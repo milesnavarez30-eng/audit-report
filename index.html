@@ -520,29 +520,31 @@
             return;
         }
 
-        // We create a temporary, hidden HTML table to force Google Sheets to read formatting
+        // Create a temporary, hidden HTML element to prevent any website styles from inheriting
         const tempDiv = document.createElement("div");
+        tempDiv.style.all = "initial"; // Blocks inherited CSS entirely
         tempDiv.style.position = "absolute";
         tempDiv.style.left = "-9999px";
         
-        let tableHTML = "<table><tbody>";
+        // Explicitly set transparent background and default black font color for the copied table
+        let tableHTML = "<table style='background-color: transparent; color: #000000; font-family: Arial, sans-serif; font-size: 10pt; border-collapse: collapse;'><tbody>";
         
         entryList.forEach(entry => {
-            // Apply text-align: center to the specific columns requested
+            // Each cell also explicitly overrides background colors just to be safe
             tableHTML += `
                 <tr>
-                    <td style="text-align: center;">${entry.year}</td>
-                    <td style="text-align: center;">${entry.month}</td>
-                    <td style="text-align: center;">${entry.formattedDate}</td>
-                    <td style="text-align: center;">${entry.auditorName}</td>
-                    <td style="text-align: center;">${entry.omName}</td>
-                    <td style="text-align: center;">${entry.site}</td>
-                    <td style="text-align: center;">${entry.tlName}</td>
-                    <td style="text-align: center;">${entry.agentName}</td>
-                    <td style="text-align: center;">${entry.cleanAccount}</td>
-                    <td style="text-align: center;">${entry.reasonCode}</td>
-                    <td style="text-align: center;">${entry.noc}</td>
-                    <td>${entry.remarks}</td>
+                    <td style="text-align: center; background-color: transparent;">${entry.year}</td>
+                    <td style="text-align: center; background-color: transparent;">${entry.month}</td>
+                    <td style="text-align: center; background-color: transparent;">${entry.formattedDate}</td>
+                    <td style="text-align: center; background-color: transparent;">${entry.auditorName}</td>
+                    <td style="text-align: center; background-color: transparent;">${entry.omName}</td>
+                    <td style="text-align: center; background-color: transparent;">${entry.site}</td>
+                    <td style="text-align: center; background-color: transparent;">${entry.tlName}</td>
+                    <td style="text-align: center; background-color: transparent;">${entry.agentName}</td>
+                    <td style="text-align: center; background-color: transparent;">${entry.cleanAccount}</td>
+                    <td style="text-align: center; background-color: transparent;">${entry.reasonCode}</td>
+                    <td style="text-align: center; background-color: transparent;">${entry.noc}</td>
+                    <td style="background-color: transparent;">${entry.remarks}</td>
                 </tr>
             `;
         });
@@ -560,7 +562,7 @@
 
         try {
             document.execCommand('copy');
-            alert("All entries copied! You can now paste into Google Sheets and they will be centered.");
+            alert("All entries copied! They will now paste seamlessly into Google Sheets without changing its colors.");
         } catch (err) {
             alert("Failed to copy data.");
         }
