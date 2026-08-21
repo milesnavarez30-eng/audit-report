@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CCTV Audit Generator - Dark Mode</title>
+    <style>
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+            background-color: #121212; 
+            color: #e0e0e0; 
+            max-width: 900px; 
+            margin: 40px auto; 
+            padding: 20px; 
+        }
+        .container { 
+            background: #1e1e1e; 
+            padding: 30px; 
+            border-radius: 8px; 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5); 
+        }
+        h2 { 
+            margin-top: 0; 
+            color: #64b5f6; 
+            border-bottom: 2px solid #333; 
+            padding-bottom: 15px; 
+        }
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        .form-group { margin-bottom: 10px; }
+        .form-group.full-width { grid-column: 1 / -1; }
+        
+        label { 
+            display: block; 
+            font-weight: bold; 
+            margin-bottom: 5px; 
+            font-size: 13px; 
+            color: #bbb;
+        }
+        input[type="text"], input[type="date"], select { 
+            width: 100%; 
+            padding: 10px; 
+            background-color: #2c2c2c;
+            color: #fff;
+            border: 1px solid #444; 
+            border-radius: 4px; 
+            box-sizing: border-box; 
+            font-family: inherit; 
+        }
+        input:focus, select:focus {
+            outline: none;
+            border-color: #64b5f6;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        button { 
+            background-color: #1976d2; 
+            color: white; 
+            border: none; 
+            padding: 12px 20px; 
+            font-size: 15px; 
+            border-radius: 4px; 
+            cursor: pointer; 
+            font-weight: bold; 
+            flex: 1;
+            transition: background-color 0.2s;
+        }
+        button:hover { background-color: #1565c0; }
+        button.clear-btn { background-color: #d32f2f; }
+        button.clear-btn:hover { background-color: #b71c1c; }
+        button.copy-btn { background-color: #388e3c; }
+        button.copy-btn:hover { background-color: #2e7d32; }
+
+        .output-section { margin-top: 30px; }
+        textarea { 
+            width: 100%; 
+            height: 200px; 
+            padding: 10px; 
+            background-color: #121212;
+            color: #aed581;
+            border: 1px solid #444; 
+            border-radius: 4px; 
+            box-sizing: border-box; 
+            resize: vertical; 
+            font-family: monospace; 
+            white-space: pre; 
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>CCTV Audit Generator (Multi-Entry)</h2>
+    
+    <div class="form-grid">
+        <div class="form-group">
+            <label for="auditDate">Date of Audit</label>
+            <input type="date" id="auditDate" required>
+        </div>
+
+        <div class="form-group">
+            <label for="site">Site</label>
+            <select id="site">
+                <option value="Mabini Site A">Mabini Site A</option>
+                <option value="Mabini Site B">Mabini Site B</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="tlName">TL Name</label>
+            <input type="text" id="tlName" placeholder="Enter TL Name">
+        </div>
+
+        <div class="form-group">
+            <label for="agentName">Agent Name</label>
+            <input type="text" id="agentName" placeholder="Enter Agent Name">
+        </div>
+
+        <div class="form-group full-width">
+            <label for="account">Account / Campaign (Auto-maps to OM)</label>
+            <select id="account">
+                <option value="">-- Select Account --</option>
+                <!-- Options populated by JS -->
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="reasonCode">CCTV Reason Code</label>
+            <select id="reasonCode">
+                <option value="SLEEPING">SLEEPING</option>
+                <option value="DRESS CODE">DRESS CODE</option>
+                <option value="BROWSING">BROWSING</option>
+                <option value="WASTING TIME">WASTING TIME</option>
+                <option value="BRINGING NON-WOF">BRINGING NON-WOF</option>
+                <option value="EATING">EATING</option>
+                <option value="IMPROPER HOUSE KEEPING">IMPROPER HOUSE KEEPING</option>
+                <option value="EQUIPMENT TAMPERING">EQUIPMENT TAMPERING</option>
+                <option value="PDA">PDA</option>
+                <option value="DISORDERLY CONDUCT">DISORDERLY CONDUCT</option>
+                <option value="USING SMARTPHONE">USING SMARTPHONE</option>
+                <option value="THEFT">THEFT</option>
+                <option value="SELLING">SELLING</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="noc">NOC (Report Status)</label>
+            <select id="noc">
+                <option value="Yes">Yes</option>
+                <option value="No">No</option>
+                <option value="Pending">Pending</option>
+                <option value="Disputed">Disputed</option>
+            </select>
+        </div>
+
+        <div class="form-group full-width">
+            <label for="remarks">Remarks (Keep short and summarized)</label>
+            <input type="text" id="remarks" placeholder="Brief summary of the incident">
+        </div>
+    </div>
+
+    <div class="button-group">
+        <button onclick="addEntry()">➕ Add Entry to List</button>
+        <button onclick="clearForm()" class="clear-btn" style="flex: 0.5;">Clear Form</button>
+    </div>
+
+    <div class="output-section">
+        <label for="outputText">Compiled Google Sheets Output (Tab Separated)</label>
+        <textarea id="outputText" readonly placeholder="Your entries will appear here..."></textarea>
+        
+        <div class="button-group">
+            <button class="copy-btn" onclick="copyToClipboard()">📋 Copy All Entries</button>
+            <button class="clear-btn" onclick="clearOutput()" style="flex: 0.3;">🗑️ Clear List</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // OM to Account Mapping Data
+    const accountMapping = {
+        // Abby
+        "123 Robotics (Abby)": "Abby",
+        "123Employee | HUB International": "Abby",
+        "Dental Back Office Admin": "Abby",
+        "DNO L1": "Abby",
+        "ESIM": "Abby",
+        "Franklin Hamilton": "Abby",
+        "LOGISTICS": "Abby",
+        "Together Network": "Abby",
+        "Triple B": "Abby",
+        "TV COMMERCIAL TRAFFIC": "Abby",
+        "WanderJoy": "Abby",
+        "BIGO - Thirdy": "Abby",
+        "CFC (Abby)": "Abby",
+        // BIGO Rules
+        "BIGO - Mabini": "Irene",
+        "BIGO - ECOLAND": "Irene",
+        "BIGO - DIGOS": "Shayne",
+        // Cherry
+        "AU Store": "Cherry",
+        "AUTAX": "Cherry",
+        "FWC": "Cherry",
+        "KOMBEA MPI": "Cherry",
+        "Kombea Pro Speaking": "Cherry",
+        // Crystal
+        "123 Employee (Crystal)": "Crystal",
+        "123 Employee - Echo Mortgage": "Crystal",
+        "AUXGP": "Crystal",
+        "Clinic P": "Crystal",
+        "ClinicP": "Crystal",
+        "COD Logistics (Crystal)": "Crystal",
+        "DAVI": "Crystal",
+        "DG Dial (Crystal)": "Crystal",
+        "DNE (Crystal)": "Crystal",
+        "Duque Immigration": "Crystal",
+        "Greenfoot (Crystal)": "Crystal",
+        "Jethro Mobile (Crystal)": "Crystal",
+        "List Simple": "Crystal",
+        "MAPUA": "Crystal",
+        "MoneyHero Group (Crystal)": "Crystal",
+        "NOX": "Crystal",
+        "Origin": "Crystal",
+        "Seesaw": "Crystal",
+        "Smart Staffing Support - Renters": "Crystal",
+        "SPEAK UP (Crystal)": "Crystal",
+        // Derline
+        "BrightDelivery": "Derline",
+        "Commercial Enterprise": "Derline",
+        "Commercial Merchant Acquisition": "Derline",
+        "Content Quality Assurance": "Derline",
+        "Cupshe": "Derline",
+        "GRAB - Commercial Enterprise": "Derline",
+        "GRAB - MPH": "Derline",
+        "GRAB - MY": "Derline",
+        "GRAB - PH": "Derline",
+        "GRAB - Quality Assurance": "Derline",
+        "GRAB - SG": "Derline",
+        "GrabRentals Voice and Digital Support": "Derline",
+        "OBRB MY": "Derline",
+        "ViewQwest Telesales": "Derline",
+        // Freda
+        "Airbills": "Freda",
+        "Allied Pain and Spine Institute": "Freda",
+        "Bayou Braces": "Freda",
+        "Bentino": "Freda",
+        "EDJ": "Freda",
+        "EDJ DATA": "Freda",
+        "EVMS": "Freda",
+        "Green Health Docs": "Freda",
+        "iMile Logistics": "Freda",
+        "Leisure-tec": "Freda",
+        "Mi Care": "Freda",
+        "Moon River Therapy": "Freda",
+        "Pearl Source": "Freda",
+        "Pivot": "Freda",
+        "Reflex Media": "Freda",
+        "SFP": "Freda",
+        "Spypoint (Freda)": "Freda",
+        "Uplift Healthcare LLC": "Freda",
+        "Veritas": "Freda",
+        // Irene
+        "AFP": "Irene",
+        "CFC OB": "Irene",
+        "GLO": "Irene",
+        "Greenfoot (Irene)": "Irene",
+        "KCDO": "Irene",
+        "KCDO - Billing (Irene)": "Irene",
+        "KCDO - Inbound (Irene)": "Irene",
+        "KCDO - Outbound (Irene)": "Irene",
+        "POINT CO": "Irene",
+        // Marc Jardenico
+        "Shopee - QA (Marc Jardenico)": "Marc Jardenico",
+        // McJordan
+        "TEMU - 1404": "McJordan",
+        "TEMU - 140X (RSL)": "McJordan",
+        "TEMU - 4029": "McJordan",
+        "TEMU - BATCH 6": "McJordan",
+        "TEMU - BATCH 7": "McJordan",
+        "TEMU - BATCH 8": "McJordan",
+        "TEMU - CPC": "McJordan",
+        "TEMU - LOB-1": "McJordan",
+        "TEMU - LOB-2": "McJordan",
+        "TEMU - LOB-3": "McJordan",
+        // Michelle
+        "AMG": "Michelle",
+        "CGP": "Michelle",
+        "IDENT": "Michelle",
+        "iMarketing": "Michelle",
+        "iMarketing Frontline": "Michelle",
+        "Kombea Fivestrata": "Michelle",
+        "Kombea Kingkong": "Michelle",
+        "TEN28": "Michelle",
+        "TWV": "Michelle",
+        // Mirah
+        "All Pro Pay": "Mirah",
+        "Clear Insights Group": "Mirah",
+        "DNE (Mirah)": "Mirah",
+        "HBW": "Mirah",
+        "Herb joy": "Mirah",
+        "LSM": "Mirah",
+        "NationGraph": "Mirah",
+        "QA OJR (Mirah)": "Mirah",
+        "Spypoint (Mirah)": "Mirah",
+        "Spypoint Outbound": "Mirah",
+        "Superdial": "Mirah",
+        // Mogan
+        "ACB": "Mogan",
+        "COD Logistics (Mogan)": "Mogan",
+        "DG Dial (Mogan)": "Mogan",
+        "Everlife": "Mogan",
+        "Eyesurf": "Mogan",
+        "FBB": "Mogan",
+        "FBB QA": "Mogan",
+        "Flexscale Next-Level Recruitment": "Mogan",
+        "Flexscale Truth Finance": "Mogan",
+        "Flexscale Truth Financial": "Mogan",
+        "Gardens Alive & Shared": "Mogan",
+        "Glamcor": "Mogan",
+        "Globalcom - Mountain Valley (Mogan)": "Mogan",
+        "Globalcom RTA": "Mogan",
+        "Jethro Mobile (Mogan)": "Mogan",
+        "LifeMD": "Mogan",
+        "MoneyHero Group (Mogan)": "Mogan",
+        "Neiline": "Mogan",
+        "NLR": "Mogan",
+        "PB&J TV": "Mogan",
+        "Phoenix Direct (Mogan)": "Mogan",
+        "Smart Circle": "Mogan",
+        "SPEAK UP (Mogan)": "Mogan",
+        "SPYFLY": "Mogan",
+        "Talixo": "Mogan",
+        "TelMDFirst": "Mogan",
+        // Norman
+        "AMR": "Norman",
+        "AMR CSR": "Norman",
+        "J&T Express": "Norman",
+        "MMG": "Norman",
+        "NetworX": "Norman",
+        "Renogy": "Norman",
+        // Renato
+        "Allen Institute Mouse": "Renato",
+        "BathroomX": "Renato",
+        "Flywire": "Renato",
+        "Justlife": "Renato",
+        "NISSAN PH": "Renato",
+        "Zetta": "Renato",
+        // Rhelford
+        "AHABI": "Rhelford",
+        "DLPC": "Rhelford",
+        "LM Consulting": "Rhelford",
+        "Luxor Eye Institute": "Rhelford",
+        "Spectee": "Rhelford",
+        // Ruth
+        "EIMS": "Ruth",
+        "EIMS - Data Validator/QA": "Ruth",
+        // Shayne
+        "123 Employee (Shayne)": "Shayne",
+        "611 VA": "Shayne",
+        "DLG": "Shayne",
+        "LEADMINER": "Shayne",
+        // Sheila
+        "DASCO": "Sheila",
+        "DASCO BACK OFFICE": "Sheila",
+        "DASCO CSR": "Sheila",
+        "Envera": "Sheila",
+        "KCDO - Billing (Sheila)": "Sheila",
+        "KCDO - Inbound (Sheila)": "Sheila",
+        "KCDO - Outbound (Sheila)": "Sheila",
+        "KCDO - RCM": "Sheila",
+        // Shey
+        "212 Dental Care": "Shey",
+        "Adams International": "Shey",
+        "Another Star": "Shey",
+        "ARS": "Shey",
+        "CORE LOGIX": "Shey",
+        "DIAL EXPRESS": "Shey",
+        "ENC": "Shey",
+        "GARDENS": "Shey",
+        "Globalcom - Mountain Valley (Shey)": "Shey",
+        "JJILL": "Shey",
+        "Phoenix Direct (Shey)": "Shey",
+        "QA OJR (Shey)": "Shey",
+        "SHARED": "Shey",
+        "The James Group, LLC": "Shey",
+        "TMS": "Shey",
+        "TOP MOVING SOLUTIONS": "Shey",
+        // SP - James
+        "Shopee - Buyer Chat and Email (James)": "SP - James",
+        "Shopee - Buyer CS": "SP - James",
+        "Shopee - Buyer Logistics (James)": "SP - James",
+        "Shopee - Buyer Non-Logistics": "SP - James",
+        "Shopee - CCS": "SP - James",
+        "Shopee - CS (James)": "SP - James",
+        "Shopee - Data Labelling - Buybox (James)": "SP - James",
+        "Shopee - Email": "SP - James",
+        "Shopee - FBS": "SP - James",
+        "Shopee - L1 Buyer - Email (James)": "SP - James",
+        "Shopee - PH - Chat Bot (James)": "SP - James",
+        "Shopee - Seller Chats and Email": "SP - James",
+        "Shopee - Seller Log x RR": "SP - James",
+        "Shopee - SIP Global (James)": "SP - James",
+        "Shopee - SPX": "SP - James",
+        "Shopee - SPX SSC and NSS": "SP - James",
+        "Shopee - Trainee": "SP - James",
+        // SP - Marc
+        "Shopee - Buybox (Marc)": "SP - Marc",
+        "Shopee - CB-SCS": "SP - Marc",
+        "Shopee - CBSCS": "SP - Marc",
+        "Shopee - Data Labelling - Buybox (Marc)": "SP - Marc",
+        "Shopee - L1 Buyer - Email (Marc)": "SP - Marc",
+        "Shopee - LiveStream (Marc)": "SP - Marc",
+        "Shopee - PIC": "SP - Marc",
+        "Shopee - QA (Marc)": "SP - Marc",
+        "Shopee - RTA": "SP - Marc",
+        "Shopee - SBS (Marc)": "SP - Marc",
+        "Shopee - SIP AME": "SP - Marc",
+        "Shopee - SIP BR & LATAM": "SP - Marc",
+        "Shopee - SIP Global (Marc)": "SP - Marc",
+        "Shopee - SIP Global - PH": "SP - Marc",
+        "Shopee - SIP L2": "SP - Marc",
+        "Shopee - SIP Malaysia": "SP - Marc",
+        "Shopee - SIP Singapore": "SP - Marc",
+        "Shopee - SIP Taiwan": "SP - Marc",
+        "Shopee - SIP Thailand": "SP - Marc",
+        "Shopee - SPX NSS Outbound": "SP - Marc",
+        "Shopee - WFM": "SP - Marc",
+        // SP - MJ
+        "Shopee - Buybox (MJ)": "SP - MJ",
+        "Shopee - Buybox - Smart UI": "SP - MJ",
+        "Shopee - Buyer Chat and Email (MJ)": "SP - MJ",
+        "Shopee - Buyer Logistics (MJ)": "SP - MJ",
+        "Shopee - CS (MJ)": "SP - MJ",
+        "Shopee - CS and Non-CS": "SP - MJ",
+        "Shopee - Data Labelling - Buybox (MJ)": "SP - MJ",
+        "Shopee - Data Labelling - Non SPU": "SP - MJ",
+        "Shopee - Data Labelling - SPU": "SP - MJ",
+        "Shopee - Keywords": "SP - MJ",
+        "Shopee - Listing Pages": "SP - MJ",
+        "Shopee - Listings Data Labelling - LLM": "SP - MJ",
+        "Shopee - Listings Data Labelling - SQE": "SP - MJ",
+        "Shopee - Listings Data Labelling - Task Center": "SP - MJ",
+        "Shopee - Listings QC": "SP - MJ",
+        "Shopee - Live Stream Marketing": "SP - MJ",
+        "Shopee - LiveStream (MJ)": "SP - MJ",
+        "Shopee - Non-CS": "SP - MJ",
+        "Shopee - PH - Chat Bot (MJ)": "SP - MJ",
+        "Shopee - QAC Department": "SP - MJ",
+        "Shopee - SBS (MJ)": "SP - MJ",
+        "Shopee - SPU Listings": "SP - MJ",
+        "Shopee - Training": "SP - MJ",
+        "Shopee - Video": "SP - MJ",
+        "Shopee - Video QC": "SP - MJ",
+        // Willy
+        "123 Employee (Willy)": "Willy",
+        "123 Employee - Hallandale Pharmacy": "Willy",
+        "Aeroex Technology Inc.": "Willy",
+        "Brianna Thaxton LLC": "Willy",
+        "CapLink Group": "Willy",
+        "Corazon Company LLC": "Willy",
+        "eJam": "Willy",
+        "eJam Inside Sales": "Willy",
+        "Insight Financial Associates Ltd.": "Willy",
+        "Legal Solutions 4U": "Willy",
+        "MBC Consulting Group Inc.": "Willy",
+        "NextgenID": "Willy",
+        "NextgenID SRIP": "Willy",
+        "Pinnacle Ozone Solutions": "Willy",
+        "Revel Hotel": "Willy",
+        "SBI": "Willy",
+        "SRIP L2 Support": "Willy",
+        "Ticket Management System SL": "Willy"
+    };
+
+    window.onload = function() {
+        const select = document.getElementById("account");
+        const sortedAccounts = Object.keys(accountMapping).sort();
+        sortedAccounts.forEach(acc => {
+            const option = document.createElement("option");
+            option.value = acc;
+            option.textContent = acc;
+            select.appendChild(option);
+        });
+    };
+
+    function addEntry() {
+        const dateInput = document.getElementById("auditDate").value;
+        if (!dateInput) {
+            alert("Please select a date.");
+            return;
+        }
+
+        const dateObj = new Date(dateInput);
+        const year = dateObj.getFullYear();
+        const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+        const month = months[dateObj.getMonth()];
+        const formattedDate = `${dateObj.getMonth() + 1}/${dateObj.getDate()}/${year}`;
+
+        const auditorName = "Miles";
+        const site = document.getElementById("site").value;
+        const tlName = document.getElementById("tlName").value || "N/A";
+        const agentName = document.getElementById("agentName").value || "N/A";
+        const accountSelection = document.getElementById("account").value;
+        const reasonCode = document.getElementById("reasonCode").value;
+        const noc = document.getElementById("noc").value;
+        const remarks = document.getElementById("remarks").value || "N/A";
+
+        if (!accountSelection) {
+            alert("Please select an Account.");
+            return;
+        }
+
+        const omName = accountMapping[accountSelection];
+        const cleanAccount = accountSelection.replace(/\s\([^)]+\)/, '');
+
+        // Generate Tab-Separated String aligned with columns: 
+        // Month | Date | Name | OM | SITE | TL | Agent Name | Account | CCTV Reason Codes | NOC | Remarks
+        const rowData = [
+            month,
+            formattedDate,
+            auditorName,
+            omName,
+            site,
+            tlName,
+            agentName,
+            cleanAccount,
+            reasonCode,
+            noc,
+            remarks
+        ].join('\t');
+
+        const outputBox = document.getElementById("outputText");
+        if (outputBox.value.trim() === "") {
+            outputBox.value = rowData;
+        } else {
+            outputBox.value += "\n" + rowData;
+        }
+        
+        // Data is intentionally NOT cleared here so you can reuse it for multiple entries.
+    }
+
+    function copyToClipboard() {
+        const copyText = document.getElementById("outputText");
+        if (!copyText.value) return;
+        
+        copyText.select();
+        document.execCommand("copy");
+        alert("All entries copied to clipboard! Paste directly into Google Sheets.");
+    }
+
+    function clearOutput() {
+        if(confirm("Are you sure you want to clear the compiled list?")) {
+            document.getElementById("outputText").value = "";
+        }
+    }
+
+    function clearForm() {
+        document.getElementById("auditDate").value = "";
+        document.getElementById("tlName").value = "";
+        document.getElementById("agentName").value = "";
+        document.getElementById("account").value = "";
+        document.getElementById("remarks").value = "";
+        document.getElementById("noc").value = "Yes";
+    }
+</script>
+
+</body>
+</html>
