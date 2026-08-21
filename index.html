@@ -100,6 +100,34 @@
         button.clear-btn:hover { background-color: #b71c1c; }
         button.copy-btn { background-color: #388e3c; }
         button.copy-btn:hover { background-color: #2e7d32; }
+        
+        /* Action buttons in the table */
+        .action-btns {
+            display: flex;
+            gap: 5px;
+            justify-content: center;
+        }
+        button.edit-btn {
+            background-color: #f57c00;
+            color: white;
+            padding: 4px 8px;
+            font-size: 12px;
+            flex: none;
+            width: auto;
+            border: none;
+        }
+        button.edit-btn:hover { background-color: #e65100; }
+        
+        button.delete-btn {
+            background-color: #d32f2f;
+            color: white;
+            padding: 4px 8px;
+            font-size: 12px;
+            flex: none;
+            width: auto;
+            border: none;
+        }
+        button.delete-btn:hover { background-color: #b71c1c; }
 
         .output-section { margin-top: 30px; }
         
@@ -136,16 +164,6 @@
             text-align: left;
             white-space: normal;
         }
-        button.delete-btn {
-            background-color: #d32f2f;
-            color: white;
-            padding: 4px 8px;
-            font-size: 12px;
-            flex: none;
-            width: auto;
-            border: none;
-        }
-        button.delete-btn:hover { background-color: #b71c1c; }
         
     </style>
 </head>
@@ -234,7 +252,7 @@
     </div>
 
     <div class="button-group">
-        <button onclick="addEntry()">➕ Add Entry to List</button>
+        <button id="addUpdateBtn" onclick="submitEntry()">➕ Add Entry to List</button>
         <button onclick="clearForm()" class="clear-btn" style="flex: 0.5;">Clear Form</button>
     </div>
 
@@ -245,7 +263,7 @@
             <table id="outputTable">
                 <thead>
                     <tr>
-                        <th>Action</th>
+                        <th>Actions</th>
                         <th>Year</th>
                         <th>Month</th>
                         <th>Date</th>
@@ -274,8 +292,9 @@
 </div>
 
 <script>
-    // Global Array to hold entries
+    // Global Arrays and Variables
     let entryList = [];
+    let editingIndex = -1; // -1 means we are adding a new entry, otherwise it's the index we are editing
 
     // OM to Account Mapping Data
     const accountMapping = {
@@ -382,7 +401,7 @@
         }
     }
 
-    function addEntry() {
+    function submitEntry() {
         const dateInput = document.getElementById("auditDate").value;
         if (!dateInput) {
             alert("Please select a date.");
@@ -412,13 +431,56 @@
         const omName = accountMapping[accountSelection];
         const cleanAccount = accountSelection.replace(/\s\([^)]+\)/, '');
 
-        // Store into array
+        // Store into object
         const entry = {
+            rawDate: dateInput, // Needed for populating the form later when editing
             year, month, formattedDate, auditorName, omName, site, 
-            tlName, agentName, cleanAccount, reasonCode, noc, remarks
+            tlName, agentName, 
+            rawAccount: accountSelection, // Needed for populating the dropdown
+            cleanAccount, reasonCode, noc, remarks
         };
         
-        entryList.push(entry);
+        if (editingIndex === -1) {
+            // Add new entry
+            entryList.push(entry);
+        } else {
+            // Update existing entry
+            entryList[editingIndex] = entry;
+            // Reset state
+            editingIndex = -1;
+            document.getElementById("addUpdateBtn").innerHTML = "➕ Add Entry to List";
+        }
+        
+        renderTable();
+        clearForm(); // clears inputs so you can enter the next one
+    }
+
+    function editEntry(index) {
+        const entry = entryList[index];
+        
+        document.getElementById("auditDate").value = entry.rawDate;
+        document.getElementById("site").value = entry.site;
+        document.getElementById("tlName").value = entry.tlName;
+        document.getElementById("agentName").value = entry.agentName;
+        document.getElementById("account").value = entry.rawAccount;
+        document.getElementById("reasonCode").value = entry.reasonCode;
+        document.getElementById("noc").value = entry.noc;
+        document.getElementById("remarks").value = entry.remarks;
+
+        editingIndex = index;
+        document.getElementById("addUpdateBtn").innerHTML = "💾 Update Entry";
+    }
+
+    function deleteEntry(index) {
+        if (editingIndex === index) {
+            // If they try to delete the entry they are currently editing, clear the form
+            clearForm();
+        } else if (editingIndex > index) {
+            // If they delete an item BEFORE the one they are currently editing, shift the index down
+            editingIndex--;
+        }
+        
+        entryList.splice(index, 1);
         renderTable();
     }
 
@@ -429,7 +491,12 @@
         entryList.forEach((entry, index) => {
             const tr = document.createElement("tr");
             tr.innerHTML = `
-                <td><button class="delete-btn" onclick="deleteEntry(${index})" title="Remove Row">❌</button></td>
+                <td>
+                    <div class="action-btns">
+                        <button class="edit-btn" onclick="editEntry(${index})" title="Edit Row">✏️</button>
+                        <button class="delete-btn" onclick="deleteEntry(${index})" title="Remove Row">❌</button>
+                    </div>
+                </td>
                 <td>${entry.year}</td>
                 <td>${entry.month}</td>
                 <td>${entry.formattedDate}</td>
@@ -445,11 +512,6 @@
             `;
             tbody.appendChild(tr);
         });
-    }
-
-    function deleteEntry(index) {
-        entryList.splice(index, 1);
-        renderTable();
     }
 
     function copyToClipboard() {
@@ -511,6 +573,8 @@
     function clearOutput() {
         if(confirm("Are you sure you want to clear all compiled entries?")) {
             entryList = [];
+            editingIndex = -1;
+            document.getElementById("addUpdateBtn").innerHTML = "➕ Add Entry to List";
             renderTable();
         }
     }
@@ -522,6 +586,9 @@
         document.getElementById("account").value = "";
         document.getElementById("remarks").value = "";
         document.getElementById("noc").value = "Yes";
+        
+        editingIndex = -1;
+        document.getElementById("addUpdateBtn").innerHTML = "➕ Add Entry to List";
     }
 </script>
 
