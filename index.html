@@ -238,8 +238,7 @@
             <label for="site">Site</label>
             <div class="input-group">
                 <select id="site">
-                    <option value="Mabini Site A">Mabini Site A</option>
-                    <option value="Mabini Site B">Mabini Site B</option>
+                    <!-- Populated by JS LocalStorage -->
                 </select>
                 <button type="button" class="add-btn" onclick="addNewOption('site', 'New Site Name')" title="Add New Site">+</button>
                 <button type="button" class="remove-btn" onclick="removeSelectedOption('site')" title="Delete Selected Site">-</button>
@@ -260,7 +259,7 @@
             <label for="omName">OM Name</label>
             <div class="input-group">
                 <select id="omName">
-                    <!-- Populated by JS -->
+                    <!-- Populated by JS LocalStorage -->
                 </select>
                 <button type="button" class="add-btn" onclick="addNewOption('omName', 'New OM Name')" title="Add New OM">+</button>
                 <button type="button" class="remove-btn" onclick="removeSelectedOption('omName')" title="Delete Selected OM">-</button>
@@ -271,7 +270,7 @@
             <label for="account">Account / Campaign</label>
             <div class="input-group">
                 <select id="account">
-                    <!-- Populated by JS -->
+                    <!-- Populated by JS LocalStorage -->
                 </select>
                 <button type="button" class="add-btn" onclick="addNewOption('account', 'New Account/Campaign')" title="Add New Account">+</button>
                 <button type="button" class="remove-btn" onclick="removeSelectedOption('account')" title="Delete Selected Account">-</button>
@@ -282,19 +281,7 @@
             <label for="reasonCode">CCTV Reason Code</label>
             <div class="input-group">
                 <select id="reasonCode">
-                    <option value="SLEEPING">SLEEPING</option>
-                    <option value="DRESS CODE">DRESS CODE</option>
-                    <option value="BROWSING">BROWSING</option>
-                    <option value="WASTING TIME">WASTING TIME</option>
-                    <option value="BRINGING NON-WOF">BRINGING NON-WOF</option>
-                    <option value="EATING">EATING</option>
-                    <option value="IMPROPER HOUSE KEEPING">IMPROPER HOUSE KEEPING</option>
-                    <option value="EQUIPMENT TAMPERING">EQUIPMENT TAMPERING</option>
-                    <option value="PDA">PDA</option>
-                    <option value="DISORDERLY CONDUCT">DISORDERLY CONDUCT</option>
-                    <option value="USING SMARTPHONE">USING SMARTPHONE</option>
-                    <option value="THEFT">THEFT</option>
-                    <option value="SELLING">SELLING</option>
+                    <!-- Populated by JS LocalStorage -->
                 </select>
                 <button type="button" class="add-btn" onclick="addNewOption('reasonCode', 'New Reason Code')" title="Add New Reason Code">+</button>
                 <button type="button" class="remove-btn" onclick="removeSelectedOption('reasonCode')" title="Delete Selected Reason Code">-</button>
@@ -380,7 +367,7 @@
     let frameCount = 0;
 
     const trail = [];
-    const maxTrailLength = 70; // Trail length before fading out
+    const maxTrailLength = 70; 
     const rainbowColors = ['#ff0000', '#ff9900', '#ffff00', '#33ff00', '#0099ff', '#6633ff'];
 
     function drawPixelCat(x, y, scale, flip) {
@@ -392,14 +379,10 @@
 
         const bob = (Math.floor(frameCount / 8) % 2 === 0) ? 0 : 2;
 
-        // Draw Pop-Tart Body Crust
-        ctx.fillStyle = '#ffcc99';
-        ctx.fillRect(-16 * scale, (-10 + bob) * scale, 21 * scale, 18 * scale);
-
-        // Draw Frosting
-        ctx.fillStyle = '#ff99cc';
-        ctx.fillRect(-14 * scale, (-8 + bob) * scale, 17 * scale, 14 * scale);
-
+        // Pop-Tart Body
+        ctx.fillStyle = '#ffcc99'; ctx.fillRect(-16 * scale, (-10 + bob) * scale, 21 * scale, 18 * scale);
+        ctx.fillStyle = '#ff99cc'; ctx.fillRect(-14 * scale, (-8 + bob) * scale, 17 * scale, 14 * scale);
+        
         // Sprinkles
         ctx.fillStyle = '#ff3399';
         ctx.fillRect(-12 * scale, (-6 + bob) * scale, 2 * scale, 2 * scale);
@@ -407,34 +390,25 @@
         ctx.fillRect(-10 * scale, (0 + bob) * scale, 2 * scale, 2 * scale);
         ctx.fillRect(-2 * scale, (-6 + bob) * scale, 2 * scale, 2 * scale);
 
-        // Cat Head
+        // Cat Parts
         ctx.fillStyle = '#999999';
-        ctx.fillRect(1 * scale, (-6 + bob) * scale, 13 * scale, 11 * scale);
-
-        // Ears
-        ctx.fillRect(2 * scale, (-10 + bob) * scale, 3 * scale, 4 * scale);
-        ctx.fillRect(10 * scale, (-10 + bob) * scale, 3 * scale, 4 * scale);
-
-        // Cheeks
-        ctx.fillStyle = '#ff9999';
+        ctx.fillRect(1 * scale, (-6 + bob) * scale, 13 * scale, 11 * scale); // Head
+        ctx.fillRect(2 * scale, (-10 + bob) * scale, 3 * scale, 4 * scale); // Ear L
+        ctx.fillRect(10 * scale, (-10 + bob) * scale, 3 * scale, 4 * scale); // Ear R
+        
+        ctx.fillStyle = '#ff9999'; // Cheeks
         ctx.fillRect(1 * scale, (-1 + bob) * scale, 2 * scale, 2 * scale);
         ctx.fillRect(11 * scale, (-1 + bob) * scale, 2 * scale, 2 * scale);
-
-        // Eyes
-        ctx.fillStyle = '#000000';
+        
+        ctx.fillStyle = '#000000'; // Eyes & Mouth
         ctx.fillRect(4 * scale, (-3 + bob) * scale, 2 * scale, 2 * scale);
         ctx.fillRect(9 * scale, (-3 + bob) * scale, 2 * scale, 2 * scale);
-
-        // Nose/Mouth
         ctx.fillRect(7 * scale, (-1 + bob) * scale, 2 * scale, 1 * scale);
-
-        // Paws
-        ctx.fillStyle = '#999999';
+        
+        ctx.fillStyle = '#999999'; // Paws & Tail
         const legShift = (Math.floor(frameCount / 6) % 2 === 0) ? 1 : -1;
         ctx.fillRect(-13 * scale + legShift, (8 + bob) * scale, 4 * scale, 3 * scale);
         ctx.fillRect(-1 * scale - legShift, (8 + bob) * scale, 4 * scale, 3 * scale);
-
-        // Tail
         const tailBob = (Math.floor(frameCount / 10) % 2 === 0) ? -2 : 0;
         ctx.fillRect(-20 * scale, (-4 + bob + tailBob) * scale, 5 * scale, 3 * scale);
 
@@ -448,42 +422,24 @@
         catX += vx;
         catY += vy;
 
-        if (catX + catWidth >= canvas.width) {
-            catX = canvas.width - catWidth;
-            vx = -vx;
-            facingRight = false;
-        } else if (catX <= 0) {
-            catX = 0;
-            vx = -vx;
-            facingRight = true;
-        }
+        if (catX + catWidth >= canvas.width) { catX = canvas.width - catWidth; vx = -vx; facingRight = false; }
+        else if (catX <= 0) { catX = 0; vx = -vx; facingRight = true; }
+        if (catY + catHeight >= canvas.height) { catY = canvas.height - catHeight; vy = -vy; } 
+        else if (catY <= 0) { catY = 0; vy = -vy; }
 
-        if (catY + catHeight >= canvas.height) {
-            catY = canvas.height - catHeight;
-            vy = -vy;
-        } else if (catY <= 0) {
-            catY = 0;
-            vy = -vy;
-        }
-
-        // Add current position to trailing path
         const trailOffsetBack = facingRight ? -14 * catScale : 14 * catScale;
         trail.unshift({
             x: catX + (catWidth / 2) + trailOffsetBack,
-            y: catY + (catHeight / 2) - 2,
-            facingRight: facingRight
+            y: catY + (catHeight / 2) - 2
         });
 
-        if (trail.length > maxTrailLength) {
-            trail.pop();
-        }
+        if (trail.length > maxTrailLength) trail.pop();
 
-        // Draw Rainbow with smooth trailing fade-out
         const stripeHeight = 3.5;
         for (let i = trail.length - 1; i > 0; i--) {
             const p1 = trail[i];
             const p2 = trail[i - 1];
-            const alpha = Math.max(0, 1 - (i / maxTrailLength)); // Fades smoothly to 0 at the tail
+            const alpha = Math.max(0, 1 - (i / maxTrailLength)); 
             const wave = Math.sin((frameCount * 0.25) + (i * 0.35)) * 2;
 
             for (let c = 0; c < rainbowColors.length; c++) {
@@ -500,51 +456,119 @@
             }
         }
 
-        // Draw Nyan Cat
         drawPixelCat(catX + (catWidth / 2), catY + (catHeight / 2), catScale, facingRight);
-
         requestAnimationFrame(animateNyan);
     }
     animateNyan();
     // -------------------------------------------------------------
 
-    let entryList = [];
-    let editingIndex = -1; 
-
+    // --- AUTO-SAVE LOGIC (LOCALSTORAGE) ---
+    
+    // Default raw lists
     const rawCampaignData = `123 Employee\n123 Robotics\n123Employee | HUB International\nDental Back Office Admin\nDNO L1\nESIM\nFranklin Hamilton\nLOGISTICS\nTogether Network\nTriple B\nTV COMMERCIAL TRAFFIC\nWanderJoy\nBIGO - ECOLAND\nBIGO - Mabini\nCFC\nAU Store\nAUTAX\nFWC\nKOMBEA MPI\nKombea Pro Speaking\n123 Employee\n123 Employee - Echo Mortgage\nAUXGP\nClinic P\nClinicP\nCOD Logistics\nDAVI\nDG Dial\nDNE\nDuque Immigration\nGreenfoot\nJethro Mobile\nList Simple\nMAPUA\nMoneyHero Group\nNOX\nOrigin\nQC\nSeesaw\nSmart Staffing Support - Renters\nSPEAK UP\nBrightDelivery\nCommercial Enterprise\nCommercial Merchant Acquisition\nContent Quality Assurance\nCupshe\nGRAB - Commercial Enterprise\nGRAB - MPH\nGRAB - MY\nGRAB - PH\nGRAB - Quality Assurance\nGRAB - SG\nGrabRentals Voice and Digital Support\nOBRB MY\nViewQwest Telesales\nAirbills\nAllied Pain and Spine Institute\nBayou Braces\nBentino\nEDJ DATA\nEVMS\nGreen Health Docs\niMile Logistics\nLeisure-tec\nMi Care\nMoon River Therapy\nPearl Source\nPivot\nReflex Media\nSFP\nSpypoint\nUplift Healthcare LLC\nVeritas\nAFP\nBIGO - ECOLAND\nBIGO - Mabini\nCFC OB\nGLO\nGreenfoot\nKCDO\nKCDO - Billing\nKCDO - Inbound\nKCDO - Outbound\nPOINT CO\nShopee - SIP Global\nBIGO - Mabini\nShopee - QA\nTEMU - 1404\nTEMU - 140X (RSL)\nTEMU - 4029\nTEMU - BATCH 6\nTEMU - BATCH 7\nTEMU - BATCH 8\nTEMU - CPC\nTEMU - LOB-1\nTEMU - LOB-2\nTEMU - LOB-3\nAMG\nCGP\nIDENT\niMarketing\niMarketing Frontline\nKombea Fivestrata\nKombea Kingkong\nTEN28\nTWV\nAll Pro Pay\nClear Insights Group\nDNE\nHBW\nHerb joy\nLSM\nNationGraph\nQA OJR\nSpypoint\nSpypoint Outbound\nSuperdial\nACB\nCOD Logistics\nDG Dial\nEverlife\nEyesurf\nFBB\nFBB QA\nFlexscale Next-Level Recruitment\nFlexscale Truth Finance\nFlexscale Truth Financial\nGardens Alive & Shared\nGlamcor\nGlobalcom - Mountain Valley\nGlobalcom RTA\nJethro Mobile\nLifeMD\nMoneyHero Group\nNeiline\nNLR\nPB&J TV\nPhoenix Direct\nSmart Circle\nSPEAK UP\nSPYFLY\nTalixo\nTelMDFirst\nAMR\nAMR CSR\nJ&T Express\nMMG\nNetworX\nRenogy\nAllen Institute Mouse\nBathroomX\nFlywire\nJustlife\nJustlife \nNISSAN PH\nZetta\nAHABI\nDLPC\nLM Consulting\nLuxor Eye Institute\nSpectee\nEIMS\nEIMS - Data Validator/QA\n123 Employee\n611 VA\nBIGO - DIGOS\nDLG\nLEADMINER\nDASCO\nDASCO BACK OFFICE\nDASCO CSR\nEnvera\nKCDO - Billing\nKCDO - Inbound\nKCDO - Outbound\nKCDO - RCM\n212 Dental Care\nAdams International\nAnother Star\nARS\nCORE LOGIX\nDIAL EXPRESS\nENC\nGARDENS\nGlobalcom - Mountain Valley\nJJILL\nPhoenix Direct\nQA OJR\nSHARED\nThe James Group, LLC\nTMS\nTOP MOVING SOLUTIONS\nShopee - Buyer Chat and Email\nShopee - Buyer CS\nShopee - Buyer Logistics\nShopee - Buyer Non-Logistics\nShopee - CCS\nShopee - CS\nShopee - Data Labelling - Buybox\nShopee - Email\nShopee - FBS\nShopee - L1 Buyer - Email\nShopee - PH - Chat Bot\nShopee - Seller Chats and Email\nShopee - Seller Log x RR\nShopee - SIP Global\nShopee - SPX\nShopee - SPX SSC and NSS\nShopee - Trainee\nShopee - Buybox\nShopee - CB-SCS\nShopee - CBSCS\nShopee - Data Labelling - Buybox\nShopee - L1 Buyer - Email\nShopee - LiveStream\nShopee - PIC\nShopee - QA\nShopee - RTA\nShopee - SBS\nShopee - SIP AME\nShopee - SIP BR & LATAM\nShopee - SIP Global\nShopee - SIP Global - PH\nShopee - SIP L2\nShopee - SIP Malaysia\nShopee - SIP Singapore\nShopee - SIP Taiwan\nShopee - SIP Thailand\nShopee - SPX NSS Outbound\nShopee - WFM\nShopee - Buybox\nShopee - Buybox - Smart UI\nShopee - Buyer Chat and Email\nShopee - Buyer Logistics\nShopee - CS \nShopee - CS and Non-CS\nShopee - Data Labelling - Buybox\nShopee - Data Labelling - Non SPU\nShopee - Data Labelling - SPU\nShopee - Keywords\nShopee - Listing Pages\nShopee - Listings Data Labelling - LLM\nShopee - Listings Data Labelling - SQE\nShopee - Listings Data Labelling - Task Center\nShopee - Listings QC\nShopee - Live Stream Marketing\nShopee - LiveStream\nShopee - Non-CS\nShopee - PH - Chat Bot\nShopee - QAC Department\nShopee - SBS\nShopee - SPU Listings\nShopee - Training\nShopee - Video\nShopee - Video QC\n123 Employee\n123 Employee - Hallandale Pharmacy\nAeroex Technology Inc.\nBrianna Thaxton LLC\nCapLink Group\nCorazon Company LLC\neJam\neJam Inside Sales\nInsight Financial Associates Ltd. (SixEleven Project)\nLegal Solutions 4U\nMBC Consulting Group Inc.\nNextgenID\nNextgenID SRIP\nPinnacle Ozone Solutions\nRevel Hotel\nSBI\nSRIP L2 Support\nTicket Management System SL`;
 
     const rawOmData = `Abby\nBIGO - Thirdy\nCFC\nCherry\nCrystal\nDerline\nFreda\nIrene\nMarc Jardenico\nMcJordan\nMichelle\nMirah\nMogan\nNorman\nRenato\nRhelford\nRuth\nShayne\nSheila\nShey\nSP - James\nSP - Marc\nSP - MJ\nWilly`;
 
-    window.onload = function() {
-        populateDropdown("account", rawCampaignData, "Account/Campaign");
-        populateDropdown("omName", rawOmData, "OM");
+    // Function to parse raw strings into unique sorted arrays
+    function processRaw(rawStr) {
+        const arr = rawStr.split('\n').map(s => s.trim()).filter(s => s !== "");
+        return [...new Set(arr)].sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
+    }
+
+    // Default arrays
+    const defaultData = {
+        site: ["Mabini Site A", "Mabini Site B"],
+        omName: processRaw(rawOmData),
+        account: processRaw(rawCampaignData),
+        reasonCode: ["SLEEPING", "DRESS CODE", "BROWSING", "WASTING TIME", "BRINGING NON-WOF", "EATING", "IMPROPER HOUSE KEEPING", "EQUIPMENT TAMPERING", "PDA", "DISORDERLY CONDUCT", "USING SMARTPHONE", "THEFT", "SELLING"]
     };
 
-    function populateDropdown(selectId, rawData, labelText) {
+    const labelMap = {
+        site: "Site",
+        omName: "OM Name",
+        account: "Account/Campaign",
+        reasonCode: "Reason Code"
+    };
+
+    // State holders
+    let currentDropdownData = {};
+    let entryList = [];
+    let editingIndex = -1; 
+
+    window.onload = function() {
+        // Init all dynamic dropdowns with localStorage
+        initDropdown("site");
+        initDropdown("omName");
+        initDropdown("account");
+        initDropdown("reasonCode");
+
+        // Init table entries from localStorage
+        const storedEntries = localStorage.getItem('cctv_entry_list');
+        if (storedEntries) {
+            try { entryList = JSON.parse(storedEntries); } 
+            catch (e) { entryList = []; }
+        }
+        renderTable();
+    };
+
+    function initDropdown(selectId) {
+        const storageKey = `cctv_dropdown_${selectId}`;
+        const stored = localStorage.getItem(storageKey);
+        
+        try {
+            if (stored) {
+                currentDropdownData[selectId] = JSON.parse(stored);
+            } else {
+                currentDropdownData[selectId] = [...defaultData[selectId]];
+                localStorage.setItem(storageKey, JSON.stringify(currentDropdownData[selectId]));
+            }
+        } catch(e) {
+            currentDropdownData[selectId] = [...defaultData[selectId]];
+        }
+        renderDropdownOptions(selectId);
+    }
+
+    function renderDropdownOptions(selectId) {
         const select = document.getElementById(selectId);
-        select.innerHTML = `<option value="">-- Select ${labelText} --</option>`;
+        // Keep current selected value if possible
+        const currentVal = select.value; 
         
-        const arrayData = rawData.split('\n').map(s => s.trim()).filter(s => s !== "");
-        const uniqueSorted = [...new Set(arrayData)].sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
+        select.innerHTML = `<option value="">-- Select ${labelMap[selectId]} --</option>`;
         
-        uniqueSorted.forEach(item => {
-            const option = document.createElement("option");
-            option.value = item;
-            option.textContent = item;
-            select.appendChild(option);
-        });
+        // Ensure alphabetical sort
+        currentDropdownData[selectId]
+            .sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()))
+            .forEach(item => {
+                const option = document.createElement("option");
+                option.value = item;
+                option.textContent = item;
+                select.appendChild(option);
+            });
+            
+        // Restore value if it still exists
+        if(currentVal && currentDropdownData[selectId].includes(currentVal)) {
+            select.value = currentVal;
+        }
     }
 
     function addNewOption(selectId, promptText) {
-        const select = document.getElementById(selectId);
         const newValue = prompt(`Enter ${promptText}:`);
         
         if (newValue && newValue.trim() !== "") {
-            const option = document.createElement("option");
-            option.value = newValue.trim();
-            option.textContent = newValue.trim();
-            select.appendChild(option);
-            select.value = newValue.trim(); 
+            const cleanValue = newValue.trim();
+            
+            if (!currentDropdownData[selectId].includes(cleanValue)) {
+                // Add to state
+                currentDropdownData[selectId].push(cleanValue);
+                // Save to localStorage
+                localStorage.setItem(`cctv_dropdown_${selectId}`, JSON.stringify(currentDropdownData[selectId]));
+                // Re-render UI
+                renderDropdownOptions(selectId);
+            } else {
+                alert("This option already exists!");
+            }
+            // Auto-select the newly added (or existing) item
+            document.getElementById(selectId).value = cleanValue;
         }
     }
 
@@ -558,9 +582,22 @@
         }
         
         const selectedOption = select.options[selectedIndex];
-        if (confirm(`Are you sure you want to delete "${selectedOption.text}" from this dropdown?`)) {
-            select.remove(selectedIndex);
+        if (confirm(`Are you sure you want to delete "${selectedOption.text}"? It will be removed permanently.`)) {
+            const valueToRemove = selectedOption.value;
+            // Remove from state
+            currentDropdownData[selectId] = currentDropdownData[selectId].filter(item => item !== valueToRemove);
+            // Save to localStorage
+            localStorage.setItem(`cctv_dropdown_${selectId}`, JSON.stringify(currentDropdownData[selectId]));
+            // Re-render UI
+            renderDropdownOptions(selectId);
         }
+    }
+
+    // --- FORM SUBMISSION & TABLE LOGIC ---
+    
+    function saveEntries() {
+        // Save current table data to localStorage
+        localStorage.setItem('cctv_entry_list', JSON.stringify(entryList));
     }
 
     function submitEntry() {
@@ -605,6 +642,7 @@
             document.getElementById("addUpdateBtn").innerHTML = "➕ Add Entry to List";
         }
         
+        saveEntries(); // Save table data to browser
         renderTable();
     }
 
@@ -632,6 +670,7 @@
             editingIndex--;
         }
         entryList.splice(index, 1);
+        saveEntries(); // Save updated table to browser
         renderTable();
     }
 
@@ -723,6 +762,7 @@
             entryList = [];
             editingIndex = -1;
             document.getElementById("addUpdateBtn").innerHTML = "➕ Add Entry to List";
+            saveEntries(); // Clear localStorage sa table
             renderTable();
         }
     }
