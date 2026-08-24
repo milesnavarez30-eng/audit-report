@@ -388,7 +388,6 @@
     let frameCount = 0;
 
     const trail = [];
-    // GINAWA KONG MAS MAHABA ANG RAINBOW (Dati 70, ngayon 200)
     const maxTrailLength = 200; 
     const rainbowColors = ['#ff0000', '#ff9900', '#ffff00', '#33ff00', '#0099ff', '#6633ff'];
 
@@ -581,8 +580,9 @@
         const frameIndex = Math.floor(frameCount / 5) % nyanFrames.length;
         const grid = nyanFrames[frameIndex];
 
-        const offsetX = -17 * scale;
-        const offsetY = -10.5 * scale;
+        // FIX: Calculate exact integer boundaries starting point
+        const startX = Math.round(-17 * scale);
+        const startY = Math.round(-10.5 * scale);
 
         for (let r = 0; r < grid.length; r++) {
             for (let c = 0; c < grid[r].length; c++) {
@@ -590,12 +590,18 @@
                 const color = nyanPalette[char];
                 if (color) {
                     ctx.fillStyle = color;
-                    // FIX: Using Math.floor/ceil to prevent the ugly vertical gaps (nagka-guba)
+                    
+                    // FIX: Calculate exact integer coordinates for EACH pixel block to prevent grid gaps
+                    const pX = Math.round(c * scale);
+                    const pY = Math.round(r * scale);
+                    const nextX = Math.round((c + 1) * scale);
+                    const nextY = Math.round((r + 1) * scale);
+                    
                     ctx.fillRect(
-                        Math.floor(offsetX + c * scale), 
-                        Math.floor(offsetY + r * scale), 
-                        Math.ceil(scale), 
-                        Math.ceil(scale)
+                        startX + pX, 
+                        startY + pY, 
+                        nextX - pX, 
+                        nextY - pY
                     );
                 }
             }
@@ -625,7 +631,6 @@
 
         if (trail.length > maxTrailLength) trail.pop();
 
-        // IBINALIK SA SMOOTH FADING RAINBOW PARA WALANG GLITCH
         const stripeHeight = 3.5 * (catScale / 3); 
         for (let i = trail.length - 1; i > 0; i--) {
             const p1 = trail[i];
@@ -637,7 +642,7 @@
                 ctx.save();
                 ctx.strokeStyle = rainbowColors[c];
                 ctx.globalAlpha = alpha * 0.9;
-                ctx.lineWidth = stripeHeight + 1.5; // Prevent gaps
+                ctx.lineWidth = stripeHeight + 1.5; // Prevent gaps in rainbow
                 ctx.beginPath();
                 const offsetY = ((c - 2.5) * stripeHeight) + wave;
                 ctx.moveTo(p1.x, p1.y + offsetY);
