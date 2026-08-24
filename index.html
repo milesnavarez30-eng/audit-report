@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>CCTV Audit Generator</title>
     
     <!-- Import Inter Font -->
@@ -31,9 +31,10 @@
             background-color: var(--bg-color); 
             color: var(--text-color); 
             max-width: 1000px; 
-            margin: 40px auto; 
-            padding: 20px; 
+            margin: 0 auto; 
+            padding: 20px 10px; 
             overflow-x: hidden;
+            min-height: 100vh;
         }
 
         /* Fullscreen Canvas for Nyan Cat & Rainbow */
@@ -55,6 +56,7 @@
             border-radius: 12px; 
             border: 1px solid var(--border-color);
             box-shadow: 0 8px 32px rgba(176, 38, 255, 0.15); 
+            margin-bottom: 30px;
         }
 
         h2 { 
@@ -67,7 +69,7 @@
             text-transform: uppercase;
         }
 
-        /* Asymmetric Grid Layout */
+        /* Desktop: Asymmetric Grid Layout */
         .form-grid {
             display: grid;
             grid-template-columns: 1.5fr 1fr 1.5fr; 
@@ -144,11 +146,14 @@
         }
         
         button.add-btn, button.remove-btn {
-            flex: 0 0 45px;
+            flex: 0 0 40px;
             padding: 0;
             font-size: 20px;
             border-radius: 6px;
             border: 1px solid var(--input-border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         button.add-btn { background-color: #1a1a1a; color: var(--primary-color); }
         button.add-btn:hover { background-color: #2a2a2a; border-color: var(--primary-color); }
@@ -168,7 +173,7 @@
             justify-content: center;
         }
         button.edit-btn, button.delete-btn {
-            padding: 4px 8px; font-size: 12px; flex: none; width: auto; border-radius: 4px; border: none;
+            padding: 6px 10px; font-size: 12px; flex: none; width: auto; border-radius: 4px; border: none;
         }
         button.edit-btn { background-color: var(--warning-bg); color: #000; }
         button.edit-btn:hover { background-color: #fcd34d; }
@@ -176,16 +181,18 @@
         button.delete-btn:hover { background-color: #f87171; }
 
         .output-section { margin-top: 40px; }
-        .output-section label { color: var(--primary-color); border-bottom: 1px solid var(--border-color); padding-bottom: 8px; margin-bottom: 15px; }
+        .output-section label { color: var(--primary-color); border-bottom: 1px solid var(--border-color); padding-bottom: 8px; margin-bottom: 15px; display: block; }
         
         .table-container {
             width: 100%;
-            max-height: 250px;
+            max-height: 350px;
             overflow-y: auto;
+            overflow-x: auto; /* Allows swiping horizontally on phones */
             background-color: rgba(18, 18, 18, 0.8);
             border: 1px solid var(--border-color);
             border-radius: 8px;
             margin-bottom: 15px;
+            -webkit-overflow-scrolling: touch; /* Smooth scroll on iOS */
         }
         
         .table-container::-webkit-scrollbar { width: 8px; height: 8px; }
@@ -199,7 +206,7 @@
             font-size: 13px;
         }
         th, td {
-            padding: 10px 12px;
+            padding: 12px 15px;
             border-bottom: 1px solid var(--border-color);
             text-align: center; 
             white-space: nowrap;
@@ -216,7 +223,43 @@
         td.remarks-col {
             text-align: left;
             white-space: normal;
-            min-width: 200px;
+            min-width: 250px; /* Prevent remarks from squishing too much */
+        }
+
+        /* --- RESPONSIVE MEDIA QUERIES --- */
+        
+        /* TABLET ADJUSTMENTS */
+        @media screen and (max-width: 900px) {
+            .form-grid {
+                grid-template-columns: 1fr 1fr; /* 2 columns */
+            }
+            .field-date, .field-site, .field-tl, .field-agent, .field-om, .field-account, .field-reason, .field-noc {
+                grid-column: span 1; /* Reset all fields to occupy 1 slot */
+            }
+            .field-remarks { grid-column: 1 / -1; } /* Full width */
+        }
+
+        /* MOBILE ADJUSTMENTS */
+        @media screen and (max-width: 600px) {
+            body { padding: 10px; margin: 10px auto; }
+            .container { padding: 20px; }
+            .form-grid {
+                grid-template-columns: 1fr; /* 1 column (Stacked) */
+                gap: 12px;
+            }
+            .field-date, .field-site, .field-tl, .field-agent, .field-om, .field-account, .field-reason, .field-noc, .field-remarks {
+                grid-column: 1 / -1; /* All fields full width */
+            }
+            .button-group {
+                flex-direction: column; /* Stack buttons on top of each other */
+            }
+            button {
+                width: 100%;
+                padding: 15px; /* Larger tap target */
+            }
+            .button-group button.clear-btn {
+                margin-top: 5px;
+            }
         }
     </style>
 </head>
@@ -306,7 +349,7 @@
 
     <div class="button-group">
         <button id="addUpdateBtn" onclick="submitEntry()">➕ Add Entry to List</button>
-        <button onclick="clearForm()" class="clear-btn" style="flex: 0.3;">Clear Form</button>
+        <button onclick="clearForm()" class="clear-btn">Clear Form</button>
     </div>
 
     <div class="output-section">
@@ -338,31 +381,24 @@
         </div>
         
         <div class="button-group">
-            <button class="copy-btn" onclick="copyToClipboard()">📋 Copy to Clipboard </button>
-            <button class="clear-btn" onclick="clearOutput()" style="flex: 0.3;">🗑️ Clear All</button>
+            <button class="copy-btn" onclick="copyToClipboard()">📋 Copy to Clipboard</button>
+            <button class="clear-btn" onclick="clearOutput()">🗑️ Clear All</button>
         </div>
     </div>
 </div>
 
 <script>
-    // --- NYAN CAT CANVAS ANIMATION WITH SMOOTH FADING RAINBOW TRAIL ---
+    // --- NYAN CAT CANVAS ANIMATION WITH DYNAMIC SCALING ---
     const canvas = document.getElementById('nyanCanvas');
     const ctx = canvas.getContext('2d');
 
-    function resizeCanvas() {
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-    }
-    window.addEventListener('resize', resizeCanvas);
-    resizeCanvas();
-
-    let catX = 50;
-    let catY = 150;
+    let catScale = 3; // Default for Desktop
+    let catWidth, catHeight;
     let vx = 3.5;
     let vy = 2.2;
-    const catScale = 3;
-    const catWidth = 34 * catScale;
-    const catHeight = 21 * catScale;
+    
+    let catX = 50;
+    let catY = 150;
     let facingRight = true;
     let frameCount = 0;
 
@@ -370,12 +406,42 @@
     const maxTrailLength = 70; 
     const rainbowColors = ['#ff0000', '#ff9900', '#ffff00', '#33ff00', '#0099ff', '#6633ff'];
 
+    function resizeCanvas() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        
+        // DEVICE RESPONSIVE NYAN CAT SIZE & SPEED
+        if (window.innerWidth <= 600) {
+            // Mobile
+            catScale = 1.3;
+            vx = facingRight ? 2 : -2;
+            vy = vy > 0 ? 1.5 : -1.5;
+        } else if (window.innerWidth <= 900) {
+            // Tablet
+            catScale = 2;
+            vx = facingRight ? 2.8 : -2.8;
+            vy = vy > 0 ? 1.8 : -1.8;
+        } else {
+            // Desktop
+            catScale = 3;
+            vx = facingRight ? 3.5 : -3.5;
+            vy = vy > 0 ? 2.2 : -2.2;
+        }
+        
+        catWidth = 34 * catScale;
+        catHeight = 21 * catScale;
+        
+        // Keep cat inside bounds on resize
+        if (catX + catWidth > canvas.width) catX = Math.max(0, canvas.width - catWidth);
+        if (catY + catHeight > canvas.height) catY = Math.max(0, canvas.height - catHeight);
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas(); // Initial call
+
     function drawPixelCat(x, y, scale, flip) {
         ctx.save();
         ctx.translate(x, y);
-        if (!flip) {
-            ctx.scale(-1, 1);
-        }
+        if (!flip) ctx.scale(-1, 1);
 
         const bob = (Math.floor(frameCount / 8) % 2 === 0) ? 0 : 2;
 
@@ -430,17 +496,18 @@
         const trailOffsetBack = facingRight ? -14 * catScale : 14 * catScale;
         trail.unshift({
             x: catX + (catWidth / 2) + trailOffsetBack,
-            y: catY + (catHeight / 2) - 2
+            y: catY + (catHeight / 2) - (2 * (catScale / 3)), // Center trail relative to scale
+            facingRight: facingRight
         });
 
         if (trail.length > maxTrailLength) trail.pop();
 
-        const stripeHeight = 3.5;
+        const stripeHeight = 3.5 * (catScale / 3); // Scale rainbow height
         for (let i = trail.length - 1; i > 0; i--) {
             const p1 = trail[i];
             const p2 = trail[i - 1];
             const alpha = Math.max(0, 1 - (i / maxTrailLength)); 
-            const wave = Math.sin((frameCount * 0.25) + (i * 0.35)) * 2;
+            const wave = Math.sin((frameCount * 0.25) + (i * 0.35)) * (2 * (catScale / 3));
 
             for (let c = 0; c < rainbowColors.length; c++) {
                 ctx.save();
@@ -463,19 +530,15 @@
     // -------------------------------------------------------------
 
     // --- AUTO-SAVE LOGIC (LOCALSTORAGE) ---
-    
-    // Default raw lists
     const rawCampaignData = `123 Employee\n123 Robotics\n123Employee | HUB International\nDental Back Office Admin\nDNO L1\nESIM\nFranklin Hamilton\nLOGISTICS\nTogether Network\nTriple B\nTV COMMERCIAL TRAFFIC\nWanderJoy\nBIGO - ECOLAND\nBIGO - Mabini\nCFC\nAU Store\nAUTAX\nFWC\nKOMBEA MPI\nKombea Pro Speaking\n123 Employee\n123 Employee - Echo Mortgage\nAUXGP\nClinic P\nClinicP\nCOD Logistics\nDAVI\nDG Dial\nDNE\nDuque Immigration\nGreenfoot\nJethro Mobile\nList Simple\nMAPUA\nMoneyHero Group\nNOX\nOrigin\nQC\nSeesaw\nSmart Staffing Support - Renters\nSPEAK UP\nBrightDelivery\nCommercial Enterprise\nCommercial Merchant Acquisition\nContent Quality Assurance\nCupshe\nGRAB - Commercial Enterprise\nGRAB - MPH\nGRAB - MY\nGRAB - PH\nGRAB - Quality Assurance\nGRAB - SG\nGrabRentals Voice and Digital Support\nOBRB MY\nViewQwest Telesales\nAirbills\nAllied Pain and Spine Institute\nBayou Braces\nBentino\nEDJ DATA\nEVMS\nGreen Health Docs\niMile Logistics\nLeisure-tec\nMi Care\nMoon River Therapy\nPearl Source\nPivot\nReflex Media\nSFP\nSpypoint\nUplift Healthcare LLC\nVeritas\nAFP\nBIGO - ECOLAND\nBIGO - Mabini\nCFC OB\nGLO\nGreenfoot\nKCDO\nKCDO - Billing\nKCDO - Inbound\nKCDO - Outbound\nPOINT CO\nShopee - SIP Global\nBIGO - Mabini\nShopee - QA\nTEMU - 1404\nTEMU - 140X (RSL)\nTEMU - 4029\nTEMU - BATCH 6\nTEMU - BATCH 7\nTEMU - BATCH 8\nTEMU - CPC\nTEMU - LOB-1\nTEMU - LOB-2\nTEMU - LOB-3\nAMG\nCGP\nIDENT\niMarketing\niMarketing Frontline\nKombea Fivestrata\nKombea Kingkong\nTEN28\nTWV\nAll Pro Pay\nClear Insights Group\nDNE\nHBW\nHerb joy\nLSM\nNationGraph\nQA OJR\nSpypoint\nSpypoint Outbound\nSuperdial\nACB\nCOD Logistics\nDG Dial\nEverlife\nEyesurf\nFBB\nFBB QA\nFlexscale Next-Level Recruitment\nFlexscale Truth Finance\nFlexscale Truth Financial\nGardens Alive & Shared\nGlamcor\nGlobalcom - Mountain Valley\nGlobalcom RTA\nJethro Mobile\nLifeMD\nMoneyHero Group\nNeiline\nNLR\nPB&J TV\nPhoenix Direct\nSmart Circle\nSPEAK UP\nSPYFLY\nTalixo\nTelMDFirst\nAMR\nAMR CSR\nJ&T Express\nMMG\nNetworX\nRenogy\nAllen Institute Mouse\nBathroomX\nFlywire\nJustlife\nJustlife \nNISSAN PH\nZetta\nAHABI\nDLPC\nLM Consulting\nLuxor Eye Institute\nSpectee\nEIMS\nEIMS - Data Validator/QA\n123 Employee\n611 VA\nBIGO - DIGOS\nDLG\nLEADMINER\nDASCO\nDASCO BACK OFFICE\nDASCO CSR\nEnvera\nKCDO - Billing\nKCDO - Inbound\nKCDO - Outbound\nKCDO - RCM\n212 Dental Care\nAdams International\nAnother Star\nARS\nCORE LOGIX\nDIAL EXPRESS\nENC\nGARDENS\nGlobalcom - Mountain Valley\nJJILL\nPhoenix Direct\nQA OJR\nSHARED\nThe James Group, LLC\nTMS\nTOP MOVING SOLUTIONS\nShopee - Buyer Chat and Email\nShopee - Buyer CS\nShopee - Buyer Logistics\nShopee - Buyer Non-Logistics\nShopee - CCS\nShopee - CS\nShopee - Data Labelling - Buybox\nShopee - Email\nShopee - FBS\nShopee - L1 Buyer - Email\nShopee - PH - Chat Bot\nShopee - Seller Chats and Email\nShopee - Seller Log x RR\nShopee - SIP Global\nShopee - SPX\nShopee - SPX SSC and NSS\nShopee - Trainee\nShopee - Buybox\nShopee - CB-SCS\nShopee - CBSCS\nShopee - Data Labelling - Buybox\nShopee - L1 Buyer - Email\nShopee - LiveStream\nShopee - PIC\nShopee - QA\nShopee - RTA\nShopee - SBS\nShopee - SIP AME\nShopee - SIP BR & LATAM\nShopee - SIP Global\nShopee - SIP Global - PH\nShopee - SIP L2\nShopee - SIP Malaysia\nShopee - SIP Singapore\nShopee - SIP Taiwan\nShopee - SIP Thailand\nShopee - SPX NSS Outbound\nShopee - WFM\nShopee - Buybox\nShopee - Buybox - Smart UI\nShopee - Buyer Chat and Email\nShopee - Buyer Logistics\nShopee - CS \nShopee - CS and Non-CS\nShopee - Data Labelling - Buybox\nShopee - Data Labelling - Non SPU\nShopee - Data Labelling - SPU\nShopee - Keywords\nShopee - Listing Pages\nShopee - Listings Data Labelling - LLM\nShopee - Listings Data Labelling - SQE\nShopee - Listings Data Labelling - Task Center\nShopee - Listings QC\nShopee - Live Stream Marketing\nShopee - LiveStream\nShopee - Non-CS\nShopee - PH - Chat Bot\nShopee - QAC Department\nShopee - SBS\nShopee - SPU Listings\nShopee - Training\nShopee - Video\nShopee - Video QC\n123 Employee\n123 Employee - Hallandale Pharmacy\nAeroex Technology Inc.\nBrianna Thaxton LLC\nCapLink Group\nCorazon Company LLC\neJam\neJam Inside Sales\nInsight Financial Associates Ltd. (SixEleven Project)\nLegal Solutions 4U\nMBC Consulting Group Inc.\nNextgenID\nNextgenID SRIP\nPinnacle Ozone Solutions\nRevel Hotel\nSBI\nSRIP L2 Support\nTicket Management System SL`;
 
     const rawOmData = `Abby\nBIGO - Thirdy\nCFC\nCherry\nCrystal\nDerline\nFreda\nIrene\nMarc Jardenico\nMcJordan\nMichelle\nMirah\nMogan\nNorman\nRenato\nRhelford\nRuth\nShayne\nSheila\nShey\nSP - James\nSP - Marc\nSP - MJ\nWilly`;
 
-    // Function to parse raw strings into unique sorted arrays
     function processRaw(rawStr) {
         const arr = rawStr.split('\n').map(s => s.trim()).filter(s => s !== "");
         return [...new Set(arr)].sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
     }
 
-    // Default arrays
     const defaultData = {
         site: ["Mabini Site A", "Mabini Site B"],
         omName: processRaw(rawOmData),
@@ -490,19 +553,16 @@
         reasonCode: "Reason Code"
     };
 
-    // State holders
     let currentDropdownData = {};
     let entryList = [];
     let editingIndex = -1; 
 
     window.onload = function() {
-        // Init all dynamic dropdowns with localStorage
         initDropdown("site");
         initDropdown("omName");
         initDropdown("account");
         initDropdown("reasonCode");
 
-        // Init table entries from localStorage
         const storedEntries = localStorage.getItem('cctv_entry_list');
         if (storedEntries) {
             try { entryList = JSON.parse(storedEntries); } 
@@ -530,12 +590,10 @@
 
     function renderDropdownOptions(selectId) {
         const select = document.getElementById(selectId);
-        // Keep current selected value if possible
         const currentVal = select.value; 
         
         select.innerHTML = `<option value="">-- Select ${labelMap[selectId]} --</option>`;
         
-        // Ensure alphabetical sort
         currentDropdownData[selectId]
             .sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()))
             .forEach(item => {
@@ -545,7 +603,6 @@
                 select.appendChild(option);
             });
             
-        // Restore value if it still exists
         if(currentVal && currentDropdownData[selectId].includes(currentVal)) {
             select.value = currentVal;
         }
@@ -558,16 +615,12 @@
             const cleanValue = newValue.trim();
             
             if (!currentDropdownData[selectId].includes(cleanValue)) {
-                // Add to state
                 currentDropdownData[selectId].push(cleanValue);
-                // Save to localStorage
                 localStorage.setItem(`cctv_dropdown_${selectId}`, JSON.stringify(currentDropdownData[selectId]));
-                // Re-render UI
                 renderDropdownOptions(selectId);
             } else {
                 alert("This option already exists!");
             }
-            // Auto-select the newly added (or existing) item
             document.getElementById(selectId).value = cleanValue;
         }
     }
@@ -584,19 +637,14 @@
         const selectedOption = select.options[selectedIndex];
         if (confirm(`Are you sure you want to delete "${selectedOption.text}"? It will be removed permanently.`)) {
             const valueToRemove = selectedOption.value;
-            // Remove from state
             currentDropdownData[selectId] = currentDropdownData[selectId].filter(item => item !== valueToRemove);
-            // Save to localStorage
             localStorage.setItem(`cctv_dropdown_${selectId}`, JSON.stringify(currentDropdownData[selectId]));
-            // Re-render UI
             renderDropdownOptions(selectId);
         }
     }
 
     // --- FORM SUBMISSION & TABLE LOGIC ---
-    
     function saveEntries() {
-        // Save current table data to localStorage
         localStorage.setItem('cctv_entry_list', JSON.stringify(entryList));
     }
 
@@ -614,10 +662,8 @@
         const site = document.getElementById("site").value;
         const tlName = document.getElementById("tlName").value || "N/A";
         const agentName = document.getElementById("agentName").value || "N/A";
-        
         const omSelection = document.getElementById("omName").value;
         const accountSelection = document.getElementById("account").value;
-        
         const reasonCode = document.getElementById("reasonCode").value;
         const noc = document.getElementById("noc").value;
         const remarks = document.getElementById("remarks").value || "N/A";
@@ -642,13 +688,12 @@
             document.getElementById("addUpdateBtn").innerHTML = "➕ Add Entry to List";
         }
         
-        saveEntries(); // Save table data to browser
+        saveEntries();
         renderTable();
     }
 
     function editEntry(index) {
         const entry = entryList[index];
-        
         document.getElementById("auditDate").value = entry.rawDate;
         document.getElementById("site").value = entry.site;
         document.getElementById("tlName").value = entry.tlName;
@@ -661,6 +706,8 @@
 
         editingIndex = index;
         document.getElementById("addUpdateBtn").innerHTML = "💾 Update Entry";
+        // Scroll to top automatically for mobile users editing
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
     function deleteEntry(index) {
@@ -670,7 +717,7 @@
             editingIndex--;
         }
         entryList.splice(index, 1);
-        saveEntries(); // Save updated table to browser
+        saveEntries();
         renderTable();
     }
 
@@ -748,7 +795,7 @@
 
         try {
             document.execCommand('copy');
-            alert("Copied successfully! You can now paste into Google Sheets (formatting is transparent).");
+            alert("Copied successfully! Ready to paste to Google Sheets.");
         } catch (err) {
             alert("Failed to copy data.");
         }
@@ -762,7 +809,7 @@
             entryList = [];
             editingIndex = -1;
             document.getElementById("addUpdateBtn").innerHTML = "➕ Add Entry to List";
-            saveEntries(); // Clear localStorage sa table
+            saveEntries(); 
             renderTable();
         }
     }
