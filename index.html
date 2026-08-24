@@ -1,959 +1,1664 @@
 <!DOCTYPE html>
+
 <html lang="en">
+
 <head>
+
     <meta charset="UTF-8">
+
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
     <title>CCTV Audit Generator</title>
+
     
+
     <!-- Import Inter Font -->
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
+
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 
+
+
     <style>
+
         :root {
+
             --bg-color: #000000;
+
             --container-bg: rgba(9, 9, 11, 0.82); 
+
             --text-color: #e0e0e0;
+
             --label-color: #d8b4fe; 
+
             --input-bg: #121212;
+
             --input-border: #2a103c;
+
             --primary-color: #b026ff; 
+
             --primary-hover: #c455ff;
+
             --border-color: #2a103c;
+
             --danger-bg: #ef4444;
+
             --success-bg: #10b981;
+
             --warning-bg: #f59e0b;
+
         }
+
+
 
         body { 
+
             font-family: 'Inter', sans-serif; 
+
             background-color: var(--bg-color); 
+
             color: var(--text-color); 
+
             max-width: 1000px; 
+
             margin: 0 auto; 
+
             padding: 20px 10px; 
+
             overflow-x: hidden;
+
             min-height: 100vh;
+
         }
+
+
 
         /* Fullscreen Canvas for Nyan Cat & Rainbow */
+
         #nyanCanvas {
+
             position: fixed;
+
             top: 0;
+
             left: 0;
+
             width: 100vw;
+
             height: 100vh;
+
             z-index: -1;
+
             pointer-events: none;
+
         }
+
         
+
         .container { 
+
             background: var(--container-bg); 
+
             backdrop-filter: blur(12px);
+
             -webkit-backdrop-filter: blur(12px);
+
             padding: 30px; 
+
             border-radius: 12px; 
+
             border: 1px solid var(--border-color);
+
             box-shadow: 0 8px 32px rgba(176, 38, 255, 0.15); 
+
             margin-bottom: 30px;
+
         }
+
+
 
         h2 { 
+
             margin-top: 0; 
+
             color: var(--primary-color); 
+
             border-bottom: 1px solid var(--border-color); 
+
             padding-bottom: 15px; 
+
             font-weight: 700;
+
             letter-spacing: -0.5px;
+
             text-transform: uppercase;
+
         }
+
+
 
         /* Desktop: Asymmetric Grid Layout */
+
         .form-grid {
+
             display: grid;
+
             grid-template-columns: 1.5fr 1fr 1.5fr; 
+
             gap: 15px;
+
         }
+
         
+
         .field-date { grid-column: 1 / 2; }
+
         .field-site { grid-column: 2 / 4; }
+
         .field-tl { grid-column: 1 / 3; }
+
         .field-agent { grid-column: 3 / 4; }
+
         .field-om { grid-column: 1 / 2; }
+
         .field-account { grid-column: 2 / 4; }
+
         .field-reason { grid-column: 1 / 3; }
+
         .field-noc { grid-column: 3 / 4; }
+
         .field-remarks { grid-column: 1 / -1; } 
+
         
+
         label { 
+
             display: block; 
+
             font-weight: 600; 
+
             margin-bottom: 6px; 
+
             font-size: 13px; 
+
             color: var(--label-color);
+
             text-transform: uppercase;
+
             letter-spacing: 0.5px;
+
         }
+
         
+
         .input-group {
+
             display: flex;
+
             gap: 8px;
+
         }
+
         
+
         input[type="text"], input[type="date"], select { 
+
             width: 100%; 
+
             padding: 12px; 
+
             background-color: var(--input-bg);
+
             color: #ffffff;
+
             border: 1px solid var(--input-border); 
+
             border-radius: 6px; 
+
             box-sizing: border-box; 
+
             font-family: inherit;
+
             font-size: 14px;
+
             transition: all 0.3s ease;
+
             color-scheme: dark; 
+
         }
+
         
+
         input:focus, select:focus {
+
             outline: none;
+
             border-color: var(--primary-color);
+
             box-shadow: 0 0 12px rgba(176, 38, 255, 0.4); 
+
         }
+
         
+
         .button-group {
+
             display: flex;
+
             gap: 12px;
+
             margin-top: 25px;
+
         }
+
         
+
         button { 
+
             background-color: var(--primary-color); 
+
             color: #ffffff; 
+
             border: none; 
+
             padding: 12px 20px; 
+
             font-size: 14px; 
+
             border-radius: 6px; 
+
             cursor: pointer; 
+
             font-weight: 600; 
+
             flex: 1;
+
             transition: all 0.2s ease;
+
             letter-spacing: 0.5px;
+
         }
+
         button:hover { 
+
             background-color: var(--primary-hover); 
+
             box-shadow: 0 0 15px rgba(176, 38, 255, 0.5);
+
         }
+
         
+
         button.add-btn, button.remove-btn {
+
             flex: 0 0 40px;
+
             padding: 0;
+
             font-size: 20px;
+
             border-radius: 6px;
+
             border: 1px solid var(--input-border);
+
             display: flex;
+
             align-items: center;
+
             justify-content: center;
+
         }
+
         button.add-btn { background-color: #1a1a1a; color: var(--primary-color); }
+
         button.add-btn:hover { background-color: #2a2a2a; border-color: var(--primary-color); }
+
         
+
         button.remove-btn { background-color: #1a0505; color: var(--danger-bg); border-color: #3f0f0f; }
+
         button.remove-btn:hover { background-color: #2a0808; border-color: var(--danger-bg); }
+
         
+
         button.clear-btn { background-color: transparent; border: 1px solid var(--danger-bg); color: var(--danger-bg); }
+
         button.clear-btn:hover { background-color: var(--danger-bg); color: #fff; box-shadow: 0 0 15px rgba(239, 68, 68, 0.4); }
+
         
+
         button.copy-btn { background-color: var(--success-bg); }
+
         button.copy-btn:hover { background-color: #34d399; box-shadow: 0 0 15px rgba(16, 185, 129, 0.4); }
+
         
+
         .action-btns {
+
             display: flex;
+
             gap: 5px;
+
             justify-content: center;
+
         }
+
         button.edit-btn, button.delete-btn {
+
             padding: 6px 10px; font-size: 12px; flex: none; width: auto; border-radius: 4px; border: none;
+
         }
+
         button.edit-btn { background-color: var(--warning-bg); color: #000; }
+
         button.edit-btn:hover { background-color: #fcd34d; }
+
         button.delete-btn { background-color: var(--danger-bg); color: white; }
+
         button.delete-btn:hover { background-color: #f87171; }
 
+
+
         .output-section { margin-top: 40px; }
+
         .output-section label { color: var(--primary-color); border-bottom: 1px solid var(--border-color); padding-bottom: 8px; margin-bottom: 15px; display: block; }
+
         
+
         .table-container {
+
             width: 100%;
+
             max-height: 350px;
+
             overflow-y: auto;
-            overflow-x: auto;
+
+            overflow-x: auto; /* Allows swiping horizontally on phones */
+
             background-color: rgba(18, 18, 18, 0.8);
+
             border: 1px solid var(--border-color);
+
             border-radius: 8px;
+
             margin-bottom: 15px;
-            -webkit-overflow-scrolling: touch; 
+
+            -webkit-overflow-scrolling: touch; /* Smooth scroll on iOS */
+
         }
+
         
+
         .table-container::-webkit-scrollbar { width: 8px; height: 8px; }
+
         .table-container::-webkit-scrollbar-track { background: var(--bg-color); }
+
         .table-container::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 4px; }
+
         .table-container::-webkit-scrollbar-thumb:hover { background: var(--primary-color); }
 
+
+
         table {
+
             width: 100%;
+
             border-collapse: collapse;
+
             font-size: 13px;
+
         }
+
         th, td {
+
             padding: 12px 15px;
+
             border-bottom: 1px solid var(--border-color);
+
             text-align: center; 
+
             white-space: nowrap;
+
         }
+
         th {
+
             background-color: #0c0414; 
+
             color: var(--primary-color);
+
             position: sticky;
+
             top: 0;
+
             z-index: 1;
+
             border-bottom: 1px solid var(--primary-color);
+
             font-weight: 600;
+
         }
+
         td.remarks-col {
+
             text-align: left;
+
             white-space: normal;
-            min-width: 250px; 
+
+            min-width: 250px; /* Prevent remarks from squishing too much */
+
         }
+
+
 
         /* --- RESPONSIVE MEDIA QUERIES --- */
+
+        
+
+        /* TABLET ADJUSTMENTS */
+
         @media screen and (max-width: 900px) {
-            .form-grid { grid-template-columns: 1fr 1fr; }
-            .field-date, .field-site, .field-tl, .field-agent, .field-om, .field-account, .field-reason, .field-noc {
-                grid-column: span 1; 
+
+            .form-grid {
+
+                grid-template-columns: 1fr 1fr; /* 2 columns */
+
             }
-            .field-remarks { grid-column: 1 / -1; } 
+
+            .field-date, .field-site, .field-tl, .field-agent, .field-om, .field-account, .field-reason, .field-noc {
+
+                grid-column: span 1; /* Reset all fields to occupy 1 slot */
+
+            }
+
+            .field-remarks { grid-column: 1 / -1; } /* Full width */
+
         }
+
+
+
+        /* MOBILE ADJUSTMENTS */
 
         @media screen and (max-width: 600px) {
+
             body { padding: 10px; margin: 10px auto; }
+
             .container { padding: 20px; }
-            .form-grid { grid-template-columns: 1fr; gap: 12px; }
-            .field-date, .field-site, .field-tl, .field-agent, .field-om, .field-account, .field-reason, .field-noc, .field-remarks {
-                grid-column: 1 / -1; 
+
+            .form-grid {
+
+                grid-template-columns: 1fr; /* 1 column (Stacked) */
+
+                gap: 12px;
+
             }
-            .button-group { flex-direction: column; }
-            button { width: 100%; padding: 15px; }
-            .button-group button.clear-btn { margin-top: 5px; }
+
+            .field-date, .field-site, .field-tl, .field-agent, .field-om, .field-account, .field-reason, .field-noc, .field-remarks {
+
+                grid-column: 1 / -1; /* All fields full width */
+
+            }
+
+            .button-group {
+
+                flex-direction: column; /* Stack buttons on top of each other */
+
+            }
+
+            button {
+
+                width: 100%;
+
+                padding: 15px; /* Larger tap target */
+
+            }
+
+            .button-group button.clear-btn {
+
+                margin-top: 5px;
+
+            }
+
         }
+
     </style>
+
 </head>
+
 <body>
 
+
+
 <!-- Background Canvas for Canvas-based Nyan Cat and Fade Trail -->
+
 <canvas id="nyanCanvas"></canvas>
 
+
+
 <div class="container">
+
     <h2>CCTV Audit Generator</h2>
+
     
+
     <div class="form-grid">
+
         <div class="form-group field-date">
+
             <label for="auditDate">Date of Audit</label>
+
             <input type="date" id="auditDate" required>
+
         </div>
+
+
 
         <div class="form-group field-site">
+
             <label for="site">Site</label>
+
             <div class="input-group">
+
                 <select id="site">
+
                     <!-- Populated by JS LocalStorage -->
+
                 </select>
+
                 <button type="button" class="add-btn" onclick="addNewOption('site', 'New Site Name')" title="Add New Site">+</button>
+
                 <button type="button" class="remove-btn" onclick="removeSelectedOption('site')" title="Delete Selected Site">-</button>
+
             </div>
+
         </div>
+
+
 
         <div class="form-group field-tl">
+
             <label for="tlName">TL Name</label>
+
             <input type="text" id="tlName" placeholder="Enter TL Name">
+
         </div>
+
+
 
         <div class="form-group field-agent">
+
             <label for="agentName">Agent Name</label>
+
             <input type="text" id="agentName" placeholder="Enter Agent Name">
+
         </div>
+
+
 
         <div class="form-group field-om">
+
             <label for="omName">OM Name</label>
+
             <div class="input-group">
+
                 <select id="omName">
+
                     <!-- Populated by JS LocalStorage -->
+
                 </select>
+
                 <button type="button" class="add-btn" onclick="addNewOption('omName', 'New OM Name')" title="Add New OM">+</button>
+
                 <button type="button" class="remove-btn" onclick="removeSelectedOption('omName')" title="Delete Selected OM">-</button>
+
             </div>
+
         </div>
+
+
 
         <div class="form-group field-account">
+
             <label for="account">Account / Campaign</label>
+
             <div class="input-group">
+
                 <select id="account">
+
                     <!-- Populated by JS LocalStorage -->
+
                 </select>
+
                 <button type="button" class="add-btn" onclick="addNewOption('account', 'New Account/Campaign')" title="Add New Account">+</button>
+
                 <button type="button" class="remove-btn" onclick="removeSelectedOption('account')" title="Delete Selected Account">-</button>
+
             </div>
+
         </div>
+
+
 
         <div class="form-group field-reason">
+
             <label for="reasonCode">CCTV Reason Code</label>
+
             <div class="input-group">
+
                 <select id="reasonCode">
+
                     <!-- Populated by JS LocalStorage -->
+
                 </select>
+
                 <button type="button" class="add-btn" onclick="addNewOption('reasonCode', 'New Reason Code')" title="Add New Reason Code">+</button>
+
                 <button type="button" class="remove-btn" onclick="removeSelectedOption('reasonCode')" title="Delete Selected Reason Code">-</button>
+
             </div>
+
         </div>
+
+
 
         <div class="form-group field-noc">
+
             <label for="noc">NOC (Status)</label>
+
             <select id="noc">
+
                 <option value="Yes">Yes</option>
+
                 <option value="No">No</option>
+
                 <option value="Pending">Pending</option>
+
                 <option value="Disputed">Disputed</option>
+
             </select>
+
         </div>
+
+
 
         <div class="form-group field-remarks">
+
             <label for="remarks">Remarks</label>
+
             <input type="text" id="remarks" placeholder="Brief summary of the incident">
+
         </div>
+
     </div>
+
+
 
     <div class="button-group">
+
         <button id="addUpdateBtn" onclick="submitEntry()">➕ Add Entry to List</button>
+
         <button onclick="clearForm()" class="clear-btn">Clear Form</button>
+
     </div>
+
+
 
     <div class="output-section">
+
         <label>Data Output Grid</label>
+
         
+
         <div class="table-container">
+
             <table id="outputTable">
+
                 <thead>
+
                     <tr>
+
                         <th>Actions</th>
+
                         <th>Year</th>
+
                         <th>Month</th>
+
                         <th>Date</th>
+
                         <th>Name</th>
+
                         <th>OM</th>
+
                         <th>SITE</th>
+
                         <th>TL Name</th>
+
                         <th>Agent Name</th>
+
                         <th>Account</th>
+
                         <th>CCTV Reason</th>
+
                         <th>NOC</th>
+
                         <th>Remarks</th>
+
                     </tr>
+
                 </thead>
+
                 <tbody>
+
                     <!-- Entries will populate here -->
+
                 </tbody>
+
             </table>
+
         </div>
+
         
+
         <div class="button-group">
+
             <button class="copy-btn" onclick="copyToClipboard()">📋 Copy to Clipboard</button>
+
             <button class="clear-btn" onclick="clearOutput()">🗑️ Clear All</button>
+
         </div>
+
     </div>
+
 </div>
 
+
+
 <script>
+
     // --- NYAN CAT CANVAS ANIMATION WITH DYNAMIC SCALING ---
+
     const canvas = document.getElementById('nyanCanvas');
+
     const ctx = canvas.getContext('2d');
 
-    let catScale = 3; 
+
+
+    let catScale = 3; // Default for Desktop
+
     let catWidth, catHeight;
+
     let vx = 3.5;
+
     let vy = 2.2;
+
     
+
     let catX = 50;
+
     let catY = 150;
+
     let facingRight = true;
+
     let frameCount = 0;
 
+
+
     const trail = [];
-    const maxTrailLength = 200; 
+
+    const maxTrailLength = 70; 
+
     const rainbowColors = ['#ff0000', '#ff9900', '#ffff00', '#33ff00', '#0099ff', '#6633ff'];
 
-    // --- ACCURATE PIXEL-ART NYAN CAT MATRIX ---
-    const nyanPalette = {
-        '.': null,                     
-        'k': '#000000',                // Black Outline
-        'g': '#999999',                // Gray Body / Ears
-        'w': '#ffffff',                // White (Eyes)
-        'p': '#ff9999',                // Pink (Cheeks / Nose)
-        't': '#ffcc99',                // Tart Crust
-        'f': '#ff3399',                // Frosting
-        'd': '#ff0066',                // Dark Pink Sprinkles
-    };
 
-    // 6-Frame Running Animation Grid (34 wide x 21 high)
-    const nyanFrames = [
-        [
-            "..................................",
-            "..................................",
-            "..........kkkkkkkk................",
-            ".........kttttttttk...............",
-            "........kttttttttttk..............",
-            ".......kffffffffffttk...k....k....",
-            ".......kffffffffffttk..kkg..gk....",
-            ".......kfdfffffdffttk.kgggkgggk...",
-            ".......kffffffffffttk.kgggggggk...",
-            ".......kffdffffdffttk.kgggggggk...",
-            ".......kffffffffffttkkkgwkgwgkk...",
-            ".......kffdffffdfftkpkkkwwkwwkp...",
-            "...kk..kfffffffffftkppkggggggkp...",
-            "..kggk.kfffdffffdftkppkggpggkk....",
-            ".kggggkkfffffffffftk..kgggggk.....",
-            "..kgggktttttttttttk....kkkkk......",
-            "...kkk..kttttttttk................",
-            ".........kkkkkkkk...kk....kk......",
-            "...................kggk..kggk.....",
-            "....................kk....kk......",
-            ".................................."
-        ],
-        [
-            "..................................",
-            "..................................",
-            "..........kkkkkkkk................",
-            ".........kttttttttk...............",
-            "........kttttttttttk..............",
-            ".......kffffffffffttk...k....k....",
-            ".......kffffffffffttk..kkg..gk....",
-            ".......kfffdffffdfttk.kgggkgggk...",
-            ".......kffffffffffttk.kgggggggk...",
-            ".......kfdfffffdffttk.kgggggggk...",
-            ".......kffffffffffttkkkgwkgwgkk...",
-            ".......kfdfffffdfftkpkkkwwkwwkp...",
-            "...kk..kfffffffffftkppkggggggkp...",
-            "..kggk.kfffffffffftkppkggpggkk....",
-            ".kggggkkfffffffffftk..kgggggk.....",
-            "..kgggktttttttttttk....kkkkk......",
-            "...kkk..kttttttttk.....kk..kk.....",
-            ".........kkkkkkkk.....kggkkggk....",
-            ".......................kk..kk.....",
-            "..................................",
-            ".................................."
-        ],
-        [
-            "..................................",
-            "..................................",
-            "..........kkkkkkkk................",
-            ".........kttttttttk...............",
-            "........kttttttttttk....k....k....",
-            ".......kffffffffffttk..kkg..gk....",
-            ".......kffffffffffttk.kgggkgggk...",
-            ".......kffdffffdffttk.kgggggggk...",
-            ".......kffffffffffttk.kgggggggk...",
-            ".......kfffdffffdfttkkkgwkgwgkk...",
-            ".......kfffffffffftkpkkkwwkwwkp...",
-            "...kk..kfffdffffdftkppkggggggkp...",
-            "..kggk.kfffffffffftkppkggpggkk....",
-            ".kggggkkfffffffffftk..kgggggk.....",
-            "..kgggktttttttttttk....kkkkk......",
-            "...kkk..kttttttttk................",
-            ".........kkkkkkkk...kk....kk......",
-            "...................kggk..kggk.....",
-            "....................kk....kk......",
-            "..................................",
-            ".................................."
-        ],
-        [
-            "..................................",
-            "..................................",
-            "..........kkkkkkkk................",
-            ".........kttttttttk...............",
-            "........kttttttttttk..............",
-            ".......kffffffffffttk...k....k....",
-            ".......kffffffffffttk..kkg..gk....",
-            ".......kfdfffffdffttk.kgggkgggk...",
-            ".......kffffffffffttk.kgggggggk...",
-            ".......kffdffffdffttk.kgggggggk...",
-            ".......kffffffffffttkkkgwkgwgkk...",
-            ".......kffdffffdfftkpkkkwwkwwkp...",
-            "...kk..kfffffffffftkppkggggggkp...",
-            "..kggk.kfffdffffdftkppkggpggkk....",
-            ".kggggkkfffffffffftk..kgggggk.....",
-            "..kgggktttttttttttk....kkkkk......",
-            "...kkk..kttttttttk......kk..kk....",
-            ".........kkkkkkkk......kggkkggk...",
-            "........................kk..kk....",
-            "..................................",
-            ".................................."
-        ],
-        [
-            "..................................",
-            "..................................",
-            "..........kkkkkkkk................",
-            ".........kttttttttk...............",
-            "........kttttttttttk..............",
-            ".......kffffffffffttk...k....k....",
-            ".......kffffffffffttk..kkg..gk....",
-            ".......kfffdffffdfttk.kgggkgggk...",
-            ".......kffffffffffttk.kgggggggk...",
-            ".......kfdfffffdffttk.kgggggggk...",
-            ".......kffffffffffttkkkgwkgwgkk...",
-            ".......kfdfffffdfftkpkkkwwkwwkp...",
-            "...kk..kfffffffffftkppkggggggkp...",
-            "..kggk.kfffffffffftkppkggpggkk....",
-            ".kggggkkfffffffffftk..kgggggk.....",
-            "..kgggktttttttttttk....kkkkk......",
-            "...kkk..kttttttttk................",
-            ".........kkkkkkkk.....kk..kk......",
-            ".....................kggkkggk.....",
-            "......................kk..kk......",
-            ".................................."
-        ],
-        [
-            "..................................",
-            "..................................",
-            "..........kkkkkkkk................",
-            ".........kttttttttk...............",
-            "........kttttttttttk....k....k....",
-            ".......kffffffffffttk..kkg..gk....",
-            ".......kffffffffffttk.kgggkgggk...",
-            ".......kffdffffdffttk.kgggggggk...",
-            ".......kffffffffffttk.kgggggggk...",
-            ".......kfffdffffdfttkkkgwkgwgkk...",
-            ".......kfffffffffftkpkkkwwkwwkp...",
-            "...kk..kfffdffffdftkppkggggggkp...",
-            "..kggk.kfffffffffftkppkggpggkk....",
-            ".kggggkkfffffffffftk..kgggggk.....",
-            "..kgggktttttttttttk....kkkkk......",
-            "...kkk..kttttttttk................",
-            ".........kkkkkkkk...kk....kk......",
-            "...................kggk..kggk.....",
-            "....................kk....kk......",
-            "..................................",
-            ".................................."
-        ]
-    ];
 
     function resizeCanvas() {
+
         canvas.width = window.innerWidth;
+
         canvas.height = window.innerHeight;
+
         
+
+        // DEVICE RESPONSIVE NYAN CAT SIZE & SPEED
+
         if (window.innerWidth <= 600) {
+
+            // Mobile
+
             catScale = 1.3;
+
             vx = facingRight ? 2 : -2;
+
             vy = vy > 0 ? 1.5 : -1.5;
+
         } else if (window.innerWidth <= 900) {
+
+            // Tablet
+
             catScale = 2;
+
             vx = facingRight ? 2.8 : -2.8;
+
             vy = vy > 0 ? 1.8 : -1.8;
+
         } else {
+
+            // Desktop
+
             catScale = 3;
+
             vx = facingRight ? 3.5 : -3.5;
+
             vy = vy > 0 ? 2.2 : -2.2;
+
         }
+
         
+
         catWidth = 34 * catScale;
+
         catHeight = 21 * catScale;
+
         
+
+        // Keep cat inside bounds on resize
+
         if (catX + catWidth > canvas.width) catX = Math.max(0, canvas.width - catWidth);
+
         if (catY + catHeight > canvas.height) catY = Math.max(0, canvas.height - catHeight);
+
     }
+
     window.addEventListener('resize', resizeCanvas);
-    resizeCanvas(); 
+
+    resizeCanvas(); // Initial call
+
+
 
     function drawPixelCat(x, y, scale, flip) {
+
         ctx.save();
+
         ctx.translate(x, y);
+
         if (!flip) ctx.scale(-1, 1);
 
-        const frameIndex = Math.floor(frameCount / 5) % nyanFrames.length;
-        const grid = nyanFrames[frameIndex];
 
-        // FIX: Calculate exact integer boundaries starting point
-        const startX = Math.round(-17 * scale);
-        const startY = Math.round(-10.5 * scale);
 
-        for (let r = 0; r < grid.length; r++) {
-            for (let c = 0; c < grid[r].length; c++) {
-                const char = grid[r][c];
-                const color = nyanPalette[char];
-                if (color) {
-                    ctx.fillStyle = color;
-                    
-                    // FIX: Calculate exact integer coordinates for EACH pixel block to prevent grid gaps
-                    const pX = Math.round(c * scale);
-                    const pY = Math.round(r * scale);
-                    const nextX = Math.round((c + 1) * scale);
-                    const nextY = Math.round((r + 1) * scale);
-                    
-                    ctx.fillRect(
-                        startX + pX, 
-                        startY + pY, 
-                        nextX - pX, 
-                        nextY - pY
-                    );
-                }
-            }
-        }
+        const bob = (Math.floor(frameCount / 8) % 2 === 0) ? 0 : 2;
+
+
+
+        // Pop-Tart Body
+
+        ctx.fillStyle = '#ffcc99'; ctx.fillRect(-16 * scale, (-10 + bob) * scale, 21 * scale, 18 * scale);
+
+        ctx.fillStyle = '#ff99cc'; ctx.fillRect(-14 * scale, (-8 + bob) * scale, 17 * scale, 14 * scale);
+
+        
+
+        // Sprinkles
+
+        ctx.fillStyle = '#ff3399';
+
+        ctx.fillRect(-12 * scale, (-6 + bob) * scale, 2 * scale, 2 * scale);
+
+        ctx.fillRect(-6 * scale, (-3 + bob) * scale, 2 * scale, 2 * scale);
+
+        ctx.fillRect(-10 * scale, (0 + bob) * scale, 2 * scale, 2 * scale);
+
+        ctx.fillRect(-2 * scale, (-6 + bob) * scale, 2 * scale, 2 * scale);
+
+
+
+        // Cat Parts
+
+        ctx.fillStyle = '#999999';
+
+        ctx.fillRect(1 * scale, (-6 + bob) * scale, 13 * scale, 11 * scale); // Head
+
+        ctx.fillRect(2 * scale, (-10 + bob) * scale, 3 * scale, 4 * scale); // Ear L
+
+        ctx.fillRect(10 * scale, (-10 + bob) * scale, 3 * scale, 4 * scale); // Ear R
+
+        
+
+        ctx.fillStyle = '#ff9999'; // Cheeks
+
+        ctx.fillRect(1 * scale, (-1 + bob) * scale, 2 * scale, 2 * scale);
+
+        ctx.fillRect(11 * scale, (-1 + bob) * scale, 2 * scale, 2 * scale);
+
+        
+
+        ctx.fillStyle = '#000000'; // Eyes & Mouth
+
+        ctx.fillRect(4 * scale, (-3 + bob) * scale, 2 * scale, 2 * scale);
+
+        ctx.fillRect(9 * scale, (-3 + bob) * scale, 2 * scale, 2 * scale);
+
+        ctx.fillRect(7 * scale, (-1 + bob) * scale, 2 * scale, 1 * scale);
+
+        
+
+        ctx.fillStyle = '#999999'; // Paws & Tail
+
+        const legShift = (Math.floor(frameCount / 6) % 2 === 0) ? 1 : -1;
+
+        ctx.fillRect(-13 * scale + legShift, (8 + bob) * scale, 4 * scale, 3 * scale);
+
+        ctx.fillRect(-1 * scale - legShift, (8 + bob) * scale, 4 * scale, 3 * scale);
+
+        const tailBob = (Math.floor(frameCount / 10) % 2 === 0) ? -2 : 0;
+
+        ctx.fillRect(-20 * scale, (-4 + bob + tailBob) * scale, 5 * scale, 3 * scale);
+
+
 
         ctx.restore();
+
     }
 
+
+
     function animateNyan() {
+
         ctx.clearRect(0, 0, canvas.width, canvas.height);
+
         frameCount++;
 
+
+
         catX += vx;
+
         catY += vy;
 
+
+
         if (catX + catWidth >= canvas.width) { catX = canvas.width - catWidth; vx = -vx; facingRight = false; }
+
         else if (catX <= 0) { catX = 0; vx = -vx; facingRight = true; }
+
         if (catY + catHeight >= canvas.height) { catY = canvas.height - catHeight; vy = -vy; } 
+
         else if (catY <= 0) { catY = 0; vy = -vy; }
 
+
+
         const trailOffsetBack = facingRight ? -14 * catScale : 14 * catScale;
+
         trail.unshift({
+
             x: catX + (catWidth / 2) + trailOffsetBack,
-            y: catY + (catHeight / 2) - (2 * (catScale / 3)), 
+
+            y: catY + (catHeight / 2) - (2 * (catScale / 3)), // Center trail relative to scale
+
             facingRight: facingRight
+
         });
+
+
 
         if (trail.length > maxTrailLength) trail.pop();
 
-        const stripeHeight = 3.5 * (catScale / 3); 
+
+
+        const stripeHeight = 3.5 * (catScale / 3); // Scale rainbow height
+
         for (let i = trail.length - 1; i > 0; i--) {
+
             const p1 = trail[i];
+
             const p2 = trail[i - 1];
+
             const alpha = Math.max(0, 1 - (i / maxTrailLength)); 
+
             const wave = Math.sin((frameCount * 0.25) + (i * 0.35)) * (2 * (catScale / 3));
 
+
+
             for (let c = 0; c < rainbowColors.length; c++) {
+
                 ctx.save();
+
                 ctx.strokeStyle = rainbowColors[c];
+
                 ctx.globalAlpha = alpha * 0.9;
-                ctx.lineWidth = stripeHeight + 1.5; // Prevent gaps in rainbow
+
+                ctx.lineWidth = stripeHeight + 0.5;
+
                 ctx.beginPath();
+
                 const offsetY = ((c - 2.5) * stripeHeight) + wave;
+
                 ctx.moveTo(p1.x, p1.y + offsetY);
+
                 ctx.lineTo(p2.x, p2.y + offsetY);
+
                 ctx.stroke();
+
                 ctx.restore();
+
             }
+
         }
 
+
+
         drawPixelCat(catX + (catWidth / 2), catY + (catHeight / 2), catScale, facingRight);
+
         requestAnimationFrame(animateNyan);
+
     }
+
     animateNyan();
+
     // -------------------------------------------------------------
 
+
+
     // --- AUTO-SAVE LOGIC (LOCALSTORAGE) ---
+
     const rawCampaignData = `123 Employee\n123 Robotics\n123Employee | HUB International\nDental Back Office Admin\nDNO L1\nESIM\nFranklin Hamilton\nLOGISTICS\nTogether Network\nTriple B\nTV COMMERCIAL TRAFFIC\nWanderJoy\nBIGO - ECOLAND\nBIGO - Mabini\nCFC\nAU Store\nAUTAX\nFWC\nKOMBEA MPI\nKombea Pro Speaking\n123 Employee\n123 Employee - Echo Mortgage\nAUXGP\nClinic P\nClinicP\nCOD Logistics\nDAVI\nDG Dial\nDNE\nDuque Immigration\nGreenfoot\nJethro Mobile\nList Simple\nMAPUA\nMoneyHero Group\nNOX\nOrigin\nQC\nSeesaw\nSmart Staffing Support - Renters\nSPEAK UP\nBrightDelivery\nCommercial Enterprise\nCommercial Merchant Acquisition\nContent Quality Assurance\nCupshe\nGRAB - Commercial Enterprise\nGRAB - MPH\nGRAB - MY\nGRAB - PH\nGRAB - Quality Assurance\nGRAB - SG\nGrabRentals Voice and Digital Support\nOBRB MY\nViewQwest Telesales\nAirbills\nAllied Pain and Spine Institute\nBayou Braces\nBentino\nEDJ DATA\nEVMS\nGreen Health Docs\niMile Logistics\nLeisure-tec\nMi Care\nMoon River Therapy\nPearl Source\nPivot\nReflex Media\nSFP\nSpypoint\nUplift Healthcare LLC\nVeritas\nAFP\nBIGO - ECOLAND\nBIGO - Mabini\nCFC OB\nGLO\nGreenfoot\nKCDO\nKCDO - Billing\nKCDO - Inbound\nKCDO - Outbound\nPOINT CO\nShopee - SIP Global\nBIGO - Mabini\nShopee - QA\nTEMU - 1404\nTEMU - 140X (RSL)\nTEMU - 4029\nTEMU - BATCH 6\nTEMU - BATCH 7\nTEMU - BATCH 8\nTEMU - CPC\nTEMU - LOB-1\nTEMU - LOB-2\nTEMU - LOB-3\nAMG\nCGP\nIDENT\niMarketing\niMarketing Frontline\nKombea Fivestrata\nKombea Kingkong\nTEN28\nTWV\nAll Pro Pay\nClear Insights Group\nDNE\nHBW\nHerb joy\nLSM\nNationGraph\nQA OJR\nSpypoint\nSpypoint Outbound\nSuperdial\nACB\nCOD Logistics\nDG Dial\nEverlife\nEyesurf\nFBB\nFBB QA\nFlexscale Next-Level Recruitment\nFlexscale Truth Finance\nFlexscale Truth Financial\nGardens Alive & Shared\nGlamcor\nGlobalcom - Mountain Valley\nGlobalcom RTA\nJethro Mobile\nLifeMD\nMoneyHero Group\nNeiline\nNLR\nPB&J TV\nPhoenix Direct\nSmart Circle\nSPEAK UP\nSPYFLY\nTalixo\nTelMDFirst\nAMR\nAMR CSR\nJ&T Express\nMMG\nNetworX\nRenogy\nAllen Institute Mouse\nBathroomX\nFlywire\nJustlife\nJustlife \nNISSAN PH\nZetta\nAHABI\nDLPC\nLM Consulting\nLuxor Eye Institute\nSpectee\nEIMS\nEIMS - Data Validator/QA\n123 Employee\n611 VA\nBIGO - DIGOS\nDLG\nLEADMINER\nDASCO\nDASCO BACK OFFICE\nDASCO CSR\nEnvera\nKCDO - Billing\nKCDO - Inbound\nKCDO - Outbound\nKCDO - RCM\n212 Dental Care\nAdams International\nAnother Star\nARS\nCORE LOGIX\nDIAL EXPRESS\nENC\nGARDENS\nGlobalcom - Mountain Valley\nJJILL\nPhoenix Direct\nQA OJR\nSHARED\nThe James Group, LLC\nTMS\nTOP MOVING SOLUTIONS\nShopee - Buyer Chat and Email\nShopee - Buyer CS\nShopee - Buyer Logistics\nShopee - Buyer Non-Logistics\nShopee - CCS\nShopee - CS\nShopee - Data Labelling - Buybox\nShopee - Email\nShopee - FBS\nShopee - L1 Buyer - Email\nShopee - PH - Chat Bot\nShopee - Seller Chats and Email\nShopee - Seller Log x RR\nShopee - SIP Global\nShopee - SPX\nShopee - SPX SSC and NSS\nShopee - Trainee\nShopee - Buybox\nShopee - CB-SCS\nShopee - CBSCS\nShopee - Data Labelling - Buybox\nShopee - L1 Buyer - Email\nShopee - LiveStream\nShopee - PIC\nShopee - QA\nShopee - RTA\nShopee - SBS\nShopee - SIP AME\nShopee - SIP BR & LATAM\nShopee - SIP Global\nShopee - SIP Global - PH\nShopee - SIP L2\nShopee - SIP Malaysia\nShopee - SIP Singapore\nShopee - SIP Taiwan\nShopee - SIP Thailand\nShopee - SPX NSS Outbound\nShopee - WFM\nShopee - Buybox\nShopee - Buybox - Smart UI\nShopee - Buyer Chat and Email\nShopee - Buyer Logistics\nShopee - CS \nShopee - CS and Non-CS\nShopee - Data Labelling - Buybox\nShopee - Data Labelling - Non SPU\nShopee - Data Labelling - SPU\nShopee - Keywords\nShopee - Listing Pages\nShopee - Listings Data Labelling - LLM\nShopee - Listings Data Labelling - SQE\nShopee - Listings Data Labelling - Task Center\nShopee - Listings QC\nShopee - Live Stream Marketing\nShopee - LiveStream\nShopee - Non-CS\nShopee - PH - Chat Bot\nShopee - QAC Department\nShopee - SBS\nShopee - SPU Listings\nShopee - Training\nShopee - Video\nShopee - Video QC\n123 Employee\n123 Employee - Hallandale Pharmacy\nAeroex Technology Inc.\nBrianna Thaxton LLC\nCapLink Group\nCorazon Company LLC\neJam\neJam Inside Sales\nInsight Financial Associates Ltd. (SixEleven Project)\nLegal Solutions 4U\nMBC Consulting Group Inc.\nNextgenID\nNextgenID SRIP\nPinnacle Ozone Solutions\nRevel Hotel\nSBI\nSRIP L2 Support\nTicket Management System SL`;
+
+
 
     const rawOmData = `Abby\nBIGO - Thirdy\nCFC\nCherry\nCrystal\nDerline\nFreda\nIrene\nMarc Jardenico\nMcJordan\nMichelle\nMirah\nMogan\nNorman\nRenato\nRhelford\nRuth\nShayne\nSheila\nShey\nSP - James\nSP - Marc\nSP - MJ\nWilly`;
 
+
+
     function processRaw(rawStr) {
+
         const arr = rawStr.split('\n').map(s => s.trim()).filter(s => s !== "");
+
         return [...new Set(arr)].sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
+
     }
+
+
 
     const defaultData = {
+
         site: ["Mabini Site A", "Mabini Site B"],
+
         omName: processRaw(rawOmData),
+
         account: processRaw(rawCampaignData),
+
         reasonCode: ["SLEEPING", "DRESS CODE", "BROWSING", "WASTING TIME", "BRINGING NON-WOF", "EATING", "IMPROPER HOUSE KEEPING", "EQUIPMENT TAMPERING", "PDA", "DISORDERLY CONDUCT", "USING SMARTPHONE", "THEFT", "SELLING"]
+
     };
+
+
 
     const labelMap = {
+
         site: "Site",
+
         omName: "OM Name",
+
         account: "Account/Campaign",
+
         reasonCode: "Reason Code"
+
     };
+
+
 
     let currentDropdownData = {};
+
     let entryList = [];
+
     let editingIndex = -1; 
 
+
+
     window.onload = function() {
+
         initDropdown("site");
+
         initDropdown("omName");
+
         initDropdown("account");
+
         initDropdown("reasonCode");
 
+
+
         const storedEntries = localStorage.getItem('cctv_entry_list');
+
         if (storedEntries) {
+
             try { entryList = JSON.parse(storedEntries); } 
+
             catch (e) { entryList = []; }
+
         }
+
         renderTable();
+
     };
 
+
+
     function initDropdown(selectId) {
+
         const storageKey = `cctv_dropdown_${selectId}`;
+
         const stored = localStorage.getItem(storageKey);
+
         
+
         try {
+
             if (stored) {
+
                 currentDropdownData[selectId] = JSON.parse(stored);
+
             } else {
+
                 currentDropdownData[selectId] = [...defaultData[selectId]];
+
                 localStorage.setItem(storageKey, JSON.stringify(currentDropdownData[selectId]));
+
             }
+
         } catch(e) {
+
             currentDropdownData[selectId] = [...defaultData[selectId]];
+
         }
+
         renderDropdownOptions(selectId);
+
     }
+
+
 
     function renderDropdownOptions(selectId) {
+
         const select = document.getElementById(selectId);
+
         const currentVal = select.value; 
+
         
+
         select.innerHTML = `<option value="">-- Select ${labelMap[selectId]} --</option>`;
+
         
+
         currentDropdownData[selectId]
+
             .sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()))
+
             .forEach(item => {
+
                 const option = document.createElement("option");
+
                 option.value = item;
+
                 option.textContent = item;
+
                 select.appendChild(option);
+
             });
+
             
+
         if(currentVal && currentDropdownData[selectId].includes(currentVal)) {
+
             select.value = currentVal;
+
         }
+
     }
+
+
 
     function addNewOption(selectId, promptText) {
+
         const newValue = prompt(`Enter ${promptText}:`);
+
         
+
         if (newValue && newValue.trim() !== "") {
+
             const cleanValue = newValue.trim();
+
             
+
             if (!currentDropdownData[selectId].includes(cleanValue)) {
+
                 currentDropdownData[selectId].push(cleanValue);
+
                 localStorage.setItem(`cctv_dropdown_${selectId}`, JSON.stringify(currentDropdownData[selectId]));
+
                 renderDropdownOptions(selectId);
+
             } else {
+
                 alert("This option already exists!");
+
             }
+
             document.getElementById(selectId).value = cleanValue;
+
         }
+
     }
+
+
 
     function removeSelectedOption(selectId) {
+
         const select = document.getElementById(selectId);
+
         const selectedIndex = select.selectedIndex;
+
         
+
         if (selectedIndex <= 0) {
+
             alert("You cannot remove the default placeholder.");
+
             return;
+
         }
+
         
+
         const selectedOption = select.options[selectedIndex];
+
         if (confirm(`Are you sure you want to delete "${selectedOption.text}"? It will be removed permanently.`)) {
+
             const valueToRemove = selectedOption.value;
+
             currentDropdownData[selectId] = currentDropdownData[selectId].filter(item => item !== valueToRemove);
+
             localStorage.setItem(`cctv_dropdown_${selectId}`, JSON.stringify(currentDropdownData[selectId]));
+
             renderDropdownOptions(selectId);
+
         }
+
     }
+
+
+
+    // --- FORM SUBMISSION & TABLE LOGIC ---
 
     function saveEntries() {
+
         localStorage.setItem('cctv_entry_list', JSON.stringify(entryList));
+
     }
+
+
 
     function submitEntry() {
+
         const dateInput = document.getElementById("auditDate").value;
+
         if (!dateInput) { alert("Please select a date."); return; }
 
+
+
         const dateObj = new Date(dateInput);
+
         const year = dateObj.getFullYear();
+
         const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
         const month = months[dateObj.getMonth()];
+
         const formattedDate = `${dateObj.getMonth() + 1}/${dateObj.getDate()}/${year}`;
 
+
+
         const auditorName = "Miles"; 
+
         const site = document.getElementById("site").value;
+
         const tlName = document.getElementById("tlName").value || "N/A";
+
         const agentName = document.getElementById("agentName").value || "N/A";
+
         const omSelection = document.getElementById("omName").value;
+
         const accountSelection = document.getElementById("account").value;
+
         const reasonCode = document.getElementById("reasonCode").value;
+
         const noc = document.getElementById("noc").value;
+
         const remarks = document.getElementById("remarks").value || "N/A";
 
+
+
         if (!omSelection) { alert("Please select an OM."); return; }
+
         if (!accountSelection) { alert("Please select an Account."); return; }
 
+
+
         const entry = {
+
             rawDate: dateInput, 
+
             year, month, formattedDate, auditorName, 
+
             omName: omSelection, 
+
             site, tlName, agentName, 
+
             cleanAccount: accountSelection, 
+
             reasonCode, noc, remarks
+
         };
+
         
+
         if (editingIndex === -1) {
+
             entryList.push(entry);
+
         } else {
+
             entryList[editingIndex] = entry;
+
             editingIndex = -1;
+
             document.getElementById("addUpdateBtn").innerHTML = "➕ Add Entry to List";
+
         }
+
         
+
         saveEntries();
+
         renderTable();
+
     }
+
+
 
     function editEntry(index) {
+
         const entry = entryList[index];
+
         document.getElementById("auditDate").value = entry.rawDate;
+
         document.getElementById("site").value = entry.site;
+
         document.getElementById("tlName").value = entry.tlName;
+
         document.getElementById("agentName").value = entry.agentName;
+
         document.getElementById("omName").value = entry.omName;
+
         document.getElementById("account").value = entry.cleanAccount;
+
         document.getElementById("reasonCode").value = entry.reasonCode;
+
         document.getElementById("noc").value = entry.noc;
+
         document.getElementById("remarks").value = entry.remarks;
 
+
+
         editingIndex = index;
+
         document.getElementById("addUpdateBtn").innerHTML = "💾 Update Entry";
+
+        // Scroll to top automatically for mobile users editing
+
         window.scrollTo({ top: 0, behavior: 'smooth' });
+
     }
+
+
 
     function deleteEntry(index) {
+
         if (editingIndex === index) {
+
             clearForm();
+
         } else if (editingIndex > index) {
+
             editingIndex--;
+
         }
+
         entryList.splice(index, 1);
+
         saveEntries();
+
         renderTable();
+
     }
+
+
 
     function renderTable() {
+
         const tbody = document.querySelector("#outputTable tbody");
+
         tbody.innerHTML = "";
+
         
+
         entryList.forEach((entry, index) => {
+
             const tr = document.createElement("tr");
+
             tr.innerHTML = `
+
                 <td>
+
                     <div class="action-btns">
+
                         <button class="edit-btn" onclick="editEntry(${index})" title="Edit Row">✏️</button>
+
                         <button class="delete-btn" onclick="deleteEntry(${index})" title="Remove Row">❌</button>
+
                     </div>
+
                 </td>
+
                 <td>${entry.year}</td>
+
                 <td>${entry.month}</td>
+
                 <td>${entry.formattedDate}</td>
+
                 <td>${entry.auditorName}</td>
+
                 <td>${entry.omName}</td>
+
                 <td>${entry.site}</td>
+
                 <td>${entry.tlName}</td>
+
                 <td>${entry.agentName}</td>
+
                 <td>${entry.cleanAccount}</td>
+
                 <td>${entry.reasonCode}</td>
+
                 <td>${entry.noc}</td>
+
                 <td class="remarks-col">${entry.remarks}</td>
+
             `;
+
             tbody.appendChild(tr);
+
         });
+
     }
+
+
 
     function copyToClipboard() {
+
         if (entryList.length === 0) {
+
             alert("No entries to copy!");
+
             return;
+
         }
+
+
 
         const tempDiv = document.createElement("div");
+
         tempDiv.style.all = "initial"; 
+
         tempDiv.style.position = "absolute";
+
         tempDiv.style.left = "-9999px";
+
         
+
         let tableHTML = "<table style='background-color: transparent !important; color: #000000 !important; font-family: Arial, sans-serif; font-size: 10pt; border-collapse: collapse;'><tbody>";
+
         
+
         entryList.forEach(entry => {
+
             tableHTML += `
+
                 <tr>
+
                     <td style="text-align: center; background-color: transparent !important; color: #000000 !important;">${entry.year}</td>
+
                     <td style="text-align: center; background-color: transparent !important; color: #000000 !important;">${entry.month}</td>
+
                     <td style="text-align: center; background-color: transparent !important; color: #000000 !important;">${entry.formattedDate}</td>
+
                     <td style="text-align: center; background-color: transparent !important; color: #000000 !important;">${entry.auditorName}</td>
+
                     <td style="text-align: center; background-color: transparent !important; color: #000000 !important;">${entry.omName}</td>
+
                     <td style="text-align: center; background-color: transparent !important; color: #000000 !important;">${entry.site}</td>
+
                     <td style="text-align: center; background-color: transparent !important; color: #000000 !important;">${entry.tlName}</td>
+
                     <td style="text-align: center; background-color: transparent !important; color: #000000 !important;">${entry.agentName}</td>
+
                     <td style="text-align: center; background-color: transparent !important; color: #000000 !important;">${entry.cleanAccount}</td>
+
                     <td style="text-align: center; background-color: transparent !important; color: #000000 !important;">${entry.reasonCode}</td>
+
                     <td style="text-align: center; background-color: transparent !important; color: #000000 !important;">${entry.noc}</td>
+
                     <td style="text-align: left; background-color: transparent !important; color: #000000 !important;">${entry.remarks}</td>
+
                 </tr>
+
             `;
+
         });
+
         
+
         tableHTML += "</tbody></table>";
+
         tempDiv.innerHTML = tableHTML;
+
         document.body.appendChild(tempDiv);
 
+
+
         const range = document.createRange();
+
         range.selectNodeContents(tempDiv);
+
         const selection = window.getSelection();
+
         selection.removeAllRanges();
+
         selection.addRange(range);
 
+
+
         try {
+
             document.execCommand('copy');
+
             alert("Copied successfully! Ready to paste to Google Sheets.");
+
         } catch (err) {
+
             alert("Failed to copy data.");
+
         }
+
+
 
         selection.removeAllRanges();
+
         document.body.removeChild(tempDiv);
+
     }
+
+
 
     function clearOutput() {
+
         if(confirm("Are you sure you want to clear all data?")) {
+
             entryList = [];
+
             editingIndex = -1;
+
             document.getElementById("addUpdateBtn").innerHTML = "➕ Add Entry to List";
+
             saveEntries(); 
+
             renderTable();
+
         }
+
     }
+
+
 
     function clearForm() {
+
         document.getElementById("auditDate").value = "";
+
         document.getElementById("tlName").value = "";
+
         document.getElementById("agentName").value = "";
+
         document.getElementById("omName").value = "";
+
         document.getElementById("account").value = "";
+
         document.getElementById("remarks").value = "";
+
         document.getElementById("noc").value = "Yes";
+
         
+
         editingIndex = -1;
+
         document.getElementById("addUpdateBtn").innerHTML = "➕ Add Entry to List";
+
     }
+
 </script>
 
+
+
 </body>
-</html>
+
+</html> 
+
