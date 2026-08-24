@@ -373,7 +373,7 @@
 </div>
 
 <script>
-    // --- NYAN CAT CANVAS ANIMATION EXACTLY MATCHING REFERENCE IMAGE ---
+    // --- NYAN CAT CANVAS ANIMATION WITH DYNAMIC SCALING ---
     const canvas = document.getElementById('nyanCanvas');
     const ctx = canvas.getContext('2d');
 
@@ -388,23 +388,23 @@
     let frameCount = 0;
 
     const trail = [];
-    const maxTrailLength = 70; 
-    
-    // Classic Rainbow Colors exactly matching image
+    // GINAWA KONG MAS MAHABA ANG RAINBOW (Dati 70, ngayon 200)
+    const maxTrailLength = 200; 
     const rainbowColors = ['#ff0000', '#ff9900', '#ffff00', '#33ff00', '#0099ff', '#6633ff'];
 
-    // Adjusted Palette matching your image (lighter pink pop-tart, dark pink sprinkles)
+    // --- ACCURATE PIXEL-ART NYAN CAT MATRIX ---
     const nyanPalette = {
         '.': null,                     
         'k': '#000000',                // Black Outline
         'g': '#999999',                // Gray Body / Ears
         'w': '#ffffff',                // White (Eyes)
-        'p': '#ff9999',                // Pink (Cheeks)
+        'p': '#ff9999',                // Pink (Cheeks / Nose)
         't': '#ffcc99',                // Tart Crust
-        'f': '#ff99ff',                // Frosting (Lighter pink matching image)
-        'd': '#ff0099',                // Dark Pink Sprinkles
+        'f': '#ff3399',                // Frosting
+        'd': '#ff0066',                // Dark Pink Sprinkles
     };
 
+    // 6-Frame Running Animation Grid (34 wide x 21 high)
     const nyanFrames = [
         [
             "..................................",
@@ -590,7 +590,13 @@
                 const color = nyanPalette[char];
                 if (color) {
                     ctx.fillStyle = color;
-                    ctx.fillRect(offsetX + (c * scale), offsetY + (r * scale), scale, scale);
+                    // FIX: Using Math.floor/ceil to prevent the ugly vertical gaps (nagka-guba)
+                    ctx.fillRect(
+                        Math.floor(offsetX + c * scale), 
+                        Math.floor(offsetY + r * scale), 
+                        Math.ceil(scale), 
+                        Math.ceil(scale)
+                    );
                 }
             }
         }
@@ -610,36 +616,34 @@
         if (catY + catHeight >= canvas.height) { catY = canvas.height - catHeight; vy = -vy; } 
         else if (catY <= 0) { catY = 0; vy = -vy; }
 
-        const trailOffsetBack = facingRight ? -12 * catScale : 12 * catScale;
-        
-        // Record trail with static wave offset for the blocky step look
+        const trailOffsetBack = facingRight ? -14 * catScale : 14 * catScale;
         trail.unshift({
             x: catX + (catWidth / 2) + trailOffsetBack,
-            y: catY + (catHeight / 2) - (1.5 * catScale), // Center adjustment
-            facingRight: facingRight,
-            waveOffset: (Math.floor(frameCount / 5) % 2 === 0) ? catScale : 0
+            y: catY + (catHeight / 2) - (2 * (catScale / 3)), 
+            facingRight: facingRight
         });
 
         if (trail.length > maxTrailLength) trail.pop();
 
-        const stripeHeight = 3 * catScale; 
-        
-        // Draw the blocky, solid rainbow (No Fade, exact colors)
+        // IBINALIK SA SMOOTH FADING RAINBOW PARA WALANG GLITCH
+        const stripeHeight = 3.5 * (catScale / 3); 
         for (let i = trail.length - 1; i > 0; i--) {
             const p1 = trail[i];
             const p2 = trail[i - 1];
-            
+            const alpha = Math.max(0, 1 - (i / maxTrailLength)); 
+            const wave = Math.sin((frameCount * 0.25) + (i * 0.35)) * (2 * (catScale / 3));
+
             for (let c = 0; c < rainbowColors.length; c++) {
-                ctx.fillStyle = rainbowColors[c];
-                ctx.globalAlpha = 1.0; 
-                
-                // Offset the 6 colored rows vertically
-                const offsetY = (c * stripeHeight) - (9 * catScale) + p1.waveOffset;
-                
-                let rx = Math.min(p1.x, p2.x);
-                let rw = Math.abs(p2.x - p1.x) + 2.5; // Slight overlap to prevent gaps
-                
-                ctx.fillRect(rx, p1.y + offsetY, rw, stripeHeight);
+                ctx.save();
+                ctx.strokeStyle = rainbowColors[c];
+                ctx.globalAlpha = alpha * 0.9;
+                ctx.lineWidth = stripeHeight + 1.5; // Prevent gaps
+                ctx.beginPath();
+                const offsetY = ((c - 2.5) * stripeHeight) + wave;
+                ctx.moveTo(p1.x, p1.y + offsetY);
+                ctx.lineTo(p2.x, p2.y + offsetY);
+                ctx.stroke();
+                ctx.restore();
             }
         }
 
