@@ -14,12 +14,12 @@
         /* Dark Mode + Neon Purple Theme Variables */
         :root {
             --bg-color: #000000;
-            --container-bg: #09090b;
+            --container-bg: rgba(9, 9, 11, 0.75); /* Semi-transparent for glass effect */
             --text-color: #e0e0e0;
-            --label-color: #d8b4fe; /* Soft neon purple for labels */
+            --label-color: #d8b4fe; 
             --input-bg: #121212;
             --input-border: #2a103c;
-            --primary-color: #b026ff; /* Neon Purple Accent */
+            --primary-color: #b026ff; 
             --primary-hover: #c455ff;
             --border-color: #2a103c;
             --danger-bg: #ef4444;
@@ -34,14 +34,28 @@
             max-width: 1000px; 
             margin: 40px auto; 
             padding: 20px; 
+            overflow-x: hidden; /* Prevent horizontal scrollbar from cat */
+        }
+
+        /* Nyan Cat Styles */
+        #nyanCat {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 180px; /* Size of the cat */
+            z-index: -1; /* Puts it behind everything */
+            pointer-events: none; /* Prevents it from blocking clicks */
+            transition: transform 0.1s; /* Smooth flip when changing direction */
         }
         
         .container { 
             background: var(--container-bg); 
+            backdrop-filter: blur(12px); /* Glassmorphism Blur */
+            -webkit-backdrop-filter: blur(12px);
             padding: 30px; 
             border-radius: 12px; 
             border: 1px solid var(--border-color);
-            box-shadow: 0 8px 32px rgba(176, 38, 255, 0.1); 
+            box-shadow: 0 8px 32px rgba(176, 38, 255, 0.15); 
         }
 
         h2 { 
@@ -57,11 +71,10 @@
         /* Asymmetric Grid Layout */
         .form-grid {
             display: grid;
-            grid-template-columns: 1.5fr 1fr 1.5fr; /* Asymmetric column sizing */
+            grid-template-columns: 1.5fr 1fr 1.5fr; 
             gap: 15px;
         }
         
-        /* Mapping specific fields to asymmetric spans */
         .field-date { grid-column: 1 / 2; }
         .field-site { grid-column: 2 / 4; }
         .field-tl { grid-column: 1 / 3; }
@@ -70,7 +83,7 @@
         .field-account { grid-column: 2 / 4; }
         .field-reason { grid-column: 1 / 3; }
         .field-noc { grid-column: 3 / 4; }
-        .field-remarks { grid-column: 1 / -1; } /* Full width */
+        .field-remarks { grid-column: 1 / -1; } 
         
         label { 
             display: block; 
@@ -104,7 +117,7 @@
         input:focus, select:focus {
             outline: none;
             border-color: var(--primary-color);
-            box-shadow: 0 0 12px rgba(176, 38, 255, 0.4); /* Neon glow effect */
+            box-shadow: 0 0 12px rgba(176, 38, 255, 0.4); 
         }
         
         .button-group {
@@ -166,18 +179,16 @@
         .output-section { margin-top: 40px; }
         .output-section label { color: var(--primary-color); border-bottom: 1px solid var(--border-color); padding-bottom: 8px; margin-bottom: 15px; }
         
-        /* Table Styles */
         .table-container {
             width: 100%;
             max-height: 250px;
             overflow-y: auto;
-            background-color: var(--input-bg);
+            background-color: rgba(18, 18, 18, 0.8);
             border: 1px solid var(--border-color);
             border-radius: 8px;
             margin-bottom: 15px;
         }
         
-        /* Custom Scrollbar for the table */
         .table-container::-webkit-scrollbar { width: 8px; height: 8px; }
         .table-container::-webkit-scrollbar-track { background: var(--bg-color); }
         .table-container::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 4px; }
@@ -195,7 +206,7 @@
             white-space: nowrap;
         }
         th {
-            background-color: #0c0414; /* Extremely dark purple */
+            background-color: #0c0414; 
             color: var(--primary-color);
             position: sticky;
             top: 0;
@@ -212,6 +223,9 @@
     </style>
 </head>
 <body>
+
+<!-- Nyan Cat Background Element -->
+<img id="nyanCat" src="https://media.giphy.com/media/sIIhZliB2McAo/giphy.gif" alt="Nyan Cat">
 
 <div class="container">
     <h2>CCTV Audit Generator</h2>
@@ -346,6 +360,44 @@
 </div>
 
 <script>
+    // --- NYAN CAT ANIMATION LOGIC ---
+    const cat = document.getElementById('nyanCat');
+    let posX = 0;
+    let posY = 0;
+    let speedX = 3; // Horizontal speed
+    let speedY = 2; // Vertical speed
+    let catWidth = 180; // Estimated GIF width
+    let catHeight = 80; // Estimated GIF height
+
+    function bounceCat() {
+        let winWidth = window.innerWidth;
+        let winHeight = window.innerHeight;
+
+        posX += speedX;
+        posY += speedY;
+
+        // Bounce off left or right walls
+        if (posX + catWidth >= winWidth || posX <= 0) {
+            speedX = -speedX;
+            // Flips the cat so it faces the direction it's running
+            cat.style.transform = speedX > 0 ? "scaleX(1)" : "scaleX(-1)";
+        }
+
+        // Bounce off top or bottom walls
+        if (posY + catHeight >= winHeight || posY <= 0) {
+            speedY = -speedY;
+        }
+
+        cat.style.left = posX + 'px';
+        cat.style.top = posY + 'px';
+
+        requestAnimationFrame(bounceCat);
+    }
+    
+    // Start the cat animation
+    bounceCat();
+    // --------------------------------
+
     let entryList = [];
     let editingIndex = -1; 
 
