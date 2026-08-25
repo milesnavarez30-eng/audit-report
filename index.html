@@ -12,8 +12,8 @@
 
     <style>
         :root {
-            /* Clean White & Brand Colors */
-            --bg-color: #f3f4f6; /* Very light gray for the page background so the white form pops */
+            /* Light Mode (Default) - Soft Gray & Clean White */
+            --bg-color: #e5e7eb; /* Soft light gray, easy on the eyes */
             --container-bg: #ffffff; /* Pure white form */
             --text-color: #1f2937; /* Dark gray/black for reading */
             --label-color: #003399; /* Navy Blue for labels */
@@ -28,6 +28,28 @@
             --danger-bg: #ef4444;
             --success-bg: #10b981;
             --warning-bg: #f59e0b;
+            
+            /* Table Variables */
+            --table-even: #f9fafb;
+            --table-hover: #f3f4f6;
+            --table-header-bg: var(--secondary-color);
+            --table-header-text: #ffffff;
+        }
+
+        /* Dark Mode Theme */
+        body.dark-mode {
+            --bg-color: #121212; 
+            --container-bg: #1e1e1e;
+            --text-color: #e0e0e0;
+            --label-color: #60a5fa; /* Lighter blue for dark mode visibility */
+            --input-bg: #2d2d2d;
+            --input-border: #404040;
+            --border-color: #404040;
+            
+            --table-even: #252525;
+            --table-hover: #333333;
+            --table-header-bg: #0a0a0a;
+            --table-header-text: var(--primary-color);
         }
 
         body { 
@@ -39,6 +61,33 @@
             padding: 20px 10px; 
             overflow-x: hidden;
             min-height: 100vh;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        /* Theme Toggle Button */
+        #themeToggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            background-color: var(--container-bg);
+            border: 1px solid var(--border-color);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            font-size: 22px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 1000;
+            transition: all 0.3s ease;
+            flex: none; /* Prevents global button flex rule */
+            padding: 0;
+            color: var(--text-color);
+        }
+        #themeToggle:hover {
+            transform: scale(1.1);
         }
 
         .container { 
@@ -48,6 +97,7 @@
             border: 1px solid var(--border-color);
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05); /* Clean, soft shadow */
             margin-bottom: 30px;
+            transition: background-color 0.3s ease, border-color 0.3s ease;
         }
 
         h2 { 
@@ -58,6 +108,10 @@
             font-weight: 700;
             letter-spacing: -0.5px;
             text-transform: uppercase;
+        }
+
+        body.dark-mode h2 {
+            color: #ffffff;
         }
 
         /* Desktop: Asymmetric Grid Layout */
@@ -85,6 +139,7 @@
             color: var(--label-color);
             text-transform: uppercase;
             letter-spacing: 0.5px;
+            transition: color 0.3s ease;
         }
         
         .input-group {
@@ -109,12 +164,12 @@
             color: #9ca3af;
         }
         
-        /* LINYA LANG MAG GREEN KAPAG CLINICK, PUTI SA LOOB */
+        /* LINYA LANG MAG GREEN KAPAG CLINICK, BACKGROUND REMAINS */
         input:focus, select:focus {
             outline: none;
             border-color: var(--primary-color);
             box-shadow: 0 0 0 3px rgba(39, 137, 20, 0.15); /* Soft green glow outside */
-            background-color: #ffffff;
+            background-color: var(--input-bg);
         }
         
         .button-group {
@@ -123,20 +178,24 @@
             margin-top: 25px;
         }
         
-        button { 
+        /* Form Buttons Scope */
+        .form-grid button, .button-group button, .action-btns button {
+            cursor: pointer; 
+            transition: all 0.2s ease;
+        }
+
+        .button-group > button { 
             background-color: var(--primary-color); 
             color: #ffffff; 
             border: none; 
             padding: 12px 20px; 
             font-size: 14px; 
             border-radius: 6px; 
-            cursor: pointer; 
             font-weight: 600; 
             flex: 1;
-            transition: all 0.2s ease;
             letter-spacing: 0.5px;
         }
-        button:hover { 
+        .button-group > button:hover { 
             background-color: var(--primary-hover); 
         }
         
@@ -155,11 +214,11 @@
         button.remove-btn { background-color: #fee2e2; color: var(--danger-bg); border: 1px solid #fca5a5; }
         button.remove-btn:hover { background-color: var(--danger-bg); color: #ffffff; border-color: var(--danger-bg); }
         
-        button.clear-btn { background-color: transparent; border: 1px solid var(--danger-bg); color: var(--danger-bg); }
-        button.clear-btn:hover { background-color: var(--danger-bg); color: #fff; }
+        button.clear-btn { background-color: transparent !important; border: 1px solid var(--danger-bg) !important; color: var(--danger-bg) !important; }
+        button.clear-btn:hover { background-color: var(--danger-bg) !important; color: #fff !important; }
         
-        button.copy-btn { background-color: var(--secondary-color); }
-        button.copy-btn:hover { background-color: #002266; }
+        button.copy-btn { background-color: var(--secondary-color) !important; border: none !important; color: #ffffff !important;}
+        button.copy-btn:hover { background-color: #002266 !important; }
         
         .action-btns {
             display: flex;
@@ -167,31 +226,34 @@
             justify-content: center;
         }
         button.edit-btn, button.delete-btn {
-            padding: 6px 10px; font-size: 12px; flex: none; width: auto; border-radius: 4px; border: none;
+            padding: 6px 10px; font-size: 12px; flex: none; width: auto; border-radius: 4px; border: none; color: #ffffff;
         }
         button.edit-btn { background-color: var(--warning-bg); color: #000; }
         button.edit-btn:hover { background-color: #d97706; color: #fff; }
-        button.delete-btn { background-color: var(--danger-bg); color: white; }
+        button.delete-btn { background-color: var(--danger-bg); }
         button.delete-btn:hover { background-color: #b91c1c; }
 
         .output-section { margin-top: 40px; }
         .output-section label { color: var(--secondary-color); border-bottom: 1px solid var(--border-color); padding-bottom: 8px; margin-bottom: 15px; display: block; }
         
+        body.dark-mode .output-section label { color: var(--label-color); }
+
         .table-container {
             width: 100%;
             max-height: 350px;
             overflow-y: auto;
             overflow-x: auto;
-            background-color: #ffffff;
+            background-color: var(--container-bg);
             border: 1px solid var(--border-color);
             border-radius: 8px;
             margin-bottom: 15px;
             -webkit-overflow-scrolling: touch; 
+            transition: background-color 0.3s ease;
         }
         
         .table-container::-webkit-scrollbar { width: 8px; height: 8px; }
-        .table-container::-webkit-scrollbar-track { background: #f3f4f6; }
-        .table-container::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 4px; }
+        .table-container::-webkit-scrollbar-track { background: var(--bg-color); }
+        .table-container::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 4px; }
         .table-container::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
 
         table {
@@ -206,19 +268,20 @@
             white-space: nowrap;
         }
         th {
-            background-color: var(--secondary-color); /* Navy Blue Header */
-            color: #ffffff;
+            background-color: var(--table-header-bg);
+            color: var(--table-header-text);
             position: sticky;
             top: 0;
             z-index: 1;
             font-weight: 600;
+            transition: background-color 0.3s ease;
         }
         /* Alternating row colors for clean look */
         tbody tr:nth-child(even) {
-            background-color: #f9fafb;
+            background-color: var(--table-even);
         }
         tbody tr:hover {
-            background-color: #f3f4f6;
+            background-color: var(--table-hover);
         }
         td.remarks-col {
             text-align: left;
@@ -243,12 +306,16 @@
                 grid-column: 1 / -1; 
             }
             .button-group { flex-direction: column; }
-            button { width: 100%; padding: 15px; }
+            .button-group button { width: 100%; padding: 15px; }
             .button-group button.clear-btn { margin-top: 5px; }
+            #themeToggle { top: 10px; right: 10px; width: 40px; height: 40px; font-size: 18px; }
         }
     </style>
 </head>
 <body>
+
+<!-- Floating Theme Toggle Button -->
+<button id="themeToggle" onclick="toggleTheme()" title="Toggle Dark/Light Mode">🌙</button>
 
 <div class="container">
     <h2>CCTV Audit</h2>
@@ -370,6 +437,23 @@
 </div>
 
 <script>
+    // --- DARK / LIGHT MODE TOGGLE LOGIC ---
+    function toggleTheme() {
+        document.body.classList.toggle('dark-mode');
+        const isDark = document.body.classList.contains('dark-mode');
+        localStorage.setItem('cctv_theme', isDark ? 'dark' : 'light');
+        document.getElementById('themeToggle').textContent = isDark ? '☀️' : '🌙';
+    }
+
+    // Initialize Theme on Load
+    const savedTheme = localStorage.getItem('cctv_theme');
+    if (savedTheme === 'dark') {
+        document.body.classList.add('dark-mode');
+        document.getElementById('themeToggle').textContent = '☀️';
+    } else {
+        document.getElementById('themeToggle').textContent = '🌙';
+    }
+
     // --- AUTO-SAVE LOGIC (LOCALSTORAGE) ---
     const rawCampaignData = `123 Employee\n123 Robotics\n123Employee | HUB International\nDental Back Office Admin\nDNO L1\nESIM\nFranklin Hamilton\nLOGISTICS\nTogether Network\nTriple B\nTV COMMERCIAL TRAFFIC\nWanderJoy\nBIGO - ECOLAND\nBIGO - Mabini\nCFC\nAU Store\nAUTAX\nFWC\nKOMBEA MPI\nKombea Pro Speaking\n123 Employee\n123 Employee - Echo Mortgage\nAUXGP\nClinic P\nClinicP\nCOD Logistics\nDAVI\nDG Dial\nDNE\nDuque Immigration\nGreenfoot\nJethro Mobile\nList Simple\nMAPUA\nMoneyHero Group\nNOX\nOrigin\nQC\nSeesaw\nSmart Staffing Support - Renters\nSPEAK UP\nBrightDelivery\nCommercial Enterprise\nCommercial Merchant Acquisition\nContent Quality Assurance\nCupshe\nGRAB - Commercial Enterprise\nGRAB - MPH\nGRAB - MY\nGRAB - PH\nGRAB - Quality Assurance\nGRAB - SG\nGrabRentals Voice and Digital Support\nOBRB MY\nViewQwest Telesales\nAirbills\nAllied Pain and Spine Institute\nBayou Braces\nBentino\nEDJ DATA\nEVMS\nGreen Health Docs\niMile Logistics\nLeisure-tec\nMi Care\nMoon River Therapy\nPearl Source\nPivot\nReflex Media\nSFP\nSpypoint\nUplift Healthcare LLC\nVeritas\nAFP\nBIGO - ECOLAND\nBIGO - Mabini\nCFC OB\nGLO\nGreenfoot\nKCDO\nKCDO - Billing\nKCDO - Inbound\nKCDO - Outbound\nPOINT CO\nShopee - SIP Global\nBIGO - Mabini\nShopee - QA\nTEMU - 1404\nTEMU - 140X (RSL)\nTEMU - 4029\nTEMU - BATCH 6\nTEMU - BATCH 7\nTEMU - BATCH 8\nTEMU - CPC\nTEMU - LOB-1\nTEMU - LOB-2\nTEMU - LOB-3\nAMG\nCGP\nIDENT\niMarketing\niMarketing Frontline\nKombea Fivestrata\nKombea Kingkong\nTEN28\nTWV\nAll Pro Pay\nClear Insights Group\nDNE\nHBW\nHerb joy\nLSM\nNationGraph\nQA OJR\nSpypoint\nSpypoint Outbound\nSuperdial\nACB\nCOD Logistics\nDG Dial\nEverlife\nEyesurf\nFBB\nFBB QA\nFlexscale Next-Level Recruitment\nFlexscale Truth Finance\nFlexscale Truth Financial\nGardens Alive & Shared\nGlamcor\nGlobalcom - Mountain Valley\nGlobalcom RTA\nJethro Mobile\nLifeMD\nMoneyHero Group\nNeiline\nNLR\nPB&J TV\nPhoenix Direct\nSmart Circle\nSPEAK UP\nSPYFLY\nTalixo\nTelMDFirst\nAMR\nAMR CSR\nJ&T Express\nMMG\nNetworX\nRenogy\nAllen Institute Mouse\nBathroomX\nFlywire\nJustlife\nJustlife \nNISSAN PH\nZetta\nAHABI\nDLPC\nLM Consulting\nLuxor Eye Institute\nSpectee\nEIMS\nEIMS - Data Validator/QA\n123 Employee\n611 VA\nBIGO - DIGOS\nDLG\nLEADMINER\nDASCO\nDASCO BACK OFFICE\nDASCO CSR\nEnvera\nKCDO - Billing\nKCDO - Inbound\nKCDO - Outbound\nKCDO - RCM\n212 Dental Care\nAdams International\nAnother Star\nARS\nCORE LOGIX\nDIAL EXPRESS\nENC\nGARDENS\nGlobalcom - Mountain Valley\nJJILL\nPhoenix Direct\nQA OJR\nSHARED\nThe James Group, LLC\nTMS\nTOP MOVING SOLUTIONS\nShopee - Buyer Chat and Email\nShopee - Buyer CS\nShopee - Buyer Logistics\nShopee - Buyer Non-Logistics\nShopee - CCS\nShopee - CS\nShopee - Data Labelling - Buybox\nShopee - Email\nShopee - FBS\nShopee - L1 Buyer - Email\nShopee - PH - Chat Bot\nShopee - Seller Chats and Email\nShopee - Seller Log x RR\nShopee - SIP Global\nShopee - SPX\nShopee - SPX SSC and NSS\nShopee - Trainee\nShopee - Buybox\nShopee - CB-SCS\nShopee - CBSCS\nShopee - Data Labelling - Buybox\nShopee - L1 Buyer - Email\nShopee - LiveStream\nShopee - PIC\nShopee - QA\nShopee - RTA\nShopee - SBS\nShopee - SIP AME\nShopee - SIP BR & LATAM\nShopee - SIP Global\nShopee - SIP Global - PH\nShopee - SIP L2\nShopee - SIP Malaysia\nShopee - SIP Singapore\nShopee - SIP Taiwan\nShopee - SIP Thailand\nShopee - SPX NSS Outbound\nShopee - WFM\nShopee - Buybox\nShopee - Buybox - Smart UI\nShopee - Buyer Chat and Email\nShopee - Buyer Logistics\nShopee - CS \nShopee - CS and Non-CS\nShopee - Data Labelling - Buybox\nShopee - Data Labelling - Non SPU\nShopee - Data Labelling - SPU\nShopee - Keywords\nShopee - Listing Pages\nShopee - Listings Data Labelling - LLM\nShopee - Listings Data Labelling - SQE\nShopee - Listings Data Labelling - Task Center\nShopee - Listings QC\nShopee - Live Stream Marketing\nShopee - LiveStream\nShopee - Non-CS\nShopee - PH - Chat Bot\nShopee - QAC Department\nShopee - SBS\nShopee - SPU Listings\nShopee - Training\nShopee - Video\nShopee - Video QC\n123 Employee\n123 Employee - Hallandale Pharmacy\nAeroex Technology Inc.\nBrianna Thaxton LLC\nCapLink Group\nCorazon Company LLC\neJam\neJam Inside Sales\nInsight Financial Associates Ltd. (SixEleven Project)\nLegal Solutions 4U\nMBC Consulting Group Inc.\nNextgenID\nNextgenID SRIP\nPinnacle Ozone Solutions\nRevel Hotel\nSBI\nSRIP L2 Support\nTicket Management System SL`;
 
@@ -601,23 +685,24 @@
         tempDiv.style.position = "absolute";
         tempDiv.style.left = "-9999px";
         
-        let tableHTML = "<table style='background-color: transparent !important; color: #000000 !important; font-family: Arial, sans-serif; font-size: 10pt; border-collapse: collapse;'><tbody>";
+        // NO BORDERS, TRANSPARENT BACKGROUND, BLACK TEXT
+        let tableHTML = "<table style='border-collapse: collapse; border: none; background-color: transparent !important; color: #000000 !important; font-family: Arial, sans-serif; font-size: 10pt;'><tbody>";
         
         entryList.forEach(entry => {
             tableHTML += `
                 <tr>
-                    <td style="text-align: center; background-color: transparent !important; color: #000000 !important;">${entry.year}</td>
-                    <td style="text-align: center; background-color: transparent !important; color: #000000 !important;">${entry.month}</td>
-                    <td style="text-align: center; background-color: transparent !important; color: #000000 !important;">${entry.formattedDate}</td>
-                    <td style="text-align: center; background-color: transparent !important; color: #000000 !important;">${entry.auditorName}</td>
-                    <td style="text-align: center; background-color: transparent !important; color: #000000 !important;">${entry.omName}</td>
-                    <td style="text-align: center; background-color: transparent !important; color: #000000 !important;">${entry.site}</td>
-                    <td style="text-align: center; background-color: transparent !important; color: #000000 !important;">${entry.tlName}</td>
-                    <td style="text-align: center; background-color: transparent !important; color: #000000 !important;">${entry.agentName}</td>
-                    <td style="text-align: center; background-color: transparent !important; color: #000000 !important;">${entry.cleanAccount}</td>
-                    <td style="text-align: center; background-color: transparent !important; color: #000000 !important;">${entry.reasonCode}</td>
-                    <td style="text-align: center; background-color: transparent !important; color: #000000 !important;">${entry.noc}</td>
-                    <td style="text-align: left; background-color: transparent !important; color: #000000 !important;">${entry.remarks}</td>
+                    <td style="border: none; text-align: center; background-color: transparent !important; color: #000000 !important;">${entry.year}</td>
+                    <td style="border: none; text-align: center; background-color: transparent !important; color: #000000 !important;">${entry.month}</td>
+                    <td style="border: none; text-align: center; background-color: transparent !important; color: #000000 !important;">${entry.formattedDate}</td>
+                    <td style="border: none; text-align: center; background-color: transparent !important; color: #000000 !important;">${entry.auditorName}</td>
+                    <td style="border: none; text-align: center; background-color: transparent !important; color: #000000 !important;">${entry.omName}</td>
+                    <td style="border: none; text-align: center; background-color: transparent !important; color: #000000 !important;">${entry.site}</td>
+                    <td style="border: none; text-align: center; background-color: transparent !important; color: #000000 !important;">${entry.tlName}</td>
+                    <td style="border: none; text-align: center; background-color: transparent !important; color: #000000 !important;">${entry.agentName}</td>
+                    <td style="border: none; text-align: center; background-color: transparent !important; color: #000000 !important;">${entry.cleanAccount}</td>
+                    <td style="border: none; text-align: center; background-color: transparent !important; color: #000000 !important;">${entry.reasonCode}</td>
+                    <td style="border: none; text-align: center; background-color: transparent !important; color: #000000 !important;">${entry.noc}</td>
+                    <td style="border: none; text-align: left; background-color: transparent !important; color: #000000 !important;">${entry.remarks}</td>
                 </tr>
             `;
         });
