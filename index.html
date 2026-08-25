@@ -56,7 +56,7 @@
             font-family: 'Inter', sans-serif; 
             background-color: var(--bg-color); 
             color: var(--text-color); 
-            max-width: 95%; /* Ang lapad sa tibuok container */
+            max-width: 95%; /* Ang lapad sa tibuok screen content */
             margin: 0 auto; 
             padding: 20px 10px; 
             overflow-x: hidden;
@@ -90,14 +90,25 @@
             transform: scale(1.1);
         }
 
+        /* Common Container Styles */
         .container { 
             background: var(--container-bg); 
             padding: 30px; 
             border-radius: 12px; 
             border: 1px solid var(--border-color);
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05); 
-            margin-bottom: 30px;
             transition: background-color 0.3s ease, border-color 0.3s ease;
+        }
+
+        /* Specific styles for the Form and Grid Containers */
+        .form-section {
+            max-width: 1000px; /* Limitahan ang gilapdon sa form */
+            margin: 0 auto 30px auto; /* I-center ang form ug naay space sa ubos */
+        }
+
+        .grid-section {
+            width: 100%; /* Pabilin nga lapad ang table grid */
+            margin: 0 auto;
         }
 
         h2 { 
@@ -108,18 +119,18 @@
             font-weight: 700;
             letter-spacing: -0.5px;
             text-transform: uppercase;
+            margin-bottom: 20px;
         }
 
         body.dark-mode h2 {
             color: #ffffff;
         }
 
-        /* Desktop: Asymmetric Grid Layout restricted to 1000px so it doesn't stretch */
+        /* Desktop: Asymmetric Grid Layout for the Form */
         .form-grid {
             display: grid;
             grid-template-columns: 1.5fr 1fr 1.5fr; 
             gap: 16px;
-            max-width: 1000px; /* ⬅️ Prevent textboxes from stretching too wide */
         }
         
         .field-date { grid-column: 1 / 2; }
@@ -148,14 +159,14 @@
             gap: 8px;
         }
         
-        /* ⬅️ FULLY ROUNDED TEXT BOXES & SELECTS */
+        /* FULLY ROUNDED TEXT BOXES & SELECTS */
         input[type="text"], input[type="date"], select { 
             width: 100%; 
-            padding: 12px 16px; /* Added side padding for rounded corners */
+            padding: 12px 16px; 
             background-color: var(--input-bg);
             color: var(--text-color);
             border: 1px solid var(--input-border); 
-            border-radius: 30px; /* ⬅️ ROUNDED EFFECT */
+            border-radius: 30px; /* ROUNDED EFFECT */
             box-sizing: border-box; 
             font-family: inherit;
             font-size: 14px;
@@ -177,7 +188,6 @@
             display: flex;
             gap: 12px;
             margin-top: 25px;
-            max-width: 1000px; /* ⬅️ Prevent buttons from stretching too wide */
         }
         
         .form-grid button, .button-group button, .action-btns button {
@@ -191,7 +201,7 @@
             border: none; 
             padding: 12px 20px; 
             font-size: 14px; 
-            border-radius: 30px; /* ⬅️ ROUNDED EFFECT FOR MAIN BUTTONS */
+            border-radius: 30px; /* ROUNDED EFFECT FOR MAIN BUTTONS */
             font-weight: 600; 
             flex: 1;
             letter-spacing: 0.5px;
@@ -200,12 +210,12 @@
             background-color: var(--primary-hover); 
         }
         
-        /* ⬅️ CIRCLE BUTTONS FOR ADD/REMOVE TO MATCH ROUNDED THEME */
+        /* CIRCLE BUTTONS FOR ADD/REMOVE TO MATCH ROUNDED THEME */
         button.add-btn, button.remove-btn {
             flex: 0 0 42px;
             padding: 0;
             font-size: 20px;
-            border-radius: 50%; /* ⬅️ CIRCULAR */
+            border-radius: 50%; /* CIRCULAR */
             display: flex;
             align-items: center;
             justify-content: center;
@@ -235,14 +245,9 @@
         button.delete-btn { background-color: var(--danger-bg); }
         button.delete-btn:hover { background-color: #b91c1c; }
 
-        .output-section { margin-top: 40px; }
-        .output-section label { color: var(--secondary-color); border-bottom: 1px solid var(--border-color); padding-bottom: 8px; margin-bottom: 15px; display: block; }
-        
-        body.dark-mode .output-section label { color: var(--label-color); }
-
         .table-container {
-            width: 100%; /* Table remains fully stretched */
-            max-height: 350px;
+            width: 100%;
+            max-height: 400px; /* Mas gitaasan gamay para daghan ma-view */
             overflow-y: auto;
             overflow-x: auto;
             background-color: var(--container-bg);
@@ -318,8 +323,9 @@
 <!-- Floating Theme Toggle Button -->
 <button id="themeToggle" onclick="toggleTheme()" title="Toggle Dark/Light Mode">🌙</button>
 
-<div class="container">
-    <h2>CCTV Audit</h2>
+<!-- 1st Container: CCTV Audit Form (Centered & 1000px max-width) -->
+<div class="container form-section">
+    <h2>CCTV Audit Form</h2>
     
     <div class="form-grid">
         <div class="form-group field-date">
@@ -401,39 +407,40 @@
         <button id="addUpdateBtn" onclick="submitEntry()">➕ Add Entry to List</button>
         <button onclick="clearForm()" class="clear-btn">Clear Form</button>
     </div>
+</div>
 
-    <div class="output-section">
-        <label>Data Output Grid</label>
-        
-        <div class="table-container">
-            <table id="outputTable">
-                <thead>
-                    <tr>
-                        <th>Actions</th>
-                        <th>Year</th>
-                        <th>Month</th>
-                        <th>Date</th>
-                        <th>Name</th>
-                        <th>OM</th>
-                        <th>SITE</th>
-                        <th>TL Name</th>
-                        <th>Agent Name</th>
-                        <th>Account</th>
-                        <th>CCTV Reason</th>
-                        <th>NOC</th>
-                        <th>Remarks</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <!-- Entries will populate here -->
-                </tbody>
-            </table>
-        </div>
-        
-        <div class="button-group" style="max-width: 100%;">
-            <button class="copy-btn" onclick="copyToClipboard()">📋 Copy to Clipboard</button>
-            <button class="clear-btn" onclick="clearOutput()">🗑️ Clear All</button>
-        </div>
+<!-- 2nd Container: Data Output Grid (Full Width, max 95% of screen) -->
+<div class="container grid-section">
+    <h2>Data Output Grid</h2>
+    
+    <div class="table-container">
+        <table id="outputTable">
+            <thead>
+                <tr>
+                    <th>Actions</th>
+                    <th>Year</th>
+                    <th>Month</th>
+                    <th>Date</th>
+                    <th>Name</th>
+                    <th>OM</th>
+                    <th>SITE</th>
+                    <th>TL Name</th>
+                    <th>Agent Name</th>
+                    <th>Account</th>
+                    <th>CCTV Reason</th>
+                    <th>NOC</th>
+                    <th>Remarks</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Entries will populate here -->
+            </tbody>
+        </table>
+    </div>
+    
+    <div class="button-group">
+        <button class="copy-btn" onclick="copyToClipboard()">📋 Copy to Clipboard</button>
+        <button class="clear-btn" onclick="clearOutput()">🗑️ Clear All</button>
     </div>
 </div>
 
