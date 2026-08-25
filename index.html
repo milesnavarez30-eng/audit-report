@@ -11,6 +11,11 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
     <style>
+        /* ⬅️ GI-ADD NAKO NI PARA DILI MUSOBRA ANG CONTAINER SA RIGHT SIDE */
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
+
         :root {
             /* Light Mode (Default) - Soft Gray & Clean White */
             --bg-color: #e5e7eb; 
@@ -56,7 +61,8 @@
             font-family: 'Inter', sans-serif; 
             background-color: var(--bg-color); 
             color: var(--text-color); 
-            max-width: 95%; /* Ang lapad sa tibuok screen content */
+            width: 95%; /* ⬅️ Changed max-width to width para sigo permi */
+            max-width: 1400px; /* Limit para dili kaayo dako sa ultrawide monitors */
             margin: 0 auto; 
             padding: 20px 10px; 
             overflow-x: hidden;
@@ -167,7 +173,6 @@
             color: var(--text-color);
             border: 1px solid var(--input-border); 
             border-radius: 30px; /* ROUNDED EFFECT */
-            box-sizing: border-box; 
             font-family: inherit;
             font-size: 14px;
             transition: all 0.2s ease;
@@ -305,7 +310,7 @@
         }
 
         @media screen and (max-width: 600px) {
-            body { padding: 10px; margin: 10px auto; }
+            body { padding: 10px; margin: 10px auto; width: 100%; }
             .container { padding: 20px; }
             .form-grid { grid-template-columns: 1fr; gap: 12px; }
             .field-date, .field-site, .field-tl, .field-agent, .field-om, .field-account, .field-reason, .field-noc, .field-remarks {
