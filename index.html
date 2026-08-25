@@ -13,17 +13,17 @@
     <style>
         :root {
             /* Light Mode (Default) - Soft Gray & Clean White */
-            --bg-color: #e5e7eb; /* Soft light gray, easy on the eyes */
-            --container-bg: #ffffff; /* Pure white form */
-            --text-color: #1f2937; /* Dark gray/black for reading */
-            --label-color: #003399; /* Navy Blue for labels */
-            --input-bg: #ffffff; /* White inside text boxes */
-            --input-border: #d1d5db; /* Light gray border for text boxes */
+            --bg-color: #e5e7eb; 
+            --container-bg: #ffffff; 
+            --text-color: #1f2937; 
+            --label-color: #003399; 
+            --input-bg: #ffffff; 
+            --input-border: #d1d5db; 
             
-            --primary-color: #278914; /* Brand Green */
+            --primary-color: #278914; 
             --primary-hover: #207110; 
-            --secondary-color: #003399; /* Brand Navy Blue */
-            --border-color: #e5e7eb; /* Light border line */
+            --secondary-color: #003399; 
+            --border-color: #e5e7eb; 
             
             --danger-bg: #ef4444;
             --success-bg: #10b981;
@@ -41,7 +41,7 @@
             --bg-color: #121212; 
             --container-bg: #1e1e1e;
             --text-color: #e0e0e0;
-            --label-color: #60a5fa; /* Lighter blue for dark mode visibility */
+            --label-color: #60a5fa; 
             --input-bg: #2d2d2d;
             --input-border: #404040;
             --border-color: #404040;
@@ -52,17 +52,17 @@
             --table-header-text: var(--primary-color);
         }
 
-body { 
-    font-family: 'Inter', sans-serif; 
-    background-color: var(--bg-color); 
-    color: var(--text-color); 
-    max-width: 95%; /* ⬅️ CHANGED FROM 1000px TO 95% PARA MAPALAPAD */
-    margin: 0 auto; 
-    padding: 20px 10px; 
-    overflow-x: hidden;
-    min-height: 100vh;
-    transition: background-color 0.3s ease, color 0.3s ease;
-}
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: var(--bg-color); 
+            color: var(--text-color); 
+            max-width: 95%; /* Ang lapad sa tibuok container */
+            margin: 0 auto; 
+            padding: 20px 10px; 
+            overflow-x: hidden;
+            min-height: 100vh;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
 
         /* Theme Toggle Button */
         #themeToggle {
@@ -82,7 +82,7 @@ body {
             cursor: pointer;
             z-index: 1000;
             transition: all 0.3s ease;
-            flex: none; /* Prevents global button flex rule */
+            flex: none; 
             padding: 0;
             color: var(--text-color);
         }
@@ -95,15 +95,15 @@ body {
             padding: 30px; 
             border-radius: 12px; 
             border: 1px solid var(--border-color);
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05); /* Clean, soft shadow */
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05); 
             margin-bottom: 30px;
             transition: background-color 0.3s ease, border-color 0.3s ease;
         }
 
         h2 { 
             margin-top: 0; 
-            color: var(--secondary-color); /* Navy Blue */
-            border-bottom: 3px solid var(--primary-color); /* Green line under title */
+            color: var(--secondary-color); 
+            border-bottom: 3px solid var(--primary-color); 
             padding-bottom: 12px; 
             font-weight: 700;
             letter-spacing: -0.5px;
@@ -114,11 +114,12 @@ body {
             color: #ffffff;
         }
 
-        /* Desktop: Asymmetric Grid Layout */
+        /* Desktop: Asymmetric Grid Layout restricted to 1000px so it doesn't stretch */
         .form-grid {
             display: grid;
             grid-template-columns: 1.5fr 1fr 1.5fr; 
             gap: 16px;
+            max-width: 1000px; /* ⬅️ Prevent textboxes from stretching too wide */
         }
         
         .field-date { grid-column: 1 / 2; }
@@ -147,13 +148,14 @@ body {
             gap: 8px;
         }
         
+        /* ⬅️ FULLY ROUNDED TEXT BOXES & SELECTS */
         input[type="text"], input[type="date"], select { 
             width: 100%; 
-            padding: 12px; 
+            padding: 12px 16px; /* Added side padding for rounded corners */
             background-color: var(--input-bg);
             color: var(--text-color);
             border: 1px solid var(--input-border); 
-            border-radius: 6px; /* Slightly rounded */
+            border-radius: 30px; /* ⬅️ ROUNDED EFFECT */
             box-sizing: border-box; 
             font-family: inherit;
             font-size: 14px;
@@ -164,11 +166,10 @@ body {
             color: #9ca3af;
         }
         
-        /* LINYA LANG MAG GREEN KAPAG CLINICK, BACKGROUND REMAINS */
         input:focus, select:focus {
             outline: none;
             border-color: var(--primary-color);
-            box-shadow: 0 0 0 3px rgba(39, 137, 20, 0.15); /* Soft green glow outside */
+            box-shadow: 0 0 0 3px rgba(39, 137, 20, 0.15); 
             background-color: var(--input-bg);
         }
         
@@ -176,9 +177,9 @@ body {
             display: flex;
             gap: 12px;
             margin-top: 25px;
+            max-width: 1000px; /* ⬅️ Prevent buttons from stretching too wide */
         }
         
-        /* Form Buttons Scope */
         .form-grid button, .button-group button, .action-btns button {
             cursor: pointer; 
             transition: all 0.2s ease;
@@ -190,7 +191,7 @@ body {
             border: none; 
             padding: 12px 20px; 
             font-size: 14px; 
-            border-radius: 6px; 
+            border-radius: 30px; /* ⬅️ ROUNDED EFFECT FOR MAIN BUTTONS */
             font-weight: 600; 
             flex: 1;
             letter-spacing: 0.5px;
@@ -199,11 +200,12 @@ body {
             background-color: var(--primary-hover); 
         }
         
+        /* ⬅️ CIRCLE BUTTONS FOR ADD/REMOVE TO MATCH ROUNDED THEME */
         button.add-btn, button.remove-btn {
             flex: 0 0 42px;
             padding: 0;
             font-size: 20px;
-            border-radius: 6px;
+            border-radius: 50%; /* ⬅️ CIRCULAR */
             display: flex;
             align-items: center;
             justify-content: center;
@@ -239,7 +241,7 @@ body {
         body.dark-mode .output-section label { color: var(--label-color); }
 
         .table-container {
-            width: 100%;
+            width: 100%; /* Table remains fully stretched */
             max-height: 350px;
             overflow-y: auto;
             overflow-x: auto;
@@ -276,7 +278,6 @@ body {
             font-weight: 600;
             transition: background-color 0.3s ease;
         }
-        /* Alternating row colors for clean look */
         tbody tr:nth-child(even) {
             background-color: var(--table-even);
         }
@@ -429,7 +430,7 @@ body {
             </table>
         </div>
         
-        <div class="button-group">
+        <div class="button-group" style="max-width: 100%;">
             <button class="copy-btn" onclick="copyToClipboard()">📋 Copy to Clipboard</button>
             <button class="clear-btn" onclick="clearOutput()">🗑️ Clear All</button>
         </div>
@@ -685,7 +686,6 @@ body {
         tempDiv.style.position = "absolute";
         tempDiv.style.left = "-9999px";
         
-        // NO BORDERS, TRANSPARENT BACKGROUND, BLACK TEXT
         let tableHTML = "<table style='border-collapse: collapse; border: none; background-color: transparent !important; color: #000000 !important; font-family: Arial, sans-serif; font-size: 10pt;'><tbody>";
         
         entryList.forEach(entry => {
