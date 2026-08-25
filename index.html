@@ -3,26 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CCTV Audit Generator</title>
+    <title>CCTV Audit</title>
     
     <!-- Import Inter Font -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
     <style>
         :root {
-            /* Six Eleven Brand Colors */
-            --bg-color: #050b14; /* Deep Navy Background */
-            --container-bg: rgba(9, 21, 51, 0.85); /* Slightly lighter Navy */
-            --text-color: #e0e0e0;
-            --label-color: #a3c2fa; /* Light Blue for readability */
-            --input-bg: #0a1738;
-            --input-border: #15306e; /* Medium Blue Border */
-            --primary-color: #278914; /* Six Eleven Green */
-            --primary-hover: #32b519;
-            --secondary-color: #003399; /* Six Eleven Blue */
-            --border-color: #15306e;
+            /* Clean White & Brand Colors */
+            --bg-color: #f3f4f6; /* Very light gray for the page background so the white form pops */
+            --container-bg: #ffffff; /* Pure white form */
+            --text-color: #1f2937; /* Dark gray/black for reading */
+            --label-color: #003399; /* Navy Blue for labels */
+            --input-bg: #ffffff; /* White inside text boxes */
+            --input-border: #d1d5db; /* Light gray border for text boxes */
+            
+            --primary-color: #278914; /* Brand Green */
+            --primary-hover: #207110; 
+            --secondary-color: #003399; /* Brand Navy Blue */
+            --border-color: #e5e7eb; /* Light border line */
+            
             --danger-bg: #ef4444;
             --success-bg: #10b981;
             --warning-bg: #f59e0b;
@@ -41,34 +43,28 @@
 
         .container { 
             background: var(--container-bg); 
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
             padding: 30px; 
             border-radius: 12px; 
             border: 1px solid var(--border-color);
-            box-shadow: 0 8px 32px rgba(0, 51, 153, 0.2); /* Blue shadow */
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05); /* Clean, soft shadow */
             margin-bottom: 30px;
         }
 
         h2 { 
             margin-top: 0; 
-            color: #ffffff; 
-            border-bottom: 2px solid var(--primary-color); 
-            padding-bottom: 15px; 
+            color: var(--secondary-color); /* Navy Blue */
+            border-bottom: 3px solid var(--primary-color); /* Green line under title */
+            padding-bottom: 12px; 
             font-weight: 700;
             letter-spacing: -0.5px;
             text-transform: uppercase;
-        }
-        
-        h2 span {
-            color: var(--primary-color);
         }
 
         /* Desktop: Asymmetric Grid Layout */
         .form-grid {
             display: grid;
             grid-template-columns: 1.5fr 1fr 1.5fr; 
-            gap: 15px;
+            gap: 16px;
         }
         
         .field-date { grid-column: 1 / 2; }
@@ -100,20 +96,25 @@
             width: 100%; 
             padding: 12px; 
             background-color: var(--input-bg);
-            color: #ffffff;
+            color: var(--text-color);
             border: 1px solid var(--input-border); 
-            border-radius: 6px; 
+            border-radius: 6px; /* Slightly rounded */
             box-sizing: border-box; 
             font-family: inherit;
             font-size: 14px;
-            transition: all 0.3s ease;
-            color-scheme: dark; 
+            transition: all 0.2s ease;
         }
         
+        input::placeholder {
+            color: #9ca3af;
+        }
+        
+        /* LINYA LANG MAG GREEN KAPAG CLINICK, PUTI SA LOOB */
         input:focus, select:focus {
             outline: none;
             border-color: var(--primary-color);
-            box-shadow: 0 0 12px rgba(39, 137, 20, 0.4); /* Green glow */
+            box-shadow: 0 0 0 3px rgba(39, 137, 20, 0.15); /* Soft green glow outside */
+            background-color: #ffffff;
         }
         
         .button-group {
@@ -137,30 +138,28 @@
         }
         button:hover { 
             background-color: var(--primary-hover); 
-            box-shadow: 0 0 15px rgba(39, 137, 20, 0.5);
         }
         
         button.add-btn, button.remove-btn {
-            flex: 0 0 40px;
+            flex: 0 0 42px;
             padding: 0;
             font-size: 20px;
             border-radius: 6px;
-            border: 1px solid var(--input-border);
             display: flex;
             align-items: center;
             justify-content: center;
         }
         button.add-btn { background-color: var(--secondary-color); color: #ffffff; border: none; }
-        button.add-btn:hover { background-color: #0044cc; }
+        button.add-btn:hover { background-color: #002266; }
         
-        button.remove-btn { background-color: #1a0505; color: var(--danger-bg); border-color: #3f0f0f; }
-        button.remove-btn:hover { background-color: #2a0808; border-color: var(--danger-bg); }
+        button.remove-btn { background-color: #fee2e2; color: var(--danger-bg); border: 1px solid #fca5a5; }
+        button.remove-btn:hover { background-color: var(--danger-bg); color: #ffffff; border-color: var(--danger-bg); }
         
         button.clear-btn { background-color: transparent; border: 1px solid var(--danger-bg); color: var(--danger-bg); }
-        button.clear-btn:hover { background-color: var(--danger-bg); color: #fff; box-shadow: 0 0 15px rgba(239, 68, 68, 0.4); }
+        button.clear-btn:hover { background-color: var(--danger-bg); color: #fff; }
         
         button.copy-btn { background-color: var(--secondary-color); }
-        button.copy-btn:hover { background-color: #0044cc; box-shadow: 0 0 15px rgba(0, 51, 153, 0.5); }
+        button.copy-btn:hover { background-color: #002266; }
         
         .action-btns {
             display: flex;
@@ -171,19 +170,19 @@
             padding: 6px 10px; font-size: 12px; flex: none; width: auto; border-radius: 4px; border: none;
         }
         button.edit-btn { background-color: var(--warning-bg); color: #000; }
-        button.edit-btn:hover { background-color: #fcd34d; }
+        button.edit-btn:hover { background-color: #d97706; color: #fff; }
         button.delete-btn { background-color: var(--danger-bg); color: white; }
-        button.delete-btn:hover { background-color: #f87171; }
+        button.delete-btn:hover { background-color: #b91c1c; }
 
         .output-section { margin-top: 40px; }
-        .output-section label { color: var(--primary-color); border-bottom: 1px solid var(--border-color); padding-bottom: 8px; margin-bottom: 15px; display: block; }
+        .output-section label { color: var(--secondary-color); border-bottom: 1px solid var(--border-color); padding-bottom: 8px; margin-bottom: 15px; display: block; }
         
         .table-container {
             width: 100%;
             max-height: 350px;
             overflow-y: auto;
             overflow-x: auto;
-            background-color: rgba(5, 11, 20, 0.9);
+            background-color: #ffffff;
             border: 1px solid var(--border-color);
             border-radius: 8px;
             margin-bottom: 15px;
@@ -191,9 +190,9 @@
         }
         
         .table-container::-webkit-scrollbar { width: 8px; height: 8px; }
-        .table-container::-webkit-scrollbar-track { background: var(--bg-color); }
-        .table-container::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 4px; }
-        .table-container::-webkit-scrollbar-thumb:hover { background: var(--primary-color); }
+        .table-container::-webkit-scrollbar-track { background: #f3f4f6; }
+        .table-container::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 4px; }
+        .table-container::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
 
         table {
             width: 100%;
@@ -207,13 +206,19 @@
             white-space: nowrap;
         }
         th {
-            background-color: #03070c; 
+            background-color: var(--secondary-color); /* Navy Blue Header */
             color: #ffffff;
             position: sticky;
             top: 0;
             z-index: 1;
-            border-bottom: 2px solid var(--primary-color);
             font-weight: 600;
+        }
+        /* Alternating row colors for clean look */
+        tbody tr:nth-child(even) {
+            background-color: #f9fafb;
+        }
+        tbody tr:hover {
+            background-color: #f3f4f6;
         }
         td.remarks-col {
             text-align: left;
@@ -246,7 +251,7 @@
 <body>
 
 <div class="container">
-    <h2><span>Six</span>Eleven CCTV Audit</h2>
+    <h2>CCTV Audit</h2>
     
     <div class="form-grid">
         <div class="form-group field-date">
