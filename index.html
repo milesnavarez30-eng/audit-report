@@ -3772,6 +3772,107 @@
     }
 </style>
 
+
+<style>
+    /* =========================================================
+       GROUPED PDF BLOCKS
+       Table -> Images left-to-right -> Remarks
+       ========================================================= */
+
+    .grouped-report-block {
+        width: 100% !important;
+        box-sizing: border-box !important;
+        margin: 0 0 7mm !important;
+        padding: 0 !important;
+        background: #ffffff !important;
+
+        /* Keep sheet, images and remarks together as one report group */
+        break-inside: avoid !important;
+        page-break-inside: avoid !important;
+    }
+
+    .grouped-report-block .simple-pdf-table-wrap {
+        margin: 0 0 3.5mm !important;
+    }
+
+    .grouped-photo-row {
+        width: 100% !important;
+        display: flex !important;
+        flex-wrap: wrap !important;
+        justify-content: flex-start !important;
+        align-items: flex-start !important;
+        gap: 2.5mm !important;
+        margin: 0 0 3mm !important;
+        padding: 0 !important;
+        background: #ffffff !important;
+
+        break-inside: avoid !important;
+        page-break-inside: avoid !important;
+    }
+
+    .grouped-photo-row img {
+        display: block !important;
+        flex: 0 0 auto !important;
+
+        /* Smaller, consistent screenshots so they arrange left-to-right */
+        width: 55mm !important;
+        height: 34mm !important;
+        max-width: 55mm !important;
+        max-height: 34mm !important;
+
+        object-fit: contain !important;
+        object-position: center !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        border: 0 !important;
+        background: #ffffff !important;
+
+        break-inside: avoid !important;
+        page-break-inside: avoid !important;
+    }
+
+    .grouped-remarks {
+        width: 100% !important;
+        box-sizing: border-box !important;
+        display: grid !important;
+        grid-template-columns: auto minmax(0, 1fr) !important;
+        gap: 2mm !important;
+        align-items: start !important;
+
+        margin: 0 !important;
+        padding: 2.2mm 2.8mm !important;
+        border-left: 2.3px solid #278914 !important;
+        background: #f6faf4 !important;
+        color: #1f3b24 !important;
+
+        font-size: 6.4px !important;
+        line-height: 1.35 !important;
+
+        break-inside: avoid !important;
+        page-break-inside: avoid !important;
+    }
+
+    .grouped-remarks-label {
+        color: #278914 !important;
+        font-weight: 900 !important;
+        white-space: nowrap !important;
+    }
+
+    .grouped-remarks-text > div + div {
+        margin-top: .7mm !important;
+    }
+
+    /* Hide any old PDF-only remarks/photo wrappers from previous versions */
+    .grouped-pdf .reference-remarks,
+    .grouped-pdf .reference-photo-group,
+    .grouped-pdf .simple-pdf-images,
+    .grouped-pdf .simple-pdf-remarks,
+    .grouped-pdf .minimal-remarks-label,
+    .grouped-pdf .minimal-divider {
+        display: none !important;
+    }
+</style>
+
 </head>
 <body>
 
@@ -6045,30 +6146,32 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
                 ? block.remarks.map(item => String(item || "").trim()).filter(Boolean)
                 : [];
 
-            const remarksLine = remarks.length
-                ? `<div class="reference-remarks">
-                    <span>Remarks:</span>
-                    <div>${remarks.map(item => `<div>${escapeHtml(item)}</div>`).join("")}</div>
-                   </div>`
-                : "";
-
             const imgs = screenshots.length
-                ? `<div class="reference-photo-group ${screenshots.length > 1 ? "multiple" : ""}">
+                ? `<div class="grouped-photo-row">
                     ${screenshots.map(shot => `<img src="${shot.dataUrl}" alt="CCTV evidence">`).join("")}
                    </div>`
                 : "";
 
+            const remarksHtml = remarks.length
+                ? `<div class="grouped-remarks">
+                    <span class="grouped-remarks-label">Remarks:</span>
+                    <div class="grouped-remarks-text">
+                        ${remarks.map(item => `<div>${escapeHtml(item)}</div>`).join("")}
+                    </div>
+                   </div>`
+                : "";
+
             return `
-                <section class="reference-report-block">
-                    ${remarksLine}
+                <section class="grouped-report-block">
                     ${tableHtml(block.lanesText, true)}
                     ${imgs}
+                    ${remarksHtml}
                 </section>
             `;
         }).join("");
 
         $("simpleEodPrintRoot").innerHTML = `
-            <div class="simple-pdf reference-pdf">
+            <div class="simple-pdf grouped-pdf">
                 <header class="reference-pdf-header">
                     <div>
                         <h1>${escapeHtml(cleanTitle)} Maintenance Report</h1>
@@ -6132,9 +6235,10 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
                     pagebreak: {
                         mode: ["css", "legacy"],
                         avoid: [
-                            ".reference-remarks",
-                            ".reference-photo-group",
-                            ".reference-photo-group img",
+                            ".grouped-report-block",
+                            ".grouped-photo-row",
+                            ".grouped-photo-row img",
+                            ".grouped-remarks",
                             ".simple-pdf-table tr"
                         ]
                     }
