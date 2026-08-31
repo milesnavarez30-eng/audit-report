@@ -1244,9 +1244,12 @@
         <h2>Maintenance AI Sorter</h2>
         <div class="maintenance-intro">
             Paste your maintenance report from <strong>Google Sheets</strong> or a copied table.
-            The smart sorter detects floor patterns from <strong>Station No.</strong>, learns each Team Leader's usual floor,
-            then groups the report into <strong>Ground Floor, 1st Floor, 2nd Floor, and Review Needed</strong>.
-            Manual corrections are remembered on this browser.
+            The sorter uses your supplied <strong>Site A 1st Floor and 2nd Floor Team Leader + campaign references</strong>,
+            combines them with <strong>Station No.</strong> patterns, and learns from the current report.
+            If a <strong>new Team Leader name</strong> appears that is not in the seat plan, it will automatically use the
+            <strong>campaign or explicit floor/station</strong> to place the row when the evidence is clear.
+            Results are grouped into <strong>Ground Floor, 1st Floor, 2nd Floor, and Review Needed</strong>.
+            Ambiguous campaigns that exist on multiple floors are not guessed.
         </div>
 
         <label for="maintenanceInput">Paste Maintenance Report</label>
@@ -1662,7 +1665,76 @@
         [FLOOR.REVIEW]: 3
     };
 
+    
     const STORAGE_KEY = "maintenance_tl_floor_overrides_v1";
+
+    // Site A floor references supplied by the user.
+    // These are used as a strong hint when Station No. is missing/unclear.
+    // Campaign matching gives extra confidence. Conflicting references stay in Review Needed.
+    const OFFICIAL_TL_FLOOR_REFERENCE = [
+        // ---------- SITE A 1ST FLOOR ----------
+        { floor: FLOOR.FIRST, aliases: ["allan albert sadili", "allan"], campaigns: ["mapua", "speakup"] },
+        { floor: FLOOR.FIRST, aliases: ["glaithe"], campaigns: ["jethro mobile"] },
+        { floor: FLOOR.FIRST, aliases: ["jovert monticayan", "jovert"], campaigns: ["hbw insurance"] },
+        { floor: FLOOR.FIRST, aliases: ["kevin omiping", "kevin"], campaigns: ["hbw insurance"] },
+        { floor: FLOOR.FIRST, aliases: ["recy pagangpang", "recy"], campaigns: ["clear insights", "clear"] },
+        { floor: FLOOR.FIRST, aliases: ["ken brylle gonzales", "ken"], campaigns: ["clear insights", "clear"] },
+        { floor: FLOOR.FIRST, aliases: ["kristine"], campaigns: ["bigo"] },
+        { floor: FLOOR.FIRST, aliases: ["dareen mhyvie caliguid", "dareen"], campaigns: ["clear insights", "clear"] },
+        { floor: FLOOR.FIRST, aliases: ["edylyn tallorin", "edylyn"], campaigns: ["bigo"] },
+        { floor: FLOOR.FIRST, aliases: ["melvinson laguting", "melvinson"], campaigns: ["bigo"] },
+        { floor: FLOOR.FIRST, aliases: ["juniper arquisola", "juniper"], campaigns: ["bigo"] },
+        { floor: FLOOR.FIRST, aliases: ["samantha"], campaigns: ["bigo"] },
+        { floor: FLOOR.FIRST, aliases: ["dianne sombilon", "dianne"], campaigns: ["superdial"] },
+        { floor: FLOOR.FIRST, aliases: ["shekinah grace javar", "shekinah"], campaigns: ["superdial"] },
+        { floor: FLOOR.FIRST, aliases: ["mirah paris macaorao", "mirah"], campaigns: ["clear insights", "clear"] },
+
+        // ---------- SITE A 2ND FLOOR ----------
+        { floor: FLOOR.SECOND, aliases: ["andrea kyle herrero", "andrea"], campaigns: ["bigo"] },
+        { floor: FLOOR.SECOND, aliases: ["pauline"], campaigns: ["bigo"] },
+        // Samantha appears in both supplied floor references, so ambiguous rows remain reviewable.
+        { floor: FLOOR.SECOND, aliases: ["samantha"], campaigns: ["bigo"] },
+        { floor: FLOOR.SECOND, aliases: ["ivy balandan", "ivy"], campaigns: ["bigo"] },
+        { floor: FLOOR.SECOND, aliases: ["christian"], campaigns: ["bigo"] },
+        { floor: FLOOR.SECOND, aliases: ["albert samsico", "albert"], campaigns: ["bigo"] },
+        { floor: FLOOR.SECOND, aliases: ["ivana"], campaigns: ["bigo"] },
+        { floor: FLOOR.SECOND, aliases: ["jeremiah"], campaigns: ["bigo"] },
+        { floor: FLOOR.SECOND, aliases: ["juddy"], campaigns: ["superdial"] },
+        { floor: FLOOR.SECOND, aliases: ["cris arandilla", "cris"], campaigns: ["herb joy", "herbjoy", "nationgraph"] },
+        { floor: FLOOR.SECOND, aliases: ["janice jugarap"], campaigns: ["sss"] },
+        { floor: FLOOR.SECOND, aliases: ["janice salubre"], campaigns: ["greenfoot", "green foot"] },
+        { floor: FLOOR.SECOND, aliases: ["recci george crodua", "recci"], campaigns: ["dg dial"] },
+        { floor: FLOOR.SECOND, aliases: ["dames alfred veloso", "dames"], campaigns: ["listsimple", "list simple", "tcm"] },
+        { floor: FLOOR.SECOND, aliases: ["nomar"], campaigns: [] }
+    ];
+
+    // Campaign-level fallback for NEW / UNKNOWN Team Leader names.
+    // Only campaigns that are reasonably floor-specific in the supplied seat plans
+    // are hard-coded here. Campaigns seen on BOTH floors (e.g. BIGO, SUPERDIAL)
+    // are intentionally excluded so the sorter will use Station No. or learned evidence instead.
+    const CAMPAIGN_FLOOR_REFERENCE = [
+        // ---------- SITE A 1ST FLOOR ----------
+        { floor: FLOOR.FIRST, keywords: ["hbw insurance", "hbw"] },
+        { floor: FLOOR.FIRST, keywords: ["clear insights", "clear insights davao", "clear"] },
+        { floor: FLOOR.FIRST, keywords: ["mapua"] },
+        { floor: FLOOR.FIRST, keywords: ["jethro mobile", "jethro"] },
+        { floor: FLOOR.FIRST, keywords: ["all pro pay", "allpro", "all pro"] },
+        { floor: FLOOR.FIRST, keywords: ["spypoint ob", "spypoint"] },
+
+        // ---------- SITE A 2ND FLOOR ----------
+        { floor: FLOOR.SECOND, keywords: ["herb joy", "herbjoy"] },
+        { floor: FLOOR.SECOND, keywords: ["nationgraph"] },
+        { floor: FLOOR.SECOND, keywords: ["greenfoot", "green foot"] },
+        { floor: FLOOR.SECOND, keywords: ["dg dial"] },
+        { floor: FLOOR.SECOND, keywords: ["listsimple", "list simple"] },
+        { floor: FLOOR.SECOND, keywords: ["clinicp", "clinic p"] },
+        { floor: FLOOR.SECOND, keywords: ["sss alliance", "sss"] },
+        { floor: FLOOR.SECOND, keywords: ["glo"] },
+        { floor: FLOOR.SECOND, keywords: ["auxgp"] },
+        { floor: FLOOR.SECOND, keywords: ["nox"] },
+        { floor: FLOOR.SECOND, keywords: ["123 echo mortgage", "echo mortgage"] }
+    ];
+
     let lastParsedRows = [];
     let lastAssignedRows = [];
     let lastAssignments = new Map();
@@ -1816,6 +1888,80 @@
             .filter(Boolean);
     }
 
+
+    function normalizeReferenceText(value) {
+        return String(value || "")
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, " ")
+            .replace(/\s+/g, " ")
+            .trim();
+    }
+
+    function tlAliasMatches(tlName, alias) {
+        const name = normalizeReferenceText(tlName);
+        const a = normalizeReferenceText(alias);
+        if (!name || !a) return false;
+        if (name === a) return true;
+
+        // Allow a supplied short unique name (e.g. "Jovert") to match a full report name.
+        if (!a.includes(" ") && name.split(" ").includes(a)) return true;
+        return false;
+    }
+
+    function getReferenceHints(tlName, account) {
+        const accountNorm = normalizeReferenceText(account);
+        const matches = [];
+
+        OFFICIAL_TL_FLOOR_REFERENCE.forEach(ref => {
+            if (!ref.aliases.some(alias => tlAliasMatches(tlName, alias))) return;
+
+            const campaignMatched = ref.campaigns.length === 0 ||
+                ref.campaigns.some(keyword => accountNorm.includes(normalizeReferenceText(keyword)));
+
+            matches.push({
+                floor: ref.floor,
+                // Campaign-confirmed reference is stronger than name-only reference.
+                score: campaignMatched ? 8 : 3,
+                campaignMatched
+            });
+        });
+
+        return matches;
+    }
+
+
+    function detectCampaignFloor(account) {
+        const accountNorm = normalizeReferenceText(account);
+        if (!accountNorm) {
+            return { floor: null, reason: "No campaign" };
+        }
+
+        const matches = CAMPAIGN_FLOOR_REFERENCE.filter(ref =>
+            ref.keywords.some(keyword => accountNorm.includes(normalizeReferenceText(keyword)))
+        );
+
+        const floors = [...new Set(matches.map(match => match.floor))];
+
+        if (floors.length === 1) {
+            return {
+                floor: floors[0],
+                reason: "Campaign floor reference"
+            };
+        }
+
+        if (floors.length > 1) {
+            return {
+                floor: null,
+                reason: "Campaign appears on multiple floors"
+            };
+        }
+
+        return {
+            floor: null,
+            reason: "No campaign floor reference"
+        };
+    }
+
     function detectStationFloor(station) {
         const raw = String(station || "").trim();
         const s = raw
@@ -1867,26 +2013,69 @@
     function buildAssignments(rows) {
         const evidence = new Map();
 
+        function ensureEvidence(name) {
+            if (!evidence.has(name)) {
+                evidence.set(name, {
+                    [FLOOR.GROUND]: 0,
+                    [FLOOR.FIRST]: 0,
+                    [FLOOR.SECOND]: 0,
+                    total: 0,
+                    stationHits: 0,
+                    referenceHits: 0
+                });
+            }
+            return evidence.get(name);
+        }
+
         rows.forEach(row => {
             const direct = detectStationFloor(row.station);
+            const campaignHint = detectCampaignFloor(row.account);
+
             row.directFloor = direct.floor;
             row.directFloorReason = direct.reason;
+            row.campaignFloor = campaignHint.floor;
+            row.campaignFloorReason = campaignHint.reason;
             row.tlNames = extractTLNames(row.tl);
-
-            if (!direct.floor) return;
+            row.referenceHints = [];
 
             row.tlNames.forEach(name => {
-                if (!evidence.has(name)) {
-                    evidence.set(name, {
-                        [FLOOR.GROUND]: 0,
-                        [FLOOR.FIRST]: 0,
-                        [FLOOR.SECOND]: 0,
-                        total: 0
+                const item = ensureEvidence(name);
+
+                // Strong evidence from an explicit station/floor pattern.
+                if (direct.floor) {
+                    const stationWeight = 10 * direct.confidence;
+                    item[direct.floor] += stationWeight;
+                    item.total += stationWeight;
+                    item.stationHits += 1;
+                }
+
+                // Strong official floor-map reference supplied by the user.
+                const hints = getReferenceHints(name, row.account);
+                hints.forEach(hint => {
+                    item[hint.floor] += hint.score;
+                    item.total += hint.score;
+                    item.referenceHits += 1;
+                    row.referenceHints.push({
+                        tl: name,
+                        floor: hint.floor,
+                        campaignMatched: hint.campaignMatched
+                    });
+                });
+
+                // Fallback for NEW names that do not exist in the seat-plan TL list:
+                // use a floor-specific campaign as supporting evidence.
+                if (!hints.length && campaignHint.floor) {
+                    const campaignWeight = 5;
+                    item[campaignHint.floor] += campaignWeight;
+                    item.total += campaignWeight;
+                    item.referenceHits += 1;
+                    row.referenceHints.push({
+                        tl: name,
+                        floor: campaignHint.floor,
+                        campaignMatched: true,
+                        campaignFallback: true
                     });
                 }
-                const item = evidence.get(name);
-                item[direct.floor] += direct.confidence;
-                item.total += direct.confidence;
             });
         });
 
@@ -1902,7 +2091,9 @@
                 [FLOOR.GROUND]: 0,
                 [FLOOR.FIRST]: 0,
                 [FLOOR.SECOND]: 0,
-                total: 0
+                total: 0,
+                stationHits: 0,
+                referenceHits: 0
             };
 
             if ([FLOOR.GROUND, FLOOR.FIRST, FLOOR.SECOND].includes(overrides[name])) {
@@ -1935,17 +2126,23 @@
             const ratio = ev.total ? best.score / ev.total : 0;
             const hasTie = Math.abs(best.score - second.score) < 0.001;
 
+            // Keep conflicting names (e.g. a TL present on both floor references) reviewable.
             if (hasTie || ratio < 0.55) {
                 assignments.set(name, {
                     floor: null,
-                    source: "Mixed floor evidence",
+                    source: ev.referenceHits ? "Conflicting floor reference / evidence" : "Mixed floor evidence",
                     confidence: ratio,
                     evidence: ev
                 });
             } else {
+                let source = "Auto-learned from report";
+                if (ev.referenceHits && ev.stationHits) source = "Official floor reference + Station No.";
+                else if (ev.referenceHits) source = "Official floor reference";
+                else if (ev.stationHits) source = "Station No. evidence";
+
                 assignments.set(name, {
                     floor: best.floor,
-                    source: "Auto-learned from Station No.",
+                    source,
                     confidence: ratio,
                     evidence: ev
                 });
@@ -1957,9 +2154,11 @@
 
     function assignRows(rows, assignments) {
         return rows.map(row => {
-            const tlFloors = row.tlNames
+            const tlItems = row.tlNames
                 .map(name => assignments.get(name))
-                .filter(Boolean)
+                .filter(Boolean);
+
+            const tlFloors = tlItems
                 .map(item => item.floor)
                 .filter(Boolean);
 
@@ -1967,15 +2166,59 @@
             let floor = FLOOR.REVIEW;
             let source = "Needs review";
 
-            if (uniqueTLFloors.length === 1) {
+            // PRIORITY 1: Explicit floor/station notation always wins.
+            if (row.directFloor) {
+                floor = row.directFloor;
+                source = row.directFloorReason || "Station No. pattern";
+            }
+            // PRIORITY 2: If all recognized TL assignments agree, use them.
+            else if (uniqueTLFloors.length === 1) {
                 floor = uniqueTLFloors[0];
-                source = "TL floor assignment";
-            } else if (uniqueTLFloors.length > 1) {
+
+                const knownOfficial = tlItems.some(item =>
+                    item.source && (
+                        item.source.includes("Official") ||
+                        item.source.includes("Saved manual")
+                    )
+                );
+
+                // If the TL was not in the seat plan but was assigned from a
+                // floor-specific campaign, label it clearly as campaign-based.
+                const onlyCampaignEvidence = tlItems.every(item =>
+                    item.source && item.source.includes("Official floor reference")
+                );
+
+                if (knownOfficial) {
+                    source = "Official TL/campaign floor reference";
+                } else if (onlyCampaignEvidence) {
+                    source = "Campaign floor fallback";
+                } else {
+                    source = "TL floor assignment";
+                }
+            }
+            // PRIORITY 3: Mixed recognized TL floors = do not guess.
+            else if (uniqueTLFloors.length > 1) {
                 floor = FLOOR.REVIEW;
                 source = "TLs map to different floors";
-            } else if (row.directFloor) {
-                floor = row.directFloor;
-                source = "Station No. pattern";
+            }
+            // PRIORITY 4: Brand-new TL with no seat-plan match:
+            // use a floor-specific campaign if available.
+            else if (row.campaignFloor) {
+                floor = row.campaignFloor;
+                source = "New TL — sorted by campaign";
+            }
+            // PRIORITY 5: Reference hints can still help, unless conflicting.
+            else if (row.referenceHints && row.referenceHints.length) {
+                const hintFloors = [...new Set(row.referenceHints.map(h => h.floor))];
+                if (hintFloors.length === 1) {
+                    floor = hintFloors[0];
+                    source = row.referenceHints.some(h => h.campaignFallback)
+                        ? "New TL — sorted by campaign"
+                        : "Official TL/campaign floor reference";
+                } else {
+                    floor = FLOOR.REVIEW;
+                    source = "Conflicting official floor references";
+                }
             }
 
             return { ...row, floor, sortSource: source };
@@ -1983,12 +2226,27 @@
             const floorDiff = floorOrder[a.floor] - floorOrder[b.floor];
             if (floorDiff !== 0) return floorDiff;
 
+            const accountDiff = String(a.account).localeCompare(
+                String(b.account),
+                undefined,
+                { numeric: true, sensitivity: "base" }
+            );
+            if (accountDiff !== 0) return accountDiff;
+
             const tlA = normalizeTLName(a.tl).toLowerCase();
             const tlB = normalizeTLName(b.tl).toLowerCase();
-            const tlDiff = tlA.localeCompare(tlB, undefined, { numeric: true, sensitivity: "base" });
+            const tlDiff = tlA.localeCompare(
+                tlB,
+                undefined,
+                { numeric: true, sensitivity: "base" }
+            );
             if (tlDiff !== 0) return tlDiff;
 
-            return String(a.station).localeCompare(String(b.station), undefined, { numeric: true, sensitivity: "base" });
+            return String(a.station).localeCompare(
+                String(b.station),
+                undefined,
+                { numeric: true, sensitivity: "base" }
+            );
         });
     }
 
@@ -2012,8 +2270,11 @@
         const g = Math.round((ev[FLOOR.GROUND] || 0) * 100) / 100;
         const f1 = Math.round((ev[FLOOR.FIRST] || 0) * 100) / 100;
         const f2 = Math.round((ev[FLOOR.SECOND] || 0) * 100) / 100;
-        if (!ev.total) return "No explicit floor rows";
-        return `GF ${g} • 1F ${f1} • 2F ${f2}`;
+        if (!ev.total) return "No floor evidence";
+        const meta = [];
+        if (ev.referenceHits) meta.push(`${ev.referenceHits} reference hit${ev.referenceHits === 1 ? "" : "s"}`);
+        if (ev.stationHits) meta.push(`${ev.stationHits} station hit${ev.stationHits === 1 ? "" : "s"}`);
+        return `GF ${g} • 1F ${f1} • 2F ${f2}${meta.length ? " • " + meta.join(" / ") : ""}`;
     }
 
     function renderSummary(assignments) {
@@ -2131,7 +2392,7 @@
             const review = assignedRows.filter(row => row.floor === FLOOR.REVIEW).length;
             const recognized = assignedRows.length - review;
             showMessage(
-                `Sorted ${assignedRows.length} rows. ${recognized} were assigned to a floor automatically${review ? `; ${review} need review.` : "."}`,
+                `Reference-aware sort complete: ${assignedRows.length} rows. ${recognized} were assigned to a floor${review ? `; ${review} need review.` : "."}`,
                 review ? "info" : "success"
             );
 
