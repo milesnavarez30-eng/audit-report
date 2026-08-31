@@ -3728,6 +3728,50 @@
     }
 </style>
 
+
+<style>
+    /* Uniform CCTV image size in the generated PDF */
+    .reference-photo-group,
+    .simple-pdf-images {
+        width: 100% !important;
+        display: flex !important;
+        flex-wrap: wrap !important;
+        justify-content: center !important;
+        align-items: flex-start !important;
+        gap: 3mm !important;
+        margin-top: 4mm !important;
+        break-inside: avoid !important;
+        page-break-inside: avoid !important;
+    }
+
+    .reference-photo-group img,
+    .simple-pdf-images img {
+        display: block !important;
+        width: 92mm !important;
+        height: 56mm !important;
+        max-width: 92mm !important;
+        max-height: 56mm !important;
+        object-fit: contain !important;
+        object-position: center !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        border: 0 !important;
+        background: #ffffff !important;
+        break-inside: avoid !important;
+        page-break-inside: avoid !important;
+    }
+
+    /* Same exact dimensions even when there are 2+ screenshots */
+    .reference-photo-group.multiple img,
+    .simple-pdf-images.two img,
+    .simple-pdf-images:has(img:nth-child(2)) img {
+        width: 92mm !important;
+        height: 56mm !important;
+        max-width: 92mm !important;
+        max-height: 56mm !important;
+    }
+</style>
+
 </head>
 <body>
 
@@ -6074,7 +6118,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
                     filename: reportFilename(),
                     image: { type: "jpeg", quality: .985 },
                     html2canvas: {
-                        scale: 2.25,
+                        scale: 2.5,
                         backgroundColor: "#ffffff",
                         useCORS: true,
                         logging: false
