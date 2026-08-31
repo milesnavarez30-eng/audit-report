@@ -4098,6 +4098,223 @@
     }
 </style>
 
+
+<style>
+    /* =========================================================
+       Maintenance AI Sorter - Editable Mini Sheet
+       ========================================================= */
+
+    #maintenancePanel .maintenance-source-output-wrap {
+        display: none !important;
+    }
+
+    #maintenancePanel .mini-sheet-card {
+        margin-top: 10px;
+        overflow: hidden;
+        border: 1px solid var(--pro-border);
+        border-radius: 12px;
+        background: var(--container-bg);
+    }
+
+    #maintenancePanel .mini-sheet-toolbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 11px 12px;
+        border-bottom: 1px solid var(--pro-border);
+        background: rgba(148,163,184,.035);
+    }
+
+    #maintenancePanel .mini-sheet-toolbar > div:first-child {
+        min-width: 0;
+    }
+
+    #maintenancePanel .mini-sheet-toolbar strong {
+        display: block;
+        color: var(--text-color);
+        font-size: 12px;
+        font-weight: 900;
+    }
+
+    #maintenancePanel .mini-sheet-toolbar span {
+        color: var(--pro-muted);
+        font-size: 10px;
+        line-height: 1.35;
+    }
+
+    #maintenancePanel .mini-sheet-actions {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        flex: none;
+    }
+
+    #maintenancePanel #miniSheetRemoveRowBtn {
+        min-height: 34px;
+        padding: 6px 10px;
+        border: 1px solid rgba(239,68,68,.42);
+        border-radius: 8px;
+        background: transparent;
+        color: #ef4444;
+        font: 700 10px/1 "Roboto", Arial, sans-serif;
+        cursor: pointer;
+    }
+
+    #maintenancePanel #miniSheetRemoveRowBtn:disabled {
+        opacity: .42;
+        cursor: not-allowed;
+    }
+
+    #maintenancePanel .mini-sheet-scroll {
+        max-height: 430px;
+        overflow: auto;
+        background: #ffffff;
+    }
+
+    #maintenancePanel .mini-sheet {
+        width: 100%;
+        min-width: 1040px;
+        table-layout: fixed;
+        border-collapse: separate;
+        border-spacing: 0;
+        background: #ffffff;
+        color: #202124;
+        font-family: Arial, sans-serif;
+        font-size: 11px;
+    }
+
+    #maintenancePanel .mini-sheet th,
+    #maintenancePanel .mini-sheet td {
+        box-sizing: border-box;
+        border-right: 1px solid #dadce0;
+        border-bottom: 1px solid #dadce0;
+    }
+
+    #maintenancePanel .mini-sheet-column-letters th {
+        position: sticky;
+        top: 0;
+        z-index: 5;
+        height: 25px;
+        padding: 4px 6px;
+        background: #f8f9fa;
+        color: #5f6368;
+        font-size: 10px;
+        font-weight: 500;
+        text-align: center;
+        user-select: none;
+    }
+
+    #maintenancePanel .mini-sheet-header-row th {
+        position: sticky;
+        top: 25px;
+        z-index: 4;
+        height: 34px;
+        padding: 6px 7px;
+        background: #ffffff;
+        color: #202124;
+        font-size: 10px;
+        font-weight: 700;
+        text-align: center;
+        white-space: normal;
+    }
+
+    #maintenancePanel .mini-sheet-corner,
+    #maintenancePanel .mini-sheet-row-number {
+        position: sticky !important;
+        left: 0;
+        z-index: 6 !important;
+        width: 42px !important;
+        min-width: 42px !important;
+        max-width: 42px !important;
+        background: #f8f9fa !important;
+        color: #5f6368 !important;
+        text-align: center !important;
+        font-weight: 500 !important;
+        user-select: none;
+    }
+
+    #maintenancePanel .mini-sheet tbody .mini-sheet-row-number {
+        z-index: 3 !important;
+        height: 30px;
+        border-right: 1px solid #dadce0;
+    }
+
+    #maintenancePanel .mini-sheet td {
+        min-height: 30px;
+        height: 30px;
+        padding: 5px 7px;
+        background: #ffffff;
+        color: #202124;
+        line-height: 1.35;
+        vertical-align: middle;
+        white-space: normal;
+        overflow-wrap: anywhere;
+        cursor: text;
+        outline: none;
+    }
+
+    #maintenancePanel .mini-sheet td[contenteditable="true"]:focus {
+        position: relative;
+        z-index: 2;
+        box-shadow: inset 0 0 0 2px #1a73e8;
+    }
+
+    #maintenancePanel .mini-sheet tbody tr.selected-row td {
+        background: #e8f0fe;
+    }
+
+    #maintenancePanel .mini-sheet tbody tr.selected-row .mini-sheet-row-number {
+        background: #d2e3fc !important;
+        color: #174ea6 !important;
+        font-weight: 700 !important;
+    }
+
+    /* Data column widths, similar to a compact sheet */
+    #maintenancePanel .mini-sheet th:nth-child(2),
+    #maintenancePanel .mini-sheet td:nth-child(2) { width: 145px; }
+
+    #maintenancePanel .mini-sheet th:nth-child(3),
+    #maintenancePanel .mini-sheet td:nth-child(3) { width: 105px; }
+
+    #maintenancePanel .mini-sheet th:nth-child(4),
+    #maintenancePanel .mini-sheet td:nth-child(4) { width: 190px; }
+
+    #maintenancePanel .mini-sheet th:nth-child(5),
+    #maintenancePanel .mini-sheet td:nth-child(5) { width: 155px; }
+
+    #maintenancePanel .mini-sheet th:nth-child(6),
+    #maintenancePanel .mini-sheet td:nth-child(6) { width: 165px; }
+
+    #maintenancePanel .mini-sheet th:nth-child(7),
+    #maintenancePanel .mini-sheet td:nth-child(7) { width: 125px; }
+
+    #maintenancePanel .mini-sheet th:nth-child(8),
+    #maintenancePanel .mini-sheet td:nth-child(8) { width: 255px; }
+
+    #maintenancePanel .mini-sheet td:nth-child(2),
+    #maintenancePanel .mini-sheet td:nth-child(3),
+    #maintenancePanel .mini-sheet td:nth-child(7) {
+        text-align: center;
+    }
+
+    @media screen and (max-width: 760px) {
+        #maintenancePanel .mini-sheet-toolbar {
+            align-items: flex-start;
+            flex-direction: column;
+        }
+
+        #maintenancePanel .mini-sheet-actions {
+            width: 100%;
+            justify-content: space-between;
+        }
+
+        #maintenancePanel .mini-sheet-scroll {
+            max-height: 360px;
+        }
+    }
+</style>
+
 </head>
 <body>
 
@@ -4282,7 +4499,9 @@
 
         <div id="sortedReportSection" hidden>
             <div class="maintenance-subheading">Sorted Maintenance Report</div>
-            <div class="maintenance-table-wrap">
+
+            <!-- Hidden source table kept for compatibility -->
+            <div class="maintenance-table-wrap maintenance-source-output-wrap" aria-hidden="true">
                 <table class="maintenance-table maintenance-sheet-output" id="maintenanceOutputTable">
                     <thead>
                         <tr>
@@ -4297,6 +4516,47 @@
                     </thead>
                     <tbody></tbody>
                 </table>
+            </div>
+
+            <div class="mini-sheet-card">
+                <div class="mini-sheet-toolbar">
+                    <div>
+                        <strong>Editable Mini Sheet</strong>
+                        <span>Auto-filled after sorting. Click any cell to edit.</span>
+                    </div>
+                    <div class="mini-sheet-actions">
+                        <span id="miniSheetRowCount">0 rows</span>
+                        <button type="button" id="miniSheetRemoveRowBtn" disabled>Remove Selected Row</button>
+                    </div>
+                </div>
+
+                <div class="mini-sheet-scroll">
+                    <table class="mini-sheet" id="maintenanceMiniSheet" aria-label="Editable sorted maintenance mini sheet">
+                        <thead>
+                            <tr class="mini-sheet-column-letters">
+                                <th class="mini-sheet-corner"></th>
+                                <th>A</th>
+                                <th>B</th>
+                                <th>C</th>
+                                <th>D</th>
+                                <th>E</th>
+                                <th>F</th>
+                                <th>G</th>
+                            </tr>
+                            <tr class="mini-sheet-header-row">
+                                <th class="mini-sheet-row-number">1</th>
+                                <th>TIMESTAMP</th>
+                                <th>DATE</th>
+                                <th>TL</th>
+                                <th>ACCOUNT</th>
+                                <th>SITE</th>
+                                <th>STATION NO.</th>
+                                <th>STATION ISSUE</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
             </div>
         </div>
 
@@ -4800,6 +5060,7 @@
     let lastParsedRows = [];
     let lastAssignedRows = [];
     let lastAssignments = new Map();
+    let miniSheetSelectedRow = -1;
 
     const byId = (id) => document.getElementById(id);
 
@@ -5503,7 +5764,125 @@
         });
     }
 
-    function renderRows(rows) {
+
+    function renderMiniSheet(rows) {
+        const sheet = byId("maintenanceMiniSheet");
+        if (!sheet) return;
+
+        const tbody = sheet.querySelector("tbody");
+        const fields = [
+            "timestamp",
+            "date",
+            "tl",
+            "account",
+            "site",
+            "station",
+            "issue"
+        ];
+
+        tbody.innerHTML = rows.map((row, rowIndex) => {
+            const displayValues = {
+                timestamp: row.timestamp || "",
+                date: row.date || "",
+                tl: displayTLValue(row.tl),
+                account: row.account || "",
+                site: row.site || "",
+                station: row.station || "",
+                issue: row.issue || ""
+            };
+
+            return `
+                <tr data-row-index="${rowIndex}" class="${miniSheetSelectedRow === rowIndex ? "selected-row" : ""}">
+                    <th class="mini-sheet-row-number" scope="row">${rowIndex + 2}</th>
+                    ${fields.map(field => `
+                        <td
+                            contenteditable="true"
+                            spellcheck="false"
+                            data-row-index="${rowIndex}"
+                            data-field="${field}"
+                            aria-label="Row ${rowIndex + 2} ${field}">
+                            ${escapeHtml(displayValues[field])}
+                        </td>
+                    `).join("")}
+                </tr>
+            `;
+        }).join("");
+
+        byId("miniSheetRowCount").textContent = `${rows.length} row${rows.length === 1 ? "" : "s"}`;
+        byId("miniSheetRemoveRowBtn").disabled =
+            miniSheetSelectedRow < 0 || miniSheetSelectedRow >= rows.length;
+
+        tbody.querySelectorAll("tr").forEach(tr => {
+            tr.addEventListener("mousedown", event => {
+                if (event.button !== 0) return;
+
+                miniSheetSelectedRow = Number(tr.dataset.rowIndex);
+                tbody.querySelectorAll("tr").forEach(rowEl => {
+                    rowEl.classList.toggle(
+                        "selected-row",
+                        Number(rowEl.dataset.rowIndex) === miniSheetSelectedRow
+                    );
+                });
+
+                byId("miniSheetRemoveRowBtn").disabled = false;
+            });
+        });
+
+        tbody.querySelectorAll('td[contenteditable="true"]').forEach(cell => {
+            cell.addEventListener("keydown", event => {
+                if (event.key === "Enter" && !event.shiftKey) {
+                    event.preventDefault();
+                    cell.blur();
+                }
+            });
+
+            cell.addEventListener("blur", () => {
+                const rowIndex = Number(cell.dataset.rowIndex);
+                const field = cell.dataset.field;
+                const row = lastAssignedRows[rowIndex];
+
+                if (!row || !field) return;
+
+                const value = cell.textContent
+                    .replace(/\u00a0/g, " ")
+                    .replace(/\s+/g, " ")
+                    .trim();
+
+                row[field] = value;
+
+                if (field === "tl") {
+                    row.tlNames = extractTLNames(value);
+                }
+
+                // Keep the hidden compatibility table and Copy Sorted Report in sync.
+                renderRows(lastAssignedRows, true);
+                showMessage("Mini Sheet edit saved in the current sorted result.", "success");
+            });
+        });
+    }
+
+    function removeSelectedMiniSheetRow() {
+        if (
+            miniSheetSelectedRow < 0 ||
+            miniSheetSelectedRow >= lastAssignedRows.length
+        ) {
+            return;
+        }
+
+        const rowNumber = miniSheetSelectedRow + 2;
+
+        if (!confirm(`Remove row ${rowNumber} from the current sorted result?`)) {
+            return;
+        }
+
+        lastAssignedRows.splice(miniSheetSelectedRow, 1);
+        miniSheetSelectedRow = -1;
+
+        renderRows(lastAssignedRows);
+        showMessage("Selected Mini Sheet row was removed.", "info");
+    }
+
+    function renderRows(rows, skipMiniSheet = false) {
         const tbody = byId("maintenanceOutputTable").querySelector("tbody");
         let previousFloor = null;
 
@@ -5537,6 +5916,10 @@
         byId("firstCount").textContent = counts[FLOOR.FIRST];
         byId("secondCount").textContent = counts[FLOOR.SECOND];
         byId("reviewCount").textContent = counts[FLOOR.REVIEW];
+
+        if (!skipMiniSheet) {
+            renderMiniSheet(rows);
+        }
     }
 
     function showMessage(text, type) {
@@ -5656,11 +6039,16 @@
         byId("maintenanceEmpty").hidden = false;
         byId("tlSummaryTable").querySelector("tbody").innerHTML = "";
         byId("maintenanceOutputTable").querySelector("tbody").innerHTML = "";
+        byId("maintenanceMiniSheet").querySelector("tbody").innerHTML = "";
+        byId("miniSheetRowCount").textContent = "0 rows";
+        byId("miniSheetRemoveRowBtn").disabled = true;
+        miniSheetSelectedRow = -1;
         hideMessage();
     }
 
     byId("cctvTabBtn").addEventListener("click", () => showTab("cctv"));
     byId("maintenanceTabBtn").addEventListener("click", () => showTab("maintenance"));
+    byId("miniSheetRemoveRowBtn").addEventListener("click", removeSelectedMiniSheetRow);
     byId("maintenanceSortBtn").addEventListener("click", () => analyzeMaintenance(true));
     byId("maintenanceCopyBtn").addEventListener("click", copySorted);
     byId("maintenanceClearBtn").addEventListener("click", clearMaintenance);
