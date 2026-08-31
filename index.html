@@ -7346,7 +7346,9 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
                 const img = new Image();
                 img.onerror = reject;
                 img.onload = () => {
-                    const maxWidth = 1600;
+                    // Keep screenshots clear enough for CCTV evidence while
+                    // making the Google Sheets payload smaller and more reliable.
+                    const maxWidth = 1200;
                     const scale = Math.min(1, maxWidth / img.width);
                     const canvas = document.createElement("canvas");
                     canvas.width = Math.max(1, Math.round(img.width * scale));
@@ -7354,7 +7356,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
 
                     const ctx = canvas.getContext("2d");
                     ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                    resolve(canvas.toDataURL("image/jpeg", .86));
+                    resolve(canvas.toDataURL("image/jpeg", .76));
                 };
                 img.src = reader.result;
             };
