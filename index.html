@@ -761,10 +761,369 @@
         }
     </style>
 
+
+    <style>
+        /* =========================================================
+           WORKSPACE TABS + MAINTENANCE AI SORTER
+           Added without removing the existing CCTV Audit functions.
+           ========================================================= */
+        .workspace-tabs {
+            width: min(100%, 1000px);
+            margin: 8px auto 22px;
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            padding: 6px;
+            border: 1px solid var(--pro-border);
+            border-radius: 14px;
+            background: var(--pro-surface);
+            box-shadow: var(--pro-soft-shadow);
+            backdrop-filter: blur(10px);
+        }
+
+        .workspace-tab-btn {
+            flex: 1;
+            max-width: 280px;
+            min-height: 44px;
+            border: 0;
+            border-radius: 10px;
+            background: transparent;
+            color: var(--pro-muted);
+            font: inherit;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: 0.2s ease;
+        }
+
+        .workspace-tab-btn:hover {
+            background: rgba(0, 51, 153, 0.06);
+            color: var(--secondary-color);
+        }
+
+        .workspace-tab-btn.active {
+            background: var(--secondary-color);
+            color: #fff;
+            box-shadow: 0 8px 18px rgba(0, 51, 153, 0.18);
+        }
+
+        body.dark-mode .workspace-tab-btn.active {
+            background: var(--primary-color);
+        }
+
+        .app-tab-panel {
+            display: none;
+        }
+
+        .app-tab-panel.active {
+            display: block;
+        }
+
+        .maintenance-shell {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto 24px;
+        }
+
+        .maintenance-intro {
+            margin-bottom: 18px;
+            color: var(--pro-muted);
+            font-size: 13px;
+            line-height: 1.6;
+            text-align: center;
+        }
+
+        .maintenance-intro strong {
+            color: var(--text-color);
+        }
+
+        .maintenance-textarea {
+            width: 100%;
+            min-height: 235px;
+            resize: vertical;
+            padding: 14px 16px;
+            border: 1px solid var(--input-border);
+            border-radius: 12px;
+            background: var(--input-bg);
+            color: var(--text-color);
+            font-family: "Inter", sans-serif;
+            font-size: 13px;
+            line-height: 1.55;
+            transition: 0.2s ease;
+        }
+
+        .maintenance-textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(39, 137, 20, 0.12);
+        }
+
+        .maintenance-toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 14px;
+        }
+
+        .maintenance-toolbar button {
+            min-height: 44px;
+            padding: 10px 16px;
+            border-radius: 10px;
+            border: 0;
+            font: inherit;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: 0.2s ease;
+        }
+
+        .maintenance-toolbar button:hover {
+            transform: translateY(-1px);
+        }
+
+        .maintenance-primary {
+            background: var(--primary-color);
+            color: #fff;
+        }
+
+        .maintenance-secondary {
+            background: var(--secondary-color);
+            color: #fff;
+        }
+
+        .maintenance-outline {
+            background: transparent;
+            color: var(--text-color);
+            border: 1px solid var(--input-border) !important;
+        }
+
+        .maintenance-danger {
+            margin-left: auto;
+            background: transparent;
+            color: var(--danger-bg);
+            border: 1px solid var(--danger-bg) !important;
+        }
+
+        .maintenance-message {
+            display: none;
+            margin-top: 12px;
+            padding: 10px 12px;
+            border-radius: 10px;
+            font-size: 12px;
+            line-height: 1.45;
+        }
+
+        .maintenance-message.show {
+            display: block;
+        }
+
+        .maintenance-message.info {
+            background: rgba(0, 51, 153, 0.08);
+            color: var(--secondary-color);
+        }
+
+        .maintenance-message.success {
+            background: rgba(39, 137, 20, 0.10);
+            color: var(--primary-color);
+        }
+
+        .maintenance-message.error {
+            background: rgba(239, 68, 68, 0.10);
+            color: var(--danger-bg);
+        }
+
+        body.dark-mode .maintenance-message.info,
+        body.dark-mode .maintenance-message.success,
+        body.dark-mode .maintenance-message.error {
+            color: var(--text-color);
+        }
+
+        .maintenance-stats {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 10px;
+            margin: 18px 0;
+        }
+
+        .maintenance-stat {
+            padding: 14px;
+            border: 1px solid var(--pro-border);
+            border-radius: 12px;
+            background: var(--pro-surface);
+            text-align: center;
+        }
+
+        .maintenance-stat strong {
+            display: block;
+            margin-bottom: 3px;
+            font-size: 22px;
+            color: var(--text-color);
+        }
+
+        .maintenance-stat span {
+            color: var(--pro-muted);
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+
+        .maintenance-subheading {
+            margin: 22px 0 10px;
+            color: var(--text-color);
+            font-size: 14px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            text-align: center;
+        }
+
+        .maintenance-table-wrap {
+            width: 100%;
+            overflow-x: auto;
+            border: 1px solid var(--pro-border);
+            border-radius: 12px;
+            background: var(--container-bg);
+        }
+
+        .maintenance-table {
+            width: 100%;
+            min-width: 920px;
+            border-collapse: collapse;
+            font-size: 12px;
+        }
+
+        .maintenance-table th,
+        .maintenance-table td {
+            padding: 10px 12px;
+            border-bottom: 1px solid var(--border-color);
+            text-align: center !important;
+            vertical-align: middle;
+            white-space: normal;
+        }
+
+        .maintenance-table th {
+            position: sticky;
+            top: 0;
+            z-index: 2;
+            background: var(--table-header-bg);
+            color: var(--table-header-text);
+            font-size: 10px;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+        }
+
+        .maintenance-table tbody tr:nth-child(even) {
+            background: var(--table-even);
+        }
+
+        .maintenance-floor-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 92px;
+            padding: 5px 9px;
+            border-radius: 999px;
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: 0.03em;
+        }
+
+        .floor-ground {
+            background: rgba(16, 185, 129, 0.12);
+            color: #047857;
+        }
+
+        .floor-first {
+            background: rgba(0, 51, 153, 0.10);
+            color: #003399;
+        }
+
+        .floor-second {
+            background: rgba(245, 158, 11, 0.14);
+            color: #b45309;
+        }
+
+        .floor-review {
+            background: rgba(239, 68, 68, 0.10);
+            color: #b91c1c;
+        }
+
+        body.dark-mode .floor-ground,
+        body.dark-mode .floor-first,
+        body.dark-mode .floor-second,
+        body.dark-mode .floor-review {
+            color: #fff;
+        }
+
+        .tl-floor-select {
+            width: 100%;
+            min-width: 120px;
+            min-height: 38px !important;
+            padding: 7px 9px !important;
+            border-radius: 9px !important;
+            font-size: 12px !important;
+        }
+
+        .confidence-label {
+            display: inline-block;
+            color: var(--pro-muted);
+            font-size: 10px;
+            line-height: 1.3;
+        }
+
+        .maintenance-empty {
+            padding: 26px 16px;
+            color: var(--pro-muted);
+            text-align: center;
+            font-size: 13px;
+        }
+
+        @media screen and (max-width: 760px) {
+            .workspace-tabs {
+                margin-top: 4px;
+            }
+
+            .workspace-tab-btn {
+                font-size: 12px;
+            }
+
+            .maintenance-stats {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .maintenance-danger {
+                margin-left: 0;
+            }
+        }
+
+        @media screen and (max-width: 480px) {
+            .workspace-tabs {
+                flex-direction: column;
+            }
+
+            .workspace-tab-btn {
+                max-width: none;
+            }
+
+            .maintenance-stats {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+    </style>
+
 </head>
 <body>
 
 <button id="themeToggle" onclick="toggleTheme()" title="Toggle Dark/Light Mode">🌙</button>
+
+
+<div class="workspace-tabs" role="tablist" aria-label="Audit workspace tabs">
+    <button type="button" class="workspace-tab-btn active" id="cctvTabBtn" role="tab" aria-selected="true" aria-controls="cctvPanel">📋 CCTV Audit</button>
+    <button type="button" class="workspace-tab-btn" id="maintenanceTabBtn" role="tab" aria-selected="false" aria-controls="maintenancePanel">✨ Maintenance AI Sorter</button>
+</div>
+
+<section id="cctvPanel" class="app-tab-panel active" role="tabpanel" aria-labelledby="cctvTabBtn">
 
 <div class="container form-section">
     <h2>CCTV Audit Form</h2>
@@ -875,6 +1234,86 @@
         <button class="clear-btn" onclick="clearOutput()">🗑️ Clear All</button>
     </div>
 </div>
+
+
+
+</section>
+
+<section id="maintenancePanel" class="app-tab-panel" role="tabpanel" aria-labelledby="maintenanceTabBtn">
+    <div class="container maintenance-shell">
+        <h2>Maintenance AI Sorter</h2>
+        <div class="maintenance-intro">
+            Paste your maintenance report from <strong>Google Sheets</strong> or a copied table.
+            The smart sorter detects floor patterns from <strong>Station No.</strong>, learns each Team Leader's usual floor,
+            then groups the report into <strong>Ground Floor, 1st Floor, 2nd Floor, and Review Needed</strong>.
+            Manual corrections are remembered on this browser.
+        </div>
+
+        <label for="maintenanceInput">Paste Maintenance Report</label>
+        <textarea
+            id="maintenanceInput"
+            class="maintenance-textarea"
+            placeholder="Paste the table here. Expected columns: TIMESTAMP, DATE, TL, ACCOUNT, SITE, STATION NO., STATION ISSUE"></textarea>
+
+        <div class="maintenance-toolbar">
+            <button type="button" class="maintenance-primary" id="maintenanceSortBtn">✨ Auto Sort by Floor</button>
+            <button type="button" class="maintenance-secondary" id="maintenanceCopyBtn">📋 Copy Sorted Report</button>
+            <button type="button" class="maintenance-outline" id="maintenanceClearBtn">Clear Report</button>
+            <button type="button" class="maintenance-danger" id="maintenanceResetAssignmentsBtn">Reset Saved TL Floors</button>
+        </div>
+
+        <div id="maintenanceMessage" class="maintenance-message" aria-live="polite"></div>
+
+        <div class="maintenance-stats" id="maintenanceStats" hidden>
+            <div class="maintenance-stat"><strong id="groundCount">0</strong><span>Ground Floor</span></div>
+            <div class="maintenance-stat"><strong id="firstCount">0</strong><span>1st Floor</span></div>
+            <div class="maintenance-stat"><strong id="secondCount">0</strong><span>2nd Floor</span></div>
+            <div class="maintenance-stat"><strong id="reviewCount">0</strong><span>Review Needed</span></div>
+        </div>
+
+        <div id="tlSummarySection" hidden>
+            <div class="maintenance-subheading">Team Leader Floor Assignment</div>
+            <div class="maintenance-table-wrap">
+                <table class="maintenance-table" id="tlSummaryTable">
+                    <thead>
+                        <tr>
+                            <th>Team Leader</th>
+                            <th>Detected / Saved Floor</th>
+                            <th>Evidence</th>
+                            <th>Manual Assignment</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="sortedReportSection" hidden>
+            <div class="maintenance-subheading">Sorted Maintenance Report</div>
+            <div class="maintenance-table-wrap">
+                <table class="maintenance-table" id="maintenanceOutputTable">
+                    <thead>
+                        <tr>
+                            <th>Floor</th>
+                            <th>Date</th>
+                            <th>TL</th>
+                            <th>Account</th>
+                            <th>Site</th>
+                            <th>Station No.</th>
+                            <th>Station Issue</th>
+                            <th>Sort Source</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="maintenanceEmpty" class="maintenance-empty">
+            Paste a maintenance report above, then click <strong>Auto Sort by Floor</strong>.
+        </div>
+    </div>
+</section>
 
 
 <div class="site-footer">
@@ -1204,6 +1643,577 @@
         editingIndex = -1;
         document.getElementById("addUpdateBtn").innerHTML = "➕ Add Entry to List";
     }
+</script>
+
+
+<script>
+(function () {
+    const FLOOR = {
+        GROUND: "Ground Floor",
+        FIRST: "1st Floor",
+        SECOND: "2nd Floor",
+        REVIEW: "Review Needed"
+    };
+
+    const floorOrder = {
+        [FLOOR.GROUND]: 0,
+        [FLOOR.FIRST]: 1,
+        [FLOOR.SECOND]: 2,
+        [FLOOR.REVIEW]: 3
+    };
+
+    const STORAGE_KEY = "maintenance_tl_floor_overrides_v1";
+    let lastParsedRows = [];
+    let lastAssignedRows = [];
+    let lastAssignments = new Map();
+
+    const byId = (id) => document.getElementById(id);
+
+    function showTab(name) {
+        const cctvActive = name === "cctv";
+        byId("cctvPanel").classList.toggle("active", cctvActive);
+        byId("maintenancePanel").classList.toggle("active", !cctvActive);
+        byId("cctvTabBtn").classList.toggle("active", cctvActive);
+        byId("maintenanceTabBtn").classList.toggle("active", !cctvActive);
+        byId("cctvTabBtn").setAttribute("aria-selected", cctvActive ? "true" : "false");
+        byId("maintenanceTabBtn").setAttribute("aria-selected", !cctvActive ? "true" : "false");
+    }
+
+    function normalizeHeader(value) {
+        return String(value || "")
+            .toLowerCase()
+            .replace(/\*\*/g, "")
+            .replace(/\./g, "")
+            .replace(/\s+/g, " ")
+            .trim();
+    }
+
+    function cleanCell(value) {
+        return String(value == null ? "" : value)
+            .replace(/^\s*\*\*|\*\*\s*$/g, "")
+            .trim();
+    }
+
+    function splitMarkdownLine(line) {
+        let s = line.trim();
+        if (s.startsWith("|")) s = s.slice(1);
+        if (s.endsWith("|")) s = s.slice(0, -1);
+        return s.split("|").map(cleanCell);
+    }
+
+    function parseDelimitedLine(line, delimiter) {
+        if (delimiter === "\t") return line.split("\t").map(cleanCell);
+
+        const out = [];
+        let current = "";
+        let quoted = false;
+        for (let i = 0; i < line.length; i++) {
+            const ch = line[i];
+            if (ch === '"') {
+                if (quoted && line[i + 1] === '"') {
+                    current += '"';
+                    i++;
+                } else {
+                    quoted = !quoted;
+                }
+            } else if (ch === delimiter && !quoted) {
+                out.push(cleanCell(current));
+                current = "";
+            } else {
+                current += ch;
+            }
+        }
+        out.push(cleanCell(current));
+        return out;
+    }
+
+    function isMarkdownSeparator(cells) {
+        return cells.length > 1 && cells.every(cell => /^:?-{2,}:?$/.test(cell.replace(/\s/g, "")));
+    }
+
+    function parseReport(raw) {
+        const lines = raw
+            .replace(/\r/g, "")
+            .split("\n")
+            .map(line => line.trimEnd())
+            .filter(line => line.trim() !== "");
+
+        if (lines.length < 2) {
+            throw new Error("Paste a report with a header row and at least one data row.");
+        }
+
+        let rows;
+        const looksMarkdown = lines[0].includes("|") && lines.slice(0, 3).some(line => line.includes("|"));
+        if (looksMarkdown) {
+            rows = lines.map(splitMarkdownLine).filter(cells => !isMarkdownSeparator(cells));
+        } else {
+            const tabCount = (lines[0].match(/\t/g) || []).length;
+            const delimiter = tabCount >= 2 ? "\t" : ",";
+            rows = lines.map(line => parseDelimitedLine(line, delimiter));
+        }
+
+        if (rows.length < 2) {
+            throw new Error("I could not detect the table rows.");
+        }
+
+        const headers = rows[0].map(normalizeHeader);
+
+        function findHeader(names) {
+            for (const name of names) {
+                const exact = headers.indexOf(name);
+                if (exact !== -1) return exact;
+            }
+            for (let i = 0; i < headers.length; i++) {
+                if (names.some(name => headers[i].includes(name))) return i;
+            }
+            return -1;
+        }
+
+        const idx = {
+            timestamp: findHeader(["timestamp", "time stamp"]),
+            date: findHeader(["date"]),
+            tl: findHeader(["tl", "team leader", "team leaders", "tl name"]),
+            account: findHeader(["account", "campaign", "account / campaign"]),
+            site: findHeader(["site"]),
+            station: findHeader(["station no", "station number", "station"]),
+            issue: findHeader(["station issue", "issues", "issue"])
+        };
+
+        if (idx.tl === -1 || idx.station === -1) {
+            throw new Error("The report needs at least a TL column and a STATION NO. column.");
+        }
+
+        return rows.slice(1)
+            .filter(row => row.some(cell => cleanCell(cell) !== ""))
+            .map((row, i) => ({
+                originalIndex: i,
+                timestamp: idx.timestamp >= 0 ? cleanCell(row[idx.timestamp]) : "",
+                date: idx.date >= 0 ? cleanCell(row[idx.date]) : "",
+                tl: idx.tl >= 0 ? cleanCell(row[idx.tl]) : "",
+                account: idx.account >= 0 ? cleanCell(row[idx.account]) : "",
+                site: idx.site >= 0 ? cleanCell(row[idx.site]) : "",
+                station: idx.station >= 0 ? cleanCell(row[idx.station]) : "",
+                issue: idx.issue >= 0 ? cleanCell(row[idx.issue]) : ""
+            }));
+    }
+
+    function normalizeTLName(name) {
+        return String(name || "")
+            .replace(/\(.*?team leader.*?\)/gi, "")
+            .replace(/\(.*?oic.*?\)/gi, "")
+            .replace(/^\s*OM\s+/i, "")
+            .replace(/\s*-\s*TL\s*$/i, "")
+            .replace(/\s*TL\s*$/i, "")
+            .replace(/\s*-\s*$/g, "")
+            .replace(/\s+/g, " ")
+            .trim();
+    }
+
+    function extractTLNames(value) {
+        return String(value || "")
+            .split(/\s*,\s*/)
+            .map(normalizeTLName)
+            .filter(Boolean);
+    }
+
+    function detectStationFloor(station) {
+        const raw = String(station || "").trim();
+        const s = raw
+            .toUpperCase()
+            .replace(/[–—]/g, "-")
+            .replace(/\s+/g, " ")
+            .trim();
+
+        if (!s) return { floor: null, confidence: 0, reason: "No station" };
+
+        if (/\bGROUND\s*FLOOR\b/.test(s) || /\bG\s*\/\s*F\b/.test(s) || /\bGF\b/.test(s)) {
+            return { floor: FLOOR.GROUND, confidence: 1, reason: "GF / Ground Floor in station" };
+        }
+
+        if (/\bSECOND\s*FLOOR\b/.test(s) || /\b2ND\s*FLOOR\b/.test(s) || /\b2\s*F\b/.test(s) || /\b2F\b/.test(s)) {
+            return { floor: FLOOR.SECOND, confidence: 1, reason: "2F / Second Floor in station" };
+        }
+
+        if (/\bFIRST\s*FLOOR\b/.test(s) || /\b1ST\s*FLOOR\b/.test(s) || /\b1\s*F\b/.test(s) || /\b1F\b/.test(s) || /\bF1\b/.test(s)) {
+            return { floor: FLOOR.FIRST, confidence: 1, reason: "1F / First Floor in station" };
+        }
+
+        // Handles formats from the sample such as 2B-10, 2D#43, 2P-11, 2Q-01.
+        if (/^2[A-Z](?:\s*[-#\/]|\d)/.test(s)) {
+            return { floor: FLOOR.SECOND, confidence: 0.92, reason: "Station begins with 2 + bay code" };
+        }
+
+        // Handles sample typos/formats such as 1K-133.
+        if (/^1[A-Z](?:\s*[-#\/]|\d)/.test(s)) {
+            return { floor: FLOOR.FIRST, confidence: 0.92, reason: "Station begins with 1 + bay code" };
+        }
+
+        return { floor: null, confidence: 0, reason: "No explicit floor pattern" };
+    }
+
+    function loadOverrides() {
+        try {
+            const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
+            return parsed && typeof parsed === "object" ? parsed : {};
+        } catch (e) {
+            return {};
+        }
+    }
+
+    function saveOverrides(data) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    }
+
+    function buildAssignments(rows) {
+        const evidence = new Map();
+
+        rows.forEach(row => {
+            const direct = detectStationFloor(row.station);
+            row.directFloor = direct.floor;
+            row.directFloorReason = direct.reason;
+            row.tlNames = extractTLNames(row.tl);
+
+            if (!direct.floor) return;
+
+            row.tlNames.forEach(name => {
+                if (!evidence.has(name)) {
+                    evidence.set(name, {
+                        [FLOOR.GROUND]: 0,
+                        [FLOOR.FIRST]: 0,
+                        [FLOOR.SECOND]: 0,
+                        total: 0
+                    });
+                }
+                const item = evidence.get(name);
+                item[direct.floor] += direct.confidence;
+                item.total += direct.confidence;
+            });
+        });
+
+        const overrides = loadOverrides();
+        const allNames = new Set();
+        rows.forEach(row => row.tlNames.forEach(name => allNames.add(name)));
+        Object.keys(overrides).forEach(name => allNames.add(name));
+
+        const assignments = new Map();
+
+        allNames.forEach(name => {
+            const ev = evidence.get(name) || {
+                [FLOOR.GROUND]: 0,
+                [FLOOR.FIRST]: 0,
+                [FLOOR.SECOND]: 0,
+                total: 0
+            };
+
+            if ([FLOOR.GROUND, FLOOR.FIRST, FLOOR.SECOND].includes(overrides[name])) {
+                assignments.set(name, {
+                    floor: overrides[name],
+                    source: "Saved manual assignment",
+                    confidence: 1,
+                    evidence: ev
+                });
+                return;
+            }
+
+            const candidates = [FLOOR.GROUND, FLOOR.FIRST, FLOOR.SECOND]
+                .map(floor => ({ floor, score: ev[floor] || 0 }))
+                .sort((a, b) => b.score - a.score);
+
+            const best = candidates[0];
+            const second = candidates[1];
+
+            if (best.score <= 0) {
+                assignments.set(name, {
+                    floor: null,
+                    source: "Not enough evidence",
+                    confidence: 0,
+                    evidence: ev
+                });
+                return;
+            }
+
+            const ratio = ev.total ? best.score / ev.total : 0;
+            const hasTie = Math.abs(best.score - second.score) < 0.001;
+
+            if (hasTie || ratio < 0.55) {
+                assignments.set(name, {
+                    floor: null,
+                    source: "Mixed floor evidence",
+                    confidence: ratio,
+                    evidence: ev
+                });
+            } else {
+                assignments.set(name, {
+                    floor: best.floor,
+                    source: "Auto-learned from Station No.",
+                    confidence: ratio,
+                    evidence: ev
+                });
+            }
+        });
+
+        return assignments;
+    }
+
+    function assignRows(rows, assignments) {
+        return rows.map(row => {
+            const tlFloors = row.tlNames
+                .map(name => assignments.get(name))
+                .filter(Boolean)
+                .map(item => item.floor)
+                .filter(Boolean);
+
+            const uniqueTLFloors = [...new Set(tlFloors)];
+            let floor = FLOOR.REVIEW;
+            let source = "Needs review";
+
+            if (uniqueTLFloors.length === 1) {
+                floor = uniqueTLFloors[0];
+                source = "TL floor assignment";
+            } else if (uniqueTLFloors.length > 1) {
+                floor = FLOOR.REVIEW;
+                source = "TLs map to different floors";
+            } else if (row.directFloor) {
+                floor = row.directFloor;
+                source = "Station No. pattern";
+            }
+
+            return { ...row, floor, sortSource: source };
+        }).sort((a, b) => {
+            const floorDiff = floorOrder[a.floor] - floorOrder[b.floor];
+            if (floorDiff !== 0) return floorDiff;
+
+            const tlA = normalizeTLName(a.tl).toLowerCase();
+            const tlB = normalizeTLName(b.tl).toLowerCase();
+            const tlDiff = tlA.localeCompare(tlB, undefined, { numeric: true, sensitivity: "base" });
+            if (tlDiff !== 0) return tlDiff;
+
+            return String(a.station).localeCompare(String(b.station), undefined, { numeric: true, sensitivity: "base" });
+        });
+    }
+
+    function floorClass(floor) {
+        if (floor === FLOOR.GROUND) return "floor-ground";
+        if (floor === FLOOR.FIRST) return "floor-first";
+        if (floor === FLOOR.SECOND) return "floor-second";
+        return "floor-review";
+    }
+
+    function escapeHtml(value) {
+        return String(value == null ? "" : value)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
+
+    function evidenceText(ev) {
+        const g = Math.round((ev[FLOOR.GROUND] || 0) * 100) / 100;
+        const f1 = Math.round((ev[FLOOR.FIRST] || 0) * 100) / 100;
+        const f2 = Math.round((ev[FLOOR.SECOND] || 0) * 100) / 100;
+        if (!ev.total) return "No explicit floor rows";
+        return `GF ${g} • 1F ${f1} • 2F ${f2}`;
+    }
+
+    function renderSummary(assignments) {
+        const tbody = byId("tlSummaryTable").querySelector("tbody");
+        const overrides = loadOverrides();
+
+        const entries = [...assignments.entries()].sort((a, b) =>
+            a[0].localeCompare(b[0], undefined, { sensitivity: "base" })
+        );
+
+        tbody.innerHTML = entries.map(([name, item]) => {
+            const detected = item.floor || FLOOR.REVIEW;
+            const selected = overrides[name] || "";
+            const confidence = item.floor
+                ? `${Math.round((item.confidence || 0) * 100)}% confidence`
+                : item.source;
+
+            return `
+                <tr>
+                    <td><strong>${escapeHtml(name)}</strong></td>
+                    <td>
+                        <span class="maintenance-floor-badge ${floorClass(detected)}">${escapeHtml(detected)}</span><br>
+                        <span class="confidence-label">${escapeHtml(confidence)}</span>
+                    </td>
+                    <td>${escapeHtml(evidenceText(item.evidence))}<br><span class="confidence-label">${escapeHtml(item.source)}</span></td>
+                    <td>
+                        <select class="tl-floor-select" data-tl-name="${escapeHtml(name)}" aria-label="Manual floor for ${escapeHtml(name)}">
+                            <option value="" ${selected === "" ? "selected" : ""}>Auto</option>
+                            <option value="${FLOOR.GROUND}" ${selected === FLOOR.GROUND ? "selected" : ""}>Ground Floor</option>
+                            <option value="${FLOOR.FIRST}" ${selected === FLOOR.FIRST ? "selected" : ""}>1st Floor</option>
+                            <option value="${FLOOR.SECOND}" ${selected === FLOOR.SECOND ? "selected" : ""}>2nd Floor</option>
+                        </select>
+                    </td>
+                </tr>
+            `;
+        }).join("");
+
+        tbody.querySelectorAll(".tl-floor-select").forEach(select => {
+            select.addEventListener("change", function () {
+                const name = this.getAttribute("data-tl-name");
+                const data = loadOverrides();
+                if (this.value) data[name] = this.value;
+                else delete data[name];
+                saveOverrides(data);
+                analyzeMaintenance(false);
+            });
+        });
+    }
+
+    function renderRows(rows) {
+        const tbody = byId("maintenanceOutputTable").querySelector("tbody");
+        tbody.innerHTML = rows.map(row => `
+            <tr>
+                <td><span class="maintenance-floor-badge ${floorClass(row.floor)}">${escapeHtml(row.floor)}</span></td>
+                <td>${escapeHtml(row.date || row.timestamp || "")}</td>
+                <td>${escapeHtml(row.tl)}</td>
+                <td>${escapeHtml(row.account)}</td>
+                <td>${escapeHtml(row.site)}</td>
+                <td><strong>${escapeHtml(row.station)}</strong></td>
+                <td>${escapeHtml(row.issue)}</td>
+                <td><span class="confidence-label">${escapeHtml(row.sortSource)}</span></td>
+            </tr>
+        `).join("");
+
+        const counts = {
+            [FLOOR.GROUND]: 0,
+            [FLOOR.FIRST]: 0,
+            [FLOOR.SECOND]: 0,
+            [FLOOR.REVIEW]: 0
+        };
+        rows.forEach(row => counts[row.floor]++);
+
+        byId("groundCount").textContent = counts[FLOOR.GROUND];
+        byId("firstCount").textContent = counts[FLOOR.FIRST];
+        byId("secondCount").textContent = counts[FLOOR.SECOND];
+        byId("reviewCount").textContent = counts[FLOOR.REVIEW];
+    }
+
+    function showMessage(text, type) {
+        const el = byId("maintenanceMessage");
+        el.textContent = text;
+        el.className = `maintenance-message show ${type || "info"}`;
+    }
+
+    function hideMessage() {
+        const el = byId("maintenanceMessage");
+        el.textContent = "";
+        el.className = "maintenance-message";
+    }
+
+    function analyzeMaintenance(scrollToResults = true) {
+        const raw = byId("maintenanceInput").value.trim();
+        if (!raw) {
+            showMessage("Paste your maintenance report first.", "error");
+            return;
+        }
+
+        try {
+            const rows = parseReport(raw);
+            const assignments = buildAssignments(rows);
+            const assignedRows = assignRows(rows, assignments);
+
+            lastParsedRows = rows;
+            lastAssignments = assignments;
+            lastAssignedRows = assignedRows;
+
+            renderSummary(assignments);
+            renderRows(assignedRows);
+
+            byId("maintenanceStats").hidden = false;
+            byId("tlSummarySection").hidden = false;
+            byId("sortedReportSection").hidden = false;
+            byId("maintenanceEmpty").hidden = true;
+
+            const review = assignedRows.filter(row => row.floor === FLOOR.REVIEW).length;
+            const recognized = assignedRows.length - review;
+            showMessage(
+                `Sorted ${assignedRows.length} rows. ${recognized} were assigned to a floor automatically${review ? `; ${review} need review.` : "."}`,
+                review ? "info" : "success"
+            );
+
+            if (scrollToResults) {
+                byId("maintenanceStats").scrollIntoView({ behavior: "smooth", block: "nearest" });
+            }
+        } catch (err) {
+            showMessage(err.message || "Unable to read the report.", "error");
+        }
+    }
+
+    function rowsToTSV(rows) {
+        const headers = ["FLOOR", "DATE", "TL", "ACCOUNT", "SITE", "STATION NO.", "STATION ISSUE"];
+        const body = rows.map(row => [
+            row.floor,
+            row.date || row.timestamp || "",
+            row.tl,
+            row.account,
+            row.site,
+            row.station,
+            row.issue
+        ]);
+        return [headers, ...body]
+            .map(cols => cols.map(v => String(v == null ? "" : v).replace(/\t/g, " ")).join("\t"))
+            .join("\n");
+    }
+
+    function fallbackCopy(text) {
+        const textarea = document.createElement("textarea");
+        textarea.value = text;
+        textarea.style.position = "absolute";
+        textarea.style.left = "-9999px";
+        document.body.appendChild(textarea);
+        textarea.select();
+        const ok = document.execCommand("copy");
+        document.body.removeChild(textarea);
+        return ok;
+    }
+
+    function copySorted() {
+        if (!lastAssignedRows.length) {
+            showMessage("Sort a report first before copying.", "error");
+            return;
+        }
+
+        const text = rowsToTSV(lastAssignedRows);
+        try {
+            const ok = fallbackCopy(text);
+            showMessage(ok ? "Sorted report copied. You can paste it directly into Google Sheets." : "Copy failed. Please try again.", ok ? "success" : "error");
+        } catch (e) {
+            showMessage("Copy failed. Please select and copy the output manually.", "error");
+        }
+    }
+
+    function clearMaintenance() {
+        byId("maintenanceInput").value = "";
+        lastParsedRows = [];
+        lastAssignedRows = [];
+        lastAssignments = new Map();
+        byId("maintenanceStats").hidden = true;
+        byId("tlSummarySection").hidden = true;
+        byId("sortedReportSection").hidden = true;
+        byId("maintenanceEmpty").hidden = false;
+        byId("tlSummaryTable").querySelector("tbody").innerHTML = "";
+        byId("maintenanceOutputTable").querySelector("tbody").innerHTML = "";
+        hideMessage();
+    }
+
+    byId("cctvTabBtn").addEventListener("click", () => showTab("cctv"));
+    byId("maintenanceTabBtn").addEventListener("click", () => showTab("maintenance"));
+    byId("maintenanceSortBtn").addEventListener("click", () => analyzeMaintenance(true));
+    byId("maintenanceCopyBtn").addEventListener("click", copySorted);
+    byId("maintenanceClearBtn").addEventListener("click", clearMaintenance);
+
+    byId("maintenanceResetAssignmentsBtn").addEventListener("click", function () {
+        if (confirm("Reset all saved Team Leader floor assignments?")) {
+            localStorage.removeItem(STORAGE_KEY);
+            if (byId("maintenanceInput").value.trim()) analyzeMaintenance(false);
+            showMessage("Saved TL floor assignments were reset. Auto-learning will be used again.", "info");
+        }
+    });
+})();
 </script>
 
 </body>
