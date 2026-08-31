@@ -1790,6 +1790,104 @@
     }
 </style>
 
+
+<style>
+    /* Multiple Remarks per report block */
+    .remarks-section {
+        margin-top: 12px;
+    }
+
+    .remarks-section-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        margin-bottom: 8px;
+    }
+
+    .remarks-section-head label {
+        margin: 0;
+    }
+
+    .add-remark-btn {
+        min-height: 36px;
+        padding: 7px 11px;
+        border: 0;
+        border-radius: 9px;
+        background: var(--primary-color);
+        color: #fff;
+        font: inherit;
+        font-size: 11px;
+        font-weight: 800;
+        cursor: pointer;
+    }
+
+    .remarks-list {
+        display: grid;
+        gap: 9px;
+    }
+
+    .remark-item {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 8px;
+        align-items: start;
+    }
+
+    .remark-item textarea {
+        width: 100%;
+        min-height: 70px;
+        padding: 10px 12px;
+        border: 1px solid var(--input-border);
+        border-radius: 10px;
+        background: var(--input-bg);
+        color: var(--text-color);
+        font: 12px/1.45 "Inter", sans-serif;
+        resize: vertical;
+    }
+
+    .remark-item textarea:focus {
+        outline: none;
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 3px rgba(39,137,20,.10);
+    }
+
+    .remove-remark-btn {
+        width: 34px;
+        height: 34px;
+        border: 1px solid var(--danger-bg);
+        border-radius: 9px;
+        background: transparent;
+        color: var(--danger-bg);
+        font-size: 16px;
+        cursor: pointer;
+    }
+
+    .remarks-empty {
+        padding: 10px 12px;
+        border: 1px dashed var(--input-border);
+        border-radius: 9px;
+        color: var(--pro-muted);
+        font-size: 11px;
+        text-align: center;
+    }
+
+    .simple-pdf-remarks {
+        margin-top: 5px;
+        font-size: 8px;
+        line-height: 1.4;
+    }
+
+    .simple-pdf-remarks ul {
+        margin: 3px 0 0 16px;
+        padding: 0;
+    }
+
+    .simple-pdf-remarks li {
+        margin-bottom: 2px;
+    }
+</style>
+
 </head>
 <body>
 
@@ -2059,7 +2157,7 @@
 
         <div class="maintenance-draft-save-row">
             <input type="text" id="maintenanceDraftName" placeholder="Draft name (example: Aug 31 - Night Shift)">
-            <button type="button" id="maintenanceSaveNamedDraft" class="btn-eod-primary">Save Draft</button>
+            <button type="button" id="maintenanceSaveNamedDraft" class="btn-eod-primary">Save Snapshot</button>
         </div>
 
         <div id="maintenanceDraftList" class="maintenance-draft-list"></div>
@@ -3263,7 +3361,7 @@
             id: uid(),
             lanesText: "",
             noteType: "wiping",
-            customNote: "",
+            remarks: [""],
             screenshots: []
         };
     }
@@ -3381,7 +3479,11 @@
     }
 
     function noteText(block) {
-        return String(block.customNote || "").trim();
+        const remarks = Array.isArray(block.remarks) ? block.remarks : [];
+        return remarks
+            .map(item => String(item || "").trim())
+            .filter(Boolean)
+            .join("\n");
     }
 
     function blockHtml(block, index) {
@@ -3392,7 +3494,7 @@
                 <div class="eod-block-head">
                     <div>
                         <div class="eod-block-title">Report Block ${index + 1}</div>
-                        <div class="eod-block-sub">Paste lanes/table, attach screenshot proof, then add the observation note.</div>
+                        <div class="eod-block-sub">Paste lanes/table, attach screenshot proof, then add one or more saved remarks.</div>
                     </div>
                     <div class="block-actions">
 <button type="button" class="btn-eod-outline duplicate-block">Duplicate</button>
@@ -3407,8 +3509,7 @@
                             <option value="wiping" ${block.noteType === "wiping" ? "selected" : ""}>Maintenance observed wiping stations</option>
                             <option value="sweeping" ${block.noteType === "sweeping" ? "selected" : ""}>Maintenance staff observed sweeping floors</option>
                             <option value="none" ${block.noteType === "none" ? "selected" : ""}>No maintenance observed wiping stations</option>
-                            <option value="custom" ${block.noteType === "custom" ? "selected" : ""}>Custom note</option>
-                        </select>
+                                                    </select>
                     </div>
                 </div>
 
@@ -3437,10 +3538,19 @@
                     </div>
                 </div>
 
-                <div class="eod-note-row">
-                    <div>
+                <div class="remarks-section">
+                    <div class="remarks-section-head">
                         <label>Remarks</label>
-                        <textarea class="eod-note-area" placeholder="Type your remarks here, e.g. Maintenance observed wiping stations in these lanes / No maintenance observed wiping stations in these lanes.">${escapeHtml(block.customNote || "")}</textarea>
+                        <button type="button" class="add-remark-btn">＋ Add Remark</button>
+                    </div>
+
+                    <div class="remarks-list">
+                        ${(Array.isArray(block.remarks) && block.remarks.length ? block.remarks : [""]).map((remark, remarkIndex) => `
+                            <div class="remark-item" data-remark-index="${remarkIndex}">
+                                <textarea class="remark-text" placeholder="Type a remark...">${escapeHtml(remark)}</textarea>
+                                <button type="button" class="remove-remark-btn" data-remark-index="${remarkIndex}" title="Remove remark">×</button>
+                            </div>
+                        `).join("")}
                     </div>
                 </div>
             </article>
@@ -3466,7 +3576,6 @@
 
             const type = card.querySelector(".block-note-type");
             const textarea = card.querySelector(".eod-paste-area");
-            const note = card.querySelector(".eod-note-area");
             const fileInput = card.querySelector(".eod-file-input");
             const zone = card.querySelector(".eod-proof-zone");
 
@@ -3493,9 +3602,46 @@
                 queueSave();
             });
 
-            note.addEventListener("input", () => {
-                block.customNote = note.value;
+
+            if (!Array.isArray(block.remarks) || !block.remarks.length) {
+                block.remarks = [""];
+            }
+
+            card.querySelector(".add-remark-btn").addEventListener("click", () => {
+                block.remarks.push("");
+                render();
                 queueSave();
+
+                setTimeout(() => {
+                    const updatedCard = document.querySelector(`.eod-block[data-id="${block.id}"]`);
+                    const textareas = updatedCard ? updatedCard.querySelectorAll(".remark-text") : [];
+                    const last = textareas[textareas.length - 1];
+                    if (last) last.focus();
+                }, 50);
+            });
+
+            card.querySelectorAll(".remark-text").forEach(textarea => {
+                textarea.addEventListener("input", () => {
+                    const item = textarea.closest(".remark-item");
+                    const index = Number(item.dataset.remarkIndex);
+                    block.remarks[index] = textarea.value;
+                    queueSave();
+                });
+            });
+
+            card.querySelectorAll(".remove-remark-btn").forEach(button => {
+                button.addEventListener("click", () => {
+                    const index = Number(button.dataset.remarkIndex);
+
+                    if (block.remarks.length === 1) {
+                        block.remarks[0] = "";
+                    } else {
+                        block.remarks.splice(index, 1);
+                    }
+
+                    render();
+                    queueSave();
+                });
             });
 
             fileInput.addEventListener("change", async () => {
@@ -3756,6 +3902,13 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         state = JSON.parse(JSON.stringify(record.state));
         if (!Array.isArray(state.blocks) || !state.blocks.length) {
             state.blocks = [makeBlock()];
+        } else {
+            state.blocks = state.blocks.map(block => ({
+                ...block,
+                remarks: Array.isArray(block.remarks)
+                    ? (block.remarks.length ? block.remarks : [""])
+                    : (block.customNote ? [block.customNote] : [""])
+            }));
         }
 
         $("simpleEodDate").value = state.date || todayLocal();
@@ -3819,7 +3972,21 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
                 <section class="simple-pdf-block">
                     ${tableHtml(block.lanesText, true)}
                     ${imgs}
-                    <div class="simple-pdf-note">${escapeHtml(noteText(block) || "")}</div>
+                    ${(Array.isArray(block.remarks) ? block.remarks : [])
+                        .map(item => String(item || "").trim())
+                        .filter(Boolean).length
+                        ? `<div class="simple-pdf-remarks">
+                            <strong>Remarks:</strong>
+                            <ul>
+                                ${(Array.isArray(block.remarks) ? block.remarks : [])
+                                    .map(item => String(item || "").trim())
+                                    .filter(Boolean)
+                                    .map(item => `<li>${escapeHtml(item)}</li>`)
+                                    .join("")}
+                            </ul>
+                           </div>`
+                        : ""}
+
                 </section>
             `;
         }).join("");
@@ -3947,11 +4114,15 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
                 state = draft;
                 if (Array.isArray(state.blocks)) {
                     state.blocks = state.blocks.map(block => {
+                        const existingRemarks = Array.isArray(block.remarks)
+                            ? block.remarks
+                            : (block.customNote ? [block.customNote] : [""]);
+
                         const cleaned = {
                             id: block.id || uid(),
                             lanesText: block.lanesText || "",
-                            noteType: block.noteType || "wiping",
-                            customNote: block.customNote || "",
+                            noteType: block.noteType === "custom" ? "wiping" : (block.noteType || "wiping"),
+                            remarks: existingRemarks.length ? existingRemarks : [""],
                             screenshots: Array.isArray(block.screenshots) ? block.screenshots : []
                         };
                         return cleaned;
