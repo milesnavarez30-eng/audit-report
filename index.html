@@ -4410,6 +4410,21 @@
     }
 </style>
 
+
+<style>
+    #eodPanel .maintenance-sheets-copy-hint {
+        margin: -7px 0 14px;
+        color: var(--pro-muted);
+        font-size: 10px;
+        line-height: 1.45;
+    }
+
+    #eodPanel .maintenance-sheets-copy-hint strong {
+        color: var(--text-color);
+        font-weight: 800;
+    }
+</style>
+
 </head>
 <body>
 
@@ -4685,11 +4700,15 @@
         <div class="simple-eod-actions">
             <button type="button" class="btn-eod-outline" id="simpleEodSaveBtn">💾 Save to Drafts</button>
             <button type="button" class="btn-eod-outline" id="simpleEodDraftsBtn">🗂️ Drafts</button>
-            <button type="button" class="btn-eod-sheet-copy" id="simpleEodCopySheetsBtn">📋 Copy All to Sheets</button>
+            <button type="button" class="btn-eod-sheet-copy" id="simpleEodCopySheetsBtn">📋 Copy Full Report to Sheets</button>
             <button type="button" class="btn-eod-secondary" id="simpleEodPreviewBtn">👁️ Preview / Print</button>
             <button type="button" class="btn-eod-primary" id="simpleEodPdfBtn">📄 Download PDF</button>
             <button type="button" class="btn-eod-danger" id="simpleEodClearBtn">Clear All</button>
             <span id="simpleEodAutosaveStatus" class="maintenance-autosave-status saved">● Auto-save active</span>
+        </div>
+
+        <div class="maintenance-sheets-copy-hint">
+            <strong>Copy Full Report to Sheets</strong> copies the report title/date, all pasted maintenance rows, CCTV screenshots, and remarks in one rich clipboard copy.
         </div>
 
         <div id="simpleEodMessage" class="simple-eod-message" aria-live="polite"></div>
@@ -6576,8 +6595,9 @@
             .map(alignRow);
     }
 
-    function maintenanceReportToSheetsTSV() {
-        const headers = [
+
+    function maintenanceReportSheetHeaders() {
+        return [
             "TIMESTAMP",
             "DATE",
             "TL",
@@ -6586,72 +6606,255 @@
             "STATION NO.",
             "STATION ISSUE"
         ];
-
-        const allRows = [];
-
-        state.blocks.forEach(block => {
-            maintenanceRowsForSheets(block.lanesText || "").forEach(row => {
-                allRows.push(row);
-            });
-        });
-
-        if (!allRows.length) return "";
-
-        return [headers, ...allRows]
-            .map(row => row
-                .map(value => String(value == null ? "" : value)
-                    .replace(/\t/g, " ")
-                    .replace(/\r?\n/g, " "))
-                .join("\t"))
-            .join("\n");
     }
 
-    function copyTextForMaintenanceSheets(text) {
-        if (navigator.clipboard && window.isSecureContext) {
-            return navigator.clipboard.writeText(text);
-        }
+    function maintenanceReportPlainTextForSheets() {
+        syncTop();
 
-        return new Promise((resolve, reject) => {
-            try {
-                const textarea = document.createElement("textarea");
-                textarea.value = text;
-                textarea.setAttribute("readonly", "");
-                textarea.style.position = "fixed";
-                textarea.style.opacity = "0";
-                textarea.style.pointerEvents = "none";
-                document.body.appendChild(textarea);
-                textarea.select();
+        const headers = maintenanceReportSheetHeaders();
+        const cleanTitle = String(state.title || "Mabini Site A - 1st & 2nd Floor")
+            .replace(/\s*Maintenance\s+Report\s*$/i, "")
+            .trim();
+        const reportDate = state.date ? formatDateForTitle(state.date) : "";
+        const titleLine = `${cleanTitle}${reportDate ? ` (${reportDate})` : ""}`;
 
-                const ok = document.execCommand("copy");
-                document.body.removeChild(textarea);
+        const lines = [
+            titleLine,
+            "",
+            headers.join("\t")
+        ];
 
-                if (ok) resolve();
-                else reject(new Error("Copy command failed."));
-            } catch (error) {
-                reject(error);
+        state.blocks.forEach((block, blockIndex) => {
+            const rows = maintenanceRowsForSheets(block.lanesText || "");
+
+            rows.forEach(row => {
+                lines.push(
+                    row.map(value =>
+                        String(value == null ? "" : value)
+                            .replace(/\t/g, " ")
+                            .replace(/\r?\n/g, " ")
+                    ).join("\t")
+                );
+            });
+
+            const screenshots = Array.isArray(block.screenshots) ? block.screenshots : [];
+            screenshots.forEach((shot, shotIndex) => {
+                lines.push(`[CCTV Screenshot ${shotIndex + 1} - Report Block ${blockIndex + 1}]`);
+            });
+
+            const remarks = Array.isArray(block.remarks)
+                ? block.remarks.map(item => String(item || "").trim()).filter(Boolean)
+                : [];
+
+            if (remarks.length) {
+                lines.push(`Remarks:\t${remarks.join(" | ")}`);
+            }
+
+            if (blockIndex < state.blocks.length - 1) {
+                lines.push("");
             }
         });
+
+        return lines.join("\n");
     }
 
-    async function copyAllMaintenanceReportToSheets() {
-        const tsv = maintenanceReportToSheetsTSV();
+    function maintenanceReportHtmlForSheets() {
+        syncTop();
 
-        if (!tsv) {
-            showMessage("Walay lanes/data nga ma-copy. Paste maintenance rows first.", "error");
+        const headers = maintenanceReportSheetHeaders();
+        const cleanTitle = String(state.title || "Mabini Site A - 1st & 2nd Floor")
+            .replace(/\s*Maintenance\s+Report\s*$/i, "")
+            .trim();
+        const reportDate = state.date ? formatDateForTitle(state.date) : "";
+        const titleLine = `${cleanTitle}${reportDate ? ` (${reportDate})` : ""}`;
+
+        const esc = value => escapeHtml(String(value == null ? "" : value));
+
+        const headerCells = headers
+            .map(header => `
+                <th style="
+                    border:1px solid #d0d7de;
+                    padding:6px 8px;
+                    background:#31495f;
+                    color:#ffffff;
+                    font-family:Arial,sans-serif;
+                    font-size:11px;
+                    font-weight:700;
+                    text-align:center;
+                ">${esc(header)}</th>
+            `)
+            .join("");
+
+        const blockHtml = state.blocks.map((block, blockIndex) => {
+            const rows = maintenanceRowsForSheets(block.lanesText || "");
+            const screenshots = Array.isArray(block.screenshots) ? block.screenshots : [];
+            const remarks = Array.isArray(block.remarks)
+                ? block.remarks.map(item => String(item || "").trim()).filter(Boolean)
+                : [];
+
+            const dataRows = rows.map(row => `
+                <tr>
+                    ${row.map((cell, index) => `
+                        <td style="
+                            border:1px solid #e5e7eb;
+                            padding:5px 7px;
+                            background:#ffffff;
+                            color:#202124;
+                            font-family:Arial,sans-serif;
+                            font-size:10px;
+                            vertical-align:top;
+                            ${index === 6 ? "text-align:left;" : "text-align:center;"}
+                        ">${esc(cell)}</td>
+                    `).join("")}
+                </tr>
+            `).join("");
+
+            const imageRow = screenshots.length
+                ? `
+                    <tr>
+                        <td colspan="7" style="
+                            padding:8px 4px;
+                            border:0;
+                            background:#ffffff;
+                            text-align:left;
+                        ">
+                            <div style="white-space:nowrap;">
+                                ${screenshots.map((shot, shotIndex) => `
+                                    <img
+                                        src="${shot.dataUrl}"
+                                        alt="CCTV Screenshot ${shotIndex + 1}"
+                                        style="
+                                            display:inline-block;
+                                            width:220px;
+                                            height:132px;
+                                            object-fit:contain;
+                                            vertical-align:top;
+                                            margin:0 8px 6px 0;
+                                            background:#ffffff;
+                                        ">
+                                `).join("")}
+                            </div>
+                        </td>
+                    </tr>
+                `
+                : "";
+
+            const remarksRow = remarks.length
+                ? `
+                    <tr>
+                        <td colspan="7" style="
+                            border:0;
+                            border-left:4px solid #278914;
+                            padding:7px 9px;
+                            background:#f5faf3;
+                            color:#1f3b24;
+                            font-family:Arial,sans-serif;
+                            font-size:10px;
+                            text-align:left;
+                        ">
+                            <strong style="color:#278914;">Remarks:</strong>
+                            ${remarks.map(item => `<div>${esc(item)}</div>`).join("")}
+                        </td>
+                    </tr>
+                `
+                : "";
+
+            const spacer = blockIndex < state.blocks.length - 1
+                ? `<tr><td colspan="7" style="height:10px;border:0;background:#ffffff;"></td></tr>`
+                : "";
+
+            return dataRows + imageRow + remarksRow + spacer;
+        }).join("");
+
+        return `
+            <html>
+                <body>
+                    <table style="
+                        border-collapse:collapse;
+                        width:100%;
+                        background:#ffffff;
+                    ">
+                        <tr>
+                            <td colspan="7" style="
+                                border:0;
+                                padding:0 0 8px 0;
+                                background:#ffffff;
+                                color:#111827;
+                                font-family:Arial,sans-serif;
+                                font-size:16px;
+                                font-weight:700;
+                                text-align:left;
+                            ">${esc(titleLine)}</td>
+                        </tr>
+                        <tr>${headerCells}</tr>
+                        ${blockHtml}
+                    </table>
+                </body>
+            </html>
+        `;
+    }
+
+    async function copyFullMaintenanceReportToSheets() {
+        const hasAnyRows = state.blocks.some(block =>
+            maintenanceRowsForSheets(block.lanesText || "").length > 0
+        );
+
+        if (!hasAnyRows) {
+            showMessage("Walay maintenance data nga ma-copy. Paste lanes/data first.", "error");
             return;
         }
 
-        const rowCount = Math.max(0, tsv.split("\n").length - 1);
+        const plainText = maintenanceReportPlainTextForSheets();
+        const richHtml = maintenanceReportHtmlForSheets();
+        const screenshotCount = state.blocks.reduce(
+            (total, block) => total + (Array.isArray(block.screenshots) ? block.screenshots.length : 0),
+            0
+        );
+        const dataRowCount = state.blocks.reduce(
+            (total, block) => total + maintenanceRowsForSheets(block.lanesText || "").length,
+            0
+        );
 
         try {
-            await copyTextForMaintenanceSheets(tsv);
+            if (
+                navigator.clipboard &&
+                typeof ClipboardItem !== "undefined" &&
+                window.isSecureContext
+            ) {
+                const item = new ClipboardItem({
+                    "text/html": new Blob([richHtml], { type: "text/html" }),
+                    "text/plain": new Blob([plainText], { type: "text/plain" })
+                });
+
+                await navigator.clipboard.write([item]);
+
+                showMessage(
+                    `Full report copied: title/date, ${dataRowCount} data row${dataRowCount === 1 ? "" : "s"}, ${screenshotCount} screenshot${screenshotCount === 1 ? "" : "s"}, and remarks. Open Google Sheets, click the starting cell, then press Ctrl+V.`,
+                    "success"
+                );
+                return;
+            }
+
+            // Fallback for browsers that do not support rich clipboard HTML.
+            await copyTextForMaintenanceSheets(plainText);
+
             showMessage(
-                `${rowCount} maintenance row${rowCount === 1 ? "" : "s"} copied. Open Google Sheets, click cell A1, then press Ctrl+V.`,
-                "success"
+                `Report text/data copied. This browser cannot include screenshots in the same clipboard copy. Use Chrome/Edge on the HTTPS website for full rich copy to Google Sheets.`,
+                "info"
             );
         } catch (error) {
             console.error(error);
-            showMessage("Could not copy the report to clipboard.", "error");
+
+            try {
+                await copyTextForMaintenanceSheets(plainText);
+                showMessage(
+                    "Copied the report text/data, but the browser blocked rich screenshot copying. Use Chrome/Edge on the HTTPS website for screenshots too.",
+                    "info"
+                );
+            } catch (fallbackError) {
+                console.error(fallbackError);
+                showMessage("Could not copy the Maintenance Report to clipboard.", "error");
+            }
         }
     }
 
@@ -7441,7 +7644,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
             setAutosaveStatus("● Save failed", "error");
         });
     });
-    $("simpleEodCopySheetsBtn").addEventListener("click", copyAllMaintenanceReportToSheets);
+    $("simpleEodCopySheetsBtn").addEventListener("click", copyFullMaintenanceReportToSheets);
     $("simpleEodPreviewBtn").addEventListener("click", previewPrint);
     $("simpleEodPdfBtn").addEventListener("click", downloadPdf);
     $("simpleEodClearBtn").addEventListener("click", clearAll);
