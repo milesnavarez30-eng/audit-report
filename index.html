@@ -4425,6 +4425,77 @@
     }
 </style>
 
+
+<style>
+    #eodPanel .btn-eod-sheet-send {
+        min-height: 40px;
+        padding: 9px 14px;
+        border: 1px solid rgba(59,130,246,.45);
+        border-radius: 9px;
+        background: rgba(59,130,246,.10);
+        color: #2563eb;
+        font: 800 11px/1 "Roboto", Arial, sans-serif;
+        cursor: pointer;
+        transition: .18s ease;
+    }
+
+    #eodPanel .btn-eod-sheet-send:hover {
+        background: rgba(59,130,246,.16);
+        transform: translateY(-1px);
+    }
+
+    body.dark-mode #eodPanel .btn-eod-sheet-send {
+        color: #7db2ff;
+    }
+
+    .maintenance-sheet-setup-dialog {
+        width: min(680px, 96vw);
+    }
+
+    .maintenance-sheet-setup-dialog > label {
+        display: block;
+        margin-bottom: 7px;
+        color: var(--text-color);
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: .03em;
+        text-transform: uppercase;
+    }
+
+    .maintenance-sheet-setup-dialog input {
+        width: 100%;
+        min-height: 44px;
+        box-sizing: border-box;
+        padding: 10px 12px;
+        border: 1px solid var(--input-border);
+        border-radius: 10px;
+        background: var(--input-bg);
+        color: var(--text-color);
+        font: 12px/1.4 "Roboto", Arial, sans-serif;
+    }
+
+    .maintenance-sheet-setup-help {
+        margin-top: 9px;
+        color: var(--pro-muted);
+        font-size: 10px;
+        line-height: 1.45;
+    }
+
+    .maintenance-sheet-setup-actions {
+        display: flex;
+        gap: 9px;
+        margin-top: 16px;
+    }
+
+    .maintenance-sheet-setup-actions button {
+        min-height: 40px;
+        padding: 8px 13px;
+        border-radius: 9px;
+        font: 800 11px/1 "Roboto", Arial, sans-serif;
+        cursor: pointer;
+    }
+</style>
+
 </head>
 <body>
 
@@ -4701,6 +4772,8 @@
             <button type="button" class="btn-eod-outline" id="simpleEodSaveBtn">💾 Save to Drafts</button>
             <button type="button" class="btn-eod-outline" id="simpleEodDraftsBtn">🗂️ Drafts</button>
             <button type="button" class="btn-eod-sheet-copy" id="simpleEodCopySheetsBtn">📋 Copy Full Report to Sheets</button>
+            <button type="button" class="btn-eod-sheet-send" id="simpleEodSendSheetsBtn">📤 Send to Google Sheets</button>
+            <button type="button" class="btn-eod-outline" id="simpleEodSheetSetupBtn">⚙️ Sheet Setup</button>
             <button type="button" class="btn-eod-secondary" id="simpleEodPreviewBtn">👁️ Preview / Print</button>
             <button type="button" class="btn-eod-primary" id="simpleEodPdfBtn">📄 Download PDF</button>
             <button type="button" class="btn-eod-danger" id="simpleEodClearBtn">Clear All</button>
@@ -4708,7 +4781,7 @@
         </div>
 
         <div class="maintenance-sheets-copy-hint">
-            <strong>Copy Full Report to Sheets</strong> copies the report title/date, all pasted maintenance rows, CCTV screenshots, and remarks in one rich clipboard copy.
+            <strong>Send to Google Sheets</strong> can send the report title/date, all maintenance rows, CCTV screenshots, and remarks directly to your tracker. Use <strong>Sheet Setup</strong> once to save the Apps Script connection.
         </div>
 
         <div id="simpleEodMessage" class="simple-eod-message" aria-live="polite"></div>
@@ -4750,7 +4823,48 @@
     </div>
 </div>
 
+
+<!-- Google Sheets connection setup -->
+<div id="maintenanceSheetSetupModal" class="maintenance-modal" aria-hidden="true">
+    <div class="maintenance-modal-backdrop" id="maintenanceSheetSetupBackdrop"></div>
+    <div class="maintenance-drafts-dialog maintenance-sheet-setup-dialog"
+         role="dialog"
+         aria-modal="true"
+         aria-labelledby="maintenanceSheetSetupTitle">
+        <div class="maintenance-drafts-head">
+            <div>
+                <h3 id="maintenanceSheetSetupTitle">Google Sheets Connection</h3>
+                <p>Paste the Apps Script Web App URL once. It will be saved only in this browser.</p>
+            </div>
+            <button type="button"
+                    id="maintenanceSheetSetupClose"
+                    class="maintenance-modal-close static-close"
+                    aria-label="Close Google Sheets setup">×</button>
+        </div>
+
+        <label for="maintenanceSheetWebAppUrl">Apps Script Web App URL</label>
+        <input type="url"
+               id="maintenanceSheetWebAppUrl"
+               placeholder="https://script.google.com/macros/s/...../exec"
+               autocomplete="off">
+
+        <div class="maintenance-sheet-setup-help">
+            Your screenshots, report title/date, data rows, and remarks will be sent to the Google Sheet configured in the Apps Script.
+        </div>
+
+        <div class="maintenance-sheet-setup-actions">
+            <button type="button" class="btn-eod-primary" id="maintenanceSaveSheetSetup">
+                Save Connection
+            </button>
+            <button type="button" class="btn-eod-danger" id="maintenanceClearSheetSetup">
+                Clear Connection
+            </button>
+        </div>
+    </div>
+</div>
+
 <div id="simpleEodPrintRoot" aria-hidden="true"></div>
+
 
 
 
@@ -6858,6 +6972,146 @@
         }
     }
 
+
+    const MAINTENANCE_SHEETS_WEB_APP_KEY = "maintenance_google_sheets_web_app_url_v1";
+
+    function getMaintenanceSheetsWebAppUrl() {
+        return String(localStorage.getItem(MAINTENANCE_SHEETS_WEB_APP_KEY) || "").trim();
+    }
+
+    function isValidAppsScriptWebAppUrl(value) {
+        const url = String(value || "").trim();
+        return /^https:\/\/script\.google\.com\/macros\/s\/[^/]+\/exec(?:\?.*)?$/i.test(url);
+    }
+
+    function openMaintenanceSheetSetup() {
+        const modal = $("maintenanceSheetSetupModal");
+        $("maintenanceSheetWebAppUrl").value = getMaintenanceSheetsWebAppUrl();
+        modal.classList.add("open");
+        modal.setAttribute("aria-hidden", "false");
+        document.body.classList.add("maintenance-modal-open");
+
+        setTimeout(() => $("maintenanceSheetWebAppUrl")?.focus(), 50);
+    }
+
+    function closeMaintenanceSheetSetup() {
+        const modal = $("maintenanceSheetSetupModal");
+        modal.classList.remove("open");
+        modal.setAttribute("aria-hidden", "true");
+        document.body.classList.remove("maintenance-modal-open");
+    }
+
+    function saveMaintenanceSheetSetup() {
+        const input = $("maintenanceSheetWebAppUrl");
+        const value = String(input.value || "").trim();
+
+        if (!isValidAppsScriptWebAppUrl(value)) {
+            showMessage("Invalid Apps Script Web App URL. It should end in /exec.", "error");
+            input.focus();
+            return;
+        }
+
+        localStorage.setItem(MAINTENANCE_SHEETS_WEB_APP_KEY, value);
+        closeMaintenanceSheetSetup();
+        showMessage("Google Sheets connection saved in this browser.", "success");
+    }
+
+    function clearMaintenanceSheetSetup() {
+        localStorage.removeItem(MAINTENANCE_SHEETS_WEB_APP_KEY);
+        $("maintenanceSheetWebAppUrl").value = "";
+        showMessage("Google Sheets connection cleared.", "info");
+    }
+
+    function buildMaintenanceSheetsPayload() {
+        syncTop();
+
+        const cleanTitle = String(state.title || "Mabini Site A - 1st & 2nd Floor")
+            .replace(/\s*Maintenance\s+Report\s*$/i, "")
+            .trim();
+
+        return {
+            action: "appendMaintenanceReport",
+            reportTitle: cleanTitle,
+            reportDate: state.date || "",
+            sentAt: new Date().toISOString(),
+            blocks: state.blocks.map((block, index) => ({
+                blockNumber: index + 1,
+                rows: maintenanceRowsForSheets(block.lanesText || ""),
+                screenshots: Array.isArray(block.screenshots)
+                    ? block.screenshots
+                        .filter(shot => shot && shot.dataUrl)
+                        .map(shot => shot.dataUrl)
+                    : [],
+                remarks: Array.isArray(block.remarks)
+                    ? block.remarks
+                        .map(item => String(item || "").trim())
+                        .filter(Boolean)
+                    : []
+            }))
+        };
+    }
+
+    async function sendMaintenanceReportToGoogleSheets() {
+        const url = getMaintenanceSheetsWebAppUrl();
+
+        if (!url) {
+            openMaintenanceSheetSetup();
+            showMessage("Set up the Google Sheets connection first.", "info");
+            return;
+        }
+
+        if (!isValidAppsScriptWebAppUrl(url)) {
+            openMaintenanceSheetSetup();
+            showMessage("The saved Google Sheets Web App URL is invalid.", "error");
+            return;
+        }
+
+        const payload = buildMaintenanceSheetsPayload();
+        const rowCount = payload.blocks.reduce((sum, block) => sum + block.rows.length, 0);
+        const screenshotCount = payload.blocks.reduce((sum, block) => sum + block.screenshots.length, 0);
+        const remarksCount = payload.blocks.reduce((sum, block) => sum + block.remarks.length, 0);
+
+        if (!rowCount) {
+            showMessage("Walay maintenance data nga ma-send. Paste lanes/data first.", "error");
+            return;
+        }
+
+        const button = $("simpleEodSendSheetsBtn");
+        const originalText = button.textContent;
+        button.disabled = true;
+        button.textContent = "⏳ Sending...";
+
+        try {
+            /*
+              Google Apps Script Web Apps do not reliably expose CORS headers.
+              text/plain + no-cors sends the complete JSON payload, including
+              base64 screenshot data, without the browser blocking the request.
+            */
+            await fetch(url, {
+                method: "POST",
+                mode: "no-cors",
+                headers: {
+                    "Content-Type": "text/plain;charset=utf-8"
+                },
+                body: JSON.stringify(payload)
+            });
+
+            showMessage(
+                `Report sent to Google Sheets: ${rowCount} row${rowCount === 1 ? "" : "s"}, ${screenshotCount} screenshot${screenshotCount === 1 ? "" : "s"}, and ${remarksCount} remark${remarksCount === 1 ? "" : "s"}. Check the tracker to confirm.`,
+                "success"
+            );
+        } catch (error) {
+            console.error(error);
+            showMessage(
+                "Could not send the report. Check the Apps Script URL and your internet connection.",
+                "error"
+            );
+        } finally {
+            button.disabled = false;
+            button.textContent = originalText;
+        }
+    }
+
     function noteText(block) {
         const remarks = Array.isArray(block.remarks) ? block.remarks : [];
         return remarks
@@ -7644,6 +7898,20 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
             setAutosaveStatus("● Save failed", "error");
         });
     });
+    $("simpleEodSheetSetupBtn").addEventListener("click", openMaintenanceSheetSetup);
+    $("simpleEodSendSheetsBtn").addEventListener("click", sendMaintenanceReportToGoogleSheets);
+    $("maintenanceSaveSheetSetup").addEventListener("click", saveMaintenanceSheetSetup);
+    $("maintenanceClearSheetSetup").addEventListener("click", clearMaintenanceSheetSetup);
+    $("maintenanceSheetSetupClose").addEventListener("click", closeMaintenanceSheetSetup);
+    $("maintenanceSheetSetupBackdrop").addEventListener("click", closeMaintenanceSheetSetup);
+
+    $("maintenanceSheetWebAppUrl").addEventListener("keydown", event => {
+        if (event.key === "Enter") {
+            event.preventDefault();
+            saveMaintenanceSheetSetup();
+        }
+    });
+
     $("simpleEodCopySheetsBtn").addEventListener("click", copyFullMaintenanceReportToSheets);
     $("simpleEodPreviewBtn").addEventListener("click", previewPrint);
     $("simpleEodPdfBtn").addEventListener("click", downloadPdf);
