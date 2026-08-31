@@ -3483,6 +3483,221 @@
     }
 </style>
 
+
+<style>
+    /* =========================================================
+       REFERENCE-INSPIRED MAINTENANCE REPORT PDF
+       Title -> Remarks -> Table -> CCTV Image
+       ========================================================= */
+
+    #simpleEodPrintRoot,
+    #simpleEodPrintRoot * {
+        color-scheme: light !important;
+    }
+
+    .reference-pdf {
+        width: 100% !important;
+        box-sizing: border-box !important;
+        padding: 10mm 9mm 12mm !important;
+        background: #ffffff !important;
+        color: #111827 !important;
+        font-family: "Roboto", Arial, sans-serif !important;
+    }
+
+    .reference-pdf-header {
+        width: 100% !important;
+        margin: 0 0 5mm !important;
+        padding: 0 0 3.5mm !important;
+        border-bottom: 0 !important;
+        background: #ffffff !important;
+    }
+
+    .reference-pdf-header h1 {
+        margin: 0 !important;
+        color: #111827 !important;
+        font-size: 14px !important;
+        line-height: 1.2 !important;
+        font-weight: 900 !important;
+        letter-spacing: -.015em !important;
+        text-transform: none !important;
+    }
+
+    .reference-report-block {
+        width: 100% !important;
+        box-sizing: border-box !important;
+        margin: 0 0 7mm !important;
+        padding: 0 !important;
+        background: #ffffff !important;
+        break-inside: auto !important;
+        page-break-inside: auto !important;
+    }
+
+    .reference-remarks {
+        display: grid !important;
+        grid-template-columns: auto minmax(0, 1fr) !important;
+        gap: 2mm !important;
+        align-items: start !important;
+        margin: 0 0 3.5mm !important;
+        padding: 0 !important;
+        color: #263238 !important;
+        font-size: 7px !important;
+        line-height: 1.35 !important;
+        background: transparent !important;
+        break-inside: avoid !important;
+        page-break-inside: avoid !important;
+    }
+
+    .reference-remarks > span {
+        color: #278914 !important;
+        font-weight: 900 !important;
+        white-space: nowrap !important;
+    }
+
+    .reference-remarks > div > div + div {
+        margin-top: .7mm !important;
+    }
+
+    /* Table */
+    .reference-pdf .simple-pdf-table-wrap {
+        width: 100% !important;
+        box-sizing: border-box !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        overflow: visible !important;
+        background: #ffffff !important;
+        border: 0 !important;
+        border-radius: 0 !important;
+    }
+
+    .reference-pdf .simple-pdf-table {
+        width: 100% !important;
+        table-layout: fixed !important;
+        border-collapse: collapse !important;
+        margin: 0 !important;
+        background: #ffffff !important;
+        font-size: 5.35px !important;
+    }
+
+    .reference-pdf .simple-pdf-table thead {
+        display: table-header-group !important;
+    }
+
+    .reference-pdf .simple-pdf-table tr,
+    .reference-pdf .simple-pdf-table tbody tr:nth-child(odd),
+    .reference-pdf .simple-pdf-table tbody tr:nth-child(even) {
+        background: #ffffff !important;
+        break-inside: avoid !important;
+        page-break-inside: avoid !important;
+    }
+
+    .reference-pdf .simple-pdf-table th {
+        padding: 2.4px 2.6px !important;
+        border: 0 !important;
+        background: #31495f !important;
+        color: #ffffff !important;
+        font-size: 5.1px !important;
+        line-height: 1.15 !important;
+        font-weight: 900 !important;
+        text-align: center !important;
+        vertical-align: middle !important;
+        box-shadow: none !important;
+    }
+
+    .reference-pdf .simple-pdf-table td {
+        padding: 2.6px 2.6px !important;
+        border: 0 !important;
+        border-bottom: 0.35px solid #e5e7eb !important;
+        background: #ffffff !important;
+        color: #27313d !important;
+        font-size: 5.2px !important;
+        line-height: 1.23 !important;
+        vertical-align: top !important;
+        overflow-wrap: anywhere !important;
+        word-break: normal !important;
+        box-shadow: none !important;
+    }
+
+    .reference-pdf .simple-pdf-table td:nth-child(-n+6) {
+        text-align: center !important;
+    }
+
+    .reference-pdf .simple-pdf-table td:nth-child(7) {
+        text-align: left !important;
+    }
+
+    /* Portrait-friendly seven-column proportions */
+    .reference-pdf .simple-pdf-table th:nth-child(1),
+    .reference-pdf .simple-pdf-table td:nth-child(1) { width: 16% !important; }
+
+    .reference-pdf .simple-pdf-table th:nth-child(2),
+    .reference-pdf .simple-pdf-table td:nth-child(2) { width: 10% !important; }
+
+    .reference-pdf .simple-pdf-table th:nth-child(3),
+    .reference-pdf .simple-pdf-table td:nth-child(3) { width: 15% !important; }
+
+    .reference-pdf .simple-pdf-table th:nth-child(4),
+    .reference-pdf .simple-pdf-table td:nth-child(4) { width: 13% !important; }
+
+    .reference-pdf .simple-pdf-table th:nth-child(5),
+    .reference-pdf .simple-pdf-table td:nth-child(5) { width: 14% !important; }
+
+    .reference-pdf .simple-pdf-table th:nth-child(6),
+    .reference-pdf .simple-pdf-table td:nth-child(6) { width: 12% !important; }
+
+    .reference-pdf .simple-pdf-table th:nth-child(7),
+    .reference-pdf .simple-pdf-table td:nth-child(7) { width: 20% !important; }
+
+    /* Photos follow the table just like the reference PDF, but cleaner. */
+    .reference-photo-group {
+        width: 100% !important;
+        display: flex !important;
+        flex-wrap: wrap !important;
+        align-items: flex-start !important;
+        justify-content: flex-start !important;
+        gap: 3mm !important;
+        margin: 4mm 0 0 !important;
+        padding: 0 !important;
+        background: #ffffff !important;
+        break-inside: avoid !important;
+        page-break-inside: avoid !important;
+    }
+
+    .reference-photo-group img {
+        display: block !important;
+        width: auto !important;
+        height: auto !important;
+        max-width: 100% !important;
+        max-height: 95mm !important;
+        object-fit: contain !important;
+        margin: 0 !important;
+        border: 0 !important;
+        border-radius: 0 !important;
+        background: #ffffff !important;
+        break-inside: avoid !important;
+        page-break-inside: avoid !important;
+    }
+
+    .reference-photo-group.multiple img {
+        max-width: calc(50% - 1.5mm) !important;
+        max-height: 70mm !important;
+    }
+
+    /* Do not print the old Remarks / screenshot styling in this layout. */
+    .reference-pdf .minimal-remarks-label,
+    .reference-pdf .simple-pdf-remarks,
+    .reference-pdf .minimal-divider,
+    .reference-pdf .minimal-no-proof {
+        display: none !important;
+    }
+
+    @media print {
+        @page {
+            size: A4 portrait !important;
+            margin: 0 !important;
+        }
+    }
+</style>
+
 </head>
 <body>
 
@@ -5744,47 +5959,46 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
     function buildPrint() {
         syncTop();
 
+        const cleanTitle = String(state.title || "Mabini Site A - 1st & 2nd Floor")
+            .replace(/\s*Maintenance\s+Report\s*$/i, "")
+            .trim();
+
+        const reportDate = state.date ? formatDateForTitle(state.date) : "";
+
         const blocksHtml = state.blocks.map((block, index) => {
             const screenshots = Array.isArray(block.screenshots) ? block.screenshots : [];
             const remarks = Array.isArray(block.remarks)
                 ? block.remarks.map(item => String(item || "").trim()).filter(Boolean)
                 : [];
 
-            const imgs = screenshots.length
-                ? `<div class="simple-pdf-images ${screenshots.length > 1 ? "two" : ""}">
-                    ${screenshots.map(shot => `<img src="${shot.dataUrl}" alt="Screenshot proof">`).join("")}
+            const remarksLine = remarks.length
+                ? `<div class="reference-remarks">
+                    <span>Remarks:</span>
+                    <div>${remarks.map(item => `<div>${escapeHtml(item)}</div>`).join("")}</div>
                    </div>`
-                : `<div class="minimal-no-proof">No screenshot proof attached.</div>`;
+                : "";
 
-            const remarksHtml = remarks.length
-                ? `<div class="simple-pdf-remarks">
-                    <ul>
-                        ${remarks.map(item => `<li>${escapeHtml(item)}</li>`).join("")}
-                    </ul>
+            const imgs = screenshots.length
+                ? `<div class="reference-photo-group ${screenshots.length > 1 ? "multiple" : ""}">
+                    ${screenshots.map(shot => `<img src="${shot.dataUrl}" alt="CCTV evidence">`).join("")}
                    </div>`
-                : `<div class="simple-pdf-remarks">No remarks entered.</div>`;
+                : "";
 
             return `
-                <section class="simple-pdf-block">
+                <section class="reference-report-block">
+                    ${remarksLine}
                     ${tableHtml(block.lanesText, true)}
-
-                    <div class="pdf-proof-remarks-group">
-                        ${imgs}
-
-                        <div class="minimal-remarks-label">Remarks</div>
-                        ${remarksHtml}
-                    </div>
-
-                    ${index < state.blocks.length - 1 ? `<hr class="minimal-divider">` : ""}
+                    ${imgs}
                 </section>
             `;
         }).join("");
 
         $("simpleEodPrintRoot").innerHTML = `
-            <div class="simple-pdf">
-                <header class="minimal-pdf-header">
-                    <h1>${escapeHtml(state.title || "Mabini Site A - 1st & 2nd Floor")}</h1>
-                    <div class="minimal-pdf-date">${state.date ? escapeHtml(formatDateForTitle(state.date)) : ""}</div>
+            <div class="simple-pdf reference-pdf">
+                <header class="reference-pdf-header">
+                    <div>
+                        <h1>${escapeHtml(cleanTitle)} Maintenance Report${reportDate ? ` ${escapeHtml(reportDate)}` : ""}</h1>
+                    </div>
                 </header>
 
                 ${blocksHtml}
@@ -5843,10 +6057,9 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
                     pagebreak: {
                         mode: ["css", "legacy"],
                         avoid: [
-                            ".pdf-proof-remarks-group",
-                            ".simple-pdf-images",
-                            ".simple-pdf-images img",
-                            ".simple-pdf-remarks",
+                            ".reference-remarks",
+                            ".reference-photo-group",
+                            ".reference-photo-group img",
                             ".simple-pdf-table tr"
                         ]
                     }
@@ -5862,14 +6075,10 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
                 const width = pdf.internal.pageSize.getWidth();
                 const height = pdf.internal.pageSize.getHeight();
 
-                pdf.setDrawColor(225, 230, 237);
-                pdf.setLineWidth(0.2);
-                pdf.line(12, height - 7.5, width - 12, height - 7.5);
-
                 pdf.setFont("helvetica", "normal");
-                pdf.setFontSize(7);
-                pdf.setTextColor(130, 140, 153);
-                pdf.text(`Page ${page} of ${totalPages}`, width - 12, height - 4.3, { align: "right" });
+                pdf.setFontSize(6.5);
+                pdf.setTextColor(145, 150, 158);
+                pdf.text(`Page ${page} of ${totalPages}`, width - 9, height - 4.3, { align: "right" });
             }
 
             await worker.save();
