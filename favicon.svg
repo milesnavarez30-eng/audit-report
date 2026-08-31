@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" width="100%" height="100%">
+  <circle cx="250" cy="250" r="235" fill="#0D233A" stroke="#E6E0D2" stroke-width="12"/>
+  <circle cx="250" cy="250" r="215" fill="#E6E0D2"/>
+
+  <polygon points="
+    250,185 275,175 285,150 295,185 320,165 315,198 340,192 328,218 
+    360,225 335,250 375,270 338,285 365,315 320,318 335,348 295,338 
+    275,372 250,345 225,372 205,338 165,348 180,318 135,315 162,285 
+    125,270 165,250 140,225 172,218 160,192 185,198 180,165 205,185 
+    215,150 225,175" 
+    fill="#0D233A" stroke="#0D233A" stroke-width="4" stroke-linejoin="round"/>
+
+  <polygon points="200,190 190,115 245,175" fill="#0D233A"/>
+  <polygon points="204,178 200,132 235,168" fill="#E6E0D2"/>
+
+  <polygon points="300,190 310,115 255,175" fill="#0D233A"/>
+  <polygon points="296,178 300,132 265,168" fill="#E6E0D2"/>
+
+  <polygon points="250,195 238,225 250,215 262,225" fill="#E6E0D2"/>
+  <polygon points="205,225 235,228 220,240" fill="#E6E0D2"/>
+  <polygon points="295,225 265,228 280,240" fill="#E6E0D2"/>
+
+  <polygon points="205,252 232,250 222,260 210,258" fill="#E6E0D2"/>
+  <polygon points="295,252 268,250 278,260 290,258" fill="#E6E0D2"/>
+  <circle cx="221" cy="254" r="3" fill="#0D233A"/>
+  <circle cx="279" cy="254" r="3" fill="#0D233A"/>
+
+  <polygon points="175,275 205,268 185,295 198,295 178,322 215,305 200,328 230,312" fill="#E6E0D2"/>
+  <polygon points="325,275 295,268 315,295 302,295 322,322 285,305 300,328 270,312" fill="#E6E0D2"/>
+
+  <polygon points="250,235 240,278 245,300 250,305 255,300 260,278" fill="#0D233A"/>
+  <polygon points="238,280 225,305 242,312" fill="#E6E0D2"/>
+  <polygon points="262,280 275,305 258,312" fill="#E6E0D2"/>
+
+  <polygon points="242,302 258,302 250,316" fill="#0D233A"/>
+
+  <polygon points="246,325 254,325 250,338" fill="#E6E0D2"/>
+</svg>
