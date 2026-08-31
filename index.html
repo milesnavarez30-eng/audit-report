@@ -3458,6 +3458,31 @@
     }
 </style>
 
+
+<style>
+    /* PDF table: clean borderless cells */
+    .simple-pdf-table th,
+    .simple-pdf-table td {
+        border-color: transparent !important;
+        border-width: 0 !important;
+        box-shadow: none !important;
+    }
+
+    /* Keep the header visually separated without cell boxes */
+    .simple-pdf-table thead tr {
+        border-bottom: 1px solid rgba(52, 79, 102, .18) !important;
+    }
+
+    /* Optional very light row guide only */
+    .simple-pdf-table tbody tr {
+        border-bottom: 1px solid rgba(17, 17, 17, .045) !important;
+    }
+
+    .simple-pdf-table tbody tr:last-child {
+        border-bottom: 0 !important;
+    }
+</style>
+
 </head>
 <body>
 
