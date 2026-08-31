@@ -1112,6 +1112,684 @@
         }
     </style>
 
+
+<style>
+    /* =========================================================
+       SIMPLE CCTV EOD REPORT BUILDER
+       Table/Lanes -> Screenshot -> Note -> Add Next Block
+       ========================================================= */
+    .simple-eod-shell {
+        width: 100%;
+        max-width: 1180px;
+        margin: 0 auto 28px;
+    }
+
+    .simple-eod-intro {
+        max-width: 900px;
+        margin: -4px auto 20px;
+        color: var(--pro-muted);
+        font-size: 13px;
+        line-height: 1.65;
+        text-align: center;
+    }
+
+    .simple-eod-top {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+        margin-bottom: 18px;
+    }
+
+    .simple-eod-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin: 14px 0 18px;
+    }
+
+    .simple-eod-actions button,
+    .block-actions button {
+        min-height: 42px;
+        padding: 9px 14px;
+        border: 0;
+        border-radius: 10px;
+        font: inherit;
+        font-size: 12px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: .18s ease;
+    }
+
+    .simple-eod-actions button:hover,
+    .block-actions button:hover {
+        transform: translateY(-1px);
+    }
+
+    .btn-eod-primary { background: var(--primary-color); color: #fff; }
+    .btn-eod-secondary { background: var(--secondary-color); color: #fff; }
+    .btn-eod-outline {
+        background: transparent;
+        color: var(--text-color);
+        border: 1px solid var(--input-border) !important;
+    }
+    .btn-eod-danger {
+        margin-left: auto;
+        background: transparent;
+        color: var(--danger-bg);
+        border: 1px solid var(--danger-bg) !important;
+    }
+
+    .simple-eod-message {
+        display: none;
+        margin: 0 0 14px;
+        padding: 10px 12px;
+        border-radius: 10px;
+        font-size: 12px;
+        line-height: 1.45;
+    }
+    .simple-eod-message.show { display: block; }
+    .simple-eod-message.success { background: rgba(39,137,20,.10); color: var(--primary-color); }
+    .simple-eod-message.info { background: rgba(0,51,153,.08); color: var(--secondary-color); }
+    .simple-eod-message.error { background: rgba(239,68,68,.10); color: var(--danger-bg); }
+    body.dark-mode .simple-eod-message { color: var(--text-color); }
+
+    .eod-block-list {
+        display: grid;
+        gap: 18px;
+    }
+
+    .eod-block {
+        position: relative;
+        padding: 18px;
+        border: 1px solid var(--pro-border);
+        border-radius: 14px;
+        background: var(--container-bg);
+        box-shadow: var(--pro-soft-shadow);
+    }
+
+    .eod-block::before {
+        content: "";
+        position: absolute;
+        top: 0; left: 0; right: 0;
+        height: 3px;
+        border-radius: 14px 14px 0 0;
+        background: linear-gradient(90deg, var(--secondary-color), var(--primary-color));
+    }
+
+    .eod-block-head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 14px;
+        margin-bottom: 14px;
+    }
+
+    .eod-block-title {
+        margin: 0 0 3px;
+        color: var(--text-color);
+        font-size: 15px;
+        font-weight: 800;
+    }
+
+    .eod-block-sub {
+        color: var(--pro-muted);
+        font-size: 11px;
+    }
+
+    .block-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 7px;
+        justify-content: flex-end;
+    }
+
+    .block-actions button {
+        min-height: 34px;
+        padding: 6px 10px;
+        font-size: 11px;
+    }
+
+    .eod-block-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 12px;
+        margin-bottom: 12px;
+    }
+
+    .eod-block-grid > div { min-width: 0; }
+
+    .eod-paste-area {
+        width: 100%;
+        min-height: 170px;
+        padding: 13px 14px;
+        border: 1px solid var(--input-border);
+        border-radius: 11px;
+        background: var(--input-bg);
+        color: var(--text-color);
+        font: 12px/1.5 "Inter", sans-serif;
+        resize: vertical;
+    }
+
+    .eod-paste-area:focus,
+    .eod-note-area:focus {
+        outline: none;
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 3px rgba(39,137,20,.10);
+    }
+
+    .eod-mini-preview {
+        margin-top: 10px;
+        overflow-x: auto;
+        border: 1px solid var(--pro-border);
+        border-radius: 10px;
+        background: var(--container-bg);
+    }
+
+    .eod-mini-preview table {
+        width: 100%;
+        min-width: 720px;
+        border-collapse: collapse;
+        font-size: 10px;
+    }
+
+    .eod-mini-preview th,
+    .eod-mini-preview td {
+        padding: 7px 8px;
+        border-bottom: 1px solid var(--border-color);
+        text-align: center !important;
+        vertical-align: middle;
+        white-space: normal;
+    }
+
+    .eod-mini-preview th {
+        background: var(--table-header-bg);
+        color: var(--table-header-text);
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: .03em;
+    }
+
+    .eod-preview-empty {
+        padding: 14px;
+        color: var(--pro-muted);
+        text-align: center;
+        font-size: 11px;
+    }
+
+    .eod-proof-zone {
+        margin-top: 12px;
+        padding: 16px;
+        border: 1.5px dashed var(--input-border);
+        border-radius: 11px;
+        background: rgba(148,163,184,.05);
+        text-align: center;
+        transition: .18s ease;
+    }
+
+    .eod-proof-zone.dragover {
+        border-color: var(--primary-color);
+        background: rgba(39,137,20,.06);
+    }
+
+    .eod-proof-zone p {
+        margin: 0 0 10px;
+        color: var(--pro-muted);
+        font-size: 11px;
+        line-height: 1.5;
+    }
+
+    .eod-proof-zone input[type=file] { display: none; }
+
+    .eod-proof-label {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 38px;
+        padding: 7px 12px;
+        border-radius: 9px;
+        background: var(--secondary-color);
+        color: #fff;
+        font-size: 11px;
+        font-weight: 700;
+        cursor: pointer;
+    }
+
+    .eod-proof-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+        gap: 10px;
+        margin-top: 12px;
+    }
+
+    .eod-proof-item {
+        position: relative;
+        overflow: hidden;
+        border: 1px solid var(--pro-border);
+        border-radius: 9px;
+        background: var(--bg-color);
+    }
+
+    .eod-proof-item img {
+        display: block;
+        width: 100%;
+        height: 125px;
+        object-fit: cover;
+    }
+
+    .eod-proof-remove {
+        position: absolute;
+        top: 6px;
+        right: 6px;
+        width: 28px;
+        height: 28px;
+        border: 0;
+        border-radius: 50%;
+        background: rgba(15,23,42,.78);
+        color: #fff;
+        cursor: pointer;
+    }
+
+    .eod-note-row {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 12px;
+        margin-top: 12px;
+    }
+
+    .eod-note-area {
+        width: 100%;
+        min-height: 76px;
+        padding: 11px 13px;
+        border: 1px solid var(--input-border);
+        border-radius: 10px;
+        background: var(--input-bg);
+        color: var(--text-color);
+        font: 12px/1.45 "Inter", sans-serif;
+        resize: vertical;
+    }
+
+    .eod-add-next {
+        width: 100%;
+        min-height: 50px;
+        margin-top: 18px;
+        border: 1.5px dashed var(--input-border);
+        border-radius: 12px;
+        background: transparent;
+        color: var(--secondary-color);
+        font: inherit;
+        font-size: 13px;
+        font-weight: 800;
+        cursor: pointer;
+        transition: .18s ease;
+    }
+
+    .eod-add-next:hover {
+        border-color: var(--secondary-color);
+        background: rgba(0,51,153,.04);
+    }
+
+    /* Printable PDF */
+    #simpleEodPrintRoot {
+        display: none;
+        background: #fff;
+        color: #111827;
+        font-family: Arial, sans-serif;
+    }
+
+    .simple-pdf {
+        width: 100%;
+        padding: 12mm 10mm;
+        background: #fff;
+        color: #111827;
+    }
+
+    .simple-pdf-header {
+        margin-bottom: 10px;
+        padding-bottom: 8px;
+        border-bottom: 2px solid #29455f;
+        text-align: center;
+    }
+
+    .simple-pdf-header h1 {
+        margin: 0 0 4px;
+        font-size: 19px;
+        color: #111827;
+    }
+
+    .simple-pdf-header p {
+        margin: 0;
+        color: #4b5563;
+        font-size: 9px;
+    }
+
+    .simple-pdf-floor {
+        margin: 12px 0 6px;
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: lowercase;
+    }
+
+    .simple-pdf-block {
+        margin-bottom: 9px;
+        page-break-inside: avoid;
+        break-inside: avoid;
+    }
+
+    .simple-pdf-table-wrap {
+        width: 100%;
+        overflow: hidden;
+    }
+
+    .simple-pdf-table {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        font-size: 7px;
+    }
+
+    .simple-pdf-table th,
+    .simple-pdf-table td {
+        padding: 3px 4px;
+        border: 1px solid #d1d5db;
+        word-wrap: break-word;
+        overflow-wrap: anywhere;
+        text-align: left;
+        vertical-align: top;
+    }
+
+    .simple-pdf-table th {
+        background: #29455f;
+        color: #fff;
+        font-weight: 700;
+    }
+
+    .simple-pdf-raw {
+        padding: 7px;
+        border: 1px solid #d1d5db;
+        white-space: pre-wrap;
+        font-size: 8px;
+        line-height: 1.35;
+    }
+
+    .simple-pdf-images {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 5px;
+        margin-top: 4px;
+    }
+
+    .simple-pdf-images.two {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .simple-pdf-images img {
+        display: block;
+        width: 100%;
+        max-height: 300px;
+        object-fit: contain;
+        border: 1px solid #e5e7eb;
+    }
+
+    .simple-pdf-note {
+        margin-top: 4px;
+        padding: 3px 2px;
+        font-size: 8px;
+        line-height: 1.35;
+    }
+
+    @media screen and (max-width: 760px) {
+        .simple-eod-top,
+        .eod-block-grid,
+        .eod-note-row {
+            grid-template-columns: 1fr;
+        }
+        .eod-block-head {
+            flex-direction: column;
+        }
+        .block-actions { justify-content: flex-start; }
+        .btn-eod-danger { margin-left: 0; }
+    }
+
+    @media print {
+        body > * { display: none !important; }
+        #simpleEodPrintRoot {
+            display: block !important;
+            position: static !important;
+            width: 100% !important;
+        }
+        @page { size: A4 portrait; margin: 0; }
+    }
+</style>
+
+
+<style>
+    .maintenance-autosave-status {
+        display: inline-flex;
+        align-items: center;
+        min-height: 42px;
+        margin-left: auto;
+        color: var(--pro-muted);
+        font-size: 11px;
+        font-weight: 800;
+        white-space: nowrap;
+    }
+    .maintenance-autosave-status.saving { color: #b45309; }
+    .maintenance-autosave-status.saved { color: var(--primary-color); }
+    .maintenance-autosave-status.error { color: var(--danger-bg); }
+
+    .eod-proof-item img {
+        cursor: zoom-in;
+        transition: transform .18s ease, opacity .18s ease;
+    }
+    .eod-proof-item img:hover {
+        transform: scale(1.01);
+        opacity: .92;
+    }
+
+    .eod-proof-zone.active-paste-target {
+        border-color: var(--primary-color);
+        background: rgba(39, 137, 20, .07);
+        box-shadow: 0 0 0 3px rgba(39, 137, 20, .08);
+    }
+
+    .maintenance-paste-indicator {
+        display: none;
+        margin-top: 8px;
+        color: var(--primary-color);
+        font-size: 10px;
+        font-weight: 800;
+        letter-spacing: .05em;
+        text-transform: uppercase;
+    }
+    .eod-proof-zone.active-paste-target .maintenance-paste-indicator {
+        display: block;
+    }
+
+    .maintenance-modal {
+        display: none;
+        position: fixed;
+        inset: 0;
+        z-index: 99999;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+    }
+    .maintenance-modal.open { display: flex; }
+
+    .maintenance-modal-backdrop {
+        position: absolute;
+        inset: 0;
+        background: rgba(2, 6, 23, .80);
+        backdrop-filter: blur(4px);
+    }
+
+    .maintenance-image-dialog,
+    .maintenance-drafts-dialog {
+        position: relative;
+        z-index: 1;
+        background: var(--container-bg);
+        border-radius: 14px;
+        box-shadow: 0 24px 70px rgba(0,0,0,.40);
+    }
+
+    .maintenance-image-dialog {
+        max-width: 96vw;
+        max-height: 92vh;
+        padding: 14px;
+    }
+    .maintenance-image-dialog img {
+        display: block;
+        max-width: 92vw;
+        max-height: 86vh;
+        object-fit: contain;
+        border-radius: 8px;
+        background: #000;
+    }
+
+    .maintenance-modal-close {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        z-index: 2;
+        width: 38px;
+        height: 38px;
+        border: 0;
+        border-radius: 50%;
+        background: rgba(15, 23, 42, .84);
+        color: #fff;
+        font-size: 23px;
+        cursor: pointer;
+    }
+    .maintenance-modal-close.static-close {
+        position: static;
+        flex: none;
+    }
+
+    .maintenance-drafts-dialog {
+        width: min(760px, 96vw);
+        max-height: 86vh;
+        overflow: auto;
+        padding: 20px;
+    }
+    .maintenance-drafts-head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 14px;
+        margin-bottom: 16px;
+    }
+    .maintenance-drafts-head h3 {
+        margin: 0 0 4px;
+        color: var(--text-color);
+        font-size: 18px;
+    }
+    .maintenance-drafts-head p {
+        margin: 0;
+        color: var(--pro-muted);
+        font-size: 12px;
+        line-height: 1.5;
+    }
+
+    .maintenance-draft-save-row {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 10px;
+        margin-bottom: 14px;
+    }
+    .maintenance-draft-save-row button {
+        min-height: 44px;
+        padding: 9px 14px;
+        border: 0;
+        border-radius: 10px;
+        font: inherit;
+        font-size: 12px;
+        font-weight: 800;
+        cursor: pointer;
+    }
+
+    .maintenance-draft-list {
+        display: grid;
+        gap: 9px;
+    }
+    .maintenance-draft-empty {
+        padding: 22px 12px;
+        border: 1px dashed var(--input-border);
+        border-radius: 10px;
+        text-align: center;
+        color: var(--pro-muted);
+        font-size: 12px;
+    }
+    .maintenance-draft-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 12px;
+        border: 1px solid var(--pro-border);
+        border-radius: 10px;
+        background: var(--container-bg);
+    }
+    .maintenance-draft-info {
+        min-width: 0;
+    }
+    .maintenance-draft-info strong {
+        display: block;
+        margin-bottom: 3px;
+        color: var(--text-color);
+        font-size: 12px;
+        overflow-wrap: anywhere;
+    }
+    .maintenance-draft-info span {
+        color: var(--pro-muted);
+        font-size: 10px;
+    }
+    .maintenance-draft-actions {
+        display: flex;
+        gap: 7px;
+        flex: none;
+    }
+    .maintenance-draft-actions button {
+        min-height: 34px;
+        padding: 6px 9px;
+        border-radius: 8px;
+        background: transparent;
+        font: inherit;
+        font-size: 10px;
+        font-weight: 800;
+        cursor: pointer;
+    }
+    .draft-load {
+        border: 1px solid var(--secondary-color);
+        color: var(--secondary-color);
+    }
+    .draft-delete {
+        border: 1px solid var(--danger-bg);
+        color: var(--danger-bg);
+    }
+
+    body.maintenance-modal-open { overflow: hidden; }
+
+    @media screen and (max-width: 680px) {
+        .maintenance-autosave-status {
+            width: 100%;
+            margin-left: 0;
+        }
+        .maintenance-draft-save-row {
+            grid-template-columns: 1fr;
+        }
+        .maintenance-draft-item {
+            align-items: flex-start;
+            flex-direction: column;
+        }
+        .maintenance-draft-actions {
+            width: 100%;
+        }
+        .maintenance-draft-actions button {
+            flex: 1;
+        }
+    }
+</style>
+
 </head>
 <body>
 
@@ -1121,6 +1799,7 @@
 <div class="workspace-tabs" role="tablist" aria-label="Audit workspace tabs">
     <button type="button" class="workspace-tab-btn active" id="cctvTabBtn" role="tab" aria-selected="true" aria-controls="cctvPanel">📋 CCTV Audit</button>
     <button type="button" class="workspace-tab-btn" id="maintenanceTabBtn" role="tab" aria-selected="false" aria-controls="maintenancePanel">✨ Maintenance AI Sorter</button>
+    <button type="button" class="workspace-tab-btn" id="eodTabBtn" role="tab" aria-selected="false" aria-controls="eodPanel">📸 Maintenance Report</button>
 </div>
 
 <section id="cctvPanel" class="app-tab-panel active" role="tabpanel" aria-labelledby="cctvTabBtn">
@@ -1317,6 +1996,78 @@
         </div>
     </div>
 </section>
+
+
+
+<section id="eodPanel" class="app-tab-panel" role="tabpanel" aria-labelledby="eodTabBtn">
+    <div class="container simple-eod-shell">
+        <h2>Maintenance Report</h2>
+        <div class="simple-eod-intro">
+            Simple workflow: <strong>paste the lanes/table → paste or upload CCTV screenshot → add the observation note → add another block below</strong>.
+            No floor selector and no time field—just repeat the blocks in the same order you want them to appear in the PDF.
+        </div>
+
+        <div class="simple-eod-top">
+            <div>
+                <label for="simpleEodDate">Report Date</label>
+                <input type="date" id="simpleEodDate">
+            </div>
+            <div>
+                <label for="simpleEodSite">Site / Report Title</label>
+                <input type="text" id="simpleEodSite" value="Mabini Site A - 1st & 2nd Floor">
+            </div>
+        </div>
+
+        <div class="simple-eod-actions">
+            <button type="button" class="btn-eod-outline" id="simpleEodSaveBtn">💾 Save Draft</button>
+            <button type="button" class="btn-eod-outline" id="simpleEodDraftsBtn">🗂️ Drafts</button>
+            <button type="button" class="btn-eod-secondary" id="simpleEodPreviewBtn">👁️ Preview / Print</button>
+            <button type="button" class="btn-eod-primary" id="simpleEodPdfBtn">📄 Download PDF</button>
+            <button type="button" class="btn-eod-danger" id="simpleEodClearBtn">Clear All</button>
+            <span id="simpleEodAutosaveStatus" class="maintenance-autosave-status saved">● Auto-save active</span>
+        </div>
+
+        <div id="simpleEodMessage" class="simple-eod-message" aria-live="polite"></div>
+
+        <div id="simpleEodBlocks" class="eod-block-list"></div>
+
+        <button type="button" id="simpleEodAddBtn" class="eod-add-next">＋ Add another editable lanes + screenshot block</button>
+    </div>
+</section>
+
+
+<!-- Full screenshot viewer -->
+<div id="maintenanceImageViewer" class="maintenance-modal" aria-hidden="true">
+    <div class="maintenance-modal-backdrop" id="maintenanceImageBackdrop"></div>
+    <div class="maintenance-image-dialog" role="dialog" aria-modal="true" aria-label="Screenshot preview">
+        <button type="button" id="maintenanceImageClose" class="maintenance-modal-close" aria-label="Close">×</button>
+        <img id="maintenanceImageFull" src="" alt="Full CCTV screenshot">
+    </div>
+</div>
+
+<!-- Draft manager -->
+<div id="maintenanceDraftsModal" class="maintenance-modal" aria-hidden="true">
+    <div class="maintenance-modal-backdrop" id="maintenanceDraftsBackdrop"></div>
+    <div class="maintenance-drafts-dialog" role="dialog" aria-modal="true" aria-labelledby="maintenanceDraftsTitle">
+        <div class="maintenance-drafts-head">
+            <div>
+                <h3 id="maintenanceDraftsTitle">Maintenance Report Drafts</h3>
+                <p>Your current work auto-saves. You can also save named snapshots here.</p>
+            </div>
+            <button type="button" id="maintenanceDraftsClose" class="maintenance-modal-close static-close" aria-label="Close drafts">×</button>
+        </div>
+
+        <div class="maintenance-draft-save-row">
+            <input type="text" id="maintenanceDraftName" placeholder="Draft name (example: Aug 31 - Night Shift)">
+            <button type="button" id="maintenanceSaveNamedDraft" class="btn-eod-primary">Save Snapshot</button>
+        </div>
+
+        <div id="maintenanceDraftList" class="maintenance-draft-list"></div>
+    </div>
+</div>
+
+<div id="simpleEodPrintRoot" aria-hidden="true"></div>
+
 
 
 <div class="site-footer">
@@ -2477,5 +3228,903 @@
 })();
 </script>
 
+
+<script>
+(function () {
+    const DB_NAME = "maintenance_report_db";
+    const DB_VERSION = 2;
+    const STORE = "drafts";
+    const NAMED_STORE = "namedDrafts";
+    const DRAFT_KEY = "current";
+
+    const NOTE_TYPES = {
+        wiping: "Maintenance observed wiping stations in these lanes",
+        sweeping: "Maintenance staff observed sweeping floors in these lanes",
+        none: "No maintenance observed wiping stations in these lanes",
+        custom: ""
+    };
+
+    let state = {
+        date: "",
+        title: "Mabini Site A - 1st & 2nd Floor",
+        blocks: []
+    };
+
+    let activePasteBlockId = null;
+
+    const $ = id => document.getElementById(id);
+
+    function uid() {
+        return "b_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 8);
+    }
+
+    function makeBlock() {
+        return {
+            id: uid(),
+            lanesText: "",
+            noteType: "wiping",
+            customNote: "",
+            screenshots: []
+        };
+    }
+
+    function escapeHtml(value) {
+        return String(value == null ? "" : value)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
+
+    function clean(value) {
+        return String(value == null ? "" : value).trim();
+    }
+
+    function splitMarkdownLine(line) {
+        let s = line.trim();
+        if (s.startsWith("|")) s = s.slice(1);
+        if (s.endsWith("|")) s = s.slice(0, -1);
+        return s.split("|").map(v => clean(v).replace(/\*\*/g, ""));
+    }
+
+    function isMdSeparator(cells) {
+        return cells.length > 1 && cells.every(cell => /^:?-{2,}:?$/.test(cell.replace(/\s/g, "")));
+    }
+
+    function splitCsv(line) {
+        const out = [];
+        let cur = "";
+        let quoted = false;
+
+        for (let i = 0; i < line.length; i++) {
+            const ch = line[i];
+            if (ch === '"') {
+                if (quoted && line[i + 1] === '"') {
+                    cur += '"';
+                    i++;
+                } else {
+                    quoted = !quoted;
+                }
+            } else if (ch === "," && !quoted) {
+                out.push(clean(cur));
+                cur = "";
+            } else {
+                cur += ch;
+            }
+        }
+
+        out.push(clean(cur));
+        return out;
+    }
+
+    function parseTable(text) {
+        const lines = String(text || "")
+            .replace(/\r/g, "")
+            .split("\n")
+            .filter(line => line.trim() !== "");
+
+        if (!lines.length) return null;
+
+        let rows = null;
+
+        if (lines[0].includes("|") && lines.slice(0, 3).some(line => line.includes("|"))) {
+            rows = lines.map(splitMarkdownLine).filter(r => !isMdSeparator(r));
+        } else if ((lines[0].match(/\t/g) || []).length >= 1) {
+            rows = lines.map(line => line.split("\t").map(clean));
+        } else if ((lines[0].match(/,/g) || []).length >= 2) {
+            rows = lines.map(splitCsv);
+        }
+
+        if (!rows || rows.length < 1) return null;
+
+        const maxCols = Math.max(...rows.map(r => r.length));
+        if (maxCols < 2) return null;
+
+        return rows.map(row => {
+            const copy = row.slice();
+            while (copy.length < maxCols) copy.push("");
+            return copy;
+        });
+    }
+
+    function tableHtml(text, forPdf = false) {
+        const rows = parseTable(text);
+
+        if (!rows) {
+            return `<div class="${forPdf ? "simple-pdf-raw" : "eod-preview-empty"}">${forPdf ? escapeHtml(text || "No lanes pasted.") : "Paste rows from the IT sheet to preview them here."}</div>`;
+        }
+
+        const [head, ...body] = rows;
+
+        if (forPdf) {
+            return `
+                <div class="simple-pdf-table-wrap">
+                    <table class="simple-pdf-table">
+                        <thead><tr>${head.map(cell => `<th>${escapeHtml(cell)}</th>`).join("")}</tr></thead>
+                        <tbody>
+                            ${body.map(row => `<tr>${row.map(cell => `<td>${escapeHtml(cell)}</td>`).join("")}</tr>`).join("")}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+
+        return `
+            <table>
+                <thead><tr>${head.map(cell => `<th>${escapeHtml(cell)}</th>`).join("")}</tr></thead>
+                <tbody>
+                    ${body.map(row => `<tr>${row.map(cell => `<td>${escapeHtml(cell)}</td>`).join("")}</tr>`).join("")}
+                </tbody>
+            </table>
+        `;
+    }
+
+    function noteText(block) {
+        return String(block.customNote || "").trim();
+    }
+
+    function blockHtml(block, index) {
+        const fileId = "proof_" + block.id;
+
+        return `
+            <article class="eod-block" data-id="${escapeHtml(block.id)}">
+                <div class="eod-block-head">
+                    <div>
+                        <div class="eod-block-title">Report Block ${index + 1}</div>
+                        <div class="eod-block-sub">Paste lanes/table, attach screenshot proof, then add the observation note.</div>
+                    </div>
+                    <div class="block-actions">
+<button type="button" class="btn-eod-outline duplicate-block">Duplicate</button>
+                        <button type="button" class="btn-eod-danger remove-block">Remove</button>
+                    </div>
+                </div>
+
+                <div class="eod-block-grid">
+                    <div>
+                        <label>Observation</label>
+                        <select class="block-note-type">
+                            <option value="wiping" ${block.noteType === "wiping" ? "selected" : ""}>Maintenance observed wiping stations</option>
+                            <option value="sweeping" ${block.noteType === "sweeping" ? "selected" : ""}>Maintenance staff observed sweeping floors</option>
+                            <option value="none" ${block.noteType === "none" ? "selected" : ""}>No maintenance observed wiping stations</option>
+                            <option value="custom" ${block.noteType === "custom" ? "selected" : ""}>Custom note</option>
+                        </select>
+                    </div>
+                </div>
+
+                <label>Paste Lanes / IT Sheet Rows</label>
+                <textarea class="eod-paste-area" placeholder="Copy the rows/lanes from the IT sheet and paste here...">${escapeHtml(block.lanesText)}</textarea>
+
+                <div class="eod-mini-preview">
+                    ${tableHtml(block.lanesText, false)}
+                </div>
+
+                <div class="eod-proof-zone" tabindex="0">
+                    <p>
+                        <strong>Screenshot Proof</strong><br>
+                        Upload, drag-and-drop, or click this area and press <strong>Ctrl+V</strong> after copying a CCTV screenshot.
+                    </p>
+                    <label class="eod-proof-label" for="${fileId}">+ Add Screenshot</label>
+                    <input id="${fileId}" class="eod-file-input" type="file" accept="image/*" multiple>
+                    <div class="maintenance-paste-indicator">Ctrl+V screenshot will paste here</div>
+                    <div class="eod-proof-grid">
+                        ${block.screenshots.map((shot, shotIndex) => `
+                            <div class="eod-proof-item">
+                                <img src="${shot.dataUrl}" alt="CCTV screenshot proof ${shotIndex + 1}">
+                                <button type="button" class="eod-proof-remove" data-shot-index="${shotIndex}" title="Remove screenshot">×</button>
+                            </div>
+                        `).join("")}
+                    </div>
+                </div>
+
+                <div class="eod-note-row">
+                    <div>
+                        <label>Remarks</label>
+                        <textarea class="eod-note-area" placeholder="Type your remarks here, e.g. Maintenance observed wiping stations in these lanes / No maintenance observed wiping stations in these lanes.">${escapeHtml(block.customNote || "")}</textarea>
+                    </div>
+                </div>
+            </article>
+        `;
+    }
+
+    function render() {
+        const root = $("simpleEodBlocks");
+        if (!state.blocks.length) state.blocks.push(makeBlock());
+
+        root.innerHTML = state.blocks.map(blockHtml).join("");
+        wireBlocks();
+    }
+
+    function getBlock(id) {
+        return state.blocks.find(block => block.id === id);
+    }
+
+    function wireBlocks() {
+        document.querySelectorAll(".eod-block").forEach(card => {
+            const block = getBlock(card.dataset.id);
+            if (!block) return;
+
+            const type = card.querySelector(".block-note-type");
+            const textarea = card.querySelector(".eod-paste-area");
+            const note = card.querySelector(".eod-note-area");
+            const fileInput = card.querySelector(".eod-file-input");
+            const zone = card.querySelector(".eod-proof-zone");
+
+            function activatePasteTarget() {
+                activePasteBlockId = block.id;
+                document.querySelectorAll(".eod-proof-zone").forEach(item => item.classList.remove("active-paste-target"));
+                zone.classList.add("active-paste-target");
+            }
+
+            zone.addEventListener("click", event => {
+                if (event.target.closest(".eod-proof-remove") || event.target.closest(".eod-proof-label")) return;
+                activatePasteTarget();
+            });
+            zone.addEventListener("focusin", activatePasteTarget);
+
+            type.addEventListener("change", () => {
+                block.noteType = type.value;
+                queueSave();
+            });
+
+            textarea.addEventListener("input", () => {
+                block.lanesText = textarea.value;
+                card.querySelector(".eod-mini-preview").innerHTML = tableHtml(block.lanesText, false);
+                queueSave();
+            });
+
+            note.addEventListener("input", () => {
+                block.customNote = note.value;
+                queueSave();
+            });
+
+            fileInput.addEventListener("change", async () => {
+                await addScreenshots(block, [...fileInput.files]);
+                fileInput.value = "";
+            });
+
+            zone.addEventListener("dragover", event => {
+                event.preventDefault();
+                zone.classList.add("dragover");
+            });
+
+            zone.addEventListener("dragleave", () => zone.classList.remove("dragover"));
+
+            zone.addEventListener("drop", async event => {
+                event.preventDefault();
+                zone.classList.remove("dragover");
+                const files = [...event.dataTransfer.files].filter(file => file.type.startsWith("image/"));
+                await addScreenshots(block, files);
+            });
+
+            zone.addEventListener("paste", async event => {
+                const files = getClipboardImages(event);
+                if (files.length) {
+                    event.preventDefault();
+                    activatePasteTarget();
+                    await addScreenshots(block, files);
+                }
+            });
+
+            card.querySelector(".remove-block").addEventListener("click", () => {
+                if (state.blocks.length === 1) {
+                    showMessage("Keep at least one report block.", "info");
+                    return;
+                }
+                if (!confirm("Remove this report block?")) return;
+                state.blocks = state.blocks.filter(item => item.id !== block.id);
+                render();
+                queueSave();
+            });
+
+            card.querySelector(".duplicate-block").addEventListener("click", () => {
+                const copy = JSON.parse(JSON.stringify(block));
+                copy.id = uid();
+                const idx = state.blocks.findIndex(item => item.id === block.id);
+                state.blocks.splice(idx + 1, 0, copy);
+                render();
+                queueSave();
+            });
+            card.querySelectorAll(".eod-proof-item img").forEach(img => {
+                img.addEventListener("click", () => openImageViewer(img.src));
+            });
+
+card.querySelectorAll(".eod-proof-remove").forEach(button => {
+                button.addEventListener("click", () => {
+                    block.screenshots.splice(Number(button.dataset.shotIndex), 1);
+                    render();
+                    queueSave();
+                });
+            });
+        });
+    }
+
+
+    async function addScreenshots(block, files) {
+        if (!files.length) return;
+
+        showMessage("Processing screenshot...", "info");
+
+        for (const file of files.slice(0, 8)) {
+            if (!file.type.startsWith("image/")) continue;
+            try {
+                block.screenshots.push({
+                    name: file.name || "cctv-screenshot.jpg",
+                    dataUrl: await compressImage(file)
+                });
+            } catch (error) {
+                console.error(error);
+            }
+        }
+
+        render();
+        await saveDraft(true);
+        showMessage("Screenshot added and auto-saved.", "success");
+    }
+
+    function compressImage(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onerror = reject;
+            reader.onload = () => {
+                const img = new Image();
+                img.onerror = reject;
+                img.onload = () => {
+                    const maxWidth = 1600;
+                    const scale = Math.min(1, maxWidth / img.width);
+                    const canvas = document.createElement("canvas");
+                    canvas.width = Math.max(1, Math.round(img.width * scale));
+                    canvas.height = Math.max(1, Math.round(img.height * scale));
+
+                    const ctx = canvas.getContext("2d");
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                    resolve(canvas.toDataURL("image/jpeg", .86));
+                };
+                img.src = reader.result;
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+
+
+    function setAutosaveStatus(text, type = "") {
+        const el = $("simpleEodAutosaveStatus");
+        if (!el) return;
+        el.textContent = text;
+        el.className = "maintenance-autosave-status" + (type ? " " + type : "");
+    }
+
+    function getClipboardImages(event) {
+        if (!event.clipboardData || !event.clipboardData.items) return [];
+        return [...event.clipboardData.items]
+            .filter(item => item.type && item.type.startsWith("image/"))
+            .map(item => item.getAsFile())
+            .filter(Boolean);
+    }
+
+    function openImageViewer(src) {
+        $("maintenanceImageFull").src = src;
+        $("maintenanceImageViewer").classList.add("open");
+        $("maintenanceImageViewer").setAttribute("aria-hidden", "false");
+        document.body.classList.add("maintenance-modal-open");
+    }
+
+    function closeImageViewer() {
+        $("maintenanceImageViewer").classList.remove("open");
+        $("maintenanceImageViewer").setAttribute("aria-hidden", "true");
+        $("maintenanceImageFull").src = "";
+        document.body.classList.remove("maintenance-modal-open");
+    }
+
+    function openDraftsModal() {
+        $("maintenanceDraftsModal").classList.add("open");
+        $("maintenanceDraftsModal").setAttribute("aria-hidden", "false");
+        document.body.classList.add("maintenance-modal-open");
+        renderDraftList();
+        setTimeout(() => $("maintenanceDraftName")?.focus(), 50);
+    }
+
+    function closeDraftsModal() {
+        $("maintenanceDraftsModal").classList.remove("open");
+        $("maintenanceDraftsModal").setAttribute("aria-hidden", "true");
+        document.body.classList.remove("maintenance-modal-open");
+    }
+
+    function snapshotState() {
+        syncTop();
+        return JSON.parse(JSON.stringify(state));
+    }
+
+    async function saveNamedDraft() {
+        syncTop();
+        const input = $("maintenanceDraftName");
+        const name = (input.value || "").trim() ||
+            `${state.title || "Maintenance Report"} - ${state.date || todayLocal()}`;
+
+        const record = {
+            id: "draft_" + Date.now(),
+            name,
+            savedAt: new Date().toISOString(),
+            state: snapshotState()
+        };
+
+        const db = await openDb();
+        await new Promise((resolve, reject) => {
+            const tx = db.transaction(NAMED_STORE, "readwrite");
+            tx.objectStore(NAMED_STORE).put(record);
+            tx.oncomplete = resolve;
+            tx.onerror = () => reject(tx.error);
+        });
+        db.close();
+
+        input.value = "";
+        await renderDraftList();
+        showMessage(`Draft "${name}" saved.`, "success");
+    }
+
+    async function getNamedDrafts() {
+        const db = await openDb();
+        const drafts = await new Promise((resolve, reject) => {
+            const tx = db.transaction(NAMED_STORE, "readonly");
+            const req = tx.objectStore(NAMED_STORE).getAll();
+            req.onsuccess = () => resolve(req.result || []);
+            req.onerror = () => reject(req.error);
+        });
+        db.close();
+        return drafts.sort((a, b) => String(b.savedAt).localeCompare(String(a.savedAt)));
+    }
+
+    async function renderDraftList() {
+        const root = $("maintenanceDraftList");
+        if (!root) return;
+
+        try {
+            const drafts = await getNamedDrafts();
+
+            if (!drafts.length) {
+                root.innerHTML = '<div class="maintenance-draft-empty">No saved snapshots yet. Your current work is still auto-saved.</div>';
+                return;
+            }
+
+            root.innerHTML = drafts.map(draft => {
+                const when = new Date(draft.savedAt).toLocaleString();
+                const blocks = Array.isArray(draft.state?.blocks) ? draft.state.blocks.length : 0;
+
+                return `
+                    <div class="maintenance-draft-item">
+                        <div class="maintenance-draft-info">
+                            <strong>${escapeHtml(draft.name)}</strong>
+                            <span>${escapeHtml(when)} • ${blocks} block${blocks === 1 ? "" : "s"}</span>
+                        </div>
+                        <div class="maintenance-draft-actions">
+                            <button type="button" class="draft-load" data-id="${escapeHtml(draft.id)}">Load</button>
+                            <button type="button" class="draft-delete" data-id="${escapeHtml(draft.id)}">Delete</button>
+                        </div>
+                    </div>
+                `;
+            }).join("");
+
+            root.querySelectorAll(".draft-load").forEach(button => {
+                button.addEventListener("click", () => loadNamedDraft(button.dataset.id));
+            });
+
+            root.querySelectorAll(".draft-delete").forEach(button => {
+                button.addEventListener("click", () => deleteNamedDraft(button.dataset.id));
+            });
+        } catch (error) {
+            console.error(error);
+            root.innerHTML = '<div class="maintenance-draft-empty">Unable to load drafts.</div>';
+        }
+    }
+
+    async function loadNamedDraft(id) {
+        const db = await openDb();
+        const record = await new Promise((resolve, reject) => {
+            const tx = db.transaction(NAMED_STORE, "readonly");
+            const req = tx.objectStore(NAMED_STORE).get(id);
+            req.onsuccess = () => resolve(req.result || null);
+            req.onerror = () => reject(req.error);
+        });
+        db.close();
+
+        if (!record || !record.state) return;
+
+        if (!confirm(`Load "${record.name}"? Your current auto-saved work will be replaced by this snapshot.`)) {
+            return;
+        }
+
+        state = JSON.parse(JSON.stringify(record.state));
+        if (!Array.isArray(state.blocks) || !state.blocks.length) {
+            state.blocks = [makeBlock()];
+        }
+
+        $("simpleEodDate").value = state.date || todayLocal();
+        $("simpleEodSite").value = state.title || "Mabini Site A - 1st & 2nd Floor";
+        activePasteBlockId = null;
+        render();
+        await saveDraft(true);
+        closeDraftsModal();
+        showMessage(`Loaded draft "${record.name}".`, "success");
+    }
+
+    async function deleteNamedDraft(id) {
+        if (!confirm("Delete this saved draft?")) return;
+
+        const db = await openDb();
+        await new Promise((resolve, reject) => {
+            const tx = db.transaction(NAMED_STORE, "readwrite");
+            tx.objectStore(NAMED_STORE).delete(id);
+            tx.oncomplete = resolve;
+            tx.onerror = () => reject(tx.error);
+        });
+        db.close();
+
+        await renderDraftList();
+    }
+
+    function showMessage(text, type = "info") {
+        const el = $("simpleEodMessage");
+        el.textContent = text;
+        el.className = "simple-eod-message show " + type;
+    }
+
+    function syncTop() {
+        state.date = $("simpleEodDate").value;
+        state.title = $("simpleEodSite").value.trim() || "Mabini Site A - 1st & 2nd Floor";
+    }
+
+    function formatDateForTitle(date) {
+        if (!date) return "";
+        const [y, m, d] = date.split("-");
+        return `${m}-${d}-${String(y).slice(-2)}`;
+    }
+
+    function reportFilename() {
+        syncTop();
+        const date = formatDateForTitle(state.date) || "report";
+        return `${state.title} - ${date}.pdf`;
+    }
+
+    function buildPrint() {
+        syncTop();
+
+        const blocksHtml = state.blocks.map(block => {
+            const imgs = block.screenshots.length
+                ? `<div class="simple-pdf-images ${block.screenshots.length > 1 ? "two" : ""}">
+                    ${block.screenshots.map(shot => `<img src="${shot.dataUrl}" alt="CCTV screenshot proof">`).join("")}
+                   </div>`
+                : "";
+
+            return `
+                <section class="simple-pdf-block">
+                    ${tableHtml(block.lanesText, true)}
+                    ${imgs}
+                    <div class="simple-pdf-note">${escapeHtml(noteText(block) || "")}</div>
+                </section>
+            `;
+        }).join("");
+
+        $("simpleEodPrintRoot").innerHTML = `
+            <div class="simple-pdf">
+                <header class="simple-pdf-header">
+                    <h1>${escapeHtml(state.title)}</h1>
+                    <p>${state.date ? escapeHtml(formatDateForTitle(state.date)) : ""}</p>
+                </header>
+                ${blocksHtml}
+            </div>
+        `;
+
+        return $("simpleEodPrintRoot").firstElementChild;
+    }
+
+    function previewPrint() {
+        if (!state.blocks.some(block => block.lanesText.trim())) {
+            showMessage("Paste at least one lanes/table block first.", "error");
+            return;
+        }
+        buildPrint();
+        window.print();
+    }
+
+    async function downloadPdf() {
+        if (!state.blocks.some(block => block.lanesText.trim())) {
+            showMessage("Paste at least one lanes/table block first.", "error");
+            return;
+        }
+
+        const root = buildPrint();
+
+        if (typeof html2pdf === "undefined") {
+            showMessage("PDF library did not load. Opening browser Print / Save as PDF instead.", "info");
+            window.print();
+            return;
+        }
+
+        const btn = $("simpleEodPdfBtn");
+        const original = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = "Generating PDF...";
+
+        try {
+            await html2pdf()
+                .set({
+                    margin: 0,
+                    filename: reportFilename(),
+                    image: { type: "jpeg", quality: .97 },
+                    html2canvas: { scale: 2, backgroundColor: "#ffffff", useCORS: true },
+                    jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+                    pagebreak: { mode: ["css", "legacy"], avoid: [".simple-pdf-block"] }
+                })
+                .from(root)
+                .save();
+
+            showMessage(`PDF created: ${reportFilename()}`, "success");
+        } catch (error) {
+            console.error(error);
+            showMessage("PDF generation failed. Opening Print / Save as PDF as fallback.", "info");
+            window.print();
+        } finally {
+            btn.disabled = false;
+            btn.textContent = original;
+        }
+    }
+
+    function openDb() {
+        return new Promise((resolve, reject) => {
+            const req = indexedDB.open(DB_NAME, DB_VERSION);
+
+            req.onupgradeneeded = () => {
+                const db = req.result;
+                if (!db.objectStoreNames.contains(STORE)) db.createObjectStore(STORE);
+                if (!db.objectStoreNames.contains(NAMED_STORE)) {
+                    db.createObjectStore(NAMED_STORE, { keyPath: "id" });
+                }
+            };
+
+            req.onsuccess = () => resolve(req.result);
+            req.onerror = () => reject(req.error);
+        });
+    }
+
+    async function saveDraft(silent = false) {
+        syncTop();
+        setAutosaveStatus("● Saving...", "saving");
+
+        try {
+            const db = await openDb();
+
+            await new Promise((resolve, reject) => {
+                const tx = db.transaction(STORE, "readwrite");
+                tx.objectStore(STORE).put(state, DRAFT_KEY);
+                tx.oncomplete = resolve;
+                tx.onerror = () => reject(tx.error);
+            });
+
+            db.close();
+            setAutosaveStatus("● Auto-saved", "saved");
+
+            if (!silent) {
+                showMessage("Draft saved locally in this browser.", "success");
+            }
+        } catch (error) {
+            setAutosaveStatus("● Auto-save failed", "error");
+            throw error;
+        }
+    }
+
+    async function loadDraft() {
+        try {
+            const db = await openDb();
+            const draft = await new Promise((resolve, reject) => {
+                const tx = db.transaction(STORE, "readonly");
+                const req = tx.objectStore(STORE).get(DRAFT_KEY);
+                req.onsuccess = () => resolve(req.result || null);
+                req.onerror = () => reject(req.error);
+            });
+            db.close();
+
+            if (draft) {
+                state = draft;
+                if (Array.isArray(state.blocks)) {
+                    state.blocks = state.blocks.map(block => {
+                        const cleaned = {
+                            id: block.id || uid(),
+                            lanesText: block.lanesText || "",
+                            noteType: block.noteType || "wiping",
+                            customNote: block.customNote || "",
+                            screenshots: Array.isArray(block.screenshots) ? block.screenshots : []
+                        };
+                        return cleaned;
+                    });
+                }
+            }
+        } catch (error) {
+            console.warn(error);
+        }
+
+        if (!state.blocks || !state.blocks.length) state.blocks = [makeBlock()];
+
+        $("simpleEodSite").value = state.title || "Mabini Site A - 1st & 2nd Floor";
+        $("simpleEodDate").value = state.date || todayLocal();
+        state.date = $("simpleEodDate").value;
+        render();
+    }
+
+    function todayLocal() {
+        const d = new Date();
+        const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000);
+        return local.toISOString().slice(0, 10);
+    }
+
+    async function clearAll() {
+        if (!confirm("Clear all Maintenance Report blocks and screenshots?")) return;
+
+        try {
+            const db = await openDb();
+            await new Promise((resolve, reject) => {
+                const tx = db.transaction(STORE, "readwrite");
+                tx.objectStore(STORE).delete(DRAFT_KEY);
+                tx.oncomplete = resolve;
+                tx.onerror = () => reject(tx.error);
+            });
+            db.close();
+        } catch (error) {
+            console.warn(error);
+        }
+
+        state = {
+            date: todayLocal(),
+            title: "Mabini Site A - 1st & 2nd Floor",
+            blocks: [makeBlock()]
+        };
+
+        $("simpleEodDate").value = state.date;
+        $("simpleEodSite").value = state.title;
+        render();
+        showMessage("Maintenance Report cleared.", "info");
+    }
+
+    let saveTimer = null;
+    function queueSave() {
+        clearTimeout(saveTimer);
+        saveTimer = setTimeout(() => saveDraft(true).catch(console.error), 400);
+    }
+
+    $("simpleEodAddBtn").addEventListener("click", () => {
+        state.blocks.push(makeBlock());
+        render();
+        queueSave();
+
+        setTimeout(() => {
+            const cards = document.querySelectorAll(".eod-block");
+            const lastCard = cards[cards.length - 1];
+
+            if (lastCard) {
+                lastCard.scrollIntoView({ behavior: "smooth", block: "start" });
+
+                // New block is immediately editable.
+                const pasteArea = lastCard.querySelector(".eod-paste-area");
+                if (pasteArea) pasteArea.focus();
+            }
+        }, 80);
+    });
+
+    $("simpleEodSaveBtn").addEventListener("click", () => saveDraft().catch(error => {
+        console.error(error);
+        showMessage("Could not save the draft.", "error");
+    }));
+    $("simpleEodPreviewBtn").addEventListener("click", previewPrint);
+    $("simpleEodPdfBtn").addEventListener("click", downloadPdf);
+    $("simpleEodClearBtn").addEventListener("click", clearAll);
+    $("simpleEodDate").addEventListener("change", queueSave);
+    $("simpleEodSite").addEventListener("input", queueSave);
+
+    // Third tab integration with the existing two-tab system.
+    const cctvBtn = $("cctvTabBtn");
+    const maintenanceBtn = $("maintenanceTabBtn");
+    const eodBtn = $("eodTabBtn");
+
+    eodBtn.addEventListener("click", () => {
+        $("cctvPanel").classList.remove("active");
+        $("maintenancePanel").classList.remove("active");
+        $("eodPanel").classList.add("active");
+
+        cctvBtn.classList.remove("active");
+        maintenanceBtn.classList.remove("active");
+        eodBtn.classList.add("active");
+
+        cctvBtn.setAttribute("aria-selected", "false");
+        maintenanceBtn.setAttribute("aria-selected", "false");
+        eodBtn.setAttribute("aria-selected", "true");
+    });
+
+    cctvBtn.addEventListener("click", () => {
+        $("eodPanel").classList.remove("active");
+        eodBtn.classList.remove("active");
+        eodBtn.setAttribute("aria-selected", "false");
+    });
+
+    maintenanceBtn.addEventListener("click", () => {
+        $("eodPanel").classList.remove("active");
+        eodBtn.classList.remove("active");
+        eodBtn.setAttribute("aria-selected", "false");
+    });
+
+
+    $("maintenanceImageClose").addEventListener("click", closeImageViewer);
+    $("maintenanceImageBackdrop").addEventListener("click", closeImageViewer);
+    $("maintenanceDraftsClose").addEventListener("click", closeDraftsModal);
+    $("maintenanceDraftsBackdrop").addEventListener("click", closeDraftsModal);
+
+    $("simpleEodDraftsBtn").addEventListener("click", openDraftsModal);
+    $("maintenanceSaveNamedDraft").addEventListener("click", () => {
+        saveNamedDraft().catch(error => {
+            console.error(error);
+            showMessage("Could not save the named draft.", "error");
+        });
+    });
+
+    $("maintenanceDraftName").addEventListener("keydown", event => {
+        if (event.key === "Enter") {
+            event.preventDefault();
+            $("maintenanceSaveNamedDraft").click();
+        }
+    });
+
+    document.addEventListener("keydown", event => {
+        if (event.key === "Escape") {
+            closeImageViewer();
+            closeDraftsModal();
+        }
+    });
+
+    // Snipping Tool workflow:
+    // Take a snip/screenshot, then press Ctrl+V.
+    // If a screenshot box was clicked, paste goes there.
+    // Otherwise it goes to the newest report block.
+    document.addEventListener("paste", async event => {
+        if (!$("eodPanel").classList.contains("active")) return;
+
+        const imageFiles = getClipboardImages(event);
+        if (!imageFiles.length) return;
+
+        event.preventDefault();
+
+        let block = activePasteBlockId ? getBlock(activePasteBlockId) : null;
+        if (!block) {
+            block = state.blocks[state.blocks.length - 1];
+            if (block) activePasteBlockId = block.id;
+        }
+
+        if (block) {
+            await addScreenshots(block, imageFiles);
+        }
+    });
+
+    loadDraft();
+})();
+</script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 </body>
 </html>
