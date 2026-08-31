@@ -3208,6 +3208,256 @@
     }
 </style>
 
+
+<style>
+    /* =========================================================
+       FINAL PORTRAIT PDF FIX
+       Clean white rows, no dark-mode/alternating black cells.
+       ========================================================= */
+
+    #simpleEodPrintRoot,
+    #simpleEodPrintRoot * {
+        color-scheme: light !important;
+    }
+
+    #simpleEodPrintRoot {
+        background: #ffffff !important;
+        color: #111111 !important;
+    }
+
+    .simple-pdf {
+        width: 100% !important;
+        box-sizing: border-box !important;
+        padding: 9mm 8mm 10mm !important;
+        background: #ffffff !important;
+        color: #111111 !important;
+    }
+
+    .minimal-pdf-header {
+        width: 100% !important;
+        box-sizing: border-box !important;
+        display: grid !important;
+        grid-template-columns: minmax(0, 1fr) auto !important;
+        align-items: baseline !important;
+        gap: 8mm !important;
+        margin: 0 0 6mm !important;
+        padding: 0 0 3.5mm !important;
+        border-bottom: 0.7px solid #3d3d3d !important;
+        background: #ffffff !important;
+    }
+
+    .minimal-pdf-header h1 {
+        margin: 0 !important;
+        color: #111111 !important;
+        font-size: 14px !important;
+        font-weight: 800 !important;
+    }
+
+    .minimal-pdf-date {
+        color: #333333 !important;
+        font-size: 7.5px !important;
+        font-weight: 700 !important;
+        text-align: right !important;
+        white-space: nowrap !important;
+    }
+
+    .simple-pdf-block {
+        width: 100% !important;
+        box-sizing: border-box !important;
+        margin: 0 0 7mm !important;
+        padding: 0 !important;
+        background: #ffffff !important;
+        break-inside: auto !important;
+        page-break-inside: auto !important;
+    }
+
+    .simple-pdf-table-wrap {
+        width: 100% !important;
+        box-sizing: border-box !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        overflow: visible !important;
+        background: #ffffff !important;
+        border: 0 !important;
+        border-radius: 0 !important;
+    }
+
+    .simple-pdf-table {
+        width: 100% !important;
+        table-layout: fixed !important;
+        border-collapse: collapse !important;
+        margin: 0 !important;
+        background: #ffffff !important;
+        font-size: 5.4px !important;
+    }
+
+    .simple-pdf-table thead {
+        display: table-header-group !important;
+    }
+
+    .simple-pdf-table tbody {
+        background: #ffffff !important;
+    }
+
+    .simple-pdf-table tr {
+        background: #ffffff !important;
+        break-inside: avoid !important;
+        page-break-inside: avoid !important;
+    }
+
+    .simple-pdf-table tbody tr:nth-child(odd),
+    .simple-pdf-table tbody tr:nth-child(even),
+    .simple-pdf-table tbody tr:hover {
+        background: #ffffff !important;
+    }
+
+    .simple-pdf-table th,
+    .simple-pdf-table td {
+        box-sizing: border-box !important;
+        padding: 2.2px 2.4px !important;
+        border: 0.45px solid #cfd4da !important;
+        vertical-align: middle !important;
+        white-space: normal !important;
+        overflow-wrap: anywhere !important;
+        word-break: normal !important;
+        box-shadow: none !important;
+    }
+
+    .simple-pdf-table th {
+        background: #344f66 !important;
+        color: #ffffff !important;
+        font-size: 5.2px !important;
+        font-weight: 800 !important;
+        text-align: center !important;
+        line-height: 1.15 !important;
+    }
+
+    .simple-pdf-table td {
+        background: #ffffff !important;
+        color: #111111 !important;
+        font-size: 5.25px !important;
+        line-height: 1.22 !important;
+    }
+
+    .simple-pdf-table td:nth-child(-n+6) {
+        text-align: center !important;
+    }
+
+    .simple-pdf-table td:nth-child(7) {
+        text-align: left !important;
+    }
+
+    /* Portrait proportions */
+    .simple-pdf-table th:nth-child(1),
+    .simple-pdf-table td:nth-child(1) { width: 16% !important; }
+
+    .simple-pdf-table th:nth-child(2),
+    .simple-pdf-table td:nth-child(2) { width: 10% !important; }
+
+    .simple-pdf-table th:nth-child(3),
+    .simple-pdf-table td:nth-child(3) { width: 15% !important; }
+
+    .simple-pdf-table th:nth-child(4),
+    .simple-pdf-table td:nth-child(4) { width: 13% !important; }
+
+    .simple-pdf-table th:nth-child(5),
+    .simple-pdf-table td:nth-child(5) { width: 14% !important; }
+
+    .simple-pdf-table th:nth-child(6),
+    .simple-pdf-table td:nth-child(6) { width: 12% !important; }
+
+    .simple-pdf-table th:nth-child(7),
+    .simple-pdf-table td:nth-child(7) { width: 20% !important; }
+
+    .pdf-proof-remarks-group {
+        width: 100% !important;
+        box-sizing: border-box !important;
+        margin-top: 4mm !important;
+        background: #ffffff !important;
+        break-inside: avoid !important;
+        page-break-inside: avoid !important;
+    }
+
+    .simple-pdf-images {
+        width: 100% !important;
+        display: flex !important;
+        flex-wrap: wrap !important;
+        justify-content: center !important;
+        align-items: flex-start !important;
+        gap: 3mm !important;
+        margin: 0 auto 3.5mm !important;
+        background: #ffffff !important;
+        break-inside: avoid !important;
+        page-break-inside: avoid !important;
+    }
+
+    .simple-pdf-images.two {
+        display: flex !important;
+    }
+
+    .simple-pdf-images img {
+        display: block !important;
+        width: auto !important;
+        height: auto !important;
+        max-width: 100% !important;
+        max-height: 108mm !important;
+        object-fit: contain !important;
+        margin: 0 auto !important;
+        border: 0.45px solid #d0d0d0 !important;
+        background: #ffffff !important;
+        break-inside: avoid !important;
+        page-break-inside: avoid !important;
+    }
+
+    .simple-pdf-images:has(img:nth-child(2)) img {
+        max-width: calc(50% - 1.5mm) !important;
+        max-height: 82mm !important;
+    }
+
+    .minimal-remarks-label {
+        margin: 0 0 1.5mm !important;
+        color: #267a31 !important;
+        font-size: 6.4px !important;
+        font-weight: 900 !important;
+        letter-spacing: .04em !important;
+        background: #ffffff !important;
+    }
+
+    .simple-pdf-remarks {
+        width: 100% !important;
+        box-sizing: border-box !important;
+        margin: 0 !important;
+        padding: 2.7mm 3mm !important;
+        border: 0.5px solid #cfe6c8 !important;
+        border-left: 2.5px solid #278914 !important;
+        border-radius: 2px !important;
+        background: #f5faf3 !important;
+        color: #1f3b24 !important;
+        font-size: 6.3px !important;
+        line-height: 1.35 !important;
+        break-inside: avoid !important;
+        page-break-inside: avoid !important;
+    }
+
+    .simple-pdf-remarks ul {
+        margin: 1px 0 0 11px !important;
+        padding: 0 !important;
+    }
+
+    .minimal-divider {
+        width: 100% !important;
+        margin: 5mm 0 0 !important;
+        border-top: 0.45px solid #dedede !important;
+    }
+
+    @media print {
+        @page {
+            size: A4 portrait !important;
+            margin: 0 !important;
+        }
+    }
+</style>
+
 </head>
 <body>
 
@@ -4769,7 +5019,7 @@
         const parsedRows = parseTable(text);
 
         if (!parsedRows) {
-            return `<div class="${forPdf ? "simple-pdf-raw" : "eod-preview-empty"}">${forPdf ? escapeHtml(text || "No lanes pasted.") : "Paste rows from the IT sheet to preview them here."}</div>`;
+            return `<div class="${forPdf ? "simple-pdf-raw" : "eod-preview-empty"}">${forPdf ? escapeHtml(text || "No lanes pasted.") : "Paste rows from the IT sheet."}</div>`;
         }
 
         const FIXED_HEADERS = [
@@ -4782,20 +5032,46 @@
             "STATION ISSUE"
         ];
 
-        function normalizeMaintenanceHeader(value) {
-            return String(value || "")
-                .toUpperCase()
+        function normalizeCell(value) {
+            return String(value == null ? "" : value)
                 .replace(/\*\*/g, "")
-                .replace(/[\/\\]/g, "")
-                .replace(/\./g, "")
                 .replace(/\s+/g, " ")
                 .trim();
         }
 
-        function looksLikeMaintenanceHeader(row) {
-            if (!Array.isArray(row) || row.length < 6) return false;
+        function normalizeHeader(value) {
+            return normalizeCell(value)
+                .toUpperCase()
+                .replace(/[\/\\]/g, "")
+                .replace(/\./g, "")
+                .trim();
+        }
 
-            const values = row.slice(0, 7).map(normalizeMaintenanceHeader);
+        function isFloorValue(value) {
+            const v = normalizeCell(value).toLowerCase();
+            return /^(1st|first|2nd|second|ground|gf)\s*floor$/.test(v) ||
+                   /^(1st|2nd)\s*flr$/.test(v) ||
+                   v === "review needed";
+        }
+
+        function looksLikeDateOnly(value) {
+            const v = normalizeCell(value);
+            return /^\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}$/.test(v);
+        }
+
+        function looksLikeTimestamp(value) {
+            const v = normalizeCell(value);
+            return /^\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}\s+\d{1,2}:\d{2}/.test(v) ||
+                   /^\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}\s+\d{1,2}:\d{2}:\d{2}/.test(v);
+        }
+
+        function looksLikeMaintenanceHeader(row) {
+            if (!Array.isArray(row)) return false;
+
+            const cleaned = row.map(normalizeHeader);
+
+            // Support pasted headers that include FLOOR as the first column.
+            if (cleaned[0] === "FLOOR") cleaned.shift();
 
             const expected = [
                 ["TIMESTAMP", "TIME STAMP"],
@@ -4807,43 +5083,79 @@
                 ["STATION ISSUE", "ISSUE", "ISSUES"]
             ];
 
-            let matches = 0;
+            // A 6-column source may omit TIMESTAMP.
+            const sixColumnExpected = expected.slice(1);
 
-            values.forEach((value, index) => {
-                if (!value || !expected[index]) return;
-                if (expected[index].some(name => value === name || value.includes(name))) {
-                    matches++;
-                }
-            });
+            const matchSequence = (values, groups) => {
+                if (values.length < groups.length) return false;
+                let score = 0;
+                groups.forEach((group, i) => {
+                    const value = values[i] || "";
+                    if (group.some(name => value === name || value.includes(name))) score++;
+                });
+                return score >= Math.max(4, groups.length - 1);
+            };
 
-            return matches >= 5;
+            return matchSequence(cleaned, expected) ||
+                   matchSequence(cleaned, sixColumnExpected);
         }
 
-        // If the user pasted the real sheet header too, remove it because
-        // the PDF always supplies the correct official header itself.
-        let bodyRows = parsedRows.slice();
+        function alignMaintenanceRow(inputRow) {
+            let cells = inputRow.map(normalizeCell);
 
-        if (bodyRows.length && looksLikeMaintenanceHeader(bodyRows[0])) {
-            bodyRows = bodyRows.slice(1);
-        }
-
-        // Force every row into the official 7-column structure.
-        // Extra cells are merged into STATION ISSUE so the table cannot shift.
-        bodyRows = bodyRows.map(row => {
-            const cells = row.map(cell => String(cell == null ? "" : cell).trim());
-
-            while (cells.length < 7) {
-                cells.push("");
+            // Remove a floor column when the pasted source includes it.
+            if (cells.length && isFloorValue(cells[0])) {
+                cells = cells.slice(1);
             }
 
-            if (cells.length > 7) {
+            // FLOOR + TIMESTAMP + DATE + TL + ACCOUNT + SITE + STATION + ISSUE
+            // becomes the normal 7 columns after floor is removed above.
+
+            // Standard full row.
+            if (cells.length >= 7) {
+                // If there are extra cells, merge extras into Station Issue.
                 const fixed = cells.slice(0, 6);
                 fixed.push(cells.slice(6).filter(Boolean).join(" "));
                 return fixed;
             }
 
+            // Common pasted source:
+            // DATE | TL | ACCOUNT | SITE | STATION NO. | STATION ISSUE
+            // Leave TIMESTAMP blank so every value stays under the right header.
+            if (cells.length === 6 && looksLikeDateOnly(cells[0])) {
+                return ["", ...cells];
+            }
+
+            // TIMESTAMP | TL | ACCOUNT | SITE | STATION NO. | STATION ISSUE
+            // If first cell has time but DATE is missing, derive DATE from timestamp.
+            if (cells.length === 6 && looksLikeTimestamp(cells[0])) {
+                const datePart = cells[0].split(/\s+/)[0] || "";
+                return [
+                    cells[0],
+                    datePart,
+                    cells[1],
+                    cells[2],
+                    cells[3],
+                    cells[4],
+                    cells[5]
+                ];
+            }
+
+            // Fallback: pad to 7 without shifting existing values further.
+            while (cells.length < 7) cells.push("");
             return cells.slice(0, 7);
-        });
+        }
+
+        let bodyRows = parsedRows.slice();
+
+        // Remove a copied source header because PDF uses the official header.
+        if (bodyRows.length && looksLikeMaintenanceHeader(bodyRows[0])) {
+            bodyRows = bodyRows.slice(1);
+        }
+
+        bodyRows = bodyRows
+            .filter(row => row.some(cell => normalizeCell(cell) !== ""))
+            .map(alignMaintenanceRow);
 
         if (!bodyRows.length) {
             bodyRows = [["", "", "", "", "", "", ""]];
@@ -4866,11 +5178,9 @@
             </table>
         `;
 
-        if (forPdf) {
-            return `<div class="simple-pdf-table-wrap">${tableMarkup}</div>`;
-        }
-
-        return tableMarkup;
+        return forPdf
+            ? `<div class="simple-pdf-table-wrap">${tableMarkup}</div>`
+            : tableMarkup;
     }
 
     function noteText(block) {
@@ -5502,7 +5812,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
                     jsPDF: {
                         unit: "mm",
                         format: "a4",
-                        orientation: "landscape",
+                        orientation: "portrait",
                         compress: true
                     },
                     pagebreak: {
@@ -5511,7 +5821,8 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
                             ".pdf-proof-remarks-group",
                             ".simple-pdf-images",
                             ".simple-pdf-images img",
-                            ".simple-pdf-remarks"
+                            ".simple-pdf-remarks",
+                            ".simple-pdf-table tr"
                         ]
                     }
                 })
