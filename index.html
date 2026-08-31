@@ -3775,101 +3775,232 @@
 
 <style>
     /* =========================================================
-       GROUPED PDF BLOCKS
-       Table -> Images left-to-right -> Remarks
+       GROUPED REPORT BLOCK PDF
+       Table -> Images -> Remarks
        ========================================================= */
 
+    .grouped-pdf {
+        width: 100% !important;
+        box-sizing: border-box !important;
+        padding: 10mm 9mm 12mm !important;
+        background: #fff !important;
+        color: #111827 !important;
+        font-family: "Roboto", Arial, sans-serif !important;
+    }
+
+    .grouped-pdf-header {
+        margin: 0 0 5mm !important;
+        padding: 0 !important;
+        background: #fff !important;
+    }
+
+    .grouped-pdf-header h1 {
+        margin: 0 !important;
+        color: #111827 !important;
+        font-size: 14px !important;
+        line-height: 1.2 !important;
+        font-weight: 900 !important;
+    }
+
+    .grouped-pdf-date {
+        margin-top: 1.4mm !important;
+        color: #667085 !important;
+        font-size: 7px !important;
+        font-weight: 700 !important;
+        text-align: left !important;
+    }
+
+    /* Keep each report block together whenever it fits on one page. */
     .grouped-report-block {
         width: 100% !important;
         box-sizing: border-box !important;
         margin: 0 0 7mm !important;
-        padding: 0 !important;
-        background: #ffffff !important;
-
-        /* Keep sheet, images and remarks together as one report group */
+        padding: 0 0 5mm !important;
+        border-bottom: 0.45px solid #e5e7eb !important;
+        background: #fff !important;
         break-inside: avoid !important;
         page-break-inside: avoid !important;
     }
 
-    .grouped-report-block .simple-pdf-table-wrap {
-        margin: 0 0 3.5mm !important;
+    .grouped-report-block:last-child {
+        border-bottom: 0 !important;
     }
 
+    /* Clean table */
+    .grouped-pdf .simple-pdf-table-wrap {
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        border: 0 !important;
+        background: #fff !important;
+        overflow: visible !important;
+    }
+
+    .grouped-pdf .simple-pdf-table {
+        width: 100% !important;
+        table-layout: fixed !important;
+        border-collapse: collapse !important;
+        background: #fff !important;
+        margin: 0 !important;
+    }
+
+    .grouped-pdf .simple-pdf-table thead {
+        display: table-header-group !important;
+    }
+
+    .grouped-pdf .simple-pdf-table tr {
+        background: #fff !important;
+        break-inside: avoid !important;
+        page-break-inside: avoid !important;
+    }
+
+    .grouped-pdf .simple-pdf-table th {
+        border: 0 !important;
+        background: #31495f !important;
+        color: #fff !important;
+        padding: 2.3px 2.5px !important;
+        font-size: 5.1px !important;
+        font-weight: 900 !important;
+        line-height: 1.15 !important;
+        text-align: center !important;
+    }
+
+    .grouped-pdf .simple-pdf-table td {
+        border: 0 !important;
+        border-bottom: 0.35px solid #e8ebef !important;
+        background: #fff !important;
+        color: #27313d !important;
+        padding: 2.5px !important;
+        font-size: 5.2px !important;
+        line-height: 1.22 !important;
+        vertical-align: top !important;
+        overflow-wrap: anywhere !important;
+    }
+
+    .grouped-pdf .simple-pdf-table td:nth-child(-n+6) {
+        text-align: center !important;
+    }
+
+    .grouped-pdf .simple-pdf-table td:nth-child(7) {
+        text-align: left !important;
+    }
+
+    /* Images: smaller, same size, arranged left-to-right */
     .grouped-photo-row {
         width: 100% !important;
         display: flex !important;
         flex-wrap: wrap !important;
         justify-content: flex-start !important;
         align-items: flex-start !important;
-        gap: 2.5mm !important;
-        margin: 0 0 3mm !important;
+        gap: 3mm !important;
+        margin: 4mm 0 3mm !important;
         padding: 0 !important;
-        background: #ffffff !important;
-
+        background: #fff !important;
         break-inside: avoid !important;
         page-break-inside: avoid !important;
     }
 
     .grouped-photo-row img {
         display: block !important;
-        flex: 0 0 auto !important;
-
-        /* Smaller, consistent screenshots so they arrange left-to-right */
-        width: 55mm !important;
-        height: 34mm !important;
-        max-width: 55mm !important;
-        max-height: 34mm !important;
-
+        width: 58mm !important;
+        height: 35mm !important;
+        max-width: 58mm !important;
+        max-height: 35mm !important;
         object-fit: contain !important;
         object-position: center !important;
         margin: 0 !important;
         padding: 0 !important;
         border: 0 !important;
-        background: #ffffff !important;
-
+        background: #fff !important;
         break-inside: avoid !important;
         page-break-inside: avoid !important;
     }
 
+    /* Remarks directly under the image row */
     .grouped-remarks {
-        width: 100% !important;
-        box-sizing: border-box !important;
         display: grid !important;
         grid-template-columns: auto minmax(0, 1fr) !important;
         gap: 2mm !important;
         align-items: start !important;
-
         margin: 0 !important;
-        padding: 2.2mm 2.8mm !important;
-        border-left: 2.3px solid #278914 !important;
-        background: #f6faf4 !important;
-        color: #1f3b24 !important;
-
-        font-size: 6.4px !important;
+        padding: 2.5mm 3mm !important;
+        border-left: 2.5px solid #278914 !important;
+        background: #f6fbf4 !important;
+        color: #263238 !important;
+        font-size: 6.5px !important;
         line-height: 1.35 !important;
-
         break-inside: avoid !important;
         page-break-inside: avoid !important;
     }
 
-    .grouped-remarks-label {
+    .grouped-remarks > span {
         color: #278914 !important;
         font-weight: 900 !important;
         white-space: nowrap !important;
     }
 
-    .grouped-remarks-text > div + div {
-        margin-top: .7mm !important;
+    .grouped-remarks > div > div + div {
+        margin-top: .8mm !important;
     }
 
-    /* Hide any old PDF-only remarks/photo wrappers from previous versions */
-    .grouped-pdf .reference-remarks,
+    /* Hide old photo/remarks PDF styles if present */
     .grouped-pdf .reference-photo-group,
+    .grouped-pdf .reference-remarks,
     .grouped-pdf .simple-pdf-images,
     .grouped-pdf .simple-pdf-remarks,
     .grouped-pdf .minimal-remarks-label,
     .grouped-pdf .minimal-divider {
         display: none !important;
+    }
+
+    @media print {
+        @page {
+            size: A4 portrait !important;
+            margin: 0 !important;
+        }
+    }
+</style>
+
+
+<style>
+    /* Single clean Remarks field */
+    #eodPanel .add-remark-btn,
+    #eodPanel .remove-remark-btn {
+        display: none !important;
+    }
+
+    #eodPanel .simple-single-remark {
+        display: block !important;
+    }
+
+    #eodPanel .simple-single-remark > label {
+        display: block !important;
+        margin: 0 0 8px !important;
+    }
+
+    #eodPanel .single-remark-text {
+        display: block !important;
+        width: 100% !important;
+        min-height: 78px !important;
+        box-sizing: border-box !important;
+        padding: 11px 12px !important;
+        border: 1px solid var(--input-border) !important;
+        border-radius: 10px !important;
+        background: var(--input-bg) !important;
+        color: var(--text-color) !important;
+        font: 12px/1.5 "Roboto", Arial, sans-serif !important;
+        resize: vertical !important;
+    }
+
+    #eodPanel .single-remark-text:focus {
+        outline: none !important;
+        border-color: rgba(59,130,246,.42) !important;
+        box-shadow: 0 0 0 3px rgba(59,130,246,.09) !important;
+    }
+
+    /* Preserve line breaks from the single Remarks textarea in the PDF. */
+    .grouped-remarks > div {
+        white-space: pre-wrap !important;
     }
 </style>
 
@@ -5648,20 +5779,11 @@
                     </div>
                 </div>
 
-                <div class="remarks-section">
-                    <div class="remarks-section-head">
-                        <label>Remarks</label>
-                        <button type="button" class="add-remark-btn">＋ Add Remark</button>
-                    </div>
-
-                    <div class="remarks-list">
-                        ${(Array.isArray(block.remarks) && block.remarks.length ? block.remarks : [""]).map((remark, remarkIndex) => `
-                            <div class="remark-item" data-remark-index="${remarkIndex}">
-                                <textarea class="remark-text" placeholder="Type a remark...">${escapeHtml(remark)}</textarea>
-                                <button type="button" class="remove-remark-btn" data-remark-index="${remarkIndex}" title="Remove remark">×</button>
-                            </div>
-                        `).join("")}
-                    </div>
+                <div class="remarks-section simple-single-remark">
+                    <label>Remarks</label>
+                    <textarea class="remark-text single-remark-text" placeholder="Type your remarks here...">${escapeHtml(
+                        Array.isArray(block.remarks) ? block.remarks.filter(Boolean).join("\n") : ""
+                    )}</textarea>
                 </div>
             </article>
         `;
@@ -5736,46 +5858,17 @@
             });
 
 
-            if (!Array.isArray(block.remarks) || !block.remarks.length) {
+            if (!Array.isArray(block.remarks)) {
                 block.remarks = [""];
             }
 
-            card.querySelector(".add-remark-btn").addEventListener("click", () => {
-                block.remarks.push("");
-                render();
-                queueSave();
-
-                setTimeout(() => {
-                    const updatedCard = document.querySelector(`.eod-block[data-id="${block.id}"]`);
-                    const textareas = updatedCard ? updatedCard.querySelectorAll(".remark-text") : [];
-                    const last = textareas[textareas.length - 1];
-                    if (last) last.focus();
-                }, 50);
-            });
-
-            card.querySelectorAll(".remark-text").forEach(textarea => {
-                textarea.addEventListener("input", () => {
-                    const item = textarea.closest(".remark-item");
-                    const index = Number(item.dataset.remarkIndex);
-                    block.remarks[index] = textarea.value;
+            const remarkTextarea = card.querySelector(".single-remark-text");
+            if (remarkTextarea) {
+                remarkTextarea.addEventListener("input", () => {
+                    block.remarks = [remarkTextarea.value];
                     queueSave();
                 });
-            });
-
-            card.querySelectorAll(".remove-remark-btn").forEach(button => {
-                button.addEventListener("click", () => {
-                    const index = Number(button.dataset.remarkIndex);
-
-                    if (block.remarks.length === 1) {
-                        block.remarks[0] = "";
-                    } else {
-                        block.remarks.splice(index, 1);
-                    }
-
-                    render();
-                    queueSave();
-                });
-            });
+            }
 
             fileInput.addEventListener("change", async () => {
                 await addScreenshots(block, [...fileInput.files]);
@@ -6140,7 +6233,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
 
         const reportDate = state.date ? formatDateForTitle(state.date) : "";
 
-        const blocksHtml = state.blocks.map((block, index) => {
+        const blocksHtml = state.blocks.map((block) => {
             const screenshots = Array.isArray(block.screenshots) ? block.screenshots : [];
             const remarks = Array.isArray(block.remarks)
                 ? block.remarks.map(item => String(item || "").trim()).filter(Boolean)
@@ -6154,8 +6247,8 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
 
             const remarksHtml = remarks.length
                 ? `<div class="grouped-remarks">
-                    <span class="grouped-remarks-label">Remarks:</span>
-                    <div class="grouped-remarks-text">
+                    <span>Remarks:</span>
+                    <div>
                         ${remarks.map(item => `<div>${escapeHtml(item)}</div>`).join("")}
                     </div>
                    </div>`
@@ -6172,11 +6265,9 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
 
         $("simpleEodPrintRoot").innerHTML = `
             <div class="simple-pdf grouped-pdf">
-                <header class="reference-pdf-header">
-                    <div>
-                        <h1>${escapeHtml(cleanTitle)} Maintenance Report</h1>
-                        ${reportDate ? `<div class="reference-pdf-date">${escapeHtml(reportDate)}</div>` : ""}
-                    </div>
+                <header class="grouped-pdf-header">
+                    <h1>${escapeHtml(cleanTitle)} Maintenance Report</h1>
+                    ${reportDate ? `<div class="grouped-pdf-date">${escapeHtml(reportDate)}</div>` : ""}
                 </header>
 
                 ${blocksHtml}
