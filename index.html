@@ -4,18 +4,19 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>CCTV Audit</title>
+    
+    <link rel="icon" type="image/x-icon" href="./favicon.ico">
 
-    <!-- Wolf Favicon -->
-    <link rel="icon" href="./favicon.ico?v=4" type="image/x-icon">
-    <link rel="shortcut icon" href="./favicon.ico?v=4" type="image/x-icon">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
-    <!-- Google Font -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
     <style>
-*, *::before, *::after {
+        *, *::before, *::after {
             box-sizing: border-box;
         }
 
@@ -323,6 +324,423 @@
             #themeToggle { top: 10px; right: 10px; width: 40px; height: 40px; font-size: 18px; }
         }
     </style>
+
+    <style>
+        /* =========================================================
+           PROFESSIONAL UI ENHANCEMENTS
+           Added on top of the existing design — original styles kept.
+           ========================================================= */
+
+        :root {
+            --pro-surface: rgba(255, 255, 255, 0.88);
+            --pro-muted: #64748b;
+            --pro-border: rgba(15, 23, 42, 0.08);
+            --pro-shadow: 0 18px 45px rgba(15, 23, 42, 0.08);
+            --pro-soft-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+        }
+
+        body.dark-mode {
+            --pro-surface: rgba(30, 30, 30, 0.92);
+            --pro-muted: #94a3b8;
+            --pro-border: rgba(255, 255, 255, 0.08);
+            --pro-shadow: 0 18px 45px rgba(0, 0, 0, 0.28);
+            --pro-soft-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            position: relative;
+            isolation: isolate;
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            z-index: -2;
+            pointer-events: none;
+            background:
+                radial-gradient(circle at 10% 0%, rgba(39, 137, 20, 0.10), transparent 30%),
+                radial-gradient(circle at 90% 10%, rgba(0, 51, 153, 0.10), transparent 30%);
+        }
+
+        body::after {
+            content: "";
+            position: fixed;
+            inset: 0;
+            z-index: -1;
+            pointer-events: none;
+            opacity: 0.24;
+            background-image:
+                linear-gradient(rgba(148, 163, 184, 0.06) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(148, 163, 184, 0.06) 1px, transparent 1px);
+            background-size: 28px 28px;
+            mask-image: linear-gradient(to bottom, rgba(0,0,0,.55), transparent 75%);
+        }
+
+        /* Top workspace header */
+        .site-hero {
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 24px;
+            margin: 10px auto 24px;
+            padding: 26px 28px;
+            border: 1px solid var(--pro-border);
+            border-radius: 18px;
+            background:
+                linear-gradient(135deg, rgba(0, 51, 153, 0.96), rgba(0, 51, 153, 0.88) 48%, rgba(39, 137, 20, 0.94));
+            box-shadow: 0 18px 44px rgba(0, 51, 153, 0.18);
+            color: #ffffff;
+        }
+
+        .site-hero::after {
+            content: "";
+            position: absolute;
+            width: 240px;
+            height: 240px;
+            right: -70px;
+            top: -110px;
+            border-radius: 50%;
+            border: 42px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .site-hero-copy {
+            position: relative;
+            z-index: 1;
+        }
+
+        .site-eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+            padding: 6px 10px;
+            border: 1px solid rgba(255, 255, 255, 0.22);
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.10);
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+        }
+
+        .site-hero h1 {
+            margin: 0;
+            max-width: 760px;
+            font-size: clamp(28px, 4vw, 44px);
+            line-height: 1.05;
+            letter-spacing: -0.035em;
+            color: #ffffff;
+        }
+
+        .site-hero p {
+            margin: 10px 0 0;
+            max-width: 760px;
+            color: rgba(255, 255, 255, 0.82);
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .site-hero-status {
+            position: relative;
+            z-index: 1;
+            flex: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 9px;
+            padding: 10px 13px;
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            border-radius: 999px;
+            background: rgba(0, 0, 0, 0.13);
+            font-size: 12px;
+            font-weight: 600;
+            white-space: nowrap;
+            backdrop-filter: blur(8px);
+        }
+
+        .site-status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #86efac;
+            box-shadow: 0 0 0 5px rgba(134, 239, 172, 0.13);
+        }
+
+        .workspace-note {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 14px;
+            margin: -8px auto 22px;
+            padding: 10px 14px;
+            border: 1px solid var(--pro-border);
+            border-radius: 12px;
+            background: var(--pro-surface);
+            color: var(--pro-muted);
+            box-shadow: var(--pro-soft-shadow);
+            font-size: 12px;
+            backdrop-filter: blur(10px);
+        }
+
+        .workspace-note strong {
+            color: var(--text-color);
+        }
+
+        /* Existing cards — refined */
+        .container {
+            position: relative;
+            overflow: hidden;
+            border-color: var(--pro-border);
+            box-shadow: var(--pro-shadow);
+            backdrop-filter: blur(10px);
+        }
+
+        .container::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--secondary-color), var(--primary-color));
+        }
+
+        .form-section {
+            margin-bottom: 24px;
+        }
+
+        h2 {
+            position: relative;
+            border-bottom-color: var(--border-color);
+            padding-bottom: 14px;
+            font-size: 18px;
+            letter-spacing: 0.02em;
+        }
+
+        h2::after {
+            content: "";
+            position: absolute;
+            left: 0;
+            bottom: -3px;
+            width: 64px;
+            height: 3px;
+            border-radius: 999px;
+            background: linear-gradient(90deg, var(--secondary-color), var(--primary-color));
+        }
+
+        label {
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+        }
+
+        input[type="text"],
+        input[type="date"],
+        select {
+            min-height: 46px;
+            border-radius: 12px;
+            border-color: var(--input-border);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.35);
+        }
+
+        input[type="text"]:hover,
+        input[type="date"]:hover,
+        select:hover {
+            border-color: #94a3b8;
+        }
+
+        input:focus,
+        select:focus {
+            transform: translateY(-1px);
+            box-shadow:
+                0 0 0 3px rgba(39, 137, 20, 0.12),
+                0 8px 20px rgba(15, 23, 42, 0.06);
+        }
+
+        .input-group {
+            align-items: stretch;
+        }
+
+        button {
+            font-family: inherit;
+        }
+
+        .button-group > button,
+        button.add-btn,
+        button.remove-btn,
+        button.edit-btn,
+        button.delete-btn {
+            box-shadow: 0 6px 14px rgba(15, 23, 42, 0.08);
+        }
+
+        .button-group > button {
+            min-height: 46px;
+            border-radius: 12px;
+        }
+
+        .button-group > button:hover,
+        button.add-btn:hover,
+        button.remove-btn:hover,
+        button.edit-btn:hover,
+        button.delete-btn:hover {
+            transform: translateY(-1px);
+        }
+
+        .button-group > button:active,
+        button.add-btn:active,
+        button.remove-btn:active,
+        button.edit-btn:active,
+        button.delete-btn:active {
+            transform: translateY(0);
+        }
+
+        button.add-btn,
+        button.remove-btn {
+            border-radius: 12px;
+        }
+
+        .table-container {
+            border-radius: 12px;
+            border-color: var(--pro-border);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25);
+        }
+
+        th {
+            font-size: 11px;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+        }
+
+        tbody tr {
+            transition: background-color 0.18s ease, transform 0.18s ease;
+        }
+
+        tbody tr:hover {
+            box-shadow: inset 3px 0 0 var(--primary-color);
+        }
+
+        td {
+            vertical-align: middle;
+        }
+
+        .remarks-col {
+            line-height: 1.45;
+        }
+
+        #themeToggle {
+            top: 18px;
+            right: 18px;
+            border: 1px solid rgba(255, 255, 255, 0.28);
+            background: rgba(15, 23, 42, 0.70);
+            color: #ffffff;
+            box-shadow: 0 10px 28px rgba(15, 23, 42, 0.18);
+            backdrop-filter: blur(12px);
+        }
+
+        body.dark-mode #themeToggle {
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .site-footer {
+            margin: 22px auto 6px;
+            padding: 12px 8px;
+            text-align: center;
+            color: var(--pro-muted);
+            font-size: 11px;
+            letter-spacing: 0.04em;
+        }
+
+        .site-footer strong {
+            color: var(--text-color);
+        }
+
+        /* Better mobile presentation */
+        @media screen and (max-width: 760px) {
+            .site-hero {
+                align-items: flex-start;
+                flex-direction: column;
+                padding: 22px 20px;
+                border-radius: 16px;
+            }
+
+            .site-hero-status {
+                align-self: flex-start;
+            }
+
+            .workspace-note {
+                align-items: flex-start;
+                flex-direction: column;
+            }
+
+            .container {
+                border-radius: 14px;
+            }
+
+            .table-container {
+                max-height: 460px;
+            }
+        }
+
+        @media screen and (max-width: 600px) {
+            body {
+                padding-top: 8px;
+            }
+
+            .site-hero {
+                margin-top: 4px;
+                padding-right: 58px;
+            }
+
+            .site-hero h1 {
+                font-size: 28px;
+            }
+
+            .site-hero p {
+                font-size: 13px;
+            }
+
+            #themeToggle {
+                top: 18px;
+                right: 18px;
+            }
+
+            input[type="text"],
+            input[type="date"],
+            select {
+                font-size: 16px;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *,
+            *::before,
+            *::after {
+                scroll-behavior: auto !important;
+                transition: none !important;
+                animation: none !important;
+            }
+        }
+    </style>
+
+
+    <style>
+        /* Center the Data Output Grid title */
+        .grid-section h2 {
+            text-align: center;
+        }
+
+        .grid-section h2::after {
+            left: 50%;
+            transform: translateX(-50%);
+        }
+    </style>
+
 </head>
 <body>
 
@@ -437,6 +855,12 @@
         <button class="clear-btn" onclick="clearOutput()">🗑️ Clear All</button>
     </div>
 </div>
+
+
+<div class="site-footer">
+    <strong>CCTV Audit</strong> • Internal Operations Workspace
+</div>
+
 
 <script>
     // --- DARK / LIGHT MODE TOGGLE LOGIC ---
