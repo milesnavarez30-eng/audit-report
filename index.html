@@ -4315,6 +4315,101 @@
     }
 </style>
 
+
+<style>
+    /* Copy all Maintenance Report rows directly into Google Sheets */
+    #eodPanel .btn-eod-sheet-copy {
+        min-height: 40px;
+        padding: 9px 14px;
+        border: 1px solid rgba(34, 197, 94, .45);
+        border-radius: 9px;
+        background: rgba(34, 197, 94, .09);
+        color: #238636;
+        font: 800 11px/1 "Roboto", Arial, sans-serif;
+        cursor: pointer;
+        transition: .18s ease;
+    }
+
+    #eodPanel .btn-eod-sheet-copy:hover {
+        background: rgba(34, 197, 94, .15);
+        transform: translateY(-1px);
+    }
+
+    body.dark-mode #eodPanel .btn-eod-sheet-copy {
+        color: #66d17a;
+    }
+</style>
+
+
+<style>
+    /* Compact professional top workspace tabs */
+    .workspace-tabs {
+        width: min(calc(100% - 28px), 760px) !important;
+        margin: 8px auto 20px !important;
+        padding: 4px !important;
+        gap: 4px !important;
+        border: 1px solid rgba(148, 163, 184, .18) !important;
+        border-radius: 12px !important;
+        background: rgba(24, 24, 24, .88) !important;
+        box-shadow:
+            0 6px 20px rgba(0, 0, 0, .08),
+            inset 0 1px 0 rgba(255,255,255,.025) !important;
+        backdrop-filter: blur(12px) !important;
+    }
+
+    .workspace-tab-btn {
+        flex: 1 1 0 !important;
+        max-width: none !important;
+        min-width: 0 !important;
+        min-height: 38px !important;
+        padding: 7px 12px !important;
+        border-radius: 9px !important;
+        font-size: 12px !important;
+        font-weight: 700 !important;
+        line-height: 1.15 !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        box-shadow: none !important;
+    }
+
+    .workspace-tab-btn:hover {
+        background: rgba(255,255,255,.045) !important;
+        color: var(--text-color) !important;
+    }
+
+    .workspace-tab-btn.active {
+        background: linear-gradient(180deg, #24991b 0%, #1d8615 100%) !important;
+        color: #fff !important;
+        box-shadow:
+            0 3px 10px rgba(39,137,20,.18),
+            inset 0 1px 0 rgba(255,255,255,.08) !important;
+    }
+
+    body:not(.dark-mode) .workspace-tabs {
+        background: rgba(255,255,255,.92) !important;
+        border-color: rgba(15,23,42,.10) !important;
+    }
+
+    body:not(.dark-mode) .workspace-tab-btn:hover {
+        background: rgba(15,23,42,.045) !important;
+    }
+
+    @media screen and (max-width: 680px) {
+        .workspace-tabs {
+            width: calc(100% - 20px) !important;
+            padding: 3px !important;
+            gap: 3px !important;
+        }
+
+        .workspace-tab-btn {
+            min-height: 36px !important;
+            padding: 6px 7px !important;
+            font-size: 10.5px !important;
+        }
+    }
+</style>
+
 </head>
 <body>
 
@@ -4590,6 +4685,7 @@
         <div class="simple-eod-actions">
             <button type="button" class="btn-eod-outline" id="simpleEodSaveBtn">💾 Save to Drafts</button>
             <button type="button" class="btn-eod-outline" id="simpleEodDraftsBtn">🗂️ Drafts</button>
+            <button type="button" class="btn-eod-sheet-copy" id="simpleEodCopySheetsBtn">📋 Copy All to Sheets</button>
             <button type="button" class="btn-eod-secondary" id="simpleEodPreviewBtn">👁️ Preview / Print</button>
             <button type="button" class="btn-eod-primary" id="simpleEodPdfBtn">📄 Download PDF</button>
             <button type="button" class="btn-eod-danger" id="simpleEodClearBtn">Clear All</button>
@@ -6354,6 +6450,211 @@
             : tableMarkup;
     }
 
+
+    function maintenanceRowsForSheets(text) {
+        const parsedRows = parseTable(text);
+        if (!parsedRows) return [];
+
+        function normalizeCell(value) {
+            return String(value == null ? "" : value)
+                .replace(/\*\*/g, "")
+                .replace(/\s+/g, " ")
+                .trim();
+        }
+
+        function normalizeHeader(value) {
+            return normalizeCell(value)
+                .toUpperCase()
+                .replace(/[\/\\]/g, "")
+                .replace(/\./g, "")
+                .trim();
+        }
+
+        function isFloorValue(value) {
+            const v = normalizeCell(value).toLowerCase();
+            return /^(1st|first|2nd|second|ground|gf)\s*floor$/.test(v) ||
+                   /^(1st|2nd)\s*flr$/.test(v) ||
+                   v === "review needed";
+        }
+
+        function looksLikeDateOnly(value) {
+            return /^\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}$/.test(normalizeCell(value));
+        }
+
+        function looksLikeTimestamp(value) {
+            const v = normalizeCell(value);
+            return /^\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}\s+\d{1,2}:\d{2}/.test(v);
+        }
+
+        function looksLikeHeader(row) {
+            if (!Array.isArray(row)) return false;
+
+            const cleaned = row.map(normalizeHeader);
+            if (cleaned[0] === "FLOOR") cleaned.shift();
+
+            const expected7 = [
+                ["TIMESTAMP", "TIME STAMP"],
+                ["DATE"],
+                ["TL", "TEAM LEADER", "TEAM LEADERS", "TL NAME"],
+                ["ACCOUNT", "CAMPAIGN"],
+                ["SITE"],
+                ["STATION NO", "STATION NUMBER", "STATION"],
+                ["STATION ISSUE", "ISSUE", "ISSUES"]
+            ];
+
+            const expected6 = expected7.slice(1);
+
+            const match = (values, groups) => {
+                if (values.length < groups.length) return false;
+                let score = 0;
+
+                groups.forEach((group, index) => {
+                    const value = values[index] || "";
+                    if (group.some(name => value === name || value.includes(name))) {
+                        score++;
+                    }
+                });
+
+                return score >= Math.max(4, groups.length - 1);
+            };
+
+            return match(cleaned, expected7) || match(cleaned, expected6);
+        }
+
+        function alignRow(inputRow) {
+            let cells = inputRow.map(normalizeCell);
+
+            // Remove FLOOR when copied from a floor-sorted sheet.
+            if (cells.length && isFloorValue(cells[0])) {
+                cells = cells.slice(1);
+            }
+
+            // Full standard row.
+            if (cells.length >= 7) {
+                return [
+                    cells[0],
+                    cells[1],
+                    cells[2],
+                    cells[3],
+                    cells[4],
+                    cells[5],
+                    cells.slice(6).filter(Boolean).join(" ")
+                ];
+            }
+
+            // DATE | TL | ACCOUNT | SITE | STATION NO. | STATION ISSUE
+            if (cells.length === 6 && looksLikeDateOnly(cells[0])) {
+                return ["", ...cells];
+            }
+
+            // TIMESTAMP | TL | ACCOUNT | SITE | STATION NO. | STATION ISSUE
+            if (cells.length === 6 && looksLikeTimestamp(cells[0])) {
+                const datePart = cells[0].split(/\s+/)[0] || "";
+                return [
+                    cells[0],
+                    datePart,
+                    cells[1],
+                    cells[2],
+                    cells[3],
+                    cells[4],
+                    cells[5]
+                ];
+            }
+
+            while (cells.length < 7) cells.push("");
+            return cells.slice(0, 7);
+        }
+
+        let rows = parsedRows.slice();
+
+        if (rows.length && looksLikeHeader(rows[0])) {
+            rows = rows.slice(1);
+        }
+
+        return rows
+            .filter(row => row.some(cell => normalizeCell(cell) !== ""))
+            .map(alignRow);
+    }
+
+    function maintenanceReportToSheetsTSV() {
+        const headers = [
+            "TIMESTAMP",
+            "DATE",
+            "TL",
+            "ACCOUNT",
+            "SITE",
+            "STATION NO.",
+            "STATION ISSUE"
+        ];
+
+        const allRows = [];
+
+        state.blocks.forEach(block => {
+            maintenanceRowsForSheets(block.lanesText || "").forEach(row => {
+                allRows.push(row);
+            });
+        });
+
+        if (!allRows.length) return "";
+
+        return [headers, ...allRows]
+            .map(row => row
+                .map(value => String(value == null ? "" : value)
+                    .replace(/\t/g, " ")
+                    .replace(/\r?\n/g, " "))
+                .join("\t"))
+            .join("\n");
+    }
+
+    function copyTextForMaintenanceSheets(text) {
+        if (navigator.clipboard && window.isSecureContext) {
+            return navigator.clipboard.writeText(text);
+        }
+
+        return new Promise((resolve, reject) => {
+            try {
+                const textarea = document.createElement("textarea");
+                textarea.value = text;
+                textarea.setAttribute("readonly", "");
+                textarea.style.position = "fixed";
+                textarea.style.opacity = "0";
+                textarea.style.pointerEvents = "none";
+                document.body.appendChild(textarea);
+                textarea.select();
+
+                const ok = document.execCommand("copy");
+                document.body.removeChild(textarea);
+
+                if (ok) resolve();
+                else reject(new Error("Copy command failed."));
+            } catch (error) {
+                reject(error);
+            }
+        });
+    }
+
+    async function copyAllMaintenanceReportToSheets() {
+        const tsv = maintenanceReportToSheetsTSV();
+
+        if (!tsv) {
+            showMessage("Walay lanes/data nga ma-copy. Paste maintenance rows first.", "error");
+            return;
+        }
+
+        const rowCount = Math.max(0, tsv.split("\n").length - 1);
+
+        try {
+            await copyTextForMaintenanceSheets(tsv);
+            showMessage(
+                `${rowCount} maintenance row${rowCount === 1 ? "" : "s"} copied. Open Google Sheets, click cell A1, then press Ctrl+V.`,
+                "success"
+            );
+        } catch (error) {
+            console.error(error);
+            showMessage("Could not copy the report to clipboard.", "error");
+        }
+    }
+
     function noteText(block) {
         const remarks = Array.isArray(block.remarks) ? block.remarks : [];
         return remarks
@@ -7140,6 +7441,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
             setAutosaveStatus("● Save failed", "error");
         });
     });
+    $("simpleEodCopySheetsBtn").addEventListener("click", copyAllMaintenanceReportToSheets);
     $("simpleEodPreviewBtn").addEventListener("click", previewPrint);
     $("simpleEodPdfBtn").addEventListener("click", downloadPdf);
     $("simpleEodClearBtn").addEventListener("click", clearAll);
