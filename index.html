@@ -4004,6 +4004,100 @@
     }
 </style>
 
+
+<style>
+    /* Maintenance AI Sorter: fixed sheet output + editable TL assignment list */
+    #maintenancePanel .maintenance-assignment-note {
+        margin: -2px 0 10px;
+        color: var(--pro-muted);
+        font-size: 11px;
+        line-height: 1.45;
+    }
+
+    #maintenancePanel .tl-assignment-sheet {
+        min-width: 620px;
+    }
+
+    #maintenancePanel .tl-assignment-sheet th:nth-child(1) { width: 50%; }
+    #maintenancePanel .tl-assignment-sheet th:nth-child(2) { width: 32%; }
+    #maintenancePanel .tl-assignment-sheet th:nth-child(3) { width: 18%; }
+
+    #maintenancePanel .tl-name-editor,
+    #maintenancePanel .tl-floor-editor {
+        width: 100% !important;
+        min-height: 38px !important;
+        box-sizing: border-box !important;
+        margin: 0 !important;
+        padding: 7px 9px !important;
+        border: 1px solid var(--input-border) !important;
+        border-radius: 8px !important;
+        background: var(--input-bg) !important;
+        color: var(--text-color) !important;
+        font: 12px/1.25 "Roboto", Arial, sans-serif !important;
+    }
+
+    #maintenancePanel .tl-name-editor:focus,
+    #maintenancePanel .tl-floor-editor:focus {
+        outline: none !important;
+        border-color: rgba(59,130,246,.45) !important;
+        box-shadow: 0 0 0 3px rgba(59,130,246,.08) !important;
+    }
+
+    #maintenancePanel .tl-row-remove {
+        min-height: 36px;
+        padding: 7px 10px;
+        border: 1px solid rgba(239,68,68,.55);
+        border-radius: 8px;
+        background: transparent;
+        color: #ef4444;
+        font: 700 11px/1 "Roboto", Arial, sans-serif;
+        cursor: pointer;
+    }
+
+    #maintenancePanel .tl-row-remove:hover {
+        background: rgba(239,68,68,.08);
+    }
+
+    #maintenancePanel .tl-auto-hint {
+        display: block;
+        margin-top: 4px;
+        color: var(--pro-muted);
+        font-size: 9px;
+        line-height: 1.3;
+    }
+
+    #maintenancePanel .maintenance-sheet-output {
+        min-width: 920px;
+        table-layout: fixed;
+    }
+
+    #maintenancePanel .maintenance-sheet-output th:nth-child(1) { width: 15%; }
+    #maintenancePanel .maintenance-sheet-output th:nth-child(2) { width: 10%; }
+    #maintenancePanel .maintenance-sheet-output th:nth-child(3) { width: 15%; }
+    #maintenancePanel .maintenance-sheet-output th:nth-child(4) { width: 13%; }
+    #maintenancePanel .maintenance-sheet-output th:nth-child(5) { width: 14%; }
+    #maintenancePanel .maintenance-sheet-output th:nth-child(6) { width: 12%; }
+    #maintenancePanel .maintenance-sheet-output th:nth-child(7) { width: 21%; }
+
+    #maintenancePanel .maintenance-sheet-output th {
+        text-align: center !important;
+        white-space: normal;
+    }
+
+    #maintenancePanel .maintenance-sheet-output td:nth-child(-n+6) {
+        text-align: center !important;
+    }
+
+    #maintenancePanel .maintenance-sheet-output td:nth-child(7) {
+        text-align: left !important;
+    }
+
+    /* Floor is still used internally for sorting, but not shown as an extra column. */
+    #maintenancePanel .maintenance-sheet-output tr.floor-break td {
+        border-top: 2px solid rgba(59,130,246,.18);
+    }
+</style>
+
 </head>
 <body>
 
@@ -4141,7 +4235,7 @@
             combines them with <strong>Station No.</strong> patterns, and learns from the current report.
             If a <strong>new Team Leader name</strong> appears that is not in the seat plan, it will automatically use the
             <strong>campaign or explicit floor/station</strong> to place the row when the evidence is clear.
-            Results are grouped into <strong>Ground Floor, 1st Floor, 2nd Floor, and Review Needed</strong>.
+            Rows are sorted internally into <strong>Ground Floor, 1st Floor, 2nd Floor, and Review Needed</strong>, while the output keeps the original seven-column maintenance-sheet header.
             Ambiguous campaigns that exist on multiple floors are not guessed.
         </div>
 
@@ -4169,14 +4263,16 @@
 
         <div id="tlSummarySection" hidden>
             <div class="maintenance-subheading">Team Leader Floor Assignment</div>
+            <div class="maintenance-assignment-note">
+                Auto-generated Team Leader list. Edit the TL name, change the floor, or remove a row from this assignment list.
+            </div>
             <div class="maintenance-table-wrap">
-                <table class="maintenance-table" id="tlSummaryTable">
+                <table class="maintenance-table tl-assignment-sheet" id="tlSummaryTable">
                     <thead>
                         <tr>
-                            <th>Team Leader</th>
-                            <th>Detected / Saved Floor</th>
-                            <th>Evidence</th>
-                            <th>Manual Assignment</th>
+                            <th>TEAM LEADER</th>
+                            <th>FLOOR ASSIGNMENT</th>
+                            <th>ACTION</th>
                         </tr>
                     </thead>
                     <tbody></tbody>
@@ -4187,17 +4283,16 @@
         <div id="sortedReportSection" hidden>
             <div class="maintenance-subheading">Sorted Maintenance Report</div>
             <div class="maintenance-table-wrap">
-                <table class="maintenance-table" id="maintenanceOutputTable">
+                <table class="maintenance-table maintenance-sheet-output" id="maintenanceOutputTable">
                     <thead>
                         <tr>
-                            <th>Floor</th>
-                            <th>Date</th>
+                            <th>TIMESTAMP</th>
+                            <th>DATE</th>
                             <th>TL</th>
-                            <th>Account</th>
-                            <th>Site</th>
-                            <th>Station No.</th>
-                            <th>Station Issue</th>
-                            <th>Sort Source</th>
+                            <th>ACCOUNT</th>
+                            <th>SITE</th>
+                            <th>STATION NO.</th>
+                            <th>STATION ISSUE</th>
                         </tr>
                     </thead>
                     <tbody></tbody>
@@ -4632,6 +4727,8 @@
 
     
     const STORAGE_KEY = "maintenance_tl_floor_overrides_v1";
+    const TL_NAME_EDIT_KEY = "maintenance_tl_name_edits_v1";
+    const TL_HIDDEN_KEY = "maintenance_hidden_tl_assignments_v1";
 
     // Site A floor references supplied by the user.
     // These are used as a strong hint when Station No. is missing/unclear.
@@ -4975,6 +5072,51 @@
         localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
     }
 
+
+    function loadTLNameEdits() {
+        try {
+            const data = JSON.parse(localStorage.getItem(TL_NAME_EDIT_KEY) || "{}");
+            return data && typeof data === "object" ? data : {};
+        } catch (e) {
+            return {};
+        }
+    }
+
+    function saveTLNameEdits(data) {
+        localStorage.setItem(TL_NAME_EDIT_KEY, JSON.stringify(data || {}));
+    }
+
+    function loadHiddenTLs() {
+        try {
+            const data = JSON.parse(localStorage.getItem(TL_HIDDEN_KEY) || "[]");
+            return Array.isArray(data) ? data : [];
+        } catch (e) {
+            return [];
+        }
+    }
+
+    function saveHiddenTLs(data) {
+        localStorage.setItem(TL_HIDDEN_KEY, JSON.stringify(Array.isArray(data) ? data : []));
+    }
+
+    function getEditedTLName(originalName) {
+        const edits = loadTLNameEdits();
+        return String(edits[originalName] || originalName || "").trim();
+    }
+
+    function displayTLValue(rawValue) {
+        const edits = loadTLNameEdits();
+
+        return String(rawValue || "")
+            .split(/\s*,\s*/)
+            .map(part => {
+                const normalized = normalizeTLName(part);
+                return edits[normalized] ? edits[normalized] : part.trim();
+            })
+            .filter(Boolean)
+            .join(", ");
+    }
+
     function buildAssignments(rows) {
         const evidence = new Map();
 
@@ -5245,64 +5387,142 @@
     function renderSummary(assignments) {
         const tbody = byId("tlSummaryTable").querySelector("tbody");
         const overrides = loadOverrides();
+        const hidden = new Set(loadHiddenTLs());
+        const edits = loadTLNameEdits();
 
-        const entries = [...assignments.entries()].sort((a, b) =>
-            a[0].localeCompare(b[0], undefined, { sensitivity: "base" })
-        );
+        const entries = [...assignments.entries()]
+            .filter(([name]) => !hidden.has(name))
+            .sort((a, b) => {
+                const aName = edits[a[0]] || a[0];
+                const bName = edits[b[0]] || b[0];
+                return aName.localeCompare(bName, undefined, { sensitivity: "base" });
+            });
+
+        if (!entries.length) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="3" style="text-align:center;color:var(--pro-muted);padding:18px;">
+                        No Team Leaders in the assignment list.
+                    </td>
+                </tr>
+            `;
+            return;
+        }
 
         tbody.innerHTML = entries.map(([name, item]) => {
             const detected = item.floor || FLOOR.REVIEW;
-            const selected = overrides[name] || "";
-            const confidence = item.floor
-                ? `${Math.round((item.confidence || 0) * 100)}% confidence`
-                : item.source;
+            const manual = overrides[name] || "";
+            const shownName = edits[name] || name;
 
             return `
                 <tr>
-                    <td><strong>${escapeHtml(name)}</strong></td>
                     <td>
-                        <span class="maintenance-floor-badge ${floorClass(detected)}">${escapeHtml(detected)}</span><br>
-                        <span class="confidence-label">${escapeHtml(confidence)}</span>
+                        <input
+                            type="text"
+                            class="tl-name-editor"
+                            data-original-tl="${encodeURIComponent(name)}"
+                            value="${escapeHtml(shownName)}"
+                            aria-label="Edit Team Leader name">
                     </td>
-                    <td>${escapeHtml(evidenceText(item.evidence))}<br><span class="confidence-label">${escapeHtml(item.source)}</span></td>
                     <td>
-                        <select class="tl-floor-select" data-tl-name="${escapeHtml(name)}" aria-label="Manual floor for ${escapeHtml(name)}">
-                            <option value="" ${selected === "" ? "selected" : ""}>Auto</option>
-                            <option value="${FLOOR.GROUND}" ${selected === FLOOR.GROUND ? "selected" : ""}>Ground Floor</option>
-                            <option value="${FLOOR.FIRST}" ${selected === FLOOR.FIRST ? "selected" : ""}>1st Floor</option>
-                            <option value="${FLOOR.SECOND}" ${selected === FLOOR.SECOND ? "selected" : ""}>2nd Floor</option>
+                        <select
+                            class="tl-floor-editor"
+                            data-original-tl="${encodeURIComponent(name)}"
+                            aria-label="Floor assignment for ${escapeHtml(shownName)}">
+                            <option value="" ${manual === "" ? "selected" : ""}>Auto — ${escapeHtml(detected)}</option>
+                            <option value="${FLOOR.GROUND}" ${manual === FLOOR.GROUND ? "selected" : ""}>Ground Floor</option>
+                            <option value="${FLOOR.FIRST}" ${manual === FLOOR.FIRST ? "selected" : ""}>1st Floor</option>
+                            <option value="${FLOOR.SECOND}" ${manual === FLOOR.SECOND ? "selected" : ""}>2nd Floor</option>
                         </select>
+                        <span class="tl-auto-hint">${manual ? "Manual floor saved" : "Using auto-detected floor"}</span>
+                    </td>
+                    <td>
+                        <button
+                            type="button"
+                            class="tl-row-remove"
+                            data-original-tl="${encodeURIComponent(name)}">
+                            Remove
+                        </button>
                     </td>
                 </tr>
             `;
         }).join("");
 
-        tbody.querySelectorAll(".tl-floor-select").forEach(select => {
+        tbody.querySelectorAll(".tl-floor-editor").forEach(select => {
             select.addEventListener("change", function () {
-                const name = this.getAttribute("data-tl-name");
+                const originalName = decodeURIComponent(this.getAttribute("data-original-tl") || "");
                 const data = loadOverrides();
-                if (this.value) data[name] = this.value;
-                else delete data[name];
+
+                if (this.value) data[originalName] = this.value;
+                else delete data[originalName];
+
                 saveOverrides(data);
                 analyzeMaintenance(false);
+            });
+        });
+
+        tbody.querySelectorAll(".tl-name-editor").forEach(input => {
+            const saveName = function () {
+                const originalName = decodeURIComponent(this.getAttribute("data-original-tl") || "");
+                const newName = this.value.replace(/\s+/g, " ").trim();
+                const data = loadTLNameEdits();
+
+                if (newName && newName !== originalName) data[originalName] = newName;
+                else delete data[originalName];
+
+                saveTLNameEdits(data);
+
+                if (lastAssignedRows.length) renderRows(lastAssignedRows);
+            };
+
+            input.addEventListener("change", saveName);
+            input.addEventListener("keydown", function (event) {
+                if (event.key === "Enter") {
+                    event.preventDefault();
+                    this.blur();
+                }
+            });
+        });
+
+        tbody.querySelectorAll(".tl-row-remove").forEach(button => {
+            button.addEventListener("click", function () {
+                const originalName = decodeURIComponent(this.getAttribute("data-original-tl") || "");
+                const shownName = getEditedTLName(originalName);
+
+                if (!confirm(`Remove "${shownName}" from the Team Leader Floor Assignment list?`)) {
+                    return;
+                }
+
+                const hiddenNames = new Set(loadHiddenTLs());
+                hiddenNames.add(originalName);
+                saveHiddenTLs([...hiddenNames]);
+
+                renderSummary(lastAssignments);
+                showMessage(`${shownName} was removed from the assignment list. The sorted report rows are unchanged.`, "info");
             });
         });
     }
 
     function renderRows(rows) {
         const tbody = byId("maintenanceOutputTable").querySelector("tbody");
-        tbody.innerHTML = rows.map(row => `
-            <tr>
-                <td><span class="maintenance-floor-badge ${floorClass(row.floor)}">${escapeHtml(row.floor)}</span></td>
-                <td>${escapeHtml(row.date || row.timestamp || "")}</td>
-                <td>${escapeHtml(row.tl)}</td>
-                <td>${escapeHtml(row.account)}</td>
-                <td>${escapeHtml(row.site)}</td>
-                <td><strong>${escapeHtml(row.station)}</strong></td>
-                <td>${escapeHtml(row.issue)}</td>
-                <td><span class="confidence-label">${escapeHtml(row.sortSource)}</span></td>
-            </tr>
-        `).join("");
+        let previousFloor = null;
+
+        tbody.innerHTML = rows.map(row => {
+            const isFloorBreak = previousFloor !== null && previousFloor !== row.floor;
+            previousFloor = row.floor;
+
+            return `
+                <tr class="${isFloorBreak ? "floor-break" : ""}" data-floor="${escapeHtml(row.floor)}">
+                    <td>${escapeHtml(row.timestamp || "")}</td>
+                    <td>${escapeHtml(row.date || "")}</td>
+                    <td>${escapeHtml(displayTLValue(row.tl))}</td>
+                    <td>${escapeHtml(row.account)}</td>
+                    <td>${escapeHtml(row.site)}</td>
+                    <td><strong>${escapeHtml(row.station)}</strong></td>
+                    <td>${escapeHtml(row.issue)}</td>
+                </tr>
+            `;
+        }).join("");
 
         const counts = {
             [FLOOR.GROUND]: 0,
@@ -5310,6 +5530,7 @@
             [FLOOR.SECOND]: 0,
             [FLOOR.REVIEW]: 0
         };
+
         rows.forEach(row => counts[row.floor]++);
 
         byId("groundCount").textContent = counts[FLOOR.GROUND];
@@ -5370,18 +5591,30 @@
     }
 
     function rowsToTSV(rows) {
-        const headers = ["FLOOR", "DATE", "TL", "ACCOUNT", "SITE", "STATION NO.", "STATION ISSUE"];
+        const headers = [
+            "TIMESTAMP",
+            "DATE",
+            "TL",
+            "ACCOUNT",
+            "SITE",
+            "STATION NO.",
+            "STATION ISSUE"
+        ];
+
         const body = rows.map(row => [
-            row.floor,
-            row.date || row.timestamp || "",
-            row.tl,
+            row.timestamp || "",
+            row.date || "",
+            displayTLValue(row.tl),
             row.account,
             row.site,
             row.station,
             row.issue
         ]);
+
         return [headers, ...body]
-            .map(cols => cols.map(v => String(v == null ? "" : v).replace(/\t/g, " ")).join("\t"))
+            .map(cols => cols
+                .map(value => String(value == null ? "" : value).replace(/\t/g, " "))
+                .join("\t"))
             .join("\n");
     }
 
@@ -5433,10 +5666,14 @@
     byId("maintenanceClearBtn").addEventListener("click", clearMaintenance);
 
     byId("maintenanceResetAssignmentsBtn").addEventListener("click", function () {
-        if (confirm("Reset all saved Team Leader floor assignments?")) {
+        if (confirm("Reset saved TL floors, edited names, and removed Team Leader assignment rows?")) {
             localStorage.removeItem(STORAGE_KEY);
+            localStorage.removeItem(TL_NAME_EDIT_KEY);
+            localStorage.removeItem(TL_HIDDEN_KEY);
+
             if (byId("maintenanceInput").value.trim()) analyzeMaintenance(false);
-            showMessage("Saved TL floor assignments were reset. Auto-learning will be used again.", "info");
+
+            showMessage("Team Leader Floor Assignment was reset. Auto-learning will be used again.", "info");
         }
     });
 })();
