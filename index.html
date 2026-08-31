@@ -2428,7 +2428,7 @@
         </div>
 
         <div class="simple-eod-actions">
-            <button type="button" class="btn-eod-outline" id="simpleEodSaveBtn">💾 Save Draft</button>
+            <button type="button" class="btn-eod-outline" id="simpleEodSaveBtn">💾 Save to Drafts</button>
             <button type="button" class="btn-eod-outline" id="simpleEodDraftsBtn">🗂️ Drafts</button>
             <button type="button" class="btn-eod-secondary" id="simpleEodPreviewBtn">👁️ Preview / Print</button>
             <button type="button" class="btn-eod-primary" id="simpleEodPdfBtn">📄 Download PDF</button>
@@ -2461,7 +2461,7 @@
         <div class="maintenance-drafts-head">
             <div>
                 <h3 id="maintenanceDraftsTitle">Maintenance Report Drafts</h3>
-                <p>Your current work auto-saves. You can also save named snapshots here.</p>
+                <p>Your work auto-saves continuously. “Save to Drafts” stores a working draft here; you can also save separate named snapshots.</p>
             </div>
             <button type="button" id="maintenanceDraftsClose" class="maintenance-modal-close static-close" aria-label="Close drafts">×</button>
         </div>
@@ -3834,7 +3834,7 @@
                 <div class="eod-proof-zone" tabindex="0">
                     <p>
                         <strong>Screenshot Proof</strong><br>
-                        Upload, drag-and-drop, or click this area and press <strong>Ctrl+V</strong> after copying a CCTV screenshot.
+                        Take a Snip/Screenshot, then press <strong>Ctrl+V</strong>. One paste = one screenshot. Click a thumbnail to view it full-size.
                     </p>
                     <label class="eod-proof-label" for="${fileId}">+ Add Screenshot</label>
                     <input id="${fileId}" class="eod-file-input" type="file" accept="image/*" multiple>
@@ -3978,6 +3978,7 @@
                 const files = getClipboardImages(event);
                 if (files.length) {
                     event.preventDefault();
+                    event.stopPropagation();
                     activatePasteTarget();
                     await addScreenshots(block, files);
                 }
@@ -4137,6 +4138,45 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         input.value = "";
         await renderDraftList();
         showMessage(`Draft "${name}" saved.`, "success");
+    }
+
+
+    function draftSlug(value) {
+        return String(value || "")
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, "_")
+            .replace(/^_+|_+$/g, "")
+            .slice(0, 60);
+    }
+
+    async function saveWorkingDraftToDrafts() {
+        syncTop();
+
+        // Save the live auto-save copy first.
+        await saveDraft(true);
+
+        const reportDate = state.date || todayLocal();
+        const reportTitle = state.title || "Maintenance Report";
+        const stableId = `working_${reportDate}_${draftSlug(reportTitle)}`;
+
+        const record = {
+            id: stableId,
+            name: `${reportTitle} - ${reportDate} (Working Draft)`,
+            savedAt: new Date().toISOString(),
+            state: snapshotState()
+        };
+
+        const db = await openDb();
+        await new Promise((resolve, reject) => {
+            const tx = db.transaction(NAMED_STORE, "readwrite");
+            tx.objectStore(NAMED_STORE).put(record);
+            tx.oncomplete = resolve;
+            tx.onerror = () => reject(tx.error);
+        });
+        db.close();
+
+        showMessage("Saved to Drafts. Saving again will update this working draft.", "success");
+        setAutosaveStatus("● Saved to Drafts", "saved");
     }
 
     async function getNamedDrafts() {
@@ -4511,10 +4551,13 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         }, 80);
     });
 
-    $("simpleEodSaveBtn").addEventListener("click", () => saveDraft().catch(error => {
-        console.error(error);
-        showMessage("Could not save the draft.", "error");
-    }));
+    $("simpleEodSaveBtn").addEventListener("click", () => {
+        saveWorkingDraftToDrafts().catch(error => {
+            console.error(error);
+            showMessage("Could not save to Drafts.", "error");
+            setAutosaveStatus("● Save failed", "error");
+        });
+    });
     $("simpleEodPreviewBtn").addEventListener("click", previewPrint);
     $("simpleEodPdfBtn").addEventListener("click", downloadPdf);
     $("simpleEodClearBtn").addEventListener("click", clearAll);
@@ -4586,6 +4629,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
     // Otherwise it goes to the newest report block.
     document.addEventListener("paste", async event => {
         if (!$("eodPanel").classList.contains("active")) return;
+        if (event.defaultPrevented) return;
 
         const imageFiles = getClipboardImages(event);
         if (!imageFiles.length) return;
