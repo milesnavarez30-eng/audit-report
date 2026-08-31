@@ -5399,37 +5399,7 @@
 </style>
 
 
-<style>
-    /* Maintenance Report - Import PDF */
-    #eodPanel .btn-eod-import-pdf {
-        min-height: 40px;
-        padding: 9px 14px;
-        border: 1px solid rgba(124,58,237,.42);
-        border-radius: 9px;
-        background: rgba(124,58,237,.09);
-        color: #6d28d9;
-        font: 800 12px/1 "Roboto", Arial, sans-serif;
-        cursor: pointer;
-        transition: .18s ease;
-    }
 
-    #eodPanel .btn-eod-import-pdf:hover {
-        background: rgba(124,58,237,.15);
-        transform: translateY(-1px);
-    }
-
-    #eodPanel .btn-eod-import-pdf:disabled {
-        opacity: .55;
-        cursor: wait;
-        transform: none;
-    }
-
-    body.dark-mode #eodPanel .btn-eod-import-pdf {
-        color: #c4b5fd;
-        border-color: rgba(196,181,253,.42);
-        background: rgba(124,58,237,.16);
-    }
-</style>
 
 
 <style>
@@ -5624,6 +5594,302 @@
     #maintenancePanel .maintenance-header-optional-note strong {
         color: var(--text-color) !important;
         font-weight: 800 !important;
+    }
+</style>
+
+
+<style id="pro-design-upgrade">
+    /* =========================================================
+       PRO DESIGN UPGRADE
+       Cleaner hero, better spacing, richer surfaces, clearer hierarchy
+       ========================================================= */
+    :root {
+        --pro-page-glow-1: rgba(37, 99, 235, 0.14);
+        --pro-page-glow-2: rgba(16, 185, 129, 0.10);
+        --pro-page-glow-3: rgba(99, 102, 241, 0.08);
+        --pro-surface-soft: rgba(255, 255, 255, 0.72);
+        --pro-surface-strong: rgba(255, 255, 255, 0.92);
+        --pro-outline-strong: rgba(148, 163, 184, 0.26);
+        --pro-elevated-shadow: 0 22px 55px rgba(15, 23, 42, 0.08);
+        --pro-soft-shadow-2: 0 12px 30px rgba(15, 23, 42, 0.06);
+        --pro-chip-bg: rgba(255, 255, 255, 0.8);
+        --pro-chip-text: #0f172a;
+        --pro-hero-accent: linear-gradient(135deg, #2563eb 0%, #1d4ed8 40%, #10b981 100%);
+        --pro-hero-text: #0f172a;
+        --pro-hero-subtext: #334155;
+    }
+
+    body.dark-mode {
+        --pro-page-glow-1: rgba(59, 130, 246, 0.18);
+        --pro-page-glow-2: rgba(34, 197, 94, 0.11);
+        --pro-page-glow-3: rgba(168, 85, 247, 0.10);
+        --pro-surface-soft: rgba(15, 23, 42, 0.72);
+        --pro-surface-strong: rgba(15, 23, 42, 0.92);
+        --pro-outline-strong: rgba(148, 163, 184, 0.22);
+        --pro-elevated-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
+        --pro-soft-shadow-2: 0 16px 34px rgba(0, 0, 0, 0.22);
+        --pro-chip-bg: rgba(30, 41, 59, 0.86);
+        --pro-chip-text: #e5e7eb;
+        --pro-hero-text: #f8fafc;
+        --pro-hero-subtext: #cbd5e1;
+    }
+
+    body {
+        width: min(96%, 1460px) !important;
+        max-width: 1460px !important;
+        padding: 24px 12px 42px !important;
+        background:
+            radial-gradient(circle at top left, var(--pro-page-glow-1), transparent 26%),
+            radial-gradient(circle at 100% 10%, var(--pro-page-glow-2), transparent 22%),
+            radial-gradient(circle at 50% 100%, var(--pro-page-glow-3), transparent 20%),
+            var(--bg-color) !important;
+    }
+
+    body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        background:
+            linear-gradient(180deg, rgba(255,255,255,0.03), transparent 18%),
+            repeating-linear-gradient(90deg, transparent 0 39px, rgba(148,163,184,0.03) 39px 40px);
+        opacity: .65;
+        z-index: -1;
+    }
+
+    
+
+    
+
+    
+
+    
+
+    body.dark-mode 
+
+    
+
+    
+
+    
+
+    
+
+    #themeToggle {
+        top: 22px !important;
+        right: 22px !important;
+        width: 52px !important;
+        height: 52px !important;
+        border-radius: 18px !important;
+        border: 1px solid var(--pro-outline-strong) !important;
+        background: var(--pro-surface-strong) !important;
+        box-shadow: var(--pro-soft-shadow-2) !important;
+        backdrop-filter: blur(14px);
+    }
+
+    #themeToggle:hover {
+        transform: translateY(-2px) scale(1.04) !important;
+    }
+
+    .workspace-tabs {
+        position: sticky;
+        top: 16px;
+        z-index: 400;
+        width: min(100%, 1140px) !important;
+        margin: 0 auto 24px !important;
+        padding: 8px !important;
+        border-radius: 18px !important;
+        border: 1px solid var(--pro-outline-strong) !important;
+        background: var(--pro-surface-soft) !important;
+        box-shadow: var(--pro-soft-shadow-2) !important;
+        backdrop-filter: blur(16px);
+    }
+
+    .workspace-tab-btn {
+        min-height: 48px !important;
+        border-radius: 14px !important;
+        font-size: 13px !important;
+        letter-spacing: .01em;
+    }
+
+    .workspace-tab-btn:hover {
+        transform: translateY(-1px);
+        background: rgba(37, 99, 235, 0.08) !important;
+    }
+
+    .workspace-tab-btn.active {
+        background: var(--pro-hero-accent) !important;
+        color: #ffffff !important;
+        box-shadow: 0 12px 24px rgba(37, 99, 235, 0.22) !important;
+    }
+
+    .app-tab-panel {
+        animation: panelFadeIn .22s ease;
+    }
+
+    @keyframes panelFadeIn {
+        from { opacity: 0; transform: translateY(6px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .container,
+    #maintenancePanel .maintenance-shell,
+    #eodPanel .container.simple-eod-shell {
+        border-radius: 24px !important;
+        border: 1px solid var(--pro-outline-strong) !important;
+        background:
+            linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,0) 18%),
+            var(--container-bg) !important;
+        box-shadow: var(--pro-elevated-shadow) !important;
+    }
+
+    .form-section,
+    .grid-section,
+    #maintenancePanel .maintenance-shell,
+    #eodPanel .container.simple-eod-shell {
+        overflow: hidden;
+    }
+
+    h2,
+    #cctvPanel h2,
+    #maintenancePanel h2,
+    #eodPanel h2 {
+        display: flex !important;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 16px !important;
+        font-size: clamp(26px, 3vw, 34px) !important;
+        letter-spacing: -0.04em !important;
+    }
+
+    #cctvPanel h2::before,
+    #maintenancePanel h2::before,
+    #eodPanel h2::before {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 42px;
+        height: 42px;
+        border-radius: 14px;
+        color: #fff;
+        font-size: 19px;
+        box-shadow: 0 10px 24px rgba(37,99,235,.16);
+    }
+
+    #cctvPanel h2::before {
+        content: "📋";
+        background: linear-gradient(135deg, #2563eb, #1d4ed8);
+    }
+
+    #maintenancePanel h2::before {
+        content: "✨";
+        background: linear-gradient(135deg, #7c3aed, #2563eb);
+    }
+
+    #eodPanel h2::before {
+        content: "📸";
+        background: linear-gradient(135deg, #10b981, #2563eb);
+    }
+
+    #cctvPanel .form-grid,
+    #eodPanel .simple-eod-top {
+        padding: 4px 0 0;
+    }
+
+    .table-container,
+    #maintenancePanel .maintenance-sheet-shell,
+    #maintenancePanel .mini-sheet-card,
+    #eodPanel .eod-block,
+    #eodPanel .simple-eod-top {
+        border-radius: 18px !important;
+        border: 1px solid var(--pro-outline-strong) !important;
+        box-shadow: var(--pro-soft-shadow-2) !important;
+        background: linear-gradient(180deg, rgba(255,255,255,.03), transparent 100%), var(--container-bg) !important;
+    }
+
+    input[type="text"],
+    input[type="date"],
+    input[type="url"],
+    select,
+    textarea {
+        min-height: 46px !important;
+        border-radius: 14px !important;
+        border-width: 1px !important;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.3);
+    }
+
+    textarea {
+        min-height: 120px;
+    }
+
+    input:focus,
+    select:focus,
+    textarea:focus {
+        transform: translateY(-1px);
+    }
+
+    .button-group > button,
+    .maintenance-toolbar button,
+    .simple-eod-actions button,
+    .block-actions button,
+    .action-btns button,
+    .google-like-toolbar button,
+    .mini-sheet-toolbar button {
+        box-shadow: 0 8px 20px rgba(15,23,42,.08) !important;
+    }
+
+    .button-group > button:hover,
+    .maintenance-toolbar button:hover,
+    .simple-eod-actions button:hover,
+    .block-actions button:hover,
+    .action-btns button:hover,
+    .google-like-toolbar button:hover,
+    .mini-sheet-toolbar button:hover {
+        transform: translateY(-1px);
+    }
+
+    table {
+        font-size: 13.5px !important;
+    }
+
+    th {
+        letter-spacing: .04em;
+    }
+
+    .maintenance-intro,
+    .simple-eod-intro {
+        padding: 14px 16px;
+        border: 1px dashed var(--pro-outline-strong);
+        border-radius: 16px;
+        background: rgba(148, 163, 184, 0.05);
+    }
+
+    .maintenance-message,
+    .message {
+        border-radius: 14px !important;
+        box-shadow: var(--pro-soft-shadow-2);
+    }
+
+    @media (max-width: 900px) {
+        
+
+        
+
+        
+
+        .workspace-tabs {
+            top: 10px;
+        }
+    }
+
+    @media (max-width: 640px) {
+        
+
+        #themeToggle {
+            width: 46px !important;
+            height: 46px !important;
+            border-radius: 14px !important;
+        }
     }
 </style>
 
@@ -5920,8 +6186,6 @@
         <div class="simple-eod-actions">
             <button type="button" class="btn-eod-outline" id="simpleEodSaveBtn">💾 Save to Drafts</button>
             <button type="button" class="btn-eod-outline" id="simpleEodDraftsBtn">🗂️ Drafts</button>
-            <button type="button" class="btn-eod-import-pdf" id="simpleEodImportPdfBtn">📥 Import PDF</button>
-            <input type="file" id="simpleEodImportPdfInput" accept="application/pdf,.pdf" multiple hidden>
             <button type="button" class="btn-eod-sheet-copy" id="simpleEodCopySheetsBtn">📋 Copy Full Report to Sheets</button>
             <button type="button" class="btn-eod-sheet-send" id="simpleEodSendSheetsBtn">📤 Send to Google Sheets</button>
             <button type="button" class="btn-eod-outline" id="simpleEodSheetSetupBtn">⚙️ Sheet Setup</button>
@@ -5932,7 +6196,7 @@
         </div>
 
         <div class="maintenance-sheets-copy-hint">
-            <strong>Import PDF</strong> rebuilds a PDF into editable Maintenance Report blocks. PDFs created by this website can preserve exact editable text/remarks; older or scanned PDFs use text extraction/OCR as a fallback. <strong>Send to Google Sheets</strong> sends the finished report directly to your tracker.
+            <strong>Send to Google Sheets</strong> can send the report title/date, all maintenance rows, CCTV screenshots, and remarks directly to your tracker. Use <strong>Sheet Setup</strong> once to save the Apps Script connection.
         </div>
 
         <div id="simpleEodMessage" class="simple-eod-message" aria-live="polite"></div>
@@ -8319,514 +8583,6 @@
     }
 
 
-    /* =========================================================
-       PDF IMPORT / EDITABLE ROUND-TRIP
-       - PDFs created by this website store editable text/remarks
-         in PDF metadata for accurate future re-import.
-       - Other PDFs use PDF.js text extraction.
-       - Image-only/scanned PDFs fall back to browser OCR.
-       ========================================================= */
-
-    const PDF_EDITABLE_STATE_PREFIX = "CCTV_MAINTENANCE_EDITABLE_V1:";
-    const PDFJS_WORKER_URL =
-        "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
-
-    function utf8ToBase64(value) {
-        const bytes = new TextEncoder().encode(String(value || ""));
-        let binary = "";
-        const chunkSize = 0x8000;
-
-        for (let i = 0; i < bytes.length; i += chunkSize) {
-            binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
-        }
-
-        return btoa(binary);
-    }
-
-    function base64ToUtf8(value) {
-        const binary = atob(String(value || ""));
-        const bytes = new Uint8Array(binary.length);
-
-        for (let i = 0; i < binary.length; i++) {
-            bytes[i] = binary.charCodeAt(i);
-        }
-
-        return new TextDecoder().decode(bytes);
-    }
-
-    function editableStateForPdfMetadata() {
-        syncTop();
-
-        return {
-            version: 1,
-            date: state.date || "",
-            title: state.title || "Mabini Site A - 1st & 2nd Floor",
-            blocks: state.blocks.map(block => ({
-                lanesText: String(block.lanesText || ""),
-                remarks: Array.isArray(block.remarks)
-                    ? block.remarks.map(item => String(item || ""))
-                    : [""]
-            }))
-        };
-    }
-
-    function encodeEditableStateForPdf() {
-        try {
-            const json = JSON.stringify(editableStateForPdfMetadata());
-
-            // Avoid creating abnormally large PDF metadata.
-            if (json.length > 250000) {
-                console.warn("Editable PDF metadata skipped because report text is too large.");
-                return "";
-            }
-
-            return PDF_EDITABLE_STATE_PREFIX + utf8ToBase64(json);
-        } catch (error) {
-            console.warn("Could not encode editable PDF state.", error);
-            return "";
-        }
-    }
-
-    function decodeEditableStateFromPdfSubject(subject) {
-        const raw = String(subject || "");
-
-        if (!raw.startsWith(PDF_EDITABLE_STATE_PREFIX)) {
-            return null;
-        }
-
-        try {
-            const encoded = raw.slice(PDF_EDITABLE_STATE_PREFIX.length);
-            const parsed = JSON.parse(base64ToUtf8(encoded));
-
-            if (!parsed || !Array.isArray(parsed.blocks)) {
-                return null;
-            }
-
-            return parsed;
-        } catch (error) {
-            console.warn("Could not decode editable state from PDF metadata.", error);
-            return null;
-        }
-    }
-
-    function normalizeImportedPdfLine(value) {
-        return String(value || "")
-            .replace(/\u00a0/g, " ")
-            .replace(/[ \t]+/g, " ")
-            .trim();
-    }
-
-    function looksLikeImportedFooter(line) {
-        const value = normalizeImportedPdfLine(line);
-        return /^Page\s+\d+\s+of\s+\d+$/i.test(value) ||
-               /^Page\s+\d+$/i.test(value);
-    }
-
-    function looksLikeImportedTitle(line) {
-        const value = normalizeImportedPdfLine(line);
-        return /maintenance\s+report/i.test(value) ||
-               /^Mabini\s+Site/i.test(value);
-    }
-
-    function looksLikeImportedHeader(line) {
-        const value = normalizeImportedPdfLine(line).toUpperCase();
-
-        const hits = [
-            "TIMESTAMP",
-            "DATE",
-            "TL",
-            "ACCOUNT",
-            "SITE",
-            "STATION",
-            "ISSUE"
-        ].filter(word => value.includes(word)).length;
-
-        return hits >= 4;
-    }
-
-    function cleanImportedPageText(rawText) {
-        const lines = String(rawText || "")
-            .replace(/\r/g, "")
-            .split("\n")
-            .map(normalizeImportedPdfLine)
-            .filter(Boolean)
-            .filter(line => !looksLikeImportedFooter(line));
-
-        let title = "";
-        let reportDate = "";
-        let remarks = [];
-        let body = [];
-
-        lines.forEach((line, index) => {
-            if (!title && looksLikeImportedTitle(line)) {
-                title = line.replace(/\s*Maintenance\s+Report\s*$/i, "").trim();
-
-                const dateMatch =
-                    line.match(/\b(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})\b/);
-
-                if (dateMatch) {
-                    let year = dateMatch[3];
-                    if (year.length === 2) year = "20" + year;
-
-                    reportDate =
-                        `${year}-${String(dateMatch[1]).padStart(2, "0")}-${String(dateMatch[2]).padStart(2, "0")}`;
-                }
-
-                return;
-            }
-
-            if (/^remarks?\s*:/i.test(line)) {
-                remarks.push(line.replace(/^remarks?\s*:\s*/i, "").trim());
-                return;
-            }
-
-            // Skip the official seven-column header. The editable textarea
-            // does not need it because PDF/Sheets generation restores it.
-            if (looksLikeImportedHeader(line)) {
-                return;
-            }
-
-            body.push(line);
-        });
-
-        // Convert broad visual spacing into tabs where possible.
-        // This helps extracted text-based PDFs become editable table rows.
-        body = body.map(line =>
-            line.replace(/\s{2,}/g, "\t").trim()
-        );
-
-        return {
-            title,
-            reportDate,
-            lanesText: body.join("\n").trim(),
-            remarks: remarks.filter(Boolean)
-        };
-    }
-
-    async function renderPdfPageToDataUrl(page, scale = 1.55, quality = 0.78) {
-        const viewport = page.getViewport({ scale });
-        const canvas = document.createElement("canvas");
-        const context = canvas.getContext("2d", { alpha: false });
-
-        canvas.width = Math.max(1, Math.ceil(viewport.width));
-        canvas.height = Math.max(1, Math.ceil(viewport.height));
-
-        context.fillStyle = "#ffffff";
-        context.fillRect(0, 0, canvas.width, canvas.height);
-
-        await page.render({
-            canvasContext: context,
-            viewport,
-            background: "#ffffff"
-        }).promise;
-
-        return canvas.toDataURL("image/jpeg", quality);
-    }
-
-    async function extractTextFromPdfPage(page) {
-        try {
-            const content = await page.getTextContent();
-            const items = (content.items || [])
-                .filter(item => item && String(item.str || "").trim())
-                .map(item => ({
-                    text: String(item.str || "").trim(),
-                    x: Number(item.transform?.[4] || 0),
-                    y: Number(item.transform?.[5] || 0),
-                    width: Number(item.width || 0)
-                }));
-
-            if (!items.length) return "";
-
-            // Group items by visual line (PDF Y coordinate), then sort left-to-right.
-            const lines = [];
-
-            items
-                .sort((a, b) => {
-                    if (Math.abs(b.y - a.y) > 2.5) return b.y - a.y;
-                    return a.x - b.x;
-                })
-                .forEach(item => {
-                    let line = lines.find(existing => Math.abs(existing.y - item.y) <= 2.5);
-
-                    if (!line) {
-                        line = { y: item.y, items: [] };
-                        lines.push(line);
-                    }
-
-                    line.items.push(item);
-                });
-
-            return lines
-                .sort((a, b) => b.y - a.y)
-                .map(line => {
-                    const sorted = line.items.sort((a, b) => a.x - b.x);
-                    let result = "";
-                    let previousRight = null;
-
-                    sorted.forEach((item, index) => {
-                        if (!index) {
-                            result = item.text;
-                            previousRight = item.x + item.width;
-                            return;
-                        }
-
-                        const gap = item.x - (previousRight == null ? item.x : previousRight);
-
-                        // Large visual gaps are treated like spreadsheet columns.
-                        result += gap > 18 ? "\t" : " ";
-                        result += item.text;
-                        previousRight = item.x + item.width;
-                    });
-
-                    return result.trim();
-                })
-                .filter(Boolean)
-                .join("\n");
-
-        } catch (error) {
-            console.warn("PDF text extraction failed.", error);
-            return "";
-        }
-    }
-
-    async function ocrPdfPage(page, pageNumber, totalPages) {
-        if (typeof Tesseract === "undefined") {
-            throw new Error("OCR library did not load.");
-        }
-
-        showMessage(
-            `PDF page ${pageNumber}/${totalPages} is image-based. Reading it with OCR...`,
-            "info"
-        );
-
-        const viewport = page.getViewport({ scale: 1.8 });
-        const canvas = document.createElement("canvas");
-        const context = canvas.getContext("2d", { alpha: false });
-
-        canvas.width = Math.max(1, Math.ceil(viewport.width));
-        canvas.height = Math.max(1, Math.ceil(viewport.height));
-
-        context.fillStyle = "#ffffff";
-        context.fillRect(0, 0, canvas.width, canvas.height);
-
-        await page.render({
-            canvasContext: context,
-            viewport,
-            background: "#ffffff"
-        }).promise;
-
-        const result = await Tesseract.recognize(canvas, "eng", {
-            logger: info => {
-                if (
-                    info &&
-                    info.status === "recognizing text" &&
-                    typeof info.progress === "number"
-                ) {
-                    const percent = Math.round(info.progress * 100);
-                    showMessage(
-                        `OCR page ${pageNumber}/${totalPages}: ${percent}%`,
-                        "info"
-                    );
-                }
-            }
-        });
-
-        return String(result?.data?.text || "");
-    }
-
-    async function importOnePdfFile(file) {
-        if (typeof pdfjsLib === "undefined") {
-            throw new Error("PDF reader library did not load. Refresh the page and try again.");
-        }
-
-        pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS_WORKER_URL;
-
-        const bytes = new Uint8Array(await file.arrayBuffer());
-        const pdf = await pdfjsLib.getDocument({ data: bytes }).promise;
-
-        let editableMetadata = null;
-
-        try {
-            const metadata = await pdf.getMetadata();
-            editableMetadata = decodeEditableStateFromPdfSubject(
-                metadata?.info?.Subject || ""
-            );
-        } catch (error) {
-            console.warn("Could not read PDF metadata.", error);
-        }
-
-        // PDFs created by this website after this update:
-        // restore exact title/date/lanes/remarks without OCR.
-        if (editableMetadata) {
-            const restoredBlocks = editableMetadata.blocks.map(item => ({
-                id: uid(),
-                lanesText: String(item.lanesText || ""),
-                remarks: Array.isArray(item.remarks) && item.remarks.length
-                    ? item.remarks.map(value => String(value || ""))
-                    : [""],
-                screenshots: []
-            }));
-
-            return {
-                exact: true,
-                title: String(editableMetadata.title || ""),
-                date: String(editableMetadata.date || ""),
-                blocks: restoredBlocks
-            };
-        }
-
-        // Older / external PDFs: each PDF page becomes one editable block.
-        const importedBlocks = [];
-        let detectedTitle = "";
-        let detectedDate = "";
-
-        for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber++) {
-            showMessage(
-                `Importing "${file.name}" - page ${pageNumber} of ${pdf.numPages}...`,
-                "info"
-            );
-
-            const page = await pdf.getPage(pageNumber);
-            let text = await extractTextFromPdfPage(page);
-
-            // html2pdf/scanned PDFs often have no real text layer.
-            if (text.replace(/\s/g, "").length < 25) {
-                text = await ocrPdfPage(page, pageNumber, pdf.numPages);
-            }
-
-            const parsed = cleanImportedPageText(text);
-
-            if (!detectedTitle && parsed.title) detectedTitle = parsed.title;
-            if (!detectedDate && parsed.reportDate) detectedDate = parsed.reportDate;
-
-            // Preserve the original page visually. This is removable/replaceable
-            // in Screenshot Proof after import.
-            const pageSnapshot = await renderPdfPageToDataUrl(page, 1.25, 0.70);
-
-            importedBlocks.push({
-                id: uid(),
-                lanesText: parsed.lanesText || text.trim(),
-                remarks: parsed.remarks.length ? parsed.remarks : [""],
-                screenshots: [{
-                    name: `${file.name} - page ${pageNumber}.jpg`,
-                    dataUrl: pageSnapshot,
-                    importedPdfPage: true
-                }]
-            });
-        }
-
-        return {
-            exact: false,
-            title: detectedTitle,
-            date: detectedDate,
-            blocks: importedBlocks
-        };
-    }
-
-    function isBlankMaintenanceBlock(block) {
-        return (
-            !String(block?.lanesText || "").trim() &&
-            !(Array.isArray(block?.screenshots) && block.screenshots.length) &&
-            !(Array.isArray(block?.remarks) &&
-              block.remarks.some(item => String(item || "").trim()))
-        );
-    }
-
-    async function importMaintenancePdfFiles(files) {
-        const pdfFiles = [...files].filter(file =>
-            file &&
-            (file.type === "application/pdf" || /\.pdf$/i.test(file.name || ""))
-        );
-
-        if (!pdfFiles.length) {
-            showMessage("Choose at least one PDF file.", "error");
-            return;
-        }
-
-        const button = $("simpleEodImportPdfBtn");
-        const originalText = button.textContent;
-
-        button.disabled = true;
-        button.textContent = "⏳ Importing PDF...";
-
-        try {
-            const results = [];
-
-            for (const file of pdfFiles) {
-                results.push(await importOnePdfFile(file));
-            }
-
-            const importedBlocks = results.flatMap(result => result.blocks || []);
-
-            if (!importedBlocks.length) {
-                throw new Error("No editable content could be generated from the PDF.");
-            }
-
-            // Replace only the default blank block. Otherwise append to current work.
-            if (
-                state.blocks.length === 1 &&
-                isBlankMaintenanceBlock(state.blocks[0])
-            ) {
-                state.blocks = importedBlocks;
-            } else {
-                state.blocks.push(...importedBlocks);
-            }
-
-            // Adopt title/date only when useful.
-            const firstTitle = results.find(result => result.title)?.title;
-            const firstDate = results.find(result => result.date)?.date;
-
-            if (firstTitle) {
-                state.title = firstTitle;
-                $("simpleEodSite").value = firstTitle;
-            }
-
-            if (firstDate) {
-                state.date = firstDate;
-                $("simpleEodDate").value = firstDate;
-            }
-
-            activePasteBlockId = importedBlocks[0]?.id || null;
-
-            render();
-            await saveDraft(true);
-
-            const exactCount = results.filter(result => result.exact).length;
-            const fallbackCount = results.length - exactCount;
-
-            let message =
-                `${pdfFiles.length} PDF file${pdfFiles.length === 1 ? "" : "s"} imported into ${importedBlocks.length} editable block${importedBlocks.length === 1 ? "" : "s"}.`;
-
-            if (exactCount) {
-                message += ` ${exactCount} PDF${exactCount === 1 ? "" : "s"} restored exact editable text/remarks from embedded report data.`;
-            }
-
-            if (fallbackCount) {
-                message += ` Older/scanned PDF pages were converted using text extraction/OCR; review the editable rows for OCR errors.`;
-            }
-
-            showMessage(message, "success");
-
-            setTimeout(() => {
-                const firstImported = document.querySelector(
-                    `.eod-block[data-id="${importedBlocks[0]?.id}"]`
-                );
-                firstImported?.scrollIntoView({ behavior: "smooth", block: "center" });
-            }, 100);
-
-        } catch (error) {
-            console.error(error);
-            showMessage(
-                error?.message || "PDF import failed.",
-                "error"
-            );
-        } finally {
-            button.disabled = false;
-            button.textContent = originalText;
-            $("simpleEodImportPdfInput").value = "";
-        }
-    }
-
     // Bridge from Maintenance AI Sorter's editable Mini Sheet.
     // Sends selected rows directly into a Maintenance Report block.
     window.addMaintenanceSorterRowsToReport = function(tsv, meta = {}) {
@@ -10278,22 +10034,6 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
 
             const pdf = await worker.get("pdf");
 
-            // Store the editable title/date/lanes/remarks in PDF metadata.
-            // A future Import PDF can restore these fields exactly.
-            try {
-                const editableSubject = encodeEditableStateForPdf();
-
-                if (editableSubject && typeof pdf.setProperties === "function") {
-                    pdf.setProperties({
-                        title: reportFilename(),
-                        subject: editableSubject,
-                        creator: "CCTV Audit Maintenance Report"
-                    });
-                }
-            } catch (metadataError) {
-                console.warn("Could not embed editable PDF metadata.", metadataError);
-            }
-
             const totalPages = pdf.internal.getNumberOfPages();
 
             for (let page = 1; page <= totalPages; page++) {
@@ -10464,17 +10204,6 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         }, 80);
     });
 
-    $("simpleEodImportPdfBtn").addEventListener("click", () => {
-        $("simpleEodImportPdfInput").click();
-    });
-
-    $("simpleEodImportPdfInput").addEventListener("change", event => {
-        importMaintenancePdfFiles(event.target.files).catch(error => {
-            console.error(error);
-            showMessage("PDF import failed.", "error");
-        });
-    });
-
     $("simpleEodSaveBtn").addEventListener("click", () => {
         saveWorkingDraftToDrafts().catch(error => {
             console.error(error);
@@ -10590,9 +10319,6 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
 })();
 </script>
 
-<!-- PDF import libraries -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 </body>
