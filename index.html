@@ -4496,6 +4496,224 @@
     }
 </style>
 
+
+
+<style>
+    /* =========================================================
+       FINAL MAINTENANCE REPORT UI CLEANUP
+       - Hide Screenshot Proof helper text
+       - Keep Add Screenshot clearly visible
+       - Consistent readable text in Light + Dark mode
+       ========================================================= */
+
+    /* Hide the Screenshot Proof title/instruction paragraph only. */
+    #eodPanel .eod-proof-zone > p {
+        display: none !important;
+    }
+
+    /* Make the screenshot area cleaner/shorter now that helper text is hidden. */
+    #eodPanel .eod-proof-zone {
+        padding: 14px 16px !important;
+        min-height: 78px !important;
+    }
+
+    /* Keep the upload button readable regardless of the global label styles. */
+    #eodPanel .eod-proof-label {
+        color: #ffffff !important;
+        background: #0b57d0 !important;
+        border: 1px solid #0b57d0 !important;
+        font-family: "Roboto", Arial, sans-serif !important;
+        font-size: 11px !important;
+        font-weight: 800 !important;
+        letter-spacing: .01em !important;
+        text-shadow: none !important;
+    }
+
+    #eodPanel .eod-proof-label:hover {
+        background: #0848ad !important;
+        border-color: #0848ad !important;
+    }
+
+    /* Paste-target helper stays visible, but with strong contrast. */
+    #eodPanel .maintenance-paste-indicator {
+        color: #1f7a2d !important;
+        font-family: "Roboto", Arial, sans-serif !important;
+        font-weight: 900 !important;
+    }
+
+    body.dark-mode #eodPanel .maintenance-paste-indicator {
+        color: #73e287 !important;
+    }
+
+    /* Unified Maintenance Report typography. */
+    #eodPanel,
+    #eodPanel button,
+    #eodPanel input,
+    #eodPanel textarea,
+    #eodPanel select,
+    #eodPanel label,
+    #eodPanel span,
+    #eodPanel div,
+    #eodPanel p {
+        font-family: "Roboto", Arial, sans-serif !important;
+    }
+
+    /* Normal text and labels: high contrast in both themes. */
+    #eodPanel {
+        color: #1f2937 !important;
+    }
+
+    #eodPanel label,
+    #eodPanel .remarks-section-head label,
+    #eodPanel .simple-single-remark > label {
+        color: #1f2937 !important;
+    }
+
+    #eodPanel .simple-eod-intro,
+    #eodPanel .maintenance-sheets-copy-hint,
+    #eodPanel .eod-block-sub,
+    #eodPanel .eod-proof-zone p,
+    #eodPanel .maintenance-sheet-setup-help,
+    #eodPanel .maintenance-autosave-status {
+        color: #5f6b7a !important;
+    }
+
+    body.dark-mode #eodPanel {
+        color: #f3f4f6 !important;
+    }
+
+    body.dark-mode #eodPanel label,
+    body.dark-mode #eodPanel .remarks-section-head label,
+    body.dark-mode #eodPanel .simple-single-remark > label {
+        color: #f3f4f6 !important;
+    }
+
+    body.dark-mode #eodPanel .simple-eod-intro,
+    body.dark-mode #eodPanel .maintenance-sheets-copy-hint,
+    body.dark-mode #eodPanel .eod-block-sub,
+    body.dark-mode #eodPanel .maintenance-sheet-setup-help,
+    body.dark-mode #eodPanel .maintenance-autosave-status {
+        color: #b8c0cc !important;
+    }
+
+    /* Inputs/textareas: readable text + placeholder in either theme. */
+    #eodPanel input,
+    #eodPanel textarea,
+    #eodPanel select {
+        color: #1f2937 !important;
+        background-color: #ffffff !important;
+    }
+
+    #eodPanel input::placeholder,
+    #eodPanel textarea::placeholder {
+        color: #7b8794 !important;
+        opacity: 1 !important;
+    }
+
+    body.dark-mode #eodPanel input,
+    body.dark-mode #eodPanel textarea,
+    body.dark-mode #eodPanel select {
+        color: #f3f4f6 !important;
+        background-color: #292929 !important;
+        border-color: #4a4a4a !important;
+    }
+
+    body.dark-mode #eodPanel input::placeholder,
+    body.dark-mode #eodPanel textarea::placeholder {
+        color: #9ca3af !important;
+        opacity: 1 !important;
+    }
+
+    /* Filled action buttons always use white text. */
+    #eodPanel .btn-eod-primary,
+    #eodPanel .btn-eod-secondary,
+    #eodPanel .eod-proof-label {
+        color: #ffffff !important;
+    }
+
+    /* Google Sheets action buttons: explicit accessible contrast. */
+    #eodPanel .btn-eod-sheet-copy {
+        color: #166534 !important;
+        background: #ecfdf3 !important;
+        border-color: #86efac !important;
+    }
+
+    #eodPanel .btn-eod-sheet-send {
+        color: #1d4ed8 !important;
+        background: #eff6ff !important;
+        border-color: #93c5fd !important;
+    }
+
+    body.dark-mode #eodPanel .btn-eod-sheet-copy {
+        color: #9bf3aa !important;
+        background: rgba(34, 197, 94, .12) !important;
+        border-color: rgba(134, 239, 172, .45) !important;
+    }
+
+    body.dark-mode #eodPanel .btn-eod-sheet-send {
+        color: #a9c8ff !important;
+        background: rgba(59, 130, 246, .14) !important;
+        border-color: rgba(147, 197, 253, .45) !important;
+    }
+
+    /* Outline buttons need different text contrast per theme. */
+    #eodPanel .btn-eod-outline,
+    #eodPanel .block-actions .btn-eod-outline {
+        color: #1f2937 !important;
+        background: #ffffff !important;
+        border-color: #cbd5e1 !important;
+    }
+
+    body.dark-mode #eodPanel .btn-eod-outline,
+    body.dark-mode #eodPanel .block-actions .btn-eod-outline {
+        color: #f3f4f6 !important;
+        background: #2b2b2b !important;
+        border-color: #555b65 !important;
+    }
+
+    /* Danger buttons: readable in both themes. */
+    #eodPanel .btn-eod-danger,
+    #eodPanel .block-actions .btn-eod-danger {
+        color: #dc2626 !important;
+        background: transparent !important;
+        border-color: #ef4444 !important;
+    }
+
+    body.dark-mode #eodPanel .btn-eod-danger,
+    body.dark-mode #eodPanel .block-actions .btn-eod-danger {
+        color: #ff8a8a !important;
+        border-color: #ff6262 !important;
+    }
+
+    /* Add-next block control. */
+    #eodPanel .eod-add-next {
+        color: #1d4ed8 !important;
+    }
+
+    body.dark-mode #eodPanel .eod-add-next {
+        color: #93c5fd !important;
+    }
+
+    /* Modal text/inputs follow the same readable theme rules. */
+    .maintenance-sheet-setup-dialog,
+    .maintenance-sheet-setup-dialog h3,
+    .maintenance-sheet-setup-dialog label {
+        color: #1f2937 !important;
+    }
+
+    body.dark-mode .maintenance-sheet-setup-dialog,
+    body.dark-mode .maintenance-sheet-setup-dialog h3,
+    body.dark-mode .maintenance-sheet-setup-dialog label {
+        color: #f3f4f6 !important;
+    }
+
+    /* Remove button remains visually distinct over thumbnails. */
+    #eodPanel .eod-proof-remove {
+        color: #ffffff !important;
+        background: rgba(15, 23, 42, .86) !important;
+    }
+</style>
+
 </head>
 <body>
 
