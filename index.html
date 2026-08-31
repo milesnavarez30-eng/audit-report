@@ -3698,6 +3698,36 @@
     }
 </style>
 
+
+<style>
+    /* Final header + footer spacing refinements */
+    .reference-pdf-header {
+        margin-bottom: 4.5mm !important;
+    }
+
+    .reference-pdf-date {
+        margin-top: 1.5mm !important;
+        color: #667085 !important;
+        font-size: 7px !important;
+        line-height: 1.2 !important;
+        font-weight: 700 !important;
+        text-align: left !important;
+    }
+
+    /*
+       Keep report content away from the PDF footer.
+       html2pdf also gets a real bottom margin below.
+    */
+    .reference-report-block {
+        margin-bottom: 6mm !important;
+    }
+
+    .reference-pdf .simple-pdf-table tr {
+        break-inside: avoid !important;
+        page-break-inside: avoid !important;
+    }
+</style>
+
 </head>
 <body>
 
@@ -5997,7 +6027,8 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
             <div class="simple-pdf reference-pdf">
                 <header class="reference-pdf-header">
                     <div>
-                        <h1>${escapeHtml(cleanTitle)} Maintenance Report${reportDate ? ` ${escapeHtml(reportDate)}` : ""}</h1>
+                        <h1>${escapeHtml(cleanTitle)} Maintenance Report</h1>
+                        ${reportDate ? `<div class="reference-pdf-date">${escapeHtml(reportDate)}</div>` : ""}
                     </div>
                 </header>
 
@@ -6039,7 +6070,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         try {
             const worker = html2pdf()
                 .set({
-                    margin: 0,
+                    margin: [7, 7, 14, 7],
                     filename: reportFilename(),
                     image: { type: "jpeg", quality: .985 },
                     html2canvas: {
@@ -6078,7 +6109,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
                 pdf.setFont("helvetica", "normal");
                 pdf.setFontSize(6.5);
                 pdf.setTextColor(145, 150, 158);
-                pdf.text(`Page ${page} of ${totalPages}`, width - 9, height - 4.3, { align: "right" });
+                pdf.text(`Page ${page} of ${totalPages}`, width - 8, height - 5, { align: "right" });
             }
 
             await worker.save();
