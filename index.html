@@ -4714,6 +4714,409 @@
     }
 </style>
 
+
+<style>
+    /* =========================================================
+       Maintenance AI Sorter - Google-Sheets-like working grid
+       Multi-row selection, cut/copy, same-TL selection, direct send
+       ========================================================= */
+    #maintenancePanel .mini-sheet-card {
+        border-color: rgba(26, 115, 232, .20) !important;
+        box-shadow: 0 8px 22px rgba(15,23,42,.06) !important;
+    }
+
+    #maintenancePanel .mini-sheet-toolbar {
+        flex-wrap: wrap !important;
+        align-items: center !important;
+        gap: 10px !important;
+        background:
+            linear-gradient(180deg, rgba(26,115,232,.045), rgba(255,255,255,0)) !important;
+    }
+
+    #maintenancePanel .mini-sheet-actions {
+        display: flex !important;
+        flex-wrap: wrap !important;
+        align-items: center !important;
+        justify-content: flex-end !important;
+        gap: 7px !important;
+    }
+
+    #maintenancePanel .mini-sheet-actions button {
+        min-height: 34px !important;
+        padding: 7px 10px !important;
+        border-radius: 8px !important;
+        font: 700 10px/1 "Roboto", Arial, sans-serif !important;
+        cursor: pointer !important;
+        transition: .15s ease !important;
+        white-space: nowrap !important;
+    }
+
+    #maintenancePanel .mini-sheet-actions button:hover:not(:disabled) {
+        transform: translateY(-1px);
+    }
+
+    #maintenancePanel .mini-sheet-actions button:disabled {
+        opacity: .42 !important;
+        cursor: not-allowed !important;
+    }
+
+    #maintenancePanel .mini-sheet-select-same {
+        border: 1px solid rgba(26,115,232,.36) !important;
+        background: rgba(26,115,232,.08) !important;
+        color: #1967d2 !important;
+    }
+
+    #maintenancePanel .mini-sheet-copy {
+        border: 1px solid rgba(34,197,94,.40) !important;
+        background: rgba(34,197,94,.08) !important;
+        color: #188038 !important;
+    }
+
+    #maintenancePanel .mini-sheet-cut {
+        border: 1px solid rgba(245,158,11,.45) !important;
+        background: rgba(245,158,11,.10) !important;
+        color: #a15c00 !important;
+    }
+
+    #maintenancePanel .mini-sheet-to-report {
+        border: 1px solid rgba(39,137,20,.48) !important;
+        background: #278914 !important;
+        color: #fff !important;
+    }
+
+    #maintenancePanel .mini-sheet-clear-selection {
+        border: 1px solid var(--input-border) !important;
+        background: transparent !important;
+        color: var(--text-color) !important;
+    }
+
+    #maintenancePanel #miniSheetRemoveRowBtn {
+        border: 1px solid rgba(239,68,68,.50) !important;
+        background: transparent !important;
+        color: #dc2626 !important;
+    }
+
+    body.dark-mode #maintenancePanel .mini-sheet-select-same {
+        color: #8ab4f8 !important;
+    }
+
+    body.dark-mode #maintenancePanel .mini-sheet-copy {
+        color: #81c995 !important;
+    }
+
+    body.dark-mode #maintenancePanel .mini-sheet-cut {
+        color: #fdd663 !important;
+    }
+
+    body.dark-mode #maintenancePanel #miniSheetRemoveRowBtn {
+        color: #f28b82 !important;
+    }
+
+    #maintenancePanel .mini-sheet-selection-help {
+        width: 100%;
+        margin-top: 2px;
+        color: var(--pro-muted);
+        font-size: 9.5px;
+        line-height: 1.4;
+    }
+
+    #maintenancePanel .mini-sheet-row-number {
+        cursor: pointer !important;
+    }
+
+    #maintenancePanel .mini-sheet tbody tr.selected-row td {
+        background: #dbeafe !important;
+        box-shadow: inset 0 1px 0 rgba(26,115,232,.08);
+    }
+
+    #maintenancePanel .mini-sheet tbody tr.selected-row .mini-sheet-row-number {
+        background: #1a73e8 !important;
+        color: #fff !important;
+        font-weight: 800 !important;
+    }
+
+    #maintenancePanel .mini-sheet tbody tr.selected-row td:first-of-type {
+        box-shadow: inset 3px 0 0 #1a73e8 !important;
+    }
+
+    body.dark-mode #maintenancePanel .mini-sheet tbody tr.selected-row td {
+        background: #243b5a !important;
+        color: #f8fafc !important;
+    }
+
+    #maintenancePanel .mini-sheet tbody tr.cut-pending td {
+        background-image:
+            repeating-linear-gradient(
+                -45deg,
+                rgba(245,158,11,.07),
+                rgba(245,158,11,.07) 6px,
+                transparent 6px,
+                transparent 12px
+            ) !important;
+    }
+
+    @media screen and (max-width: 900px) {
+        #maintenancePanel .mini-sheet-actions {
+            width: 100% !important;
+            justify-content: flex-start !important;
+        }
+    }
+</style>
+
+
+<style>
+    /* =========================================================
+       AI SORTER - TRUE GOOGLE-SHEETS-LIKE OUTPUT
+       Auto Sort -> sheet appears directly below
+       ========================================================= */
+    #maintenancePanel #sortedReportSection {
+        margin-top: 18px !important;
+    }
+
+    #maintenancePanel .mini-sheet-card {
+        margin-top: 0 !important;
+        border: 1px solid #dadce0 !important;
+        border-radius: 0 !important;
+        background: #ffffff !important;
+        box-shadow: none !important;
+        overflow: hidden !important;
+    }
+
+    #maintenancePanel .mini-sheet-toolbar {
+        min-height: 46px !important;
+        padding: 7px 10px !important;
+        border-bottom: 1px solid #dadce0 !important;
+        background: #f8f9fa !important;
+        color: #202124 !important;
+    }
+
+    #maintenancePanel .mini-sheet-toolbar strong {
+        color: #202124 !important;
+        font-family: Arial, sans-serif !important;
+        font-size: 12px !important;
+        font-weight: 600 !important;
+    }
+
+    #maintenancePanel .mini-sheet-toolbar span,
+    #maintenancePanel .mini-sheet-selection-help {
+        color: #5f6368 !important;
+        font-family: Arial, sans-serif !important;
+    }
+
+    #maintenancePanel .mini-sheet-selection-help {
+        margin: 0 !important;
+        padding: 0 2px 4px !important;
+        background: #f8f9fa !important;
+    }
+
+    #maintenancePanel .mini-sheet-scroll {
+        height: 520px !important;
+        max-height: 520px !important;
+        overflow: auto !important;
+        background: #ffffff !important;
+    }
+
+    #maintenancePanel .mini-sheet {
+        min-width: 1040px !important;
+        background: #ffffff !important;
+        color: #202124 !important;
+        font-family: Arial, sans-serif !important;
+        font-size: 11px !important;
+    }
+
+    #maintenancePanel .mini-sheet-column-letters th {
+        height: 24px !important;
+        top: 0 !important;
+        background: #f8f9fa !important;
+        color: #5f6368 !important;
+        border-color: #dadce0 !important;
+        font-family: Arial, sans-serif !important;
+        font-size: 10px !important;
+        font-weight: 500 !important;
+    }
+
+    #maintenancePanel .mini-sheet-header-row th {
+        top: 24px !important;
+        height: 32px !important;
+        background: #ffffff !important;
+        color: #202124 !important;
+        border-color: #dadce0 !important;
+        font-family: Arial, sans-serif !important;
+        font-size: 10px !important;
+        font-weight: 600 !important;
+    }
+
+    #maintenancePanel .mini-sheet td,
+    #maintenancePanel .mini-sheet-row-number {
+        height: 28px !important;
+        min-height: 28px !important;
+        border-color: #dadce0 !important;
+    }
+
+    #maintenancePanel .mini-sheet td {
+        padding: 4px 6px !important;
+        background: #ffffff !important;
+        color: #202124 !important;
+        font-family: Arial, sans-serif !important;
+        font-size: 11px !important;
+        line-height: 1.25 !important;
+    }
+
+    #maintenancePanel .mini-sheet-row-number {
+        background: #f8f9fa !important;
+        color: #5f6368 !important;
+        font-family: Arial, sans-serif !important;
+        font-size: 10px !important;
+        font-weight: 500 !important;
+    }
+
+    #maintenancePanel .mini-sheet tbody tr:hover td {
+        background: #f8fbff !important;
+    }
+
+    #maintenancePanel .mini-sheet tbody tr.selected-row td {
+        background: #e8f0fe !important;
+        color: #202124 !important;
+    }
+
+    #maintenancePanel .mini-sheet tbody tr.selected-row .mini-sheet-row-number {
+        background: #d2e3fc !important;
+        color: #174ea6 !important;
+    }
+
+    #maintenancePanel .mini-sheet td[contenteditable="true"]:focus {
+        box-shadow: inset 0 0 0 2px #1a73e8 !important;
+        background: #ffffff !important;
+        color: #202124 !important;
+    }
+
+    /* Keep this workspace light even when the website is in dark mode,
+       matching Google Sheets itself and preserving readability. */
+    body.dark-mode #maintenancePanel .mini-sheet-card,
+    body.dark-mode #maintenancePanel .mini-sheet-scroll,
+    body.dark-mode #maintenancePanel .mini-sheet,
+    body.dark-mode #maintenancePanel .mini-sheet td,
+    body.dark-mode #maintenancePanel .mini-sheet-header-row th {
+        background: #ffffff !important;
+        color: #202124 !important;
+    }
+
+    body.dark-mode #maintenancePanel .mini-sheet-toolbar,
+    body.dark-mode #maintenancePanel .mini-sheet-column-letters th,
+    body.dark-mode #maintenancePanel .mini-sheet-row-number {
+        background: #f8f9fa !important;
+        color: #5f6368 !important;
+    }
+
+    /* Make the sheet span nearly the full sorter card width */
+    #maintenancePanel .maintenance-shell {
+        max-width: 1360px !important;
+    }
+
+    #maintenancePanel .maintenance-table-wrap.maintenance-source-output-wrap {
+        display: none !important;
+    }
+
+    @media screen and (max-width: 760px) {
+        #maintenancePanel .mini-sheet-scroll {
+            height: 430px !important;
+            max-height: 430px !important;
+        }
+    }
+</style>
+
+
+<style>
+    /* AI Sorter - Find Team Leader + Clear All */
+    #maintenancePanel .mini-sheet-findbar {
+        display: flex !important;
+        align-items: center !important;
+        gap: 6px !important;
+        min-width: min(100%, 360px) !important;
+        flex: 1 1 320px !important;
+    }
+
+    #maintenancePanel .mini-sheet-findbar input {
+        width: 100% !important;
+        min-width: 160px !important;
+        min-height: 34px !important;
+        box-sizing: border-box !important;
+        padding: 7px 10px !important;
+        border: 1px solid #dadce0 !important;
+        border-radius: 6px !important;
+        background: #ffffff !important;
+        color: #202124 !important;
+        font: 11px/1.2 Arial, sans-serif !important;
+        box-shadow: none !important;
+    }
+
+    #maintenancePanel .mini-sheet-findbar input:focus {
+        outline: none !important;
+        border-color: #1a73e8 !important;
+        box-shadow: 0 0 0 1px #1a73e8 !important;
+    }
+
+    #maintenancePanel .mini-sheet-findbar button,
+    #maintenancePanel .mini-sheet-clear-all {
+        min-height: 34px !important;
+        padding: 7px 10px !important;
+        border-radius: 6px !important;
+        font: 700 10px/1 Arial, sans-serif !important;
+        cursor: pointer !important;
+        white-space: nowrap !important;
+    }
+
+    #maintenancePanel #miniSheetFindTlBtn {
+        border: 1px solid #1a73e8 !important;
+        background: #1a73e8 !important;
+        color: #ffffff !important;
+    }
+
+    #maintenancePanel #miniSheetFindNextBtn {
+        border: 1px solid #dadce0 !important;
+        background: #ffffff !important;
+        color: #202124 !important;
+    }
+
+    #maintenancePanel #miniSheetFindNextBtn:disabled {
+        opacity: .45 !important;
+        cursor: not-allowed !important;
+    }
+
+    #maintenancePanel .mini-sheet-clear-all {
+        border: 1px solid rgba(239,68,68,.55) !important;
+        background: rgba(239,68,68,.06) !important;
+        color: #d93025 !important;
+    }
+
+    #maintenancePanel .mini-sheet tbody tr.find-match td {
+        background: #fff4cc !important;
+    }
+
+    #maintenancePanel .mini-sheet tbody tr.find-match .mini-sheet-row-number {
+        background: #fce8a6 !important;
+        color: #7a4f00 !important;
+        font-weight: 700 !important;
+    }
+
+    #maintenancePanel .mini-sheet tbody tr.find-current td {
+        background: #d2e3fc !important;
+        box-shadow: inset 0 0 0 1px #1a73e8 !important;
+    }
+
+    #maintenancePanel .mini-sheet tbody tr.find-current .mini-sheet-row-number {
+        background: #1a73e8 !important;
+        color: #ffffff !important;
+        font-weight: 800 !important;
+    }
+
+    @media screen and (max-width: 820px) {
+        #maintenancePanel .mini-sheet-findbar {
+            flex-basis: 100% !important;
+        }
+    }
+</style>
+
 </head>
 <body>
 
@@ -4852,6 +5255,7 @@
             If a <strong>new Team Leader name</strong> appears that is not in the seat plan, it will automatically use the
             <strong>campaign or explicit floor/station</strong> to place the row when the evidence is clear.
             Rows are sorted internally into <strong>Ground Floor, 1st Floor, 2nd Floor, and Review Needed</strong>, while the output keeps the original seven-column maintenance-sheet header.
+            After sorting, the result appears directly below in a <strong>Google Sheets-style workspace</strong>. Edit cells, highlight rows, cut/copy them, or send selected rows directly to <strong>Maintenance Report</strong>.
             Ambiguous campaigns that exist on multiple floors are not guessed.
         </div>
 
@@ -4877,27 +5281,8 @@
             <div class="maintenance-stat"><strong id="reviewCount">0</strong><span>Review Needed</span></div>
         </div>
 
-        <div id="tlSummarySection" hidden>
-            <div class="maintenance-subheading">Team Leader Floor Assignment</div>
-            <div class="maintenance-assignment-note">
-                Auto-generated Team Leader list. Edit the TL name, change the floor, or remove a row from this assignment list.
-            </div>
-            <div class="maintenance-table-wrap">
-                <table class="maintenance-table tl-assignment-sheet" id="tlSummaryTable">
-                    <thead>
-                        <tr>
-                            <th>TEAM LEADER</th>
-                            <th>FLOOR ASSIGNMENT</th>
-                            <th>ACTION</th>
-                        </tr>
-                    </thead>
-                    <tbody></tbody>
-                </table>
-            </div>
-        </div>
-
         <div id="sortedReportSection" hidden>
-            <div class="maintenance-subheading">Sorted Maintenance Report</div>
+            
 
             <!-- Hidden source table kept for compatibility -->
             <div class="maintenance-table-wrap maintenance-source-output-wrap" aria-hidden="true">
@@ -4920,12 +5305,33 @@
             <div class="mini-sheet-card">
                 <div class="mini-sheet-toolbar">
                     <div>
-                        <strong>Editable Mini Sheet</strong>
-                        <span>Auto-filled after sorting. Click any cell to edit.</span>
+                        <strong>Google Sheets Workspace</strong>
+                        <span>Auto-filled after Auto Sort by Floor. Edit cells, select rows, copy/cut, then send selected rows to Maintenance Report.</span>
                     </div>
+                    <div class="mini-sheet-findbar">
+                        <input
+                            type="text"
+                            id="miniSheetFindTlInput"
+                            placeholder="Find Team Leader..."
+                            autocomplete="off"
+                            aria-label="Find Team Leader">
+                        <button type="button" id="miniSheetFindTlBtn">Find</button>
+                        <button type="button" id="miniSheetFindNextBtn" disabled>Next</button>
+                    </div>
+
                     <div class="mini-sheet-actions">
                         <span id="miniSheetRowCount">0 rows</span>
-                        <button type="button" id="miniSheetRemoveRowBtn" disabled>Remove Selected Row</button>
+                        <span id="miniSheetSelectedCount">0 selected</span>
+                        <button type="button" id="miniSheetSelectSameTlBtn" class="mini-sheet-select-same" disabled>Select Same TL</button>
+                        <button type="button" id="miniSheetCopyRowsBtn" class="mini-sheet-copy" disabled>Copy Selected</button>
+                        <button type="button" id="miniSheetCutRowsBtn" class="mini-sheet-cut" disabled>Cut Selected</button>
+                        <button type="button" id="miniSheetToReportBtn" class="mini-sheet-to-report" disabled>→ Maintenance Report</button>
+                        <button type="button" id="miniSheetClearSelectionBtn" class="mini-sheet-clear-selection" disabled>Clear Selection</button>
+                        <button type="button" id="miniSheetRemoveRowBtn" disabled>Remove Selected</button>
+                        <button type="button" id="miniSheetClearAllBtn" class="mini-sheet-clear-all">Clear All</button>
+                    </div>
+                    <div class="mini-sheet-selection-help">
+                        Use <strong>Find Team Leader</strong> to locate and automatically highlight/select every matching TL row. Then use <strong>Cut Selected</strong> to copy + remove them, or <strong>→ Maintenance Report</strong> to send them directly. <strong>Clear All</strong> resets the sorter for your next pasted report.
                     </div>
                 </div>
 
@@ -5507,7 +5913,10 @@
     let lastParsedRows = [];
     let lastAssignedRows = [];
     let lastAssignments = new Map();
-    let miniSheetSelectedRow = -1;
+    let miniSheetSelectedRows = new Set();
+    let miniSheetSelectionAnchor = null;
+    let miniSheetFindMatches = [];
+    let miniSheetFindCursor = -1;
 
     const byId = (id) => document.getElementById(id);
 
@@ -6205,16 +6614,415 @@
                 hiddenNames.add(originalName);
                 saveHiddenTLs([...hiddenNames]);
 
-                renderSummary(lastAssignments);
                 showMessage(`${shownName} was removed from the assignment list. The sorted report rows are unchanged.`, "info");
             });
         });
     }
 
 
+    function selectedMiniSheetIndexes() {
+        return [...miniSheetSelectedRows]
+            .filter(index => Number.isInteger(index) && index >= 0 && index < lastAssignedRows.length)
+            .sort((a, b) => a - b);
+    }
+
+    function updateMiniSheetSelectionUi() {
+        const indexes = selectedMiniSheetIndexes();
+        const count = indexes.length;
+
+        const selectedCount = byId("miniSheetSelectedCount");
+        if (selectedCount) selectedCount.textContent = `${count} selected`;
+
+        [
+            "miniSheetCopyRowsBtn",
+            "miniSheetCutRowsBtn",
+            "miniSheetToReportBtn",
+            "miniSheetClearSelectionBtn",
+            "miniSheetRemoveRowBtn",
+            "miniSheetSelectSameTlBtn"
+        ].forEach(id => {
+            const button = byId(id);
+            if (button) button.disabled = count === 0;
+        });
+
+        const tbody = byId("maintenanceMiniSheet")?.querySelector("tbody");
+        if (tbody) {
+            tbody.querySelectorAll("tr").forEach(tr => {
+                const rowIndex = Number(tr.dataset.rowIndex);
+                tr.classList.toggle("selected-row", miniSheetSelectedRows.has(rowIndex));
+            });
+        }
+    }
+
+    function selectMiniSheetRow(rowIndex, event = {}) {
+        if (!Number.isInteger(rowIndex) || rowIndex < 0 || rowIndex >= lastAssignedRows.length) {
+            return;
+        }
+
+        const isToggle = !!(event.ctrlKey || event.metaKey);
+        const isRange = !!event.shiftKey;
+
+        if (isRange && miniSheetSelectionAnchor !== null) {
+            const start = Math.min(miniSheetSelectionAnchor, rowIndex);
+            const end = Math.max(miniSheetSelectionAnchor, rowIndex);
+
+            if (!isToggle) miniSheetSelectedRows.clear();
+            for (let i = start; i <= end; i++) {
+                miniSheetSelectedRows.add(i);
+            }
+        } else if (isToggle) {
+            if (miniSheetSelectedRows.has(rowIndex)) {
+                miniSheetSelectedRows.delete(rowIndex);
+            } else {
+                miniSheetSelectedRows.add(rowIndex);
+            }
+            miniSheetSelectionAnchor = rowIndex;
+        } else {
+            miniSheetSelectedRows.clear();
+            miniSheetSelectedRows.add(rowIndex);
+            miniSheetSelectionAnchor = rowIndex;
+        }
+
+        updateMiniSheetSelectionUi();
+    }
+
+    function rowToMiniSheetValues(row) {
+        return [
+            row.timestamp || "",
+            row.date || "",
+            displayTLValue(row.tl),
+            row.account || "",
+            row.site || "",
+            row.station || "",
+            row.issue || ""
+        ];
+    }
+
+    function selectedMiniSheetTsv(includeHeader = false) {
+        const indexes = selectedMiniSheetIndexes();
+        if (!indexes.length) return "";
+
+        const lines = indexes.map(index =>
+            rowToMiniSheetValues(lastAssignedRows[index])
+                .map(value => String(value == null ? "" : value)
+                    .replace(/\t/g, " ")
+                    .replace(/\r?\n/g, " "))
+                .join("\t")
+        );
+
+        if (includeHeader) {
+            lines.unshift([
+                "TIMESTAMP",
+                "DATE",
+                "TL",
+                "ACCOUNT",
+                "SITE",
+                "STATION NO.",
+                "STATION ISSUE"
+            ].join("\t"));
+        }
+
+        return lines.join("\n");
+    }
+
+    async function writeMiniSheetClipboard(text) {
+        if (!text) return false;
+
+        try {
+            if (navigator.clipboard && window.isSecureContext) {
+                await navigator.clipboard.writeText(text);
+                return true;
+            }
+        } catch (error) {
+            console.warn("Clipboard API failed, using fallback.", error);
+        }
+
+        return fallbackCopy(text);
+    }
+
+    async function copySelectedMiniSheetRows() {
+        const indexes = selectedMiniSheetIndexes();
+        if (!indexes.length) {
+            showMessage("Select one or more rows first.", "error");
+            return;
+        }
+
+        const ok = await writeMiniSheetClipboard(selectedMiniSheetTsv(false));
+        showMessage(
+            ok
+                ? `${indexes.length} selected row${indexes.length === 1 ? "" : "s"} copied. Ready to paste.`
+                : "Could not copy the selected rows.",
+            ok ? "success" : "error"
+        );
+    }
+
+    async function cutSelectedMiniSheetRows() {
+        const indexes = selectedMiniSheetIndexes();
+        if (!indexes.length) {
+            showMessage("Select one or more rows first.", "error");
+            return;
+        }
+
+        const ok = await writeMiniSheetClipboard(selectedMiniSheetTsv(false));
+        if (!ok) {
+            showMessage("Could not copy the selected rows, so nothing was removed.", "error");
+            return;
+        }
+
+        // Remove from highest index to lowest so positions remain correct.
+        [...indexes].sort((a, b) => b - a).forEach(index => {
+            lastAssignedRows.splice(index, 1);
+        });
+
+        miniSheetSelectedRows.clear();
+        miniSheetSelectionAnchor = null;
+
+        renderRows(lastAssignedRows);
+        showMessage(
+            `${indexes.length} row${indexes.length === 1 ? "" : "s"} cut to clipboard and removed from the Mini Sheet.`,
+            "success"
+        );
+    }
+
+    function removeSelectedMiniSheetRows() {
+        const indexes = selectedMiniSheetIndexes();
+        if (!indexes.length) {
+            showMessage("Select one or more rows first.", "error");
+            return;
+        }
+
+        if (!confirm(`Remove ${indexes.length} selected row${indexes.length === 1 ? "" : "s"} from the current sorted result?`)) {
+            return;
+        }
+
+        [...indexes].sort((a, b) => b - a).forEach(index => {
+            lastAssignedRows.splice(index, 1);
+        });
+
+        miniSheetSelectedRows.clear();
+        miniSheetSelectionAnchor = null;
+        renderRows(lastAssignedRows);
+        showMessage("Selected Mini Sheet rows were removed.", "info");
+    }
+
+    function selectSameTlMiniSheetRows() {
+        const indexes = selectedMiniSheetIndexes();
+        if (!indexes.length) {
+            showMessage("Select a row first, then use Select Same TL.", "error");
+            return;
+        }
+
+        const sourceRow = lastAssignedRows[indexes[0]];
+        if (!sourceRow) return;
+
+        const targetNames = extractTLNames(sourceRow.tl)
+            .map(name => normalizeReferenceText(name))
+            .filter(Boolean);
+
+        if (!targetNames.length) {
+            showMessage("The selected row has no Team Leader name to match.", "error");
+            return;
+        }
+
+        miniSheetSelectedRows.clear();
+
+        lastAssignedRows.forEach((row, index) => {
+            const rowNames = extractTLNames(row.tl)
+                .map(name => normalizeReferenceText(name))
+                .filter(Boolean);
+
+            const matches = targetNames.some(target =>
+                rowNames.some(name => name === target)
+            );
+
+            if (matches) miniSheetSelectedRows.add(index);
+        });
+
+        miniSheetSelectionAnchor = indexes[0];
+        updateMiniSheetSelectionUi();
+
+        const shown = displayTLValue(sourceRow.tl) || "same TL";
+        showMessage(
+            `${miniSheetSelectedRows.size} row${miniSheetSelectedRows.size === 1 ? "" : "s"} selected for ${shown}.`,
+            "success"
+        );
+    }
+
+    function clearMiniSheetSelection() {
+        miniSheetSelectedRows.clear();
+        miniSheetSelectionAnchor = null;
+        updateMiniSheetSelectionUi();
+    }
+
+    function sendSelectedMiniSheetRowsToMaintenanceReport() {
+        const indexes = selectedMiniSheetIndexes();
+        if (!indexes.length) {
+            showMessage("Select one or more rows first.", "error");
+            return;
+        }
+
+        const tsv = selectedMiniSheetTsv(false);
+
+        if (typeof window.addMaintenanceSorterRowsToReport !== "function") {
+            showMessage("Maintenance Report bridge is not ready. Refresh the page and try again.", "error");
+            return;
+        }
+
+        window.addMaintenanceSorterRowsToReport(tsv, {
+            rowCount: indexes.length,
+            sourceTl: displayTLValue(lastAssignedRows[indexes[0]]?.tl || "")
+        });
+
+        showMessage(
+            `${indexes.length} selected row${indexes.length === 1 ? "" : "s"} sent directly to Maintenance Report.`,
+            "success"
+        );
+    }
+
+
+    function normalizeMiniSheetFindText(value) {
+        return String(value || "")
+            .toLowerCase()
+            .replace(/\s+/g, " ")
+            .trim();
+    }
+
+    function highlightMiniSheetFindMatches() {
+        const tbody = byId("maintenanceMiniSheet")?.querySelector("tbody");
+        if (!tbody) return;
+
+        tbody.querySelectorAll("tr[data-row-index]").forEach(tr => {
+            const index = Number(tr.dataset.rowIndex);
+            const matchIndex = miniSheetFindMatches.indexOf(index);
+
+            tr.classList.toggle("find-match", matchIndex !== -1);
+            tr.classList.toggle(
+                "find-current",
+                matchIndex !== -1 && matchIndex === miniSheetFindCursor
+            );
+        });
+    }
+
+    function scrollToCurrentMiniSheetFindMatch() {
+        if (miniSheetFindCursor < 0 || miniSheetFindCursor >= miniSheetFindMatches.length) {
+            return;
+        }
+
+        const rowIndex = miniSheetFindMatches[miniSheetFindCursor];
+        const row = byId("maintenanceMiniSheet")?.querySelector(`tr[data-row-index="${rowIndex}"]`);
+
+        if (row) {
+            row.scrollIntoView({
+                behavior: "smooth",
+                block: "center",
+                inline: "nearest"
+            });
+        }
+    }
+
+    function findTeamLeaderInMiniSheet() {
+        const input = byId("miniSheetFindTlInput");
+        const query = normalizeMiniSheetFindText(input?.value);
+
+        miniSheetFindMatches = [];
+        miniSheetFindCursor = -1;
+
+        if (!query) {
+            highlightMiniSheetFindMatches();
+            byId("miniSheetFindNextBtn").disabled = true;
+            showMessage("Type a Team Leader name first.", "info");
+            input?.focus();
+            return;
+        }
+
+        lastAssignedRows.forEach((row, index) => {
+            const tl = normalizeMiniSheetFindText(displayTLValue(row.tl));
+            if (tl.includes(query)) {
+                miniSheetFindMatches.push(index);
+            }
+        });
+
+        if (!miniSheetFindMatches.length) {
+            highlightMiniSheetFindMatches();
+            byId("miniSheetFindNextBtn").disabled = true;
+            showMessage(`No Team Leader found for "${input.value.trim()}".`, "error");
+            return;
+        }
+
+        // Automatically select all matching Team Leader rows.
+        miniSheetSelectedRows.clear();
+        miniSheetFindMatches.forEach(index => miniSheetSelectedRows.add(index));
+        miniSheetSelectionAnchor = miniSheetFindMatches[0];
+        miniSheetFindCursor = 0;
+
+        updateMiniSheetSelectionUi();
+        highlightMiniSheetFindMatches();
+        scrollToCurrentMiniSheetFindMatch();
+
+        byId("miniSheetFindNextBtn").disabled = miniSheetFindMatches.length <= 1;
+
+        showMessage(
+            `${miniSheetFindMatches.length} row${miniSheetFindMatches.length === 1 ? "" : "s"} found and selected for "${input.value.trim()}". You can now Cut Selected or send them to Maintenance Report.`,
+            "success"
+        );
+    }
+
+    function findNextTeamLeaderMatch() {
+        if (!miniSheetFindMatches.length) {
+            findTeamLeaderInMiniSheet();
+            return;
+        }
+
+        miniSheetFindCursor =
+            (miniSheetFindCursor + 1) % miniSheetFindMatches.length;
+
+        highlightMiniSheetFindMatches();
+        scrollToCurrentMiniSheetFindMatch();
+
+        showMessage(
+            `Match ${miniSheetFindCursor + 1} of ${miniSheetFindMatches.length}.`,
+            "info"
+        );
+    }
+
+    function clearAllMiniSheetWorkspace() {
+        if (
+            !lastAssignedRows.length &&
+            !String(byId("maintenanceInput")?.value || "").trim()
+        ) {
+            showMessage("The sorter workspace is already empty.", "info");
+            return;
+        }
+
+        if (!confirm("Clear the pasted report and all sorted Mini Sheet rows so you can paste another report?")) {
+            return;
+        }
+
+        miniSheetFindMatches = [];
+        miniSheetFindCursor = -1;
+        miniSheetSelectedRows.clear();
+        miniSheetSelectionAnchor = null;
+
+        const findInput = byId("miniSheetFindTlInput");
+        if (findInput) findInput.value = "";
+
+        clearMaintenance();
+
+        setTimeout(() => {
+            byId("maintenanceInput")?.focus();
+        }, 60);
+
+        showMessage("AI Sorter cleared. Paste your next maintenance report.", "success");
+    }
+
     function renderMiniSheet(rows) {
         const sheet = byId("maintenanceMiniSheet");
         if (!sheet) return;
+
+        // Drop selections that no longer exist after sorting/editing/removing rows.
+        miniSheetSelectedRows = new Set(
+            [...miniSheetSelectedRows].filter(index => index >= 0 && index < rows.length)
+        );
 
         const tbody = sheet.querySelector("tbody");
         const fields = [
@@ -6227,7 +7035,7 @@
             "issue"
         ];
 
-        tbody.innerHTML = rows.map((row, rowIndex) => {
+        const filledRowsHtml = rows.map((row, rowIndex) => {
             const displayValues = {
                 timestamp: row.timestamp || "",
                 date: row.date || "",
@@ -6239,8 +7047,8 @@
             };
 
             return `
-                <tr data-row-index="${rowIndex}" class="${miniSheetSelectedRow === rowIndex ? "selected-row" : ""}">
-                    <th class="mini-sheet-row-number" scope="row">${rowIndex + 2}</th>
+                <tr data-row-index="${rowIndex}" class="${miniSheetSelectedRows.has(rowIndex) ? "selected-row" : ""}">
+                    <th class="mini-sheet-row-number" scope="row" title="Click to select row. Shift+Click = range, Ctrl+Click = toggle.">${rowIndex + 2}</th>
                     ${fields.map(field => `
                         <td
                             contenteditable="true"
@@ -6255,23 +7063,32 @@
             `;
         }).join("");
 
+        // Add blank visual rows below the sorted data so the output feels like a real Google Sheet.
+        const minimumVisibleRows = 32;
+        const blankCount = Math.max(8, minimumVisibleRows - rows.length);
+        const blankRowsHtml = Array.from({ length: blankCount }, (_, i) => {
+            const rowNumber = rows.length + i + 2;
+            return `
+                <tr class="mini-sheet-blank-row">
+                    <th class="mini-sheet-row-number" scope="row">${rowNumber}</th>
+                    ${fields.map(() => `<td aria-hidden="true"></td>`).join("")}
+                </tr>
+            `;
+        }).join("");
+
+        tbody.innerHTML = filledRowsHtml + blankRowsHtml;
+
         byId("miniSheetRowCount").textContent = `${rows.length} row${rows.length === 1 ? "" : "s"}`;
-        byId("miniSheetRemoveRowBtn").disabled =
-            miniSheetSelectedRow < 0 || miniSheetSelectedRow >= rows.length;
 
-        tbody.querySelectorAll("tr").forEach(tr => {
-            tr.addEventListener("mousedown", event => {
+        tbody.querySelectorAll(".mini-sheet-row-number").forEach(rowHeader => {
+            rowHeader.addEventListener("mousedown", event => {
                 if (event.button !== 0) return;
+                event.preventDefault();
 
-                miniSheetSelectedRow = Number(tr.dataset.rowIndex);
-                tbody.querySelectorAll("tr").forEach(rowEl => {
-                    rowEl.classList.toggle(
-                        "selected-row",
-                        Number(rowEl.dataset.rowIndex) === miniSheetSelectedRow
-                    );
-                });
+                const tr = rowHeader.closest("tr");
+                if (!tr) return;
 
-                byId("miniSheetRemoveRowBtn").disabled = false;
+                selectMiniSheetRow(Number(tr.dataset.rowIndex), event);
             });
         });
 
@@ -6301,32 +7118,14 @@
                     row.tlNames = extractTLNames(value);
                 }
 
-                // Keep the hidden compatibility table and Copy Sorted Report in sync.
+                // Keep hidden compatibility table and copy functions synchronized.
                 renderRows(lastAssignedRows, true);
                 showMessage("Mini Sheet edit saved in the current sorted result.", "success");
             });
         });
-    }
 
-    function removeSelectedMiniSheetRow() {
-        if (
-            miniSheetSelectedRow < 0 ||
-            miniSheetSelectedRow >= lastAssignedRows.length
-        ) {
-            return;
-        }
-
-        const rowNumber = miniSheetSelectedRow + 2;
-
-        if (!confirm(`Remove row ${rowNumber} from the current sorted result?`)) {
-            return;
-        }
-
-        lastAssignedRows.splice(miniSheetSelectedRow, 1);
-        miniSheetSelectedRow = -1;
-
-        renderRows(lastAssignedRows);
-        showMessage("Selected Mini Sheet row was removed.", "info");
+        updateMiniSheetSelectionUi();
+        highlightMiniSheetFindMatches();
     }
 
     function renderRows(rows, skipMiniSheet = false) {
@@ -6397,11 +7196,9 @@
             lastAssignments = assignments;
             lastAssignedRows = assignedRows;
 
-            renderSummary(assignments);
             renderRows(assignedRows);
 
             byId("maintenanceStats").hidden = false;
-            byId("tlSummarySection").hidden = false;
             byId("sortedReportSection").hidden = false;
             byId("maintenanceEmpty").hidden = true;
 
@@ -6481,22 +7278,66 @@
         lastAssignedRows = [];
         lastAssignments = new Map();
         byId("maintenanceStats").hidden = true;
-        byId("tlSummarySection").hidden = true;
         byId("sortedReportSection").hidden = true;
         byId("maintenanceEmpty").hidden = false;
-        byId("tlSummaryTable").querySelector("tbody").innerHTML = "";
         byId("maintenanceOutputTable").querySelector("tbody").innerHTML = "";
         byId("maintenanceMiniSheet").querySelector("tbody").innerHTML = "";
         byId("miniSheetRowCount").textContent = "0 rows";
         byId("miniSheetRemoveRowBtn").disabled = true;
-        miniSheetSelectedRow = -1;
+        miniSheetSelectedRows.clear();
+        miniSheetSelectionAnchor = null;
+        miniSheetFindMatches = [];
+        miniSheetFindCursor = -1;
+
+        const findInput = byId("miniSheetFindTlInput");
+        if (findInput) findInput.value = "";
+        const nextButton = byId("miniSheetFindNextBtn");
+        if (nextButton) nextButton.disabled = true;
+
         hideMessage();
     }
 
     byId("cctvTabBtn").addEventListener("click", () => showTab("cctv"));
     byId("maintenanceTabBtn").addEventListener("click", () => showTab("maintenance"));
-    byId("miniSheetRemoveRowBtn").addEventListener("click", removeSelectedMiniSheetRow);
-    byId("maintenanceSortBtn").addEventListener("click", () => analyzeMaintenance(true));
+    byId("miniSheetRemoveRowBtn").addEventListener("click", removeSelectedMiniSheetRows);
+    byId("miniSheetSelectSameTlBtn").addEventListener("click", selectSameTlMiniSheetRows);
+    byId("miniSheetCopyRowsBtn").addEventListener("click", () => copySelectedMiniSheetRows().catch(console.error));
+    byId("miniSheetCutRowsBtn").addEventListener("click", () => cutSelectedMiniSheetRows().catch(console.error));
+    byId("miniSheetToReportBtn").addEventListener("click", sendSelectedMiniSheetRowsToMaintenanceReport);
+    byId("miniSheetClearSelectionBtn").addEventListener("click", clearMiniSheetSelection);
+    byId("miniSheetFindTlBtn").addEventListener("click", findTeamLeaderInMiniSheet);
+    byId("miniSheetFindNextBtn").addEventListener("click", findNextTeamLeaderMatch);
+    byId("miniSheetClearAllBtn").addEventListener("click", clearAllMiniSheetWorkspace);
+
+    byId("miniSheetFindTlInput").addEventListener("keydown", event => {
+        if (event.key === "Enter") {
+            event.preventDefault();
+            findTeamLeaderInMiniSheet();
+        }
+
+        if (event.key === "Escape") {
+            event.preventDefault();
+            event.currentTarget.value = "";
+            miniSheetFindMatches = [];
+            miniSheetFindCursor = -1;
+            highlightMiniSheetFindMatches();
+            byId("miniSheetFindNextBtn").disabled = true;
+        }
+    });
+
+    byId("maintenanceSortBtn").addEventListener("click", () => {
+        miniSheetSelectedRows.clear();
+        miniSheetSelectionAnchor = null;
+        miniSheetFindMatches = [];
+        miniSheetFindCursor = -1;
+
+        const findInput = byId("miniSheetFindTlInput");
+        if (findInput) findInput.value = "";
+        const nextButton = byId("miniSheetFindNextBtn");
+        if (nextButton) nextButton.disabled = true;
+
+        analyzeMaintenance(true);
+    });
     byId("maintenanceCopyBtn").addEventListener("click", copySorted);
     byId("maintenanceClearBtn").addEventListener("click", clearMaintenance);
 
@@ -6509,6 +7350,31 @@
             if (byId("maintenanceInput").value.trim()) analyzeMaintenance(false);
 
             showMessage("Team Leader Floor Assignment was reset. Auto-learning will be used again.", "info");
+        }
+    });
+
+    document.addEventListener("keydown", event => {
+        if (!byId("maintenancePanel").classList.contains("active")) return;
+        if (!miniSheetSelectedRows.size) return;
+
+        const active = document.activeElement;
+        const editingCell = active && active.matches && active.matches('#maintenanceMiniSheet td[contenteditable="true"]');
+        const typingField = active && /^(INPUT|TEXTAREA|SELECT)$/.test(active.tagName);
+
+        if (editingCell || typingField) return;
+
+        if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "c") {
+            event.preventDefault();
+            copySelectedMiniSheetRows().catch(console.error);
+        }
+
+        if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "x") {
+            event.preventDefault();
+            cutSelectedMiniSheetRows().catch(console.error);
+        }
+
+        if (event.key === "Escape") {
+            clearMiniSheetSelection();
         }
     });
 })();
@@ -6552,6 +7418,68 @@
             screenshots: []
         };
     }
+
+    // Bridge from Maintenance AI Sorter's editable Mini Sheet.
+    // Sends selected rows directly into a Maintenance Report block.
+    window.addMaintenanceSorterRowsToReport = function(tsv, meta = {}) {
+        const text = String(tsv || "").trim();
+        if (!text) return;
+
+        syncTop();
+
+        let targetBlock = state.blocks.find(block =>
+            !String(block.lanesText || "").trim() &&
+            !(Array.isArray(block.screenshots) && block.screenshots.length) &&
+            !(Array.isArray(block.remarks) && block.remarks.some(item => String(item || "").trim()))
+        );
+
+        if (!targetBlock) {
+            targetBlock = makeBlock();
+            state.blocks.push(targetBlock);
+        }
+
+        targetBlock.lanesText = text;
+        if (!Array.isArray(targetBlock.remarks) || !targetBlock.remarks.length) {
+            targetBlock.remarks = [""];
+        }
+
+        activePasteBlockId = targetBlock.id;
+        render();
+        queueSave();
+
+        // Open Maintenance Report tab automatically.
+        const cctvBtn = $("cctvTabBtn");
+        const maintenanceBtn = $("maintenanceTabBtn");
+        const eodBtn = $("eodTabBtn");
+
+        $("cctvPanel").classList.remove("active");
+        $("maintenancePanel").classList.remove("active");
+        $("eodPanel").classList.add("active");
+
+        cctvBtn.classList.remove("active");
+        maintenanceBtn.classList.remove("active");
+        eodBtn.classList.add("active");
+
+        cctvBtn.setAttribute("aria-selected", "false");
+        maintenanceBtn.setAttribute("aria-selected", "false");
+        eodBtn.setAttribute("aria-selected", "true");
+
+        setTimeout(() => {
+            const card = document.querySelector(`.eod-block[data-id="${targetBlock.id}"]`);
+            if (card) {
+                card.scrollIntoView({ behavior: "smooth", block: "center" });
+                setWorkingBlock(targetBlock.id);
+                card.querySelector(".eod-paste-area")?.focus();
+            }
+        }, 80);
+
+        const rowCount = Number(meta.rowCount || 0);
+        const sourceTl = String(meta.sourceTl || "").trim();
+        showMessage(
+            `${rowCount || "Selected"} row${rowCount === 1 ? "" : "s"} from AI Sorter added to Maintenance Report${sourceTl ? ` (${sourceTl})` : ""}.`,
+            "success"
+        );
+    };
 
     function escapeHtml(value) {
         return String(value == null ? "" : value)
@@ -8229,3 +9157,4 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 </body>
 </html>
+<style>#tlSummarySection{display:none!important;}</style>
