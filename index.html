@@ -5117,6 +5117,516 @@
     }
 </style>
 
+
+<style>
+    /* =========================================================
+       GLOBAL TYPOGRAPHY + HEADER CONSISTENCY
+       Slightly larger, clearer text across all three workspaces
+       ========================================================= */
+
+    body,
+    button,
+    input,
+    select,
+    textarea,
+    table {
+        font-family: "Roboto", Arial, sans-serif !important;
+    }
+
+    body {
+        font-size: 15px !important;
+    }
+
+    /* Main headers: CCTV Audit, Maintenance AI Sorter, Maintenance Report */
+    .app-tab-panel h2,
+    #cctvPanel h2,
+    #maintenancePanel h2,
+    #eodPanel h2 {
+        font-family: "Roboto", Arial, sans-serif !important;
+        font-size: 25px !important;
+        line-height: 1.2 !important;
+        font-weight: 900 !important;
+        letter-spacing: -0.025em !important;
+        text-transform: none !important;
+        color: var(--text-color) !important;
+    }
+
+    /* Keep the underline style consistent */
+    .app-tab-panel h2::after,
+    #cctvPanel h2::after,
+    #maintenancePanel h2::after,
+    #eodPanel h2::after {
+        width: 58px !important;
+        height: 4px !important;
+        border-radius: 999px !important;
+    }
+
+    /* Form labels */
+    label,
+    #eodPanel label,
+    #maintenancePanel label {
+        font-family: "Roboto", Arial, sans-serif !important;
+        font-size: 12px !important;
+        font-weight: 800 !important;
+        letter-spacing: .035em !important;
+    }
+
+    /* General inputs */
+    input[type="text"],
+    input[type="date"],
+    input[type="url"],
+    select,
+    textarea {
+        font-size: 14px !important;
+        line-height: 1.45 !important;
+    }
+
+    /* General buttons */
+    button,
+    .simple-eod-actions button,
+    .maintenance-toolbar button,
+    .block-actions button,
+    .workspace-tab-btn {
+        font-family: "Roboto", Arial, sans-serif !important;
+        font-weight: 800 !important;
+    }
+
+    .simple-eod-actions button,
+    .maintenance-toolbar button {
+        font-size: 12px !important;
+    }
+
+    .block-actions button {
+        font-size: 11px !important;
+    }
+
+    .workspace-tab-btn {
+        font-size: 12.5px !important;
+    }
+
+    /* CCTV Audit grid readability */
+    #cctvPanel table {
+        font-size: 13.5px !important;
+    }
+
+    #cctvPanel th {
+        font-size: 11.5px !important;
+        font-weight: 800 !important;
+    }
+
+    #cctvPanel td {
+        font-size: 13px !important;
+    }
+
+    /* Maintenance AI Sorter body text */
+    .maintenance-intro,
+    .maintenance-message,
+    .maintenance-empty {
+        font-size: 13.5px !important;
+        line-height: 1.6 !important;
+    }
+
+    /* Maintenance Report body text */
+    .simple-eod-intro,
+    .maintenance-sheets-copy-hint {
+        font-size: 11.5px !important;
+        line-height: 1.55 !important;
+    }
+
+    #eodPanel .eod-paste-area,
+    #eodPanel .single-remark-text {
+        font-size: 13px !important;
+    }
+
+    /* =========================================================
+       GOOGLE SHEETS WORKSPACE BUTTON CONTRAST
+       Clear and readable in both light and dark modes
+       ========================================================= */
+
+    #maintenancePanel .mini-sheet-toolbar,
+    #maintenancePanel .mini-sheet-toolbar * {
+        font-family: Arial, "Roboto", sans-serif !important;
+    }
+
+    #maintenancePanel .mini-sheet-toolbar strong {
+        font-size: 13px !important;
+        font-weight: 700 !important;
+        color: #202124 !important;
+    }
+
+    #maintenancePanel .mini-sheet-toolbar span,
+    #maintenancePanel .mini-sheet-selection-help {
+        font-size: 10.5px !important;
+        color: #5f6368 !important;
+    }
+
+    #maintenancePanel .mini-sheet-findbar input {
+        font-size: 12px !important;
+        font-weight: 500 !important;
+        color: #202124 !important;
+        background: #ffffff !important;
+    }
+
+    #maintenancePanel .mini-sheet-findbar input::placeholder {
+        color: #80868b !important;
+        opacity: 1 !important;
+    }
+
+    #maintenancePanel .mini-sheet-findbar button,
+    #maintenancePanel .mini-sheet-actions button {
+        min-height: 36px !important;
+        padding: 8px 11px !important;
+        font-family: Arial, "Roboto", sans-serif !important;
+        font-size: 11px !important;
+        line-height: 1 !important;
+        font-weight: 700 !important;
+        border-radius: 6px !important;
+        box-shadow: none !important;
+    }
+
+    #maintenancePanel #miniSheetFindTlBtn {
+        background: #1a73e8 !important;
+        border: 1px solid #1a73e8 !important;
+        color: #ffffff !important;
+    }
+
+    #maintenancePanel #miniSheetFindNextBtn {
+        background: #ffffff !important;
+        border: 1px solid #bdc1c6 !important;
+        color: #202124 !important;
+    }
+
+    #maintenancePanel .mini-sheet-select-same {
+        background: #e8f0fe !important;
+        border: 1px solid #8ab4f8 !important;
+        color: #174ea6 !important;
+    }
+
+    #maintenancePanel .mini-sheet-copy {
+        background: #e6f4ea !important;
+        border: 1px solid #81c995 !important;
+        color: #137333 !important;
+    }
+
+    #maintenancePanel .mini-sheet-cut {
+        background: #fef7e0 !important;
+        border: 1px solid #fdd663 !important;
+        color: #8a4b08 !important;
+    }
+
+    #maintenancePanel .mini-sheet-to-report {
+        background: #188038 !important;
+        border: 1px solid #188038 !important;
+        color: #ffffff !important;
+    }
+
+    #maintenancePanel .mini-sheet-clear-selection {
+        background: #ffffff !important;
+        border: 1px solid #bdc1c6 !important;
+        color: #202124 !important;
+    }
+
+    #maintenancePanel #miniSheetRemoveRowBtn {
+        background: #ffffff !important;
+        border: 1px solid #f28b82 !important;
+        color: #b3261e !important;
+    }
+
+    #maintenancePanel .mini-sheet-clear-all {
+        background: #fce8e6 !important;
+        border: 1px solid #f28b82 !important;
+        color: #b3261e !important;
+    }
+
+    #maintenancePanel .mini-sheet-findbar button:hover:not(:disabled),
+    #maintenancePanel .mini-sheet-actions button:hover:not(:disabled) {
+        filter: brightness(.97) !important;
+        transform: translateY(-1px) !important;
+    }
+
+    #maintenancePanel .mini-sheet-findbar button:disabled,
+    #maintenancePanel .mini-sheet-actions button:disabled {
+        opacity: .48 !important;
+        color: #80868b !important;
+        cursor: not-allowed !important;
+        transform: none !important;
+    }
+
+    /* Google Sheets-like grid slightly larger */
+    #maintenancePanel .mini-sheet {
+        font-size: 12px !important;
+    }
+
+    #maintenancePanel .mini-sheet-column-letters th,
+    #maintenancePanel .mini-sheet-row-number {
+        font-size: 10.5px !important;
+    }
+
+    #maintenancePanel .mini-sheet-header-row th {
+        font-size: 10.5px !important;
+        font-weight: 700 !important;
+    }
+
+    #maintenancePanel .mini-sheet td {
+        font-size: 11.5px !important;
+        line-height: 1.3 !important;
+    }
+
+    /* Keep Google Sheets workspace readable even in site dark mode */
+    body.dark-mode #maintenancePanel .mini-sheet-toolbar,
+    body.dark-mode #maintenancePanel .mini-sheet-toolbar *,
+    body.dark-mode #maintenancePanel .mini-sheet-findbar input {
+        color-scheme: light !important;
+    }
+
+    @media screen and (max-width: 760px) {
+        .app-tab-panel h2,
+        #cctvPanel h2,
+        #maintenancePanel h2,
+        #eodPanel h2 {
+            font-size: 22px !important;
+        }
+
+        .workspace-tab-btn {
+            font-size: 11px !important;
+        }
+
+        #maintenancePanel .mini-sheet-findbar button,
+        #maintenancePanel .mini-sheet-actions button {
+            font-size: 10.5px !important;
+        }
+    }
+</style>
+
+
+<style>
+    /* Maintenance Report - Import PDF */
+    #eodPanel .btn-eod-import-pdf {
+        min-height: 40px;
+        padding: 9px 14px;
+        border: 1px solid rgba(124,58,237,.42);
+        border-radius: 9px;
+        background: rgba(124,58,237,.09);
+        color: #6d28d9;
+        font: 800 12px/1 "Roboto", Arial, sans-serif;
+        cursor: pointer;
+        transition: .18s ease;
+    }
+
+    #eodPanel .btn-eod-import-pdf:hover {
+        background: rgba(124,58,237,.15);
+        transform: translateY(-1px);
+    }
+
+    #eodPanel .btn-eod-import-pdf:disabled {
+        opacity: .55;
+        cursor: wait;
+        transform: none;
+    }
+
+    body.dark-mode #eodPanel .btn-eod-import-pdf {
+        color: #c4b5fd;
+        border-color: rgba(196,181,253,.42);
+        background: rgba(124,58,237,.16);
+    }
+</style>
+
+
+<style>
+    /* =========================================================
+       GOOGLE SHEETS WORKSPACE - HIGH CONTRAST + SHORTCUT GUIDE
+       ========================================================= */
+    #maintenancePanel .mini-sheet-shortcuts {
+        width: 100% !important;
+        display: flex !important;
+        flex-wrap: wrap !important;
+        align-items: center !important;
+        gap: 6px 10px !important;
+        padding: 8px 10px !important;
+        border: 1px solid #dadce0 !important;
+        border-radius: 7px !important;
+        background: #ffffff !important;
+        color: #3c4043 !important;
+        font: 600 10.5px/1.35 Arial, sans-serif !important;
+    }
+
+    #maintenancePanel .mini-sheet-shortcuts span {
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 3px !important;
+        color: #3c4043 !important;
+        white-space: nowrap !important;
+    }
+
+    #maintenancePanel .mini-sheet-shortcuts kbd {
+        min-width: 22px !important;
+        padding: 3px 6px !important;
+        border: 1px solid #bdc1c6 !important;
+        border-bottom-width: 2px !important;
+        border-radius: 5px !important;
+        background: #f8f9fa !important;
+        color: #202124 !important;
+        font: 700 9.5px/1 Arial, sans-serif !important;
+        text-align: center !important;
+        box-shadow: none !important;
+    }
+
+    /* Stronger solid button colors for visibility */
+    #maintenancePanel #miniSheetFindTlBtn {
+        background: #0b57d0 !important;
+        border-color: #0b57d0 !important;
+        color: #ffffff !important;
+    }
+
+    #maintenancePanel #miniSheetFindNextBtn {
+        background: #5f6368 !important;
+        border-color: #5f6368 !important;
+        color: #ffffff !important;
+    }
+
+    #maintenancePanel .mini-sheet-select-same {
+        background: #1a73e8 !important;
+        border-color: #1a73e8 !important;
+        color: #ffffff !important;
+    }
+
+    #maintenancePanel .mini-sheet-copy {
+        background: #188038 !important;
+        border-color: #188038 !important;
+        color: #ffffff !important;
+    }
+
+    #maintenancePanel .mini-sheet-cut {
+        background: #f9ab00 !important;
+        border-color: #e89b00 !important;
+        color: #202124 !important;
+    }
+
+    #maintenancePanel .mini-sheet-to-report {
+        background: #6f42c1 !important;
+        border-color: #6f42c1 !important;
+        color: #ffffff !important;
+    }
+
+    #maintenancePanel .mini-sheet-clear-selection {
+        background: #5f6368 !important;
+        border-color: #5f6368 !important;
+        color: #ffffff !important;
+    }
+
+    #maintenancePanel #miniSheetRemoveRowBtn {
+        background: #d93025 !important;
+        border-color: #d93025 !important;
+        color: #ffffff !important;
+    }
+
+    #maintenancePanel .mini-sheet-clear-all {
+        background: #a50e0e !important;
+        border-color: #a50e0e !important;
+        color: #ffffff !important;
+    }
+
+    #maintenancePanel .mini-sheet-actions button,
+    #maintenancePanel .mini-sheet-findbar button {
+        min-height: 38px !important;
+        padding: 9px 12px !important;
+        font-size: 11.5px !important;
+        font-weight: 800 !important;
+        opacity: 1 !important;
+        text-shadow: none !important;
+    }
+
+    #maintenancePanel .mini-sheet-actions button:hover:not(:disabled),
+    #maintenancePanel .mini-sheet-findbar button:hover:not(:disabled) {
+        filter: brightness(.91) !important;
+    }
+
+    #maintenancePanel .mini-sheet-actions button:disabled,
+    #maintenancePanel .mini-sheet-findbar button:disabled {
+        background: #e8eaed !important;
+        border-color: #dadce0 !important;
+        color: #80868b !important;
+        opacity: 1 !important;
+    }
+
+    /* Workspace keyboard-active indicator */
+    #maintenancePanel .mini-sheet-card.keyboard-active {
+        outline: 2px solid rgba(26,115,232,.34) !important;
+        outline-offset: 2px !important;
+    }
+
+    #maintenancePanel .mini-sheet-card.keyboard-active .mini-sheet-shortcuts {
+        border-color: #8ab4f8 !important;
+        background: #f8fbff !important;
+    }
+
+    body.dark-mode #maintenancePanel .mini-sheet-shortcuts,
+    body.dark-mode #maintenancePanel .mini-sheet-shortcuts span,
+    body.dark-mode #maintenancePanel .mini-sheet-shortcuts kbd {
+        color-scheme: light !important;
+    }
+
+    @media screen and (max-width: 760px) {
+        #maintenancePanel .mini-sheet-shortcuts {
+            gap: 6px !important;
+            font-size: 10px !important;
+        }
+
+        #maintenancePanel .mini-sheet-actions button,
+        #maintenancePanel .mini-sheet-findbar button {
+            min-height: 36px !important;
+            font-size: 10.5px !important;
+        }
+    }
+</style>
+
+
+<style>
+    /* Maintenance AI Sorter - single live overall row counter */
+    #maintenancePanel .maintenance-overall-count {
+        width: fit-content !important;
+        min-width: 150px !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 10px !important;
+        margin: 14px 0 10px !important;
+        padding: 9px 12px !important;
+        border: 1px solid var(--pro-border) !important;
+        border-radius: 10px !important;
+        background: var(--container-bg) !important;
+        color: var(--text-color) !important;
+        box-shadow: none !important;
+    }
+
+    #maintenancePanel .maintenance-overall-count span {
+        color: var(--pro-muted) !important;
+        font: 800 11px/1 "Roboto", Arial, sans-serif !important;
+        letter-spacing: .035em !important;
+        text-transform: uppercase !important;
+    }
+
+    #maintenancePanel .maintenance-overall-count strong {
+        min-width: 30px !important;
+        color: var(--text-color) !important;
+        font: 900 18px/1 "Roboto", Arial, sans-serif !important;
+        text-align: right !important;
+    }
+</style>
+
+
+<style>
+    #maintenancePanel .maintenance-header-optional-note {
+        margin: -2px 0 8px !important;
+        color: var(--pro-muted) !important;
+        font: 500 11px/1.45 "Roboto", Arial, sans-serif !important;
+    }
+
+    #maintenancePanel .maintenance-header-optional-note strong {
+        color: var(--text-color) !important;
+        font-weight: 800 !important;
+    }
+</style>
+
 </head>
 <body>
 
@@ -5249,7 +5759,7 @@
     <div class="container maintenance-shell">
         <h2>Maintenance AI Sorter</h2>
         <div class="maintenance-intro">
-            Paste your maintenance report from <strong>Google Sheets</strong> or a copied table.
+            Paste your maintenance report from <strong>Google Sheets</strong> or a copied table. <strong>The header row is optional.</strong>
             The sorter uses your supplied <strong>Site A 1st Floor and 2nd Floor Team Leader + campaign references</strong>,
             combines them with <strong>Station No.</strong> patterns, and learns from the current report.
             If a <strong>new Team Leader name</strong> appears that is not in the seat plan, it will automatically use the
@@ -5260,10 +5770,14 @@
         </div>
 
         <label for="maintenanceInput">Paste Maintenance Report</label>
+        <div class="maintenance-header-optional-note">
+            Header optional — you can paste the data rows directly in the normal order:
+            <strong>TIMESTAMP → DATE → TL → ACCOUNT → SITE → STATION NO. → STATION ISSUE</strong>.
+        </div>
         <textarea
             id="maintenanceInput"
             class="maintenance-textarea"
-            placeholder="Paste the table here. Expected columns: TIMESTAMP, DATE, TL, ACCOUNT, SITE, STATION NO., STATION ISSUE"></textarea>
+            placeholder="Paste maintenance rows directly — header is optional. Standard order: TIMESTAMP, DATE, TL, ACCOUNT, SITE, STATION NO., STATION ISSUE"></textarea>
 
         <div class="maintenance-toolbar">
             <button type="button" class="maintenance-primary" id="maintenanceSortBtn">✨ Auto Sort by Floor</button>
@@ -5274,11 +5788,9 @@
 
         <div id="maintenanceMessage" class="maintenance-message" aria-live="polite"></div>
 
-        <div class="maintenance-stats" id="maintenanceStats" hidden>
-            <div class="maintenance-stat"><strong id="groundCount">0</strong><span>Ground Floor</span></div>
-            <div class="maintenance-stat"><strong id="firstCount">0</strong><span>1st Floor</span></div>
-            <div class="maintenance-stat"><strong id="secondCount">0</strong><span>2nd Floor</span></div>
-            <div class="maintenance-stat"><strong id="reviewCount">0</strong><span>Review Needed</span></div>
+        <div class="maintenance-overall-count" id="maintenanceStats" hidden>
+            <span>Overall Rows</span>
+            <strong id="overallRowCount">0</strong>
         </div>
 
         <div id="sortedReportSection" hidden>
@@ -5306,8 +5818,21 @@
                 <div class="mini-sheet-toolbar">
                     <div>
                         <strong>Google Sheets Workspace</strong>
-                        <span>Auto-filled after Auto Sort by Floor. Edit cells, select rows, copy/cut, then send selected rows to Maintenance Report.</span>
+                        <span>Auto-filled after Auto Sort by Floor. Click inside the workspace once, then use the keyboard shortcuts below.</span>
                     </div>
+
+                    <div class="mini-sheet-shortcuts" aria-label="Google Sheets Workspace keyboard shortcuts">
+                        <span><kbd>Ctrl</kbd>+<kbd>F</kbd> Find TL</span>
+                        <span><kbd>F3</kbd> Next match</span>
+                        <span><kbd>Ctrl</kbd>+<kbd>A</kbd> Select all</span>
+                        <span><kbd>Ctrl</kbd>+<kbd>C</kbd> Copy</span>
+                        <span><kbd>Ctrl</kbd>+<kbd>X</kbd> Cut</span>
+                        <span><kbd>Ctrl</kbd>+<kbd>V</kbd> Paste rows</span>
+                        <span><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>M</kbd> → Report</span>
+                        <span><kbd>Delete</kbd> Remove</span>
+                        <span><kbd>Esc</kbd> Clear selection</span>
+                    </div>
+
                     <div class="mini-sheet-findbar">
                         <input
                             type="text"
@@ -5331,7 +5856,7 @@
                         <button type="button" id="miniSheetClearAllBtn" class="mini-sheet-clear-all">Clear All</button>
                     </div>
                     <div class="mini-sheet-selection-help">
-                        Use <strong>Find Team Leader</strong> to locate and automatically highlight/select every matching TL row. Then use <strong>Cut Selected</strong> to copy + remove them, or <strong>→ Maintenance Report</strong> to send them directly. <strong>Clear All</strong> resets the sorter for your next pasted report.
+                        Tip: click inside the sheet once to activate shortcuts. <strong>Ctrl+X</strong> copies + removes selected rows, while <strong>Ctrl+Shift+M</strong> sends the selected rows directly to Maintenance Report.
                     </div>
                 </div>
 
@@ -5395,6 +5920,8 @@
         <div class="simple-eod-actions">
             <button type="button" class="btn-eod-outline" id="simpleEodSaveBtn">💾 Save to Drafts</button>
             <button type="button" class="btn-eod-outline" id="simpleEodDraftsBtn">🗂️ Drafts</button>
+            <button type="button" class="btn-eod-import-pdf" id="simpleEodImportPdfBtn">📥 Import PDF</button>
+            <input type="file" id="simpleEodImportPdfInput" accept="application/pdf,.pdf" multiple hidden>
             <button type="button" class="btn-eod-sheet-copy" id="simpleEodCopySheetsBtn">📋 Copy Full Report to Sheets</button>
             <button type="button" class="btn-eod-sheet-send" id="simpleEodSendSheetsBtn">📤 Send to Google Sheets</button>
             <button type="button" class="btn-eod-outline" id="simpleEodSheetSetupBtn">⚙️ Sheet Setup</button>
@@ -5405,7 +5932,7 @@
         </div>
 
         <div class="maintenance-sheets-copy-hint">
-            <strong>Send to Google Sheets</strong> can send the report title/date, all maintenance rows, CCTV screenshots, and remarks directly to your tracker. Use <strong>Sheet Setup</strong> once to save the Apps Script connection.
+            <strong>Import PDF</strong> rebuilds a PDF into editable Maintenance Report blocks. PDFs created by this website can preserve exact editable text/remarks; older or scanned PDFs use text extraction/OCR as a fallback. <strong>Send to Google Sheets</strong> sends the finished report directly to your tracker.
         </div>
 
         <div id="simpleEodMessage" class="simple-eod-message" aria-live="polite"></div>
@@ -5917,6 +6444,7 @@
     let miniSheetSelectionAnchor = null;
     let miniSheetFindMatches = [];
     let miniSheetFindCursor = -1;
+    let miniSheetKeyboardActive = false;
 
     const byId = (id) => document.getElementById(id);
 
@@ -5983,69 +6511,221 @@
     }
 
     function parseReport(raw) {
-        const lines = raw
+        const lines = String(raw || "")
             .replace(/\r/g, "")
             .split("\n")
             .map(line => line.trimEnd())
             .filter(line => line.trim() !== "");
 
-        if (lines.length < 2) {
-            throw new Error("Paste a report with a header row and at least one data row.");
+        if (!lines.length) {
+            throw new Error("Paste maintenance rows first.");
         }
 
         let rows;
-        const looksMarkdown = lines[0].includes("|") && lines.slice(0, 3).some(line => line.includes("|"));
+        const looksMarkdown = lines.some(line => line.includes("|"));
+
         if (looksMarkdown) {
-            rows = lines.map(splitMarkdownLine).filter(cells => !isMarkdownSeparator(cells));
+            rows = lines
+                .map(splitMarkdownLine)
+                .filter(cells => !isMarkdownSeparator(cells));
         } else {
-            const tabCount = (lines[0].match(/\t/g) || []).length;
-            const delimiter = tabCount >= 2 ? "\t" : ",";
+            const firstUsefulLine = lines.find(line => line.trim()) || "";
+            const tabCount = (firstUsefulLine.match(/\t/g) || []).length;
+            const delimiter = tabCount >= 1 ? "\t" : ",";
+
             rows = lines.map(line => parseDelimitedLine(line, delimiter));
         }
 
-        if (rows.length < 2) {
-            throw new Error("I could not detect the table rows.");
+        rows = rows
+            .map(row => row.map(cleanCell))
+            .filter(row => row.some(cell => cleanCell(cell) !== ""));
+
+        if (!rows.length) {
+            throw new Error("I could not detect any maintenance rows.");
         }
 
-        const headers = rows[0].map(normalizeHeader);
+        const normalizeHeaderCell = value =>
+            String(value || "")
+                .toLowerCase()
+                .replace(/\*\*/g, "")
+                .replace(/[._/\\-]+/g, " ")
+                .replace(/\s+/g, " ")
+                .trim();
 
-        function findHeader(names) {
+        const headerGroups = {
+            timestamp: ["timestamp", "time stamp", "time"],
+            date: ["date"],
+            tl: ["tl", "team leader", "team leaders", "tl name"],
+            account: ["account", "campaign", "account campaign"],
+            site: ["site"],
+            station: ["station no", "station number", "station"],
+            issue: ["station issue", "issues", "issue"]
+        };
+
+        function findHeaderIndex(headers, names) {
             for (const name of names) {
                 const exact = headers.indexOf(name);
                 if (exact !== -1) return exact;
             }
+
             for (let i = 0; i < headers.length; i++) {
-                if (names.some(name => headers[i].includes(name))) return i;
+                if (names.some(name => headers[i] === name || headers[i].includes(name))) {
+                    return i;
+                }
             }
+
             return -1;
         }
 
-        const idx = {
-            timestamp: findHeader(["timestamp", "time stamp"]),
-            date: findHeader(["date"]),
-            tl: findHeader(["tl", "team leader", "team leaders", "tl name"]),
-            account: findHeader(["account", "campaign", "account / campaign"]),
-            site: findHeader(["site"]),
-            station: findHeader(["station no", "station number", "station"]),
-            issue: findHeader(["station issue", "issues", "issue"])
-        };
+        function headerConfidence(row) {
+            const headers = row.map(normalizeHeaderCell);
+            let hits = 0;
 
-        if (idx.tl === -1 || idx.station === -1) {
-            throw new Error("The report needs at least a TL column and a STATION NO. column.");
+            Object.values(headerGroups).forEach(names => {
+                if (findHeaderIndex(headers, names) !== -1) hits++;
+            });
+
+            return hits;
         }
 
-        return rows.slice(1)
+        function isFloorValue(value) {
+            const v = String(value || "").toLowerCase().trim();
+            return /^(ground|gf|1st|first|2nd|second)\s*(floor|flr)?$/.test(v) ||
+                   v === "review needed";
+        }
+
+        function looksLikeDateOnly(value) {
+            return /^\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}$/.test(String(value || "").trim());
+        }
+
+        function looksLikeTimestamp(value) {
+            return /^\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}\s+\d{1,2}:\d{2}/.test(
+                String(value || "").trim()
+            );
+        }
+
+        let dataRows = rows.slice();
+        let idx = null;
+
+        // HEADER IS OPTIONAL.
+        // If the first row clearly looks like a header, use it.
+        // Otherwise infer the standard maintenance-column order automatically.
+        const firstRowHeaderScore = headerConfidence(rows[0]);
+
+        if (firstRowHeaderScore >= 4) {
+            const headers = rows[0].map(normalizeHeaderCell);
+
+            idx = {
+                timestamp: findHeaderIndex(headers, headerGroups.timestamp),
+                date: findHeaderIndex(headers, headerGroups.date),
+                tl: findHeaderIndex(headers, headerGroups.tl),
+                account: findHeaderIndex(headers, headerGroups.account),
+                site: findHeaderIndex(headers, headerGroups.site),
+                station: findHeaderIndex(headers, headerGroups.station),
+                issue: findHeaderIndex(headers, headerGroups.issue)
+            };
+
+            dataRows = rows.slice(1);
+        }
+
+        return dataRows
             .filter(row => row.some(cell => cleanCell(cell) !== ""))
-            .map((row, i) => ({
-                originalIndex: i,
-                timestamp: idx.timestamp >= 0 ? cleanCell(row[idx.timestamp]) : "",
-                date: idx.date >= 0 ? cleanCell(row[idx.date]) : "",
-                tl: idx.tl >= 0 ? cleanCell(row[idx.tl]) : "",
-                account: idx.account >= 0 ? cleanCell(row[idx.account]) : "",
-                site: idx.site >= 0 ? cleanCell(row[idx.site]) : "",
-                station: idx.station >= 0 ? cleanCell(row[idx.station]) : "",
-                issue: idx.issue >= 0 ? cleanCell(row[idx.issue]) : ""
-            }));
+            .map((sourceRow, i) => {
+                let row = sourceRow.slice();
+
+                // Also accept floor-prefixed copied rows:
+                // FLOOR | TIMESTAMP | DATE | TL | ACCOUNT | SITE | STATION | ISSUE
+                if (row.length >= 8 && isFloorValue(row[0])) {
+                    row = row.slice(1);
+                }
+
+                // With a detected header, follow its actual column positions.
+                if (idx) {
+                    return {
+                        originalIndex: i,
+                        timestamp: idx.timestamp >= 0 ? cleanCell(row[idx.timestamp]) : "",
+                        date: idx.date >= 0 ? cleanCell(row[idx.date]) : "",
+                        tl: idx.tl >= 0 ? cleanCell(row[idx.tl]) : "",
+                        account: idx.account >= 0 ? cleanCell(row[idx.account]) : "",
+                        site: idx.site >= 0 ? cleanCell(row[idx.site]) : "",
+                        station: idx.station >= 0 ? cleanCell(row[idx.station]) : "",
+                        issue: idx.issue >= 0 ? cleanCell(row[idx.issue]) : ""
+                    };
+                }
+
+                // No header: infer the standard raw maintenance-sheet order.
+                //
+                // 7+ columns:
+                // TIMESTAMP | DATE | TL | ACCOUNT | SITE | STATION NO. | STATION ISSUE
+                if (row.length >= 7) {
+                    return {
+                        originalIndex: i,
+                        timestamp: cleanCell(row[0]),
+                        date: cleanCell(row[1]),
+                        tl: cleanCell(row[2]),
+                        account: cleanCell(row[3]),
+                        site: cleanCell(row[4]),
+                        station: cleanCell(row[5]),
+                        issue: row.slice(6).map(cleanCell).filter(Boolean).join(" ")
+                    };
+                }
+
+                // 6 columns with DATE first:
+                // DATE | TL | ACCOUNT | SITE | STATION NO. | STATION ISSUE
+                if (row.length === 6 && looksLikeDateOnly(row[0])) {
+                    return {
+                        originalIndex: i,
+                        timestamp: "",
+                        date: cleanCell(row[0]),
+                        tl: cleanCell(row[1]),
+                        account: cleanCell(row[2]),
+                        site: cleanCell(row[3]),
+                        station: cleanCell(row[4]),
+                        issue: cleanCell(row[5])
+                    };
+                }
+
+                // 6 columns with TIMESTAMP first and DATE omitted:
+                // TIMESTAMP | TL | ACCOUNT | SITE | STATION NO. | STATION ISSUE
+                if (row.length === 6 && looksLikeTimestamp(row[0])) {
+                    const timestamp = cleanCell(row[0]);
+                    const date = timestamp.split(/\s+/)[0] || "";
+
+                    return {
+                        originalIndex: i,
+                        timestamp,
+                        date,
+                        tl: cleanCell(row[1]),
+                        account: cleanCell(row[2]),
+                        site: cleanCell(row[3]),
+                        station: cleanCell(row[4]),
+                        issue: cleanCell(row[5])
+                    };
+                }
+
+                // Last fallback: pad to seven columns instead of rejecting the paste.
+                while (row.length < 7) row.push("");
+
+                return {
+                    originalIndex: i,
+                    timestamp: cleanCell(row[0]),
+                    date: cleanCell(row[1]),
+                    tl: cleanCell(row[2]),
+                    account: cleanCell(row[3]),
+                    site: cleanCell(row[4]),
+                    station: cleanCell(row[5]),
+                    issue: row.slice(6).map(cleanCell).filter(Boolean).join(" ")
+                };
+            })
+            .filter(row =>
+                row.timestamp ||
+                row.date ||
+                row.tl ||
+                row.account ||
+                row.site ||
+                row.station ||
+                row.issue
+            );
     }
 
     function normalizeTLName(name) {
@@ -7015,6 +7695,130 @@
         showMessage("AI Sorter cleared. Paste your next maintenance report.", "success");
     }
 
+
+    function setMiniSheetKeyboardActive(active) {
+        miniSheetKeyboardActive = !!active;
+        const card = byId("maintenanceMiniSheet")?.closest(".mini-sheet-card");
+        if (card) {
+            card.classList.toggle("keyboard-active", miniSheetKeyboardActive);
+        }
+    }
+
+    function selectAllMiniSheetRows() {
+        if (!lastAssignedRows.length) {
+            showMessage("There are no rows to select.", "info");
+            return;
+        }
+
+        miniSheetSelectedRows.clear();
+        lastAssignedRows.forEach((row, index) => miniSheetSelectedRows.add(index));
+        miniSheetSelectionAnchor = 0;
+        updateMiniSheetSelectionUi();
+
+        showMessage(
+            `${lastAssignedRows.length} row${lastAssignedRows.length === 1 ? "" : "s"} selected.`,
+            "success"
+        );
+    }
+
+    function parseMiniSheetClipboardRows(text) {
+        const raw = String(text || "").replace(/\r/g, "").trim();
+        if (!raw) return [];
+
+        const lines = raw.split("\n").filter(line => line.trim() !== "");
+
+        const rows = lines.map(line => {
+            const cells = line.includes("\t")
+                ? line.split("\t")
+                : line.split(",").map(value => value.trim());
+
+            while (cells.length < 7) cells.push("");
+
+            return {
+                timestamp: String(cells[0] || "").trim(),
+                date: String(cells[1] || "").trim(),
+                tl: String(cells[2] || "").trim(),
+                account: String(cells[3] || "").trim(),
+                site: String(cells[4] || "").trim(),
+                station: String(cells[5] || "").trim(),
+                issue: cells.slice(6).join(" ").trim(),
+                floor: FLOOR.REVIEW,
+                sortSource: "Pasted into Mini Sheet",
+                tlNames: extractTLNames(cells[2] || "")
+            };
+        });
+
+        // Ignore a copied seven-column header if present.
+        if (rows.length) {
+            const first = rows[0];
+            const headerText = [
+                first.timestamp,
+                first.date,
+                first.tl,
+                first.account,
+                first.site,
+                first.station,
+                first.issue
+            ].join(" ").toUpperCase();
+
+            if (
+                headerText.includes("TIMESTAMP") &&
+                headerText.includes("DATE") &&
+                headerText.includes("STATION")
+            ) {
+                rows.shift();
+            }
+        }
+
+        return rows.filter(row =>
+            [
+                row.timestamp,
+                row.date,
+                row.tl,
+                row.account,
+                row.site,
+                row.station,
+                row.issue
+            ].some(value => String(value || "").trim())
+        );
+    }
+
+    function pasteRowsIntoMiniSheet(text) {
+        const rows = parseMiniSheetClipboardRows(text);
+
+        if (!rows.length) {
+            showMessage("Clipboard does not contain readable maintenance rows.", "error");
+            return;
+        }
+
+        lastAssignedRows.push(...rows);
+        miniSheetSelectedRows.clear();
+
+        const start = lastAssignedRows.length - rows.length;
+        for (let i = start; i < lastAssignedRows.length; i++) {
+            miniSheetSelectedRows.add(i);
+        }
+
+        miniSheetSelectionAnchor = start;
+        renderRows(lastAssignedRows);
+
+        setTimeout(() => {
+            const firstNew = byId("maintenanceMiniSheet")?.querySelector(
+                `tr[data-row-index="${start}"]`
+            );
+            firstNew?.scrollIntoView({
+                behavior: "smooth",
+                block: "center",
+                inline: "nearest"
+            });
+        }, 60);
+
+        showMessage(
+            `${rows.length} pasted row${rows.length === 1 ? "" : "s"} added to the Mini Sheet and selected.`,
+            "success"
+        );
+    }
+
     function renderMiniSheet(rows) {
         const sheet = byId("maintenanceMiniSheet");
         if (!sheet) return;
@@ -7149,19 +7953,10 @@
             `;
         }).join("");
 
-        const counts = {
-            [FLOOR.GROUND]: 0,
-            [FLOOR.FIRST]: 0,
-            [FLOOR.SECOND]: 0,
-            [FLOOR.REVIEW]: 0
-        };
-
-        rows.forEach(row => counts[row.floor]++);
-
-        byId("groundCount").textContent = counts[FLOOR.GROUND];
-        byId("firstCount").textContent = counts[FLOOR.FIRST];
-        byId("secondCount").textContent = counts[FLOOR.SECOND];
-        byId("reviewCount").textContent = counts[FLOOR.REVIEW];
+        const overallCounter = byId("overallRowCount");
+        if (overallCounter) {
+            overallCounter.textContent = rows.length;
+        }
 
         if (!skipMiniSheet) {
             renderMiniSheet(rows);
@@ -7288,6 +8083,7 @@
         miniSheetSelectionAnchor = null;
         miniSheetFindMatches = [];
         miniSheetFindCursor = -1;
+        setMiniSheetKeyboardActive(false);
 
         const findInput = byId("miniSheetFindTlInput");
         if (findInput) findInput.value = "";
@@ -7353,29 +8149,132 @@
         }
     });
 
+    // Activate shortcuts after the user clicks anywhere in the Google Sheets Workspace.
+    document.addEventListener("mousedown", event => {
+        if (!byId("maintenancePanel").classList.contains("active")) return;
+
+        const card = event.target.closest?.(".mini-sheet-card");
+        setMiniSheetKeyboardActive(!!card);
+    });
+
     document.addEventListener("keydown", event => {
         if (!byId("maintenancePanel").classList.contains("active")) return;
-        if (!miniSheetSelectedRows.size) return;
 
         const active = document.activeElement;
-        const editingCell = active && active.matches && active.matches('#maintenanceMiniSheet td[contenteditable="true"]');
-        const typingField = active && /^(INPUT|TEXTAREA|SELECT)$/.test(active.tagName);
+        const editingCell = active && active.matches &&
+            active.matches('#maintenanceMiniSheet td[contenteditable="true"]');
+        const typingField = active &&
+            /^(INPUT|TEXTAREA|SELECT)$/.test(active.tagName);
 
-        if (editingCell || typingField) return;
+        // Ctrl+F works anywhere inside the AI Sorter and focuses Find Team Leader.
+        if (
+            (event.ctrlKey || event.metaKey) &&
+            !event.shiftKey &&
+            event.key.toLowerCase() === "f"
+        ) {
+            if (editingCell) return;
 
-        if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "c") {
             event.preventDefault();
-            copySelectedMiniSheetRows().catch(console.error);
+            setMiniSheetKeyboardActive(true);
+            byId("miniSheetFindTlInput")?.focus();
+            byId("miniSheetFindTlInput")?.select();
+            return;
         }
 
-        if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "x") {
+        // Find next match.
+        if (event.key === "F3" && !typingField && !editingCell) {
+            event.preventDefault();
+            setMiniSheetKeyboardActive(true);
+            findNextTeamLeaderMatch();
+            return;
+        }
+
+        // Other shortcuts are scoped to the Google Sheets Workspace.
+        if (!miniSheetKeyboardActive) return;
+
+        if (typingField || editingCell) {
+            // Keep normal Ctrl+C/X/V/A behavior while typing/editing a single cell.
+            return;
+        }
+
+        if (
+            (event.ctrlKey || event.metaKey) &&
+            !event.shiftKey &&
+            event.key.toLowerCase() === "a"
+        ) {
+            event.preventDefault();
+            selectAllMiniSheetRows();
+            return;
+        }
+
+        if (
+            (event.ctrlKey || event.metaKey) &&
+            !event.shiftKey &&
+            event.key.toLowerCase() === "c"
+        ) {
+            if (!miniSheetSelectedRows.size) return;
+            event.preventDefault();
+            copySelectedMiniSheetRows().catch(console.error);
+            return;
+        }
+
+        if (
+            (event.ctrlKey || event.metaKey) &&
+            !event.shiftKey &&
+            event.key.toLowerCase() === "x"
+        ) {
+            if (!miniSheetSelectedRows.size) return;
             event.preventDefault();
             cutSelectedMiniSheetRows().catch(console.error);
+            return;
+        }
+
+        if (
+            (event.ctrlKey || event.metaKey) &&
+            event.shiftKey &&
+            event.key.toLowerCase() === "m"
+        ) {
+            if (!miniSheetSelectedRows.size) return;
+            event.preventDefault();
+            sendSelectedMiniSheetRowsToMaintenanceReport();
+            return;
+        }
+
+        if (
+            event.key === "Delete" &&
+            miniSheetSelectedRows.size
+        ) {
+            event.preventDefault();
+            removeSelectedMiniSheetRows();
+            return;
         }
 
         if (event.key === "Escape") {
+            event.preventDefault();
             clearMiniSheetSelection();
+            return;
         }
+    });
+
+    // Ctrl+V / paste: append copied spreadsheet rows to the Mini Sheet
+    // when the workspace is active and the user is not editing one cell.
+    document.addEventListener("paste", event => {
+        if (!byId("maintenancePanel").classList.contains("active")) return;
+        if (!miniSheetKeyboardActive) return;
+
+        const active = document.activeElement;
+        const editingCell = active && active.matches &&
+            active.matches('#maintenanceMiniSheet td[contenteditable="true"]');
+        const typingField = active &&
+            /^(INPUT|TEXTAREA|SELECT)$/.test(active.tagName);
+
+        if (editingCell || typingField) return;
+
+        const text = event.clipboardData?.getData("text/plain") || "";
+        if (!text.trim()) return;
+
+        event.preventDefault();
+        pasteRowsIntoMiniSheet(text);
     });
 })();
 </script>
@@ -7417,6 +8316,515 @@
             remarks: [""],
             screenshots: []
         };
+    }
+
+
+    /* =========================================================
+       PDF IMPORT / EDITABLE ROUND-TRIP
+       - PDFs created by this website store editable text/remarks
+         in PDF metadata for accurate future re-import.
+       - Other PDFs use PDF.js text extraction.
+       - Image-only/scanned PDFs fall back to browser OCR.
+       ========================================================= */
+
+    const PDF_EDITABLE_STATE_PREFIX = "CCTV_MAINTENANCE_EDITABLE_V1:";
+    const PDFJS_WORKER_URL =
+        "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+
+    function utf8ToBase64(value) {
+        const bytes = new TextEncoder().encode(String(value || ""));
+        let binary = "";
+        const chunkSize = 0x8000;
+
+        for (let i = 0; i < bytes.length; i += chunkSize) {
+            binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
+        }
+
+        return btoa(binary);
+    }
+
+    function base64ToUtf8(value) {
+        const binary = atob(String(value || ""));
+        const bytes = new Uint8Array(binary.length);
+
+        for (let i = 0; i < binary.length; i++) {
+            bytes[i] = binary.charCodeAt(i);
+        }
+
+        return new TextDecoder().decode(bytes);
+    }
+
+    function editableStateForPdfMetadata() {
+        syncTop();
+
+        return {
+            version: 1,
+            date: state.date || "",
+            title: state.title || "Mabini Site A - 1st & 2nd Floor",
+            blocks: state.blocks.map(block => ({
+                lanesText: String(block.lanesText || ""),
+                remarks: Array.isArray(block.remarks)
+                    ? block.remarks.map(item => String(item || ""))
+                    : [""]
+            }))
+        };
+    }
+
+    function encodeEditableStateForPdf() {
+        try {
+            const json = JSON.stringify(editableStateForPdfMetadata());
+
+            // Avoid creating abnormally large PDF metadata.
+            if (json.length > 250000) {
+                console.warn("Editable PDF metadata skipped because report text is too large.");
+                return "";
+            }
+
+            return PDF_EDITABLE_STATE_PREFIX + utf8ToBase64(json);
+        } catch (error) {
+            console.warn("Could not encode editable PDF state.", error);
+            return "";
+        }
+    }
+
+    function decodeEditableStateFromPdfSubject(subject) {
+        const raw = String(subject || "");
+
+        if (!raw.startsWith(PDF_EDITABLE_STATE_PREFIX)) {
+            return null;
+        }
+
+        try {
+            const encoded = raw.slice(PDF_EDITABLE_STATE_PREFIX.length);
+            const parsed = JSON.parse(base64ToUtf8(encoded));
+
+            if (!parsed || !Array.isArray(parsed.blocks)) {
+                return null;
+            }
+
+            return parsed;
+        } catch (error) {
+            console.warn("Could not decode editable state from PDF metadata.", error);
+            return null;
+        }
+    }
+
+    function normalizeImportedPdfLine(value) {
+        return String(value || "")
+            .replace(/\u00a0/g, " ")
+            .replace(/[ \t]+/g, " ")
+            .trim();
+    }
+
+    function looksLikeImportedFooter(line) {
+        const value = normalizeImportedPdfLine(line);
+        return /^Page\s+\d+\s+of\s+\d+$/i.test(value) ||
+               /^Page\s+\d+$/i.test(value);
+    }
+
+    function looksLikeImportedTitle(line) {
+        const value = normalizeImportedPdfLine(line);
+        return /maintenance\s+report/i.test(value) ||
+               /^Mabini\s+Site/i.test(value);
+    }
+
+    function looksLikeImportedHeader(line) {
+        const value = normalizeImportedPdfLine(line).toUpperCase();
+
+        const hits = [
+            "TIMESTAMP",
+            "DATE",
+            "TL",
+            "ACCOUNT",
+            "SITE",
+            "STATION",
+            "ISSUE"
+        ].filter(word => value.includes(word)).length;
+
+        return hits >= 4;
+    }
+
+    function cleanImportedPageText(rawText) {
+        const lines = String(rawText || "")
+            .replace(/\r/g, "")
+            .split("\n")
+            .map(normalizeImportedPdfLine)
+            .filter(Boolean)
+            .filter(line => !looksLikeImportedFooter(line));
+
+        let title = "";
+        let reportDate = "";
+        let remarks = [];
+        let body = [];
+
+        lines.forEach((line, index) => {
+            if (!title && looksLikeImportedTitle(line)) {
+                title = line.replace(/\s*Maintenance\s+Report\s*$/i, "").trim();
+
+                const dateMatch =
+                    line.match(/\b(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})\b/);
+
+                if (dateMatch) {
+                    let year = dateMatch[3];
+                    if (year.length === 2) year = "20" + year;
+
+                    reportDate =
+                        `${year}-${String(dateMatch[1]).padStart(2, "0")}-${String(dateMatch[2]).padStart(2, "0")}`;
+                }
+
+                return;
+            }
+
+            if (/^remarks?\s*:/i.test(line)) {
+                remarks.push(line.replace(/^remarks?\s*:\s*/i, "").trim());
+                return;
+            }
+
+            // Skip the official seven-column header. The editable textarea
+            // does not need it because PDF/Sheets generation restores it.
+            if (looksLikeImportedHeader(line)) {
+                return;
+            }
+
+            body.push(line);
+        });
+
+        // Convert broad visual spacing into tabs where possible.
+        // This helps extracted text-based PDFs become editable table rows.
+        body = body.map(line =>
+            line.replace(/\s{2,}/g, "\t").trim()
+        );
+
+        return {
+            title,
+            reportDate,
+            lanesText: body.join("\n").trim(),
+            remarks: remarks.filter(Boolean)
+        };
+    }
+
+    async function renderPdfPageToDataUrl(page, scale = 1.55, quality = 0.78) {
+        const viewport = page.getViewport({ scale });
+        const canvas = document.createElement("canvas");
+        const context = canvas.getContext("2d", { alpha: false });
+
+        canvas.width = Math.max(1, Math.ceil(viewport.width));
+        canvas.height = Math.max(1, Math.ceil(viewport.height));
+
+        context.fillStyle = "#ffffff";
+        context.fillRect(0, 0, canvas.width, canvas.height);
+
+        await page.render({
+            canvasContext: context,
+            viewport,
+            background: "#ffffff"
+        }).promise;
+
+        return canvas.toDataURL("image/jpeg", quality);
+    }
+
+    async function extractTextFromPdfPage(page) {
+        try {
+            const content = await page.getTextContent();
+            const items = (content.items || [])
+                .filter(item => item && String(item.str || "").trim())
+                .map(item => ({
+                    text: String(item.str || "").trim(),
+                    x: Number(item.transform?.[4] || 0),
+                    y: Number(item.transform?.[5] || 0),
+                    width: Number(item.width || 0)
+                }));
+
+            if (!items.length) return "";
+
+            // Group items by visual line (PDF Y coordinate), then sort left-to-right.
+            const lines = [];
+
+            items
+                .sort((a, b) => {
+                    if (Math.abs(b.y - a.y) > 2.5) return b.y - a.y;
+                    return a.x - b.x;
+                })
+                .forEach(item => {
+                    let line = lines.find(existing => Math.abs(existing.y - item.y) <= 2.5);
+
+                    if (!line) {
+                        line = { y: item.y, items: [] };
+                        lines.push(line);
+                    }
+
+                    line.items.push(item);
+                });
+
+            return lines
+                .sort((a, b) => b.y - a.y)
+                .map(line => {
+                    const sorted = line.items.sort((a, b) => a.x - b.x);
+                    let result = "";
+                    let previousRight = null;
+
+                    sorted.forEach((item, index) => {
+                        if (!index) {
+                            result = item.text;
+                            previousRight = item.x + item.width;
+                            return;
+                        }
+
+                        const gap = item.x - (previousRight == null ? item.x : previousRight);
+
+                        // Large visual gaps are treated like spreadsheet columns.
+                        result += gap > 18 ? "\t" : " ";
+                        result += item.text;
+                        previousRight = item.x + item.width;
+                    });
+
+                    return result.trim();
+                })
+                .filter(Boolean)
+                .join("\n");
+
+        } catch (error) {
+            console.warn("PDF text extraction failed.", error);
+            return "";
+        }
+    }
+
+    async function ocrPdfPage(page, pageNumber, totalPages) {
+        if (typeof Tesseract === "undefined") {
+            throw new Error("OCR library did not load.");
+        }
+
+        showMessage(
+            `PDF page ${pageNumber}/${totalPages} is image-based. Reading it with OCR...`,
+            "info"
+        );
+
+        const viewport = page.getViewport({ scale: 1.8 });
+        const canvas = document.createElement("canvas");
+        const context = canvas.getContext("2d", { alpha: false });
+
+        canvas.width = Math.max(1, Math.ceil(viewport.width));
+        canvas.height = Math.max(1, Math.ceil(viewport.height));
+
+        context.fillStyle = "#ffffff";
+        context.fillRect(0, 0, canvas.width, canvas.height);
+
+        await page.render({
+            canvasContext: context,
+            viewport,
+            background: "#ffffff"
+        }).promise;
+
+        const result = await Tesseract.recognize(canvas, "eng", {
+            logger: info => {
+                if (
+                    info &&
+                    info.status === "recognizing text" &&
+                    typeof info.progress === "number"
+                ) {
+                    const percent = Math.round(info.progress * 100);
+                    showMessage(
+                        `OCR page ${pageNumber}/${totalPages}: ${percent}%`,
+                        "info"
+                    );
+                }
+            }
+        });
+
+        return String(result?.data?.text || "");
+    }
+
+    async function importOnePdfFile(file) {
+        if (typeof pdfjsLib === "undefined") {
+            throw new Error("PDF reader library did not load. Refresh the page and try again.");
+        }
+
+        pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS_WORKER_URL;
+
+        const bytes = new Uint8Array(await file.arrayBuffer());
+        const pdf = await pdfjsLib.getDocument({ data: bytes }).promise;
+
+        let editableMetadata = null;
+
+        try {
+            const metadata = await pdf.getMetadata();
+            editableMetadata = decodeEditableStateFromPdfSubject(
+                metadata?.info?.Subject || ""
+            );
+        } catch (error) {
+            console.warn("Could not read PDF metadata.", error);
+        }
+
+        // PDFs created by this website after this update:
+        // restore exact title/date/lanes/remarks without OCR.
+        if (editableMetadata) {
+            const restoredBlocks = editableMetadata.blocks.map(item => ({
+                id: uid(),
+                lanesText: String(item.lanesText || ""),
+                remarks: Array.isArray(item.remarks) && item.remarks.length
+                    ? item.remarks.map(value => String(value || ""))
+                    : [""],
+                screenshots: []
+            }));
+
+            return {
+                exact: true,
+                title: String(editableMetadata.title || ""),
+                date: String(editableMetadata.date || ""),
+                blocks: restoredBlocks
+            };
+        }
+
+        // Older / external PDFs: each PDF page becomes one editable block.
+        const importedBlocks = [];
+        let detectedTitle = "";
+        let detectedDate = "";
+
+        for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber++) {
+            showMessage(
+                `Importing "${file.name}" - page ${pageNumber} of ${pdf.numPages}...`,
+                "info"
+            );
+
+            const page = await pdf.getPage(pageNumber);
+            let text = await extractTextFromPdfPage(page);
+
+            // html2pdf/scanned PDFs often have no real text layer.
+            if (text.replace(/\s/g, "").length < 25) {
+                text = await ocrPdfPage(page, pageNumber, pdf.numPages);
+            }
+
+            const parsed = cleanImportedPageText(text);
+
+            if (!detectedTitle && parsed.title) detectedTitle = parsed.title;
+            if (!detectedDate && parsed.reportDate) detectedDate = parsed.reportDate;
+
+            // Preserve the original page visually. This is removable/replaceable
+            // in Screenshot Proof after import.
+            const pageSnapshot = await renderPdfPageToDataUrl(page, 1.25, 0.70);
+
+            importedBlocks.push({
+                id: uid(),
+                lanesText: parsed.lanesText || text.trim(),
+                remarks: parsed.remarks.length ? parsed.remarks : [""],
+                screenshots: [{
+                    name: `${file.name} - page ${pageNumber}.jpg`,
+                    dataUrl: pageSnapshot,
+                    importedPdfPage: true
+                }]
+            });
+        }
+
+        return {
+            exact: false,
+            title: detectedTitle,
+            date: detectedDate,
+            blocks: importedBlocks
+        };
+    }
+
+    function isBlankMaintenanceBlock(block) {
+        return (
+            !String(block?.lanesText || "").trim() &&
+            !(Array.isArray(block?.screenshots) && block.screenshots.length) &&
+            !(Array.isArray(block?.remarks) &&
+              block.remarks.some(item => String(item || "").trim()))
+        );
+    }
+
+    async function importMaintenancePdfFiles(files) {
+        const pdfFiles = [...files].filter(file =>
+            file &&
+            (file.type === "application/pdf" || /\.pdf$/i.test(file.name || ""))
+        );
+
+        if (!pdfFiles.length) {
+            showMessage("Choose at least one PDF file.", "error");
+            return;
+        }
+
+        const button = $("simpleEodImportPdfBtn");
+        const originalText = button.textContent;
+
+        button.disabled = true;
+        button.textContent = "⏳ Importing PDF...";
+
+        try {
+            const results = [];
+
+            for (const file of pdfFiles) {
+                results.push(await importOnePdfFile(file));
+            }
+
+            const importedBlocks = results.flatMap(result => result.blocks || []);
+
+            if (!importedBlocks.length) {
+                throw new Error("No editable content could be generated from the PDF.");
+            }
+
+            // Replace only the default blank block. Otherwise append to current work.
+            if (
+                state.blocks.length === 1 &&
+                isBlankMaintenanceBlock(state.blocks[0])
+            ) {
+                state.blocks = importedBlocks;
+            } else {
+                state.blocks.push(...importedBlocks);
+            }
+
+            // Adopt title/date only when useful.
+            const firstTitle = results.find(result => result.title)?.title;
+            const firstDate = results.find(result => result.date)?.date;
+
+            if (firstTitle) {
+                state.title = firstTitle;
+                $("simpleEodSite").value = firstTitle;
+            }
+
+            if (firstDate) {
+                state.date = firstDate;
+                $("simpleEodDate").value = firstDate;
+            }
+
+            activePasteBlockId = importedBlocks[0]?.id || null;
+
+            render();
+            await saveDraft(true);
+
+            const exactCount = results.filter(result => result.exact).length;
+            const fallbackCount = results.length - exactCount;
+
+            let message =
+                `${pdfFiles.length} PDF file${pdfFiles.length === 1 ? "" : "s"} imported into ${importedBlocks.length} editable block${importedBlocks.length === 1 ? "" : "s"}.`;
+
+            if (exactCount) {
+                message += ` ${exactCount} PDF${exactCount === 1 ? "" : "s"} restored exact editable text/remarks from embedded report data.`;
+            }
+
+            if (fallbackCount) {
+                message += ` Older/scanned PDF pages were converted using text extraction/OCR; review the editable rows for OCR errors.`;
+            }
+
+            showMessage(message, "success");
+
+            setTimeout(() => {
+                const firstImported = document.querySelector(
+                    `.eod-block[data-id="${importedBlocks[0]?.id}"]`
+                );
+                firstImported?.scrollIntoView({ behavior: "smooth", block: "center" });
+            }, 100);
+
+        } catch (error) {
+            console.error(error);
+            showMessage(
+                error?.message || "PDF import failed.",
+                "error"
+            );
+        } finally {
+            button.disabled = false;
+            button.textContent = originalText;
+            $("simpleEodImportPdfInput").value = "";
+        }
     }
 
     // Bridge from Maintenance AI Sorter's editable Mini Sheet.
@@ -8869,6 +10277,23 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
                 .toPdf();
 
             const pdf = await worker.get("pdf");
+
+            // Store the editable title/date/lanes/remarks in PDF metadata.
+            // A future Import PDF can restore these fields exactly.
+            try {
+                const editableSubject = encodeEditableStateForPdf();
+
+                if (editableSubject && typeof pdf.setProperties === "function") {
+                    pdf.setProperties({
+                        title: reportFilename(),
+                        subject: editableSubject,
+                        creator: "CCTV Audit Maintenance Report"
+                    });
+                }
+            } catch (metadataError) {
+                console.warn("Could not embed editable PDF metadata.", metadataError);
+            }
+
             const totalPages = pdf.internal.getNumberOfPages();
 
             for (let page = 1; page <= totalPages; page++) {
@@ -9039,6 +10464,17 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         }, 80);
     });
 
+    $("simpleEodImportPdfBtn").addEventListener("click", () => {
+        $("simpleEodImportPdfInput").click();
+    });
+
+    $("simpleEodImportPdfInput").addEventListener("change", event => {
+        importMaintenancePdfFiles(event.target.files).catch(error => {
+            console.error(error);
+            showMessage("PDF import failed.", "error");
+        });
+    });
+
     $("simpleEodSaveBtn").addEventListener("click", () => {
         saveWorkingDraftToDrafts().catch(error => {
             console.error(error);
@@ -9153,6 +10589,10 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
     loadDraft();
 })();
 </script>
+
+<!-- PDF import libraries -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 </body>
