@@ -5598,7 +5598,7 @@
 </style>
 
 
-    <link rel="stylesheet" href="./style.css?v=20260901-masterlist-google-sheets-1">
+    <link rel="stylesheet" href="./style.css?v=20260901-masterlist-v2-1">
 
 <style id="edrCriticalStyles">
 /* =========================================================
@@ -9248,6 +9248,355 @@ body.dark-mode .master-sticky {
     }
 }
 </style>
+<style id="masterlistV2Critical">
+
+/* =========================================================
+   MASTERLIST V2 — FULL TRACKER / HR / CAMPAIGN GUIDE
+   ========================================================= */
+
+.masterlist-v2-shell {
+    max-width: 1320px !important;
+}
+
+.masterlist-mini-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.master-mini-note {
+    min-height: 310px;
+}
+
+.master-wide-note {
+    min-height: auto !important;
+    margin-bottom: 12px;
+}
+
+.master-sticky-orange {
+    background: #ffe6b9;
+    color: #52391a;
+}
+
+.master-sticky-teal {
+    background: #d7f1ed;
+    color: #214b45;
+}
+
+.master-note-sub {
+    margin: -2px 0 11px;
+    color: inherit;
+    opacity: .70;
+    font: 600 8.8px/1.45 "Inter", "Roboto", Arial, sans-serif;
+}
+
+.master-table-wrap {
+    width: 100%;
+    max-height: 410px;
+    overflow: auto;
+    border: 1px solid rgba(15,23,42,.10);
+    border-radius: 7px;
+    background: rgba(255,255,255,.23);
+}
+
+.master-data-monitor-wrap {
+    max-height: 520px;
+}
+
+.master-data-table {
+    width: max-content;
+    min-width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    color: inherit;
+    font: 600 8.4px/1.35 "Inter", "Roboto", Arial, sans-serif;
+}
+
+.master-data-table th,
+.master-data-table td {
+    padding: 6px 7px;
+    border-right: 1px solid rgba(15,23,42,.08);
+    border-bottom: 1px solid rgba(15,23,42,.08);
+    text-align: left;
+    vertical-align: top;
+    white-space: nowrap;
+}
+
+.master-data-table th {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: rgba(255,255,255,.72);
+    font-weight: 850;
+}
+
+.master-data-table td:last-child,
+.master-data-table th:last-child {
+    border-right: 0;
+}
+
+.master-empty-cell {
+    padding: 16px !important;
+    text-align: center !important;
+    opacity: .6;
+}
+
+.master-site-map {
+    display: grid;
+    gap: 10px;
+}
+
+.master-site-section {
+    padding: 10px;
+    border: 1px solid rgba(15,23,42,.09);
+    border-radius: 8px;
+    background: rgba(255,255,255,.25);
+}
+
+.master-site-title {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 8px;
+    padding-bottom: 7px;
+    border-bottom: 1px dashed rgba(15,23,42,.15);
+}
+
+.master-site-title strong {
+    font: 900 11px/1.2 "Inter", sans-serif;
+    letter-spacing: .04em;
+}
+
+.master-site-title span {
+    font: 700 8px/1.2 "Inter", sans-serif;
+    opacity: .62;
+}
+
+.master-om-note-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.master-om-note {
+    min-width: 0;
+    padding: 9px;
+    border: 1px solid rgba(15,23,42,.09);
+    border-radius: 7px;
+    background: rgba(255,255,255,.36);
+    box-shadow: 0 2px 5px rgba(15,23,42,.04);
+}
+
+.master-om-note-head {
+    margin-bottom: 7px;
+}
+
+.master-om-note-head strong {
+    font: 850 10px/1.3 "Inter", sans-serif;
+}
+
+.master-om-note-label {
+    margin: 7px 0 4px;
+    font: 850 7.2px/1.15 "Inter", sans-serif;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    opacity: .55;
+}
+
+.master-om-hr-list {
+    display: grid;
+    gap: 4px;
+}
+
+.master-om-hr-line {
+    display: flex;
+    align-items: baseline;
+    gap: 5px;
+    flex-wrap: wrap;
+    font: 650 8.4px/1.35 "Inter", sans-serif;
+}
+
+.master-om-hr-line strong {
+    font-weight: 800;
+}
+
+.master-om-hr-line span {
+    opacity: .64;
+    font-size: 7.8px;
+}
+
+.master-om-tls {
+    margin-top: 6px;
+    font: 600 8px/1.35 "Inter", sans-serif;
+    opacity: .72;
+}
+
+.master-om-tls span {
+    font-weight: 850;
+}
+
+.master-campaign-pills {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+}
+
+.master-campaign-pill {
+    display: inline-flex;
+    align-items: center;
+    min-height: 21px;
+    padding: 3px 6px;
+    border: 1px solid rgba(15,23,42,.08);
+    border-radius: 999px;
+    background: rgba(255,255,255,.38);
+    font: 700 7.4px/1 "Inter", sans-serif;
+}
+
+.master-muted-line {
+    font: 600 8px/1.3 "Inter", sans-serif;
+    opacity: .55;
+}
+
+.site-note-yellow { background: rgba(255,247,199,.46); }
+.site-note-blue { background: rgba(220,239,255,.48); }
+.site-note-green { background: rgba(221,245,223,.48); }
+.site-note-pink { background: rgba(255,228,236,.48); }
+.site-note-purple { background: rgba(238,227,255,.48); }
+.site-note-peach { background: rgba(255,230,207,.48); }
+.site-note-gray { background: rgba(226,232,240,.34); }
+
+.master-hr-editor {
+    display: grid;
+    grid-template-columns: 150px minmax(180px, .9fr) minmax(180px, .9fr) minmax(220px, 1.1fr) auto;
+    gap: 7px;
+    align-items: end;
+    margin-bottom: 8px;
+    padding: 9px;
+    border: 1px dashed rgba(15,23,42,.14);
+    border-radius: 8px;
+    background: rgba(255,255,255,.22);
+}
+
+.master-hr-editor label > span {
+    display: block;
+    margin-bottom: 4px;
+    font: 800 7.4px/1.1 "Inter", sans-serif;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    opacity: .58;
+}
+
+.master-hr-editor input {
+    width: 100%;
+    box-sizing: border-box;
+    min-height: 34px;
+    padding: 6px 8px;
+    border: 1px solid rgba(15,23,42,.13);
+    border-radius: 6px;
+    background: rgba(255,255,255,.45);
+    color: inherit;
+    font: 650 8.5px/1.2 "Inter", sans-serif;
+}
+
+.master-hr-editor-actions {
+    display: flex;
+    gap: 5px;
+}
+
+.master-hr-editor-actions button {
+    min-height: 34px !important;
+    white-space: nowrap;
+}
+
+.master-hr-save-status {
+    min-height: 16px;
+    margin: 0 0 7px;
+    font: 700 8px/1.3 "Inter", sans-serif;
+    opacity: .7;
+}
+
+.master-hr-save-status.is-success { color: #047857; opacity: 1; }
+.master-hr-save-status.is-error { color: #b91c1c; opacity: 1; }
+.master-hr-save-status.is-local { color: #a16207; opacity: 1; }
+
+.master-row-actions {
+    display: flex;
+    gap: 4px;
+}
+
+.master-edit-hr-btn,
+.master-delete-hr-btn {
+    min-height: 25px;
+    padding: 4px 6px;
+    border-radius: 5px;
+    background: rgba(255,255,255,.42);
+    color: inherit;
+    font: 800 7.2px/1 "Inter", sans-serif;
+    cursor: pointer;
+}
+
+.master-edit-hr-btn {
+    border: 1px solid rgba(37,99,235,.25);
+}
+
+.master-delete-hr-btn {
+    border: 1px solid rgba(220,38,38,.25);
+    color: #b91c1c;
+}
+
+.master-email-guide pre {
+    margin: 0;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    color: inherit;
+    font: 600 8.8px/1.5 "Inter", "Roboto", Arial, sans-serif;
+}
+
+body.dark-mode .master-wide-note,
+body.dark-mode .master-mini-note {
+    filter: saturate(.75) brightness(.74);
+}
+
+body.dark-mode .master-data-table th {
+    background: rgba(15,23,42,.78);
+}
+
+@media (max-width: 1050px) {
+    .master-om-note-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .master-hr-editor {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .master-hr-editor-actions {
+        grid-column: 1 / -1;
+        justify-content: flex-end;
+    }
+}
+
+@media (max-width: 760px) {
+    .masterlist-mini-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .master-om-note-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .master-hr-editor {
+        grid-template-columns: 1fr;
+    }
+
+    .master-hr-editor-actions {
+        grid-column: auto;
+        justify-content: flex-start;
+    }
+}
+</style>
 </head>
 <body>
 
@@ -9775,14 +10124,15 @@ body.dark-mode .master-sticky {
 </section>
 
 
+
 <section id="masterlistPanel" class="app-tab-panel" role="tabpanel" aria-labelledby="masterlistTabBtn">
-    <div class="container masterlist-shell">
+    <div class="container masterlist-shell masterlist-v2-shell">
         <div class="masterlist-page-head">
             <div>
-                <h2>Masterlist Guide</h2>
+                <h2>Masterlist & HR Guide</h2>
                 <p class="page-lead">
-                    Live reference from your Google Sheets tracker. OM, Team Leaders, Campaigns, HR sites,
-                    assigned HR, and email guides update automatically.
+                    Live guide from Tracker, Master List, and Data. Monitor Pending Miles, see every campaign under its OM,
+                    and keep the HR assignment guide in one place.
                 </p>
             </div>
 
@@ -9794,7 +10144,7 @@ body.dark-mode .master-sticky {
         <div class="masterlist-sync-bar">
             <div>
                 <strong id="masterlistSyncTitle">Connecting to Google Sheets...</strong>
-                <span id="masterlistSyncDetail">Loading masterlist data.</span>
+                <span id="masterlistSyncDetail">Loading Tracker, Master List, and Data.</span>
             </div>
             <span id="masterlistLastUpdated">Not synced yet</span>
         </div>
@@ -9802,13 +10152,13 @@ body.dark-mode .master-sticky {
         <div class="masterlist-search-row">
             <input type="search"
                    id="masterlistSearch"
-                   placeholder="Search OM, TL, campaign, HR, site, email guide..."
+                   placeholder="Search OM, TL, campaign, HR, site, agent, remarks..."
                    autocomplete="off">
             <button type="button" class="edr-outline-btn" id="masterlistClearSearch">Clear</button>
         </div>
 
-        <div class="masterlist-sticky-grid" id="masterlistStickyGrid">
-            <section class="master-sticky master-sticky-yellow" data-section="oms">
+        <div class="masterlist-mini-grid">
+            <section class="master-sticky master-sticky-yellow master-mini-note">
                 <div class="master-sticky-head">
                     <div>
                         <span class="master-sticky-kicker">Reference</span>
@@ -9821,7 +10171,7 @@ body.dark-mode .master-sticky {
                 </div>
             </section>
 
-            <section class="master-sticky master-sticky-blue" data-section="tls">
+            <section class="master-sticky master-sticky-blue master-mini-note">
                 <div class="master-sticky-head">
                     <div>
                         <span class="master-sticky-kicker">Reference</span>
@@ -9834,7 +10184,7 @@ body.dark-mode .master-sticky {
                 </div>
             </section>
 
-            <section class="master-sticky master-sticky-green" data-section="campaigns">
+            <section class="master-sticky master-sticky-green master-mini-note">
                 <div class="master-sticky-head">
                     <div>
                         <span class="master-sticky-kicker">Reference</span>
@@ -9846,49 +10196,147 @@ body.dark-mode .master-sticky {
                     <div class="master-empty">Loading...</div>
                 </div>
             </section>
-
-            <section class="master-sticky master-sticky-pink" data-section="hrSites">
-                <div class="master-sticky-head">
-                    <div>
-                        <span class="master-sticky-kicker">HR Guide</span>
-                        <h3>HR Sites</h3>
-                    </div>
-                    <span class="master-sticky-count" id="masterHrSiteCount">0</span>
-                </div>
-                <div class="master-sticky-body" id="masterHrSiteList">
-                    <div class="master-empty">Loading...</div>
-                </div>
-            </section>
-
-            <section class="master-sticky master-sticky-purple master-sticky-wide" data-section="assignedHr">
-                <div class="master-sticky-head">
-                    <div>
-                        <span class="master-sticky-kicker">HR Guide</span>
-                        <h3>Assigned HR per OM</h3>
-                    </div>
-                    <span class="master-sticky-count" id="masterAssignedHrCount">0</span>
-                </div>
-                <div class="master-sticky-body master-assigned-body" id="masterAssignedHrList">
-                    <div class="master-empty">Loading...</div>
-                </div>
-            </section>
-
-            <section class="master-sticky master-sticky-peach master-sticky-wide" data-section="emailGuide">
-                <div class="master-sticky-head">
-                    <div>
-                        <span class="master-sticky-kicker">Copy & Paste</span>
-                        <h3>Email Guide</h3>
-                    </div>
-                    <span class="master-sticky-count" id="masterEmailGuideCount">0</span>
-                </div>
-                <div class="master-sticky-body master-email-body" id="masterEmailGuideList">
-                    <div class="master-empty">Loading...</div>
-                </div>
-            </section>
         </div>
 
+        <section class="master-sticky master-sticky-orange master-wide-note master-pending-note">
+            <div class="master-sticky-head">
+                <div>
+                    <span class="master-sticky-kicker">Tracker Monitor</span>
+                    <h3>Pending Miles</h3>
+                </div>
+                <span class="master-sticky-count" id="masterPendingMilesCount">0</span>
+            </div>
+
+            <div class="master-note-sub">
+                All Tracker rows where <strong>Name = Miles</strong> and <strong>NOC = Pending</strong>.
+            </div>
+
+            <div class="master-table-wrap">
+                <table class="master-data-table" id="masterPendingMilesTable">
+                    <thead></thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="master-sticky master-sticky-purple master-wide-note master-hr-map-note">
+            <div class="master-sticky-head">
+                <div>
+                    <span class="master-sticky-kicker">HR + Operations Guide</span>
+                    <h3>OM / HR / Campaign Map</h3>
+                </div>
+                <span class="master-sticky-count" id="masterOmCampaignCount">0</span>
+            </div>
+
+            <div class="master-note-sub">
+                Grouped by site. Each OM card shows the assigned HR and all campaigns/accounts found under that OM in the live tracker.
+            </div>
+
+            <div id="masterOmCampaignMap" class="master-site-map">
+                <div class="master-empty">Loading...</div>
+            </div>
+        </section>
+
+        <section class="master-sticky master-sticky-pink master-wide-note">
+            <div class="master-sticky-head">
+                <div>
+                    <span class="master-sticky-kicker">Editable HR Guide</span>
+                    <h3>Assigned HR per Site / OM</h3>
+                </div>
+                <span class="master-sticky-count" id="masterAssignedHrCount">0</span>
+            </div>
+
+            <div class="master-note-sub">
+                You can add or update an HR assignment here. With the upgraded Apps Script, changes are saved back to Google Sheets.
+                Until then, edits are safely kept on this browser.
+            </div>
+
+            <div class="master-hr-editor">
+                <input type="hidden" id="masterHrEditId">
+
+                <label>
+                    <span>Site</span>
+                    <input type="text" id="masterHrSiteInput" placeholder="MABINI, DIGOS, ECOLAND...">
+                </label>
+
+                <label>
+                    <span>OM / Team</span>
+                    <input type="text" id="masterHrOmInput" placeholder="Team Mirah / OM Jordan">
+                </label>
+
+                <label>
+                    <span>HR Assignee</span>
+                    <input type="text" id="masterHrAssigneeInput" placeholder="HR name">
+                </label>
+
+                <label class="master-hr-remarks-field">
+                    <span>Remarks / Campaign Scope</span>
+                    <input type="text" id="masterHrRemarksInput" placeholder="Optional: Superdial, FBB, Shopee...">
+                </label>
+
+                <div class="master-hr-editor-actions">
+                    <button type="button" class="edr-primary-btn" id="masterHrSaveBtn">Add Assignment</button>
+                    <button type="button" class="edr-outline-btn" id="masterHrCancelBtn">Clear</button>
+                </div>
+            </div>
+
+            <div id="masterHrSaveStatus" class="master-hr-save-status"></div>
+
+            <div class="master-table-wrap master-hr-table-wrap">
+                <table class="master-data-table master-hr-table">
+                    <thead>
+                        <tr>
+                            <th>Site</th>
+                            <th>OM / Team</th>
+                            <th>HR Assignee</th>
+                            <th>Remarks</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="masterAssignedHrList"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="master-sticky master-sticky-teal master-wide-note">
+            <div class="master-sticky-head">
+                <div>
+                    <span class="master-sticky-kicker">Live Data</span>
+                    <h3>Data Monitor</h3>
+                </div>
+                <span class="master-sticky-count" id="masterDataCount">0</span>
+            </div>
+
+            <div class="master-note-sub">
+                Live rows from the <strong>Data</strong> tab. This follows your 5-minute auto-refresh and manual Refresh button.
+            </div>
+
+            <div class="master-table-wrap master-data-monitor-wrap">
+                <table class="master-data-table" id="masterDataMonitorTable">
+                    <thead></thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="master-sticky master-sticky-peach master-wide-note">
+            <div class="master-sticky-head">
+                <div>
+                    <span class="master-sticky-kicker">Copy & Paste</span>
+                    <h3>Email Guide</h3>
+                </div>
+                <span class="master-sticky-count" id="masterEmailGuideCount">0</span>
+            </div>
+
+            <div id="masterEmailGuideList" class="master-email-body">
+                <div class="master-empty">
+                    The current API only exposes the first table headers. Install the supplied Apps Script v2 once so the website can also scan the full Master List / Data grid for email templates.
+                </div>
+            </div>
+        </section>
+
         <div class="masterlist-source-note">
-            Auto-refreshes every 5 minutes while this page is open.
+            Auto-refreshes every 5 minutes while the website is open.
         </div>
     </div>
 </section>
@@ -18791,18 +19239,66 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
 (function () {
     const API_URL = 'https://script.google.com/macros/s/AKfycbw2-7ERz3psAaUfsceoFHV6leNmqFf5HxgasRYORMHU8bbnte7DLbDIfX_YzjRrzMZh/exec';
     const REFRESH_MS = 5 * 60 * 1000;
-    const CACHE_DB = "cctv_masterlist_cache_v1";
+    const CACHE_DB = "cctv_masterlist_cache_v2";
     const CACHE_STORE = "state";
     const CACHE_KEY = "latest";
+    const LOCAL_HR_KEY = "cctv_masterlist_hr_overrides_v2";
+
+    const SEED_HR = [
+        { id: "seed_1", site: 'MABINI', omTeam: 'Team Mirah', hr: 'HR Geselle Merencillo', remarks: 'Superdial', source: "seed" },
+        { id: "seed_2", site: 'MABINI', omTeam: 'Team Irene', hr: 'Angelika Felasol', remarks: 'AFP, GLO, GREENFOOT', source: "seed" },
+        { id: "seed_3", site: 'MABINI', omTeam: 'Team Irene (BIGO)', hr: 'Rhea Picot', remarks: '', source: "seed" },
+        { id: "seed_4", site: 'MABINI', omTeam: 'Team Mogan', hr: 'Allen Valdez', remarks: '', source: "seed" },
+        { id: "seed_5", site: 'MABINI', omTeam: 'Team Joneza', hr: 'Angelika Felasol', remarks: 'FBB', source: "seed" },
+        { id: "seed_6", site: 'MABINI', omTeam: 'Team Renato', hr: 'Geselle Merencillo', remarks: '', source: "seed" },
+        { id: "seed_7", site: 'MABINI', omTeam: 'Team Jordan', hr: 'Marie Peralta / Shyra Rendon', remarks: 'Shared assignment', source: "seed" },
+        { id: "seed_8", site: 'MABINI', omTeam: 'Team Crystal', hr: 'Geselle Merencillo', remarks: '', source: "seed" },
+        { id: "seed_9", site: 'DIGOS', omTeam: 'OM Jordan', hr: 'Alliah Alisoso', remarks: '', source: "seed" },
+        { id: "seed_10", site: 'DIGOS', omTeam: 'OM Cherry', hr: 'Alliah Alisoso', remarks: '', source: "seed" },
+        { id: "seed_11", site: 'DIGOS', omTeam: 'OM Shayne', hr: 'Joven Jay Bauden', remarks: '', source: "seed" },
+        { id: "seed_12", site: 'DIGOS', omTeam: 'OM Mirah', hr: 'Gleecille Goles', remarks: '', source: "seed" },
+        { id: "seed_13", site: 'DIGOS', omTeam: 'OM Freda', hr: 'Gleecille Goles', remarks: '', source: "seed" },
+        { id: "seed_14", site: 'ECOLAND', omTeam: 'OM Rhelford', hr: 'Reena Coralde', remarks: 'DLPC Norderco', source: "seed" },
+        { id: "seed_15", site: 'ECOLAND', omTeam: 'OM Rhelford', hr: 'Trisha Diane Kwan', remarks: 'UMG (Transfer to EOR - Angel Jomolo)', source: "seed" },
+        { id: "seed_16", site: 'ECOLAND', omTeam: 'OM Rhelford', hr: 'Elaiza Jane Panes', remarks: 'Special Hires (Transfer to EOR - Angel Jomolo)', source: "seed" },
+        { id: "seed_17", site: 'ECOLAND', omTeam: 'OM Thirdie', hr: 'Kimberly Sueta', remarks: 'BIGO Ecoland', source: "seed" },
+        { id: "seed_18", site: 'GENSAN', omTeam: 'Team Abby', hr: 'Phoebe Bularon', remarks: '', source: "seed" },
+        { id: "seed_19", site: 'GENSAN', omTeam: 'Team Mirah', hr: 'Marian Malinao', remarks: '', source: "seed" },
+        { id: "seed_20", site: 'GENSAN', omTeam: 'Team Willy', hr: 'Marian Malinao', remarks: '', source: "seed" },
+        { id: "seed_21", site: 'GENSAN', omTeam: 'Team Irene', hr: 'Marian Malinao', remarks: '', source: "seed" },
+        { id: "seed_22", site: 'GENSAN', omTeam: 'Team Michelle', hr: 'Marian Malinao', remarks: '', source: "seed" },
+        { id: "seed_23", site: 'MAA', omTeam: 'Team MJ', hr: 'Gerald Calfoforo', remarks: 'Shopee', source: "seed" },
+        { id: "seed_24", site: 'MAA', omTeam: 'Team Mark', hr: 'Judelaine Mae Bacus', remarks: 'Shopee', source: "seed" },
+        { id: "seed_25", site: 'MAA', omTeam: 'Team James', hr: 'Khristine Cate Lumayag', remarks: 'Shopee', source: "seed" },
+        { id: "seed_26", site: 'MAA', omTeam: 'TD', hr: 'Shania', remarks: '', source: "seed" },
+        { id: "seed_27", site: 'MAA', omTeam: 'OM Willy', hr: 'Jodels Pantonial (HL)', remarks: '', source: "seed" },
+        { id: "seed_28", site: 'MAA', omTeam: 'OM Norman', hr: 'Elsy Mae Villarino', remarks: '', source: "seed" },
+        { id: "seed_29", site: 'MAA', omTeam: 'OM Derline', hr: 'John Albert Golosino', remarks: '', source: "seed" },
+        { id: "seed_30", site: 'MAA', omTeam: 'OM Michelle', hr: 'Annie Mae Tomanggong', remarks: 'Shared with OM Elezalde', source: "seed" },
+        { id: "seed_31", site: 'MAA', omTeam: 'OM Elezalde', hr: 'Annie Mae Tomanggong', remarks: 'Shared with OM Michelle', source: "seed" },
+        { id: "seed_32", site: 'MAA', omTeam: 'OM Cherry', hr: 'Keycee Selerio', remarks: 'EIMS', source: "seed" },
+        { id: "seed_33", site: 'MAA', omTeam: 'OM Shiela', hr: 'Cherry Ann Ordeniza', remarks: '', source: "seed" },
+        { id: "seed_34", site: 'MAA', omTeam: 'NVT', hr: 'Cherry Ann Ordeniza', remarks: '', source: "seed" },
+        { id: "seed_35", site: 'MAA', omTeam: 'OM Beth', hr: 'Cherry Ann Ordeniza', remarks: 'EDJ, AIRBILLS, WIZAI', source: "seed" },
+        { id: "seed_36", site: 'MAA', omTeam: 'OM Frederick', hr: 'Anne Kimberly Briones', remarks: 'Support Group', source: "seed" },
+        { id: "seed_37", site: 'CDO', omTeam: 'Team Shey', hr: 'Johairah Sanggacala', remarks: 'Admin Support', source: "seed" },
+        { id: "seed_38", site: 'CDO', omTeam: 'Team Mirah', hr: 'Queen Dibbie Barros', remarks: '', source: "seed" },
+        { id: "seed_39", site: 'CDO', omTeam: 'Team Norman', hr: 'Queen Dibbie Barros', remarks: '', source: "seed" },
+        { id: "seed_40", site: 'CDO', omTeam: 'Team Daniel', hr: 'Queen Dibbie Barros', remarks: '', source: "seed" },
+        { id: "seed_41", site: 'CDO', omTeam: 'Support Group', hr: 'Queen Dibbie Barros', remarks: '', source: "seed" }
+    ];
 
     let payload = null;
+    let localHr = loadLocalHr();
     let derived = {
         oms: [],
         tls: [],
         campaigns: [],
-        hrSites: [],
-        assignedHr: [],
-        emailGuide: []
+        pendingMiles: [],
+        dataRows: [],
+        assignments: [],
+        omCampaignGroups: [],
+        emailGuides: []
     };
 
     const $ = id => document.getElementById(id);
@@ -18832,350 +19328,687 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
     }
 
     function unique(values) {
-        return [...new Set(
-            values
-                .map(clean)
-                .filter(Boolean)
-        )].sort((a, b) => a.localeCompare(b));
+        return [...new Set(values.map(clean).filter(Boolean))]
+            .sort((a, b) => a.localeCompare(b));
     }
 
-    function rowsFrom(sheetName) {
-        const direct = payload?.[sheetName];
+    function rowsFrom(name) {
+        const direct = payload?.[name];
         if (Array.isArray(direct)) return direct;
 
-        const nested = payload?.sheets?.[sheetName]?.rows;
+        const nested = payload?.sheets?.[name]?.rows;
         return Array.isArray(nested) ? nested : [];
     }
 
-    function allRows() {
-        return [
-            ...rowsFrom("masterList"),
-            ...rowsFrom("data"),
-            ...rowsFrom("tracker")
-        ];
+    function gridFrom(name) {
+        const nested = payload?.sheets?.[name]?.grid;
+        return Array.isArray(nested) ? nested : [];
     }
 
-    function guideRows() {
-        return [
-            ...rowsFrom("masterList"),
-            ...rowsFrom("data")
-        ];
+    function webHrRows() {
+        const direct = payload?.webHrAssignments;
+        if (Array.isArray(direct)) return direct;
+
+        const nested = payload?.sheets?.webHrAssignments?.rows;
+        return Array.isArray(nested) ? nested : [];
     }
 
-    function matchingKeys(row, matcher) {
-        return Object.keys(row || {})
-            .filter(key => matcher(norm(key), key));
+    function keyMatch(key, aliases) {
+        const n = norm(key);
+        return aliases.some(alias => n === alias || n.includes(alias));
     }
 
-    function valuesFromRows(rows, matcher) {
-        const out = [];
+    function rowVal(row, aliases) {
+        if (!row || typeof row !== "object") return "";
 
-        rows.forEach(row => {
-            matchingKeys(row, matcher).forEach(key => {
-                const value = clean(row[key]);
-                if (value) out.push(value);
-            });
-        });
-
-        return unique(out);
-    }
-
-    function firstValue(row, matcher) {
-        const key = Object.keys(row || {})
-            .find(key => matcher(norm(key), key));
+        const key = Object.keys(row).find(k =>
+            keyMatch(k, aliases)
+        );
 
         return key ? clean(row[key]) : "";
     }
 
-    function isOmKey(key) {
-        return (
-            key === "om" ||
-            key === "om name" ||
-            key === "operations manager" ||
-            key.includes("operations manager")
+    function trackerName(row) {
+        return rowVal(row, ["name"]);
+    }
+
+    function trackerOm(row) {
+        return rowVal(row, ["om", "om name", "operations manager"]);
+    }
+
+    function trackerTl(row) {
+        return rowVal(row, ["tl", "tl name", "team leader"]);
+    }
+
+    function trackerAccount(row) {
+        return rowVal(row, ["account", "campaign"]);
+    }
+
+    function trackerSite(row) {
+        return rowVal(row, ["site"]);
+    }
+
+    function trackerNoc(row) {
+        return rowVal(row, ["noc"]);
+    }
+
+    function normalizeSite(value) {
+        const n = norm(value).toUpperCase();
+
+        if (!n) return "UNSPECIFIED";
+        if (n.includes("MABINI")) return "MABINI";
+        if (n.includes("ECOLAND")) return "ECOLAND";
+        if (n.includes("DIGOS")) return "DIGOS";
+        if (n.includes("GENSAN") || n.includes("GENERAL SANTOS")) return "GENSAN";
+        if (n === "MAA" || n.includes(" MAA") || n.includes("MAA SITE")) return "MAA";
+        if (n.includes("CDO") || n.includes("CAGAYAN DE ORO")) return "CDO";
+
+        return clean(value).toUpperCase();
+    }
+
+    function normalizeOmTeam(value) {
+        return norm(value)
+            .replace(/^team\s+/, "")
+            .replace(/^om\s+/, "")
+            .replace(/\s+\(bigo\)$/, "")
+            .trim();
+    }
+
+    function loadLocalHr() {
+        try {
+            const parsed = JSON.parse(localStorage.getItem(LOCAL_HR_KEY) || "[]");
+            return Array.isArray(parsed) ? parsed : [];
+        } catch (_) {
+            return [];
+        }
+    }
+
+    function saveLocalHr() {
+        localStorage.setItem(LOCAL_HR_KEY, JSON.stringify(localHr));
+    }
+
+    function parseApiHrRows() {
+        return webHrRows().map((row, index) => ({
+            id: rowVal(row, ["id"]) || `api_${index}`,
+            site: rowVal(row, ["site"]),
+            omTeam: rowVal(row, ["om / team", "om team", "om", "team"]),
+            hr: rowVal(row, ["hr assignee", "assigned hr", "hr"]),
+            remarks: rowVal(row, ["remarks", "remark"]),
+            source: "api"
+        })).filter(item => item.site && item.omTeam && item.hr);
+    }
+
+    function extractHrFromGrid(grid) {
+        if (!Array.isArray(grid) || !grid.length) return [];
+
+        const out = [];
+
+        for (let r = 0; r < grid.length; r++) {
+            const header = (grid[r] || []).map(cell => norm(cell));
+
+            const siteIdx = header.findIndex(v => v === "site" || v === "hr site");
+            const omIdx = header.findIndex(v =>
+                v === "om / team" ||
+                v === "om team" ||
+                v === "om" ||
+                v === "team" ||
+                v.includes("om / team")
+            );
+            const hrIdx = header.findIndex(v =>
+                v === "hr assignee" ||
+                v === "assigned hr" ||
+                v === "hr assigned" ||
+                v === "hr"
+            );
+            const remarksIdx = header.findIndex(v =>
+                v === "remarks" || v === "remark"
+            );
+
+            if (siteIdx < 0 || omIdx < 0 || hrIdx < 0) continue;
+
+            let blankStreak = 0;
+
+            for (let rr = r + 1; rr < grid.length; rr++) {
+                const row = grid[rr] || [];
+                const site = clean(row[siteIdx]);
+                const omTeam = clean(row[omIdx]);
+                const hr = clean(row[hrIdx]);
+                const remarks = remarksIdx >= 0 ? clean(row[remarksIdx]) : "";
+
+                if (!site && !omTeam && !hr && !remarks) {
+                    blankStreak++;
+                    if (blankStreak >= 2) break;
+                    continue;
+                }
+
+                blankStreak = 0;
+
+                if (site && omTeam && hr) {
+                    out.push({
+                        id: `grid_${r}_${rr}`,
+                        site,
+                        omTeam,
+                        hr,
+                        remarks,
+                        source: "grid"
+                    });
+                }
+            }
+        }
+
+        return out;
+    }
+
+    function assignmentKey(item) {
+        return [
+            normalizeSite(item.site),
+            normalizeOmTeam(item.omTeam),
+            norm(item.remarks)
+        ].join("|");
+    }
+
+    function mergedAssignments() {
+        const fromGrid = [
+            ...extractHrFromGrid(gridFrom("masterList")),
+            ...extractHrFromGrid(gridFrom("data"))
+        ];
+
+        const all = [
+            ...SEED_HR,
+            ...fromGrid,
+            ...parseApiHrRows(),
+            ...localHr
+        ];
+
+        const map = new Map();
+
+        all.forEach(item => {
+            if (!item.site || !item.omTeam || !item.hr) return;
+
+            const key = assignmentKey(item);
+            const old = map.get(key);
+
+            // Priority: local > api > grid > seed.
+            const rank = { seed: 1, grid: 2, api: 3, local: 4 };
+            if (!old || (rank[item.source] || 0) >= (rank[old.source] || 0)) {
+                map.set(key, { ...item });
+            }
+        });
+
+        return [...map.values()].sort((a, b) =>
+            normalizeSite(a.site).localeCompare(normalizeSite(b.site)) ||
+            normalizeOmTeam(a.omTeam).localeCompare(normalizeOmTeam(b.omTeam))
         );
     }
 
-    function isTlKey(key) {
-        return (
-            key === "tl" ||
-            key === "tl name" ||
-            key === "team leader" ||
-            key === "team leader name" ||
-            key.includes("team leader")
+    function findAssignments(site, om) {
+        const siteKey = normalizeSite(site);
+        const omKey = normalizeOmTeam(om);
+
+        return derived.assignments.filter(item =>
+            normalizeSite(item.site) === siteKey &&
+            normalizeOmTeam(item.omTeam) === omKey
         );
     }
 
-    function isCampaignKey(key) {
-        return (
-            key === "account" ||
-            key === "campaign" ||
-            key === "account campaign" ||
-            key.includes("campaign") ||
-            key.includes("account")
-        );
+    function extractEmailGuidesFromGrid(grid, sourceName) {
+        if (!Array.isArray(grid) || !grid.length) return [];
+
+        const guides = [];
+
+        for (let r = 0; r < grid.length; r++) {
+            const row = grid[r] || [];
+            const joined = row.map(clean).filter(Boolean).join(" | ");
+            const n = norm(joined);
+
+            if (!(
+                n.includes("email guide") ||
+                n.includes("email template") ||
+                n.includes("email subject") ||
+                n.startsWith("subject ") ||
+                n.includes("subject:")
+            )) continue;
+
+            const lines = [];
+
+            for (let rr = r; rr < Math.min(grid.length, r + 10); rr++) {
+                const text = (grid[rr] || []).map(clean).filter(Boolean).join(" | ");
+                if (!text) {
+                    if (lines.length) break;
+                    continue;
+                }
+
+                lines.push(text);
+            }
+
+            if (lines.length) {
+                guides.push({
+                    id: `${sourceName}_${r}`,
+                    title: lines[0],
+                    text: lines.join("\n")
+                });
+            }
+        }
+
+        return guides;
     }
 
-    function isHrSiteKey(key) {
-        return (
-            (key.includes("hr") && key.includes("site")) ||
-            key === "hr location" ||
-            key === "hr office"
-        );
-    }
-
-    function isHrPersonKey(key) {
-        return (
-            (
-                key === "hr" ||
-                key === "hr name" ||
-                key === "assigned hr" ||
-                key === "hr assigned" ||
-                key.includes("assigned hr") ||
-                key.includes("hr representative") ||
-                key.includes("hr personnel")
-            ) &&
-            !key.includes("site") &&
-            !key.includes("email")
-        );
-    }
-
-    function isHrEmailKey(key) {
-        return (
-            key.includes("hr") &&
-            key.includes("email")
-        );
-    }
-
-    function isSiteKey(key) {
-        return (
-            key === "site" ||
-            key === "hr site" ||
-            key.includes("site")
-        );
-    }
-
-    function emailGuideRows(rows) {
-        const results = [];
+    function objectEmailGuides(rows, sourceName) {
+        const out = [];
 
         rows.forEach((row, index) => {
-            const guideKeys = Object.keys(row || {}).filter(rawKey => {
-                const key = norm(rawKey);
-                return (
-                    key.includes("email guide") ||
-                    key.includes("email template") ||
-                    key === "subject" ||
-                    key.includes("email subject") ||
-                    key.includes("email body") ||
-                    key === "body" ||
-                    key.includes("message template") ||
-                    key.includes("email message")
-                );
-            });
-
-            if (!guideKeys.length) return;
-
             const parts = [];
 
-            guideKeys.forEach(key => {
-                const value = clean(row[key]);
-                if (!value) return;
+            Object.entries(row || {}).forEach(([key, value]) => {
+                const k = norm(key);
+                const v = clean(value);
 
-                const label = clean(key);
-                parts.push({
-                    label,
-                    value
+                if (!v) return;
+
+                if (
+                    k.includes("email guide") ||
+                    k.includes("email template") ||
+                    k.includes("email subject") ||
+                    k === "subject" ||
+                    k.includes("email body") ||
+                    k === "body"
+                ) {
+                    parts.push(`${key}: ${v}`);
+                }
+            });
+
+            if (parts.length) {
+                out.push({
+                    id: `${sourceName}_obj_${index}`,
+                    title: `Email Guide ${out.length + 1}`,
+                    text: parts.join("\n\n")
                 });
-            });
-
-            if (!parts.length) return;
-
-            const title =
-                firstValue(row, k => k === "title" || k === "name" || k.includes("email guide name")) ||
-                `Email Guide ${results.length + 1}`;
-
-            results.push({
-                id: `email_${index}`,
-                title,
-                parts
-            });
+            }
         });
 
-        return results;
-    }
-
-    function assignedHrRows(rows) {
-        const results = [];
-
-        rows.forEach(row => {
-            const om = firstValue(row, isOmKey);
-            const hr = firstValue(row, isHrPersonKey);
-            const hrEmail = firstValue(row, isHrEmailKey);
-            const site =
-                firstValue(row, isHrSiteKey) ||
-                (
-                    (hr || hrEmail)
-                        ? firstValue(row, isSiteKey)
-                        : ""
-                );
-
-            if (!om || (!hr && !hrEmail && !site)) return;
-
-            results.push({
-                om,
-                hr,
-                hrEmail,
-                site
-            });
-        });
-
-        const seen = new Set();
-
-        return results
-            .filter(item => {
-                const key = [
-                    item.om,
-                    item.hr,
-                    item.hrEmail,
-                    item.site
-                ].map(norm).join("|");
-
-                if (seen.has(key)) return false;
-                seen.add(key);
-                return true;
-            })
-            .sort((a, b) => a.om.localeCompare(b.om));
+        return out;
     }
 
     function derive() {
-        const rows = allRows();
-        const guides = guideRows();
+        const tracker = rowsFrom("tracker");
+        const dataRows = rowsFrom("data");
 
-        const oms = valuesFromRows(rows, isOmKey);
-        const tls = valuesFromRows(rows, isTlKey);
-        const campaigns = valuesFromRows(rows, isCampaignKey);
+        const oms = unique([
+            ...tracker.map(trackerOm),
+            ...dataRows.map(trackerOm),
+            ...SEED_HR.map(item => normalizeOmTeam(item.omTeam))
+        ]);
 
-        let hrSites = valuesFromRows(guides, isHrSiteKey);
+        const tls = unique([
+            ...tracker.map(trackerTl),
+            ...dataRows.map(trackerTl)
+        ]);
 
-        const assignedHr = assignedHrRows(guides);
+        const campaigns = unique([
+            ...tracker.map(trackerAccount),
+            ...dataRows.map(trackerAccount)
+        ]);
 
-        if (!hrSites.length) {
-            hrSites = unique(
-                assignedHr
-                    .map(item => item.site)
-                    .filter(Boolean)
+        const pendingMiles = tracker.filter(row =>
+            norm(trackerName(row)) === "miles" &&
+            norm(trackerNoc(row)) === "pending"
+        );
+
+        const assignments = mergedAssignments();
+
+        const groupMap = new Map();
+
+        [...tracker, ...dataRows].forEach(row => {
+            const om = trackerOm(row);
+            const account = trackerAccount(row);
+            const site = trackerSite(row);
+
+            if (!om) return;
+
+            const siteKey = normalizeSite(site);
+            const omKey = normalizeOmTeam(om);
+            const key = `${siteKey}|${omKey}`;
+
+            if (!groupMap.has(key)) {
+                groupMap.set(key, {
+                    site: siteKey,
+                    om: clean(om),
+                    campaigns: new Set(),
+                    tls: new Set()
+                });
+            }
+
+            const group = groupMap.get(key);
+            if (account) group.campaigns.add(account);
+
+            const tl = trackerTl(row);
+            if (tl) group.tls.add(tl);
+        });
+
+        // Ensure HR assignments also appear even if there is no current tracker row.
+        assignments.forEach(item => {
+            const siteKey = normalizeSite(item.site);
+            const omKey = normalizeOmTeam(item.omTeam);
+            const key = `${siteKey}|${omKey}`;
+
+            if (!groupMap.has(key)) {
+                groupMap.set(key, {
+                    site: siteKey,
+                    om: clean(item.omTeam),
+                    campaigns: new Set(),
+                    tls: new Set()
+                });
+            }
+        });
+
+        const omCampaignGroups = [...groupMap.values()]
+            .map(group => ({
+                site: group.site,
+                om: group.om,
+                campaigns: [...group.campaigns].sort((a, b) => a.localeCompare(b)),
+                tls: [...group.tls].sort((a, b) => a.localeCompare(b))
+            }))
+            .sort((a, b) =>
+                a.site.localeCompare(b.site) ||
+                normalizeOmTeam(a.om).localeCompare(normalizeOmTeam(b.om))
             );
-        }
+
+        const emailGuides = [
+            ...objectEmailGuides(rowsFrom("masterList"), "masterList"),
+            ...objectEmailGuides(dataRows, "data"),
+            ...extractEmailGuidesFromGrid(gridFrom("masterList"), "Master List"),
+            ...extractEmailGuidesFromGrid(gridFrom("data"), "Data")
+        ];
+
+        const uniqueGuides = [];
+        const guideSeen = new Set();
+
+        emailGuides.forEach(guide => {
+            const key = norm(guide.text);
+            if (!key || guideSeen.has(key)) return;
+            guideSeen.add(key);
+            uniqueGuides.push(guide);
+        });
 
         derived = {
             oms,
             tls,
             campaigns,
-            hrSites,
-            assignedHr,
-            emailGuide: emailGuideRows(guides)
+            pendingMiles,
+            dataRows,
+            assignments,
+            omCampaignGroups,
+            emailGuides: uniqueGuides
         };
     }
 
     function listHtml(items) {
-        if (!items.length) {
-            return '<div class="master-empty">No matching data detected.</div>';
-        }
+        if (!items.length) return '<div class="master-empty">No data detected.</div>';
 
-        return items
-            .map(value => `
-                <div class="master-list-item" data-search="${esc(norm(value))}">
-                    ${esc(value)}
-                </div>
-            `)
-            .join("");
+        return items.map(value => `
+            <div class="master-list-item" data-search="${esc(norm(value))}">
+                ${esc(value)}
+            </div>
+        `).join("");
     }
 
-    function assignedHrHtml(items) {
-        if (!items.length) {
-            return '<div class="master-empty">No OM → HR mapping detected in Master List / Data.</div>';
+    function tableColumns(rows, preferred) {
+        const all = [];
+
+        rows.slice(0, 100).forEach(row => {
+            Object.keys(row || {}).forEach(key => {
+                if (!all.includes(key)) all.push(key);
+            });
+        });
+
+        const preferredFound = preferred.filter(wanted =>
+            all.some(key => norm(key) === norm(wanted))
+        ).map(wanted =>
+            all.find(key => norm(key) === norm(wanted))
+        );
+
+        const remainder = all.filter(key => !preferredFound.includes(key));
+        return [...preferredFound, ...remainder];
+    }
+
+    function renderTable(tableId, rows, preferredColumns, maxRows = 500) {
+        const table = $(tableId);
+        if (!table) return;
+
+        const thead = table.querySelector("thead");
+        const tbody = table.querySelector("tbody");
+
+        if (!rows.length) {
+            thead.innerHTML = "";
+            tbody.innerHTML = '<tr><td class="master-empty-cell">No matching rows.</td></tr>';
+            return;
         }
 
-        return items.map(item => {
-            const copyText = [
-                `OM: ${item.om}`,
-                item.hr ? `HR: ${item.hr}` : "",
-                item.site ? `Site: ${item.site}` : "",
-                item.hrEmail ? `Email: ${item.hrEmail}` : ""
-            ].filter(Boolean).join("\n");
+        const columns = tableColumns(rows, preferredColumns);
+
+        thead.innerHTML = `<tr>${columns.map(col => `<th>${esc(col)}</th>`).join("")}</tr>`;
+
+        tbody.innerHTML = rows.slice(0, maxRows).map(row => {
+            const search = norm(columns.map(col => row[col]).join(" "));
 
             return `
-                <article class="master-hr-row"
-                         data-search="${esc(norm(copyText))}">
-                    <div class="master-hr-main">
-                        <strong>${esc(item.om)}</strong>
-                        <span>${esc(item.hr || "HR not listed")}</span>
-                    </div>
-                    <div class="master-hr-meta">
-                        ${item.site ? `<span>${esc(item.site)}</span>` : ""}
-                        ${item.hrEmail ? `<span>${esc(item.hrEmail)}</span>` : ""}
-                    </div>
+                <tr data-search="${esc(search)}">
+                    ${columns.map(col => `<td>${esc(clean(row[col]))}</td>`).join("")}
+                </tr>
+            `;
+        }).join("");
+    }
+
+    const SITE_CLASSES = {
+        MABINI: "site-note-yellow",
+        DIGOS: "site-note-blue",
+        ECOLAND: "site-note-green",
+        GENSAN: "site-note-pink",
+        MAA: "site-note-purple",
+        CDO: "site-note-peach",
+        UNSPECIFIED: "site-note-gray"
+    };
+
+    function renderOmCampaignMap() {
+        const root = $("masterOmCampaignMap");
+
+        if (!derived.omCampaignGroups.length) {
+            root.innerHTML = '<div class="master-empty">No OM / Campaign data detected.</div>';
+            return;
+        }
+
+        const sites = new Map();
+
+        derived.omCampaignGroups.forEach(group => {
+            if (!sites.has(group.site)) sites.set(group.site, []);
+            sites.get(group.site).push(group);
+        });
+
+        root.innerHTML = [...sites.entries()].map(([site, groups]) => `
+            <section class="master-site-section ${SITE_CLASSES[site] || "site-note-gray"}"
+                     data-search="${esc(norm(site + " " + groups.map(g => g.om + " " + g.campaigns.join(" ")).join(" ")))}">
+                <div class="master-site-title">
+                    <strong>${esc(site)}</strong>
+                    <span>${groups.length} OM / team${groups.length === 1 ? "" : "s"}</span>
+                </div>
+
+                <div class="master-om-note-grid">
+                    ${groups.map(group => {
+                        const hrs = findAssignments(group.site, group.om);
+
+                        const hrText = hrs.length
+                            ? hrs.map(item => `
+                                <div class="master-om-hr-line">
+                                    <strong>${esc(item.hr)}</strong>
+                                    ${item.remarks ? `<span>${esc(item.remarks)}</span>` : ""}
+                                </div>
+                            `).join("")
+                            : '<div class="master-muted-line">No HR assignment mapped</div>';
+
+                        const campaigns = group.campaigns.length
+                            ? group.campaigns.map(item => `<span class="master-campaign-pill">${esc(item)}</span>`).join("")
+                            : '<span class="master-muted-line">No campaign found in live tracker</span>';
+
+                        const tls = group.tls.length
+                            ? `<div class="master-om-tls"><span>TL:</span> ${esc(group.tls.join(", "))}</div>`
+                            : "";
+
+                        const search = norm([
+                            group.site,
+                            group.om,
+                            group.campaigns.join(" "),
+                            group.tls.join(" "),
+                            hrs.map(item => item.hr + " " + item.remarks).join(" ")
+                        ].join(" "));
+
+                        return `
+                            <article class="master-om-note" data-search="${esc(search)}">
+                                <div class="master-om-note-head">
+                                    <strong>${esc(group.om)}</strong>
+                                </div>
+                                <div class="master-om-note-label">Assigned HR</div>
+                                <div class="master-om-hr-list">${hrText}</div>
+                                ${tls}
+                                <div class="master-om-note-label">Campaigns</div>
+                                <div class="master-campaign-pills">${campaigns}</div>
+                            </article>
+                        `;
+                    }).join("")}
+                </div>
+            </section>
+        `).join("");
+    }
+
+    function renderAssignments() {
+        const root = $("masterAssignedHrList");
+
+        if (!derived.assignments.length) {
+            root.innerHTML = '<tr><td colspan="5" class="master-empty-cell">No HR assignments.</td></tr>';
+            return;
+        }
+
+        root.innerHTML = derived.assignments.map(item => {
+            const search = norm([item.site, item.omTeam, item.hr, item.remarks].join(" "));
+
+            return `
+                <tr data-search="${esc(search)}">
+                    <td>${esc(item.site)}</td>
+                    <td>${esc(item.omTeam)}</td>
+                    <td>${esc(item.hr)}</td>
+                    <td>${esc(item.remarks || "")}</td>
+                    <td>
+                        <div class="master-row-actions">
+                            <button type="button"
+                                    class="master-edit-hr-btn"
+                                    data-id="${esc(item.id)}"
+                                    data-source="${esc(item.source || "")}">
+                                Edit
+                            </button>
+                            ${item.source === "local" || item.source === "api"
+                                ? `<button type="button"
+                                           class="master-delete-hr-btn"
+                                           data-id="${esc(item.id)}"
+                                           data-source="${esc(item.source || "")}">
+                                       Delete
+                                   </button>`
+                                : ""}
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }).join("");
+
+        root.querySelectorAll(".master-edit-hr-btn").forEach(button => {
+            button.addEventListener("click", () => {
+                const item = derived.assignments.find(entry =>
+                    entry.id === button.dataset.id &&
+                    entry.source === button.dataset.source
+                );
+
+                if (!item) return;
+
+                $("masterHrEditId").value = item.id || "";
+                $("masterHrSiteInput").value = item.site || "";
+                $("masterHrOmInput").value = item.omTeam || "";
+                $("masterHrAssigneeInput").value = item.hr || "";
+                $("masterHrRemarksInput").value = item.remarks || "";
+                $("masterHrSaveBtn").textContent = "Update Assignment";
+                $("masterHrSiteInput").focus();
+            });
+        });
+
+        root.querySelectorAll(".master-delete-hr-btn").forEach(button => {
+            button.addEventListener("click", async () => {
+                const item = derived.assignments.find(entry =>
+                    entry.id === button.dataset.id &&
+                    entry.source === button.dataset.source
+                );
+
+                if (!item) return;
+
+                const approved = await window.appConfirm({
+                    title: "Delete HR assignment?",
+                    message: `${item.site} · ${item.omTeam} · ${item.hr}`,
+                    confirmText: "Delete Assignment",
+                    tone: "danger"
+                });
+
+                if (!approved) return;
+
+                if (item.source === "api") {
+                    const ok = await postApi({
+                        action: "deleteHrAssignment",
+                        id: item.id
+                    }).catch(() => false);
+
+                    if (!ok) {
+                        setHrStatus("Could not delete from Google Sheets.", "error");
+                        return;
+                    }
+                } else {
+                    localHr = localHr.filter(entry => entry.id !== item.id);
+                    saveLocalHr();
+                }
+
+                await loadMasterlist(false);
+            });
+        });
+    }
+
+    function renderEmailGuides() {
+        const root = $("masterEmailGuideList");
+        $("masterEmailGuideCount").textContent = String(derived.emailGuides.length);
+
+        if (!derived.emailGuides.length) {
+            root.innerHTML = `
+                <div class="master-empty">
+                    No full email template detected yet. Replace your Apps Script with the supplied v2 code and redeploy the same Web App URL;
+                    v2 exposes the complete Master List / Data grid so this section can detect guides outside the first table.
+                </div>
+            `;
+            return;
+        }
+
+        root.innerHTML = derived.emailGuides.map(guide => `
+            <article class="master-email-guide"
+                     data-search="${esc(norm(guide.title + " " + guide.text))}">
+                <div class="master-email-guide-head">
+                    <strong>${esc(guide.title)}</strong>
                     <button type="button"
-                            class="master-copy-small"
-                            data-copy="${esc(copyText)}">
+                            class="master-copy-guide"
+                            data-copy="${esc(guide.text)}">
                         Copy
                     </button>
-                </article>
-            `;
-        }).join("");
-    }
+                </div>
+                <pre>${esc(guide.text)}</pre>
+            </article>
+        `).join("");
 
-    function emailGuideHtml(items) {
-        if (!items.length) {
-            return '<div class="master-empty">No Email Guide columns detected in Master List / Data.</div>';
-        }
-
-        return items.map(item => {
-            const fullText = item.parts
-                .map(part => `${part.label}: ${part.value}`)
-                .join("\n\n");
-
-            return `
-                <article class="master-email-guide"
-                         data-search="${esc(norm(item.title + " " + fullText))}">
-                    <div class="master-email-guide-head">
-                        <strong>${esc(item.title)}</strong>
-                        <button type="button"
-                                class="master-copy-guide"
-                                data-copy="${esc(fullText)}">
-                            Copy
-                        </button>
-                    </div>
-                    <div class="master-email-guide-content">
-                        ${item.parts.map(part => `
-                            <div class="master-email-part">
-                                <span>${esc(part.label)}</span>
-                                <pre>${esc(part.value)}</pre>
-                            </div>
-                        `).join("")}
-                    </div>
-                </article>
-            `;
-        }).join("");
-    }
-
-    function render() {
-        $("masterOmCount").textContent = String(derived.oms.length);
-        $("masterTlCount").textContent = String(derived.tls.length);
-        $("masterCampaignCount").textContent = String(derived.campaigns.length);
-        $("masterHrSiteCount").textContent = String(derived.hrSites.length);
-        $("masterAssignedHrCount").textContent = String(derived.assignedHr.length);
-        $("masterEmailGuideCount").textContent = String(derived.emailGuide.length);
-
-        $("masterOmList").innerHTML = listHtml(derived.oms);
-        $("masterTlList").innerHTML = listHtml(derived.tls);
-        $("masterCampaignList").innerHTML = listHtml(derived.campaigns);
-        $("masterHrSiteList").innerHTML = listHtml(derived.hrSites);
-        $("masterAssignedHrList").innerHTML = assignedHrHtml(derived.assignedHr);
-        $("masterEmailGuideList").innerHTML = emailGuideHtml(derived.emailGuide);
-
-        wireCopyButtons();
-        applySearch();
+        root.querySelectorAll("[data-copy]").forEach(button => {
+            button.addEventListener("click", async () => {
+                await copyText(button.dataset.copy || "", button);
+            });
+        });
     }
 
     async function copyText(value, button) {
@@ -19183,14 +20016,6 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
 
         try {
             await navigator.clipboard.writeText(value);
-
-            if (button) {
-                const old = button.textContent;
-                button.textContent = "Copied";
-                window.setTimeout(() => {
-                    button.textContent = old;
-                }, 1200);
-            }
         } catch (_) {
             const area = document.createElement("textarea");
             area.value = value;
@@ -19200,86 +20025,179 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
             area.select();
             document.execCommand("copy");
             area.remove();
+        }
 
-            if (button) {
-                const old = button.textContent;
-                button.textContent = "Copied";
-                window.setTimeout(() => {
-                    button.textContent = old;
-                }, 1200);
-            }
+        if (button) {
+            const old = button.textContent;
+            button.textContent = "Copied";
+            setTimeout(() => button.textContent = old, 1200);
         }
     }
 
-    function wireCopyButtons() {
-        document.querySelectorAll(
-            "#masterlistPanel [data-copy]"
-        ).forEach(button => {
-            button.addEventListener("click", () => {
-                copyText(button.dataset.copy || "", button);
-            });
-        });
+    function render() {
+        $("masterOmCount").textContent = String(derived.oms.length);
+        $("masterTlCount").textContent = String(derived.tls.length);
+        $("masterCampaignCount").textContent = String(derived.campaigns.length);
+        $("masterPendingMilesCount").textContent = String(derived.pendingMiles.length);
+        $("masterDataCount").textContent = String(derived.dataRows.length);
+        $("masterAssignedHrCount").textContent = String(derived.assignments.length);
+        $("masterOmCampaignCount").textContent = String(derived.omCampaignGroups.length);
+
+        $("masterOmList").innerHTML = listHtml(derived.oms);
+        $("masterTlList").innerHTML = listHtml(derived.tls);
+        $("masterCampaignList").innerHTML = listHtml(derived.campaigns);
+
+        renderTable(
+            "masterPendingMilesTable",
+            derived.pendingMiles,
+            ["Year", "Month", "Date", "OM", "SITE", "TL", "Agent Name", "Account", "CCTV Reason Codes", "NOC", "Remarks"],
+            1000
+        );
+
+        renderTable(
+            "masterDataMonitorTable",
+            derived.dataRows,
+            ["Year", "Month", "Date", "Name", "OM", "SITE", "TL", "Agent Name", "Account", "CCTV Reason Codes", "NOC", "Remarks"],
+            1000
+        );
+
+        renderOmCampaignMap();
+        renderAssignments();
+        renderEmailGuides();
+        applySearch();
     }
 
     function applySearch() {
         const query = norm($("masterlistSearch")?.value || "");
 
         document.querySelectorAll(
-            "#masterlistPanel .master-list-item, " +
-            "#masterlistPanel .master-hr-row, " +
-            "#masterlistPanel .master-email-guide"
+            "#masterlistPanel [data-search]"
         ).forEach(item => {
-            const text = item.dataset.search || norm(item.textContent);
+            const text = item.dataset.search || "";
             item.hidden = !!query && !text.includes(query);
-        });
-
-        document.querySelectorAll(
-            "#masterlistPanel .master-sticky"
-        ).forEach(card => {
-            const candidates = card.querySelectorAll(
-                ".master-list-item, .master-hr-row, .master-email-guide"
-            );
-
-            if (!query) {
-                card.classList.remove("master-no-match");
-                return;
-            }
-
-            const visible = Array.from(candidates)
-                .some(item => !item.hidden);
-
-            card.classList.toggle(
-                "master-no-match",
-                candidates.length > 0 && !visible
-            );
         });
     }
 
-    function setSyncState(kind, title, detail) {
-        const root = $("masterlistSyncTitle");
-        const sub = $("masterlistSyncDetail");
-        const badge = $("masterlistSidebarBadge");
+    function clearHrForm() {
+        $("masterHrEditId").value = "";
+        $("masterHrSiteInput").value = "";
+        $("masterHrOmInput").value = "";
+        $("masterHrAssigneeInput").value = "";
+        $("masterHrRemarksInput").value = "";
+        $("masterHrSaveBtn").textContent = "Add Assignment";
+    }
 
-        if (root) root.textContent = title;
-        if (sub) sub.textContent = detail;
+    function setHrStatus(message, kind = "") {
+        const el = $("masterHrSaveStatus");
+        el.textContent = message || "";
+        el.className = `master-hr-save-status ${kind ? "is-" + kind : ""}`;
+    }
 
-        if (badge) {
-            badge.classList.remove(
-                "is-live",
-                "is-syncing",
-                "is-error"
+    async function postApi(body) {
+        const response = await fetch(API_URL, {
+            method: "POST",
+            credentials: "omit",
+            redirect: "follow",
+            body: JSON.stringify(body)
+        });
+
+        if (!response.ok) {
+            throw new Error(`Save API returned ${response.status}.`);
+        }
+
+        const data = await response.json();
+
+        if (data?.success === false) {
+            throw new Error(data.error || "Google Sheets update failed.");
+        }
+
+        return data;
+    }
+
+    async function saveHrAssignment() {
+        const site = clean($("masterHrSiteInput").value);
+        const omTeam = clean($("masterHrOmInput").value);
+        const hr = clean($("masterHrAssigneeInput").value);
+        const remarks = clean($("masterHrRemarksInput").value);
+        const editId = clean($("masterHrEditId").value);
+
+        if (!site || !omTeam || !hr) {
+            setHrStatus("Site, OM / Team, and HR Assignee are required.", "error");
+            return;
+        }
+
+        const existing = derived.assignments.find(item => item.id === editId);
+
+        const record = {
+            id: editId && (existing?.source === "api" || existing?.source === "local")
+                ? editId
+                : "web_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 7),
+            site,
+            omTeam,
+            hr,
+            remarks
+        };
+
+        $("masterHrSaveBtn").disabled = true;
+        setHrStatus("Saving...", "");
+
+        let savedToSheet = false;
+
+        try {
+            const result = await postApi({
+                action: "upsertHrAssignment",
+                record
+            });
+
+            if (result?.success) {
+                savedToSheet = true;
+            }
+        } catch (error) {
+            console.warn("Google Sheets HR save unavailable; using local fallback:", error);
+        }
+
+        if (!savedToSheet) {
+            const key = assignmentKey(record);
+            localHr = localHr.filter(item =>
+                item.id !== record.id &&
+                assignmentKey(item) !== key
             );
 
-            if (kind === "live") {
-                badge.textContent = "Live";
-                badge.classList.add("is-live");
-            } else if (kind === "syncing") {
-                badge.textContent = "...";
-                badge.classList.add("is-syncing");
-            } else {
-                badge.textContent = "!";
-                badge.classList.add("is-error");
-            }
+            localHr.push({
+                ...record,
+                source: "local"
+            });
+
+            saveLocalHr();
+            setHrStatus("Saved on this browser. Install Apps Script v2 to save HR edits back to Google Sheets.", "local");
+        } else {
+            setHrStatus("Saved to Google Sheets.", "success");
+        }
+
+        clearHrForm();
+        $("masterHrSaveBtn").disabled = false;
+
+        await loadMasterlist(false);
+    }
+
+    function setSyncState(kind, title, detail) {
+        $("masterlistSyncTitle").textContent = title;
+        $("masterlistSyncDetail").textContent = detail;
+
+        const badge = $("masterlistSidebarBadge");
+        if (!badge) return;
+
+        badge.classList.remove("is-live", "is-syncing", "is-error");
+
+        if (kind === "live") {
+            badge.textContent = "Live";
+            badge.classList.add("is-live");
+        } else if (kind === "syncing") {
+            badge.textContent = "...";
+            badge.classList.add("is-syncing");
+        } else {
+            badge.textContent = "!";
+            badge.classList.add("is-error");
         }
     }
 
@@ -19351,7 +20269,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         setSyncState(
             "syncing",
             "Syncing Google Sheets...",
-            "Checking Tracker, Master List, and Data."
+            "Checking Tracker, Master List, Data, and HR assignments."
         );
 
         try {
@@ -19381,31 +20299,25 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
             render();
             await saveCache(data);
 
-            const updatedAt = data.updatedAt || new Date().toISOString();
-
             $("masterlistLastUpdated").textContent =
-                formatSyncTime(updatedAt);
+                formatSyncTime(data.updatedAt || new Date().toISOString());
 
-            const rowCount =
-                rowsFrom("tracker").length +
-                rowsFrom("masterList").length +
-                rowsFrom("data").length;
+            const version = clean(data.version || "");
+            const v2Ready = version.startsWith("2");
 
             setSyncState(
                 "live",
                 "Google Sheets connected",
-                `${rowCount} source rows loaded. Auto-refresh every 5 minutes.`
+                v2Ready
+                    ? `Full API v${version} · Tracker, Master List, Data, raw grids, and HR write-back enabled.`
+                    : "Connected to API v1 · live Tracker/Data works now. Install supplied API v2 for full Master List grids, Email Guide, and HR write-back."
             );
 
             if (showFreshMessage) {
-                const button = $("masterlistRefreshBtn");
-                if (button) {
-                    const old = button.textContent;
-                    button.textContent = "Updated";
-                    window.setTimeout(() => {
-                        button.textContent = old;
-                    }, 1200);
-                }
+                const btn = $("masterlistRefreshBtn");
+                const old = btn.textContent;
+                btn.textContent = "Updated";
+                setTimeout(() => btn.textContent = old, 1200);
             }
 
             return true;
@@ -19419,13 +20331,12 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
                 derive();
                 render();
 
-                $("masterlistLastUpdated").textContent =
-                    "Showing last saved sync";
+                $("masterlistLastUpdated").textContent = "Showing last saved sync";
 
                 setSyncState(
                     "error",
                     "Live sync unavailable",
-                    "Showing the last saved masterlist. Click Refresh to try again."
+                    "Showing the last saved data. Click Refresh to try again."
                 );
 
                 return false;
@@ -19434,23 +20345,8 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
             setSyncState(
                 "error",
                 "Could not connect to Google Sheets",
-                error.message || "Check the Apps Script Web App deployment."
+                error.message || "Check the Apps Script deployment."
             );
-
-            [
-                "masterOmList",
-                "masterTlList",
-                "masterCampaignList",
-                "masterHrSiteList",
-                "masterAssignedHrList",
-                "masterEmailGuideList"
-            ].forEach(id => {
-                const el = $(id);
-                if (el) {
-                    el.innerHTML =
-                        '<div class="master-empty">No synced data available yet.</div>';
-                }
-            });
 
             return false;
         }
@@ -19468,10 +20364,15 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         loadMasterlist(true);
     });
 
+    $("masterHrSaveBtn")?.addEventListener("click", saveHrAssignment);
+
+    $("masterHrCancelBtn")?.addEventListener("click", () => {
+        clearHrForm();
+        setHrStatus("");
+    });
+
     $("masterlistTabBtn")?.addEventListener("click", () => {
-        if (!payload) {
-            loadMasterlist(false);
-        }
+        if (!payload) loadMasterlist(false);
     });
 
     async function boot() {
@@ -19481,8 +20382,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
             payload = cached;
             derive();
             render();
-            $("masterlistLastUpdated").textContent =
-                "Showing saved data while syncing";
+            $("masterlistLastUpdated").textContent = "Showing saved data while syncing";
         }
 
         loadMasterlist(false);
@@ -19493,11 +20393,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
     }
 
     if (document.readyState === "loading") {
-        document.addEventListener(
-            "DOMContentLoaded",
-            boot,
-            { once: true }
-        );
+        document.addEventListener("DOMContentLoaded", boot, { once: true });
     } else {
         boot();
     }
