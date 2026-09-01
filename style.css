@@ -2188,3 +2188,176 @@ body:not(.dark-mode) .edr-simple-output { background:#f8fafc; color:#172033; }
     .edr-simple-top-grid { grid-template-columns:1fr; }
     .edr-simple-output-actions > button,.edr-simple-list-tools > button { flex:1; }
 }
+
+
+/* =========================================================
+   CUSTOM CENTER CONFIRMATION MODAL
+   Replaces native browser "site says" confirm dialogs.
+   ========================================================= */
+
+.app-confirm-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 200000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.app-confirm-modal.open {
+    display: flex;
+}
+
+.app-confirm-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(2, 6, 23, .64);
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    animation: appConfirmFade .16s ease-out;
+}
+
+.app-confirm-dialog {
+    position: relative;
+    z-index: 1;
+    width: min(430px, calc(100vw - 32px));
+    display: grid;
+    grid-template-columns: 42px minmax(0, 1fr);
+    gap: 13px 14px;
+    padding: 18px;
+    border: 1px solid var(--admin-line, var(--border-color));
+    border-radius: 15px;
+    background: var(--admin-panel, var(--container-bg));
+    color: var(--admin-text, var(--text-color));
+    box-shadow:
+        0 28px 80px rgba(0, 0, 0, .36),
+        0 2px 8px rgba(0, 0, 0, .12);
+    animation: appConfirmPop .18s cubic-bezier(.2,.8,.2,1);
+}
+
+.app-confirm-icon {
+    width: 42px;
+    height: 42px;
+    display: grid;
+    place-items: center;
+    border-radius: 12px;
+    background: rgba(220, 38, 38, .11);
+    color: #ef4444;
+    font: 900 18px/1 "Inter", sans-serif;
+}
+
+.app-confirm-modal[data-tone="primary"] .app-confirm-icon {
+    background: rgba(37, 99, 235, .11);
+    color: #3b82f6;
+}
+
+.app-confirm-copy {
+    min-width: 0;
+}
+
+.app-confirm-copy h3 {
+    margin: 1px 0 6px;
+    color: var(--admin-text, var(--text-color));
+    font: 850 15px/1.25 "Inter", "Roboto", Arial, sans-serif;
+    letter-spacing: -.015em;
+}
+
+.app-confirm-copy p {
+    margin: 0;
+    color: var(--admin-muted, var(--pro-muted));
+    font: 500 11.5px/1.5 "Inter", "Roboto", Arial, sans-serif;
+}
+
+.app-confirm-actions {
+    grid-column: 1 / -1;
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 3px;
+    padding-top: 12px;
+    border-top: 1px solid var(--admin-line, var(--border-color));
+}
+
+.app-confirm-actions button {
+    min-width: 86px;
+    min-height: 37px;
+    padding: 8px 13px;
+    border-radius: 8px;
+    font: 800 10.5px/1 "Inter", "Roboto", Arial, sans-serif;
+    cursor: pointer;
+    transition: .14s ease;
+}
+
+.app-confirm-cancel {
+    border: 1px solid var(--admin-line, var(--input-border));
+    background: var(--admin-panel-soft, var(--input-bg));
+    color: var(--admin-text, var(--text-color));
+}
+
+.app-confirm-cancel:hover {
+    border-color: #64748b;
+}
+
+.app-confirm-accept {
+    border: 1px solid #dc2626;
+    background: #dc2626;
+    color: #fff;
+}
+
+.app-confirm-accept:hover {
+    background: #b91c1c;
+    border-color: #b91c1c;
+}
+
+.app-confirm-modal[data-tone="primary"] .app-confirm-accept {
+    border-color: #2563eb;
+    background: #2563eb;
+}
+
+.app-confirm-modal[data-tone="primary"] .app-confirm-accept:hover {
+    border-color: #1d4ed8;
+    background: #1d4ed8;
+}
+
+.app-confirm-actions button:focus-visible {
+    outline: 2px solid #60a5fa;
+    outline-offset: 2px;
+}
+
+body.app-confirm-open {
+    overflow: hidden !important;
+}
+
+@keyframes appConfirmFade {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes appConfirmPop {
+    from {
+        opacity: 0;
+        transform: translateY(8px) scale(.98);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@media (max-width: 520px) {
+    .app-confirm-dialog {
+        grid-template-columns: 36px minmax(0, 1fr);
+        padding: 15px;
+    }
+
+    .app-confirm-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+    }
+
+    .app-confirm-actions button {
+        flex: 1;
+    }
+}
