@@ -4006,3 +4006,40 @@ body.dark-mode .edr-row-audit.is-linked,
 body.dark-mode .edr-audit-linked {
     color: #6ee7b7 !important;
 }
+
+
+/* =========================================================
+   CCTV AUDIT - EDR SENT COUNT
+   ========================================================= */
+
+#cctvTabBtn {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 8px !important;
+}
+
+.cctv-edr-sent-badge {
+    flex: none;
+    min-width: 20px;
+    height: 20px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 6px;
+    border-radius: 999px;
+    background: rgba(59,130,246,.12);
+    color: #2563eb;
+    font: 850 8.5px/1 "Inter", "Roboto", Arial, sans-serif;
+    font-variant-numeric: tabular-nums;
+}
+
+#cctvTabBtn.active .cctv-edr-sent-badge {
+    background: rgba(255,255,255,.18);
+    color: inherit;
+}
+
+body.dark-mode #cctvTabBtn:not(.active) .cctv-edr-sent-badge {
+    background: rgba(96,165,250,.14);
+    color: #93c5fd;
+}
