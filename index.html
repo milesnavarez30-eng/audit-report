@@ -5598,7 +5598,7 @@
 </style>
 
 
-    <link rel="stylesheet" href="./style.css?v=20260901-masterlist-v2-1">
+    <link rel="stylesheet" href="./style.css?v=20260901-masterlist-simple-1">
 
 <style id="edrCriticalStyles">
 /* =========================================================
@@ -8667,175 +8667,10 @@ body.dark-mode #cctvTabBtn:not(.active) .cctv-edr-sent-badge {
     }
 }
 </style>
-<style id="notesPendingCleanupCritical">
-
-/* Pending Reports cleanup */
-.pending-card-remarks-field {
-    grid-column: 1 / -1;
-}
-
-.pending-card-remarks {
-    width: 100%;
-    box-sizing: border-box;
-    min-height: 64px;
-    resize: vertical;
-    padding: 8px 9px;
-    border: 1px solid var(--admin-line, var(--input-border));
-    border-radius: 7px;
-    background: var(--admin-panel, var(--input-bg));
-    color: var(--admin-text, var(--text-color));
-    font: 600 10px/1.45 "Inter", "Roboto", Arial, sans-serif;
-}
-
-.pending-card-actions {
-    justify-content: flex-end;
-}
+<style id="masterlistSimpleCritical">
 
 /* =========================================================
-   NOTES
-   ========================================================= */
-
-#notesTabBtn {
-    display: flex !important;
-    align-items: center !important;
-    justify-content: space-between !important;
-    gap: 8px !important;
-}
-
-.notes-sidebar-badge {
-    flex: none;
-    min-width: 20px;
-    height: 20px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0 6px;
-    border-radius: 999px;
-    background: rgba(148,163,184,.13);
-    color: var(--admin-muted, var(--pro-muted));
-    font: 850 8px/1 "Inter", sans-serif;
-    font-variant-numeric: tabular-nums;
-}
-
-#notesTabBtn.active .notes-sidebar-badge {
-    background: rgba(255,255,255,.18);
-    color: inherit;
-}
-
-.notes-shell {
-    width: 100% !important;
-    max-width: 1000px !important;
-    margin: 0 auto 26px !important;
-}
-
-.notes-page-head {
-    margin-bottom: 12px;
-}
-
-.notes-add-card {
-    margin-bottom: 12px;
-    padding: 12px;
-    border: 1px solid var(--admin-line, var(--input-border));
-    border-radius: 10px;
-    background: var(--admin-panel, var(--input-bg));
-}
-
-.notes-add-grid {
-    display: grid;
-    grid-template-columns: 150px minmax(0, 1fr);
-    gap: 10px;
-}
-
-.notes-field label {
-    display: block;
-    margin-bottom: 5px;
-    color: var(--admin-muted, var(--pro-muted));
-    font: 750 8.5px/1.2 "Inter", sans-serif;
-}
-
-.notes-field input,
-.notes-field textarea {
-    width: 100%;
-    box-sizing: border-box;
-    padding: 8px 9px;
-    border: 1px solid var(--admin-line, var(--input-border));
-    border-radius: 7px;
-    background: var(--admin-panel, var(--input-bg));
-    color: var(--admin-text, var(--text-color));
-    font: 600 10px/1.45 "Inter", sans-serif;
-}
-
-.notes-text-field textarea {
-    min-height: 92px;
-    resize: vertical;
-}
-
-.notes-add-actions {
-    grid-column: 1 / -1;
-    display: flex;
-    justify-content: flex-end;
-    gap: 7px;
-}
-
-.notes-list {
-    display: grid;
-    gap: 8px;
-}
-
-.notes-card {
-    display: grid;
-    grid-template-columns: 120px minmax(0, 1fr) auto;
-    gap: 9px;
-    align-items: start;
-    padding: 10px;
-    border: 1px solid var(--admin-line, var(--input-border));
-    border-radius: 9px;
-    background: var(--admin-panel, var(--input-bg));
-}
-
-.notes-card-date {
-    padding-top: 7px;
-    color: var(--admin-muted, var(--pro-muted));
-    font: 750 9px/1.3 "Inter", sans-serif;
-}
-
-.notes-card-text {
-    width: 100%;
-    box-sizing: border-box;
-    min-height: 66px;
-    resize: vertical;
-    padding: 8px 9px;
-    border: 1px solid var(--admin-line, var(--input-border));
-    border-radius: 7px;
-    background: var(--admin-panel-soft, rgba(148,163,184,.025));
-    color: var(--admin-text, var(--text-color));
-    font: 600 10px/1.45 "Inter", sans-serif;
-}
-
-.notes-delete-btn {
-    min-height: 30px !important;
-    padding: 5px 8px !important;
-    font-size: 8.5px !important;
-}
-
-@media (max-width: 680px) {
-    .notes-add-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .notes-add-actions {
-        grid-column: auto;
-    }
-
-    .notes-card {
-        grid-template-columns: 1fr;
-    }
-}
-</style>
-<style id="masterlistGuideCritical">
-
-/* =========================================================
-   MASTERLIST GUIDE
+   MASTER LIST — SIMPLE PENDING MILES + HR GUIDE
    ========================================================= */
 
 #masterlistTabBtn {
@@ -8847,16 +8682,16 @@ body.dark-mode #cctvTabBtn:not(.active) .cctv-edr-sent-badge {
 
 .masterlist-sidebar-badge {
     flex: none;
-    min-width: 27px;
-    height: 19px;
+    min-width: 26px;
+    height: 18px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     padding: 0 6px;
     border-radius: 999px;
-    background: rgba(148,163,184,.13);
-    color: var(--admin-muted, var(--pro-muted));
-    font: 850 7.5px/1 "Inter", sans-serif;
+    background: rgba(148,163,184,.12);
+    color: var(--admin-muted, #64748b);
+    font: 750 7.5px/1 "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
 .masterlist-sidebar-badge.is-live {
@@ -8875,433 +8710,121 @@ body.dark-mode #cctvTabBtn:not(.active) .cctv-edr-sent-badge {
 }
 
 #masterlistTabBtn.active .masterlist-sidebar-badge {
-    background: rgba(255,255,255,.18);
+    background: rgba(255,255,255,.16);
     color: inherit;
 }
 
-.masterlist-shell {
+.master-simple-shell {
     width: 100% !important;
-    max-width: 1220px !important;
-    margin: 0 auto 28px !important;
+    max-width: 1280px !important;
+    margin: 0 auto 26px !important;
 }
 
-.masterlist-page-head {
+.master-simple-head {
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
     gap: 14px;
-    margin-bottom: 11px;
+    margin-bottom: 10px;
 }
 
-.masterlist-refresh-btn {
-    flex: none;
-    min-width: 76px;
-}
-
-.masterlist-sync-bar {
+.master-simple-sync {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 12px;
-    margin-bottom: 10px;
+    margin-bottom: 12px;
     padding: 9px 11px;
-    border: 1px solid var(--admin-line, var(--input-border));
+    border: 1px solid var(--admin-line, #e2e8f0);
     border-radius: 9px;
-    background: var(--admin-panel, var(--input-bg));
+    background: var(--admin-panel-soft, #f8fafc);
 }
 
-.masterlist-sync-bar > div {
-    min-width: 0;
+.master-simple-sync > div {
     display: flex;
-    align-items: baseline;
     gap: 8px;
+    align-items: baseline;
     flex-wrap: wrap;
-}
-
-.masterlist-sync-bar strong {
-    color: var(--admin-text, var(--text-color));
-    font: 800 9.5px/1.3 "Inter", sans-serif;
-}
-
-.masterlist-sync-bar span {
-    color: var(--admin-muted, var(--pro-muted));
-    font: 600 8.5px/1.35 "Inter", sans-serif;
-}
-
-#masterlistLastUpdated {
-    flex: none;
-    text-align: right;
-}
-
-.masterlist-search-row {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    gap: 7px;
-    margin-bottom: 11px;
-}
-
-.masterlist-search-row input {
-    width: 100%;
-    min-height: 38px;
-    box-sizing: border-box;
-    padding: 8px 10px;
-    border: 1px solid var(--admin-line, var(--input-border));
-    border-radius: 8px;
-    background: var(--admin-panel, var(--input-bg));
-    color: var(--admin-text, var(--text-color));
-    font: 600 10px/1.2 "Inter", sans-serif;
-}
-
-.masterlist-sticky-grid {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 12px;
-    align-items: start;
-}
-
-.master-sticky {
-    position: relative;
     min-width: 0;
-    min-height: 290px;
-    padding: 14px 13px 13px;
-    border: 1px solid rgba(15,23,42,.08);
-    border-radius: 6px 6px 11px 6px;
-    box-shadow:
-        0 7px 18px rgba(15,23,42,.055),
-        0 1px 2px rgba(15,23,42,.08);
-    overflow: hidden;
 }
 
-.master-sticky::after {
-    content: "";
-    position: absolute;
-    right: 0;
-    bottom: 0;
-    width: 20px;
-    height: 20px;
-    background:
-        linear-gradient(
-            135deg,
-            rgba(255,255,255,.12) 0 48%,
-            rgba(15,23,42,.08) 49% 51%,
-            rgba(255,255,255,.5) 52% 100%
-        );
-    pointer-events: none;
+.master-simple-sync strong {
+    color: var(--admin-text, #111827);
+    font: 750 9.5px/1.3 "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
-.master-sticky-yellow {
-    background: #fff7c7;
-    color: #3f3a20;
+.master-simple-sync span {
+    color: var(--admin-muted, #64748b);
+    font: 550 8.5px/1.35 "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
-.master-sticky-blue {
-    background: #dcefff;
-    color: #203b52;
+.master-simple-card {
+    margin-bottom: 12px;
+    padding: 13px;
+    border: 1px solid var(--admin-line, #e2e8f0);
+    border-radius: 11px;
+    background: var(--admin-panel, #fff);
+    box-shadow: 0 5px 16px rgba(15,23,42,.035);
 }
 
-.master-sticky-green {
-    background: #ddf5df;
-    color: #25462a;
+.master-pending-card {
+    border-top: 3px solid #d97706;
 }
 
-.master-sticky-pink {
-    background: #ffe4ec;
-    color: #512e3c;
+.master-hr-card {
+    border-top: 3px solid #7c3aed;
 }
 
-.master-sticky-purple {
-    background: #eee3ff;
-    color: #3f3157;
-}
-
-.master-sticky-peach {
-    background: #ffe6cf;
-    color: #553923;
-}
-
-body.dark-mode .master-sticky {
-    border-color: rgba(255,255,255,.05);
-    box-shadow:
-        0 8px 18px rgba(0,0,0,.20),
-        0 1px 2px rgba(0,0,0,.25);
-    filter: saturate(.74) brightness(.72);
-}
-
-.master-sticky-wide {
-    grid-column: span 3;
-    min-height: auto;
-}
-
-.master-sticky-head {
+.master-simple-card-head {
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
-    gap: 9px;
-    margin-bottom: 11px;
-    padding-bottom: 8px;
-    border-bottom: 1px dashed rgba(15,23,42,.16);
+    gap: 10px;
+    margin-bottom: 10px;
 }
 
-.master-sticky-head h3 {
-    margin: 2px 0 0;
-    color: inherit;
-    font: 850 14px/1.2 "Inter", "Roboto", Arial, sans-serif;
-}
-
-.master-sticky-kicker {
+.master-simple-kicker {
     display: block;
-    font: 800 7.5px/1.1 "Inter", sans-serif;
-    letter-spacing: .08em;
+    margin-bottom: 3px;
+    color: var(--admin-muted, #64748b);
+    font: 750 7.5px/1 "Inter", sans-serif;
+    letter-spacing: .075em;
     text-transform: uppercase;
-    opacity: .58;
 }
 
-.master-sticky-count {
+.master-simple-card-head h3 {
+    margin: 0;
+    color: var(--admin-text, #111827);
+    font: 800 15px/1.2 "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    letter-spacing: -.02em;
+}
+
+.master-simple-count {
     flex: none;
-    min-width: 26px;
-    height: 23px;
+    min-width: 28px;
+    height: 24px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     padding: 0 7px;
-    border: 1px solid rgba(15,23,42,.08);
     border-radius: 999px;
-    background: rgba(255,255,255,.38);
-    color: inherit;
-    font: 850 8px/1 "Inter", sans-serif;
+    background: var(--admin-panel-soft, #f1f5f9);
+    color: var(--admin-text, #334155);
+    font: 750 8px/1 "Inter", sans-serif;
     font-variant-numeric: tabular-nums;
-}
-
-.master-sticky-body {
-    max-height: 310px;
-    overflow: auto;
-    padding-right: 3px;
-    scrollbar-width: thin;
-}
-
-.master-assigned-body,
-.master-email-body {
-    max-height: 430px;
-}
-
-.master-list-item {
-    padding: 6px 2px;
-    border-bottom: 1px solid rgba(15,23,42,.08);
-    font: 650 9.5px/1.35 "Inter", sans-serif;
-}
-
-.master-list-item:last-child {
-    border-bottom: 0;
-}
-
-.master-empty {
-    padding: 9px 2px;
-    font: 650 9px/1.45 "Inter", sans-serif;
-    opacity: .6;
-}
-
-.master-hr-row {
-    display: grid;
-    grid-template-columns: minmax(150px, .8fr) minmax(180px, 1.2fr) auto;
-    gap: 9px;
-    align-items: center;
-    padding: 8px 0;
-    border-bottom: 1px solid rgba(15,23,42,.09);
-}
-
-.master-hr-main {
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-}
-
-.master-hr-main strong {
-    font: 800 9.5px/1.25 "Inter", sans-serif;
-}
-
-.master-hr-main span {
-    font: 650 8.7px/1.3 "Inter", sans-serif;
-    opacity: .74;
-}
-
-.master-hr-meta {
-    min-width: 0;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 5px 9px;
-    font: 650 8.5px/1.3 "Inter", sans-serif;
-    opacity: .76;
-}
-
-.master-copy-small,
-.master-copy-guide {
-    border: 1px solid rgba(15,23,42,.14);
-    border-radius: 6px;
-    background: rgba(255,255,255,.38);
-    color: inherit;
-    cursor: pointer;
-    font: 800 8px/1 "Inter", sans-serif;
-}
-
-.master-copy-small {
-    min-height: 28px;
-    padding: 5px 8px;
-}
-
-.master-email-guide {
-    padding: 10px 0 12px;
-    border-bottom: 1px solid rgba(15,23,42,.10);
-}
-
-.master-email-guide:last-child {
-    border-bottom: 0;
-}
-
-.master-email-guide-head {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 9px;
-    margin-bottom: 7px;
-}
-
-.master-email-guide-head strong {
-    font: 850 10px/1.3 "Inter", sans-serif;
-}
-
-.master-copy-guide {
-    flex: none;
-    min-width: 58px;
-    min-height: 29px;
-    padding: 5px 9px;
-}
-
-.master-email-guide-content {
-    display: grid;
-    gap: 7px;
-}
-
-.master-email-part > span {
-    display: block;
-    margin-bottom: 3px;
-    font: 800 7.8px/1.2 "Inter", sans-serif;
-    text-transform: uppercase;
-    letter-spacing: .035em;
-    opacity: .60;
-}
-
-.master-email-part pre {
-    margin: 0;
-    white-space: pre-wrap;
-    overflow-wrap: anywhere;
-    font: 600 9px/1.5 "Inter", "Roboto", Arial, sans-serif;
-    color: inherit;
-}
-
-.master-no-match {
-    opacity: .40;
-}
-
-.masterlist-source-note {
-    margin-top: 10px;
-    color: var(--admin-muted, var(--pro-muted));
-    font: 600 8px/1.35 "Inter", sans-serif;
-    text-align: right;
-}
-
-@media (max-width: 980px) {
-    .masterlist-sticky-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-
-    .master-sticky-wide {
-        grid-column: span 2;
-    }
-}
-
-@media (max-width: 680px) {
-    .masterlist-page-head,
-    .masterlist-sync-bar {
-        flex-direction: column;
-        align-items: stretch;
-    }
-
-    #masterlistLastUpdated {
-        text-align: left;
-    }
-
-    .masterlist-sticky-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .master-sticky-wide {
-        grid-column: auto;
-    }
-
-    .master-hr-row {
-        grid-template-columns: 1fr;
-    }
-
-    .master-copy-small {
-        justify-self: start;
-    }
-}
-</style>
-<style id="masterlistV2Critical">
-
-/* =========================================================
-   MASTERLIST V2 — FULL TRACKER / HR / CAMPAIGN GUIDE
-   ========================================================= */
-
-.masterlist-v2-shell {
-    max-width: 1320px !important;
-}
-
-.masterlist-mini-grid {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 12px;
-    margin-bottom: 12px;
-}
-
-.master-mini-note {
-    min-height: 310px;
-}
-
-.master-wide-note {
-    min-height: auto !important;
-    margin-bottom: 12px;
-}
-
-.master-sticky-orange {
-    background: #ffe6b9;
-    color: #52391a;
-}
-
-.master-sticky-teal {
-    background: #d7f1ed;
-    color: #214b45;
-}
-
-.master-note-sub {
-    margin: -2px 0 11px;
-    color: inherit;
-    opacity: .70;
-    font: 600 8.8px/1.45 "Inter", "Roboto", Arial, sans-serif;
 }
 
 .master-table-wrap {
     width: 100%;
     max-height: 410px;
     overflow: auto;
-    border: 1px solid rgba(15,23,42,.10);
-    border-radius: 7px;
-    background: rgba(255,255,255,.23);
+    border: 1px solid var(--admin-line, #e2e8f0);
+    border-radius: 8px;
+    background: var(--admin-panel, #fff);
 }
 
-.master-data-monitor-wrap {
-    max-height: 520px;
+.master-hr-table-wrap {
+    max-height: 500px;
 }
 
 .master-data-table {
@@ -9309,15 +8832,15 @@ body.dark-mode .master-sticky {
     min-width: 100%;
     border-collapse: separate;
     border-spacing: 0;
-    color: inherit;
-    font: 600 8.4px/1.35 "Inter", "Roboto", Arial, sans-serif;
+    color: var(--admin-text, #111827);
+    font: 550 8.6px/1.35 "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
 .master-data-table th,
 .master-data-table td {
-    padding: 6px 7px;
-    border-right: 1px solid rgba(15,23,42,.08);
-    border-bottom: 1px solid rgba(15,23,42,.08);
+    padding: 7px 8px;
+    border-right: 1px solid var(--admin-line, #e2e8f0);
+    border-bottom: 1px solid var(--admin-line, #e2e8f0);
     text-align: left;
     vertical-align: top;
     white-space: nowrap;
@@ -9327,8 +8850,21 @@ body.dark-mode .master-sticky {
     position: sticky;
     top: 0;
     z-index: 2;
-    background: rgba(255,255,255,.72);
-    font-weight: 850;
+    background: #f8fafc;
+    color: #334155;
+    font-weight: 750;
+    font-size: 8px;
+    letter-spacing: .025em;
+    text-transform: uppercase;
+}
+
+body.dark-mode .master-data-table th {
+    background: #182231;
+    color: #dbe5f3;
+}
+
+.master-data-table tr:last-child td {
+    border-bottom: 0;
 }
 
 .master-data-table td:last-child,
@@ -9337,263 +8873,95 @@ body.dark-mode .master-sticky {
 }
 
 .master-empty-cell {
-    padding: 16px !important;
+    padding: 18px !important;
     text-align: center !important;
-    opacity: .6;
+    color: var(--admin-muted, #64748b);
 }
 
-.master-site-map {
-    display: grid;
-    gap: 10px;
-}
-
-.master-site-section {
+.master-notepad {
+    margin-top: 10px;
     padding: 10px;
-    border: 1px solid rgba(15,23,42,.09);
-    border-radius: 8px;
-    background: rgba(255,255,255,.25);
+    border: 1px dashed rgba(217,119,6,.35);
+    border-radius: 9px;
+    background: rgba(245,158,11,.045);
 }
 
-.master-site-title {
+.master-notepad-head {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: space-between;
-    gap: 8px;
-    margin-bottom: 8px;
-    padding-bottom: 7px;
-    border-bottom: 1px dashed rgba(15,23,42,.15);
-}
-
-.master-site-title strong {
-    font: 900 11px/1.2 "Inter", sans-serif;
-    letter-spacing: .04em;
-}
-
-.master-site-title span {
-    font: 700 8px/1.2 "Inter", sans-serif;
-    opacity: .62;
-}
-
-.master-om-note-grid {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 8px;
-}
-
-.master-om-note {
-    min-width: 0;
-    padding: 9px;
-    border: 1px solid rgba(15,23,42,.09);
-    border-radius: 7px;
-    background: rgba(255,255,255,.36);
-    box-shadow: 0 2px 5px rgba(15,23,42,.04);
-}
-
-.master-om-note-head {
+    gap: 10px;
     margin-bottom: 7px;
 }
 
-.master-om-note-head strong {
-    font: 850 10px/1.3 "Inter", sans-serif;
+.master-notepad-head strong {
+    color: var(--admin-text, #111827);
+    font: 750 10px/1.3 "Inter", sans-serif;
 }
 
-.master-om-note-label {
-    margin: 7px 0 4px;
-    font: 850 7.2px/1.15 "Inter", sans-serif;
-    letter-spacing: .06em;
-    text-transform: uppercase;
-    opacity: .55;
+.master-notepad-head > span {
+    color: var(--admin-muted, #64748b);
+    font: 550 8px/1.3 "Inter", sans-serif;
 }
 
-.master-om-hr-list {
-    display: grid;
-    gap: 4px;
-}
-
-.master-om-hr-line {
-    display: flex;
-    align-items: baseline;
-    gap: 5px;
-    flex-wrap: wrap;
-    font: 650 8.4px/1.35 "Inter", sans-serif;
-}
-
-.master-om-hr-line strong {
-    font-weight: 800;
-}
-
-.master-om-hr-line span {
-    opacity: .64;
-    font-size: 7.8px;
-}
-
-.master-om-tls {
-    margin-top: 6px;
-    font: 600 8px/1.35 "Inter", sans-serif;
-    opacity: .72;
-}
-
-.master-om-tls span {
-    font-weight: 850;
-}
-
-.master-campaign-pills {
-    display: flex;
-    gap: 4px;
-    flex-wrap: wrap;
-}
-
-.master-campaign-pill {
-    display: inline-flex;
-    align-items: center;
-    min-height: 21px;
-    padding: 3px 6px;
-    border: 1px solid rgba(15,23,42,.08);
-    border-radius: 999px;
-    background: rgba(255,255,255,.38);
-    font: 700 7.4px/1 "Inter", sans-serif;
-}
-
-.master-muted-line {
-    font: 600 8px/1.3 "Inter", sans-serif;
-    opacity: .55;
-}
-
-.site-note-yellow { background: rgba(255,247,199,.46); }
-.site-note-blue { background: rgba(220,239,255,.48); }
-.site-note-green { background: rgba(221,245,223,.48); }
-.site-note-pink { background: rgba(255,228,236,.48); }
-.site-note-purple { background: rgba(238,227,255,.48); }
-.site-note-peach { background: rgba(255,230,207,.48); }
-.site-note-gray { background: rgba(226,232,240,.34); }
-
-.master-hr-editor {
-    display: grid;
-    grid-template-columns: 150px minmax(180px, .9fr) minmax(180px, .9fr) minmax(220px, 1.1fr) auto;
-    gap: 7px;
-    align-items: end;
-    margin-bottom: 8px;
-    padding: 9px;
-    border: 1px dashed rgba(15,23,42,.14);
-    border-radius: 8px;
-    background: rgba(255,255,255,.22);
-}
-
-.master-hr-editor label > span {
-    display: block;
-    margin-bottom: 4px;
-    font: 800 7.4px/1.1 "Inter", sans-serif;
-    text-transform: uppercase;
-    letter-spacing: .04em;
-    opacity: .58;
-}
-
-.master-hr-editor input {
+#masterPendingNotepad {
     width: 100%;
+    min-height: 105px;
     box-sizing: border-box;
-    min-height: 34px;
-    padding: 6px 8px;
-    border: 1px solid rgba(15,23,42,.13);
-    border-radius: 6px;
-    background: rgba(255,255,255,.45);
-    color: inherit;
-    font: 650 8.5px/1.2 "Inter", sans-serif;
+    resize: vertical;
+    padding: 9px 10px;
+    border: 1px solid var(--admin-line, #e2e8f0) !important;
+    border-radius: 8px !important;
+    background: var(--admin-panel, #fff) !important;
+    color: var(--admin-text, #111827) !important;
+    font: 550 10px/1.5 "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
 }
 
-.master-hr-editor-actions {
+.master-notepad-actions {
     display: flex;
-    gap: 5px;
+    justify-content: flex-end;
+    margin-top: 7px;
 }
 
-.master-hr-editor-actions button {
-    min-height: 34px !important;
-    white-space: nowrap;
+.master-search-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 7px;
+    margin-bottom: 9px;
 }
 
-.master-hr-save-status {
-    min-height: 16px;
-    margin: 0 0 7px;
-    font: 700 8px/1.3 "Inter", sans-serif;
-    opacity: .7;
+.master-search-row input {
+    width: 100%;
+    min-height: 36px;
+    box-sizing: border-box;
+    padding: 7px 9px;
+    border: 1px solid var(--admin-line, #e2e8f0) !important;
+    border-radius: 8px !important;
+    background: var(--admin-panel-soft, #f8fafc) !important;
+    color: var(--admin-text, #111827) !important;
+    font: 550 9.5px/1.2 "Inter", sans-serif !important;
 }
 
-.master-hr-save-status.is-success { color: #047857; opacity: 1; }
-.master-hr-save-status.is-error { color: #b91c1c; opacity: 1; }
-.master-hr-save-status.is-local { color: #a16207; opacity: 1; }
-
-.master-row-actions {
-    display: flex;
-    gap: 4px;
+.master-simple-source-note {
+    margin-top: 8px;
+    color: var(--admin-muted, #64748b);
+    font: 550 8px/1.3 "Inter", sans-serif;
+    text-align: right;
 }
 
-.master-edit-hr-btn,
-.master-delete-hr-btn {
-    min-height: 25px;
-    padding: 4px 6px;
-    border-radius: 5px;
-    background: rgba(255,255,255,.42);
-    color: inherit;
-    font: 800 7.2px/1 "Inter", sans-serif;
-    cursor: pointer;
-}
-
-.master-edit-hr-btn {
-    border: 1px solid rgba(37,99,235,.25);
-}
-
-.master-delete-hr-btn {
-    border: 1px solid rgba(220,38,38,.25);
-    color: #b91c1c;
-}
-
-.master-email-guide pre {
-    margin: 0;
-    white-space: pre-wrap;
-    overflow-wrap: anywhere;
-    color: inherit;
-    font: 600 8.8px/1.5 "Inter", "Roboto", Arial, sans-serif;
-}
-
-body.dark-mode .master-wide-note,
-body.dark-mode .master-mini-note {
-    filter: saturate(.75) brightness(.74);
-}
-
-body.dark-mode .master-data-table th {
-    background: rgba(15,23,42,.78);
-}
-
-@media (max-width: 1050px) {
-    .master-om-note-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+@media (max-width: 720px) {
+    .master-simple-head,
+    .master-simple-sync {
+        flex-direction: column;
+        align-items: stretch;
     }
 
-    .master-hr-editor {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-
-    .master-hr-editor-actions {
-        grid-column: 1 / -1;
-        justify-content: flex-end;
-    }
-}
-
-@media (max-width: 760px) {
-    .masterlist-mini-grid {
+    .master-search-row {
         grid-template-columns: 1fr;
     }
 
-    .master-om-note-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .master-hr-editor {
-        grid-template-columns: 1fr;
-    }
-
-    .master-hr-editor-actions {
-        grid-column: auto;
-        justify-content: flex-start;
+    .master-simple-source-note {
+        text-align: left;
     }
 }
 </style>
@@ -9626,15 +8994,11 @@ body.dark-mode .master-data-table th {
         <span>Pending Reports</span>
         <small class="pending-sidebar-badge" id="pendingSidebarBadge" title="Reports needing attention">0</small>
     </button>
-    <button type="button" class="workspace-tab-btn" id="notesTabBtn" role="tab" aria-selected="false" aria-controls="notesPanel">
-        <span>Notes</span>
-        <small class="notes-sidebar-badge" id="notesSidebarBadge" title="Saved notes">0</small>
-    </button>
     <button type="button" class="workspace-tab-btn" id="masterlistTabBtn" role="tab" aria-selected="false" aria-controls="masterlistPanel">
-        <span>Masterlist</span>
+        <span>Master List</span>
         <small class="masterlist-sidebar-badge" id="masterlistSidebarBadge" title="Google Sheets sync status">Live</small>
     </button>
-    <button type="button" class="workspace-tab-btn" id="edrTabBtn" role="tab" aria-selected="false" aria-controls="edrPanel">
+<button type="button" class="workspace-tab-btn" id="edrTabBtn" role="tab" aria-selected="false" aria-controls="edrPanel">
         <span>EDR</span>
     </button>
 
@@ -10087,128 +9451,34 @@ body.dark-mode .master-data-table th {
 </div>
 
 
-<section id="notesPanel" class="app-tab-panel" role="tabpanel" aria-labelledby="notesTabBtn">
-    <div class="container notes-shell">
-        <div class="notes-page-head">
-            <div>
-                <h2>Notes</h2>
-                <p class="page-lead">Save pre-shift notes, reminders, or items you want to share during post-shift.</p>
-            </div>
-        </div>
-
-        <section class="notes-add-card">
-            <div class="notes-add-grid">
-                <div class="notes-field">
-                    <label for="notesDate">Date</label>
-                    <input type="date" id="notesDate">
-                </div>
-
-                <div class="notes-field notes-text-field">
-                    <label for="notesText">Note</label>
-                    <textarea id="notesText"
-                              rows="4"
-                              placeholder="Type your note here..."></textarea>
-                </div>
-
-                <div class="notes-add-actions">
-                    <button type="button" class="edr-primary-btn" id="notesAddBtn">Save Note</button>
-                    <button type="button" class="edr-outline-btn" id="notesClearBtn">Clear</button>
-                </div>
-            </div>
-        </section>
-
-        <div id="notesList" class="notes-list">
-            <div class="edr-empty-state">No saved notes yet.</div>
-        </div>
-    </div>
-</section>
-
-
 
 <section id="masterlistPanel" class="app-tab-panel" role="tabpanel" aria-labelledby="masterlistTabBtn">
-    <div class="container masterlist-shell masterlist-v2-shell">
-        <div class="masterlist-page-head">
+    <div class="container master-simple-shell">
+        <div class="master-simple-head">
             <div>
-                <h2>Masterlist & HR Guide</h2>
+                <h2>Master List</h2>
                 <p class="page-lead">
-                    Live guide from Tracker, Master List, and Data. Monitor Pending Miles, see every campaign under its OM,
-                    and keep the HR assignment guide in one place.
+                    Quick live reference for your Pending Miles audits and HR assignment per OM.
                 </p>
             </div>
-
-            <button type="button" class="edr-outline-btn masterlist-refresh-btn" id="masterlistRefreshBtn">
-                Refresh
-            </button>
+            <button type="button" class="edr-outline-btn" id="masterlistRefreshBtn">Refresh</button>
         </div>
 
-        <div class="masterlist-sync-bar">
+        <div class="master-simple-sync">
             <div>
                 <strong id="masterlistSyncTitle">Connecting to Google Sheets...</strong>
-                <span id="masterlistSyncDetail">Loading Tracker, Master List, and Data.</span>
+                <span id="masterlistSyncDetail">Loading latest tracker data.</span>
             </div>
             <span id="masterlistLastUpdated">Not synced yet</span>
         </div>
 
-        <div class="masterlist-search-row">
-            <input type="search"
-                   id="masterlistSearch"
-                   placeholder="Search OM, TL, campaign, HR, site, agent, remarks..."
-                   autocomplete="off">
-            <button type="button" class="edr-outline-btn" id="masterlistClearSearch">Clear</button>
-        </div>
-
-        <div class="masterlist-mini-grid">
-            <section class="master-sticky master-sticky-yellow master-mini-note">
-                <div class="master-sticky-head">
-                    <div>
-                        <span class="master-sticky-kicker">Reference</span>
-                        <h3>OM Masterlist</h3>
-                    </div>
-                    <span class="master-sticky-count" id="masterOmCount">0</span>
-                </div>
-                <div class="master-sticky-body" id="masterOmList">
-                    <div class="master-empty">Loading...</div>
-                </div>
-            </section>
-
-            <section class="master-sticky master-sticky-blue master-mini-note">
-                <div class="master-sticky-head">
-                    <div>
-                        <span class="master-sticky-kicker">Reference</span>
-                        <h3>Team Leaders</h3>
-                    </div>
-                    <span class="master-sticky-count" id="masterTlCount">0</span>
-                </div>
-                <div class="master-sticky-body" id="masterTlList">
-                    <div class="master-empty">Loading...</div>
-                </div>
-            </section>
-
-            <section class="master-sticky master-sticky-green master-mini-note">
-                <div class="master-sticky-head">
-                    <div>
-                        <span class="master-sticky-kicker">Reference</span>
-                        <h3>Campaigns / Accounts</h3>
-                    </div>
-                    <span class="master-sticky-count" id="masterCampaignCount">0</span>
-                </div>
-                <div class="master-sticky-body" id="masterCampaignList">
-                    <div class="master-empty">Loading...</div>
-                </div>
-            </section>
-        </div>
-
-        <section class="master-sticky master-sticky-orange master-wide-note master-pending-note">
-            <div class="master-sticky-head">
+        <section class="master-simple-card master-pending-card">
+            <div class="master-simple-card-head">
                 <div>
-                    <span class="master-sticky-kicker">Tracker Monitor</span>
+                    <span class="master-simple-kicker">Tracker</span>
                     <h3>Pending Miles</h3>
                 </div>
-                <span class="master-sticky-count" id="masterPendingMilesCount">0</span>
-            </div>
-
-            <div class="master-note-sub">
-                All Tracker rows where <strong>Name = Miles</strong> and <strong>NOC = Pending</strong>.
+                <span class="master-simple-count" id="masterPendingMilesCount">0</span>
             </div>
 
             <div class="master-table-wrap">
@@ -10217,125 +9487,57 @@ body.dark-mode .master-data-table th {
                     <tbody></tbody>
                 </table>
             </div>
+
+            <div class="master-notepad">
+                <div class="master-notepad-head">
+                    <div>
+                        <span class="master-simple-kicker">Notepad</span>
+                        <strong>Pending Miles Notes</strong>
+                    </div>
+                    <span id="masterNotepadStatus">Saved locally</span>
+                </div>
+                <textarea id="masterPendingNotepad"
+                          rows="6"
+                          placeholder="Type follow-up notes, reminders, HR responses, NOC status, or anything you need to remember..."></textarea>
+                <div class="master-notepad-actions">
+                    <button type="button" class="edr-outline-btn" id="masterNotepadClearBtn">Clear Notepad</button>
+                </div>
+            </div>
         </section>
 
-        <section class="master-sticky master-sticky-purple master-wide-note master-hr-map-note">
-            <div class="master-sticky-head">
+        <section class="master-simple-card master-hr-card">
+            <div class="master-simple-card-head">
                 <div>
-                    <span class="master-sticky-kicker">HR + Operations Guide</span>
-                    <h3>OM / HR / Campaign Map</h3>
+                    <span class="master-simple-kicker">Google Sheets</span>
+                    <h3>Assigned HR per OM</h3>
                 </div>
-                <span class="master-sticky-count" id="masterOmCampaignCount">0</span>
+                <span class="master-simple-count" id="masterAssignedHrCount">0</span>
             </div>
 
-            <div class="master-note-sub">
-                Grouped by site. Each OM card shows the assigned HR and all campaigns/accounts found under that OM in the live tracker.
+            <div class="master-search-row">
+                <input type="search"
+                       id="masterHrSearch"
+                       placeholder="Search site, OM / team, HR assignee, remarks..."
+                       autocomplete="off">
+                <button type="button" class="edr-outline-btn" id="masterHrSearchClear">Clear</button>
             </div>
-
-            <div id="masterOmCampaignMap" class="master-site-map">
-                <div class="master-empty">Loading...</div>
-            </div>
-        </section>
-
-        <section class="master-sticky master-sticky-pink master-wide-note">
-            <div class="master-sticky-head">
-                <div>
-                    <span class="master-sticky-kicker">Editable HR Guide</span>
-                    <h3>Assigned HR per Site / OM</h3>
-                </div>
-                <span class="master-sticky-count" id="masterAssignedHrCount">0</span>
-            </div>
-
-            <div class="master-note-sub">
-                You can add or update an HR assignment here. With the upgraded Apps Script, changes are saved back to Google Sheets.
-                Until then, edits are safely kept on this browser.
-            </div>
-
-            <div class="master-hr-editor">
-                <input type="hidden" id="masterHrEditId">
-
-                <label>
-                    <span>Site</span>
-                    <input type="text" id="masterHrSiteInput" placeholder="MABINI, DIGOS, ECOLAND...">
-                </label>
-
-                <label>
-                    <span>OM / Team</span>
-                    <input type="text" id="masterHrOmInput" placeholder="Team Mirah / OM Jordan">
-                </label>
-
-                <label>
-                    <span>HR Assignee</span>
-                    <input type="text" id="masterHrAssigneeInput" placeholder="HR name">
-                </label>
-
-                <label class="master-hr-remarks-field">
-                    <span>Remarks / Campaign Scope</span>
-                    <input type="text" id="masterHrRemarksInput" placeholder="Optional: Superdial, FBB, Shopee...">
-                </label>
-
-                <div class="master-hr-editor-actions">
-                    <button type="button" class="edr-primary-btn" id="masterHrSaveBtn">Add Assignment</button>
-                    <button type="button" class="edr-outline-btn" id="masterHrCancelBtn">Clear</button>
-                </div>
-            </div>
-
-            <div id="masterHrSaveStatus" class="master-hr-save-status"></div>
 
             <div class="master-table-wrap master-hr-table-wrap">
-                <table class="master-data-table master-hr-table">
+                <table class="master-data-table" id="masterAssignedHrTable">
                     <thead>
                         <tr>
                             <th>Site</th>
                             <th>OM / Team</th>
                             <th>HR Assignee</th>
                             <th>Remarks</th>
-                            <th>Action</th>
                         </tr>
                     </thead>
-                    <tbody id="masterAssignedHrList"></tbody>
+                    <tbody id="masterAssignedHrBody"></tbody>
                 </table>
             </div>
         </section>
 
-        <section class="master-sticky master-sticky-teal master-wide-note">
-            <div class="master-sticky-head">
-                <div>
-                    <span class="master-sticky-kicker">Live Data</span>
-                    <h3>Data Monitor</h3>
-                </div>
-                <span class="master-sticky-count" id="masterDataCount">0</span>
-            </div>
-
-            <div class="master-note-sub">
-                Live rows from the <strong>Data</strong> tab. This follows your 5-minute auto-refresh and manual Refresh button.
-            </div>
-
-            <div class="master-table-wrap master-data-monitor-wrap">
-                <table class="master-data-table" id="masterDataMonitorTable">
-                    <thead></thead>
-                    <tbody></tbody>
-                </table>
-            </div>
-        </section>
-
-        <section class="master-sticky master-sticky-peach master-wide-note">
-            <div class="master-sticky-head">
-                <div>
-                    <span class="master-sticky-kicker">Copy & Paste</span>
-                    <h3>Email Guide</h3>
-                </div>
-                <span class="master-sticky-count" id="masterEmailGuideCount">0</span>
-            </div>
-
-            <div id="masterEmailGuideList" class="master-email-body">
-                <div class="master-empty">
-                    The current API only exposes the first table headers. Install the supplied Apps Script v2 once so the website can also scan the full Master List / Data grid for email templates.
-                </div>
-            </div>
-        </section>
-
-        <div class="masterlist-source-note">
+        <div class="master-simple-source-note">
             Auto-refreshes every 5 minutes while the website is open.
         </div>
     </div>
@@ -19023,283 +18225,18 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
 })();
 </script>
 
-
-<script id="notesWorkspaceScript">
-(function () {
-    const DB_NAME = "cctv_notes_v1";
-    const STORE = "state";
-    const KEY = "notes";
-    let notes = [];
-
-    const $ = id => document.getElementById(id);
-
-    function uid() {
-        return "note_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 8);
-    }
-
-    function todayLocal() {
-        const d = new Date();
-        return [
-            d.getFullYear(),
-            String(d.getMonth() + 1).padStart(2, "0"),
-            String(d.getDate()).padStart(2, "0")
-        ].join("-");
-    }
-
-    function esc(value) {
-        return String(value == null ? "" : value)
-            .replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;")
-            .replace(/"/g, "&quot;")
-            .replace(/'/g, "&#039;");
-    }
-
-    function clone(value) {
-        try { return structuredClone(value); }
-        catch (_) { return JSON.parse(JSON.stringify(value)); }
-    }
-
-    function openDb() {
-        return new Promise((resolve, reject) => {
-            const req = indexedDB.open(DB_NAME, 1);
-
-            req.onupgradeneeded = () => {
-                const db = req.result;
-                if (!db.objectStoreNames.contains(STORE)) {
-                    db.createObjectStore(STORE);
-                }
-            };
-
-            req.onsuccess = () => resolve(req.result);
-            req.onerror = () => reject(req.error);
-        });
-    }
-
-    async function save() {
-        const db = await openDb();
-
-        await new Promise((resolve, reject) => {
-            const tx = db.transaction(STORE, "readwrite");
-            tx.objectStore(STORE).put(clone(notes), KEY);
-            tx.oncomplete = resolve;
-            tx.onerror = () => reject(tx.error);
-        });
-
-        db.close();
-    }
-
-    async function load() {
-        try {
-            const db = await openDb();
-
-            notes = await new Promise((resolve, reject) => {
-                const tx = db.transaction(STORE, "readonly");
-                const req = tx.objectStore(STORE).get(KEY);
-                req.onsuccess = () => resolve(Array.isArray(req.result) ? req.result : []);
-                req.onerror = () => reject(req.error);
-            });
-
-            db.close();
-        } catch (error) {
-            console.error("Notes load failed:", error);
-            notes = [];
-        }
-
-        render();
-    }
-
-    function formatDate(value) {
-        if (!value) return "";
-        const date = new Date(`${value}T00:00:00`);
-        if (Number.isNaN(date.getTime())) return value;
-
-        return date.toLocaleDateString([], {
-            month: "short",
-            day: "numeric",
-            year: "numeric"
-        });
-    }
-
-    function render() {
-        const root = $("notesList");
-        const badge = $("notesSidebarBadge");
-
-        if (badge) badge.textContent = String(notes.length);
-        if (!root) return;
-
-        if (!notes.length) {
-            root.innerHTML = '<div class="edr-empty-state">No saved notes yet.</div>';
-            return;
-        }
-
-        root.innerHTML = notes
-            .slice()
-            .sort((a, b) => {
-                const ad = new Date(`${a.date || ""}T00:00:00`);
-                const bd = new Date(`${b.date || ""}T00:00:00`);
-                return bd - ad;
-            })
-            .map(note => `
-                <article class="notes-card" data-id="${esc(note.id)}">
-                    <div class="notes-card-date">${esc(formatDate(note.date))}</div>
-                    <textarea class="notes-card-text" rows="3">${esc(note.text || "")}</textarea>
-                    <button type="button" class="edr-danger-soft-btn notes-delete-btn">Delete</button>
-                </article>
-            `)
-            .join("");
-
-        root.querySelectorAll(".notes-card").forEach(card => {
-            const note = notes.find(item => item.id === card.dataset.id);
-            if (!note) return;
-
-            card.querySelector(".notes-card-text")?.addEventListener("change", async event => {
-                note.text = event.target.value.trim();
-                note.updatedAt = new Date().toISOString();
-                await save();
-            });
-
-            card.querySelector(".notes-delete-btn")?.addEventListener("click", async () => {
-                const approved = await window.appConfirm({
-                    title: "Delete note?",
-                    message: "This saved note will be removed.",
-                    confirmText: "Delete Note",
-                    tone: "danger"
-                });
-
-                if (!approved) return;
-
-                notes = notes.filter(item => item.id !== note.id);
-                await save();
-                render();
-            });
-        });
-    }
-
-    async function addNote() {
-        const date = $("notesDate").value || todayLocal();
-        const text = $("notesText").value.trim();
-
-        if (!text) {
-            window.alert("Please enter a note.");
-            return;
-        }
-
-        const now = new Date().toISOString();
-
-        notes.push({
-            id: uid(),
-            date,
-            text,
-            createdAt: now,
-            updatedAt: now
-        });
-
-        await save();
-
-        $("notesDate").value = todayLocal();
-        $("notesText").value = "";
-        render();
-    }
-
-    $("notesAddBtn")?.addEventListener("click", addNote);
-    $("notesClearBtn")?.addEventListener("click", () => {
-        $("notesDate").value = todayLocal();
-        $("notesText").value = "";
-    });
-
-    window.__workspaceHistoryAdapters = window.__workspaceHistoryAdapters || {};
-    window.__workspaceHistoryAdapters.notes = {
-        label: "Notes",
-        snapshot() {
-            return clone(notes);
-        },
-        async restore(snapshot) {
-            notes = Array.isArray(snapshot) ? clone(snapshot) : [];
-            await save();
-            render();
-        }
-    };
-
-    function boot() {
-        $("notesDate").value = todayLocal();
-        load();
-    }
-
-    if (document.readyState === "loading") {
-        document.addEventListener("DOMContentLoaded", boot, { once: true });
-    } else {
-        boot();
-    }
-})();
-</script>
-
-
-<script id="masterlistGuideScript">
+<script id="masterlistSimpleScript">
 (function () {
     const API_URL = 'https://script.google.com/macros/s/AKfycbw2-7ERz3psAaUfsceoFHV6leNmqFf5HxgasRYORMHU8bbnte7DLbDIfX_YzjRrzMZh/exec';
     const REFRESH_MS = 5 * 60 * 1000;
-    const CACHE_DB = "cctv_masterlist_cache_v2";
+    const CACHE_DB = "cctv_masterlist_simple_v1";
     const CACHE_STORE = "state";
     const CACHE_KEY = "latest";
-    const LOCAL_HR_KEY = "cctv_masterlist_hr_overrides_v2";
-
-    const SEED_HR = [
-        { id: "seed_1", site: 'MABINI', omTeam: 'Team Mirah', hr: 'HR Geselle Merencillo', remarks: 'Superdial', source: "seed" },
-        { id: "seed_2", site: 'MABINI', omTeam: 'Team Irene', hr: 'Angelika Felasol', remarks: 'AFP, GLO, GREENFOOT', source: "seed" },
-        { id: "seed_3", site: 'MABINI', omTeam: 'Team Irene (BIGO)', hr: 'Rhea Picot', remarks: '', source: "seed" },
-        { id: "seed_4", site: 'MABINI', omTeam: 'Team Mogan', hr: 'Allen Valdez', remarks: '', source: "seed" },
-        { id: "seed_5", site: 'MABINI', omTeam: 'Team Joneza', hr: 'Angelika Felasol', remarks: 'FBB', source: "seed" },
-        { id: "seed_6", site: 'MABINI', omTeam: 'Team Renato', hr: 'Geselle Merencillo', remarks: '', source: "seed" },
-        { id: "seed_7", site: 'MABINI', omTeam: 'Team Jordan', hr: 'Marie Peralta / Shyra Rendon', remarks: 'Shared assignment', source: "seed" },
-        { id: "seed_8", site: 'MABINI', omTeam: 'Team Crystal', hr: 'Geselle Merencillo', remarks: '', source: "seed" },
-        { id: "seed_9", site: 'DIGOS', omTeam: 'OM Jordan', hr: 'Alliah Alisoso', remarks: '', source: "seed" },
-        { id: "seed_10", site: 'DIGOS', omTeam: 'OM Cherry', hr: 'Alliah Alisoso', remarks: '', source: "seed" },
-        { id: "seed_11", site: 'DIGOS', omTeam: 'OM Shayne', hr: 'Joven Jay Bauden', remarks: '', source: "seed" },
-        { id: "seed_12", site: 'DIGOS', omTeam: 'OM Mirah', hr: 'Gleecille Goles', remarks: '', source: "seed" },
-        { id: "seed_13", site: 'DIGOS', omTeam: 'OM Freda', hr: 'Gleecille Goles', remarks: '', source: "seed" },
-        { id: "seed_14", site: 'ECOLAND', omTeam: 'OM Rhelford', hr: 'Reena Coralde', remarks: 'DLPC Norderco', source: "seed" },
-        { id: "seed_15", site: 'ECOLAND', omTeam: 'OM Rhelford', hr: 'Trisha Diane Kwan', remarks: 'UMG (Transfer to EOR - Angel Jomolo)', source: "seed" },
-        { id: "seed_16", site: 'ECOLAND', omTeam: 'OM Rhelford', hr: 'Elaiza Jane Panes', remarks: 'Special Hires (Transfer to EOR - Angel Jomolo)', source: "seed" },
-        { id: "seed_17", site: 'ECOLAND', omTeam: 'OM Thirdie', hr: 'Kimberly Sueta', remarks: 'BIGO Ecoland', source: "seed" },
-        { id: "seed_18", site: 'GENSAN', omTeam: 'Team Abby', hr: 'Phoebe Bularon', remarks: '', source: "seed" },
-        { id: "seed_19", site: 'GENSAN', omTeam: 'Team Mirah', hr: 'Marian Malinao', remarks: '', source: "seed" },
-        { id: "seed_20", site: 'GENSAN', omTeam: 'Team Willy', hr: 'Marian Malinao', remarks: '', source: "seed" },
-        { id: "seed_21", site: 'GENSAN', omTeam: 'Team Irene', hr: 'Marian Malinao', remarks: '', source: "seed" },
-        { id: "seed_22", site: 'GENSAN', omTeam: 'Team Michelle', hr: 'Marian Malinao', remarks: '', source: "seed" },
-        { id: "seed_23", site: 'MAA', omTeam: 'Team MJ', hr: 'Gerald Calfoforo', remarks: 'Shopee', source: "seed" },
-        { id: "seed_24", site: 'MAA', omTeam: 'Team Mark', hr: 'Judelaine Mae Bacus', remarks: 'Shopee', source: "seed" },
-        { id: "seed_25", site: 'MAA', omTeam: 'Team James', hr: 'Khristine Cate Lumayag', remarks: 'Shopee', source: "seed" },
-        { id: "seed_26", site: 'MAA', omTeam: 'TD', hr: 'Shania', remarks: '', source: "seed" },
-        { id: "seed_27", site: 'MAA', omTeam: 'OM Willy', hr: 'Jodels Pantonial (HL)', remarks: '', source: "seed" },
-        { id: "seed_28", site: 'MAA', omTeam: 'OM Norman', hr: 'Elsy Mae Villarino', remarks: '', source: "seed" },
-        { id: "seed_29", site: 'MAA', omTeam: 'OM Derline', hr: 'John Albert Golosino', remarks: '', source: "seed" },
-        { id: "seed_30", site: 'MAA', omTeam: 'OM Michelle', hr: 'Annie Mae Tomanggong', remarks: 'Shared with OM Elezalde', source: "seed" },
-        { id: "seed_31", site: 'MAA', omTeam: 'OM Elezalde', hr: 'Annie Mae Tomanggong', remarks: 'Shared with OM Michelle', source: "seed" },
-        { id: "seed_32", site: 'MAA', omTeam: 'OM Cherry', hr: 'Keycee Selerio', remarks: 'EIMS', source: "seed" },
-        { id: "seed_33", site: 'MAA', omTeam: 'OM Shiela', hr: 'Cherry Ann Ordeniza', remarks: '', source: "seed" },
-        { id: "seed_34", site: 'MAA', omTeam: 'NVT', hr: 'Cherry Ann Ordeniza', remarks: '', source: "seed" },
-        { id: "seed_35", site: 'MAA', omTeam: 'OM Beth', hr: 'Cherry Ann Ordeniza', remarks: 'EDJ, AIRBILLS, WIZAI', source: "seed" },
-        { id: "seed_36", site: 'MAA', omTeam: 'OM Frederick', hr: 'Anne Kimberly Briones', remarks: 'Support Group', source: "seed" },
-        { id: "seed_37", site: 'CDO', omTeam: 'Team Shey', hr: 'Johairah Sanggacala', remarks: 'Admin Support', source: "seed" },
-        { id: "seed_38", site: 'CDO', omTeam: 'Team Mirah', hr: 'Queen Dibbie Barros', remarks: '', source: "seed" },
-        { id: "seed_39", site: 'CDO', omTeam: 'Team Norman', hr: 'Queen Dibbie Barros', remarks: '', source: "seed" },
-        { id: "seed_40", site: 'CDO', omTeam: 'Team Daniel', hr: 'Queen Dibbie Barros', remarks: '', source: "seed" },
-        { id: "seed_41", site: 'CDO', omTeam: 'Support Group', hr: 'Queen Dibbie Barros', remarks: '', source: "seed" }
-    ];
+    const NOTEPAD_KEY = "cctv_master_pending_miles_notepad_v1";
 
     let payload = null;
-    let localHr = loadLocalHr();
-    let derived = {
-        oms: [],
-        tls: [],
-        campaigns: [],
-        pendingMiles: [],
-        dataRows: [],
-        assignments: [],
-        omCampaignGroups: [],
-        emailGuides: []
-    };
+    let pendingMiles = [];
+    let hrAssignments = [];
 
     const $ = id => document.getElementById(id);
 
@@ -19327,11 +18264,6 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
             .replace(/'/g, "&#039;");
     }
 
-    function unique(values) {
-        return [...new Set(values.map(clean).filter(Boolean))]
-            .sort((a, b) => a.localeCompare(b));
-    }
-
     function rowsFrom(name) {
         const direct = payload?.[name];
         if (Array.isArray(direct)) return direct;
@@ -19345,25 +18277,13 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         return Array.isArray(nested) ? nested : [];
     }
 
-    function webHrRows() {
-        const direct = payload?.webHrAssignments;
-        if (Array.isArray(direct)) return direct;
-
-        const nested = payload?.sheets?.webHrAssignments?.rows;
-        return Array.isArray(nested) ? nested : [];
-    }
-
-    function keyMatch(key, aliases) {
-        const n = norm(key);
-        return aliases.some(alias => n === alias || n.includes(alias));
-    }
-
     function rowVal(row, aliases) {
         if (!row || typeof row !== "object") return "";
 
-        const key = Object.keys(row).find(k =>
-            keyMatch(k, aliases)
-        );
+        const key = Object.keys(row).find(rawKey => {
+            const k = norm(rawKey);
+            return aliases.some(alias => k === alias || k.includes(alias));
+        });
 
         return key ? clean(row[key]) : "";
     }
@@ -19372,81 +18292,40 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         return rowVal(row, ["name"]);
     }
 
-    function trackerOm(row) {
-        return rowVal(row, ["om", "om name", "operations manager"]);
-    }
-
-    function trackerTl(row) {
-        return rowVal(row, ["tl", "tl name", "team leader"]);
-    }
-
-    function trackerAccount(row) {
-        return rowVal(row, ["account", "campaign"]);
-    }
-
-    function trackerSite(row) {
-        return rowVal(row, ["site"]);
-    }
-
     function trackerNoc(row) {
         return rowVal(row, ["noc"]);
     }
 
-    function normalizeSite(value) {
-        const n = norm(value).toUpperCase();
+    function webHrRows() {
+        const direct = payload?.webHrAssignments;
+        if (Array.isArray(direct)) return direct;
 
-        if (!n) return "UNSPECIFIED";
-        if (n.includes("MABINI")) return "MABINI";
-        if (n.includes("ECOLAND")) return "ECOLAND";
-        if (n.includes("DIGOS")) return "DIGOS";
-        if (n.includes("GENSAN") || n.includes("GENERAL SANTOS")) return "GENSAN";
-        if (n === "MAA" || n.includes(" MAA") || n.includes("MAA SITE")) return "MAA";
-        if (n.includes("CDO") || n.includes("CAGAYAN DE ORO")) return "CDO";
-
-        return clean(value).toUpperCase();
+        const nested = payload?.sheets?.webHrAssignments?.rows;
+        return Array.isArray(nested) ? nested : [];
     }
 
-    function normalizeOmTeam(value) {
-        return norm(value)
-            .replace(/^team\s+/, "")
-            .replace(/^om\s+/, "")
-            .replace(/\s+\(bigo\)$/, "")
-            .trim();
+    function parseWebHrRows() {
+        return webHrRows()
+            .map((row, index) => ({
+                id: rowVal(row, ["id"]) || `web_${index}`,
+                site: rowVal(row, ["site"]),
+                omTeam: rowVal(row, ["om / team", "om team", "om", "team"]),
+                hr: rowVal(row, ["hr assignee", "assigned hr", "hr"]),
+                remarks: rowVal(row, ["remarks", "remark"]),
+                source: "web"
+            }))
+            .filter(item => item.site && item.omTeam && item.hr);
     }
 
-    function loadLocalHr() {
-        try {
-            const parsed = JSON.parse(localStorage.getItem(LOCAL_HR_KEY) || "[]");
-            return Array.isArray(parsed) ? parsed : [];
-        } catch (_) {
-            return [];
-        }
-    }
-
-    function saveLocalHr() {
-        localStorage.setItem(LOCAL_HR_KEY, JSON.stringify(localHr));
-    }
-
-    function parseApiHrRows() {
-        return webHrRows().map((row, index) => ({
-            id: rowVal(row, ["id"]) || `api_${index}`,
-            site: rowVal(row, ["site"]),
-            omTeam: rowVal(row, ["om / team", "om team", "om", "team"]),
-            hr: rowVal(row, ["hr assignee", "assigned hr", "hr"]),
-            remarks: rowVal(row, ["remarks", "remark"]),
-            source: "api"
-        })).filter(item => item.site && item.omTeam && item.hr);
-    }
-
-    function extractHrFromGrid(grid) {
+    function extractHrTableFromGrid(grid, source) {
         if (!Array.isArray(grid) || !grid.length) return [];
 
-        const out = [];
+        const results = [];
 
         for (let r = 0; r < grid.length; r++) {
             const header = (grid[r] || []).map(cell => norm(cell));
 
-            const siteIdx = header.findIndex(v => v === "site" || v === "hr site");
+            const siteIdx = header.findIndex(v => v === "site" || v.includes("hr site"));
             const omIdx = header.findIndex(v =>
                 v === "om / team" ||
                 v === "om team" ||
@@ -19466,7 +18345,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
 
             if (siteIdx < 0 || omIdx < 0 || hrIdx < 0) continue;
 
-            let blankStreak = 0;
+            let blankRows = 0;
 
             for (let rr = r + 1; rr < grid.length; rr++) {
                 const row = grid[rr] || [];
@@ -19476,283 +18355,73 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
                 const remarks = remarksIdx >= 0 ? clean(row[remarksIdx]) : "";
 
                 if (!site && !omTeam && !hr && !remarks) {
-                    blankStreak++;
-                    if (blankStreak >= 2) break;
+                    blankRows++;
+                    if (blankRows >= 2) break;
                     continue;
                 }
 
-                blankStreak = 0;
+                blankRows = 0;
 
                 if (site && omTeam && hr) {
-                    out.push({
-                        id: `grid_${r}_${rr}`,
+                    results.push({
+                        id: `${source}_${r}_${rr}`,
                         site,
                         omTeam,
                         hr,
                         remarks,
-                        source: "grid"
+                        source
                     });
                 }
             }
         }
 
-        return out;
+        return results;
     }
 
     function assignmentKey(item) {
         return [
-            normalizeSite(item.site),
-            normalizeOmTeam(item.omTeam),
+            norm(item.site),
+            norm(item.omTeam),
+            norm(item.hr),
             norm(item.remarks)
         ].join("|");
     }
 
-    function mergedAssignments() {
-        const fromGrid = [
-            ...extractHrFromGrid(gridFrom("masterList")),
-            ...extractHrFromGrid(gridFrom("data"))
-        ];
-
-        const all = [
-            ...SEED_HR,
-            ...fromGrid,
-            ...parseApiHrRows(),
-            ...localHr
-        ];
-
-        const map = new Map();
-
-        all.forEach(item => {
-            if (!item.site || !item.omTeam || !item.hr) return;
-
-            const key = assignmentKey(item);
-            const old = map.get(key);
-
-            // Priority: local > api > grid > seed.
-            const rank = { seed: 1, grid: 2, api: 3, local: 4 };
-            if (!old || (rank[item.source] || 0) >= (rank[old.source] || 0)) {
-                map.set(key, { ...item });
-            }
-        });
-
-        return [...map.values()].sort((a, b) =>
-            normalizeSite(a.site).localeCompare(normalizeSite(b.site)) ||
-            normalizeOmTeam(a.omTeam).localeCompare(normalizeOmTeam(b.omTeam))
-        );
-    }
-
-    function findAssignments(site, om) {
-        const siteKey = normalizeSite(site);
-        const omKey = normalizeOmTeam(om);
-
-        return derived.assignments.filter(item =>
-            normalizeSite(item.site) === siteKey &&
-            normalizeOmTeam(item.omTeam) === omKey
-        );
-    }
-
-    function extractEmailGuidesFromGrid(grid, sourceName) {
-        if (!Array.isArray(grid) || !grid.length) return [];
-
-        const guides = [];
-
-        for (let r = 0; r < grid.length; r++) {
-            const row = grid[r] || [];
-            const joined = row.map(clean).filter(Boolean).join(" | ");
-            const n = norm(joined);
-
-            if (!(
-                n.includes("email guide") ||
-                n.includes("email template") ||
-                n.includes("email subject") ||
-                n.startsWith("subject ") ||
-                n.includes("subject:")
-            )) continue;
-
-            const lines = [];
-
-            for (let rr = r; rr < Math.min(grid.length, r + 10); rr++) {
-                const text = (grid[rr] || []).map(clean).filter(Boolean).join(" | ");
-                if (!text) {
-                    if (lines.length) break;
-                    continue;
-                }
-
-                lines.push(text);
-            }
-
-            if (lines.length) {
-                guides.push({
-                    id: `${sourceName}_${r}`,
-                    title: lines[0],
-                    text: lines.join("\n")
-                });
-            }
-        }
-
-        return guides;
-    }
-
-    function objectEmailGuides(rows, sourceName) {
-        const out = [];
-
-        rows.forEach((row, index) => {
-            const parts = [];
-
-            Object.entries(row || {}).forEach(([key, value]) => {
-                const k = norm(key);
-                const v = clean(value);
-
-                if (!v) return;
-
-                if (
-                    k.includes("email guide") ||
-                    k.includes("email template") ||
-                    k.includes("email subject") ||
-                    k === "subject" ||
-                    k.includes("email body") ||
-                    k === "body"
-                ) {
-                    parts.push(`${key}: ${v}`);
-                }
-            });
-
-            if (parts.length) {
-                out.push({
-                    id: `${sourceName}_obj_${index}`,
-                    title: `Email Guide ${out.length + 1}`,
-                    text: parts.join("\n\n")
-                });
-            }
-        });
-
-        return out;
-    }
-
     function derive() {
         const tracker = rowsFrom("tracker");
-        const dataRows = rowsFrom("data");
 
-        const oms = unique([
-            ...tracker.map(trackerOm),
-            ...dataRows.map(trackerOm),
-            ...SEED_HR.map(item => normalizeOmTeam(item.omTeam))
-        ]);
-
-        const tls = unique([
-            ...tracker.map(trackerTl),
-            ...dataRows.map(trackerTl)
-        ]);
-
-        const campaigns = unique([
-            ...tracker.map(trackerAccount),
-            ...dataRows.map(trackerAccount)
-        ]);
-
-        const pendingMiles = tracker.filter(row =>
+        pendingMiles = tracker.filter(row =>
             norm(trackerName(row)) === "miles" &&
             norm(trackerNoc(row)) === "pending"
         );
 
-        const assignments = mergedAssignments();
-
-        const groupMap = new Map();
-
-        [...tracker, ...dataRows].forEach(row => {
-            const om = trackerOm(row);
-            const account = trackerAccount(row);
-            const site = trackerSite(row);
-
-            if (!om) return;
-
-            const siteKey = normalizeSite(site);
-            const omKey = normalizeOmTeam(om);
-            const key = `${siteKey}|${omKey}`;
-
-            if (!groupMap.has(key)) {
-                groupMap.set(key, {
-                    site: siteKey,
-                    om: clean(om),
-                    campaigns: new Set(),
-                    tls: new Set()
-                });
-            }
-
-            const group = groupMap.get(key);
-            if (account) group.campaigns.add(account);
-
-            const tl = trackerTl(row);
-            if (tl) group.tls.add(tl);
-        });
-
-        // Ensure HR assignments also appear even if there is no current tracker row.
-        assignments.forEach(item => {
-            const siteKey = normalizeSite(item.site);
-            const omKey = normalizeOmTeam(item.omTeam);
-            const key = `${siteKey}|${omKey}`;
-
-            if (!groupMap.has(key)) {
-                groupMap.set(key, {
-                    site: siteKey,
-                    om: clean(item.omTeam),
-                    campaigns: new Set(),
-                    tls: new Set()
-                });
-            }
-        });
-
-        const omCampaignGroups = [...groupMap.values()]
-            .map(group => ({
-                site: group.site,
-                om: group.om,
-                campaigns: [...group.campaigns].sort((a, b) => a.localeCompare(b)),
-                tls: [...group.tls].sort((a, b) => a.localeCompare(b))
-            }))
-            .sort((a, b) =>
-                a.site.localeCompare(b.site) ||
-                normalizeOmTeam(a.om).localeCompare(normalizeOmTeam(b.om))
-            );
-
-        const emailGuides = [
-            ...objectEmailGuides(rowsFrom("masterList"), "masterList"),
-            ...objectEmailGuides(dataRows, "data"),
-            ...extractEmailGuidesFromGrid(gridFrom("masterList"), "Master List"),
-            ...extractEmailGuidesFromGrid(gridFrom("data"), "Data")
+        const candidates = [
+            ...extractHrTableFromGrid(gridFrom("masterList"), "masterList"),
+            ...extractHrTableFromGrid(gridFrom("data"), "data"),
+            ...parseWebHrRows()
         ];
 
-        const uniqueGuides = [];
-        const guideSeen = new Set();
+        const seen = new Set();
 
-        emailGuides.forEach(guide => {
-            const key = norm(guide.text);
-            if (!key || guideSeen.has(key)) return;
-            guideSeen.add(key);
-            uniqueGuides.push(guide);
-        });
-
-        derived = {
-            oms,
-            tls,
-            campaigns,
-            pendingMiles,
-            dataRows,
-            assignments,
-            omCampaignGroups,
-            emailGuides: uniqueGuides
-        };
+        hrAssignments = candidates
+            .filter(item => {
+                const key = assignmentKey(item);
+                if (seen.has(key)) return false;
+                seen.add(key);
+                return true;
+            })
+            .sort((a, b) =>
+                clean(a.site).localeCompare(clean(b.site)) ||
+                clean(a.omTeam).localeCompare(clean(b.omTeam))
+            );
     }
 
-    function listHtml(items) {
-        if (!items.length) return '<div class="master-empty">No data detected.</div>';
+    function tableColumns(rows) {
+        const preferred = [
+            "Year", "Month", "Date", "OM", "SITE", "TL",
+            "Agent Name", "Account", "CCTV Reason Codes", "NOC", "Remarks"
+        ];
 
-        return items.map(value => `
-            <div class="master-list-item" data-search="${esc(norm(value))}">
-                ${esc(value)}
-            </div>
-        `).join("");
-    }
-
-    function tableColumns(rows, preferred) {
         const all = [];
 
         rows.slice(0, 100).forEach(row => {
@@ -19761,134 +18430,59 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
             });
         });
 
-        const preferredFound = preferred.filter(wanted =>
-            all.some(key => norm(key) === norm(wanted))
-        ).map(wanted =>
-            all.find(key => norm(key) === norm(wanted))
-        );
+        const preferredFound = preferred
+            .map(wanted => all.find(key => norm(key) === norm(wanted)))
+            .filter(Boolean);
 
-        const remainder = all.filter(key => !preferredFound.includes(key));
-        return [...preferredFound, ...remainder];
+        const rest = all.filter(key => !preferredFound.includes(key));
+
+        return [...preferredFound, ...rest];
     }
 
-    function renderTable(tableId, rows, preferredColumns, maxRows = 500) {
-        const table = $(tableId);
-        if (!table) return;
-
+    function renderPendingMiles() {
+        const table = $("masterPendingMilesTable");
         const thead = table.querySelector("thead");
         const tbody = table.querySelector("tbody");
 
-        if (!rows.length) {
+        $("masterPendingMilesCount").textContent = String(pendingMiles.length);
+
+        if (!pendingMiles.length) {
             thead.innerHTML = "";
-            tbody.innerHTML = '<tr><td class="master-empty-cell">No matching rows.</td></tr>';
+            tbody.innerHTML =
+                '<tr><td class="master-empty-cell">No Pending Miles rows found.</td></tr>';
             return;
         }
 
-        const columns = tableColumns(rows, preferredColumns);
+        const columns = tableColumns(pendingMiles);
 
-        thead.innerHTML = `<tr>${columns.map(col => `<th>${esc(col)}</th>`).join("")}</tr>`;
+        thead.innerHTML =
+            `<tr>${columns.map(col => `<th>${esc(col)}</th>`).join("")}</tr>`;
 
-        tbody.innerHTML = rows.slice(0, maxRows).map(row => {
-            const search = norm(columns.map(col => row[col]).join(" "));
-
-            return `
-                <tr data-search="${esc(search)}">
-                    ${columns.map(col => `<td>${esc(clean(row[col]))}</td>`).join("")}
-                </tr>
-            `;
-        }).join("");
-    }
-
-    const SITE_CLASSES = {
-        MABINI: "site-note-yellow",
-        DIGOS: "site-note-blue",
-        ECOLAND: "site-note-green",
-        GENSAN: "site-note-pink",
-        MAA: "site-note-purple",
-        CDO: "site-note-peach",
-        UNSPECIFIED: "site-note-gray"
-    };
-
-    function renderOmCampaignMap() {
-        const root = $("masterOmCampaignMap");
-
-        if (!derived.omCampaignGroups.length) {
-            root.innerHTML = '<div class="master-empty">No OM / Campaign data detected.</div>';
-            return;
-        }
-
-        const sites = new Map();
-
-        derived.omCampaignGroups.forEach(group => {
-            if (!sites.has(group.site)) sites.set(group.site, []);
-            sites.get(group.site).push(group);
-        });
-
-        root.innerHTML = [...sites.entries()].map(([site, groups]) => `
-            <section class="master-site-section ${SITE_CLASSES[site] || "site-note-gray"}"
-                     data-search="${esc(norm(site + " " + groups.map(g => g.om + " " + g.campaigns.join(" ")).join(" ")))}">
-                <div class="master-site-title">
-                    <strong>${esc(site)}</strong>
-                    <span>${groups.length} OM / team${groups.length === 1 ? "" : "s"}</span>
-                </div>
-
-                <div class="master-om-note-grid">
-                    ${groups.map(group => {
-                        const hrs = findAssignments(group.site, group.om);
-
-                        const hrText = hrs.length
-                            ? hrs.map(item => `
-                                <div class="master-om-hr-line">
-                                    <strong>${esc(item.hr)}</strong>
-                                    ${item.remarks ? `<span>${esc(item.remarks)}</span>` : ""}
-                                </div>
-                            `).join("")
-                            : '<div class="master-muted-line">No HR assignment mapped</div>';
-
-                        const campaigns = group.campaigns.length
-                            ? group.campaigns.map(item => `<span class="master-campaign-pill">${esc(item)}</span>`).join("")
-                            : '<span class="master-muted-line">No campaign found in live tracker</span>';
-
-                        const tls = group.tls.length
-                            ? `<div class="master-om-tls"><span>TL:</span> ${esc(group.tls.join(", "))}</div>`
-                            : "";
-
-                        const search = norm([
-                            group.site,
-                            group.om,
-                            group.campaigns.join(" "),
-                            group.tls.join(" "),
-                            hrs.map(item => item.hr + " " + item.remarks).join(" ")
-                        ].join(" "));
-
-                        return `
-                            <article class="master-om-note" data-search="${esc(search)}">
-                                <div class="master-om-note-head">
-                                    <strong>${esc(group.om)}</strong>
-                                </div>
-                                <div class="master-om-note-label">Assigned HR</div>
-                                <div class="master-om-hr-list">${hrText}</div>
-                                ${tls}
-                                <div class="master-om-note-label">Campaigns</div>
-                                <div class="master-campaign-pills">${campaigns}</div>
-                            </article>
-                        `;
-                    }).join("")}
-                </div>
-            </section>
+        tbody.innerHTML = pendingMiles.map(row => `
+            <tr>
+                ${columns.map(col => `<td>${esc(clean(row[col]))}</td>`).join("")}
+            </tr>
         `).join("");
     }
 
-    function renderAssignments() {
-        const root = $("masterAssignedHrList");
+    function renderHrAssignments() {
+        const body = $("masterAssignedHrBody");
 
-        if (!derived.assignments.length) {
-            root.innerHTML = '<tr><td colspan="5" class="master-empty-cell">No HR assignments.</td></tr>';
+        $("masterAssignedHrCount").textContent = String(hrAssignments.length);
+
+        if (!hrAssignments.length) {
+            body.innerHTML =
+                '<tr><td colspan="4" class="master-empty-cell">No HR assignment table detected in Google Sheets.</td></tr>';
             return;
         }
 
-        root.innerHTML = derived.assignments.map(item => {
-            const search = norm([item.site, item.omTeam, item.hr, item.remarks].join(" "));
+        body.innerHTML = hrAssignments.map(item => {
+            const search = norm([
+                item.site,
+                item.omTeam,
+                item.hr,
+                item.remarks
+            ].join(" "));
 
             return `
                 <tr data-search="${esc(search)}">
@@ -19896,288 +18490,26 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
                     <td>${esc(item.omTeam)}</td>
                     <td>${esc(item.hr)}</td>
                     <td>${esc(item.remarks || "")}</td>
-                    <td>
-                        <div class="master-row-actions">
-                            <button type="button"
-                                    class="master-edit-hr-btn"
-                                    data-id="${esc(item.id)}"
-                                    data-source="${esc(item.source || "")}">
-                                Edit
-                            </button>
-                            ${item.source === "local" || item.source === "api"
-                                ? `<button type="button"
-                                           class="master-delete-hr-btn"
-                                           data-id="${esc(item.id)}"
-                                           data-source="${esc(item.source || "")}">
-                                       Delete
-                                   </button>`
-                                : ""}
-                        </div>
-                    </td>
                 </tr>
             `;
         }).join("");
 
-        root.querySelectorAll(".master-edit-hr-btn").forEach(button => {
-            button.addEventListener("click", () => {
-                const item = derived.assignments.find(entry =>
-                    entry.id === button.dataset.id &&
-                    entry.source === button.dataset.source
-                );
-
-                if (!item) return;
-
-                $("masterHrEditId").value = item.id || "";
-                $("masterHrSiteInput").value = item.site || "";
-                $("masterHrOmInput").value = item.omTeam || "";
-                $("masterHrAssigneeInput").value = item.hr || "";
-                $("masterHrRemarksInput").value = item.remarks || "";
-                $("masterHrSaveBtn").textContent = "Update Assignment";
-                $("masterHrSiteInput").focus();
-            });
-        });
-
-        root.querySelectorAll(".master-delete-hr-btn").forEach(button => {
-            button.addEventListener("click", async () => {
-                const item = derived.assignments.find(entry =>
-                    entry.id === button.dataset.id &&
-                    entry.source === button.dataset.source
-                );
-
-                if (!item) return;
-
-                const approved = await window.appConfirm({
-                    title: "Delete HR assignment?",
-                    message: `${item.site} · ${item.omTeam} · ${item.hr}`,
-                    confirmText: "Delete Assignment",
-                    tone: "danger"
-                });
-
-                if (!approved) return;
-
-                if (item.source === "api") {
-                    const ok = await postApi({
-                        action: "deleteHrAssignment",
-                        id: item.id
-                    }).catch(() => false);
-
-                    if (!ok) {
-                        setHrStatus("Could not delete from Google Sheets.", "error");
-                        return;
-                    }
-                } else {
-                    localHr = localHr.filter(entry => entry.id !== item.id);
-                    saveLocalHr();
-                }
-
-                await loadMasterlist(false);
-            });
-        });
-    }
-
-    function renderEmailGuides() {
-        const root = $("masterEmailGuideList");
-        $("masterEmailGuideCount").textContent = String(derived.emailGuides.length);
-
-        if (!derived.emailGuides.length) {
-            root.innerHTML = `
-                <div class="master-empty">
-                    No full email template detected yet. Replace your Apps Script with the supplied v2 code and redeploy the same Web App URL;
-                    v2 exposes the complete Master List / Data grid so this section can detect guides outside the first table.
-                </div>
-            `;
-            return;
-        }
-
-        root.innerHTML = derived.emailGuides.map(guide => `
-            <article class="master-email-guide"
-                     data-search="${esc(norm(guide.title + " " + guide.text))}">
-                <div class="master-email-guide-head">
-                    <strong>${esc(guide.title)}</strong>
-                    <button type="button"
-                            class="master-copy-guide"
-                            data-copy="${esc(guide.text)}">
-                        Copy
-                    </button>
-                </div>
-                <pre>${esc(guide.text)}</pre>
-            </article>
-        `).join("");
-
-        root.querySelectorAll("[data-copy]").forEach(button => {
-            button.addEventListener("click", async () => {
-                await copyText(button.dataset.copy || "", button);
-            });
-        });
-    }
-
-    async function copyText(value, button) {
-        if (!value) return;
-
-        try {
-            await navigator.clipboard.writeText(value);
-        } catch (_) {
-            const area = document.createElement("textarea");
-            area.value = value;
-            area.style.position = "fixed";
-            area.style.opacity = "0";
-            document.body.appendChild(area);
-            area.select();
-            document.execCommand("copy");
-            area.remove();
-        }
-
-        if (button) {
-            const old = button.textContent;
-            button.textContent = "Copied";
-            setTimeout(() => button.textContent = old, 1200);
-        }
+        applyHrSearch();
     }
 
     function render() {
-        $("masterOmCount").textContent = String(derived.oms.length);
-        $("masterTlCount").textContent = String(derived.tls.length);
-        $("masterCampaignCount").textContent = String(derived.campaigns.length);
-        $("masterPendingMilesCount").textContent = String(derived.pendingMiles.length);
-        $("masterDataCount").textContent = String(derived.dataRows.length);
-        $("masterAssignedHrCount").textContent = String(derived.assignments.length);
-        $("masterOmCampaignCount").textContent = String(derived.omCampaignGroups.length);
-
-        $("masterOmList").innerHTML = listHtml(derived.oms);
-        $("masterTlList").innerHTML = listHtml(derived.tls);
-        $("masterCampaignList").innerHTML = listHtml(derived.campaigns);
-
-        renderTable(
-            "masterPendingMilesTable",
-            derived.pendingMiles,
-            ["Year", "Month", "Date", "OM", "SITE", "TL", "Agent Name", "Account", "CCTV Reason Codes", "NOC", "Remarks"],
-            1000
-        );
-
-        renderTable(
-            "masterDataMonitorTable",
-            derived.dataRows,
-            ["Year", "Month", "Date", "Name", "OM", "SITE", "TL", "Agent Name", "Account", "CCTV Reason Codes", "NOC", "Remarks"],
-            1000
-        );
-
-        renderOmCampaignMap();
-        renderAssignments();
-        renderEmailGuides();
-        applySearch();
+        renderPendingMiles();
+        renderHrAssignments();
     }
 
-    function applySearch() {
-        const query = norm($("masterlistSearch")?.value || "");
+    function applyHrSearch() {
+        const query = norm($("masterHrSearch")?.value || "");
 
-        document.querySelectorAll(
-            "#masterlistPanel [data-search]"
-        ).forEach(item => {
-            const text = item.dataset.search || "";
-            item.hidden = !!query && !text.includes(query);
-        });
-    }
-
-    function clearHrForm() {
-        $("masterHrEditId").value = "";
-        $("masterHrSiteInput").value = "";
-        $("masterHrOmInput").value = "";
-        $("masterHrAssigneeInput").value = "";
-        $("masterHrRemarksInput").value = "";
-        $("masterHrSaveBtn").textContent = "Add Assignment";
-    }
-
-    function setHrStatus(message, kind = "") {
-        const el = $("masterHrSaveStatus");
-        el.textContent = message || "";
-        el.className = `master-hr-save-status ${kind ? "is-" + kind : ""}`;
-    }
-
-    async function postApi(body) {
-        const response = await fetch(API_URL, {
-            method: "POST",
-            credentials: "omit",
-            redirect: "follow",
-            body: JSON.stringify(body)
-        });
-
-        if (!response.ok) {
-            throw new Error(`Save API returned ${response.status}.`);
-        }
-
-        const data = await response.json();
-
-        if (data?.success === false) {
-            throw new Error(data.error || "Google Sheets update failed.");
-        }
-
-        return data;
-    }
-
-    async function saveHrAssignment() {
-        const site = clean($("masterHrSiteInput").value);
-        const omTeam = clean($("masterHrOmInput").value);
-        const hr = clean($("masterHrAssigneeInput").value);
-        const remarks = clean($("masterHrRemarksInput").value);
-        const editId = clean($("masterHrEditId").value);
-
-        if (!site || !omTeam || !hr) {
-            setHrStatus("Site, OM / Team, and HR Assignee are required.", "error");
-            return;
-        }
-
-        const existing = derived.assignments.find(item => item.id === editId);
-
-        const record = {
-            id: editId && (existing?.source === "api" || existing?.source === "local")
-                ? editId
-                : "web_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 7),
-            site,
-            omTeam,
-            hr,
-            remarks
-        };
-
-        $("masterHrSaveBtn").disabled = true;
-        setHrStatus("Saving...", "");
-
-        let savedToSheet = false;
-
-        try {
-            const result = await postApi({
-                action: "upsertHrAssignment",
-                record
+        $("masterAssignedHrBody")
+            ?.querySelectorAll("tr[data-search]")
+            .forEach(row => {
+                row.hidden = !!query && !row.dataset.search.includes(query);
             });
-
-            if (result?.success) {
-                savedToSheet = true;
-            }
-        } catch (error) {
-            console.warn("Google Sheets HR save unavailable; using local fallback:", error);
-        }
-
-        if (!savedToSheet) {
-            const key = assignmentKey(record);
-            localHr = localHr.filter(item =>
-                item.id !== record.id &&
-                assignmentKey(item) !== key
-            );
-
-            localHr.push({
-                ...record,
-                source: "local"
-            });
-
-            saveLocalHr();
-            setHrStatus("Saved on this browser. Install Apps Script v2 to save HR edits back to Google Sheets.", "local");
-        } else {
-            setHrStatus("Saved to Google Sheets.", "success");
-        }
-
-        clearHrForm();
-        $("masterHrSaveBtn").disabled = false;
-
-        await loadMasterlist(false);
     }
 
     function setSyncState(kind, title, detail) {
@@ -20243,7 +18575,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
 
             db.close();
         } catch (error) {
-            console.warn("Masterlist cache save failed:", error);
+            console.warn("Master List cache save failed:", error);
         }
     }
 
@@ -20265,11 +18597,11 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         }
     }
 
-    async function loadMasterlist(showFreshMessage = false) {
+    async function loadMasterList(showFresh = false) {
         setSyncState(
             "syncing",
             "Syncing Google Sheets...",
-            "Checking Tracker, Master List, Data, and HR assignments."
+            "Checking Pending Miles and Assigned HR per OM."
         );
 
         try {
@@ -20302,18 +18634,13 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
             $("masterlistLastUpdated").textContent =
                 formatSyncTime(data.updatedAt || new Date().toISOString());
 
-            const version = clean(data.version || "");
-            const v2Ready = version.startsWith("2");
-
             setSyncState(
                 "live",
                 "Google Sheets connected",
-                v2Ready
-                    ? `Full API v${version} · Tracker, Master List, Data, raw grids, and HR write-back enabled.`
-                    : "Connected to API v1 · live Tracker/Data works now. Install supplied API v2 for full Master List grids, Email Guide, and HR write-back."
+                `${pendingMiles.length} Pending Miles · ${hrAssignments.length} HR assignments loaded.`
             );
 
-            if (showFreshMessage) {
+            if (showFresh) {
                 const btn = $("masterlistRefreshBtn");
                 const old = btn.textContent;
                 btn.textContent = "Updated";
@@ -20322,7 +18649,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
 
             return true;
         } catch (error) {
-            console.error("Masterlist sync failed:", error);
+            console.error("Master List sync failed:", error);
 
             const cached = await loadCache();
 
@@ -20352,30 +18679,89 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         }
     }
 
-    $("masterlistSearch")?.addEventListener("input", applySearch);
+    function loadNotepad() {
+        $("masterPendingNotepad").value =
+            localStorage.getItem(NOTEPAD_KEY) || "";
+    }
 
-    $("masterlistClearSearch")?.addEventListener("click", () => {
-        $("masterlistSearch").value = "";
-        applySearch();
-        $("masterlistSearch").focus();
+    let noteTimer = null;
+
+    $("masterPendingNotepad")?.addEventListener("input", () => {
+        $("masterNotepadStatus").textContent = "Saving...";
+
+        clearTimeout(noteTimer);
+
+        noteTimer = setTimeout(() => {
+            localStorage.setItem(
+                NOTEPAD_KEY,
+                $("masterPendingNotepad").value
+            );
+
+            $("masterNotepadStatus").textContent =
+                "Saved " + new Date().toLocaleTimeString([], {
+                    hour: "2-digit",
+                    minute: "2-digit"
+                });
+        }, 350);
+    });
+
+    $("masterNotepadClearBtn")?.addEventListener("click", async () => {
+        const approved = await window.appConfirm({
+            title: "Clear Pending Miles notepad?",
+            message: "This will remove the saved notes from this browser.",
+            confirmText: "Clear Notepad",
+            tone: "danger"
+        });
+
+        if (!approved) return;
+
+        $("masterPendingNotepad").value = "";
+        localStorage.removeItem(NOTEPAD_KEY);
+        $("masterNotepadStatus").textContent = "Notepad cleared";
+    });
+
+    $("masterHrSearch")?.addEventListener("input", applyHrSearch);
+
+    $("masterHrSearchClear")?.addEventListener("click", () => {
+        $("masterHrSearch").value = "";
+        applyHrSearch();
+        $("masterHrSearch").focus();
     });
 
     $("masterlistRefreshBtn")?.addEventListener("click", () => {
-        loadMasterlist(true);
-    });
-
-    $("masterHrSaveBtn")?.addEventListener("click", saveHrAssignment);
-
-    $("masterHrCancelBtn")?.addEventListener("click", () => {
-        clearHrForm();
-        setHrStatus("");
+        loadMasterList(true);
     });
 
     $("masterlistTabBtn")?.addEventListener("click", () => {
-        if (!payload) loadMasterlist(false);
+        if (!payload) loadMasterList(false);
     });
 
+    // Global History support for the notepad.
+    window.__workspaceHistoryAdapters = window.__workspaceHistoryAdapters || {};
+    window.__workspaceHistoryAdapters.masterlist = {
+        label: "Master List",
+
+        snapshot() {
+            return {
+                note: $("masterPendingNotepad")?.value || ""
+            };
+        },
+
+        async restore(snapshot) {
+            const note = snapshot?.note || "";
+
+            if ($("masterPendingNotepad")) {
+                $("masterPendingNotepad").value = note;
+            }
+
+            localStorage.setItem(NOTEPAD_KEY, note);
+            $("masterNotepadStatus").textContent = "Restored from History";
+        }
+    };
+
     async function boot() {
+        loadNotepad();
+
         const cached = await loadCache();
 
         if (cached) {
@@ -20385,10 +18771,10 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
             $("masterlistLastUpdated").textContent = "Showing saved data while syncing";
         }
 
-        loadMasterlist(false);
+        loadMasterList(false);
 
         window.setInterval(() => {
-            loadMasterlist(false);
+            loadMasterList(false);
         }, REFRESH_MS);
     }
 
@@ -20408,7 +18794,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         <div class="maintenance-drafts-head">
             <div>
                 <h3 id="globalHistoryTitle">Workspace History</h3>
-                <p>Undo and redo changes from CCTV Audit, Maintenance AI Sorter, Maintenance Report, Pending Reports, Notes, and EDR.</p>
+                <p>Undo and redo changes from CCTV Audit, Maintenance AI Sorter, Maintenance Report, Pending Reports, Master List, and EDR.</p>
             </div>
             <button type="button" id="globalHistoryClose"
                     class="maintenance-modal-close static-close"
@@ -20570,7 +18956,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         maintenancePanel: "aiSorter",
         eodPanel: "maintenanceReport",
         pendingPanel: "pendingReports",
-        notesPanel: "notes",
+        masterlistPanel: "masterlist",
         edrPanel: "edr"
     };
 
@@ -20579,7 +18965,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         aiSorter: "Maintenance AI Sorter",
         maintenanceReport: "Maintenance Report",
         pendingReports: "Pending Reports",
-        notes: "Notes",
+        masterlist: "Master List",
         edr: "EDR"
     };
 
@@ -21019,7 +19405,6 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         ["maintenanceTabBtn", "maintenancePanel"],
         ["eodTabBtn", "eodPanel"],
         ["pendingTabBtn", "pendingPanel"],
-        ["notesTabBtn", "notesPanel"],
         ["masterlistTabBtn", "masterlistPanel"],
         ["edrTabBtn", "edrPanel"]
     ];
