@@ -5598,7 +5598,7 @@
 </style>
 
 
-    <link rel="stylesheet" href="./style.css?v=20260901-edr-docs-connect-fix-1">
+    <link rel="stylesheet" href="./style.css?v=20260901-edr-clean-ui-1">
 
 <style id="edrCriticalStyles">
 /* =========================================================
@@ -7331,6 +7331,220 @@ body:not(.dark-mode) .edr-rich-facebook a {
     }
 }
 </style>
+<style id="edrDocsUrlHintCritical">
+
+.edr-docs-url-hint {
+    margin-top: 7px;
+    color: var(--admin-muted, var(--pro-muted));
+    font: 650 9.5px/1.4 "Inter", sans-serif;
+}
+
+.edr-docs-url-hint.valid {
+    color: #22a447;
+}
+
+.edr-docs-url-hint.invalid {
+    color: #ef4444;
+}
+</style>
+<style id="edrUiCleanupCritical">
+
+/* =========================================================
+   EDR UI CLEANUP - compact choices, minimal screenshot form,
+   saved screenshot controls, clean sidebar
+   ========================================================= */
+
+/* Brand removed: bring the four workspace buttons to the top. */
+.workspace-tabs.admin-sidebar {
+    padding-top: 8px !important;
+}
+
+.workspace-tabs.admin-sidebar > .workspace-tab-btn:first-of-type {
+    margin-top: 0 !important;
+}
+
+/* Compact role / violation subject buttons that fit their words. */
+.edr-choice-group {
+    display: inline-flex;
+    width: fit-content;
+    max-width: 100%;
+    gap: 5px;
+    padding: 3px;
+    border: 1px solid var(--admin-line, var(--input-border));
+    border-radius: 9px;
+    background: var(--admin-panel, var(--input-bg));
+}
+
+.edr-choice-btn {
+    width: auto !important;
+    min-width: 0 !important;
+    min-height: 33px !important;
+    padding: 7px 10px !important;
+    border: 1px solid transparent !important;
+    border-radius: 7px !important;
+    background: transparent !important;
+    color: var(--admin-muted, var(--pro-muted)) !important;
+    font: 800 9.5px/1 "Inter", sans-serif !important;
+    white-space: nowrap !important;
+    cursor: pointer;
+    box-shadow: none !important;
+}
+
+.edr-choice-btn.active {
+    border-color: rgba(37,99,235,.28) !important;
+    background: rgba(37,99,235,.12) !important;
+    color: #3b82f6 !important;
+}
+
+body:not(.dark-mode) .edr-choice-btn.active {
+    color: #1d4ed8 !important;
+}
+
+/* Screenshot form: only one clean Add Screenshot button. */
+.edr-screenshot-zone.edr-screenshot-minimal {
+    min-height: 0 !important;
+    width: fit-content !important;
+    padding: 0 !important;
+    border: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    cursor: default !important;
+}
+
+.edr-screenshot-zone.edr-screenshot-minimal::before {
+    display: none !important;
+    content: none !important;
+}
+
+.edr-screenshot-zone.edr-screenshot-minimal:focus,
+.edr-screenshot-zone.edr-screenshot-minimal.is-dragging {
+    border: 0 !important;
+    box-shadow: none !important;
+    background: transparent !important;
+}
+
+#edrScreenshotEmpty,
+#edrScreenshotPreviewWrap,
+#edrReplaceScreenshotBtn,
+#edrRemoveScreenshotBtn {
+    display: none !important;
+}
+
+/* Saved EDR screenshot actions. */
+.edr-row-ss-view,
+.edr-row-ss-add,
+.edr-row-ss-remove {
+    min-height: 31px !important;
+    padding: 6px 8px !important;
+    background: transparent !important;
+    font-size: 9px !important;
+}
+
+.edr-row-ss-view,
+.edr-row-ss-add {
+    border: 1px solid rgba(37,99,235,.38) !important;
+    color: #3b82f6 !important;
+}
+
+.edr-row-ss-remove {
+    border: 1px solid rgba(239,68,68,.4) !important;
+    color: #ef4444 !important;
+}
+
+/* Centered saved screenshot viewer. */
+.edr-ss-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 190000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 22px;
+}
+
+.edr-ss-modal.open {
+    display: flex;
+}
+
+.edr-ss-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(2,6,23,.76);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+}
+
+.edr-ss-dialog {
+    position: relative;
+    z-index: 1;
+    width: min(1000px, 95vw);
+    max-height: 88vh;
+    display: grid;
+    place-items: center;
+    padding: 14px;
+    border: 1px solid rgba(148,163,184,.25);
+    border-radius: 14px;
+    background: #080b10;
+    box-shadow: 0 28px 80px rgba(0,0,0,.45);
+}
+
+.edr-ss-dialog img {
+    display: block;
+    max-width: 100%;
+    max-height: calc(88vh - 28px);
+    object-fit: contain;
+    border-radius: 8px;
+}
+
+.edr-ss-close {
+    position: absolute;
+    top: 9px;
+    right: 9px;
+    z-index: 2;
+    width: 34px !important;
+    height: 34px !important;
+    min-width: 34px !important;
+    min-height: 34px !important;
+    display: grid !important;
+    place-items: center !important;
+    padding: 0 !important;
+    border: 1px solid rgba(255,255,255,.15) !important;
+    border-radius: 999px !important;
+    background: rgba(15,23,42,.88) !important;
+    color: #fff !important;
+    font: 800 18px/1 sans-serif !important;
+    cursor: pointer;
+}
+
+/* Strong boundary after every Teams-ready EDR. */
+.edr-final-output hr.edr-rich-divider {
+    height: 0 !important;
+    margin: 16px 0 !important;
+    border: 0 !important;
+    border-top: 1px solid rgba(148,163,184,.55) !important;
+    background: transparent !important;
+}
+
+/* The old div rule can remain supported for previous markup. */
+.edr-rich-divider {
+    margin: 16px 0;
+}
+
+/* Keep segmented controls compact on mobile too. */
+@media (max-width: 560px) {
+    .edr-choice-group {
+        width: fit-content !important;
+    }
+
+    .edr-choice-btn {
+        flex: 0 0 auto !important;
+    }
+
+    .edr-row-actions {
+        gap: 5px !important;
+    }
+}
+</style>
 </head>
 <body>
 
@@ -7346,17 +7560,7 @@ body:not(.dark-mode) .edr-rich-facebook a {
 
 
 <aside class="workspace-tabs admin-sidebar" role="tablist" aria-label="Audit workspace navigation">
-    <div class="sidebar-brand" aria-label="CCTV Operations Workspace">
-        <div class="sidebar-brand-mark">C</div>
-        <div class="sidebar-brand-copy">
-            <strong>CCTV OPS</strong>
-            <span>Operations Workspace</span>
-        </div>
-    </div>
-
-    <div class="sidebar-section-label">Workspace</div>
-
-    <button type="button" class="workspace-tab-btn active" id="cctvTabBtn" role="tab" aria-selected="true" aria-controls="cctvPanel">
+<button type="button" class="workspace-tab-btn active" id="cctvTabBtn" role="tab" aria-selected="true" aria-controls="cctvPanel">
         <span>CCTV Audit</span>
     </button>
     <button type="button" class="workspace-tab-btn" id="maintenanceTabBtn" role="tab" aria-selected="false" aria-controls="maintenancePanel">
@@ -7749,24 +7953,24 @@ body:not(.dark-mode) .edr-rich-facebook a {
                 </div>
 
                 <div class="edr-field">
-                    <label>Time Observed</label>
-                    <div class="edr-time-pair">
-                        <input type="time" id="edrTimeStart" step="1" aria-label="Time observed start">
-                        <span>to</span>
-                        <input type="time" id="edrTimeEnd" step="1" aria-label="Time observed end">
+                    <label for="edrTimeObserved">Time Observed</label>
+                    <input type="text"
+                           id="edrTimeObserved"
+                           autocomplete="off"
+                           placeholder="Paste time, e.g. 3:10:45 AM–3:18:01 AM">
+                </div>
+
+                <div class="edr-field">
+                    <label>Supervisor</label>
+                    <input type="hidden" id="edrSupervisorRole" value="Team Leader">
+                    <div class="edr-choice-group" id="edrSupervisorRoleButtons" role="group" aria-label="Choose Team Leader or OM">
+                        <button type="button" class="edr-choice-btn active" data-value="Team Leader">Team Leader</button>
+                        <button type="button" class="edr-choice-btn" data-value="OM">OM</button>
                     </div>
                 </div>
 
                 <div class="edr-field">
-                    <label for="edrSupervisorRole">Team Leader or OM</label>
-                    <select id="edrSupervisorRole">
-                        <option value="Team Leader">Team Leader</option>
-                        <option value="OM">OM</option>
-                    </select>
-                </div>
-
-                <div class="edr-field">
-                    <label for="edrSupervisorName">Name</label>
+                    <label for="edrSupervisorName" id="edrSupervisorNameLabel">Team Leader</label>
                     <div class="edr-search-row">
                         <input type="text"
                                id="edrSupervisorName"
@@ -7780,16 +7984,16 @@ body:not(.dark-mode) .edr-rich-facebook a {
                 </div>
 
                 <div class="edr-field">
-                    <label for="edrSubjectType">Violation Subject</label>
-                    <select id="edrSubjectType">
-                        <option value="Agent/s">Agent/s</option>
-                        <option value="Team Leader">Team Leader</option>
-                        <option value="OM">OM</option>
-                    </select>
+                    <label>Violation Subject</label>
+                    <input type="hidden" id="edrSubjectType" value="Agent/s">
+                    <div class="edr-choice-group" id="edrSubjectTypeButtons" role="group" aria-label="Choose Agent or Team Leader">
+                        <button type="button" class="edr-choice-btn active" data-value="Agent/s">Agent/s</button>
+                        <button type="button" class="edr-choice-btn" data-value="Team Leader">Team Leader</button>
+                    </div>
                 </div>
 
                 <div class="edr-field">
-                    <label for="edrSubjectName">Agent/s or Team Leader</label>
+                    <label for="edrSubjectName" id="edrSubjectNameLabel">Agent/s</label>
                     <input type="text"
                            id="edrSubjectName"
                            list="edrSubjectOptions"
@@ -7826,20 +8030,16 @@ body:not(.dark-mode) .edr-rich-facebook a {
 
                 <div class="edr-field edr-span-2">
                     <label>CCTV Screenshot</label>
-                    <div id="edrScreenshotZone" class="edr-screenshot-zone" tabindex="0">
+                    <div id="edrScreenshotZone" class="edr-screenshot-zone edr-screenshot-minimal" tabindex="0">
                         <input type="file" id="edrScreenshotInput" accept="image/*" hidden>
-                        <div id="edrScreenshotEmpty" class="edr-screenshot-empty">
-                            <strong>Paste CCTV Screenshot</strong>
-                            <span>Press Ctrl+V anywhere on the EDR page after taking a Snip/Screenshot. You can also drag/drop or use Add Screenshot.</span>
-                            <button type="button" class="edr-outline-btn" id="edrChooseScreenshotBtn">Add Screenshot</button>
-                        </div>
+                        <button type="button" class="edr-outline-btn" id="edrChooseScreenshotBtn">Add Screenshot</button>
 
-                        <div id="edrScreenshotPreviewWrap" class="edr-screenshot-preview-wrap" hidden>
-                            <img id="edrScreenshotPreview" alt="CCTV screenshot preview">
-                            <div class="edr-screenshot-actions">
-                                <button type="button" class="edr-outline-btn" id="edrReplaceScreenshotBtn">Replace</button>
-                                <button type="button" class="edr-danger-soft-btn" id="edrRemoveScreenshotBtn">Remove</button>
-                            </div>
+                        <!-- Kept hidden for JS compatibility; saved EDR screenshots are managed from the EDR List. -->
+                        <div id="edrScreenshotEmpty" hidden></div>
+                        <div id="edrScreenshotPreviewWrap" hidden>
+                            <img id="edrScreenshotPreview" alt="">
+                            <button type="button" id="edrReplaceScreenshotBtn" hidden>Replace</button>
+                            <button type="button" id="edrRemoveScreenshotBtn" hidden>Remove</button>
                         </div>
                     </div>
                 </div>
@@ -7908,7 +8108,7 @@ https://www.facebook.com/share/..."></textarea>
 
                 <div class="edr-output-actions">
                     <button type="button" class="edr-primary-btn" id="edrCopyAllBtn">Copy All</button>
-                    <button type="button" class="edr-danger-btn" id="edrClearAllBtn">Clear All</button>
+                    <button type="button" class="edr-danger-btn" id="edrClearAllBtn">Clear Output</button>
                 </div>
             </div>
 
@@ -7917,6 +8117,16 @@ https://www.facebook.com/share/..."></textarea>
     </div>
 </section>
 
+
+
+<!-- Saved EDR CCTV screenshot viewer -->
+<div id="edrSavedScreenshotModal" class="edr-ss-modal" aria-hidden="true">
+    <div class="edr-ss-backdrop" id="edrSavedScreenshotBackdrop"></div>
+    <div class="edr-ss-dialog" role="dialog" aria-modal="true" aria-label="Saved CCTV screenshot">
+        <button type="button" class="edr-ss-close" id="edrSavedScreenshotClose" aria-label="Close screenshot">×</button>
+        <img id="edrSavedScreenshotImage" alt="Saved CCTV screenshot">
+    </div>
+</div>
 
 <!-- EDR Google Docs connection -->
 <div id="edrDocsSetupModal" class="maintenance-modal" aria-hidden="true">
@@ -7943,8 +8153,10 @@ https://www.facebook.com/share/..."></textarea>
         <label for="edrDocsWebAppUrl">Apps Script Web App URL</label>
         <input type="url"
                id="edrDocsWebAppUrl"
-               placeholder="https://script.google.com/macros/s/...../exec"
+               placeholder="Paste the complete Web App URL ending in /exec"
                autocomplete="off">
+
+        <div id="edrDocsUrlHint" class="edr-docs-url-hint">The URL must end in <strong>/exec</strong>.</div>
 
         <div class="edr-docs-setup-help">
             Target Google Doc is already configured inside the supplied Apps Script receiver.
@@ -12741,8 +12953,8 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         document.body.classList.remove("maintenance-modal-open");
     }
 
-    function edrDocsJsonp(params = {}) {
-        const url = getEdrDocsWebAppUrl();
+    function edrDocsJsonp(params = {}, overrideUrl = "") {
+        const url = String(overrideUrl || getEdrDocsWebAppUrl()).trim();
 
         if (!isValidEdrDocsUrl(url)) {
             return Promise.reject(new Error("Google Docs Web App URL is not configured."));
@@ -12793,11 +13005,30 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         });
     }
 
-    async function testEdrDocsConnection(showSuccess = true) {
+    async function testEdrDocsConnection(showSuccess = true, urlOverride = "") {
+        const typedUrl = String(
+            urlOverride ||
+            byId("edrDocsWebAppUrl")?.value ||
+            getEdrDocsWebAppUrl()
+        ).trim();
+
+        if (!isValidEdrDocsUrl(typedUrl)) {
+            setEdrDocsStatus(
+                "Paste the Apps Script Web App URL ending in /exec.",
+                "error"
+            );
+
+            if (showSuccess) {
+                showToast("The Web App URL must end in /exec.", "error");
+            }
+
+            return false;
+        }
+
         setEdrDocsStatus("Testing Google Docs connection...", "syncing");
 
         try {
-            const payload = await edrDocsJsonp({ action: "ping" });
+            const payload = await edrDocsJsonp({ action: "ping" }, typedUrl);
 
             setEdrDocsStatus(
                 `Connected to "${payload.documentName || "EDR Google Doc"}".`,
@@ -12830,11 +13061,11 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
             return;
         }
 
-        localStorage.setItem(EDR_DOCS_WEB_APP_KEY, value);
-
-        const connected = await testEdrDocsConnection(false);
+        const connected = await testEdrDocsConnection(false, value);
 
         if (!connected) return;
+
+        localStorage.setItem(EDR_DOCS_WEB_APP_KEY, value);
 
         closeEdrDocsSetup();
         showToast("Google Docs sync connected. Loading your saved EDRs...", "success");
@@ -12874,8 +13105,9 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
             id: report.id,
             site: report.site || "",
             date: report.date || "",
-            timeStart: report.timeStart || "",
-            timeEnd: report.timeEnd || "",
+            timeObserved: report.timeObserved || report.timeStart || "",
+            timeStart: report.timeObserved || report.timeStart || "",
+            timeEnd: "",
             supervisorRole: report.supervisorRole || "Team Leader",
             supervisorName: report.supervisorName || "",
             subjectType: report.subjectType || "Agent/s",
@@ -12958,7 +13190,8 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
             screenshotChanged: false,
             site: record.site || "Mabini Site A - 1st Floor",
             date: record.date || "",
-            timeStart: record.timeStart || "",
+            timeObserved: record.timeObserved || record.timeStart || "",
+            timeStart: record.timeObserved || record.timeStart || "",
             timeEnd: record.timeEnd || "",
             supervisorRole: record.supervisorRole || "Team Leader",
             supervisorName: record.supervisorName || "",
@@ -13139,6 +13372,41 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
             .join("");
     }
 
+    function setEdrChoice(inputId, groupId, value) {
+        const input = byId(inputId);
+        const group = byId(groupId);
+
+        if (input) input.value = value;
+
+        group?.querySelectorAll(".edr-choice-btn").forEach(button => {
+            const active = button.dataset.value === value;
+            button.classList.toggle("active", active);
+            button.setAttribute("aria-pressed", active ? "true" : "false");
+        });
+
+        if (inputId === "edrSupervisorRole") {
+            const label = byId("edrSupervisorNameLabel");
+            if (label) label.textContent = value === "OM" ? "OM" : "Team Leader";
+        }
+
+        if (inputId === "edrSubjectType") {
+            const label = byId("edrSubjectNameLabel");
+            if (label) label.textContent = value === "Team Leader" ? "Team Leader" : "Agent/s";
+        }
+    }
+
+    function wireEdrChoiceGroup(groupId, inputId, afterChange) {
+        byId(groupId)?.querySelectorAll(".edr-choice-btn").forEach(button => {
+            button.addEventListener("click", () => {
+                setEdrChoice(inputId, groupId, button.dataset.value);
+
+                if (typeof afterChange === "function") {
+                    afterChange(button.dataset.value);
+                }
+            });
+        });
+    }
+
     function refreshSupervisorOptions() {
         const role = byId("edrSupervisorRole").value;
         fillDatalist(
@@ -13149,11 +13417,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
 
     function refreshSubjectOptions() {
         const type = byId("edrSubjectType").value;
-        const list = type === "OM"
-            ? omOptions
-            : type === "Team Leader"
-                ? tlOptions
-                : [];
+        const list = type === "Team Leader" ? tlOptions : [];
 
         fillDatalist(byId("edrSubjectOptions"), list);
     }
@@ -13199,11 +13463,22 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
     }
 
     function timeRange(report) {
+        const pasted = clean(report.timeObserved || report.timeStart || "");
+        if (pasted && !report.timeEnd) return pasted;
+
         const start = formatTime(report.timeStart);
         const end = formatTime(report.timeEnd);
 
         if (start && end) return `${start}–${end}`;
-        return start || end || "";
+        return start || end || pasted || "";
+    }
+
+    function supervisorOutputLabel(report) {
+        return report.supervisorRole === "OM" ? "OM" : "Team Leader";
+    }
+
+    function subjectOutputLabel(report) {
+        return report.subjectType === "Team Leader" ? "Team Leader" : "Agent/s";
     }
 
     function reportText(report) {
@@ -13217,8 +13492,8 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
             topLine,
             `Date: ${formatDate(report.date)}`,
             `Time Observed: ${timeRange(report)}`,
-            `Team Leader or OM: ${report.supervisorName}`,
-            `Agent/s or Team Leader: ${report.subjectName}`,
+            `${supervisorOutputLabel(report)}: ${report.supervisorName}`,
+            `${subjectOutputLabel(report)}: ${report.subjectName}`,
             `Account/Campaign: ${report.account}`,
             `Incident: ${report.incident}`,
             `Action Taken/Remarks: ${report.action}`
@@ -13265,8 +13540,8 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
                 <div class="edr-rich-title">${escapeHtml(topLine)}</div>
                 <div class="edr-rich-line"><strong>Date:</strong> ${escapeHtml(formatDate(report.date))}</div>
                 <div class="edr-rich-line"><strong>Time Observed:</strong> ${escapeHtml(timeRange(report))}</div>
-                <div class="edr-rich-line"><strong>Team Leader or OM:</strong> ${escapeHtml(report.supervisorName)}</div>
-                <div class="edr-rich-line"><strong>Agent/s or Team Leader:</strong> ${escapeHtml(report.subjectName)}</div>
+                <div class="edr-rich-line"><strong>${escapeHtml(supervisorOutputLabel(report))}:</strong> ${escapeHtml(report.supervisorName)}</div>
+                <div class="edr-rich-line"><strong>${escapeHtml(subjectOutputLabel(report))}:</strong> ${escapeHtml(report.subjectName)}</div>
                 <div class="edr-rich-line"><strong>Account/Campaign:</strong> ${escapeHtml(report.account)}</div>
                 <div class="edr-rich-line"><strong>Incident:</strong> ${escapeHtml(report.incident)}</div>
                 <div class="edr-rich-line"><strong>Action Taken/Remarks:</strong> ${escapeHtml(report.action)}</div>
@@ -13280,8 +13555,10 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         return {
             site: byId("edrSite").value,
             date: byId("edrDate").value,
-            timeStart: byId("edrTimeStart").value,
-            timeEnd: byId("edrTimeEnd").value,
+            timeObserved: clean(byId("edrTimeObserved").value),
+            // Receiver compatibility: raw pasted time is stored in timeStart.
+            timeStart: clean(byId("edrTimeObserved").value),
+            timeEnd: "",
             supervisorRole: byId("edrSupervisorRole").value,
             supervisorName: clean(byId("edrSupervisorName").value),
             subjectType: byId("edrSubjectType").value,
@@ -13301,8 +13578,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
     function validateReport(report) {
         const required = [
             ["Date", report.date],
-            ["Time Observed - start", report.timeStart],
-            ["Time Observed - end", report.timeEnd],
+            ["Time Observed", report.timeObserved || report.timeStart],
             ["Team Leader or OM name", report.supervisorName],
             ["Agent/s or Team Leader", report.subjectName],
             ["Account / Campaign", report.account],
@@ -13323,11 +13599,10 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
     function clearForm(options = {}) {
         byId("edrSite").value = "Mabini Site A - 1st Floor";
         byId("edrDate").value = todayLocal();
-        byId("edrTimeStart").value = "";
-        byId("edrTimeEnd").value = "";
-        byId("edrSupervisorRole").value = "Team Leader";
+        byId("edrTimeObserved").value = "";
+        setEdrChoice("edrSupervisorRole", "edrSupervisorRoleButtons", "Team Leader");
         byId("edrSupervisorName").value = "";
-        byId("edrSubjectType").value = "Agent/s";
+        setEdrChoice("edrSubjectType", "edrSubjectTypeButtons", "Agent/s");
         byId("edrSubjectName").value = "";
         byId("edrAccount").value = "";
         byId("edrIncident").value = "";
@@ -13418,12 +13693,11 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
 
         byId("edrSite").value = report.site;
         byId("edrDate").value = report.date;
-        byId("edrTimeStart").value = report.timeStart;
-        byId("edrTimeEnd").value = report.timeEnd;
-        byId("edrSupervisorRole").value = report.supervisorRole || "Team Leader";
+        byId("edrTimeObserved").value = report.timeObserved || timeRange(report);
+        setEdrChoice("edrSupervisorRole", "edrSupervisorRoleButtons", report.supervisorRole || "Team Leader");
         refreshSupervisorOptions();
         byId("edrSupervisorName").value = report.supervisorName;
-        byId("edrSubjectType").value = report.subjectType || "Agent/s";
+        setEdrChoice("edrSubjectType", "edrSubjectTypeButtons", report.subjectType === "Team Leader" ? "Team Leader" : "Agent/s");
         refreshSubjectOptions();
         byId("edrSubjectName").value = report.subjectName;
         byId("edrAccount").value = report.account;
@@ -13514,8 +13788,8 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
                     </div>
 
                     <div class="edr-list-sub">
-                        ${escapeHtml(report.supervisorRole)}: ${escapeHtml(report.supervisorName)}
-                        · ${escapeHtml(report.subjectType)}: ${escapeHtml(report.subjectName)}
+                        ${escapeHtml(supervisorOutputLabel(report))}: ${escapeHtml(report.supervisorName)}
+                        · ${escapeHtml(subjectOutputLabel(report))}: ${escapeHtml(report.subjectName)}
                     </div>
 
                     ${report.expanded
@@ -13525,6 +13799,13 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
 
                 <div class="edr-row-actions">
                     <button type="button" class="edr-row-view">${report.expanded ? "Hide" : "View"}</button>
+                    ${
+                        report.screenshotData || report.screenshotFileId
+                            ? `<button type="button" class="edr-row-ss-view">View SS</button>
+                               <button type="button" class="edr-row-ss-add">Replace SS</button>
+                               <button type="button" class="edr-row-ss-remove">Remove SS</button>`
+                            : `<button type="button" class="edr-row-ss-add">Add SS</button>`
+                    }
                     <button type="button" class="edr-row-edit">Edit</button>
                     <button type="button" class="edr-row-delete">Delete</button>
                 </div>
@@ -13548,6 +13829,19 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
             });
 
             card.querySelector(".edr-row-view").addEventListener("click", () => toggleExpanded(id));
+
+            card.querySelector(".edr-row-ss-view")?.addEventListener("click", () => {
+                viewSavedEdrScreenshot(report);
+            });
+
+            card.querySelector(".edr-row-ss-add")?.addEventListener("click", () => {
+                chooseScreenshotForSavedReport(report);
+            });
+
+            card.querySelector(".edr-row-ss-remove")?.addEventListener("click", () => {
+                removeSavedEdrScreenshot(report);
+            });
+
             card.querySelector(".edr-row-edit").addEventListener("click", () => editReport(id));
             card.querySelector(".edr-row-delete").addEventListener("click", () => deleteReport(id));
         });
@@ -13557,15 +13851,17 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         const selected = edrReports.filter(item => item.selected);
         const facebook = byId("edrFacebookText").value.trim();
 
+        const divider = "────────────────────────────────────────";
+
         const edrText = selected
-            .map(reportText)
-            .join("\n\n────────────────────────────────────────\n\n");
+            .map(report => `${reportText(report)}\n\n${divider}`)
+            .join("\n\n");
 
         let result = edrText;
 
         if (facebook) {
             if (result) {
-                result += "\n\n────────────────────────────────────────\n\n";
+                result += "\n\n";
             }
 
             const dateSource = selected.length
@@ -13599,7 +13895,6 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
             .join("");
 
         return `
-            <div class="edr-rich-divider"></div>
             <div class="edr-rich-facebook">
                 <strong>Facebook shared post ${escapeHtml(formatFacebookDate(dateSource))}</strong>
                 ${lines}
@@ -13611,8 +13906,8 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         const selected = edrReports.filter(item => item.selected);
 
         const reports = selected
-            .map(report => reportHtml(report, true))
-            .join('<div class="edr-rich-divider"></div>');
+            .map(report => `${reportHtml(report, true)}<hr class="edr-rich-divider">`)
+            .join("");
 
         return (reports + facebookHtml(selected)).trim();
     }
@@ -13704,50 +13999,37 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
     }
 
     async function clearAll() {
-        const hasContent = edrReports.length || byId("edrFacebookText").value.trim();
+        const hasOutput =
+            edrReports.some(report => report.selected) ||
+            byId("edrFacebookText").value.trim();
 
-        if (!hasContent) {
-            showToast("EDR workspace is already empty.", "info");
+        if (!hasOutput) {
+            showToast("Teams-Ready Output is already empty.", "info");
             return;
         }
 
-        const approved = await appConfirm({
-            title: "Clear EDR workspace?",
-            message: "All current EDR entries and Facebook shared-post links will be removed.",
-            confirmText: "Clear All",
-            tone: "danger"
+        edrReports.forEach(report => {
+            report.selected = false;
         });
 
-        if (!approved) return;
-
-        edrReports = [];
-        editingId = null;
         byId("edrFacebookText").value = "";
 
-        clearForm();
         renderList();
         refreshOutput();
-        showToast("EDR workspace cleared.", "info");
+
+        showToast("Teams-Ready Output cleared. Saved EDR List was kept.", "info");
     }
 
     function setCurrentScreenshot(dataUrl, markDirty = false) {
         currentScreenshot = dataUrl || "";
         if (markDirty) screenshotDirty = true;
 
-        const empty = byId("edrScreenshotEmpty");
-        const wrap = byId("edrScreenshotPreviewWrap");
+        // Form intentionally stays minimal: only Add Screenshot is visible.
+        // Confirmation is shown through the toast instead of a large preview.
         const img = byId("edrScreenshotPreview");
-
-        if (!empty || !wrap || !img) return;
-
-        if (currentScreenshot) {
-            img.src = currentScreenshot;
-            empty.hidden = true;
-            wrap.hidden = false;
-        } else {
-            img.removeAttribute("src");
-            empty.hidden = false;
-            wrap.hidden = true;
+        if (img) {
+            if (currentScreenshot) img.src = currentScreenshot;
+            else img.removeAttribute("src");
         }
     }
 
@@ -13804,6 +14086,153 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         event.stopPropagation();
         loadScreenshotFile(file);
         return true;
+    }
+
+    function openSavedScreenshotModal(dataUrl) {
+        const modal = byId("edrSavedScreenshotModal");
+        const image = byId("edrSavedScreenshotImage");
+
+        if (!modal || !image || !dataUrl) return;
+
+        image.src = dataUrl;
+        modal.classList.add("open");
+        modal.setAttribute("aria-hidden", "false");
+        document.body.classList.add("app-confirm-open");
+    }
+
+    function closeSavedScreenshotModal() {
+        const modal = byId("edrSavedScreenshotModal");
+        const image = byId("edrSavedScreenshotImage");
+
+        modal?.classList.remove("open");
+        modal?.setAttribute("aria-hidden", "true");
+        document.body.classList.remove("app-confirm-open");
+
+        if (image) image.removeAttribute("src");
+    }
+
+    function compressScreenshotFile(file) {
+        return new Promise((resolve, reject) => {
+            if (!file || !file.type || !file.type.startsWith("image/")) {
+                reject(new Error("Please choose an image file."));
+                return;
+            }
+
+            const reader = new FileReader();
+
+            reader.onerror = () => reject(new Error("Could not read that screenshot."));
+
+            reader.onload = () => {
+                const img = new Image();
+
+                img.onerror = () => reject(new Error("Could not process that screenshot."));
+
+                img.onload = () => {
+                    const maxWidth = 1400;
+                    const scale = Math.min(
+                        1,
+                        maxWidth / Math.max(1, img.naturalWidth || img.width)
+                    );
+
+                    const canvas = document.createElement("canvas");
+                    canvas.width = Math.max(
+                        1,
+                        Math.round((img.naturalWidth || img.width) * scale)
+                    );
+                    canvas.height = Math.max(
+                        1,
+                        Math.round((img.naturalHeight || img.height) * scale)
+                    );
+
+                    const ctx = canvas.getContext("2d");
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+                    resolve(canvas.toDataURL("image/jpeg", .80));
+                };
+
+                img.src = String(reader.result || "");
+            };
+
+            reader.readAsDataURL(file);
+        });
+    }
+
+    async function viewSavedEdrScreenshot(report) {
+        if (!report) return;
+
+        if (!report.screenshotData && report.screenshotFileId) {
+            showToast("Loading saved screenshot...", "info");
+            await ensureRemoteScreenshot(report);
+        }
+
+        if (!report.screenshotData) {
+            showToast("This EDR has no screenshot.", "info");
+            return;
+        }
+
+        openSavedScreenshotModal(report.screenshotData);
+    }
+
+    async function chooseScreenshotForSavedReport(report) {
+        if (!report) return;
+
+        const picker = document.createElement("input");
+        picker.type = "file";
+        picker.accept = "image/*";
+
+        picker.addEventListener("change", async () => {
+            const file = picker.files && picker.files[0];
+            if (!file) return;
+
+            try {
+                report.screenshotData = await compressScreenshotFile(file);
+                report.screenshotChanged = true;
+
+                renderList();
+                refreshOutput();
+
+                if (isValidEdrDocsUrl(getEdrDocsWebAppUrl())) {
+                    await syncReportToGoogleDocs(report);
+                }
+
+                showToast("Screenshot saved to this EDR.", "success");
+            } catch (error) {
+                console.error(error);
+                showToast(error.message || "Could not add screenshot.", "error");
+            }
+        });
+
+        picker.click();
+    }
+
+    async function removeSavedEdrScreenshot(report) {
+        if (!report || (!report.screenshotData && !report.screenshotFileId)) {
+            showToast("This EDR has no screenshot.", "info");
+            return;
+        }
+
+        const approved = await appConfirm({
+            title: "Remove CCTV screenshot?",
+            message: "The screenshot will be removed from this saved EDR.",
+            confirmText: "Remove Screenshot",
+            tone: "danger"
+        });
+
+        if (!approved) return;
+
+        report.screenshotData = "";
+        report.screenshotChanged = true;
+
+        renderList();
+        refreshOutput();
+
+        if (isValidEdrDocsUrl(getEdrDocsWebAppUrl())) {
+            await syncReportToGoogleDocs(report);
+        }
+
+        report.screenshotFileId = "";
+        report.screenshotChanged = false;
+        showToast("CCTV screenshot removed.", "info");
     }
 
     function showToast(message, type = "info") {
@@ -13977,12 +14406,12 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         });
     });
 
-    byId("edrSupervisorRole").addEventListener("change", () => {
+    wireEdrChoiceGroup("edrSupervisorRoleButtons", "edrSupervisorRole", () => {
         byId("edrSupervisorName").value = "";
         refreshSupervisorOptions();
     });
 
-    byId("edrSubjectType").addEventListener("change", () => {
+    wireEdrChoiceGroup("edrSubjectTypeButtons", "edrSubjectType", () => {
         byId("edrSubjectName").value = "";
         refreshSubjectOptions();
     });
@@ -14076,18 +14505,48 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
     byId("edrCopyAllBtn").addEventListener("click", copyAll);
     byId("edrClearAllBtn").addEventListener("click", clearAll);
 
+    byId("edrSavedScreenshotClose")?.addEventListener("click", closeSavedScreenshotModal);
+    byId("edrSavedScreenshotBackdrop")?.addEventListener("click", closeSavedScreenshotModal);
+
+    document.addEventListener("keydown", event => {
+        if (
+            event.key === "Escape" &&
+            byId("edrSavedScreenshotModal")?.classList.contains("open")
+        ) {
+            closeSavedScreenshotModal();
+        }
+    });
+
     byId("edrDocsSetupBtn").addEventListener("click", openEdrDocsSetup);
     byId("edrDocsReloadBtn").addEventListener("click", () => loadSavedEdrsFromDocs(true));
     byId("edrDocsSetupClose").addEventListener("click", closeEdrDocsSetup);
     byId("edrDocsSetupBackdrop").addEventListener("click", closeEdrDocsSetup);
     byId("edrDocsSaveSetup").addEventListener("click", saveEdrDocsSetup);
-    byId("edrDocsTestSetup").addEventListener("click", () => testEdrDocsConnection(true));
+    byId("edrDocsTestSetup").addEventListener("click", () => testEdrDocsConnection(true, byId("edrDocsWebAppUrl").value));
     byId("edrDocsClearSetup").addEventListener("click", clearEdrDocsSetup);
 
     byId("edrDocsWebAppUrl").addEventListener("keydown", event => {
         if (event.key === "Enter") {
             event.preventDefault();
             saveEdrDocsSetup();
+        }
+    });
+
+    byId("edrDocsWebAppUrl").addEventListener("input", event => {
+        const value = String(event.target.value || "").trim();
+        const hint = byId("edrDocsUrlHint");
+
+        if (!hint) return;
+
+        if (!value) {
+            hint.innerHTML = 'The URL must end in <strong>/exec</strong>.';
+            hint.className = "edr-docs-url-hint";
+        } else if (isValidEdrDocsUrl(value)) {
+            hint.textContent = "Web App URL format looks correct.";
+            hint.className = "edr-docs-url-hint valid";
+        } else {
+            hint.innerHTML = 'This does not look complete yet. It must end in <strong>/exec</strong>.';
+            hint.className = "edr-docs-url-hint invalid";
         }
     });
 
