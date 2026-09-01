@@ -639,3 +639,247 @@ body:not(.dark-mode) .sidebar-collapse-toggle:hover {
         pointer-events: auto;
     }
 }
+
+
+/* =========================================================
+   FINAL SLIM SIDEBAR FIX
+   - Prevent old tab CSS from stretching the 3 nav buttons
+   - Compact 185px sidebar
+   - Clear active/hover states in both Light and Dark mode
+   ========================================================= */
+
+:root {
+    --admin-sidebar: 185px !important;
+}
+
+/* Critical: old inline CSS uses flex:1 on workspace tabs.
+   Force every sidebar nav item to stay compact. */
+.workspace-tabs.admin-sidebar > .workspace-tab-btn {
+    flex: 0 0 40px !important;
+    width: 100% !important;
+    height: 40px !important;
+    min-height: 40px !important;
+    max-height: 40px !important;
+    margin: 0 0 4px 0 !important;
+    padding: 0 10px !important;
+    gap: 8px !important;
+    border-radius: 9px !important;
+    overflow: hidden !important;
+    white-space: nowrap !important;
+    font-size: 10.5px !important;
+    font-weight: 800 !important;
+    line-height: 1 !important;
+    text-overflow: ellipsis !important;
+}
+
+/* Do not let the nav buttons consume the sidebar's vertical free space. */
+.workspace-tabs.admin-sidebar > .workspace-tab-btn,
+.workspace-tabs.admin-sidebar > #themeToggle {
+    align-self: stretch !important;
+}
+
+/* Slightly smaller sidebar contents */
+.workspace-tabs.admin-sidebar {
+    padding: 12px 9px 12px !important;
+    gap: 0 !important;
+}
+
+.sidebar-brand {
+    min-height: 42px !important;
+    margin: 0 2px 10px !important;
+    padding: 2px !important;
+    gap: 7px !important;
+}
+
+.sidebar-brand-mark {
+    width: 32px !important;
+    height: 32px !important;
+    flex-basis: 32px !important;
+    border-radius: 9px !important;
+    font-size: 15px !important;
+}
+
+.sidebar-brand-copy strong {
+    font-size: 10.5px !important;
+    line-height: 1.1 !important;
+}
+
+.sidebar-brand-copy span {
+    margin-top: 2px !important;
+    font-size: 8.5px !important;
+    line-height: 1.15 !important;
+}
+
+.sidebar-section-label {
+    margin: 5px 8px 8px !important;
+    font-size: 8px !important;
+    letter-spacing: .14em !important;
+}
+
+.sidebar-nav-icon {
+    width: 16px !important;
+    height: 16px !important;
+    flex: 0 0 16px !important;
+    font-size: 10.5px !important;
+}
+
+/* Keep only the spacer flexible, so Appearance stays at the bottom. */
+.sidebar-spacer {
+    flex: 1 1 auto !important;
+    min-height: 18px !important;
+}
+
+#themeToggle.sidebar-theme-btn {
+    flex: 0 0 38px !important;
+    width: 100% !important;
+    height: 38px !important;
+    min-height: 38px !important;
+    max-height: 38px !important;
+    padding: 0 10px !important;
+    gap: 8px !important;
+    border-radius: 9px !important;
+    font-size: 10px !important;
+}
+
+/* -------------------------
+   LIGHT MODE SIDEBAR
+   ------------------------- */
+body:not(.dark-mode) .workspace-tabs.admin-sidebar {
+    background:
+        radial-gradient(circle at top left, rgba(37,99,235,.055), transparent 30%),
+        radial-gradient(circle at bottom right, rgba(16,185,129,.05), transparent 28%),
+        #ffffff !important;
+    border-right-color: #e2e8f0 !important;
+    box-shadow: 8px 0 25px rgba(15,23,42,.06) !important;
+}
+
+body:not(.dark-mode) .sidebar-brand-copy strong {
+    color: #172033 !important;
+}
+
+body:not(.dark-mode) .sidebar-brand-copy span {
+    color: #7b8798 !important;
+}
+
+body:not(.dark-mode) .sidebar-section-label {
+    color: #64748b !important;
+}
+
+body:not(.dark-mode) .workspace-tabs.admin-sidebar > .workspace-tab-btn {
+    background: transparent !important;
+    border: 1px solid transparent !important;
+    color: #64748b !important;
+    box-shadow: none !important;
+}
+
+body:not(.dark-mode) .workspace-tabs.admin-sidebar > .workspace-tab-btn:hover {
+    transform: translateX(1px) !important;
+    background: #f1f5f9 !important;
+    border-color: #e2e8f0 !important;
+    color: #172033 !important;
+}
+
+/* Very visible selected page in light mode */
+body:not(.dark-mode) .workspace-tabs.admin-sidebar > .workspace-tab-btn.active {
+    background: linear-gradient(105deg, #eaf2ff 0%, #eafaf1 100%) !important;
+    border-color: #93c5fd !important;
+    color: #0f172a !important;
+    box-shadow:
+        inset 3px 0 0 #10b981,
+        0 3px 12px rgba(37,99,235,.08) !important;
+}
+
+body:not(.dark-mode) .workspace-tabs.admin-sidebar > .workspace-tab-btn.active .sidebar-nav-icon {
+    filter: saturate(1.15);
+}
+
+body:not(.dark-mode) .sidebar-divider {
+    background: #e5e7eb !important;
+}
+
+body:not(.dark-mode) #themeToggle.sidebar-theme-btn {
+    background: #f8fafc !important;
+    border-color: #e2e8f0 !important;
+    color: #475569 !important;
+}
+
+body:not(.dark-mode) #themeToggle.sidebar-theme-btn:hover {
+    background: #eef2f7 !important;
+    color: #0f172a !important;
+}
+
+/* -------------------------
+   DARK MODE SIDEBAR
+   ------------------------- */
+body.dark-mode .workspace-tabs.admin-sidebar {
+    background:
+        radial-gradient(circle at top left, rgba(37,99,235,.15), transparent 28%),
+        radial-gradient(circle at bottom right, rgba(16,185,129,.09), transparent 28%),
+        #080d16 !important;
+}
+
+body.dark-mode .sidebar-brand-copy strong {
+    color: #f8fafc !important;
+}
+
+body.dark-mode .sidebar-brand-copy span,
+body.dark-mode .sidebar-section-label {
+    color: #8290a5 !important;
+}
+
+body.dark-mode .workspace-tabs.admin-sidebar > .workspace-tab-btn {
+    background: transparent !important;
+    border: 1px solid transparent !important;
+    color: #95a3b8 !important;
+    box-shadow: none !important;
+}
+
+body.dark-mode .workspace-tabs.admin-sidebar > .workspace-tab-btn:hover {
+    transform: translateX(1px) !important;
+    background: rgba(255,255,255,.055) !important;
+    border-color: rgba(148,163,184,.10) !important;
+    color: #f8fafc !important;
+}
+
+/* Very visible selected page in dark mode */
+body.dark-mode .workspace-tabs.admin-sidebar > .workspace-tab-btn.active {
+    background: linear-gradient(105deg, rgba(37,99,235,.22), rgba(16,185,129,.14)) !important;
+    border-color: rgba(96,165,250,.28) !important;
+    color: #ffffff !important;
+    box-shadow:
+        inset 3px 0 0 #34d399,
+        0 5px 16px rgba(0,0,0,.16) !important;
+}
+
+body.dark-mode #themeToggle.sidebar-theme-btn {
+    background: rgba(255,255,255,.035) !important;
+    border-color: rgba(148,163,184,.12) !important;
+    color: #aeb9c8 !important;
+}
+
+body.dark-mode #themeToggle.sidebar-theme-btn:hover {
+    background: rgba(255,255,255,.075) !important;
+    color: #ffffff !important;
+}
+
+/* Keep collapse handle aligned to the slimmer sidebar */
+.sidebar-collapse-toggle {
+    left: calc(var(--admin-sidebar) - 14px) !important;
+}
+
+body.sidebar-collapsed .sidebar-collapse-toggle {
+    left: 0 !important;
+}
+
+/* Existing mobile navigation remains horizontal. */
+@media (max-width: 920px) {
+    .workspace-tabs.admin-sidebar > .workspace-tab-btn {
+        flex: 0 0 auto !important;
+        width: auto !important;
+        height: 42px !important;
+        min-height: 42px !important;
+        max-height: 42px !important;
+        margin: 0 !important;
+        padding: 0 11px !important;
+    }
+}
