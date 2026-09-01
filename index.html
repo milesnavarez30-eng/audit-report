@@ -5598,7 +5598,7 @@
 </style>
 
 
-    <link rel="stylesheet" href="./style.css?v=20260901-edr-history-persist-1">
+    <link rel="stylesheet" href="./style.css?v=20260901-global-history-timeis-2">
 
 <style id="edrCriticalStyles">
 /* =========================================================
@@ -7774,6 +7774,174 @@ body.dark-mode .sidebar-live-clock {
     }
 }
 </style>
+<style id="globalHistoryTimeIsCriticalStyles">
+
+/* =========================================================
+   SIDEBAR GLOBAL HISTORY
+   ========================================================= */
+.sidebar-history-btn {
+    width: 100%;
+    min-height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-top: 6px;
+    padding: 8px 10px;
+    border: 1px solid var(--admin-line, var(--sidebar-border));
+    border-radius: 8px;
+    background: transparent;
+    color: var(--admin-text, var(--text-color));
+    font: 800 10px/1 "Inter", "Roboto", Arial, sans-serif;
+    cursor: pointer;
+}
+.sidebar-history-btn:hover {
+    border-color: rgba(59,130,246,.45);
+    background: rgba(59,130,246,.055);
+}
+.sidebar-history-btn small {
+    min-width: 20px;
+    padding: 3px 5px;
+    border-radius: 999px;
+    background: rgba(59,130,246,.11);
+    color: #3b82f6;
+    font: 850 8px/1 "Inter", sans-serif;
+    text-align: center;
+}
+
+/* =========================================================
+   TIME.IS EXACT MANILA CLOCK
+   ========================================================= */
+.sidebar-live-clock.timeis-clock {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 8px 9px;
+    border: 1px solid var(--admin-line, var(--sidebar-border));
+    border-radius: 9px;
+    background: var(--admin-panel-soft, rgba(148,163,184,.035));
+    text-align: left;
+}
+#Manila_z42c {
+    display: block;
+    line-height: 1.15;
+}
+#Manila_z42c .sidebar-live-date {
+    display: inline-block;
+    margin-bottom: 4px;
+    color: var(--admin-muted, var(--pro-muted));
+    font: 750 8.2px/1.2 "Inter", "Roboto", Arial, sans-serif;
+    letter-spacing: .02em;
+    white-space: normal;
+}
+#Manila_z42c .sidebar-live-time {
+    display: inline-block;
+    color: var(--admin-text, var(--text-color));
+    font: 850 11.5px/1 "Inter", "Roboto", Arial, sans-serif;
+    letter-spacing: .015em;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+}
+.timeis-source-link {
+    display: inline-block;
+    margin-top: 5px;
+    color: var(--admin-muted, var(--pro-muted)) !important;
+    font: 650 7px/1 "Inter", sans-serif;
+    text-decoration: none !important;
+    opacity: .72;
+}
+.timeis-source-link:hover {
+    opacity: 1;
+    text-decoration: underline !important;
+}
+
+/* =========================================================
+   GLOBAL HISTORY MODAL
+   ========================================================= */
+.global-history-dialog {
+    width: min(720px, 96vw);
+}
+.global-history-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+    margin-bottom: 10px;
+}
+.global-history-toolbar button:disabled {
+    opacity: .4 !important;
+    cursor: not-allowed !important;
+}
+.global-history-summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 8px;
+    color: var(--admin-muted, var(--pro-muted));
+    font: 700 9px/1.3 "Inter", sans-serif;
+}
+.global-history-list {
+    display: grid;
+    gap: 6px;
+    max-height: min(430px, 54vh);
+    overflow: auto;
+}
+.global-history-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 9px 10px;
+    border: 1px solid var(--admin-line, var(--input-border));
+    border-radius: 8px;
+    background: var(--admin-panel, var(--input-bg));
+}
+.global-history-item.current {
+    border-color: rgba(37,99,235,.52);
+    background: rgba(37,99,235,.075);
+}
+.global-history-item > div {
+    min-width: 0;
+}
+.global-history-item strong {
+    display: block;
+    overflow: hidden;
+    color: var(--admin-text, var(--text-color));
+    font: 750 10px/1.35 "Inter", sans-serif;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.global-history-item span {
+    display: block;
+    margin-top: 2px;
+    color: var(--admin-muted, var(--pro-muted));
+    font: 600 8.5px/1.25 "Inter", sans-serif;
+}
+.global-history-item small {
+    flex: none;
+    color: var(--admin-muted, var(--pro-muted));
+    font: 650 8.5px/1 "Inter", sans-serif;
+}
+.global-history-note {
+    margin-top: 10px;
+    padding: 9px 10px;
+    border: 1px solid var(--admin-line, var(--input-border));
+    border-radius: 8px;
+    background: rgba(59,130,246,.04);
+    color: var(--admin-muted, var(--pro-muted));
+    font: 550 9.5px/1.45 "Inter", sans-serif;
+}
+@media (max-width: 760px) {
+    .sidebar-history-btn {
+        width: auto;
+        min-width: 92px;
+        margin-top: 0;
+    }
+    .sidebar-live-clock.timeis-clock {
+        width: auto;
+        min-width: 180px;
+    }
+}
+</style>
 </head>
 <body>
 
@@ -7802,14 +7970,20 @@ body.dark-mode .sidebar-live-clock {
         <span>EDR</span>
     </button>
 
+    <button type="button" class="sidebar-history-btn" id="globalHistoryBtn" title="History and Undo/Redo">
+        <span>History</span>
+        <small id="globalHistoryCount">0</small>
+    </button>
+
     <div class="sidebar-spacer"></div>
 
-    <div class="sidebar-live-clock" id="sidebarLiveClock" title="Philippine Time">
-        <div class="sidebar-live-date" id="sidebarLiveDate">Sep 01, 2026</div>
-        <div class="sidebar-live-time-row">
-            <span class="sidebar-live-time" id="sidebarLiveTime">00:00:00 AM</span>
-            <span class="sidebar-live-zone">PHT</span>
-        </div>
+    <div class="sidebar-live-clock timeis-clock" id="sidebarLiveClock" title="Exact Manila time">
+        <span id="Manila_z42c"></span>
+        <a href="https://time.is/Manila"
+           id="time_is_link"
+           class="timeis-source-link"
+           rel="nofollow noopener"
+           target="_blank">Time.is</a>
     </div>
 
     <div class="sidebar-divider"></div>
@@ -8148,9 +8322,6 @@ body.dark-mode .sidebar-live-clock {
             </div>
 
             <div class="edr-header-tools">
-                <button type="button" class="edr-outline-btn edr-history-quick" id="edrUndoBtn" disabled>Undo</button>
-                <button type="button" class="edr-outline-btn edr-history-quick" id="edrRedoBtn" disabled>Redo</button>
-                <button type="button" class="edr-outline-btn edr-history-quick" id="edrHistoryBtn">History</button>
                 <a class="edr-template-link"
                    href="https://docs.google.com/document/d/1-i54dxMosFgiNcdEO7fHqvN15yIsicdOjmsW0XTYbUw/edit?tab=t.ob2cyz0wou1"
                    target="_blank"
@@ -8798,12 +8969,25 @@ https://www.facebook.com/share/..."></textarea>
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
-    function deleteEntry(index) {
+    async function deleteEntry(index) {
+        const entry = entryList[index];
+        if (!entry) return;
+
+        const approved = await appConfirm({
+            title: "Remove CCTV Audit entry?",
+            message: `${entry.formattedDate || "This entry"} · ${entry.tlName || "No TL"} · ${entry.agentName || "No agent"}`,
+            confirmText: "Remove Entry",
+            tone: "danger"
+        });
+
+        if (!approved) return;
+
         if (editingIndex === index) {
             clearForm();
         } else if (editingIndex > index) {
             editingIndex--;
         }
+
         entryList.splice(index, 1);
         saveEntries();
         renderTable();
@@ -8923,6 +9107,65 @@ https://www.facebook.com/share/..."></textarea>
         editingIndex = -1;
         document.getElementById("addUpdateBtn").textContent = "Add Entry to List";
     }
+
+    window.__workspaceHistoryAdapters = window.__workspaceHistoryAdapters || {};
+    window.__workspaceHistoryAdapters.cctv = {
+        label: "CCTV Audit",
+
+        snapshot() {
+            const ids = [
+                "auditDate", "site", "tlName", "agentName", "omName",
+                "account", "reasonCode", "noc", "remarks"
+            ];
+            const form = {};
+
+            ids.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) form[id] = el.value;
+            });
+
+            return {
+                entries: JSON.parse(JSON.stringify(entryList)),
+                dropdowns: JSON.parse(JSON.stringify(currentDropdownData)),
+                editingIndex,
+                form
+            };
+        },
+
+        async restore(snapshot) {
+            if (!snapshot) return;
+
+            entryList = JSON.parse(JSON.stringify(snapshot.entries || []));
+            currentDropdownData = JSON.parse(JSON.stringify(snapshot.dropdowns || {}));
+            editingIndex = Number.isInteger(snapshot.editingIndex)
+                ? snapshot.editingIndex
+                : -1;
+
+            ["site", "omName", "account", "reasonCode"].forEach(id => {
+                if (!Array.isArray(currentDropdownData[id])) {
+                    currentDropdownData[id] = [...defaultData[id]];
+                }
+
+                localStorage.setItem(
+                    `cctv_dropdown_${id}`,
+                    JSON.stringify(currentDropdownData[id])
+                );
+                renderDropdownOptions(id);
+            });
+
+            saveEntries();
+            renderTable();
+
+            Object.entries(snapshot.form || {}).forEach(([id, value]) => {
+                const el = document.getElementById(id);
+                if (el) el.value = value == null ? "" : value;
+            });
+
+            document.getElementById("addUpdateBtn").textContent =
+                editingIndex >= 0 ? "Update Entry" : "Add Entry to List";
+        }
+    };
+
 </script>
 
 
@@ -10030,8 +10273,19 @@ https://www.facebook.com/share/..."></textarea>
         return lines.join("\n");
     }
 
-    function clearSelectedMiniSheetCells() {
+    async function clearSelectedMiniSheetCells() {
         if (!miniSheetCellSelection) return;
+
+        const count = miniSheetCellSelectionCount();
+
+        const approved = await appConfirm({
+            title: "Clear selected Mini Sheet cells?",
+            message: `${count} selected cell${count === 1 ? "" : "s"} will be emptied.`,
+            confirmText: "Clear Cells",
+            tone: "danger"
+        });
+
+        if (!approved) return;
 
         const {
             startRow,
@@ -10050,15 +10304,13 @@ https://www.facebook.com/share/..."></textarea>
 
                 row[field] = "";
 
-                if (field === "tl") {
-                    row.tlNames = [];
-                }
+                if (field === "tl") row.tlNames = [];
             }
         }
 
         renderRows(lastAssignedRows);
         showMessage(
-            `${miniSheetCellSelectionCount()} selected cell${miniSheetCellSelectionCount() === 1 ? "" : "s"} cleared.`,
+            `${count} selected cell${count === 1 ? "" : "s"} cleared.`,
             "info"
         );
     }
@@ -11175,7 +11427,25 @@ https://www.facebook.com/share/..."></textarea>
         analyzeMaintenance(true);
     });
     byId("maintenanceCopyBtn").addEventListener("click", copySorted);
-    byId("maintenanceClearBtn").addEventListener("click", clearMaintenance);
+    byId("maintenanceClearBtn").addEventListener("click", async () => {
+        if (
+            !String(byId("maintenanceInput")?.value || "").trim() &&
+            !lastAssignedRows.length
+        ) {
+            showMessage("The AI Sorter is already empty.", "info");
+            return;
+        }
+
+        const approved = await appConfirm({
+            title: "Clear Maintenance AI Sorter?",
+            message: "The pasted report and current sorted workspace will be cleared.",
+            confirmText: "Clear Report",
+            tone: "danger"
+        });
+
+        if (!approved) return;
+        clearMaintenance();
+    });
 
     byId("maintenanceResetAssignmentsBtn").addEventListener("click", async function () {
         const approved = await appConfirm({
@@ -11296,7 +11566,7 @@ https://www.facebook.com/share/..."></textarea>
         if (event.key === "Delete") {
             if (hasMiniSheetCellSelection()) {
                 event.preventDefault();
-                clearSelectedMiniSheetCells();
+                clearSelectedMiniSheetCells().catch(console.error);
                 return;
             }
 
@@ -11341,6 +11611,63 @@ https://www.facebook.com/share/..."></textarea>
 
         pasteRowsIntoMiniSheet(text);
     });
+
+    window.__workspaceHistoryAdapters = window.__workspaceHistoryAdapters || {};
+    window.__workspaceHistoryAdapters.aiSorter = {
+        label: "Maintenance AI Sorter",
+
+        snapshot() {
+            return {
+                input: byId("maintenanceInput")?.value || "",
+                rows: JSON.parse(JSON.stringify(lastAssignedRows || [])),
+                tlFloorOverrides: localStorage.getItem(STORAGE_KEY),
+                tlNameEdits: localStorage.getItem(TL_NAME_EDIT_KEY),
+                hiddenTlRows: localStorage.getItem(TL_HIDDEN_KEY)
+            };
+        },
+
+        async restore(snapshot) {
+            if (!snapshot) return;
+
+            const setOrRemove = (key, value) => {
+                if (value == null) localStorage.removeItem(key);
+                else localStorage.setItem(key, value);
+            };
+
+            setOrRemove(STORAGE_KEY, snapshot.tlFloorOverrides);
+            setOrRemove(TL_NAME_EDIT_KEY, snapshot.tlNameEdits);
+            setOrRemove(TL_HIDDEN_KEY, snapshot.hiddenTlRows);
+
+            const rawInput = snapshot.input || "";
+            lastParsedRows = [];
+            lastAssignments = new Map();
+            lastAssignedRows = JSON.parse(JSON.stringify(snapshot.rows || []));
+            miniSheetSelectedRows.clear();
+            miniSheetSelectionAnchor = null;
+            miniSheetCellSelection = null;
+            miniSheetCellAnchor = null;
+
+            byId("maintenanceInput").value = rawInput;
+
+            if (lastAssignedRows.length) {
+                renderRows(lastAssignedRows);
+                byId("maintenanceStats").hidden = false;
+                byId("sortedReportSection").hidden = false;
+                byId("maintenanceEmpty").hidden = true;
+                updateMiniSheetSelectionUi();
+                showMessage("Maintenance AI Sorter history restored.", "success");
+            } else {
+                byId("maintenanceStats").hidden = true;
+                byId("sortedReportSection").hidden = true;
+                byId("maintenanceEmpty").hidden = false;
+                byId("maintenanceOutputTable").querySelector("tbody").innerHTML = "";
+                byId("maintenanceMiniSheet").querySelector("tbody").innerHTML = "";
+                byId("miniSheetRowCount").textContent = "0 rows";
+                hideMessage();
+            }
+        }
+    };
+
 })();
 </script>
 
@@ -12428,8 +12755,19 @@ https://www.facebook.com/share/..."></textarea>
             });
 
 card.querySelectorAll(".eod-proof-remove").forEach(button => {
-                button.addEventListener("click", () => {
-                    block.screenshots.splice(Number(button.dataset.shotIndex), 1);
+                button.addEventListener("click", async () => {
+                    const shotIndex = Number(button.dataset.shotIndex);
+
+                    const approved = await appConfirm({
+                        title: "Remove screenshot proof?",
+                        message: "This screenshot will be removed from the current Maintenance Report block.",
+                        confirmText: "Remove Screenshot",
+                        tone: "danger"
+                    });
+
+                    if (!approved) return;
+
+                    block.screenshots.splice(shotIndex, 1);
                     render();
                     queueSave();
                 });
@@ -13144,6 +13482,35 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
             await addScreenshots(block, imageFiles);
         }
     });
+
+    window.__workspaceHistoryAdapters = window.__workspaceHistoryAdapters || {};
+    window.__workspaceHistoryAdapters.maintenanceReport = {
+        label: "Maintenance Report",
+
+        snapshot() {
+            syncTop();
+            return JSON.parse(JSON.stringify(state));
+        },
+
+        async restore(snapshot) {
+            if (!snapshot) return;
+
+            state = JSON.parse(JSON.stringify(snapshot));
+
+            if (!Array.isArray(state.blocks) || !state.blocks.length) {
+                state.blocks = [makeBlock()];
+            }
+
+            $("simpleEodSite").value =
+                state.title || "Mabini Site A - 1st & 2nd Floor";
+            $("simpleEodDate").value = state.date || todayLocal();
+
+            activePasteBlockId = null;
+            render();
+            await saveDraft(true);
+            showMessage("Maintenance Report history restored.", "success");
+        }
+    };
 
     loadDraft();
 })();
@@ -15431,9 +15798,66 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
             );
         }
     });
+
+    window.__workspaceHistoryAdapters = window.__workspaceHistoryAdapters || {};
+    window.__workspaceHistoryAdapters.edr = {
+        label: "EDR",
+
+        snapshot() {
+            return captureEdrWorkspaceState();
+        },
+
+        async restore(snapshot) {
+            await applyEdrWorkspaceState(snapshot, true);
+            await persistEdrWorkspace();
+            showToast("EDR history restored.", "success");
+        },
+
+        async clearInternalHistory() {
+            const current = historyEntry("Current workspace");
+            edrHistory = [current];
+            edrHistoryIndex = 0;
+            await persistEdrHistory();
+            updateEdrHistoryButtons();
+        }
+    };
+
 })();
 </script>
 
+
+
+<!-- Global Workspace History -->
+<div id="globalHistoryModal" class="maintenance-modal" aria-hidden="true">
+    <div class="maintenance-modal-backdrop" id="globalHistoryBackdrop"></div>
+    <div class="maintenance-drafts-dialog global-history-dialog"
+         role="dialog" aria-modal="true" aria-labelledby="globalHistoryTitle">
+        <div class="maintenance-drafts-head">
+            <div>
+                <h3 id="globalHistoryTitle">Workspace History</h3>
+                <p>Undo and redo changes from CCTV Audit, Maintenance AI Sorter, Maintenance Report, and EDR.</p>
+            </div>
+            <button type="button" id="globalHistoryClose"
+                    class="maintenance-modal-close static-close"
+                    aria-label="Close History">×</button>
+        </div>
+        <div class="global-history-toolbar">
+            <button type="button" class="edr-outline-btn" id="globalUndoBtn">Undo</button>
+            <button type="button" class="edr-outline-btn" id="globalRedoBtn">Redo</button>
+            <button type="button" class="edr-danger-btn" id="globalClearHistoryBtn">Clear History</button>
+        </div>
+        <div class="global-history-summary">
+            <span id="globalHistorySummary">No changes recorded yet.</span>
+            <span>Max 20 changes</span>
+        </div>
+        <div id="globalHistoryList" class="global-history-list">
+            <div class="edr-empty-state">No history yet.</div>
+        </div>
+        <div class="global-history-note">
+            Clear History removes undo/redo snapshots only. Your current data and Google Docs archive stay untouched.
+        </div>
+    </div>
+</div>
 
 <!-- Custom centered confirmation modal -->
 <div id="appConfirmModal" class="app-confirm-modal" aria-hidden="true">
@@ -15534,43 +15958,478 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
-<script id="sidebarLiveClockScript">
+<script src="https://widget.time.is/en.js"></script>
+<script id="timeIsManilaClockInit">
 (function () {
-    function startSidebarClock() {
-        const dateEl = document.getElementById("sidebarLiveDate");
-        const timeEl = document.getElementById("sidebarLiveTime");
+    function startTimeIs() {
+        if (!window.time_is_widget) {
+            setTimeout(startTimeIs, 250);
+            return;
+        }
+        try {
+            window.time_is_widget.init({
+                Manila_z42c: {
+                    template:
+                        "<span class='sidebar-live-date'>DATE</span><br>" +
+                        "<span class='sidebar-live-time'>TIME</span>",
+                    time_format: "12hours:minutes:seconds AMPM",
+                    date_format: "dayname, monthname dnum, year"
+                }
+            });
+        } catch (error) {
+            console.error("Time.is clock error:", error);
+        }
+    }
+    startTimeIs();
+})();
+</script>
 
-        if (!dateEl || !timeEl) return;
 
-        const dateFormatter = new Intl.DateTimeFormat("en-US", {
-            timeZone: "Asia/Manila",
-            month: "short",
-            day: "2-digit",
-            year: "numeric"
+<script id="globalWorkspaceHistoryScript">
+(function () {
+    const DB_NAME = "cctv_global_workspace_history_v1";
+    const STORE = "history";
+    const STATE_KEY = "timeline";
+    const MAX_HISTORY = 20;
+
+    const workspaceMap = {
+        cctvPanel: "cctv",
+        maintenancePanel: "aiSorter",
+        eodPanel: "maintenanceReport",
+        edrPanel: "edr"
+    };
+
+    const workspaceNames = {
+        cctv: "CCTV Audit",
+        aiSorter: "Maintenance AI Sorter",
+        maintenanceReport: "Maintenance Report",
+        edr: "EDR"
+    };
+
+    let entries = [];
+    let cursor = -1;
+    let lastSnapshots = {};
+    let timers = {};
+    let suppress = false;
+    let pendingWorkspace = null;
+    let pendingAction = null;
+
+    const $ = id => document.getElementById(id);
+
+    function adapters() {
+        return window.__workspaceHistoryAdapters || {};
+    }
+
+    function clone(value) {
+        try {
+            return structuredClone(value);
+        } catch (_) {
+            return JSON.parse(JSON.stringify(value));
+        }
+    }
+
+    function stable(value) {
+        return JSON.stringify(value);
+    }
+
+    function workspaceForElement(target) {
+        const panel = target?.closest?.(".app-tab-panel");
+        return panel ? workspaceMap[panel.id] || null : null;
+    }
+
+    function activeWorkspace() {
+        const panel = document.querySelector(".app-tab-panel.active");
+        return panel ? workspaceMap[panel.id] || null : null;
+    }
+
+    function actionFromTarget(target, workspace) {
+        const control = target?.closest?.("button, label, a");
+        const raw =
+            control?.getAttribute?.("title") ||
+            control?.getAttribute?.("aria-label") ||
+            control?.textContent ||
+            "";
+
+        const text = String(raw).replace(/\s+/g, " ").trim();
+        return text
+            ? `${text} · ${workspaceNames[workspace]}`
+            : `Updated ${workspaceNames[workspace]}`;
+    }
+
+    function openDb() {
+        return new Promise((resolve, reject) => {
+            const req = indexedDB.open(DB_NAME, 1);
+            req.onupgradeneeded = () => {
+                const db = req.result;
+                if (!db.objectStoreNames.contains(STORE)) {
+                    db.createObjectStore(STORE);
+                }
+            };
+            req.onsuccess = () => resolve(req.result);
+            req.onerror = () => reject(req.error);
         });
+    }
 
-        const timeFormatter = new Intl.DateTimeFormat("en-US", {
-            timeZone: "Asia/Manila",
-            hour: "2-digit",
-            minute: "2-digit",
-            second: "2-digit",
-            hour12: true
-        });
+    async function saveTimeline() {
+        try {
+            const db = await openDb();
+            await new Promise((resolve, reject) => {
+                const tx = db.transaction(STORE, "readwrite");
+                tx.objectStore(STORE).put({ entries, cursor }, STATE_KEY);
+                tx.oncomplete = resolve;
+                tx.onerror = () => reject(tx.error);
+            });
+            db.close();
+        } catch (error) {
+            console.error("Global history save failed:", error);
+        }
+    }
 
-        function renderClock() {
-            const now = new Date();
-            dateEl.textContent = dateFormatter.format(now);
-            timeEl.textContent = timeFormatter.format(now);
+    async function loadTimeline() {
+        try {
+            const db = await openDb();
+            const saved = await new Promise((resolve, reject) => {
+                const tx = db.transaction(STORE, "readonly");
+                const req = tx.objectStore(STORE).get(STATE_KEY);
+                req.onsuccess = () => resolve(req.result || null);
+                req.onerror = () => reject(req.error);
+            });
+            db.close();
+
+            if (saved && Array.isArray(saved.entries)) {
+                entries = saved.entries.slice(-MAX_HISTORY);
+                cursor = Math.min(
+                    Number.isInteger(saved.cursor)
+                        ? saved.cursor
+                        : entries.length - 1,
+                    entries.length - 1
+                );
+            }
+        } catch (error) {
+            console.error("Global history load failed:", error);
+        }
+    }
+
+    async function takeSnapshot(workspace) {
+        const adapter = adapters()[workspace];
+        if (!adapter?.snapshot) return null;
+
+        try {
+            return clone(await adapter.snapshot());
+        } catch (error) {
+            console.error(`Snapshot failed for ${workspace}:`, error);
+            return null;
+        }
+    }
+
+    async function initializeBaselines() {
+        for (const workspace of Object.keys(workspaceNames)) {
+            const snap = await takeSnapshot(workspace);
+            if (snap != null) lastSnapshots[workspace] = snap;
+        }
+        updateUi();
+    }
+
+    async function captureIfChanged(workspace, action) {
+        if (suppress || !workspace) return;
+
+        const after = await takeSnapshot(workspace);
+        if (after == null) return;
+
+        const before = lastSnapshots[workspace];
+
+        if (before == null) {
+            lastSnapshots[workspace] = after;
+            return;
         }
 
-        renderClock();
-        window.setInterval(renderClock, 1000);
+        if (stable(before) === stable(after)) return;
+
+        if (cursor < entries.length - 1) {
+            entries = entries.slice(0, cursor + 1);
+        }
+
+        entries.push({
+            id: Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 7),
+            workspace,
+            action: action || `Updated ${workspaceNames[workspace]}`,
+            at: new Date().toISOString(),
+            before: clone(before),
+            after: clone(after)
+        });
+
+        if (entries.length > MAX_HISTORY) {
+            entries = entries.slice(entries.length - MAX_HISTORY);
+        }
+
+        cursor = entries.length - 1;
+        lastSnapshots[workspace] = clone(after);
+
+        await saveTimeline();
+        updateUi();
+    }
+
+    function scheduleCapture(workspace, action, delay = 650) {
+        if (!workspace || suppress) return;
+        clearTimeout(timers[workspace]);
+        timers[workspace] = setTimeout(() => {
+            captureIfChanged(workspace, action).catch(console.error);
+        }, delay);
+    }
+
+    async function restoreEntry(entry, direction) {
+        if (!entry) return;
+
+        const adapter = adapters()[entry.workspace];
+        if (!adapter?.restore) return;
+
+        suppress = true;
+        try {
+            const snapshot = direction === "undo" ? entry.before : entry.after;
+            await adapter.restore(clone(snapshot));
+            lastSnapshots[entry.workspace] = clone(snapshot);
+        } finally {
+            suppress = false;
+        }
+    }
+
+    async function undo() {
+        if (cursor < 0 || !entries[cursor]) return;
+        const entry = entries[cursor];
+        await restoreEntry(entry, "undo");
+        cursor--;
+        await saveTimeline();
+        updateUi();
+    }
+
+    async function redo() {
+        if (cursor >= entries.length - 1) return;
+        const entry = entries[cursor + 1];
+        await restoreEntry(entry, "redo");
+        cursor++;
+        await saveTimeline();
+        updateUi();
+    }
+
+    async function clearHistory() {
+        const approved = await window.appConfirm({
+            title: "Clear workspace history?",
+            message: "Undo/redo snapshots from all four workspaces will be removed. Current data will stay.",
+            confirmText: "Clear History",
+            tone: "danger"
+        });
+
+        if (!approved) return;
+
+        entries = [];
+        cursor = -1;
+
+        try {
+            const db = await openDb();
+            await new Promise((resolve, reject) => {
+                const tx = db.transaction(STORE, "readwrite");
+                tx.objectStore(STORE).delete(STATE_KEY);
+                tx.oncomplete = resolve;
+                tx.onerror = () => reject(tx.error);
+            });
+            db.close();
+        } catch (error) {
+            console.error(error);
+        }
+
+        const edrAdapter = adapters().edr;
+        if (edrAdapter?.clearInternalHistory) {
+            await edrAdapter.clearInternalHistory().catch(console.error);
+        }
+
+        await initializeBaselines();
+        updateUi();
+    }
+
+    function esc(value) {
+        return String(value == null ? "" : value)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
+
+    function formatTime(iso) {
+        const date = new Date(iso);
+        if (Number.isNaN(date.getTime())) return "";
+        return date.toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit"
+        });
+    }
+
+    function renderList() {
+        const root = $("globalHistoryList");
+        if (!root) return;
+
+        if (!entries.length) {
+            root.innerHTML = '<div class="edr-empty-state">No history yet.</div>';
+            return;
+        }
+
+        root.innerHTML = entries
+            .map((entry, index) => ({ entry, index }))
+            .reverse()
+            .map(({ entry, index }) => `
+                <div class="global-history-item ${index === cursor ? "current" : ""}">
+                    <div>
+                        <strong>${esc(entry.action)}</strong>
+                        <span>${esc(workspaceNames[entry.workspace] || entry.workspace)}</span>
+                    </div>
+                    <small>${esc(formatTime(entry.at))}</small>
+                </div>
+            `)
+            .join("");
+    }
+
+    function updateUi() {
+        const undoBtn = $("globalUndoBtn");
+        const redoBtn = $("globalRedoBtn");
+
+        if (undoBtn) undoBtn.disabled = cursor < 0;
+        if (redoBtn) redoBtn.disabled = cursor >= entries.length - 1;
+
+        const badge = $("globalHistoryCount");
+        if (badge) badge.textContent = String(entries.length);
+
+        const summary = $("globalHistorySummary");
+        if (summary) {
+            summary.textContent = entries.length
+                ? `${entries.length} saved change${entries.length === 1 ? "" : "s"}`
+                : "No changes recorded yet.";
+        }
+
+        renderList();
+    }
+
+    function openModal() {
+        const modal = $("globalHistoryModal");
+        if (!modal) return;
+        updateUi();
+        modal.classList.add("open");
+        modal.setAttribute("aria-hidden", "false");
+        document.body.classList.add("maintenance-modal-open");
+    }
+
+    function closeModal() {
+        const modal = $("globalHistoryModal");
+        if (!modal) return;
+        modal.classList.remove("open");
+        modal.setAttribute("aria-hidden", "true");
+        document.body.classList.remove("maintenance-modal-open");
+    }
+
+    document.addEventListener("input", event => {
+        const workspace = workspaceForElement(event.target);
+        if (!workspace) return;
+        scheduleCapture(workspace, `Edited ${workspaceNames[workspace]}`, 700);
+    }, true);
+
+    document.addEventListener("change", event => {
+        const workspace = workspaceForElement(event.target);
+        if (!workspace) return;
+        scheduleCapture(workspace, `Changed ${workspaceNames[workspace]}`, 500);
+    }, true);
+
+    document.addEventListener("paste", event => {
+        const workspace = workspaceForElement(event.target) || activeWorkspace();
+        if (!workspace) return;
+        scheduleCapture(workspace, `Pasted into ${workspaceNames[workspace]}`, 900);
+    }, true);
+
+    document.addEventListener("drop", event => {
+        const workspace = workspaceForElement(event.target) || activeWorkspace();
+        if (!workspace) return;
+        scheduleCapture(workspace, `Added file to ${workspaceNames[workspace]}`, 1100);
+    }, true);
+
+    document.addEventListener("click", event => {
+        const control = event.target.closest?.("button, label, a");
+        if (!control) return;
+
+        if (
+            control.closest("#globalHistoryModal") ||
+            control.id === "globalHistoryBtn" ||
+            control.id === "themeToggle" ||
+            control.id === "sidebarToggle" ||
+            control.classList.contains("workspace-tab-btn")
+        ) {
+            return;
+        }
+
+        let workspace = workspaceForElement(control) || activeWorkspace();
+
+        if (control.id === "appConfirmAccept") {
+            workspace = pendingWorkspace || workspace;
+
+            if (workspace) {
+                scheduleCapture(
+                    workspace,
+                    pendingAction || `Confirmed change in ${workspaceNames[workspace]}`,
+                    750
+                );
+            }
+            return;
+        }
+
+        if (!workspace) return;
+
+        const action = actionFromTarget(control, workspace);
+        pendingWorkspace = workspace;
+        pendingAction = action;
+
+        scheduleCapture(workspace, action, 400);
+        setTimeout(() => captureIfChanged(workspace, action).catch(console.error), 1200);
+        setTimeout(() => captureIfChanged(workspace, action).catch(console.error), 2800);
+    }, true);
+
+    $("globalHistoryBtn")?.addEventListener("click", openModal);
+    $("globalHistoryClose")?.addEventListener("click", closeModal);
+    $("globalHistoryBackdrop")?.addEventListener("click", closeModal);
+    $("globalUndoBtn")?.addEventListener("click", () => undo().catch(console.error));
+    $("globalRedoBtn")?.addEventListener("click", () => redo().catch(console.error));
+    $("globalClearHistoryBtn")?.addEventListener("click", () => clearHistory().catch(console.error));
+
+    document.addEventListener("keydown", event => {
+        if (
+            event.key === "Escape" &&
+            $("globalHistoryModal")?.classList.contains("open")
+        ) {
+            closeModal();
+            return;
+        }
+
+        if (!(event.ctrlKey || event.metaKey)) return;
+
+        const key = String(event.key || "").toLowerCase();
+
+        if (key === "z" && !event.shiftKey) {
+            event.preventDefault();
+            undo().catch(console.error);
+        } else if (key === "y" || (key === "z" && event.shiftKey)) {
+            event.preventDefault();
+            redo().catch(console.error);
+        }
+    });
+
+    async function boot() {
+        await loadTimeline();
+        setTimeout(() => {
+            initializeBaselines().catch(console.error);
+        }, 1700);
     }
 
     if (document.readyState === "loading") {
-        document.addEventListener("DOMContentLoaded", startSidebarClock, { once: true });
+        document.addEventListener("DOMContentLoaded", boot, { once: true });
     } else {
-        startSidebarClock();
+        boot();
     }
 })();
 </script>
