@@ -5598,7 +5598,7 @@
 </style>
 
 
-    <link rel="stylesheet" href="./style.css?v=20260901-edr-docs-cloud-1">
+    <link rel="stylesheet" href="./style.css?v=20260901-edr-docs-connect-fix-1">
 
 <style id="edrCriticalStyles">
 /* =========================================================
@@ -7720,7 +7720,7 @@ body:not(.dark-mode) .edr-rich-facebook a {
             </div>
             <div class="edr-docs-sync-actions">
                 <button type="button" class="edr-outline-btn" id="edrDocsReloadBtn">Reload Saved EDRs</button>
-                <button type="button" class="edr-primary-btn" id="edrDocsSetupBtn">Connect Google Docs</button>
+                <button type="button" class="edr-primary-btn" id="edrDocsSetupBtn" aria-haspopup="dialog" aria-controls="edrDocsSetupModal">Connect Google Docs</button>
             </div>
         </div>
 
@@ -7958,6 +7958,38 @@ https://www.facebook.com/share/..."></textarea>
         </div>
     </div>
 </div>
+
+
+<script id="edrDocsConnectFallback">
+(function () {
+    document.addEventListener("click", function (event) {
+        const button = event.target.closest && event.target.closest("#edrDocsSetupBtn");
+        if (!button) return;
+
+        const modal = document.getElementById("edrDocsSetupModal");
+        const input = document.getElementById("edrDocsWebAppUrl");
+
+        if (!modal) return;
+
+        // If the main EDR listener already opened it, do nothing.
+        if (modal.classList.contains("open")) return;
+
+        try {
+            if (input) {
+                input.value = localStorage.getItem("edr_google_docs_web_app_url_v1") || "";
+            }
+        } catch (_) {}
+
+        modal.classList.add("open");
+        modal.setAttribute("aria-hidden", "false");
+        document.body.classList.add("maintenance-modal-open");
+
+        setTimeout(function () {
+            if (input) input.focus();
+        }, 30);
+    });
+})();
+</script>
 
 <!-- Full screenshot viewer -->
 
@@ -10834,398 +10866,6 @@ https://www.facebook.com/share/..."></textarea>
 
     const $ = id => document.getElementById(id);
 
-    function getEdrDocsWebAppUrl() {
-        return String(localStorage.getItem(EDR_DOCS_WEB_APP_KEY) || "").trim();
-    }
-
-    function isValidEdrDocsUrl(value) {
-        return /^https:\/\/script\.google\.com\/macros\/s\/[^/]+\/exec(?:\?.*)?$/i.test(
-            String(value || "").trim()
-        );
-    }
-
-    function setEdrDocsStatus(message, mode = "") {
-        const status = byId("edrDocsSyncStatus");
-        const badge = byId("edrCloudBadge");
-
-        if (status) {
-            status.textContent = message;
-            status.className = "edr-docs-sync-status" + (mode ? " " + mode : "");
-        }
-
-        if (badge) {
-            if (mode === "connected") {
-                badge.textContent = "Auto-saved to Google Docs";
-                badge.className = "edr-session-note is-connected";
-            } else if (mode === "syncing") {
-                badge.textContent = "Syncing to Google Docs";
-                badge.className = "edr-session-note is-syncing";
-            } else if (mode === "error") {
-                badge.textContent = "Google Docs sync needs attention";
-                badge.className = "edr-session-note is-error";
-            } else {
-                badge.textContent = "Local until Google Docs is connected";
-                badge.className = "edr-session-note";
-            }
-        }
-    }
-
-    function openEdrDocsSetup() {
-        const modal = byId("edrDocsSetupModal");
-        byId("edrDocsWebAppUrl").value = getEdrDocsWebAppUrl();
-        modal.classList.add("open");
-        modal.setAttribute("aria-hidden", "false");
-        document.body.classList.add("maintenance-modal-open");
-        setTimeout(() => byId("edrDocsWebAppUrl")?.focus(), 40);
-    }
-
-    function closeEdrDocsSetup() {
-        const modal = byId("edrDocsSetupModal");
-        modal.classList.remove("open");
-        modal.setAttribute("aria-hidden", "true");
-        document.body.classList.remove("maintenance-modal-open");
-    }
-
-    function edrDocsJsonp(params = {}) {
-        const url = getEdrDocsWebAppUrl();
-
-        if (!isValidEdrDocsUrl(url)) {
-            return Promise.reject(new Error("Google Docs Web App URL is not configured."));
-        }
-
-        return new Promise((resolve, reject) => {
-            const callbackName =
-                "__edrDocsCb_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 7);
-
-            const query = new URLSearchParams({
-                ...params,
-                callback: callbackName,
-                _: String(Date.now())
-            });
-
-            const script = document.createElement("script");
-            let timeoutId = null;
-
-            function cleanup() {
-                clearTimeout(timeoutId);
-                script.remove();
-                try { delete window[callbackName]; } catch (_) { window[callbackName] = undefined; }
-            }
-
-            window[callbackName] = payload => {
-                cleanup();
-
-                if (!payload || payload.ok === false) {
-                    reject(new Error(payload?.error || "Google Docs sync request failed."));
-                    return;
-                }
-
-                resolve(payload);
-            };
-
-            script.onerror = () => {
-                cleanup();
-                reject(new Error("Could not reach the Google Docs Apps Script Web App."));
-            };
-
-            timeoutId = setTimeout(() => {
-                cleanup();
-                reject(new Error("Google Docs sync timed out."));
-            }, 20000);
-
-            script.src = url + (url.includes("?") ? "&" : "?") + query.toString();
-            document.head.appendChild(script);
-        });
-    }
-
-    async function testEdrDocsConnection(showSuccess = true) {
-        setEdrDocsStatus("Testing Google Docs connection...", "syncing");
-
-        try {
-            const payload = await edrDocsJsonp({ action: "ping" });
-
-            setEdrDocsStatus(
-                `Connected to "${payload.documentName || "EDR Google Doc"}".`,
-                "connected"
-            );
-
-            if (showSuccess) {
-                showToast("Google Docs EDR sync is connected.", "success");
-            }
-
-            return true;
-        } catch (error) {
-            console.error(error);
-            setEdrDocsStatus(error.message || "Google Docs connection failed.", "error");
-
-            if (showSuccess) {
-                showToast(error.message || "Google Docs connection failed.", "error");
-            }
-
-            return false;
-        }
-    }
-
-    async function saveEdrDocsSetup() {
-        const value = String(byId("edrDocsWebAppUrl").value || "").trim();
-
-        if (!isValidEdrDocsUrl(value)) {
-            showToast("Invalid Apps Script URL. It should end in /exec.", "error");
-            byId("edrDocsWebAppUrl").focus();
-            return;
-        }
-
-        localStorage.setItem(EDR_DOCS_WEB_APP_KEY, value);
-
-        const connected = await testEdrDocsConnection(false);
-
-        if (!connected) return;
-
-        closeEdrDocsSetup();
-        showToast("Google Docs sync connected. Loading your saved EDRs...", "success");
-        await loadSavedEdrsFromDocs(true);
-    }
-
-    function clearEdrDocsSetup() {
-        localStorage.removeItem(EDR_DOCS_WEB_APP_KEY);
-        edrDocsLoadedOnce = false;
-        byId("edrDocsWebAppUrl").value = "";
-        setEdrDocsStatus(
-            "Not connected. Your EDRs already saved in Google Docs remain there.",
-            ""
-        );
-        showToast("Google Docs connection removed from this browser.", "info");
-    }
-
-    async function postEdrDocs(payload) {
-        const url = getEdrDocsWebAppUrl();
-
-        if (!isValidEdrDocsUrl(url)) {
-            throw new Error("Google Docs is not connected.");
-        }
-
-        await fetch(url, {
-            method: "POST",
-            mode: "no-cors",
-            headers: {
-                "Content-Type": "text/plain;charset=utf-8"
-            },
-            body: JSON.stringify(payload)
-        });
-    }
-
-    function cloudRecordPayload(report) {
-        return {
-            id: report.id,
-            site: report.site || "",
-            date: report.date || "",
-            timeStart: report.timeStart || "",
-            timeEnd: report.timeEnd || "",
-            supervisorRole: report.supervisorRole || "Team Leader",
-            supervisorName: report.supervisorName || "",
-            subjectType: report.subjectType || "Agent/s",
-            subjectName: report.subjectName || "",
-            account: report.account || "",
-            incident: report.incident || "",
-            action: report.action || "",
-            clipLink: report.clipLink || "",
-            screenshotData: report.screenshotData || "",
-            screenshotChanged: !!report.screenshotChanged,
-            screenshotFileId: report.screenshotFileId || "",
-            createdAt: report.createdAt || "",
-            updatedAt: new Date().toISOString()
-        };
-    }
-
-    async function syncReportToGoogleDocs(report) {
-        if (!isValidEdrDocsUrl(getEdrDocsWebAppUrl())) {
-            setEdrDocsStatus(
-                "EDR saved only in this open page. Connect Google Docs for permanent archive.",
-                ""
-            );
-            return false;
-        }
-
-        setEdrDocsStatus("Saving EDR to Google Docs...", "syncing");
-
-        try {
-            await postEdrDocs({
-                action: "upsertEdr",
-                record: cloudRecordPayload(report)
-            });
-
-            report.screenshotChanged = false;
-            report.cloudSynced = true;
-
-            setEdrDocsStatus(
-                `Saved to Google Docs at ${new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}.`,
-                "connected"
-            );
-
-            return true;
-        } catch (error) {
-            console.error(error);
-            report.cloudSynced = false;
-            setEdrDocsStatus(error.message || "Could not save to Google Docs.", "error");
-            showToast("EDR kept on this page, but Google Docs sync failed.", "error");
-            return false;
-        }
-    }
-
-    async function deleteReportFromGoogleDocs(id) {
-        if (!isValidEdrDocsUrl(getEdrDocsWebAppUrl())) return false;
-
-        setEdrDocsStatus("Removing EDR from Google Docs...", "syncing");
-
-        try {
-            await postEdrDocs({
-                action: "deleteEdr",
-                id
-            });
-
-            setEdrDocsStatus("EDR removed from Google Docs.", "connected");
-            return true;
-        } catch (error) {
-            console.error(error);
-            setEdrDocsStatus(error.message || "Could not delete EDR from Google Docs.", "error");
-            return false;
-        }
-    }
-
-    function normalizeCloudRecord(record) {
-        return {
-            id: record.id || uid(),
-            selected: false,
-            expanded: false,
-            cloudSynced: true,
-            screenshotData: record.screenshotData || "",
-            screenshotFileId: record.screenshotFileId || "",
-            screenshotChanged: false,
-            site: record.site || "Mabini Site A - 1st Floor",
-            date: record.date || "",
-            timeStart: record.timeStart || "",
-            timeEnd: record.timeEnd || "",
-            supervisorRole: record.supervisorRole || "Team Leader",
-            supervisorName: record.supervisorName || "",
-            subjectType: record.subjectType || "Agent/s",
-            subjectName: record.subjectName || "",
-            account: record.account || "",
-            incident: record.incident || "",
-            action: record.action || "",
-            clipLink: record.clipLink || "",
-            createdAt: record.createdAt || "",
-            updatedAt: record.updatedAt || ""
-        };
-    }
-
-    async function loadSavedEdrsFromDocs(showFeedback = false) {
-        if (!isValidEdrDocsUrl(getEdrDocsWebAppUrl())) {
-            if (showFeedback) openEdrDocsSetup();
-            return false;
-        }
-
-        setEdrDocsStatus("Loading saved EDRs from Google Docs...", "syncing");
-
-        try {
-            const payload = await edrDocsJsonp({
-                action: "list",
-                limit: "250"
-            });
-
-            const remote = Array.isArray(payload.records)
-                ? payload.records.map(normalizeCloudRecord)
-                : [];
-
-            const localMap = new Map(edrReports.map(item => [item.id, item]));
-            const merged = [];
-
-            remote.forEach(remoteItem => {
-                const local = localMap.get(remoteItem.id);
-
-                if (local) {
-                    merged.push({
-                        ...remoteItem,
-                        ...local,
-                        screenshotFileId:
-                            local.screenshotFileId || remoteItem.screenshotFileId || "",
-                        cloudSynced: true
-                    });
-                    localMap.delete(remoteItem.id);
-                } else {
-                    merged.push(remoteItem);
-                }
-            });
-
-            // Keep any unsynced local entries that have not reached the Google Doc yet.
-            localMap.forEach(local => merged.push(local));
-
-            edrReports = merged;
-            edrDocsLoadedOnce = true;
-
-            renderList();
-            refreshOutput();
-
-            setEdrDocsStatus(
-                `Connected · ${remote.length} saved EDR${remote.length === 1 ? "" : "s"} loaded from Google Docs.`,
-                "connected"
-            );
-
-            if (showFeedback) {
-                showToast(
-                    `${remote.length} saved EDR${remote.length === 1 ? "" : "s"} loaded from Google Docs.`,
-                    "success"
-                );
-            }
-
-            return true;
-        } catch (error) {
-            console.error(error);
-            setEdrDocsStatus(error.message || "Could not load saved EDRs.", "error");
-
-            if (showFeedback) {
-                showToast(error.message || "Could not load saved EDRs.", "error");
-            }
-
-            return false;
-        }
-    }
-
-    async function fetchFullCloudRecord(id) {
-        const payload = await edrDocsJsonp({
-            action: "get",
-            id
-        });
-
-        if (!payload.record) {
-            throw new Error("Saved EDR was not found in Google Docs.");
-        }
-
-        return normalizeCloudRecord(payload.record);
-    }
-
-    async function ensureRemoteScreenshot(report) {
-        if (!report || report.screenshotData || !report.screenshotFileId) {
-            return report;
-        }
-
-        if (!isValidEdrDocsUrl(getEdrDocsWebAppUrl())) {
-            return report;
-        }
-
-        try {
-            const full = await fetchFullCloudRecord(report.id);
-
-            if (full.screenshotData) {
-                report.screenshotData = full.screenshotData;
-            }
-
-            return report;
-        } catch (error) {
-            console.error(error);
-            return report;
-        }
-    }
-
     function uid() {
         return "b_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 8);
     }
@@ -13048,6 +12688,398 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
     let edrDocsLoadedOnce = false;
 
     const EDR_DOCS_WEB_APP_KEY = "edr_google_docs_web_app_url_v1";
+
+    function getEdrDocsWebAppUrl() {
+        return String(localStorage.getItem(EDR_DOCS_WEB_APP_KEY) || "").trim();
+    }
+
+    function isValidEdrDocsUrl(value) {
+        return /^https:\/\/script\.google\.com\/macros\/s\/[^/]+\/exec(?:\?.*)?$/i.test(
+            String(value || "").trim()
+        );
+    }
+
+    function setEdrDocsStatus(message, mode = "") {
+        const status = byId("edrDocsSyncStatus");
+        const badge = byId("edrCloudBadge");
+
+        if (status) {
+            status.textContent = message;
+            status.className = "edr-docs-sync-status" + (mode ? " " + mode : "");
+        }
+
+        if (badge) {
+            if (mode === "connected") {
+                badge.textContent = "Auto-saved to Google Docs";
+                badge.className = "edr-session-note is-connected";
+            } else if (mode === "syncing") {
+                badge.textContent = "Syncing to Google Docs";
+                badge.className = "edr-session-note is-syncing";
+            } else if (mode === "error") {
+                badge.textContent = "Google Docs sync needs attention";
+                badge.className = "edr-session-note is-error";
+            } else {
+                badge.textContent = "Local until Google Docs is connected";
+                badge.className = "edr-session-note";
+            }
+        }
+    }
+
+    function openEdrDocsSetup() {
+        const modal = byId("edrDocsSetupModal");
+        byId("edrDocsWebAppUrl").value = getEdrDocsWebAppUrl();
+        modal.classList.add("open");
+        modal.setAttribute("aria-hidden", "false");
+        document.body.classList.add("maintenance-modal-open");
+        setTimeout(() => byId("edrDocsWebAppUrl")?.focus(), 40);
+    }
+
+    function closeEdrDocsSetup() {
+        const modal = byId("edrDocsSetupModal");
+        modal.classList.remove("open");
+        modal.setAttribute("aria-hidden", "true");
+        document.body.classList.remove("maintenance-modal-open");
+    }
+
+    function edrDocsJsonp(params = {}) {
+        const url = getEdrDocsWebAppUrl();
+
+        if (!isValidEdrDocsUrl(url)) {
+            return Promise.reject(new Error("Google Docs Web App URL is not configured."));
+        }
+
+        return new Promise((resolve, reject) => {
+            const callbackName =
+                "__edrDocsCb_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 7);
+
+            const query = new URLSearchParams({
+                ...params,
+                callback: callbackName,
+                _: String(Date.now())
+            });
+
+            const script = document.createElement("script");
+            let timeoutId = null;
+
+            function cleanup() {
+                clearTimeout(timeoutId);
+                script.remove();
+                try { delete window[callbackName]; } catch (_) { window[callbackName] = undefined; }
+            }
+
+            window[callbackName] = payload => {
+                cleanup();
+
+                if (!payload || payload.ok === false) {
+                    reject(new Error(payload?.error || "Google Docs sync request failed."));
+                    return;
+                }
+
+                resolve(payload);
+            };
+
+            script.onerror = () => {
+                cleanup();
+                reject(new Error("Could not reach the Google Docs Apps Script Web App."));
+            };
+
+            timeoutId = setTimeout(() => {
+                cleanup();
+                reject(new Error("Google Docs sync timed out."));
+            }, 20000);
+
+            script.src = url + (url.includes("?") ? "&" : "?") + query.toString();
+            document.head.appendChild(script);
+        });
+    }
+
+    async function testEdrDocsConnection(showSuccess = true) {
+        setEdrDocsStatus("Testing Google Docs connection...", "syncing");
+
+        try {
+            const payload = await edrDocsJsonp({ action: "ping" });
+
+            setEdrDocsStatus(
+                `Connected to "${payload.documentName || "EDR Google Doc"}".`,
+                "connected"
+            );
+
+            if (showSuccess) {
+                showToast("Google Docs EDR sync is connected.", "success");
+            }
+
+            return true;
+        } catch (error) {
+            console.error(error);
+            setEdrDocsStatus(error.message || "Google Docs connection failed.", "error");
+
+            if (showSuccess) {
+                showToast(error.message || "Google Docs connection failed.", "error");
+            }
+
+            return false;
+        }
+    }
+
+    async function saveEdrDocsSetup() {
+        const value = String(byId("edrDocsWebAppUrl").value || "").trim();
+
+        if (!isValidEdrDocsUrl(value)) {
+            showToast("Invalid Apps Script URL. It should end in /exec.", "error");
+            byId("edrDocsWebAppUrl").focus();
+            return;
+        }
+
+        localStorage.setItem(EDR_DOCS_WEB_APP_KEY, value);
+
+        const connected = await testEdrDocsConnection(false);
+
+        if (!connected) return;
+
+        closeEdrDocsSetup();
+        showToast("Google Docs sync connected. Loading your saved EDRs...", "success");
+        await loadSavedEdrsFromDocs(true);
+    }
+
+    function clearEdrDocsSetup() {
+        localStorage.removeItem(EDR_DOCS_WEB_APP_KEY);
+        edrDocsLoadedOnce = false;
+        byId("edrDocsWebAppUrl").value = "";
+        setEdrDocsStatus(
+            "Not connected. Your EDRs already saved in Google Docs remain there.",
+            ""
+        );
+        showToast("Google Docs connection removed from this browser.", "info");
+    }
+
+    async function postEdrDocs(payload) {
+        const url = getEdrDocsWebAppUrl();
+
+        if (!isValidEdrDocsUrl(url)) {
+            throw new Error("Google Docs is not connected.");
+        }
+
+        await fetch(url, {
+            method: "POST",
+            mode: "no-cors",
+            headers: {
+                "Content-Type": "text/plain;charset=utf-8"
+            },
+            body: JSON.stringify(payload)
+        });
+    }
+
+    function cloudRecordPayload(report) {
+        return {
+            id: report.id,
+            site: report.site || "",
+            date: report.date || "",
+            timeStart: report.timeStart || "",
+            timeEnd: report.timeEnd || "",
+            supervisorRole: report.supervisorRole || "Team Leader",
+            supervisorName: report.supervisorName || "",
+            subjectType: report.subjectType || "Agent/s",
+            subjectName: report.subjectName || "",
+            account: report.account || "",
+            incident: report.incident || "",
+            action: report.action || "",
+            clipLink: report.clipLink || "",
+            screenshotData: report.screenshotData || "",
+            screenshotChanged: !!report.screenshotChanged,
+            screenshotFileId: report.screenshotFileId || "",
+            createdAt: report.createdAt || "",
+            updatedAt: new Date().toISOString()
+        };
+    }
+
+    async function syncReportToGoogleDocs(report) {
+        if (!isValidEdrDocsUrl(getEdrDocsWebAppUrl())) {
+            setEdrDocsStatus(
+                "EDR saved only in this open page. Connect Google Docs for permanent archive.",
+                ""
+            );
+            return false;
+        }
+
+        setEdrDocsStatus("Saving EDR to Google Docs...", "syncing");
+
+        try {
+            await postEdrDocs({
+                action: "upsertEdr",
+                record: cloudRecordPayload(report)
+            });
+
+            report.screenshotChanged = false;
+            report.cloudSynced = true;
+
+            setEdrDocsStatus(
+                `Saved to Google Docs at ${new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}.`,
+                "connected"
+            );
+
+            return true;
+        } catch (error) {
+            console.error(error);
+            report.cloudSynced = false;
+            setEdrDocsStatus(error.message || "Could not save to Google Docs.", "error");
+            showToast("EDR kept on this page, but Google Docs sync failed.", "error");
+            return false;
+        }
+    }
+
+    async function deleteReportFromGoogleDocs(id) {
+        if (!isValidEdrDocsUrl(getEdrDocsWebAppUrl())) return false;
+
+        setEdrDocsStatus("Removing EDR from Google Docs...", "syncing");
+
+        try {
+            await postEdrDocs({
+                action: "deleteEdr",
+                id
+            });
+
+            setEdrDocsStatus("EDR removed from Google Docs.", "connected");
+            return true;
+        } catch (error) {
+            console.error(error);
+            setEdrDocsStatus(error.message || "Could not delete EDR from Google Docs.", "error");
+            return false;
+        }
+    }
+
+    function normalizeCloudRecord(record) {
+        return {
+            id: record.id || uid(),
+            selected: false,
+            expanded: false,
+            cloudSynced: true,
+            screenshotData: record.screenshotData || "",
+            screenshotFileId: record.screenshotFileId || "",
+            screenshotChanged: false,
+            site: record.site || "Mabini Site A - 1st Floor",
+            date: record.date || "",
+            timeStart: record.timeStart || "",
+            timeEnd: record.timeEnd || "",
+            supervisorRole: record.supervisorRole || "Team Leader",
+            supervisorName: record.supervisorName || "",
+            subjectType: record.subjectType || "Agent/s",
+            subjectName: record.subjectName || "",
+            account: record.account || "",
+            incident: record.incident || "",
+            action: record.action || "",
+            clipLink: record.clipLink || "",
+            createdAt: record.createdAt || "",
+            updatedAt: record.updatedAt || ""
+        };
+    }
+
+    async function loadSavedEdrsFromDocs(showFeedback = false) {
+        if (!isValidEdrDocsUrl(getEdrDocsWebAppUrl())) {
+            if (showFeedback) openEdrDocsSetup();
+            return false;
+        }
+
+        setEdrDocsStatus("Loading saved EDRs from Google Docs...", "syncing");
+
+        try {
+            const payload = await edrDocsJsonp({
+                action: "list",
+                limit: "250"
+            });
+
+            const remote = Array.isArray(payload.records)
+                ? payload.records.map(normalizeCloudRecord)
+                : [];
+
+            const localMap = new Map(edrReports.map(item => [item.id, item]));
+            const merged = [];
+
+            remote.forEach(remoteItem => {
+                const local = localMap.get(remoteItem.id);
+
+                if (local) {
+                    merged.push({
+                        ...remoteItem,
+                        ...local,
+                        screenshotFileId:
+                            local.screenshotFileId || remoteItem.screenshotFileId || "",
+                        cloudSynced: true
+                    });
+                    localMap.delete(remoteItem.id);
+                } else {
+                    merged.push(remoteItem);
+                }
+            });
+
+            // Keep any unsynced local entries that have not reached the Google Doc yet.
+            localMap.forEach(local => merged.push(local));
+
+            edrReports = merged;
+            edrDocsLoadedOnce = true;
+
+            renderList();
+            refreshOutput();
+
+            setEdrDocsStatus(
+                `Connected · ${remote.length} saved EDR${remote.length === 1 ? "" : "s"} loaded from Google Docs.`,
+                "connected"
+            );
+
+            if (showFeedback) {
+                showToast(
+                    `${remote.length} saved EDR${remote.length === 1 ? "" : "s"} loaded from Google Docs.`,
+                    "success"
+                );
+            }
+
+            return true;
+        } catch (error) {
+            console.error(error);
+            setEdrDocsStatus(error.message || "Could not load saved EDRs.", "error");
+
+            if (showFeedback) {
+                showToast(error.message || "Could not load saved EDRs.", "error");
+            }
+
+            return false;
+        }
+    }
+
+    async function fetchFullCloudRecord(id) {
+        const payload = await edrDocsJsonp({
+            action: "get",
+            id
+        });
+
+        if (!payload.record) {
+            throw new Error("Saved EDR was not found in Google Docs.");
+        }
+
+        return normalizeCloudRecord(payload.record);
+    }
+
+    async function ensureRemoteScreenshot(report) {
+        if (!report || report.screenshotData || !report.screenshotFileId) {
+            return report;
+        }
+
+        if (!isValidEdrDocsUrl(getEdrDocsWebAppUrl())) {
+            return report;
+        }
+
+        try {
+            const full = await fetchFullCloudRecord(report.id);
+
+            if (full.screenshotData) {
+                report.screenshotData = full.screenshotData;
+            }
+
+            return report;
+        } catch (error) {
+            console.error(error);
+            return report;
+        }
+    }
 
     function uid() {
         return "edr_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 8);
