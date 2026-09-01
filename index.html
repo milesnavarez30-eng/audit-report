@@ -5625,19 +5625,19 @@
     <div class="sidebar-section-label">Workspace</div>
 
     <button type="button" class="workspace-tab-btn active" id="cctvTabBtn" role="tab" aria-selected="true" aria-controls="cctvPanel">
-        <span class="sidebar-nav-icon"><i data-lucide="clipboard-check"></i></span><span>CCTV Audit</span>
+        <span>CCTV Audit</span>
     </button>
     <button type="button" class="workspace-tab-btn" id="maintenanceTabBtn" role="tab" aria-selected="false" aria-controls="maintenancePanel">
-        <span class="sidebar-nav-icon"><i data-lucide="sparkles"></i></span><span>Maintenance AI Sorter</span>
+        <span>Maintenance AI Sorter</span>
     </button>
     <button type="button" class="workspace-tab-btn" id="eodTabBtn" role="tab" aria-selected="false" aria-controls="eodPanel">
-        <span class="sidebar-nav-icon"><i data-lucide="file-text"></i></span><span>Maintenance Report</span>
+        <span>Maintenance Report</span>
     </button>
 
     <div class="sidebar-spacer"></div>
     <div class="sidebar-divider"></div>
     <button id="themeToggle" onclick="toggleTheme()" title="Toggle Dark/Light Mode" class="sidebar-theme-btn">
-        <span class="sidebar-nav-icon"><i data-lucide="moon"></i></span><span>Appearance</span>
+        <span>Appearance</span>
     </button>
 </aside>
 
@@ -5716,7 +5716,7 @@
     </div>
 
     <div class="button-group">
-        <button id="addUpdateBtn" class="icon-button" onclick="submitEntry()"><i data-lucide="plus"></i><span>Add Entry to List</span></button>
+        <button id="addUpdateBtn" class="icon-button" onclick="submitEntry()"><span>Add Entry to List</span></button>
         <button onclick="clearForm()" class="clear-btn">Clear Form</button>
     </div>
 </div>
@@ -5749,8 +5749,8 @@
     </div>
     
     <div class="button-group">
-        <button class="copy-btn icon-button" onclick="copyToClipboard()"><i data-lucide="copy"></i><span>Copy to Clipboard</span></button>
-        <button class="clear-btn icon-button" onclick="clearOutput()"><i data-lucide="trash-2"></i><span>Clear All</span></button>
+        <button class="copy-btn" onclick="copyToClipboard()"><span>Copy to Clipboard</span></button>
+        <button class="clear-btn" onclick="clearOutput()"><span>Clear All</span></button>
     </div>
 </div>
 
@@ -5784,10 +5784,10 @@
             placeholder="Paste maintenance rows directly — header is optional. Standard order: TIMESTAMP, DATE, TL, ACCOUNT, SITE, STATION NO., STATION ISSUE"></textarea>
 
         <div class="maintenance-toolbar">
-            <button type="button" class="maintenance-primary icon-button" id="maintenanceSortBtn"><i data-lucide="wand-sparkles"></i><span>Auto Sort by Floor</span></button>
-            <button type="button" class="maintenance-secondary icon-button" id="maintenanceCopyBtn"><i data-lucide="copy"></i><span>Copy Sorted Report</span></button>
-            <button type="button" class="maintenance-outline icon-button" id="maintenanceClearBtn"><i data-lucide="eraser"></i><span>Clear Report</span></button>
-            <button type="button" class="maintenance-danger icon-button" id="maintenanceResetAssignmentsBtn"><i data-lucide="rotate-ccw"></i><span>Reset Saved TL Floors</span></button>
+            <button type="button" class="maintenance-primary" id="maintenanceSortBtn"><span>Auto Sort by Floor</span></button>
+            <button type="button" class="maintenance-secondary" id="maintenanceCopyBtn"><span>Copy Sorted Report</span></button>
+            <button type="button" class="maintenance-outline" id="maintenanceClearBtn"><span>Clear Report</span></button>
+            <button type="button" class="maintenance-danger" id="maintenanceResetAssignmentsBtn"><span>Reset Saved TL Floors</span></button>
         </div>
 
         <div id="maintenanceMessage" class="maintenance-message" aria-live="polite"></div>
@@ -5851,13 +5851,13 @@
                     <div class="mini-sheet-actions">
                         <span id="miniSheetRowCount">0 rows</span>
                         <span id="miniSheetSelectedCount">0 selected</span>
-                        <button type="button" id="miniSheetSelectSameTlBtn" class="mini-sheet-select-same icon-button" disabled><i data-lucide="users"></i><span>Select Same TL</span></button>
-                        <button type="button" id="miniSheetCopyRowsBtn" class="mini-sheet-copy icon-button" disabled><i data-lucide="copy"></i><span>Copy Selected</span></button>
-                        <button type="button" id="miniSheetCutRowsBtn" class="mini-sheet-cut icon-button" disabled><i data-lucide="scissors"></i><span>Cut Selected</span></button>
-                        <button type="button" id="miniSheetToReportBtn" class="mini-sheet-to-report icon-button" disabled><i data-lucide="file-output"></i><span>Maintenance Report</span></button>
-                        <button type="button" id="miniSheetClearSelectionBtn" class="mini-sheet-clear-selection icon-button" disabled><i data-lucide="x"></i><span>Clear Selection</span></button>
-                        <button type="button" id="miniSheetRemoveRowBtn" disabled><i data-lucide="trash-2"></i><span>Remove Selected</span></button>
-                        <button type="button" id="miniSheetClearAllBtn" class="mini-sheet-clear-all icon-button"><i data-lucide="eraser"></i><span>Clear All</span></button>
+                        <button type="button" id="miniSheetSelectSameTlBtn" class="mini-sheet-select-same" disabled><span>Select Same TL</span></button>
+                        <button type="button" id="miniSheetCopyRowsBtn" class="mini-sheet-copy" disabled><span>Copy Selected</span></button>
+                        <button type="button" id="miniSheetCutRowsBtn" class="mini-sheet-cut" disabled><span>Cut Selected</span></button>
+                        <button type="button" id="miniSheetToReportBtn" class="mini-sheet-to-report" disabled><span>Maintenance Report</span></button>
+                        <button type="button" id="miniSheetClearSelectionBtn" class="mini-sheet-clear-selection" disabled><span>Clear Selection</span></button>
+                        <button type="button" id="miniSheetRemoveRowBtn" disabled><span>Remove Selected</span></button>
+                        <button type="button" id="miniSheetClearAllBtn" class="mini-sheet-clear-all"><span>Clear All</span></button>
                     </div>
                     <div class="mini-sheet-selection-help">
                         Tip: click inside the sheet once to activate shortcuts. <strong>Ctrl+X</strong> copies + removes selected rows, while <strong>Ctrl+Shift+M</strong> sends the selected rows directly to Maintenance Report.
@@ -5923,14 +5923,14 @@
         </div>
 
         <div class="simple-eod-actions">
-            <button type="button" class="btn-eod-outline icon-button" id="simpleEodSaveBtn"><i data-lucide="save"></i><span>Save to Drafts</span></button>
-            <button type="button" class="btn-eod-outline icon-button" id="simpleEodDraftsBtn"><i data-lucide="folder-open"></i><span>Drafts</span></button>
-            <button type="button" class="btn-eod-sheet-copy icon-button" id="simpleEodCopySheetsBtn"><i data-lucide="copy"></i><span>Copy Full Report to Sheets</span></button>
-            <button type="button" class="btn-eod-sheet-send icon-button" id="simpleEodSendSheetsBtn"><i data-lucide="send"></i><span>Send to Google Sheets</span></button>
-            <button type="button" class="btn-eod-outline icon-button" id="simpleEodSheetSetupBtn"><i data-lucide="settings-2"></i><span>Sheet Setup</span></button>
-            <button type="button" class="btn-eod-secondary icon-button" id="simpleEodPreviewBtn"><i data-lucide="eye"></i><span>Preview / Print</span></button>
-            <button type="button" class="btn-eod-primary icon-button" id="simpleEodPdfBtn"><i data-lucide="file-down"></i><span>Download PDF</span></button>
-            <button type="button" class="btn-eod-danger icon-button" id="simpleEodClearBtn"><i data-lucide="trash-2"></i><span>Clear All</span></button>
+            <button type="button" class="btn-eod-outline" id="simpleEodSaveBtn"><span>Save to Drafts</span></button>
+            <button type="button" class="btn-eod-outline" id="simpleEodDraftsBtn"><span>Drafts</span></button>
+            <button type="button" class="btn-eod-sheet-copy" id="simpleEodCopySheetsBtn"><span>Copy Full Report to Sheets</span></button>
+            <button type="button" class="btn-eod-sheet-send" id="simpleEodSendSheetsBtn"><span>Send to Google Sheets</span></button>
+            <button type="button" class="btn-eod-outline" id="simpleEodSheetSetupBtn"><span>Sheet Setup</span></button>
+            <button type="button" class="btn-eod-secondary" id="simpleEodPreviewBtn"><span>Preview / Print</span></button>
+            <button type="button" class="btn-eod-primary" id="simpleEodPdfBtn"><span>Download PDF</span></button>
+            <button type="button" class="btn-eod-danger" id="simpleEodClearBtn"><span>Clear All</span></button>
             <span id="simpleEodAutosaveStatus" class="maintenance-autosave-status saved">● Auto-save active</span>
         </div>
 
@@ -5942,7 +5942,7 @@
 
         <div id="simpleEodBlocks" class="eod-block-list"></div>
 
-        <button type="button" id="simpleEodAddBtn" class="eod-add-next icon-button"><i data-lucide="plus"></i><span>Add another editable lanes + screenshot block</span></button>
+        <button type="button" id="simpleEodAddBtn" class="eod-add-next"><span>Add another editable lanes + screenshot block</span></button>
     </div>
 </section>
 
@@ -6029,25 +6029,12 @@
 
 <script>
     // --- DARK / LIGHT MODE TOGGLE LOGIC ---
-    function refreshLucideIcons() {
-        if (window.lucide && typeof window.lucide.createIcons === "function") {
-            window.lucide.createIcons({
-                attrs: {
-                    "stroke-width": 1.8
-                }
-            });
-        }
-    }
+    function refreshLucideIcons() {}
 
     function setThemeToggleIcon(isDark) {
         const toggle = document.getElementById('themeToggle');
         if (!toggle) return;
-        const iconWrap = toggle.querySelector('.sidebar-nav-icon');
-        if (iconWrap) {
-            iconWrap.innerHTML = `<i data-lucide="${isDark ? 'sun' : 'moon'}"></i>`;
-        }
         toggle.title = isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode';
-        refreshLucideIcons();
     }
 
     function toggleTheme() {
@@ -6229,7 +6216,7 @@
         } else {
             entryList[editingIndex] = entry;
             editingIndex = -1;
-            document.getElementById("addUpdateBtn").innerHTML = '<i data-lucide="plus"></i><span>Add Entry to List</span>'; refreshLucideIcons();
+            document.getElementById("addUpdateBtn").textContent = "Add Entry to List";
         }
         
         sortEntries();
@@ -6250,7 +6237,7 @@
         document.getElementById("remarks").value = entry.remarks;
 
         editingIndex = index;
-        document.getElementById("addUpdateBtn").innerHTML = '<i data-lucide="save"></i><span>Update Entry</span>'; refreshLucideIcons();
+        document.getElementById("addUpdateBtn").textContent = "Update Entry";
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
@@ -6274,8 +6261,8 @@
             tr.innerHTML = `
                 <td>
                     <div class="action-btns">
-                        <button class="edit-btn icon-only-button" onclick="editEntry(${index})" title="Edit Row" aria-label="Edit row"><i data-lucide="pencil"></i></button>
-                        <button class="delete-btn icon-only-button" onclick="deleteEntry(${index})" title="Remove Row" aria-label="Remove row"><i data-lucide="trash-2"></i></button>
+                        <button class="edit-btn" onclick="editEntry(${index})" title="Edit Row">Edit</button>
+                        <button class="delete-btn" onclick="deleteEntry(${index})" title="Remove Row">Remove</button>
                     </div>
                 </td>
                 <td>${entry.year}</td>
@@ -6354,7 +6341,7 @@
         if(confirm("Are you sure you want to clear all data?")) {
             entryList = [];
             editingIndex = -1;
-            document.getElementById("addUpdateBtn").innerHTML = '<i data-lucide="plus"></i><span>Add Entry to List</span>'; refreshLucideIcons();
+            document.getElementById("addUpdateBtn").textContent = "Add Entry to List";
             saveEntries(); 
             renderTable();
         }
@@ -6370,7 +6357,7 @@
         document.getElementById("noc").value = "YES";
         
         editingIndex = -1;
-        document.getElementById("addUpdateBtn").innerHTML = '<i data-lucide="plus"></i><span>Add Entry to List</span>'; refreshLucideIcons();
+        document.getElementById("addUpdateBtn").textContent = "Add Entry to List";
     }
 </script>
 
@@ -9151,8 +9138,7 @@
         const button = $("simpleEodSendSheetsBtn");
         const originalHtml = button.innerHTML;
         button.disabled = true;
-        button.innerHTML = '<i data-lucide="loader-circle" class="icon-spin"></i><span>Sending...</span>';
-        refreshLucideIcons();
+        button.textContent = "Sending...";
 
         try {
             /*
@@ -9206,8 +9192,8 @@
                     </div>
                     <div class="working-badge">Active Block</div>
                     <div class="block-actions">
-<button type="button" class="btn-eod-outline duplicate-block icon-button"><i data-lucide="copy"></i><span>Duplicate</span></button>
-                        <button type="button" class="btn-eod-danger remove-block icon-button"><i data-lucide="trash-2"></i><span>Remove</span></button>
+<button type="button" class="btn-eod-outline duplicate-block"><span>Duplicate</span></button>
+                        <button type="button" class="btn-eod-danger remove-block"><span>Remove</span></button>
                     </div>
                 </div>
 
@@ -9223,7 +9209,7 @@
                         <strong>Screenshot Proof</strong><br>
                         Take a Snip/Screenshot, then press <strong>Ctrl+V</strong>. One paste = one screenshot. Click a thumbnail to view it full-size.
                     </p>
-                    <label class="eod-proof-label icon-button" for="${fileId}"><i data-lucide="image-plus"></i><span>Add Screenshot</span></label>
+                    <label class="eod-proof-label" for="${fileId}"><span>Add Screenshot</span></label>
                     <input id="${fileId}" class="eod-file-input" type="file" accept="image/*" multiple>
                     <div class="maintenance-paste-indicator">Ctrl+V screenshot will paste here</div>
                     <div class="eod-proof-grid">
@@ -9763,8 +9749,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         const btn = $("simpleEodPdfBtn");
         const originalHtml = btn.innerHTML;
         btn.disabled = true;
-        btn.innerHTML = '<i data-lucide="loader-circle" class="icon-spin"></i><span>Generating PDF...</span>';
-        refreshLucideIcons();
+        btn.textContent = "Generating PDF...";
 
         try {
             const worker = html2pdf()
@@ -10108,17 +10093,6 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
 
     updateSidebarToggle();
 })();
-</script>
-
-<script src="https://unpkg.com/lucide@latest"></script>
-<script>
-window.addEventListener("load", function () {
-    if (typeof refreshLucideIcons === "function") {
-        refreshLucideIcons();
-    } else if (window.lucide) {
-        window.lucide.createIcons();
-    }
-});
 </script>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
