@@ -1445,3 +1445,481 @@ body.dark-mode #maintenancePanel .mini-sheet-actions button:disabled {
     outline: 2px solid #60a5fa !important;
     outline-offset: 2px !important;
 }
+
+
+/* =========================================================
+   EDR WORKSPACE
+   Replied CCTV reports -> Facebook links -> PDF checklist -> Teams post
+   ========================================================= */
+
+#edrPanel,
+#edrPanel * {
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.edr-shell {
+    width: 100%;
+    max-width: 1220px;
+    margin: 0 auto 28px;
+}
+
+.edr-page-head,
+.edr-section-head,
+.edr-entry-head,
+.edr-shot-zone-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 14px;
+}
+
+.edr-page-head {
+    margin-bottom: 20px;
+}
+
+.edr-page-head h2 {
+    margin-bottom: 5px !important;
+}
+
+.edr-template-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 39px;
+    padding: 9px 13px;
+    border: 1px solid var(--input-border);
+    border-radius: 9px;
+    background: var(--input-bg);
+    color: var(--text-color);
+    font-size: 11px;
+    font-weight: 750;
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.edr-template-link:hover {
+    border-color: #3b82f6;
+}
+
+.edr-top-grid,
+.edr-two-column {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+}
+
+.edr-top-grid {
+    margin-bottom: 16px;
+    padding: 14px;
+    border: 1px solid var(--pro-border);
+    border-radius: 12px;
+    background: rgba(148,163,184,.035);
+}
+
+.edr-source-card,
+.edr-side-card,
+.edr-preview-card {
+    margin-bottom: 16px;
+    padding: 16px;
+    border: 1px solid var(--pro-border);
+    border-radius: 14px;
+    background: var(--container-bg);
+}
+
+.edr-section-head {
+    margin-bottom: 12px;
+}
+
+.edr-section-head h3 {
+    margin: 0 0 3px;
+    color: var(--text-color);
+    font-size: 14px;
+    font-weight: 850;
+}
+
+.edr-section-head p,
+.edr-shot-zone-head span,
+.edr-attachment-note {
+    margin: 0;
+    color: var(--pro-muted);
+    font-size: 10.5px;
+    line-height: 1.5;
+}
+
+.edr-raw-report,
+.edr-link-list {
+    width: 100%;
+    min-height: 170px;
+    box-sizing: border-box;
+    padding: 12px 13px;
+    border: 1px solid var(--input-border);
+    border-radius: 10px;
+    background: var(--input-bg);
+    color: var(--text-color);
+    font-size: 12px;
+    line-height: 1.5;
+    resize: vertical;
+}
+
+.edr-link-list {
+    min-height: 160px;
+}
+
+.edr-raw-report:focus,
+.edr-link-list:focus,
+.edr-entry-input:focus {
+    outline: none;
+    border-color: #3b82f6 !important;
+    box-shadow: 0 0 0 3px rgba(59,130,246,.09);
+}
+
+.edr-inline-actions,
+.edr-preview-actions,
+.edr-shot-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+}
+
+.edr-inline-actions {
+    margin-top: 10px;
+}
+
+.edr-primary-btn,
+.edr-outline-btn,
+.edr-danger-btn,
+.edr-entry-remove,
+.edr-shot-actions button,
+.edr-pdf-item button,
+.edr-pdf-picker {
+    min-height: 36px;
+    padding: 8px 11px;
+    border-radius: 8px;
+    font: 700 10.5px/1 "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    cursor: pointer;
+    transition: .16s ease;
+}
+
+.edr-primary-btn {
+    border: 1px solid #2563eb;
+    background: #2563eb;
+    color: #fff;
+}
+
+.edr-primary-btn:hover {
+    background: #1d4ed8;
+}
+
+.edr-outline-btn,
+.edr-pdf-picker {
+    border: 1px solid var(--input-border);
+    background: transparent;
+    color: var(--text-color);
+}
+
+.edr-outline-btn:hover,
+.edr-pdf-picker:hover {
+    border-color: #3b82f6;
+}
+
+.edr-danger-btn,
+.edr-entry-remove,
+.edr-remove-shot,
+.edr-pdf-item button {
+    border: 1px solid rgba(220,38,38,.55);
+    background: transparent;
+    color: #dc2626;
+}
+
+.edr-danger-btn:hover,
+.edr-entry-remove:hover,
+.edr-remove-shot:hover,
+.edr-pdf-item button:hover {
+    background: rgba(220,38,38,.08);
+}
+
+.edr-report-head {
+    margin: 20px 0 10px;
+}
+
+.edr-entry-list {
+    display: grid;
+    gap: 14px;
+    margin-bottom: 18px;
+}
+
+.edr-entry-card {
+    overflow: hidden;
+    border: 1px solid var(--pro-border);
+    border-radius: 14px;
+    background: var(--container-bg);
+    box-shadow: 0 5px 18px rgba(15,23,42,.04);
+}
+
+.edr-entry-head {
+    align-items: center;
+    padding: 11px 13px;
+    border-bottom: 1px solid var(--pro-border);
+    background: rgba(148,163,184,.035);
+}
+
+.edr-entry-head strong {
+    color: var(--text-color);
+    font-size: 12px;
+}
+
+.edr-entry-remove {
+    min-height: 30px;
+    padding: 6px 9px;
+}
+
+.edr-entry-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 11px 12px;
+    padding: 14px;
+}
+
+.edr-field {
+    min-width: 0;
+}
+
+.edr-field.edr-wide {
+    grid-column: 1 / -1;
+}
+
+.edr-field label {
+    margin-bottom: 5px;
+    font-size: 9.5px;
+}
+
+.edr-entry-input {
+    width: 100%;
+    min-height: 40px;
+    box-sizing: border-box;
+    padding: 9px 10px;
+    border: 1px solid var(--input-border);
+    border-radius: 8px;
+    background: var(--input-bg);
+    color: var(--text-color);
+    font-size: 11.5px;
+}
+
+textarea.edr-entry-input {
+    min-height: 74px;
+    resize: vertical;
+    line-height: 1.45;
+}
+
+.edr-shot-zone {
+    margin: 0 14px 14px;
+    padding: 13px;
+    border: 1px dashed var(--input-border);
+    border-radius: 10px;
+    background: rgba(148,163,184,.025);
+}
+
+.edr-shot-zone:focus-within {
+    border-color: rgba(59,130,246,.4);
+}
+
+.edr-shot-zone-head {
+    align-items: center;
+}
+
+.edr-shot-zone-head strong {
+    display: block;
+    margin-bottom: 2px;
+    color: var(--text-color);
+    font-size: 11px;
+}
+
+.edr-file-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+}
+
+.edr-shot-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 10px;
+    margin-top: 11px;
+}
+
+.edr-shot-item {
+    overflow: hidden;
+    border: 1px solid var(--pro-border);
+    border-radius: 9px;
+    background: var(--input-bg);
+}
+
+.edr-shot-item img {
+    display: block;
+    width: 100%;
+    height: 130px;
+    object-fit: cover;
+    background: #090909;
+}
+
+.edr-shot-actions {
+    padding: 7px;
+}
+
+.edr-shot-actions button {
+    flex: 1;
+    min-height: 30px;
+    padding: 6px 7px;
+    border: 1px solid var(--input-border);
+    background: transparent;
+    color: var(--text-color);
+    font-size: 9.5px;
+}
+
+.edr-shot-actions .edr-remove-shot {
+    color: #dc2626;
+    border-color: rgba(220,38,38,.42);
+}
+
+.edr-pdf-picker {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 10px;
+}
+
+.edr-pdf-list {
+    display: grid;
+    gap: 7px;
+}
+
+.edr-pdf-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 9px 10px;
+    border: 1px solid var(--pro-border);
+    border-radius: 8px;
+    background: rgba(148,163,184,.025);
+}
+
+.edr-pdf-item span {
+    min-width: 0;
+    overflow: hidden;
+    color: var(--text-color);
+    font-size: 10px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.edr-pdf-item button {
+    min-height: 28px;
+    padding: 5px 8px;
+    flex: none;
+    font-size: 9.5px;
+}
+
+.edr-preview-card {
+    margin-top: 2px;
+}
+
+.edr-teams-preview {
+    width: 100%;
+    min-height: 300px;
+    box-sizing: border-box;
+    margin: 0;
+    padding: 15px;
+    overflow: auto;
+    border: 1px solid var(--input-border);
+    border-radius: 10px;
+    background: #16191f;
+    color: #f8fafc;
+    font: 500 11px/1.55 "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+body:not(.dark-mode) .edr-teams-preview {
+    background: #f8fafc;
+    color: #172033;
+}
+
+.edr-attachment-note {
+    margin-top: 9px;
+    padding: 9px 10px;
+    border-radius: 8px;
+    background: rgba(59,130,246,.055);
+}
+
+.edr-empty-state {
+    padding: 12px;
+    border: 1px dashed var(--input-border);
+    border-radius: 8px;
+    color: var(--pro-muted);
+    font-size: 10px;
+    text-align: center;
+}
+
+.edr-toast {
+    position: fixed;
+    right: 18px;
+    bottom: 18px;
+    z-index: 12000;
+    max-width: 360px;
+    padding: 10px 13px;
+    border-radius: 9px;
+    background: #172033;
+    color: #fff;
+    font: 700 11px/1.4 "Inter", sans-serif;
+    box-shadow: 0 12px 30px rgba(0,0,0,.22);
+    opacity: 0;
+    transform: translateY(8px);
+    pointer-events: none;
+    transition: .18s ease;
+}
+
+.edr-toast.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.edr-toast.success {
+    background: #166534;
+}
+
+.edr-toast.error {
+    background: #991b1b;
+}
+
+@media (max-width: 760px) {
+    .edr-page-head,
+    .edr-section-head,
+    .edr-shot-zone-head {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .edr-top-grid,
+    .edr-two-column,
+    .edr-entry-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .edr-field.edr-wide {
+        grid-column: auto;
+    }
+
+    .edr-template-link,
+    .edr-preview-actions,
+    .edr-inline-actions {
+        width: 100%;
+    }
+
+    .edr-preview-actions > button,
+    .edr-inline-actions > button {
+        flex: 1;
+    }
+}
