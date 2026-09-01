@@ -3169,3 +3169,215 @@ body:not(.dark-mode) .edr-rich-facebook a {
         flex: 1;
     }
 }
+
+
+.edr-docs-url-hint {
+    margin-top: 7px;
+    color: var(--admin-muted, var(--pro-muted));
+    font: 650 9.5px/1.4 "Inter", sans-serif;
+}
+
+.edr-docs-url-hint.valid {
+    color: #22a447;
+}
+
+.edr-docs-url-hint.invalid {
+    color: #ef4444;
+}
+
+
+/* =========================================================
+   EDR UI CLEANUP - compact choices, minimal screenshot form,
+   saved screenshot controls, clean sidebar
+   ========================================================= */
+
+/* Brand removed: bring the four workspace buttons to the top. */
+.workspace-tabs.admin-sidebar {
+    padding-top: 8px !important;
+}
+
+.workspace-tabs.admin-sidebar > .workspace-tab-btn:first-of-type {
+    margin-top: 0 !important;
+}
+
+/* Compact role / violation subject buttons that fit their words. */
+.edr-choice-group {
+    display: inline-flex;
+    width: fit-content;
+    max-width: 100%;
+    gap: 5px;
+    padding: 3px;
+    border: 1px solid var(--admin-line, var(--input-border));
+    border-radius: 9px;
+    background: var(--admin-panel, var(--input-bg));
+}
+
+.edr-choice-btn {
+    width: auto !important;
+    min-width: 0 !important;
+    min-height: 33px !important;
+    padding: 7px 10px !important;
+    border: 1px solid transparent !important;
+    border-radius: 7px !important;
+    background: transparent !important;
+    color: var(--admin-muted, var(--pro-muted)) !important;
+    font: 800 9.5px/1 "Inter", sans-serif !important;
+    white-space: nowrap !important;
+    cursor: pointer;
+    box-shadow: none !important;
+}
+
+.edr-choice-btn.active {
+    border-color: rgba(37,99,235,.28) !important;
+    background: rgba(37,99,235,.12) !important;
+    color: #3b82f6 !important;
+}
+
+body:not(.dark-mode) .edr-choice-btn.active {
+    color: #1d4ed8 !important;
+}
+
+/* Screenshot form: only one clean Add Screenshot button. */
+.edr-screenshot-zone.edr-screenshot-minimal {
+    min-height: 0 !important;
+    width: fit-content !important;
+    padding: 0 !important;
+    border: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    cursor: default !important;
+}
+
+.edr-screenshot-zone.edr-screenshot-minimal::before {
+    display: none !important;
+    content: none !important;
+}
+
+.edr-screenshot-zone.edr-screenshot-minimal:focus,
+.edr-screenshot-zone.edr-screenshot-minimal.is-dragging {
+    border: 0 !important;
+    box-shadow: none !important;
+    background: transparent !important;
+}
+
+#edrScreenshotEmpty,
+#edrScreenshotPreviewWrap,
+#edrReplaceScreenshotBtn,
+#edrRemoveScreenshotBtn {
+    display: none !important;
+}
+
+/* Saved EDR screenshot actions. */
+.edr-row-ss-view,
+.edr-row-ss-add,
+.edr-row-ss-remove {
+    min-height: 31px !important;
+    padding: 6px 8px !important;
+    background: transparent !important;
+    font-size: 9px !important;
+}
+
+.edr-row-ss-view,
+.edr-row-ss-add {
+    border: 1px solid rgba(37,99,235,.38) !important;
+    color: #3b82f6 !important;
+}
+
+.edr-row-ss-remove {
+    border: 1px solid rgba(239,68,68,.4) !important;
+    color: #ef4444 !important;
+}
+
+/* Centered saved screenshot viewer. */
+.edr-ss-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 190000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 22px;
+}
+
+.edr-ss-modal.open {
+    display: flex;
+}
+
+.edr-ss-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(2,6,23,.76);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+}
+
+.edr-ss-dialog {
+    position: relative;
+    z-index: 1;
+    width: min(1000px, 95vw);
+    max-height: 88vh;
+    display: grid;
+    place-items: center;
+    padding: 14px;
+    border: 1px solid rgba(148,163,184,.25);
+    border-radius: 14px;
+    background: #080b10;
+    box-shadow: 0 28px 80px rgba(0,0,0,.45);
+}
+
+.edr-ss-dialog img {
+    display: block;
+    max-width: 100%;
+    max-height: calc(88vh - 28px);
+    object-fit: contain;
+    border-radius: 8px;
+}
+
+.edr-ss-close {
+    position: absolute;
+    top: 9px;
+    right: 9px;
+    z-index: 2;
+    width: 34px !important;
+    height: 34px !important;
+    min-width: 34px !important;
+    min-height: 34px !important;
+    display: grid !important;
+    place-items: center !important;
+    padding: 0 !important;
+    border: 1px solid rgba(255,255,255,.15) !important;
+    border-radius: 999px !important;
+    background: rgba(15,23,42,.88) !important;
+    color: #fff !important;
+    font: 800 18px/1 sans-serif !important;
+    cursor: pointer;
+}
+
+/* Strong boundary after every Teams-ready EDR. */
+.edr-final-output hr.edr-rich-divider {
+    height: 0 !important;
+    margin: 16px 0 !important;
+    border: 0 !important;
+    border-top: 1px solid rgba(148,163,184,.55) !important;
+    background: transparent !important;
+}
+
+/* The old div rule can remain supported for previous markup. */
+.edr-rich-divider {
+    margin: 16px 0;
+}
+
+/* Keep segmented controls compact on mobile too. */
+@media (max-width: 560px) {
+    .edr-choice-group {
+        width: fit-content !important;
+    }
+
+    .edr-choice-btn {
+        flex: 0 0 auto !important;
+    }
+
+    .edr-row-actions {
+        gap: 5px !important;
+    }
+}
