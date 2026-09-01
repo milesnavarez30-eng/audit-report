@@ -1255,3 +1255,76 @@ body.dark-mode .theme-switch-thumb {
         padding: 0 10px !important;
     }
 }
+
+
+/* =========================================================
+   GOOGLE-SHEETS-LIKE MOUSE CELL SELECTION
+   Click-drag cells to select a rectangular range.
+   Double-click a cell to edit.
+   ========================================================= */
+
+#maintenancePanel #maintenanceMiniSheet tbody td[data-row-index][data-col-index] {
+    position: relative;
+    cursor: cell !important;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+#maintenancePanel #maintenanceMiniSheet.cell-range-dragging,
+#maintenancePanel #maintenanceMiniSheet.cell-range-dragging * {
+    cursor: cell !important;
+}
+
+#maintenancePanel #maintenanceMiniSheet td.cell-range-selected {
+    background: #dbeafe !important;
+    color: #172033 !important;
+    box-shadow:
+        inset 0 0 0 1px rgba(26, 115, 232, .32) !important;
+}
+
+#maintenancePanel #maintenanceMiniSheet td.cell-range-active {
+    z-index: 2;
+    box-shadow:
+        inset 0 0 0 2px #1a73e8 !important;
+}
+
+#maintenancePanel #maintenanceMiniSheet td.cell-editing {
+    z-index: 4 !important;
+    cursor: text !important;
+    user-select: text !important;
+    -webkit-user-select: text !important;
+    background: #ffffff !important;
+    color: #202124 !important;
+    box-shadow:
+        inset 0 0 0 2px #1a73e8,
+        0 2px 8px rgba(26, 115, 232, .10) !important;
+}
+
+body.dark-mode #maintenancePanel #maintenanceMiniSheet td.cell-range-selected {
+    background: rgba(37, 99, 235, .30) !important;
+    color: #f8fafc !important;
+    box-shadow:
+        inset 0 0 0 1px rgba(96, 165, 250, .45) !important;
+}
+
+body.dark-mode #maintenancePanel #maintenanceMiniSheet td.cell-range-active {
+    box-shadow:
+        inset 0 0 0 2px #60a5fa !important;
+}
+
+body.dark-mode #maintenancePanel #maintenanceMiniSheet td.cell-editing {
+    background: #101827 !important;
+    color: #f8fafc !important;
+    box-shadow:
+        inset 0 0 0 2px #60a5fa,
+        0 2px 10px rgba(0, 0, 0, .22) !important;
+}
+
+/* Row-selection highlight stays distinct from cell selection. */
+#maintenancePanel #maintenanceMiniSheet tbody tr.selected-row td.cell-range-selected {
+    background: #dbeafe !important;
+}
+
+body.dark-mode #maintenancePanel #maintenanceMiniSheet tbody tr.selected-row td.cell-range-selected {
+    background: rgba(37, 99, 235, .30) !important;
+}
