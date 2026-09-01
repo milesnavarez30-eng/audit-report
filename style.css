@@ -3381,3 +3381,50 @@ body:not(.dark-mode) .edr-choice-btn.active {
         gap: 5px !important;
     }
 }
+
+
+/* =========================================================
+   EDR RESPONDENT ROW - compact layout
+   Removes the large unused gap beside the role buttons.
+   ========================================================= */
+
+.edr-inline-pair {
+    display: grid;
+    grid-template-columns: max-content minmax(0, 1fr);
+    align-items: end;
+    gap: 12px;
+    min-width: 0;
+}
+
+.edr-compact-choice-field {
+    width: fit-content;
+    min-width: 0;
+}
+
+.edr-inline-name-field {
+    min-width: 0;
+}
+
+/* Keep role buttons only as wide as their labels. */
+.edr-compact-choice-field .edr-choice-group {
+    width: fit-content !important;
+}
+
+/* Name/search field consumes all remaining row width. */
+.edr-inline-name-field .edr-search-row,
+.edr-inline-name-field > input {
+    width: 100% !important;
+}
+
+/* On narrow screens, stack cleanly instead of creating squeeze. */
+@media (max-width: 720px) {
+    .edr-inline-pair {
+        grid-template-columns: 1fr;
+        align-items: stretch;
+        gap: 9px;
+    }
+
+    .edr-compact-choice-field {
+        width: fit-content;
+    }
+}
