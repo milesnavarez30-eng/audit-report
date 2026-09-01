@@ -1991,3 +1991,200 @@ body:not(.dark-mode) .edr-teams-preview {
     border-color: var(--admin-line, var(--pro-border)) !important;
     background: var(--admin-panel-soft, rgba(148,163,184,.035)) !important;
 }
+
+
+/* =========================================================
+   SIMPLE EDR COLLECTOR
+   Paste -> Add -> Check -> Facebook -> Copy All
+   ========================================================= */
+#edrPanel .edr-simple-shell {
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 24px !important;
+    border: 1px solid var(--admin-line, var(--border-color)) !important;
+    border-radius: 18px !important;
+    background: var(--admin-panel, var(--container-bg)) !important;
+    box-shadow: var(--admin-shadow, none) !important;
+}
+.edr-simple-header,
+.edr-simple-list-head,
+.edr-simple-output-head,
+.edr-simple-card-title {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 14px;
+}
+.edr-simple-header { margin-bottom: 18px; }
+#edrPanel h2 {
+    margin: 0 0 6px !important;
+    padding: 0 !important;
+    border: 0 !important;
+    color: var(--admin-text, var(--text-color)) !important;
+    font-family: "Roboto","Inter",Arial,sans-serif !important;
+    font-size: clamp(25px,2.4vw,32px) !important;
+    font-weight: 900 !important;
+    letter-spacing: -.035em !important;
+    text-transform: none !important;
+}
+#edrPanel h2::before,#edrPanel h2::after { display:none !important; }
+.edr-simple-header .page-lead {
+    max-width: 760px;
+    margin: 0 !important;
+    color: var(--admin-muted, var(--pro-muted)) !important;
+    font-size: 12.5px !important;
+    line-height: 1.55 !important;
+}
+.edr-simple-template-link {
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    min-height:38px;
+    padding:8px 12px;
+    border:1px solid var(--admin-line,var(--input-border));
+    border-radius:9px;
+    background:var(--admin-panel-soft,var(--input-bg));
+    color:var(--admin-text,var(--text-color)) !important;
+    font-size:10.5px;
+    font-weight:800;
+    text-decoration:none !important;
+    white-space:nowrap;
+}
+.edr-simple-layout {
+    display:grid;
+    grid-template-columns:minmax(0,1fr) minmax(340px,.72fr);
+    gap:14px;
+    align-items:start;
+}
+.edr-simple-card {
+    padding:16px;
+    border:1px solid var(--admin-line,var(--pro-border));
+    border-radius:13px;
+    background:var(--admin-panel-soft,var(--container-bg));
+}
+.edr-simple-card h3 {
+    margin:0 0 3px;
+    color:var(--admin-text,var(--text-color));
+    font-size:13.5px;
+    font-weight:850;
+}
+.edr-simple-card p {
+    margin:0;
+    color:var(--admin-muted,var(--pro-muted));
+    font-size:10.5px;
+    line-height:1.45;
+}
+.edr-simple-top-grid {
+    display:grid;
+    grid-template-columns:170px minmax(0,1fr);
+    gap:10px;
+    margin:14px 0 11px;
+}
+#edrPanel label {
+    display:block;
+    margin-bottom:6px;
+    color:var(--admin-muted,var(--pro-muted)) !important;
+    font-size:10px !important;
+    font-weight:850 !important;
+    letter-spacing:.045em !important;
+}
+#edrPanel input,#edrPanel textarea {
+    width:100%;
+    box-sizing:border-box;
+    border:1px solid var(--admin-line,var(--input-border)) !important;
+    border-radius:9px !important;
+    background:var(--admin-panel,var(--input-bg)) !important;
+    color:var(--admin-text,var(--text-color)) !important;
+    font:500 11.5px/1.5 "Inter","Roboto",Arial,sans-serif !important;
+}
+#edrPanel input { min-height:40px; padding:8px 10px; }
+.edr-simple-textarea { min-height:235px; padding:12px; resize:vertical; }
+.edr-facebook-textarea { min-height:130px; }
+#edrPanel input:focus,#edrPanel textarea:focus {
+    outline:none !important;
+    border-color:#3b82f6 !important;
+    box-shadow:0 0 0 3px rgba(59,130,246,.09) !important;
+}
+.edr-simple-actions,.edr-simple-list-tools,.edr-simple-output-actions {
+    display:flex; flex-wrap:wrap; gap:8px;
+}
+.edr-simple-actions { margin-top:10px; }
+.edr-simple-primary,.edr-simple-outline,.edr-simple-danger,.edr-simple-remove-report {
+    min-height:36px;
+    padding:8px 11px;
+    border-radius:8px;
+    font:800 10.5px/1 "Inter","Roboto",Arial,sans-serif;
+    cursor:pointer;
+}
+.edr-simple-primary { border:1px solid #2563eb; background:#2563eb; color:#fff; }
+.edr-simple-outline { border:1px solid var(--admin-line,var(--input-border)); background:var(--admin-panel,transparent); color:var(--admin-text,var(--text-color)); }
+.edr-simple-danger,.edr-simple-remove-report { border:1px solid rgba(220,38,38,.5); background:transparent; color:#dc2626; }
+.edr-simple-count { margin:8px 0 10px; color:var(--admin-muted,var(--pro-muted)); font-size:10px; font-weight:750; }
+.edr-simple-report-list { display:grid; gap:7px; max-height:435px; overflow:auto; }
+.edr-simple-report-item {
+    display:grid;
+    grid-template-columns:auto minmax(0,1fr) auto;
+    gap:10px;
+    align-items:center;
+    padding:10px;
+    border:1px solid var(--admin-line,var(--pro-border));
+    border-radius:9px;
+    background:var(--admin-panel,var(--container-bg));
+}
+.edr-simple-report-item.is-selected {
+    border-color:rgba(37,99,235,.38);
+    background:linear-gradient(90deg,rgba(37,99,235,.065),transparent 75%),var(--admin-panel,var(--container-bg));
+}
+.edr-simple-check { margin:0 !important; }
+.edr-simple-check input { position:absolute; opacity:0; pointer-events:none; }
+.edr-simple-checkbox {
+    width:18px; height:18px; display:grid; place-items:center;
+    border:1.5px solid #94a3b8; border-radius:5px;
+    background:var(--admin-panel,#fff); cursor:pointer;
+}
+.edr-simple-check input:checked + .edr-simple-checkbox { border-color:#2563eb; background:#2563eb; }
+.edr-simple-check input:checked + .edr-simple-checkbox::after { content:"✓"; color:#fff; font-size:12px; font-weight:900; }
+.edr-simple-report-main { min-width:0; }
+.edr-simple-report-meta { display:flex; align-items:center; gap:7px; margin-bottom:3px; }
+.edr-simple-report-meta strong { color:var(--admin-text,var(--text-color)); font-size:11px; }
+.edr-simple-report-meta span { color:#3b82f6; font-size:10px; font-weight:750; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.edr-simple-report-preview { color:var(--admin-muted,var(--pro-muted)); font-size:9.8px; line-height:1.4; }
+.edr-simple-remove-report { min-height:30px; padding:6px 8px; font-size:9.5px; }
+.edr-simple-facebook-card,.edr-simple-output-card { margin-top:14px; }
+.edr-simple-output-head { align-items:center; margin-bottom:10px; }
+.edr-simple-output {
+    width:100%;
+    min-height:290px;
+    max-height:520px;
+    box-sizing:border-box;
+    margin:0;
+    padding:14px;
+    overflow:auto;
+    border:1px solid var(--admin-line,var(--input-border));
+    border-radius:10px;
+    background:#101722;
+    color:#f8fafc;
+    font:500 11px/1.55 "Inter","Roboto",Arial,sans-serif;
+    white-space:pre-wrap;
+    overflow-wrap:anywhere;
+}
+body:not(.dark-mode) .edr-simple-output { background:#f8fafc; color:#172033; }
+.edr-simple-empty { padding:22px 12px; border:1px dashed var(--admin-line,var(--input-border)); border-radius:9px; color:var(--admin-muted,var(--pro-muted)); font-size:10.5px; text-align:center; }
+.edr-simple-toast {
+    position:fixed; right:18px; bottom:18px; z-index:12000;
+    max-width:320px; padding:10px 13px; border-radius:9px;
+    background:#172033; color:#fff;
+    font:750 10.5px/1.4 "Inter",sans-serif;
+    box-shadow:0 12px 30px rgba(0,0,0,.22);
+    opacity:0; transform:translateY(8px); pointer-events:none; transition:.18s ease;
+}
+.edr-simple-toast.show { opacity:1; transform:translateY(0); }
+.edr-simple-toast.success { background:#166534; }
+.edr-simple-toast.error { background:#991b1b; }
+@media (max-width:900px) { .edr-simple-layout { grid-template-columns:1fr; } }
+@media (max-width:680px) {
+    .edr-simple-header,.edr-simple-list-head,.edr-simple-output-head { flex-direction:column; align-items:stretch; }
+    .edr-simple-top-grid { grid-template-columns:1fr; }
+    .edr-simple-output-actions > button,.edr-simple-list-tools > button { flex:1; }
+}
