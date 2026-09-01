@@ -5636,8 +5636,18 @@
 
     <div class="sidebar-spacer"></div>
     <div class="sidebar-divider"></div>
-    <button id="themeToggle" onclick="toggleTheme()" title="Toggle Dark/Light Mode" class="sidebar-theme-btn">
-        <span>Appearance</span>
+    <button
+        id="themeToggle"
+        type="button"
+        onclick="toggleTheme()"
+        title="Toggle Light / Dark Mode"
+        class="sidebar-theme-btn theme-switch-control"
+        aria-label="Toggle Light and Dark Mode">
+        <span class="theme-switch-label theme-switch-light">Light</span>
+        <span class="theme-switch-track" aria-hidden="true">
+            <span class="theme-switch-thumb"></span>
+        </span>
+        <span class="theme-switch-label theme-switch-dark">Dark</span>
     </button>
 </aside>
 
@@ -6035,6 +6045,7 @@
         const toggle = document.getElementById('themeToggle');
         if (!toggle) return;
         toggle.title = isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode';
+        toggle.setAttribute('aria-label', isDark ? 'Dark Mode active. Switch to Light Mode' : 'Light Mode active. Switch to Dark Mode');
     }
 
     function toggleTheme() {
