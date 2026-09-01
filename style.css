@@ -4815,3 +4815,47 @@ body.dark-mode .master-data-table th {
         text-align: left;
     }
 }
+
+
+/* Assigned HR per OM — cleaner 3-column searchable guide */
+#masterAssignedHrTable {
+    width: 100% !important;
+    min-width: 760px !important;
+}
+
+#masterAssignedHrTable th:nth-child(1),
+#masterAssignedHrTable td:nth-child(1) {
+    width: 20%;
+}
+
+#masterAssignedHrTable th:nth-child(2),
+#masterAssignedHrTable td:nth-child(2) {
+    width: 45%;
+}
+
+#masterAssignedHrTable th:nth-child(3),
+#masterAssignedHrTable td:nth-child(3) {
+    width: 35%;
+}
+
+#masterAssignedHrTable td {
+    white-space: normal !important;
+    line-height: 1.45 !important;
+}
+
+#masterAssignedHrTable tbody tr:hover td {
+    background: rgba(59,130,246,.045);
+}
+
+body.dark-mode #masterAssignedHrTable tbody tr:hover td {
+    background: rgba(96,165,250,.07);
+}
+
+#masterHrSearch {
+    font-size: 10px !important;
+}
+
+#masterHrSearch:focus {
+    border-color: rgba(37,99,235,.55) !important;
+    box-shadow: 0 0 0 3px rgba(37,99,235,.09) !important;
+}
