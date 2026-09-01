@@ -5598,7 +5598,7 @@
 </style>
 
 
-    <link rel="stylesheet" href="./style.css?v=20260901-edr-shot-drop-1">
+    <link rel="stylesheet" href="./style.css?v=20260901-workspace-isolation-fix-1">
 
 <style id="edrCriticalStyles">
 /* =========================================================
@@ -8101,6 +8101,32 @@ body.dark-mode .sidebar-live-clock {
     }
 }
 </style>
+<style id="workspaceIsolationCritical">
+
+/* =========================================================
+   WORKSPACE ISOLATION FIX
+   Exactly one main workspace is visible at a time.
+   ========================================================= */
+
+body .app-tab-panel {
+    display: none !important;
+}
+
+body .app-tab-panel.active {
+    display: block !important;
+}
+
+body .app-tab-panel:not(.active) {
+    visibility: hidden !important;
+    position: absolute !important;
+    left: -99999px !important;
+    top: -99999px !important;
+    width: 0 !important;
+    height: 0 !important;
+    overflow: hidden !important;
+    pointer-events: none !important;
+}
+</style>
 </head>
 <body>
 
@@ -8685,7 +8711,7 @@ body.dark-mode .sidebar-live-clock {
             <div class="edr-card-heading">
                 <div>
                     <h3>Facebook Shared Posts</h3>
-                    <p>Paste the Facebook shared-post links or text. One link per line is recommended.</p>
+                    <p>Paste the Facebook shared-post links or text. The Facebook shared-post date uses today’s date automatically.</p>
                 </div>
             </div>
 
@@ -11924,15 +11950,20 @@ https://www.facebook.com/share/..."></textarea>
 
         $("cctvPanel").classList.remove("active");
         $("maintenancePanel").classList.remove("active");
+        $("edrPanel")?.classList.remove("active");
         $("eodPanel").classList.add("active");
 
         cctvBtn.classList.remove("active");
         maintenanceBtn.classList.remove("active");
+        $("edrTabBtn")?.classList.remove("active");
         eodBtn.classList.add("active");
 
         cctvBtn.setAttribute("aria-selected", "false");
         maintenanceBtn.setAttribute("aria-selected", "false");
+        $("edrTabBtn")?.setAttribute("aria-selected", "false");
         eodBtn.setAttribute("aria-selected", "true");
+
+        window.showWorkspaceOnly?.("eodPanel");
 
         setTimeout(() => {
             const card = document.querySelector(`.eod-block[data-id="${targetBlock.id}"]`);
@@ -15195,9 +15226,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
                 result += "\n\n";
             }
 
-            const dateSource = selected.length
-                ? selected[selected.length - 1].date
-                : todayLocal();
+            const dateSource = todayLocal();
 
             result += `Facebook shared post ${formatFacebookDate(dateSource)}\n${facebook}`;
         }
@@ -15209,9 +15238,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         const facebook = byId("edrFacebookText").value.trim();
         if (!facebook) return "";
 
-        const dateSource = selected.length
-            ? selected[selected.length - 1].date
-            : todayLocal();
+        const dateSource = todayLocal();
 
         const lines = facebook
             .split(/\n+/)
@@ -16643,6 +16670,87 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
     } else {
         boot();
     }
+})();
+</script>
+
+
+<script id="workspaceIsolationGuard">
+(function () {
+    const pairs = [
+        ["cctvTabBtn", "cctvPanel"],
+        ["maintenanceTabBtn", "maintenancePanel"],
+        ["eodTabBtn", "eodPanel"],
+        ["edrTabBtn", "edrPanel"]
+    ];
+
+    function enforceWorkspace(activeButtonId, activePanelId) {
+        pairs.forEach(([buttonId, panelId]) => {
+            const button = document.getElementById(buttonId);
+            const panel = document.getElementById(panelId);
+            const active =
+                buttonId === activeButtonId &&
+                panelId === activePanelId;
+
+            if (button) {
+                button.classList.toggle("active", active);
+                button.setAttribute(
+                    "aria-selected",
+                    active ? "true" : "false"
+                );
+            }
+
+            if (panel) {
+                panel.classList.toggle("active", active);
+                panel.hidden = !active;
+                panel.setAttribute(
+                    "aria-hidden",
+                    active ? "false" : "true"
+                );
+            }
+        });
+    }
+
+    function currentPair() {
+        const activeButton = pairs.find(([buttonId]) =>
+            document.getElementById(buttonId)?.classList.contains("active")
+        );
+
+        if (activeButton) return activeButton;
+
+        return pairs[0];
+    }
+
+    pairs.forEach(([buttonId, panelId]) => {
+        const button = document.getElementById(buttonId);
+        if (!button) return;
+
+        button.addEventListener("click", () => {
+            // Run after older workspace handlers so this becomes
+            // the final source of truth.
+            setTimeout(() => {
+                enforceWorkspace(buttonId, panelId);
+            }, 0);
+        });
+    });
+
+    function boot() {
+        const [buttonId, panelId] = currentPair();
+        enforceWorkspace(buttonId, panelId);
+    }
+
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", boot, { once: true });
+    } else {
+        boot();
+    }
+
+    // Expose a tiny helper for internal features that navigate
+    // to another workspace programmatically.
+    window.showWorkspaceOnly = function (panelId) {
+        const pair = pairs.find(([, id]) => id === panelId);
+        if (!pair) return;
+        enforceWorkspace(pair[0], pair[1]);
+    };
 })();
 </script>
 
