@@ -3957,3 +3957,52 @@ body .app-tab-panel:not(.active) {
     overflow: hidden !important;
     pointer-events: none !important;
 }
+
+
+/* =========================================================
+   EDR -> CCTV AUDIT
+   ========================================================= */
+
+.edr-row-audit {
+    min-height: 31px !important;
+    padding: 6px 9px !important;
+    border: 1px solid rgba(59,130,246,.38) !important;
+    border-radius: 7px !important;
+    background: rgba(59,130,246,.07) !important;
+    color: #2563eb !important;
+    font: 750 9px/1 "Inter", "Roboto", Arial, sans-serif !important;
+    cursor: pointer !important;
+}
+
+.edr-row-audit:hover {
+    border-color: rgba(59,130,246,.62) !important;
+    background: rgba(59,130,246,.12) !important;
+}
+
+.edr-row-audit.is-linked {
+    border-color: rgba(16,185,129,.38) !important;
+    background: rgba(16,185,129,.07) !important;
+    color: #059669 !important;
+}
+
+.edr-audit-linked {
+    display: inline-flex;
+    align-items: center;
+    margin-left: 7px;
+    padding: 2px 6px;
+    border: 1px solid rgba(16,185,129,.28);
+    border-radius: 999px;
+    background: rgba(16,185,129,.07);
+    color: #059669;
+    font: 750 8px/1 "Inter", sans-serif;
+    vertical-align: middle;
+}
+
+body.dark-mode .edr-row-audit {
+    color: #93c5fd !important;
+}
+
+body.dark-mode .edr-row-audit.is-linked,
+body.dark-mode .edr-audit-linked {
+    color: #6ee7b7 !important;
+}
