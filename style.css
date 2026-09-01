@@ -3049,3 +3049,123 @@ body:not(.dark-mode) .edr-rich-facebook a {
     font: 850 8.5px/1 "Inter", sans-serif;
     letter-spacing: .06em;
 }
+
+
+/* =========================================================
+   EDR GOOGLE DOCS CLOUD ARCHIVE
+   ========================================================= */
+
+.edr-docs-sync-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    margin: 0 0 13px;
+    padding: 11px 12px;
+    border: 1px solid var(--admin-line, var(--border-color));
+    border-radius: 11px;
+    background:
+        linear-gradient(90deg, rgba(37,99,235,.045), transparent 70%),
+        var(--admin-panel-soft, var(--container-bg));
+}
+
+.edr-docs-sync-copy {
+    min-width: 0;
+}
+
+.edr-docs-sync-copy strong {
+    display: block;
+    margin-bottom: 3px;
+    color: var(--admin-text, var(--text-color));
+    font: 850 10.5px/1.25 "Inter", sans-serif;
+}
+
+.edr-docs-sync-copy span,
+.edr-docs-sync-status {
+    display: block;
+    color: var(--admin-muted, var(--pro-muted));
+    font: 600 9.5px/1.4 "Inter", sans-serif;
+}
+
+.edr-docs-sync-status.connected {
+    color: #22a447;
+}
+
+.edr-docs-sync-status.syncing {
+    color: #d97706;
+}
+
+.edr-docs-sync-status.error {
+    color: #ef4444;
+}
+
+.edr-docs-sync-actions {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    flex: none;
+}
+
+.edr-session-note.is-connected {
+    border-color: rgba(34,197,94,.35);
+    background: rgba(34,197,94,.08);
+    color: #22a447;
+}
+
+.edr-session-note.is-syncing {
+    border-color: rgba(245,158,11,.35);
+    background: rgba(245,158,11,.08);
+    color: #d97706;
+}
+
+.edr-session-note.is-error {
+    border-color: rgba(239,68,68,.35);
+    background: rgba(239,68,68,.07);
+    color: #ef4444;
+}
+
+.edr-docs-setup-dialog {
+    width: min(690px, 96vw);
+}
+
+.edr-docs-setup-dialog > label {
+    display: block;
+    margin: 0 0 7px;
+    color: var(--admin-muted, var(--pro-muted));
+    font: 850 10px/1.2 "Inter", sans-serif;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+}
+
+.edr-docs-setup-dialog input {
+    width: 100%;
+    min-height: 43px;
+    box-sizing: border-box;
+    padding: 9px 11px;
+    border: 1px solid var(--admin-line, var(--input-border));
+    border-radius: 9px;
+    background: var(--admin-panel, var(--input-bg));
+    color: var(--admin-text, var(--text-color));
+    font: 500 11.5px/1.4 "Inter", sans-serif;
+}
+
+.edr-docs-setup-help {
+    margin-top: 9px;
+    color: var(--admin-muted, var(--pro-muted));
+    font: 500 10px/1.5 "Inter", sans-serif;
+}
+
+@media (max-width: 680px) {
+    .edr-docs-sync-bar {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .edr-docs-sync-actions {
+        width: 100%;
+    }
+
+    .edr-docs-sync-actions > button {
+        flex: 1;
+    }
+}
