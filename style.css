@@ -73,12 +73,12 @@ body::after {
     width: var(--admin-sidebar) !important;
     height: 100vh !important;
     margin: 0 !important;
-    padding: 20px 14px 18px !important;
+    padding: 14px 10px 14px !important;
     display: flex !important;
     flex-direction: column !important;
     align-items: stretch !important;
     justify-content: flex-start !important;
-    gap: 7px !important;
+    gap: 4px !important;
     border: 0 !important;
     border-right: 1px solid var(--admin-sidebar-border) !important;
     border-radius: 0 !important;
@@ -94,22 +94,22 @@ body::after {
 .sidebar-brand {
     display: flex;
     align-items: center;
-    gap: 11px;
-    min-height: 58px;
-    margin: 0 3px 17px;
-    padding: 6px 4px;
+    gap: 8px;
+    min-height: 46px;
+    margin: 0 2px 12px;
+    padding: 4px 2px;
 }
 
 .sidebar-brand-mark {
-    width: 42px;
-    height: 42px;
+    width: 34px;
+    height: 34px;
     display: grid;
     place-items: center;
-    flex: 0 0 42px;
-    border-radius: 13px;
+    flex: 0 0 34px;
+    border-radius: 10px;
     background: linear-gradient(145deg, var(--admin-blue), var(--admin-green));
     color: #fff;
-    font-size: 20px;
+    font-size: 16px;
     font-weight: 900;
     box-shadow: 0 10px 22px rgba(37, 99, 235, .22);
 }
@@ -121,7 +121,7 @@ body::after {
 .sidebar-brand-copy strong {
     display: block;
     color: #fff;
-    font-size: 14px;
+    font-size: 12px;
     font-weight: 900;
     letter-spacing: .055em;
 }
@@ -130,7 +130,7 @@ body::after {
     display: block;
     margin-top: 3px;
     color: var(--admin-sidebar-muted);
-    font-size: 10.5px;
+    font-size: 9.5px;
     font-weight: 600;
 }
 
@@ -162,12 +162,10 @@ body::after {
     font-size: 11px !important;
     font-weight: 700 !important;
     text-align: left !important;
-    line-height: 1.1 !important;
     box-shadow: none !important;
     cursor: pointer;
-    overflow: hidden !important;
+    overflow: visible !important;
     transition: background .16s ease, color .16s ease, border-color .16s ease, transform .16s ease !important;
-}
 }
 
 .workspace-tab-btn:hover {
@@ -212,11 +210,11 @@ body::after {
     margin: 0 !important;
     padding: 8px 10px !important;
     border: 1px solid rgba(148,163,184,.12) !important;
-    border-radius: 10px !important;
+    border-radius: 12px !important;
     background: rgba(255,255,255,.035) !important;
     color: #aeb9c8 !important;
     font-size: 11px !important;
-    font-weight: 700 !important;
+    font-weight: 800 !important;
     box-shadow: none !important;
 }
 
@@ -493,14 +491,13 @@ body.dark-mode .maintenance-table th {
         overflow-y: hidden !important;
     }
 
-.sidebar-brand {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    min-height: 46px;
-    margin: 0 2px 12px;
-    padding: 4px 2px;
-}
+    .sidebar-brand,
+    .sidebar-section-label,
+    .sidebar-spacer,
+    .sidebar-divider {
+        display: none !important;
+    }
+
     .workspace-tab-btn {
         width: auto !important;
         min-width: max-content !important;
