@@ -5598,7 +5598,7 @@
 </style>
 
 
-    <link rel="stylesheet" href="./style.css?v=20260901-custom-confirm-1">
+    <link rel="stylesheet" href="./style.css?v=20260901-edr-global-paste-1">
 
 <style id="edrCriticalStyles">
 /* =========================================================
@@ -6518,6 +6518,698 @@ body.app-confirm-open {
     }
 }
 </style>
+<style id="edrCrudCriticalStyles">
+
+/* =========================================================
+   EDR CRUD BUILDER
+   Standard template + searchable master lists + CRUD list.
+   ========================================================= */
+
+#edrPanel .edr-crud-shell {
+    width: 100% !important;
+    max-width: 1240px !important;
+    margin: 0 auto !important;
+    padding: 24px !important;
+    border: 1px solid var(--admin-line, var(--border-color)) !important;
+    border-radius: 18px !important;
+    background: var(--admin-panel, var(--container-bg)) !important;
+    box-shadow: var(--admin-shadow, none) !important;
+}
+
+.edr-crud-header,
+.edr-card-heading,
+.edr-list-head,
+.edr-output-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 14px;
+}
+
+.edr-crud-header {
+    margin-bottom: 16px;
+}
+
+#edrPanel .edr-crud-header h2 {
+    margin: 0 0 5px !important;
+    padding: 0 !important;
+    border: 0 !important;
+    color: var(--admin-text, var(--text-color)) !important;
+    font-family: "Inter", "Roboto", Arial, sans-serif !important;
+    font-size: 29px !important;
+    line-height: 1.08 !important;
+    font-weight: 850 !important;
+    letter-spacing: -.035em !important;
+    text-transform: none !important;
+}
+
+#edrPanel .edr-crud-header h2::before,
+#edrPanel .edr-crud-header h2::after {
+    display: none !important;
+}
+
+.edr-crud-header .page-lead {
+    max-width: 790px;
+    margin: 0 !important;
+    color: var(--admin-muted, var(--pro-muted)) !important;
+    font-size: 12px !important;
+    line-height: 1.55 !important;
+}
+
+.edr-template-link {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 38px;
+    padding: 8px 12px;
+    border: 1px solid var(--admin-line, var(--input-border));
+    border-radius: 9px;
+    background: var(--admin-panel-soft, var(--input-bg));
+    color: var(--admin-text, var(--text-color)) !important;
+    font: 800 10.5px/1 "Inter", sans-serif;
+    text-decoration: none !important;
+}
+
+.edr-template-link:hover {
+    border-color: #3b82f6;
+}
+
+.edr-crud-card {
+    margin-top: 13px;
+    padding: 17px;
+    border: 1px solid var(--admin-line, var(--pro-border));
+    border-radius: 14px;
+    background: var(--admin-panel-soft, var(--container-bg));
+}
+
+.edr-crud-card h3 {
+    margin: 0 0 3px;
+    color: var(--admin-text, var(--text-color));
+    font: 850 14px/1.3 "Inter", "Roboto", Arial, sans-serif;
+    letter-spacing: -.015em;
+}
+
+.edr-crud-card p {
+    margin: 0;
+    color: var(--admin-muted, var(--pro-muted));
+    font: 500 10.5px/1.45 "Inter", "Roboto", Arial, sans-serif;
+}
+
+.edr-session-note {
+    flex: none;
+    padding: 5px 8px;
+    border: 1px solid var(--admin-line, var(--input-border));
+    border-radius: 999px;
+    color: var(--admin-muted, var(--pro-muted));
+    font: 750 9px/1 "Inter", sans-serif;
+}
+
+.edr-form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    margin-top: 15px;
+}
+
+.edr-field {
+    min-width: 0;
+}
+
+.edr-span-2 {
+    grid-column: span 2;
+}
+
+#edrPanel .edr-field > label {
+    display: block !important;
+    margin: 0 0 6px !important;
+    color: var(--admin-muted, var(--pro-muted)) !important;
+    font: 850 9.5px/1.2 "Inter", sans-serif !important;
+    letter-spacing: .055em !important;
+    text-transform: uppercase !important;
+}
+
+#edrPanel .edr-field input,
+#edrPanel .edr-field select,
+#edrPanel .edr-field textarea,
+#edrPanel .edr-facebook-input {
+    width: 100% !important;
+    box-sizing: border-box !important;
+    border: 1px solid var(--admin-line, var(--input-border)) !important;
+    border-radius: 9px !important;
+    background: var(--admin-panel, var(--input-bg)) !important;
+    color: var(--admin-text, var(--text-color)) !important;
+    font: 500 11.5px/1.45 "Inter", "Roboto", Arial, sans-serif !important;
+    box-shadow: none !important;
+}
+
+#edrPanel .edr-field input,
+#edrPanel .edr-field select {
+    min-height: 41px !important;
+    padding: 8px 10px !important;
+}
+
+#edrPanel .edr-field textarea {
+    min-height: 95px !important;
+    padding: 11px !important;
+    resize: vertical !important;
+}
+
+#edrPanel .edr-field input:focus,
+#edrPanel .edr-field select:focus,
+#edrPanel .edr-field textarea:focus,
+#edrPanel .edr-facebook-input:focus {
+    outline: none !important;
+    border-color: #3b82f6 !important;
+    box-shadow: 0 0 0 3px rgba(59,130,246,.09) !important;
+}
+
+.edr-fixed-cctv {
+    margin-top: 5px;
+    color: var(--admin-muted, var(--pro-muted));
+    font-size: 9px;
+}
+
+.edr-time-pair {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    align-items: center;
+    gap: 7px;
+}
+
+.edr-time-pair > span {
+    color: var(--admin-muted, var(--pro-muted));
+    font-size: 10px;
+    font-weight: 700;
+}
+
+.edr-search-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    gap: 6px;
+}
+
+.edr-small-add,
+.edr-small-remove {
+    min-height: 41px;
+    padding: 7px 9px;
+    border-radius: 8px;
+    font: 800 9.5px/1 "Inter", sans-serif;
+    cursor: pointer;
+}
+
+.edr-small-add {
+    border: 1px solid rgba(34,197,94,.42);
+    background: rgba(34,197,94,.10);
+    color: #22a447;
+}
+
+.edr-small-remove {
+    border: 1px solid rgba(239,68,68,.42);
+    background: rgba(239,68,68,.07);
+    color: #ef4444;
+}
+
+.edr-form-actions,
+.edr-list-actions,
+.edr-output-actions,
+.edr-row-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+}
+
+.edr-form-actions {
+    margin-top: 14px;
+    padding-top: 13px;
+    border-top: 1px solid var(--admin-line, var(--border-color));
+}
+
+.edr-primary-btn,
+.edr-outline-btn,
+.edr-danger-btn,
+.edr-row-actions button {
+    min-height: 36px;
+    padding: 8px 11px;
+    border-radius: 8px;
+    font: 800 10px/1 "Inter", sans-serif;
+    cursor: pointer;
+}
+
+.edr-primary-btn {
+    border: 1px solid #2563eb;
+    background: #2563eb;
+    color: #fff;
+}
+
+.edr-primary-btn:hover {
+    background: #1d4ed8;
+}
+
+.edr-outline-btn {
+    border: 1px solid var(--admin-line, var(--input-border));
+    background: var(--admin-panel, transparent);
+    color: var(--admin-text, var(--text-color));
+}
+
+.edr-danger-btn {
+    border: 1px solid #dc2626;
+    background: #dc2626;
+    color: #fff;
+}
+
+.edr-cancel-edit[hidden] {
+    display: none !important;
+}
+
+.edr-list-head {
+    align-items: center;
+}
+
+.edr-list-summary {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 11px 0 9px;
+    color: var(--admin-muted, var(--pro-muted));
+    font: 750 9.5px/1 "Inter", sans-serif;
+}
+
+.edr-list-summary span {
+    padding: 5px 8px;
+    border: 1px solid var(--admin-line, var(--border-color));
+    border-radius: 999px;
+}
+
+.edr-report-list {
+    display: grid;
+    gap: 7px;
+}
+
+.edr-list-item {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 10px;
+    padding: 10px;
+    border: 1px solid var(--admin-line, var(--border-color));
+    border-radius: 10px;
+    background: var(--admin-panel, var(--container-bg));
+}
+
+.edr-list-item.is-selected {
+    border-color: rgba(37,99,235,.38);
+    background:
+        linear-gradient(90deg, rgba(37,99,235,.055), transparent 72%),
+        var(--admin-panel, var(--container-bg));
+}
+
+.edr-select-box {
+    margin: 0 !important;
+    cursor: pointer;
+}
+
+.edr-select-box input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.edr-select-box > span {
+    width: 18px;
+    height: 18px;
+    display: grid;
+    place-items: center;
+    border: 1.5px solid #94a3b8;
+    border-radius: 5px;
+    background: var(--admin-panel, #fff);
+}
+
+.edr-select-box input:checked + span {
+    border-color: #2563eb;
+    background: #2563eb;
+}
+
+.edr-select-box input:checked + span::after {
+    content: "✓";
+    color: #fff;
+    font: 900 12px/1 "Inter", sans-serif;
+}
+
+.edr-list-main {
+    min-width: 0;
+}
+
+.edr-list-title {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.edr-list-title strong {
+    color: var(--admin-text, var(--text-color));
+    font-size: 11px;
+}
+
+.edr-list-title > span:not(.edr-account-chip) {
+    color: var(--admin-muted, var(--pro-muted));
+    font-size: 10px;
+}
+
+.edr-account-chip {
+    padding: 3px 6px;
+    border-radius: 999px;
+    background: rgba(37,99,235,.09);
+    color: #3b82f6;
+    font-size: 9px;
+    font-weight: 800;
+}
+
+.edr-list-sub {
+    margin-top: 4px;
+    color: var(--admin-muted, var(--pro-muted));
+    font-size: 9.5px;
+    line-height: 1.4;
+}
+
+.edr-inline-read {
+    margin: 9px 0 0;
+    padding: 10px;
+    overflow: auto;
+    border: 1px solid var(--admin-line, var(--border-color));
+    border-radius: 8px;
+    background: var(--admin-panel-soft, var(--input-bg));
+    color: var(--admin-text, var(--text-color));
+    font: 500 10px/1.5 "Inter", sans-serif;
+    white-space: pre-wrap;
+}
+
+.edr-row-actions {
+    flex: none;
+}
+
+.edr-row-actions button {
+    min-height: 31px;
+    padding: 6px 8px;
+    background: transparent;
+}
+
+.edr-row-view {
+    border: 1px solid var(--admin-line, var(--input-border));
+    color: var(--admin-text, var(--text-color));
+}
+
+.edr-row-edit {
+    border: 1px solid rgba(37,99,235,.45);
+    color: #3b82f6;
+}
+
+.edr-row-delete {
+    border: 1px solid rgba(239,68,68,.45);
+    color: #ef4444;
+}
+
+.edr-empty-state {
+    padding: 24px 12px;
+    border: 1px dashed var(--admin-line, var(--input-border));
+    border-radius: 10px;
+    color: var(--admin-muted, var(--pro-muted));
+    font-size: 10.5px;
+    text-align: center;
+}
+
+.edr-facebook-input {
+    min-height: 120px !important;
+    margin-top: 11px;
+    padding: 11px !important;
+    resize: vertical;
+}
+
+.edr-output-head {
+    align-items: center;
+    margin-bottom: 11px;
+}
+
+.edr-final-output {
+    width: 100%;
+    min-height: 310px;
+    max-height: 600px;
+    box-sizing: border-box;
+    margin: 0;
+    padding: 14px;
+    overflow: auto;
+    border: 1px solid var(--admin-line, var(--input-border));
+    border-radius: 10px;
+    background: #0f1723;
+    color: #f8fafc;
+    font: 500 10.5px/1.55 "Inter", "Roboto", Arial, sans-serif;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+body:not(.dark-mode) .edr-final-output {
+    background: #f8fafc;
+    color: #172033;
+}
+
+.edr-crud-toast {
+    position: fixed;
+    right: 18px;
+    bottom: 18px;
+    z-index: 150000;
+    max-width: 350px;
+    padding: 10px 13px;
+    border-radius: 9px;
+    background: #172033;
+    color: #fff;
+    font: 750 10.5px/1.4 "Inter", sans-serif;
+    box-shadow: 0 14px 36px rgba(0,0,0,.25);
+    opacity: 0;
+    transform: translateY(8px);
+    pointer-events: none;
+    transition: .16s ease;
+}
+
+.edr-crud-toast.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.edr-crud-toast.success {
+    background: #166534;
+}
+
+.edr-crud-toast.error {
+    background: #991b1b;
+}
+
+@media (max-width: 820px) {
+    #edrPanel .edr-crud-shell {
+        padding: 16px !important;
+    }
+
+    .edr-crud-header,
+    .edr-list-head,
+    .edr-output-head {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .edr-form-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .edr-span-2 {
+        grid-column: span 1;
+    }
+
+    .edr-list-item {
+        grid-template-columns: auto minmax(0, 1fr);
+    }
+
+    .edr-row-actions {
+        grid-column: 2;
+    }
+}
+
+@media (max-width: 560px) {
+    .edr-time-pair {
+        grid-template-columns: 1fr;
+    }
+
+    .edr-time-pair > span {
+        display: none;
+    }
+
+    .edr-search-row {
+        grid-template-columns: minmax(0, 1fr) auto;
+    }
+
+    .edr-small-remove {
+        grid-column: 1 / -1;
+    }
+
+    .edr-form-actions > button,
+    .edr-list-actions > button,
+    .edr-output-actions > button {
+        flex: 1;
+    }
+}
+
+
+
+/* EDR CCTV screenshot + rich hyperlink output */
+.edr-screenshot-zone {
+    min-height: 150px;
+    padding: 12px;
+    border: 1.5px dashed var(--admin-line, var(--input-border));
+    border-radius: 10px;
+    background: var(--admin-panel, var(--input-bg));
+    cursor: pointer;
+    transition: border-color .15s ease, box-shadow .15s ease, background .15s ease;
+}
+
+.edr-screenshot-zone:focus,
+.edr-screenshot-zone.is-dragging {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59,130,246,.09);
+    background: rgba(59,130,246,.035);
+}
+
+.edr-screenshot-empty {
+    min-height: 126px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    text-align: center;
+}
+
+.edr-screenshot-empty strong {
+    color: var(--admin-text, var(--text-color));
+    font-size: 11px;
+}
+
+.edr-screenshot-empty span {
+    max-width: 520px;
+    color: var(--admin-muted, var(--pro-muted));
+    font-size: 9.5px;
+    line-height: 1.45;
+}
+
+.edr-screenshot-preview-wrap {
+    display: grid;
+    justify-items: center;
+    gap: 9px;
+}
+
+.edr-screenshot-preview-wrap img {
+    width: min(100%, 620px);
+    max-height: 360px;
+    object-fit: contain;
+    border: 1px solid var(--admin-line, var(--border-color));
+    border-radius: 9px;
+    background: #05070a;
+}
+
+.edr-screenshot-actions {
+    display: flex;
+    gap: 7px;
+}
+
+.edr-danger-soft-btn {
+    min-height: 36px;
+    padding: 8px 11px;
+    border: 1px solid rgba(239,68,68,.42);
+    border-radius: 8px;
+    background: rgba(239,68,68,.07);
+    color: #ef4444;
+    font: 800 10px/1 "Inter", sans-serif;
+    cursor: pointer;
+}
+
+.edr-final-output {
+    white-space: normal !important;
+}
+
+.edr-output-empty {
+    color: var(--admin-muted, var(--pro-muted));
+    font-size: 10.5px;
+}
+
+.edr-rich-report {
+    line-height: 1.48;
+}
+
+.edr-rich-title {
+    margin-bottom: 5px;
+    font-weight: 850;
+}
+
+.edr-rich-line {
+    margin: 1px 0;
+}
+
+.edr-rich-line strong {
+    font-weight: 800;
+}
+
+.edr-rich-line a,
+.edr-rich-facebook a {
+    color: #60a5fa;
+    text-decoration: underline;
+    font-weight: 750;
+}
+
+body:not(.dark-mode) .edr-rich-line a,
+body:not(.dark-mode) .edr-rich-facebook a {
+    color: #1d4ed8;
+}
+
+.edr-rich-screenshot {
+    margin: 10px 0 8px;
+}
+
+.edr-rich-screenshot img {
+    display: block;
+    width: min(100%, 620px);
+    max-height: 420px;
+    object-fit: contain;
+    border: 1px solid rgba(148,163,184,.28);
+    border-radius: 7px;
+    background: #05070a;
+}
+
+.edr-rich-divider {
+    height: 1px;
+    margin: 16px 0;
+    background: rgba(148,163,184,.38);
+}
+
+.edr-rich-facebook {
+    line-height: 1.55;
+}
+
+</style>
+<style>
+
+/* EDR global Ctrl+V screenshot hint */
+.edr-screenshot-zone::before {
+    content: "CTRL + V READY";
+    display: block;
+    width: fit-content;
+    margin: 0 auto 8px;
+    padding: 4px 7px;
+    border-radius: 999px;
+    background: rgba(34,197,94,.10);
+    color: #22a447;
+    font: 850 8.5px/1 "Inter", sans-serif;
+    letter-spacing: .06em;
+}
+</style>
 </head>
 <body>
 
@@ -6880,102 +7572,221 @@ body.app-confirm-open {
 </section>
 
 
+
 <section id="edrPanel" class="app-tab-panel" role="tabpanel" aria-labelledby="edrTabBtn">
-    <div class="container edr-simple-shell">
-        <div class="edr-simple-header">
+    <div class="container edr-crud-shell">
+        <div class="edr-crud-header">
             <div>
                 <h2>EDR</h2>
                 <p class="page-lead">
-                    Paste EDR reports one by one, add them to the list, choose which reports to include,
-                    then add Facebook shared-post links and copy one ready-to-send Teams post.
+                    Build each EDR using the standard CCTV format, keep several reports in one working list,
+                    edit or delete them when needed, select the reports to include, then copy one Teams-ready post.
                 </p>
             </div>
-            <a class="edr-simple-template-link"
+
+            <a class="edr-template-link"
                href="https://docs.google.com/document/d/1-i54dxMosFgiNcdEO7fHqvN15yIsicdOjmsW0XTYbUw/edit?tab=t.ob2cyz0wou1"
-               target="_blank" rel="noopener noreferrer">Open EDR Template</a>
+               target="_blank"
+               rel="noopener noreferrer">
+                Open EDR Template
+            </a>
         </div>
 
-        <div class="edr-simple-layout">
-            <section class="edr-simple-card">
-                <div class="edr-simple-card-title">
-                    <div>
-                        <h3>Add EDR Report</h3>
-                        <p>Paste one complete EDR report. Press <strong>Ctrl + Enter</strong> or click <strong>Add EDR</strong>.</p>
-                    </div>
-                </div>
-
-                <div class="edr-simple-top-grid">
-                    <div>
-                        <label for="edrEntryDate">EDR Date</label>
-                        <input type="date" id="edrEntryDate">
-                    </div>
-                    <div>
-                        <label for="edrEntryLabel">Short Label / Site</label>
-                        <input type="text" id="edrEntryLabel" placeholder="Example: Mabini Site A - CCTV">
-                    </div>
-                </div>
-
-                <label for="edrEntryText">EDR Content</label>
-                <textarea id="edrEntryText" class="edr-simple-textarea"
-                    placeholder="Paste the replied CCTV / EDR report here..."></textarea>
-
-                <div class="edr-simple-actions">
-                    <button type="button" class="edr-simple-primary" id="edrAddReportBtn">Add EDR</button>
-                    <button type="button" class="edr-simple-outline" id="edrClearEntryBtn">Clear Input</button>
-                </div>
-            </section>
-
-            <section class="edr-simple-card">
-                <div class="edr-simple-list-head">
-                    <div>
-                        <h3>EDR List</h3>
-                        <p>Check the reports you want included in the final Teams post.</p>
-                    </div>
-                    <div class="edr-simple-list-tools">
-                        <button type="button" class="edr-simple-outline" id="edrSelectAllBtn">Select All</button>
-                        <button type="button" class="edr-simple-outline" id="edrUnselectAllBtn">Unselect All</button>
-                    </div>
-                </div>
-
-                <div id="edrReportCount" class="edr-simple-count">0 reports</div>
-                <div id="edrReportList" class="edr-simple-report-list">
-                    <div class="edr-simple-empty">No EDR reports added yet.</div>
-                </div>
-            </section>
-        </div>
-
-        <section class="edr-simple-card edr-simple-facebook-card">
-            <div class="edr-simple-card-title">
+        <section class="edr-crud-card edr-form-card">
+            <div class="edr-card-heading">
                 <div>
-                    <h3>Facebook Shared Posts</h3>
-                    <p>Paste the Facebook links or Facebook post text below.</p>
+                    <h3 id="edrFormHeading">Create EDR</h3>
+                    <p>Searchable Team Leader, OM, and Account/Campaign fields are already loaded below.</p>
+                </div>
+                <span class="edr-session-note">Current session only</span>
+            </div>
+
+            <div class="edr-form-grid">
+                <div class="edr-field edr-span-2">
+                    <label for="edrSite">Site</label>
+                    <select id="edrSite">
+                        <option value="Mabini Site A - 1st Floor">Mabini Site A - 1st Floor</option>
+                        <option value="Mabini Site A - 2nd Floor">Mabini Site A - 2nd Floor</option>
+                    </select>
+                    <div class="edr-fixed-cctv">CCTV is added automatically to the generated template.</div>
+                </div>
+
+                <div class="edr-field">
+                    <label for="edrDate">Date</label>
+                    <input type="date" id="edrDate">
+                </div>
+
+                <div class="edr-field">
+                    <label>Time Observed</label>
+                    <div class="edr-time-pair">
+                        <input type="time" id="edrTimeStart" step="1" aria-label="Time observed start">
+                        <span>to</span>
+                        <input type="time" id="edrTimeEnd" step="1" aria-label="Time observed end">
+                    </div>
+                </div>
+
+                <div class="edr-field">
+                    <label for="edrSupervisorRole">Team Leader or OM</label>
+                    <select id="edrSupervisorRole">
+                        <option value="Team Leader">Team Leader</option>
+                        <option value="OM">OM</option>
+                    </select>
+                </div>
+
+                <div class="edr-field">
+                    <label for="edrSupervisorName">Name</label>
+                    <div class="edr-search-row">
+                        <input type="text"
+                               id="edrSupervisorName"
+                               list="edrSupervisorOptions"
+                               autocomplete="off"
+                               placeholder="Search Team Leader or OM...">
+                        <button type="button" class="edr-small-add" id="edrAddSupervisorOption" title="Add typed name">Add</button>
+                        <button type="button" class="edr-small-remove" id="edrRemoveSupervisorOption" title="Remove typed name from this session">Remove</button>
+                    </div>
+                    <datalist id="edrSupervisorOptions"></datalist>
+                </div>
+
+                <div class="edr-field">
+                    <label for="edrSubjectType">Violation Subject</label>
+                    <select id="edrSubjectType">
+                        <option value="Agent/s">Agent/s</option>
+                        <option value="Team Leader">Team Leader</option>
+                        <option value="OM">OM</option>
+                    </select>
+                </div>
+
+                <div class="edr-field">
+                    <label for="edrSubjectName">Agent/s or Team Leader</label>
+                    <input type="text"
+                           id="edrSubjectName"
+                           list="edrSubjectOptions"
+                           autocomplete="off"
+                           placeholder="Enter or search the name...">
+                    <datalist id="edrSubjectOptions"></datalist>
+                </div>
+
+                <div class="edr-field edr-span-2">
+                    <label for="edrAccount">Account / Campaign</label>
+                    <div class="edr-search-row">
+                        <input type="text"
+                               id="edrAccount"
+                               list="edrAccountOptions"
+                               autocomplete="off"
+                               placeholder="Search Account / Campaign...">
+                        <button type="button" class="edr-small-add" id="edrAddAccountOption" title="Add typed campaign">Add</button>
+                        <button type="button" class="edr-small-remove" id="edrRemoveAccountOption" title="Remove typed campaign from this session">Remove</button>
+                    </div>
+                    <datalist id="edrAccountOptions"></datalist>
+                </div>
+
+                <div class="edr-field edr-span-2">
+                    <label for="edrIncident">Incident</label>
+                    <textarea id="edrIncident"
+                              placeholder="Example: Agent was observed loitering away from her workstation while the PC was turned off during work hours."></textarea>
+                </div>
+
+                <div class="edr-field edr-span-2">
+                    <label for="edrActionRemarks">Action Taken / Remarks</label>
+                    <textarea id="edrActionRemarks"
+                              placeholder="Example: TL confirmed the agent had completed her audits and was assisting another agent while waiting for the next audit."></textarea>
+                </div>
+
+                <div class="edr-field edr-span-2">
+                    <label>CCTV Screenshot</label>
+                    <div id="edrScreenshotZone" class="edr-screenshot-zone" tabindex="0">
+                        <input type="file" id="edrScreenshotInput" accept="image/*" hidden>
+                        <div id="edrScreenshotEmpty" class="edr-screenshot-empty">
+                            <strong>Paste CCTV Screenshot</strong>
+                            <span>Press Ctrl+V anywhere on the EDR page after taking a Snip/Screenshot. You can also drag/drop or use Add Screenshot.</span>
+                            <button type="button" class="edr-outline-btn" id="edrChooseScreenshotBtn">Add Screenshot</button>
+                        </div>
+
+                        <div id="edrScreenshotPreviewWrap" class="edr-screenshot-preview-wrap" hidden>
+                            <img id="edrScreenshotPreview" alt="CCTV screenshot preview">
+                            <div class="edr-screenshot-actions">
+                                <button type="button" class="edr-outline-btn" id="edrReplaceScreenshotBtn">Replace</button>
+                                <button type="button" class="edr-danger-soft-btn" id="edrRemoveScreenshotBtn">Remove</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="edr-field edr-span-2">
+                    <label for="edrClipLink">CCTV Clip - Google Drive Link</label>
+                    <input type="url"
+                           id="edrClipLink"
+                           placeholder="Paste Google Drive link here, e.g. https://drive.google.com/...">
+                    <div class="edr-fixed-cctv">
+                        In the generated EDR this becomes <strong>CCTV Clip: <u>Click here!</u></strong> with “Click here!” linked to this URL.
+                    </div>
                 </div>
             </div>
 
-            <textarea id="edrFacebookText" class="edr-simple-textarea edr-facebook-textarea"
-                placeholder="https://www.facebook.com/share/...
-https://www.facebook.com/share/...
-or paste Facebook shared-post text here"></textarea>
+            <div class="edr-form-actions">
+                <button type="button" class="edr-primary-btn" id="edrSaveBtn">Create EDR</button>
+                <button type="button" class="edr-outline-btn" id="edrClearFormBtn">Clear Form</button>
+                <button type="button" class="edr-outline-btn edr-cancel-edit" id="edrCancelEditBtn" hidden>Cancel Edit</button>
+            </div>
         </section>
 
-        <section class="edr-simple-card edr-simple-output-card">
-            <div class="edr-simple-output-head">
+        <section class="edr-crud-card edr-list-card">
+            <div class="edr-list-head">
                 <div>
-                    <h3>Ready to Send</h3>
-                    <p>Selected EDR reports appear first, followed by a divider, then Facebook shared posts.</p>
+                    <h3>EDR List</h3>
+                    <p>Check the EDRs you want to include. Use Edit to update any report before copying.</p>
                 </div>
-                <div class="edr-simple-output-actions">
-                    <button type="button" class="edr-simple-primary" id="edrCopyAllBtn">Copy All</button>
-                    <button type="button" class="edr-simple-danger" id="edrClearAllSimpleBtn">Clear All</button>
+
+                <div class="edr-list-actions">
+                    <button type="button" class="edr-outline-btn" id="edrSelectAllBtn">Select All</button>
+                    <button type="button" class="edr-outline-btn" id="edrUnselectAllBtn">Unselect All</button>
                 </div>
             </div>
 
-            <pre id="edrFinalOutput" class="edr-simple-output"></pre>
+            <div class="edr-list-summary">
+                <span id="edrReportCount">0 EDRs</span>
+                <span id="edrSelectedCount">0 selected</span>
+            </div>
+
+            <div id="edrReportList" class="edr-report-list">
+                <div class="edr-empty-state">No EDR reports created yet.</div>
+            </div>
+        </section>
+
+        <section class="edr-crud-card edr-facebook-card">
+            <div class="edr-card-heading">
+                <div>
+                    <h3>Facebook Shared Posts</h3>
+                    <p>Paste the Facebook shared-post links or text. One link per line is recommended.</p>
+                </div>
+            </div>
+
+            <textarea id="edrFacebookText"
+                      class="edr-facebook-input"
+                      placeholder="https://www.facebook.com/share/...
+https://www.facebook.com/share/..."></textarea>
+        </section>
+
+        <section class="edr-crud-card edr-output-card">
+            <div class="edr-output-head">
+                <div>
+                    <h3>Teams-Ready Output</h3>
+                    <p>Selected EDRs are generated in your requested template, followed by a divider and Facebook shared posts.</p>
+                </div>
+
+                <div class="edr-output-actions">
+                    <button type="button" class="edr-primary-btn" id="edrCopyAllBtn">Copy All</button>
+                    <button type="button" class="edr-danger-btn" id="edrClearAllBtn">Clear All</button>
+                </div>
+            </div>
+
+            <div id="edrFinalOutput" class="edr-final-output"><div class="edr-output-empty">Create an EDR above to generate the Teams-ready output.</div></div>
         </section>
     </div>
 </section>
 
 <!-- Full screenshot viewer -->
+
 <div id="maintenanceImageViewer" class="maintenance-modal" aria-hidden="true">
     <div class="maintenance-modal-backdrop" id="maintenanceImageBackdrop"></div>
     <div class="maintenance-image-dialog" role="dialog" aria-modal="true" aria-label="Screenshot preview">
@@ -11651,29 +12462,35 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
 </script>
 
 
+
 <script>
 (function () {
     const byId = id => document.getElementById(id);
-    let edrReports = [];
 
-    function edrUid() {
-        return "edr_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 7);
+    const SOURCE_TLS = ["Abegail Llena", "Abigail Calo", "Adana Salaveria", "Adrian Balbuena", "Adrian Crisht Lontiong", "Adrian Paolo Tangonan", "Aiza Pearl Sablas", "Al Joven Malda", "Albert Samsico", "Albert Tumilap", "Alexis Fe Ginez", "Allan Albert Sadili", "Alliana Melgarejo Suaner", "Allysa San Luis", "Almar Bongcac", "Alyssa Jane Gainsan", "Amethyst Jeanne Patani", "Amilyn Vicente", "Analou Madanlo", "Andrea Agudera", "Andrea Kyle Herrero", "Andro Agad", "Angel Omas-as", "Angelica Lantic", "Angelie Ceballos", "Angeline Melgo", "Angelito Carsano", "Angelo Trazona", "Angie Cabaluna", "Angiely Soriano", "Anna Lou Pedregosa", "Annalie Manmano", "Annalou Gonzales", "Anthony Autentico", "Antonette Noran", "Apple Grace Terec", "April Jay Sitoy", "April Ranulo", "April Rose Rabor", "Ara Shaine Villegas", "Archel Cole", "Arianne Agao-Agao", "Ariel Facturan", "Arnel Vicente", "Arrah Mae Sanchez", "Ashley Kim Esplagera", "Aura Rey Velasco", "Ayra Porras", "Bai Indera Diocolano", "Beethoven Diaz", "Benign Borral", "Benjie Cabalhin", "Beverly Origenes", "Bless Dian Buga-as", "Bryan Rey Tabares", "Carl Anthony Galvez", "Carlo Rubia", "Carmena Dagaraga", "Cedric Michael Gianan", "Celestino Bravo", "Chady Flores", "Charisse Romasanta", "Charlene Mae Ruiz", "Charles Ethan Arcilla", "Charles Vincent Vidanes", "Charlotte Danica Dauz", "Charyl Diatras", "Cherry Mae Astorga", "Christian Arcilla", "Christian Estrera", "Christian Jay Corsiga", "Christian Nicko Rosales", "Christine Monique Labastida", "Christine Olasiman", "Christine Urdaneta", "Claire Charl Belover-Cabanas", "Clarissa Cyrine Aguanta", "Connie Fe Villanueva", "Crea Amorte", "Cresil Fe Duhig", "Cris Arandilla", "Cristine Olasiman", "Cristoper Cavan", "Crystal Paulene Delmo", "Cyfer Marie Diapolet", "Dames Alfred Veloso", "Dan Ric Abendaño", "Daniel Algario", "Dannevy Salvador", "Dante Tahuran", "Dar Benjie Limikid", "Darben Esperanza", "Dareen Mhyvie Caliguid", "Darhyl John Bauyot", "Dariel Cardiente", "Dariel John Duco", "Darlene Barcelo", "Darlene Grace Sornido", "Darryl De Guzman", "Datun Mamasainged", "Dave Leezer Sodusta", "David Gabut", "Dether Languido", "Dianne Sombilon", "Dinah Grace Rio", "Divi Ann Alcontin", "Divi Anne Alcontin", "Dorrisse Jane De Vera", "Edelaido Roble Jr.", "Edgie Clarin Alcarion", "Edrianne Delos Santos", "Edylyn Tallorin", "EJ Oribe", "Ejjie Madjire", "Elijah Felipe", "Elisha Bayona", "Ellame Pantojan", "Emmaruel James Alao", "Ephraim June Vismanos", "Erik Jan Martillan", "Erika Gerado", "Erika Jane Almerez", "Erika Sabdullah", "Erly Jade Jadap", "Ethel Grace Paberan Habanes", "Exequiel Edorosas", "Ezel Jean Sebandal Mahinay", "Flora May Maño", "Floramae Palma", "Francis Alta", "Francis Brylle Cane", "Francis Lian Ramos", "Freda Apuda", "Frederick Jopia", "Fritz Cales", "Garyll Castillo", "Geharchelle Fuentes", "Gemark Cardanio", "Genibie Trasmonte", "Gerramie Mendoza-Racoma", "Gilbert Murillo", "Ginalyn Mariano", "Glaithe Hienze Perero", "Gliza Mae Samelin", "Glyze Morgado", "Grazelle Tagadiad", "Hani Precious Serna", "Hani Serna", "Hanz Rosetham Tolentino", "Hanzel Umpad", "Harlene Candel", "Hazel Gorgoya", "Henie Alvarez", "Hiezel Heart Bariquit", "Honey Glaze Pialago", "Honey-lyn Dalos", "Ian Greg Mandalupe", "Ian Lauroza", "Irene Fuentes", "Ivan Strauss Castillon", "Ivan Taala", "Ivy Balandan", "Ivy Decenilla", "Jade Rocacorba", "Jaime Arisgado", "Jake Dimpas", "Jake Maghanoy", "Jake Montajes", "James Matthew Quintana", "Jamiel Leyson", "Jan Andes Noel", "Jan Gabriel Pariolan", "Jan Laurence Amacanim", "Jan Noel Andes", "Jan Sield Molinas", "Janice Jugarap", "Janice Salubre", "Jastine Ann Casayas", "Jastine Karl Pracueles", "Jave Mamontayao", "Jay Besedor", "Jay Catito", "Jayboi Tuling", "Jaycee Zabate", "Je Ann Jy Ramos", "Jefferson Egoy", "Jeffrey Juan", "Jeiryld Abella", "Jenesis Mabasa", "Jenessa Subteniente", "Jenette Hisola", "Jennifer Toroba", "Jenny Rose Aquino", "Jeremiah Quesada", "Jerome Uyanguren", "Jerrylyn Guinto", "Jesbonnin Sudaria", "Jessa Lopez", "Jessa Mae Amihan", "Jessa Mae Bacus", "Jethro Gerali", "Jexeer Khent Trinidad", "Jhon Carlos Santos", "Jhon Kenan Baran", "Jhon Rex Mantilla", "Jhuly Basmayor", "Jhun Carlo San", "Jim Fernandez", "Jinelyn Ligtas", "Joecel Villegas", "Joevinyll Palabrica", "John Alvin Despogado", "John Dave Barzo", "John Eric Momo", "John Joshua Bahinting", "John Karl Butaslac", "John Lloyd Pogoy", "John Peter Ano-os", "John Raphael Toledo", "John Rel Lagura", "John Rey Salise", "John Vincent Sotto", "Jollie Berjes", "Jomar Linaza", "Jomar Manla Daie", "Jomira Aquino", "Jonalyn Mamaba", "Jonas Haguyahay", "Jonel Delgado", "Jonell Bisnar", "Joneza Gementiza", "Jose Manila", "Jose Rino Hontiveros", "Joseph Dagatan", "Joshua Bahinting", "Joshua Bañez", "Joshua Salva", "Jovert Monticayan", "Juan Miguel Aleos", "Juddy Ann Tumazar", "Judel Gabunilas", "Judy Ann Ero", "Juliah Monte", "Julina Flores", "Juniper Arquisola", "Jupel Hemolatan", "Juren Davies Buhawe", "Justine Aninion", "Justine Karl Pracueles", "Justine Magandam", "Justine Pleños", "Kathleen Joy Sulaiman", "Kathlyn Yuba", "Kathrine Mae Arce", "Kehn Angelo Egdamin", "Kerjean Labi", "Kevin John Oroc", "Kevin Kyle Omiping", "Khemyajaira Paquit", "Kimberly Quirabo", "Kin Batomalaque", "Kirk Daniel Ripley", "Kristine Bulonos", "Kristine Jay Salvadora", "Kristine Laarnee Lucariza", "Krizzna Berang", "Krystyl Jean Daclag", "Kurt Calvin Cajeles", "Kyle Ryan Gaviola", "Kylene Cabanada", "Kyzer Bacle", "Larry Lloyd Rodriguez", "Laurence Dave Sindol", "Lemuel Rosalejos", "Leo Jones Sayago", "Leslie Deparene", "Lezmar Teh", "Lhoyd Mondinido", "Liezl Joy Lodonia", "Lloyd Vincent Orquina", "Lorence Gucor", "Lorenz Calm Fabellar", "Louie Roy Casang", "Louise Anne Litao", "Lovelle Famorcan", "Luke Zedric Jun Lopez", "Luz Dela Peña", "Ma. Czalthea Obed", "Madelyn Mahinay", "Mae Ann Espina", "Maia Isla", "Maica Estafia", "Maica Mambaling", "Marc Jardenico", "Marco Paolo Salazar", "Marecar Suerte", "Margie Gracia", "Marianette Aradilla", "Maribeth Georpe", "Maricel Sungkip", "Maridel Salon", "Marie Fe Palen", "Marie Mogan", "Marie Rose Mutia", "Mark Anthony Arellano", "Mark Clint Encallado", "Mark Conrad Pinton", "Mark Cortez", "Mark Edejer", "Mark Gervacio", "Mark Glendel Embudo", "Mark Lloyd Pielago", "Mark Loeh Salaysay", "Mark Nelcone Grullo", "Marwen Diel", "Mary Abegail Gabrielle Amora", "Mary Ann De Leon", "Mary Grace Ybañez", "Maxx De Vera", "Maxy Jodelle Alota", "May Jean Romaguera", "Mc Jordan Costan", "Mc Reden De Vera", "Meilah Deocares", "Mel Jan Cole", "Melissa Liceralde", "Melvin Balaba", "Melvinson Laguting", "Michael Angelo Rosauro", "Michael James Macabingkil", "Michael Jan Bangoy", "Michael Mogan", "Michael Ocampo", "Michael Ralph Montejo", "Michelle Pantujan", "Mickie Jhon Absin", "Mina Joy Ramirez", "Mirah Paris Macaorao", "Moktar Ibrahim", "Nasrudin Sailila", "Neil Jarencio", "Nelboy Campaner", "Neña May Barientos", "Noel Ulalan", "Nomar Dagmil", "Norjahid Akmad", "Norman Lindo", "Noronisa Mante", "Odesa Lacadwe", "Oliver Dela Cruz", "Omar Langco", "Omar Mallari", "Pablito Janeo", "Pam Cuizon", "Pamela Villanueva", "Patricia Paula Therese Martinez", "Patrick James Mariano", "Patrick Jhon Misagal", "Patrick Llamasarez", "Paul Angelo Maguad", "Paul Anthony Rica", "Pauline Grace Genon", "Philip Baaria Lomada", "Prince Borras", "Princess Angel Barinque", "Princess Catabay", "Princess Jay Cadungog", "Princess Robles", "Queendolyn Pama", "Rachel Joyce Carillo", "Raena Rosos", "Ralph Raul Montero", "Ramil Ramos", "Raphael Montiague", "Ray Allen Baracao", "Raymund Ordinario", "Reah Mae Manangca", "Recci George Crodua", "Recy Pagangpang", "Remer Tancontian", "Renato Feria", "Rene Fernandez", "Resamy Crausos", "Rex Mantilla", "Rey Adrian Candilada", "Rey Mark Ibañez", "Reyland Sumael", "Reynaldo Arreza", "Reynaldo Ligad", "Reynan Arellano", "Rhea Elises", "Rhea Liezyl Naol", "Rhea Mae Manangca", "Rhelford Allawan", "Rhocky Resma", "Rhusty Lascuña", "Rica Gingone", "Rica Micaella Suan", "Ricardo Traya Jr.", "Richell Saavedra", "Rieven John Catipay", "Rigel Conejar", "Rio Ubaldo", "Risaldo Castellon Jr.", "Risha May Memoracion", "Ritchie Crispe", "Rizel Abanes", "Robina Tai", "Rogelyn Boligao", "Rojon Rosales", "Roleen Joy Juntong", "Rolly Acaso Lasala", "Romel Biliran", "Romelyn Samar", "Ron Jay Socia", "Ronnel Ragas", "Rosalia Mandawe", "Rosalinda Erellana", "Rosalyn Darang", "Rosanna Bergavera", "Roselle Novecio", "Rowaida Faisal", "Rowena Lamatan", "Rubie Ramos", "Ryan Patrick Balicog", "Samantha Gen Cruz", "Shaira Mae Olasiman", "Shaira May Divinagracia", "Shayne Erasmo", "Sheila Emmanuelle Nueza", "Sheila Mae Cuison", "Shekinah Grace Javar", "Shella Caangay", "Shella Mae Caangay", "Sherlak Culanag", "Sherwin James Solier", "Shiela Sales Sarmiento", "Shiella Marie Miñoza", "Simforiano Gerongco", "Stacey Verdeflor", "Stanley Rojas", "Stephanie Pombo", "Suzette Rose Dayaday", "Switzel Condor", "TBA", "Thea Tanya Bete", "Thirdie Galedo", "Val Sandingay", "Venus Cua", "Vicente Sumagabac", "Vincent Lapasigue", "Vinette Sanchez", "Vowin Cordova", "Walter Jay Carrasca", "Warren Mansueto", "Willy Mark Callao", "Xyzel Saludares", "Yancy Camingue", "Zady Daguat", "Zaila Faye Soreño", "Zaldy John Garcia", "Zheenab Datu-dacula", "Zoe Cordova", "Zyrie Christian Wasil"];
+    const SOURCE_OMS = ["Abby", "Beth", "BIGO - Thirdy", "CFC", "Cherry", "Crystal", "Derline", "Freda", "Gerramie", "Irene", "Marc Jardenico", "McJordan", "Michelle", "Mirah", "Mogan", "Norman", "Renato", "Rhelford", "Ruth", "Shayne", "Sheila", "Shey", "SP - James", "SP - Marc", "SP - MJ", "SP - Ryan", "Willy"];
+    const SOURCE_ACCOUNTS = ["123 Employee", "123 Employee - Echo Mortgage", "123 Employee - Hallandale Pharmacy", "123 Employee - Mercantile Property", "123 Robotics", "123Employee | HUB International", "212 Dental Care", "611 VA", "ACB", "Adams International", "Advocacy Refund Group", "Aeroex Technology Inc.", "AFP", "Ahabi", "Airbills", "Alibaba", "All Pro Pay", "Allen Institute Mouse", "Allied Pain and Spine Institute", "AMG", "AMR", "AMR CSR", "Angel Oak Mortgage Solution", "Another Star", "ARS", "AU Store", "AU Tax", "AUXGP", "BathroomX", "Bayou Braces", "Bentino", "BIGO - DIGOS", "BIGO - ECOLAND", "BIGO - Mabini", "Brianna Thaxton LLC", "BrightDelivery", "CapLink Group", "CFC", "CFC OB", "CGP", "CIG", "CITUS HR SOLUTIONS", "Clear Insights Group", "Clinic P", "COD Logistics", "Commercial Enterprise", "Commercial Merchant Acquisition", "Content Quality Assurance", "Corazon Company LLC", "CORE LOGIX", "Cupshe", "DASCO", "DASCO BACK OFFICE", "DASCO CSR", "DAVI", "Dental Back Office Admin", "DG Dial", "DIAL EXPRESS", "DLG", "DLPC", "DNE", "DNO L1", "DNO L2", "Duque Immigration", "EDJ DATA", "EIMS", "EIMS - Data Validator/QA", "eJam", "eJam Inside Sales", "ENC", "Envera", "EOR Project: Future Proof", "ESIM", "Everlife", "EVMS", "EWC", "Eyesurf", "FBB", "FBB QA", "Flexscale Next-Level Recruitment", "Flexscale Truth Finance", "Flexscale Truth Financial", "Flywire", "Franklin Hamilton", "FWC", "GARDENS", "Gardens Alive & Shared", "Glamcor", "GLO", "Globalcom - Mountain Valley", "Globalcom RTA", "GRAB", "GRAB - Commercial Enterprise", "GRAB - MPH", "Grab - MY", "GRAB - PH", "GRAB - Quality Assurance", "GRAB - SG", "GrabRentals Voice and Digital Support", "Green Health Docs", "Greenfoot", "HBW", "Herb joy", "Hotel Revel", "IADU/IAVU PH", "IAVU/IADU SG Support", "IDENT", "iMarketing", "iMarketing Frontline", "iMile Logistics", "Industry Rock Star", "Insight Financial Associates Ltd. (SixEleven Project)", "Integrity Financial Solutions", "J&T Express", "Jethro Mobile", "JJILL", "Justlife", "KCDO", "KCDO - Billing", "KCDO - Inbound", "KCDO - Outbound", "KCDO - RCM", "Kombea Fivestrata", "Kombea Kingkong", "KOMBEA MPI", "Kombea Pro Speaking", "Kraven Bahamas", "LEADMINER", "LedUp", "Legal Solutions 4U", "Leisure-tec", "LifeMD", "List Simple", "LM Consulting", "LOGISTICS", "LSM", "Luxor Eye Institute", "Mallory Headset", "MAPUA", "MBC Consulting Group Inc.", "Mehboob Law Firm", "Mi Care", "MMG", "MoneyHero Group", "Moon River Therapy", "Mousewire", "NationGraph", "Neiline", "NetworX", "NextgenID", "NextgenID SRIP", "NISSAN PH", "NLR", "Nomad eSIM", "NOX", "NVT", "OBRB MY", "Origin", "PB&J TV", "Pearl Source", "Phoenix Direct", "Pinnacle Ozone Solutions", "Pivot", "POINT CO", "QA OJR", "QC", "Quick Contractors", "Reflex Media", "Renogy", "Revel Hotel", "RPI (1voiceSolution)", "SBI", "Seesaw", "SFP", "SHARED", "Shopee", "Shopee - Buybox", "Shopee - Buybox - Smart UI", "Shopee - Buyer Chat and Email", "Shopee - Buyer CS", "Shopee - Buyer Logistics", "Shopee - Buyer Non-Logistics", "Shopee - CB-SCS", "Shopee - CCS", "Shopee - CS", "Shopee - CS and Non-CS", "Shopee - Data Labelling - Buybox", "Shopee - Data Labelling - Non SPU", "Shopee - Data Labelling - SPU", "Shopee - Email", "Shopee - FBS", "Shopee - Keywords", "Shopee - L1 Buyer - Email", "Shopee - Listing Pages", "Shopee - Listings Data Labelling - LLM", "Shopee - Listings Data Labelling - SQE", "Shopee - Listings Data Labelling - Task Center", "Shopee - Listings QC", "Shopee - Live Stream Marketing", "Shopee - LiveStream", "Shopee - Lovito", "Shopee - Non-CS", "Shopee - PH - Chat Bot", "Shopee - PIC", "Shopee - QA", "Shopee - QAC Department", "Shopee - RTA", "Shopee - SBS", "Shopee - SCS", "Shopee - Seller Chats and Email", "Shopee - Seller Log x RR", "Shopee - SIP AME", "Shopee - SIP BR & LATAM", "Shopee - SIP Global", "Shopee - SIP Global - PH", "Shopee - SIP L2", "Shopee - SIP Malaysia", "Shopee - SIP Singapore", "Shopee - SIP Taiwan", "Shopee - SIP Thailand", "Shopee - SIP Vietnam", "Shopee - SPU Listings", "Shopee - SPX", "Shopee - SPX NSS Outbound", "Shopee - SPX SSC and NSS", "Shopee - Trainee", "Shopee - Training", "Shopee - Video", "Shopee - Video QC", "Shopee - WFM", "Shopee - WFM/RTA", "SLEEPDYNAMICS", "Smart Circle", "Smart Staffing Support - Renters", "Solution That Matter", "SPEAK UP", "Spectee", "Spyfly", "Spypoint", "Spypoint Outbound", "SRIP L2 Support", "Superdial", "Talixo", "Talixo Dispatch", "TelMDFirst", "TEMU - 1404", "TEMU - 140X (RSL)", "TEMU - 4029", "TEMU - BATCH 6", "TEMU - BATCH 7", "TEMU - BATCH 8", "TEMU - CPC", "TEMU - LOB-1", "TEMU - LOB-2", "TEMU - LOB-3", "TEN28", "The James Group, LLC", "Ticket Management System SL", "TMS", "Together Network", "TOP MOVING SOLUTIONS", "Triple B", "TV COMMERCIAL TRAFFIC", "Two Birds Supplements", "TWV", "Uplift Healthcare LLC", "Veritas", "ViewQwest CSR", "ViewQwest Telesales", "Virtual Staffing", "WanderJoy", "Wiz AI", "Zetta"];
+
+    let tlOptions = [...SOURCE_TLS];
+    let omOptions = [...SOURCE_OMS];
+    let accountOptions = [...SOURCE_ACCOUNTS];
+
+    let edrReports = [];
+    let editingId = null;
+    let currentScreenshot = "";
+
+    function uid() {
+        return "edr_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 8);
     }
 
     function todayLocal() {
-        const d = new Date();
-        const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000);
+        const now = new Date();
+        const local = new Date(now.getTime() - now.getTimezoneOffset() * 60000);
         return local.toISOString().slice(0, 10);
     }
 
-    function displayDate(value) {
-        const raw = String(value || "").trim();
-        if (!raw) return "No date";
-        if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
-            const parts = raw.split("-");
-            return parts[1] + "/" + parts[2] + "/" + parts[0].slice(-2);
-        }
-        return raw;
+    function clean(value) {
+        return String(value == null ? "" : value).replace(/\s+/g, " ").trim();
     }
 
     function escapeHtml(value) {
@@ -11685,116 +12502,507 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
             .replace(/'/g, "&#039;");
     }
 
-    function addReport() {
-        const date = byId("edrEntryDate").value;
-        const label = byId("edrEntryLabel").value.trim();
-        const text = byId("edrEntryText").value.trim();
+    function compareText(a, b) {
+        return String(a).localeCompare(String(b), undefined, {
+            sensitivity: "base",
+            numeric: true
+        });
+    }
 
-        if (!text) {
-            showToast("Paste an EDR report first.", "error");
-            byId("edrEntryText").focus();
-            return;
+    function uniquePush(list, value) {
+        const v = clean(value);
+        if (!v) return false;
+
+        if (list.some(item => item.localeCompare(v, undefined, { sensitivity: "base" }) === 0)) {
+            return false;
         }
 
-        edrReports.push({ id: edrUid(), date, label, text, selected: true });
-
-        byId("edrEntryText").value = "";
-        byId("edrEntryLabel").value = "";
-        byId("edrEntryDate").value = todayLocal();
-
-        renderReportList();
-        refreshOutput();
-        showToast("EDR added to the list.", "success");
-        setTimeout(() => byId("edrEntryText").focus(), 40);
+        list.push(v);
+        list.sort(compareText);
+        return true;
     }
 
-    function removeReport(id) {
-        edrReports = edrReports.filter(report => report.id !== id);
-        renderReportList();
+    function removeValue(list, value) {
+        const v = clean(value);
+        const before = list.length;
+        const filtered = list.filter(item =>
+            item.localeCompare(v, undefined, { sensitivity: "base" }) !== 0
+        );
+        return { changed: filtered.length !== before, list: filtered };
+    }
+
+    function fillDatalist(element, values) {
+        element.innerHTML = values
+            .map(value => `<option value="${escapeHtml(value)}"></option>`)
+            .join("");
+    }
+
+    function refreshSupervisorOptions() {
+        const role = byId("edrSupervisorRole").value;
+        fillDatalist(
+            byId("edrSupervisorOptions"),
+            role === "OM" ? omOptions : tlOptions
+        );
+    }
+
+    function refreshSubjectOptions() {
+        const type = byId("edrSubjectType").value;
+        const list = type === "OM"
+            ? omOptions
+            : type === "Team Leader"
+                ? tlOptions
+                : [];
+
+        fillDatalist(byId("edrSubjectOptions"), list);
+    }
+
+    function refreshAccountOptions() {
+        fillDatalist(byId("edrAccountOptions"), accountOptions);
+    }
+
+    function formatDate(value) {
+        const raw = clean(value);
+        if (!raw) return "";
+
+        if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
+            const [year, month, day] = raw.split("-");
+            return `${month}/${day}/${year.slice(-2)}`;
+        }
+
+        return raw;
+    }
+
+    function formatFacebookDate(value) {
+        const raw = formatDate(value);
+        if (!raw) return "";
+        return raw.replace(/\//g, "-");
+    }
+
+    function formatTime(value) {
+        const raw = clean(value);
+        if (!raw) return "";
+
+        const match = raw.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?$/);
+        if (!match) return raw;
+
+        let hour = Number(match[1]);
+        const minute = match[2];
+        const second = match[3] || "00";
+        const period = hour >= 12 ? "PM" : "AM";
+
+        hour = hour % 12;
+        if (hour === 0) hour = 12;
+
+        return `${hour}:${minute}:${second} ${period}`;
+    }
+
+    function timeRange(report) {
+        const start = formatTime(report.timeStart);
+        const end = formatTime(report.timeEnd);
+
+        if (start && end) return `${start}–${end}`;
+        return start || end || "";
+    }
+
+    function reportText(report) {
+        const topLine = [
+            report.site,
+            "CCTV",
+            report.account
+        ].filter(Boolean).join(" | ");
+
+        const lines = [
+            topLine,
+            `Date: ${formatDate(report.date)}`,
+            `Time Observed: ${timeRange(report)}`,
+            `Team Leader or OM: ${report.supervisorName}`,
+            `Agent/s or Team Leader: ${report.subjectName}`,
+            `Account/Campaign: ${report.account}`,
+            `Incident: ${report.incident}`,
+            `Action Taken/Remarks: ${report.action}`
+        ];
+
+        if (report.clipLink) {
+            lines.push(`CCTV Clip: Click here! (${report.clipLink})`);
+        }
+
+        return lines.join("\n");
+    }
+
+    function safeUrl(value) {
+        const raw = clean(value);
+        if (!raw) return "";
+
+        try {
+            const parsed = new URL(raw);
+            if (!/^https?:$/.test(parsed.protocol)) return "";
+            return parsed.href;
+        } catch {
+            return "";
+        }
+    }
+
+    function reportHtml(report, includeImage = true) {
+        const topLine = [
+            report.site,
+            "CCTV",
+            report.account
+        ].filter(Boolean).join(" | ");
+
+        const clipUrl = safeUrl(report.clipLink);
+        const screenshot = includeImage && report.screenshotData
+            ? `<div class="edr-rich-screenshot"><img src="${report.screenshotData}" alt="CCTV Screenshot"></div>`
+            : "";
+
+        const clip = clipUrl
+            ? `<div class="edr-rich-line"><strong>CCTV Clip:</strong> <a href="${escapeHtml(clipUrl)}" target="_blank" rel="noopener noreferrer">Click here!</a></div>`
+            : "";
+
+        return `
+            <div class="edr-rich-report">
+                <div class="edr-rich-title">${escapeHtml(topLine)}</div>
+                <div class="edr-rich-line"><strong>Date:</strong> ${escapeHtml(formatDate(report.date))}</div>
+                <div class="edr-rich-line"><strong>Time Observed:</strong> ${escapeHtml(timeRange(report))}</div>
+                <div class="edr-rich-line"><strong>Team Leader or OM:</strong> ${escapeHtml(report.supervisorName)}</div>
+                <div class="edr-rich-line"><strong>Agent/s or Team Leader:</strong> ${escapeHtml(report.subjectName)}</div>
+                <div class="edr-rich-line"><strong>Account/Campaign:</strong> ${escapeHtml(report.account)}</div>
+                <div class="edr-rich-line"><strong>Incident:</strong> ${escapeHtml(report.incident)}</div>
+                <div class="edr-rich-line"><strong>Action Taken/Remarks:</strong> ${escapeHtml(report.action)}</div>
+                ${screenshot}
+                ${clip}
+            </div>
+        `;
+    }
+
+    function formReport() {
+        return {
+            site: byId("edrSite").value,
+            date: byId("edrDate").value,
+            timeStart: byId("edrTimeStart").value,
+            timeEnd: byId("edrTimeEnd").value,
+            supervisorRole: byId("edrSupervisorRole").value,
+            supervisorName: clean(byId("edrSupervisorName").value),
+            subjectType: byId("edrSubjectType").value,
+            subjectName: clean(byId("edrSubjectName").value),
+            account: clean(byId("edrAccount").value),
+            incident: byId("edrIncident").value.trim(),
+            action: byId("edrActionRemarks").value.trim(),
+            screenshotData: currentScreenshot,
+            clipLink: clean(byId("edrClipLink").value)
+        };
+    }
+
+    function validateReport(report) {
+        const required = [
+            ["Date", report.date],
+            ["Time Observed - start", report.timeStart],
+            ["Time Observed - end", report.timeEnd],
+            ["Team Leader or OM name", report.supervisorName],
+            ["Agent/s or Team Leader", report.subjectName],
+            ["Account / Campaign", report.account],
+            ["Incident", report.incident],
+            ["Action Taken / Remarks", report.action]
+        ];
+
+        const missing = required.filter(([, value]) => !clean(value));
+
+        if (missing.length) {
+            showToast(`Complete: ${missing.map(([label]) => label).join(", ")}`, "error");
+            return false;
+        }
+
+        return true;
+    }
+
+    function clearForm(options = {}) {
+        byId("edrSite").value = "Mabini Site A - 1st Floor";
+        byId("edrDate").value = todayLocal();
+        byId("edrTimeStart").value = "";
+        byId("edrTimeEnd").value = "";
+        byId("edrSupervisorRole").value = "Team Leader";
+        byId("edrSupervisorName").value = "";
+        byId("edrSubjectType").value = "Agent/s";
+        byId("edrSubjectName").value = "";
+        byId("edrAccount").value = "";
+        byId("edrIncident").value = "";
+        byId("edrActionRemarks").value = "";
+        byId("edrClipLink").value = "";
+        setCurrentScreenshot("");
+
+        refreshSupervisorOptions();
+        refreshSubjectOptions();
+
+        if (!options.keepEdit) {
+            editingId = null;
+            byId("edrFormHeading").textContent = "Create EDR";
+            byId("edrSaveBtn").textContent = "Create EDR";
+            byId("edrCancelEditBtn").hidden = true;
+        }
+    }
+
+    function saveReport() {
+        const report = formReport();
+        if (!validateReport(report)) return;
+
+        if (editingId) {
+            const index = edrReports.findIndex(item => item.id === editingId);
+
+            if (index !== -1) {
+                edrReports[index] = {
+                    ...edrReports[index],
+                    ...report
+                };
+            }
+
+            showToast("EDR updated.", "success");
+        } else {
+            edrReports.push({
+                id: uid(),
+                selected: true,
+                expanded: false,
+                ...report
+            });
+
+            showToast("EDR created and selected.", "success");
+        }
+
+        clearForm();
+        renderList();
         refreshOutput();
     }
 
-    function renderReportList() {
+    function editReport(id) {
+        const report = edrReports.find(item => item.id === id);
+        if (!report) return;
+
+        editingId = id;
+
+        byId("edrSite").value = report.site;
+        byId("edrDate").value = report.date;
+        byId("edrTimeStart").value = report.timeStart;
+        byId("edrTimeEnd").value = report.timeEnd;
+        byId("edrSupervisorRole").value = report.supervisorRole || "Team Leader";
+        refreshSupervisorOptions();
+        byId("edrSupervisorName").value = report.supervisorName;
+        byId("edrSubjectType").value = report.subjectType || "Agent/s";
+        refreshSubjectOptions();
+        byId("edrSubjectName").value = report.subjectName;
+        byId("edrAccount").value = report.account;
+        byId("edrIncident").value = report.incident;
+        byId("edrActionRemarks").value = report.action;
+        byId("edrClipLink").value = report.clipLink || "";
+        setCurrentScreenshot(report.screenshotData || "");
+
+        byId("edrFormHeading").textContent = "Update EDR";
+        byId("edrSaveBtn").textContent = "Update EDR";
+        byId("edrCancelEditBtn").hidden = false;
+
+        byId("edrPanel").scrollIntoView({ behavior: "smooth", block: "start" });
+        setTimeout(() => byId("edrSite").focus(), 250);
+    }
+
+    async function deleteReport(id) {
+        const report = edrReports.find(item => item.id === id);
+        if (!report) return;
+
+        const approved = await appConfirm({
+            title: "Delete this EDR?",
+            message: `${formatDate(report.date)} - ${report.site} - ${report.account}`,
+            confirmText: "Delete EDR",
+            tone: "danger"
+        });
+
+        if (!approved) return;
+
+        edrReports = edrReports.filter(item => item.id !== id);
+
+        if (editingId === id) {
+            clearForm();
+        }
+
+        renderList();
+        refreshOutput();
+        showToast("EDR deleted.", "info");
+    }
+
+    function toggleExpanded(id) {
+        const report = edrReports.find(item => item.id === id);
+        if (!report) return;
+
+        report.expanded = !report.expanded;
+        renderList();
+    }
+
+    function renderList() {
         const root = byId("edrReportList");
-        const count = byId("edrReportCount");
-        count.textContent = edrReports.length + " report" + (edrReports.length === 1 ? "" : "s");
+        const selectedCount = edrReports.filter(item => item.selected).length;
+
+        byId("edrReportCount").textContent =
+            `${edrReports.length} EDR${edrReports.length === 1 ? "" : "s"}`;
+
+        byId("edrSelectedCount").textContent =
+            `${selectedCount} selected`;
 
         if (!edrReports.length) {
-            root.innerHTML = '<div class="edr-simple-empty">No EDR reports added yet.</div>';
+            root.innerHTML = '<div class="edr-empty-state">No EDR reports created yet.</div>';
             return;
         }
 
-        root.innerHTML = edrReports.map(report => `
-            <article class="edr-simple-report-item ${report.selected ? "is-selected" : ""}" data-id="${escapeHtml(report.id)}">
-                <label class="edr-simple-check">
-                    <input type="checkbox" class="edr-report-check" ${report.selected ? "checked" : ""}>
-                    <span class="edr-simple-checkbox"></span>
+        root.innerHTML = edrReports.map((report, index) => `
+            <article class="edr-list-item ${report.selected ? "is-selected" : ""}" data-id="${escapeHtml(report.id)}">
+                <label class="edr-select-box" title="Include this EDR">
+                    <input type="checkbox" class="edr-row-check" ${report.selected ? "checked" : ""}>
+                    <span></span>
                 </label>
 
-                <div class="edr-simple-report-main">
-                    <div class="edr-simple-report-meta">
-                        <strong>${escapeHtml(displayDate(report.date))}</strong>
-                        ${report.label ? `<span>${escapeHtml(report.label)}</span>` : ""}
+                <div class="edr-list-main">
+                    <div class="edr-list-title">
+                        <strong>${escapeHtml(formatDate(report.date) || `EDR ${index + 1}`)}</strong>
+                        <span>${escapeHtml(report.site)}</span>
+                        <span class="edr-account-chip">${escapeHtml(report.account)}</span>
                     </div>
-                    <div class="edr-simple-report-preview">${escapeHtml(report.text.slice(0, 180))}${report.text.length > 180 ? "…" : ""}</div>
+
+                    <div class="edr-list-sub">
+                        ${escapeHtml(report.supervisorRole)}: ${escapeHtml(report.supervisorName)}
+                        · ${escapeHtml(report.subjectType)}: ${escapeHtml(report.subjectName)}
+                    </div>
+
+                    ${report.expanded
+                        ? `<div class="edr-inline-read">${reportHtml(report, true)}</div>`
+                        : ""}
                 </div>
 
-                <button type="button" class="edr-simple-remove-report">Remove</button>
+                <div class="edr-row-actions">
+                    <button type="button" class="edr-row-view">${report.expanded ? "Hide" : "View"}</button>
+                    <button type="button" class="edr-row-edit">Edit</button>
+                    <button type="button" class="edr-row-delete">Delete</button>
+                </div>
             </article>
         `).join("");
 
-        root.querySelectorAll(".edr-simple-report-item").forEach(card => {
-            const report = edrReports.find(item => item.id === card.dataset.id);
+        root.querySelectorAll(".edr-list-item").forEach(card => {
+            const id = card.dataset.id;
+            const report = edrReports.find(item => item.id === id);
             if (!report) return;
 
-            const check = card.querySelector(".edr-report-check");
-            check.addEventListener("change", () => {
-                report.selected = check.checked;
-                card.classList.toggle("is-selected", report.selected);
+            card.querySelector(".edr-row-check").addEventListener("change", event => {
+                report.selected = event.target.checked;
+                renderList();
                 refreshOutput();
             });
 
-            card.querySelector(".edr-simple-remove-report").addEventListener("click", () => {
-                removeReport(report.id);
-            });
+            card.querySelector(".edr-row-view").addEventListener("click", () => toggleExpanded(id));
+            card.querySelector(".edr-row-edit").addEventListener("click", () => editReport(id));
+            card.querySelector(".edr-row-delete").addEventListener("click", () => deleteReport(id));
         });
     }
 
-    function finalText() {
-        const selected = edrReports.filter(report => report.selected);
+    function outputText() {
+        const selected = edrReports.filter(item => item.selected);
         const facebook = byId("edrFacebookText").value.trim();
-        const parts = [];
 
-        selected.forEach(report => {
-            const heading = [displayDate(report.date), report.label].filter(Boolean).join(" - ");
-            parts.push((heading + "\n" + report.text).trim());
-        });
+        const edrText = selected
+            .map(reportText)
+            .join("\n\n────────────────────────────────────────\n\n");
 
-        let result = parts.join("\n\n----------------------------------------\n\n");
+        let result = edrText;
 
         if (facebook) {
-            if (result) result += "\n\n========================================\n\n";
-            result += "FACEBOOK SHARED POSTS\n" + facebook;
+            if (result) {
+                result += "\n\n────────────────────────────────────────\n\n";
+            }
+
+            const dateSource = selected.length
+                ? selected[selected.length - 1].date
+                : todayLocal();
+
+            result += `Facebook shared post ${formatFacebookDate(dateSource)}\n${facebook}`;
         }
 
         return result.trim();
     }
 
+    function facebookHtml(selected) {
+        const facebook = byId("edrFacebookText").value.trim();
+        if (!facebook) return "";
+
+        const dateSource = selected.length
+            ? selected[selected.length - 1].date
+            : todayLocal();
+
+        const lines = facebook
+            .split(/\n+/)
+            .map(line => clean(line))
+            .filter(Boolean)
+            .map(line => {
+                const href = safeUrl(line);
+                return href
+                    ? `<div><a href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer">${escapeHtml(line)}</a></div>`
+                    : `<div>${escapeHtml(line)}</div>`;
+            })
+            .join("");
+
+        return `
+            <div class="edr-rich-divider"></div>
+            <div class="edr-rich-facebook">
+                <strong>Facebook shared post ${escapeHtml(formatFacebookDate(dateSource))}</strong>
+                ${lines}
+            </div>
+        `;
+    }
+
+    function outputHtml() {
+        const selected = edrReports.filter(item => item.selected);
+
+        const reports = selected
+            .map(report => reportHtml(report, true))
+            .join('<div class="edr-rich-divider"></div>');
+
+        return (reports + facebookHtml(selected)).trim();
+    }
+
     function refreshOutput() {
-        byId("edrFinalOutput").textContent =
-            finalText() || "Your selected EDR reports and Facebook posts will appear here.";
+        const rich = outputHtml();
+
+        byId("edrFinalOutput").innerHTML =
+            rich || '<div class="edr-output-empty">Create an EDR above to generate the Teams-ready output.</div>';
+    }
+
+    function clipboardHtmlDocument(fragment) {
+        return `
+            <div style="font-family:Arial,sans-serif;font-size:11pt;color:#111;line-height:1.4;">
+                ${fragment}
+            </div>
+        `;
     }
 
     async function copyAll() {
-        const text = finalText();
+        const text = outputText();
+        const rich = outputHtml();
 
-        if (!text) {
-            showToast("Select an EDR or paste Facebook shared posts.", "error");
+        if (!text && !rich) {
+            showToast("Create or select an EDR first.", "error");
             return;
         }
 
         try {
-            if (navigator.clipboard && navigator.clipboard.writeText) {
+            if (navigator.clipboard && window.ClipboardItem && navigator.clipboard.write) {
+                const htmlBlob = new Blob(
+                    [clipboardHtmlDocument(rich)],
+                    { type: "text/html" }
+                );
+                const textBlob = new Blob(
+                    [text],
+                    { type: "text/plain" }
+                );
+
+                await navigator.clipboard.write([
+                    new ClipboardItem({
+                        "text/html": htmlBlob,
+                        "text/plain": textBlob
+                    })
+                ]);
+            } else if (navigator.clipboard && navigator.clipboard.writeText) {
                 await navigator.clipboard.writeText(text);
             } else {
                 const textarea = document.createElement("textarea");
@@ -11806,66 +13014,256 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
                 document.execCommand("copy");
                 textarea.remove();
             }
-            showToast("Copied. Ready to paste into Teams.", "success");
+
+            showToast("Copied with CCTV screenshot and clickable CCTV Clip link.", "success");
         } catch (error) {
             console.error(error);
-            showToast("Copy failed. Try again.", "error");
+
+            try {
+                await navigator.clipboard.writeText(text);
+                showToast("Copied as text. Browser blocked rich screenshot copy.", "info");
+            } catch {
+                showToast("Copy failed. Please try again.", "error");
+            }
         }
     }
 
-    function showToast(message, type) {
-        let toast = document.getElementById("edrSimpleToast");
-        if (!toast) {
-            toast = document.createElement("div");
-            toast.id = "edrSimpleToast";
-            toast.className = "edr-simple-toast";
-            document.body.appendChild(toast);
-        }
+    function selectAll(value) {
+        edrReports.forEach(report => {
+            report.selected = value;
+        });
 
-        toast.textContent = message;
-        toast.className = "edr-simple-toast show " + (type || "info");
-        clearTimeout(showToast.timer);
-        showToast.timer = setTimeout(() => toast.classList.remove("show"), 2300);
-    }
-
-    function clearInput() {
-        byId("edrEntryText").value = "";
-        byId("edrEntryLabel").value = "";
-        byId("edrEntryDate").value = todayLocal();
+        renderList();
+        refreshOutput();
     }
 
     async function clearAll() {
+        const hasContent = edrReports.length || byId("edrFacebookText").value.trim();
+
+        if (!hasContent) {
+            showToast("EDR workspace is already empty.", "info");
+            return;
+        }
+
         const approved = await appConfirm({
             title: "Clear EDR workspace?",
-            message: "All EDR reports and Facebook shared posts in the current workspace will be cleared.",
+            message: "All current EDR entries and Facebook shared-post links will be removed.",
             confirmText: "Clear All",
             tone: "danger"
         });
+
         if (!approved) return;
+
         edrReports = [];
+        editingId = null;
         byId("edrFacebookText").value = "";
-        clearInput();
-        renderReportList();
+
+        clearForm();
+        renderList();
         refreshOutput();
         showToast("EDR workspace cleared.", "info");
     }
 
-    function selectAll(value) {
-        edrReports.forEach(report => report.selected = value);
-        renderReportList();
-        refreshOutput();
+    function setCurrentScreenshot(dataUrl) {
+        currentScreenshot = dataUrl || "";
+
+        const empty = byId("edrScreenshotEmpty");
+        const wrap = byId("edrScreenshotPreviewWrap");
+        const img = byId("edrScreenshotPreview");
+
+        if (!empty || !wrap || !img) return;
+
+        if (currentScreenshot) {
+            img.src = currentScreenshot;
+            empty.hidden = true;
+            wrap.hidden = false;
+        } else {
+            img.removeAttribute("src");
+            empty.hidden = false;
+            wrap.hidden = true;
+        }
     }
 
+    function loadScreenshotFile(file) {
+        if (!file || !file.type || !file.type.startsWith("image/")) {
+            showToast("Please choose an image file.", "error");
+            return;
+        }
+
+        const reader = new FileReader();
+
+        reader.onload = () => {
+            setCurrentScreenshot(String(reader.result || ""));
+            showToast("CCTV screenshot added.", "success");
+        };
+
+        reader.onerror = () => {
+            showToast("Could not read that screenshot.", "error");
+        };
+
+        reader.readAsDataURL(file);
+    }
+
+    function screenshotFromClipboard(event) {
+        const items = Array.from(event.clipboardData?.items || []);
+        const imageItem = items.find(item => item.type && item.type.startsWith("image/"));
+
+        if (!imageItem) return false;
+
+        const file = imageItem.getAsFile();
+        if (!file) return false;
+
+        event.preventDefault();
+        event.stopPropagation();
+        loadScreenshotFile(file);
+        return true;
+    }
+
+    function showToast(message, type = "info") {
+        let toast = document.getElementById("edrCrudToast");
+
+        if (!toast) {
+            toast = document.createElement("div");
+            toast.id = "edrCrudToast";
+            toast.className = "edr-crud-toast";
+            document.body.appendChild(toast);
+        }
+
+        toast.textContent = message;
+        toast.className = `edr-crud-toast show ${type}`;
+
+        clearTimeout(showToast.timer);
+        showToast.timer = setTimeout(() => {
+            toast.classList.remove("show");
+        }, 2400);
+    }
+
+    async function addSupervisorOption() {
+        const value = clean(byId("edrSupervisorName").value);
+
+        if (!value) {
+            showToast("Type a Team Leader or OM name first.", "error");
+            return;
+        }
+
+        const role = byId("edrSupervisorRole").value;
+        const list = role === "OM" ? omOptions : tlOptions;
+        const added = uniquePush(list, value);
+
+        if (!added) {
+            showToast(`${value} is already in the ${role} list.`, "info");
+            return;
+        }
+
+        refreshSupervisorOptions();
+        refreshSubjectOptions();
+        showToast(`${value} added to the ${role} list for this session.`, "success");
+    }
+
+    async function removeSupervisorOption() {
+        const value = clean(byId("edrSupervisorName").value);
+
+        if (!value) {
+            showToast("Type or choose a name to remove.", "error");
+            return;
+        }
+
+        const role = byId("edrSupervisorRole").value;
+        const sourceList = role === "OM" ? omOptions : tlOptions;
+
+        if (!sourceList.some(item => item.localeCompare(value, undefined, { sensitivity: "base" }) === 0)) {
+            showToast(`${value} is not in the current ${role} list.`, "info");
+            return;
+        }
+
+        const approved = await appConfirm({
+            title: `Remove ${role} option?`,
+            message: `Remove "${value}" from the searchable list for this session?`,
+            confirmText: "Remove",
+            tone: "danger"
+        });
+
+        if (!approved) return;
+
+        const result = removeValue(sourceList, value);
+
+        if (role === "OM") omOptions = result.list;
+        else tlOptions = result.list;
+
+        byId("edrSupervisorName").value = "";
+        refreshSupervisorOptions();
+        refreshSubjectOptions();
+        showToast(`${value} removed from the current ${role} list.`, "info");
+    }
+
+    function addAccountOption() {
+        const value = clean(byId("edrAccount").value);
+
+        if (!value) {
+            showToast("Type an Account / Campaign first.", "error");
+            return;
+        }
+
+        const added = uniquePush(accountOptions, value);
+
+        if (!added) {
+            showToast(`${value} is already in the campaign list.`, "info");
+            return;
+        }
+
+        refreshAccountOptions();
+        showToast(`${value} added to the campaign list for this session.`, "success");
+    }
+
+    async function removeAccountOption() {
+        const value = clean(byId("edrAccount").value);
+
+        if (!value) {
+            showToast("Type or choose an Account / Campaign to remove.", "error");
+            return;
+        }
+
+        if (!accountOptions.some(item => item.localeCompare(value, undefined, { sensitivity: "base" }) === 0)) {
+            showToast(`${value} is not in the current campaign list.`, "info");
+            return;
+        }
+
+        const approved = await appConfirm({
+            title: "Remove campaign option?",
+            message: `Remove "${value}" from the searchable campaign list for this session?`,
+            confirmText: "Remove",
+            tone: "danger"
+        });
+
+        if (!approved) return;
+
+        const result = removeValue(accountOptions, value);
+        accountOptions = result.list;
+        byId("edrAccount").value = "";
+        refreshAccountOptions();
+
+        showToast(`${value} removed from the current campaign list.`, "info");
+    }
+
+    // EDR navigation integration.
     const edrBtn = byId("edrTabBtn");
     const edrPanel = byId("edrPanel");
-    const otherButtons = [byId("cctvTabBtn"), byId("maintenanceTabBtn"), byId("eodTabBtn")].filter(Boolean);
+    const otherButtons = [
+        byId("cctvTabBtn"),
+        byId("maintenanceTabBtn"),
+        byId("eodTabBtn")
+    ].filter(Boolean);
 
-    edrBtn.addEventListener("click", () => {
-        ["cctvPanel", "maintenancePanel", "eodPanel"].forEach(id => byId(id)?.classList.remove("active"));
+    edrBtn?.addEventListener("click", () => {
+        ["cctvPanel", "maintenancePanel", "eodPanel"].forEach(id => {
+            byId(id)?.classList.remove("active");
+        });
+
         otherButtons.forEach(button => {
             button.classList.remove("active");
             button.setAttribute("aria-selected", "false");
         });
+
         edrPanel.classList.add("active");
         edrBtn.classList.add("active");
         edrBtn.setAttribute("aria-selected", "true");
@@ -11874,32 +13272,118 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
     otherButtons.forEach(button => {
         button.addEventListener("click", () => {
             edrPanel.classList.remove("active");
-            edrBtn.classList.remove("active");
-            edrBtn.setAttribute("aria-selected", "false");
+            edrBtn?.classList.remove("active");
+            edrBtn?.setAttribute("aria-selected", "false");
         });
     });
 
-    byId("edrAddReportBtn").addEventListener("click", addReport);
-    byId("edrClearEntryBtn").addEventListener("click", clearInput);
-    byId("edrSelectAllBtn").addEventListener("click", () => selectAll(true));
-    byId("edrUnselectAllBtn").addEventListener("click", () => selectAll(false));
-    byId("edrCopyAllBtn").addEventListener("click", copyAll);
-    byId("edrClearAllSimpleBtn").addEventListener("click", clearAll);
-    byId("edrFacebookText").addEventListener("input", refreshOutput);
-
-    byId("edrEntryText").addEventListener("keydown", event => {
-        if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) {
-            event.preventDefault();
-            addReport();
-        }
+    byId("edrSupervisorRole").addEventListener("change", () => {
+        byId("edrSupervisorName").value = "";
+        refreshSupervisorOptions();
     });
 
-    byId("edrEntryDate").value = todayLocal();
-    renderReportList();
+    byId("edrSubjectType").addEventListener("change", () => {
+        byId("edrSubjectName").value = "";
+        refreshSubjectOptions();
+    });
+
+    const screenshotZone = byId("edrScreenshotZone");
+    const screenshotInput = byId("edrScreenshotInput");
+
+    byId("edrChooseScreenshotBtn").addEventListener("click", event => {
+        event.stopPropagation();
+        screenshotInput.click();
+    });
+
+    byId("edrReplaceScreenshotBtn").addEventListener("click", event => {
+        event.stopPropagation();
+        screenshotInput.click();
+    });
+
+    byId("edrRemoveScreenshotBtn").addEventListener("click", event => {
+        event.stopPropagation();
+        setCurrentScreenshot("");
+        showToast("CCTV screenshot removed.", "info");
+    });
+
+    screenshotInput.addEventListener("change", () => {
+        const file = screenshotInput.files && screenshotInput.files[0];
+        if (file) loadScreenshotFile(file);
+        screenshotInput.value = "";
+    });
+
+    screenshotZone.addEventListener("click", event => {
+        if (event.target.closest("button")) return;
+        screenshotZone.focus();
+    });
+
+    screenshotZone.addEventListener("paste", screenshotFromClipboard);
+
+    // Global EDR screenshot paste:
+    // When the EDR page is active, Ctrl+V with an image goes straight
+    // into the current EDR screenshot field. No need to click the screenshot box first.
+    document.addEventListener("paste", event => {
+        if (!byId("edrPanel")?.classList.contains("active")) return;
+        if (event.defaultPrevented) return;
+
+        const items = Array.from(event.clipboardData?.items || []);
+        const hasImage = items.some(item =>
+            item.type && item.type.startsWith("image/")
+        );
+
+        if (!hasImage) return;
+
+        screenshotFromClipboard(event);
+    });
+
+    screenshotZone.addEventListener("dragover", event => {
+        event.preventDefault();
+        screenshotZone.classList.add("is-dragging");
+    });
+
+    screenshotZone.addEventListener("dragleave", () => {
+        screenshotZone.classList.remove("is-dragging");
+    });
+
+    screenshotZone.addEventListener("drop", event => {
+        event.preventDefault();
+        screenshotZone.classList.remove("is-dragging");
+
+        const file = Array.from(event.dataTransfer?.files || [])
+            .find(item => item.type && item.type.startsWith("image/"));
+
+        if (file) loadScreenshotFile(file);
+    });
+
+    byId("edrSaveBtn").addEventListener("click", saveReport);
+    byId("edrClearFormBtn").addEventListener("click", () => clearForm());
+    byId("edrCancelEditBtn").addEventListener("click", () => {
+        clearForm();
+        showToast("Edit cancelled.", "info");
+    });
+
+    byId("edrAddSupervisorOption").addEventListener("click", addSupervisorOption);
+    byId("edrRemoveSupervisorOption").addEventListener("click", removeSupervisorOption);
+    byId("edrAddAccountOption").addEventListener("click", addAccountOption);
+    byId("edrRemoveAccountOption").addEventListener("click", removeAccountOption);
+
+    byId("edrSelectAllBtn").addEventListener("click", () => selectAll(true));
+    byId("edrUnselectAllBtn").addEventListener("click", () => selectAll(false));
+    byId("edrFacebookText").addEventListener("input", refreshOutput);
+    byId("edrClipLink").addEventListener("input", () => {
+        if (editingId) return;
+    });
+    byId("edrCopyAllBtn").addEventListener("click", copyAll);
+    byId("edrClearAllBtn").addEventListener("click", clearAll);
+
+    refreshSupervisorOptions();
+    refreshSubjectOptions();
+    refreshAccountOptions();
+    clearForm();
+    renderList();
     refreshOutput();
 })();
 </script>
-
 
 
 <!-- Custom centered confirmation modal -->
