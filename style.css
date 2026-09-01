@@ -3482,7 +3482,7 @@ body.dark-mode .sidebar-live-clock {
 
 @media (max-width: 760px) {
     .sidebar-live-clock {
-        width: auto;
+        width: auto; 
         min-width: 128px;
         margin: 0;
         padding: 7px 8px;
