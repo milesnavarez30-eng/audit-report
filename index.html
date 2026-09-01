@@ -5602,11 +5602,22 @@
 </head>
 <body>
 
+<button
+    type="button"
+    id="sidebarToggle"
+    class="sidebar-collapse-toggle"
+    aria-label="Hide sidebar"
+    aria-expanded="true"
+    title="Hide sidebar">
+    ‹
+</button>
+
+
 <aside class="workspace-tabs admin-sidebar" role="tablist" aria-label="Audit workspace navigation">
     <div class="sidebar-brand" aria-label="CCTV Operations Workspace">
         <div class="sidebar-brand-mark">C</div>
         <div class="sidebar-brand-copy">
-            <strong>CCTV</strong>
+            <strong>CCTV OPS</strong>
             <span>Operations Workspace</span>
         </div>
     </div>
@@ -10055,6 +10066,29 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
 })();
 </script>
 
+
+
+<script>
+(function () {
+    const toggle = document.getElementById("sidebarToggle");
+    if (!toggle) return;
+
+    function updateSidebarToggle() {
+        const collapsed = document.body.classList.contains("sidebar-collapsed");
+        toggle.textContent = collapsed ? "›" : "‹";
+        toggle.setAttribute("aria-expanded", collapsed ? "false" : "true");
+        toggle.setAttribute("aria-label", collapsed ? "Show sidebar" : "Hide sidebar");
+        toggle.title = collapsed ? "Show sidebar" : "Hide sidebar";
+    }
+
+    toggle.addEventListener("click", function () {
+        document.body.classList.toggle("sidebar-collapsed");
+        updateSidebarToggle();
+    });
+
+    updateSidebarToggle();
+})();
+</script>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 </body>
