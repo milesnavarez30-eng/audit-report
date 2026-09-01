@@ -3428,3 +3428,67 @@ body:not(.dark-mode) .edr-choice-btn.active {
         width: fit-content;
     }
 }
+
+
+/* =========================================================
+   LIVE DATE + TIME
+   Small persistent Philippine clock for all workspaces.
+   ========================================================= */
+
+.sidebar-live-clock {
+    width: 100%;
+    box-sizing: border-box;
+    margin: 0 0 7px;
+    padding: 8px 9px;
+    border: 1px solid var(--admin-line, var(--sidebar-border));
+    border-radius: 9px;
+    background: var(--admin-panel-soft, rgba(148,163,184,.035));
+    color: var(--admin-text, var(--text-color));
+    user-select: none;
+}
+
+.sidebar-live-date {
+    margin-bottom: 4px;
+    color: var(--admin-muted, var(--pro-muted));
+    font: 750 8.5px/1.2 "Inter", "Roboto", Arial, sans-serif;
+    letter-spacing: .025em;
+    white-space: nowrap;
+}
+
+.sidebar-live-time-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 6px;
+}
+
+.sidebar-live-time {
+    color: var(--admin-text, var(--text-color));
+    font: 850 11.5px/1 "Inter", "Roboto", Arial, sans-serif;
+    letter-spacing: .015em;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+}
+
+.sidebar-live-zone {
+    color: var(--admin-muted, var(--pro-muted));
+    font: 800 7.5px/1 "Inter", "Roboto", Arial, sans-serif;
+    letter-spacing: .07em;
+}
+
+body.dark-mode .sidebar-live-clock {
+    background: rgba(255,255,255,.025);
+}
+
+@media (max-width: 760px) {
+    .sidebar-live-clock {
+        width: auto;
+        min-width: 128px;
+        margin: 0;
+        padding: 7px 8px;
+    }
+
+    .sidebar-live-date {
+        margin-bottom: 2px;
+    }
+}
