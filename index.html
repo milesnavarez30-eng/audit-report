@@ -5633,6 +5633,9 @@
     <button type="button" class="workspace-tab-btn" id="eodTabBtn" role="tab" aria-selected="false" aria-controls="eodPanel">
         <span>Maintenance Report</span>
     </button>
+    <button type="button" class="workspace-tab-btn" id="edrTabBtn" role="tab" aria-selected="false" aria-controls="edrPanel">
+        <span>EDR</span>
+    </button>
 
     <div class="sidebar-spacer"></div>
     <div class="sidebar-divider"></div>
@@ -5953,6 +5956,131 @@
         <div id="simpleEodBlocks" class="eod-block-list"></div>
 
         <button type="button" id="simpleEodAddBtn" class="eod-add-next"><span>Add another editable lanes + screenshot block</span></button>
+    </div>
+
+</section>
+
+
+<section id="edrPanel" class="app-tab-panel" role="tabpanel" aria-labelledby="edrTabBtn">
+    <div class="container edr-shell">
+        <div class="edr-page-head">
+            <div>
+                <h2>EDR</h2>
+                <p class="page-lead">
+                    Prepare your CCTV end-of-day Teams post from replied CCTV reports, Facebook shared-post links,
+                    screenshots, and Maintenance Report PDFs.
+                </p>
+            </div>
+            <a
+                class="edr-template-link"
+                href="https://docs.google.com/document/d/1-i54dxMosFgiNcdEO7fHqvN15yIsicdOjmsW0XTYbUw/edit?tab=t.ob2cyz0wou1"
+                target="_blank"
+                rel="noopener noreferrer">
+                Open Google Docs Template
+            </a>
+        </div>
+
+        <div class="edr-top-grid">
+            <div>
+                <label for="edrDate">EDR Date</label>
+                <input type="date" id="edrDate">
+            </div>
+            <div>
+                <label for="edrStaffName">Staff Name</label>
+                <input type="text" id="edrStaffName" value="Miles Navares" placeholder="Example: Miles Navares">
+            </div>
+        </div>
+
+        <section class="edr-source-card">
+            <div class="edr-section-head">
+                <div>
+                    <h3>Paste Replied CCTV Report</h3>
+                    <p>Copy one replied report from the CCTV GC or Google Docs, paste it here, then parse it into an EDR entry.</p>
+                </div>
+            </div>
+
+            <textarea
+                id="edrRawReport"
+                class="edr-raw-report"
+                placeholder="Example:
+
+Mabini Site A - Ground Floor | CCTV | HBW
+Date: 08/26/26
+Time Observed: 2:13:50 AM–2:33:17 AM
+Team Leader: Kevin Kyle Omiping
+Agent/s: Marede Alvarez
+Account/Campaign: HBW
+
+Incident: Agent was observed dozing off/sleeping...
+Action Taken: NOC was already served.
+CCTV Clip: paste link here"></textarea>
+
+            <div class="edr-inline-actions">
+                <button type="button" class="edr-primary-btn" id="edrParseBtn">Parse into Entry</button>
+                <button type="button" class="edr-outline-btn" id="edrClearRawBtn">Clear Pasted Text</button>
+            </div>
+        </section>
+
+        <div class="edr-section-head edr-report-head">
+            <div>
+                <h3>CCTV Report Entries</h3>
+                <p>Each entry becomes one section in your Teams post.</p>
+            </div>
+            <button type="button" class="edr-outline-btn" id="edrAddEntryBtn">Add Blank Entry</button>
+        </div>
+
+        <div id="edrEntries" class="edr-entry-list"></div>
+
+        <div class="edr-two-column">
+            <section class="edr-side-card">
+                <div class="edr-section-head">
+                    <div>
+                        <h3>Facebook Shared Posts</h3>
+                        <p>Paste one Facebook link per line. They will be added below the CCTV reports.</p>
+                    </div>
+                </div>
+                <textarea
+                    id="edrFacebookLinks"
+                    class="edr-link-list"
+                    placeholder="https://www.facebook.com/share/...
+https://www.facebook.com/share/..."></textarea>
+            </section>
+
+            <section class="edr-side-card">
+                <div class="edr-section-head">
+                    <div>
+                        <h3>Maintenance Report PDFs</h3>
+                        <p>Select the PDFs you plan to attach in Teams. The website keeps them only for this open page.</p>
+                    </div>
+                </div>
+
+                <label class="edr-pdf-picker" for="edrPdfInput">Choose Maintenance Report PDFs</label>
+                <input id="edrPdfInput" type="file" accept="application/pdf,.pdf" multiple hidden>
+                <div id="edrPdfList" class="edr-pdf-list">
+                    <div class="edr-empty-state">No PDF selected.</div>
+                </div>
+            </section>
+        </div>
+
+        <section class="edr-preview-card">
+            <div class="edr-section-head">
+                <div>
+                    <h3>Teams Post Preview</h3>
+                    <p>Review the generated text, then copy it into your CCTV Teams channel.</p>
+                </div>
+                <div class="edr-preview-actions">
+                    <button type="button" class="edr-primary-btn" id="edrCopyTeamsBtn">Copy Teams Post</button>
+                    <button type="button" class="edr-danger-btn" id="edrClearAllBtn">Clear All</button>
+                </div>
+            </div>
+
+            <pre id="edrTeamsPreview" class="edr-teams-preview"></pre>
+
+            <div class="edr-attachment-note">
+                CCTV screenshots can be copied individually from each report entry. PDF files are listed as an attachment checklist;
+                attach the actual PDF files manually in Microsoft Teams after pasting the generated post.
+            </div>
+        </section>
     </div>
 </section>
 
@@ -10569,6 +10697,664 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
     });
 
     updateSidebarToggle();
+})();
+</script>
+
+
+<script>
+(function () {
+    const $edr = id => document.getElementById(id);
+
+    let edrState = {
+        entries: [],
+        pdfs: []
+    };
+
+    function edrUid() {
+        return "edr_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 8);
+    }
+
+    function edrTodayLocal() {
+        const d = new Date();
+        const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000);
+        return local.toISOString().slice(0, 10);
+    }
+
+    function edrDisplayDate(value) {
+        const raw = String(value || "").trim();
+        if (!raw) return "";
+
+        if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
+            const [y, m, d] = raw.split("-");
+            return `${Number(m)}/${Number(d)}/${String(y).slice(-2)}`;
+        }
+
+        return raw;
+    }
+
+    function edrEscape(value) {
+        return String(value == null ? "" : value)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
+
+    function edrMakeEntry(seed = {}) {
+        return {
+            id: edrUid(),
+            siteFloor: seed.siteFloor || "",
+            department: seed.department || "CCTV",
+            account: seed.account || "",
+            date: seed.date || "",
+            timeObserved: seed.timeObserved || "",
+            teamLeader: seed.teamLeader || "",
+            agents: seed.agents || "",
+            incident: seed.incident || "",
+            actionTaken: seed.actionTaken || "",
+            cctvClip: seed.cctvClip || "",
+            screenshots: Array.isArray(seed.screenshots) ? seed.screenshots : []
+        };
+    }
+
+    function edrLabelValue(text, labels) {
+        const escaped = labels.map(label =>
+            label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+        );
+
+        const re = new RegExp(
+            `(?:^|\\n)\\s*(?:${escaped.join("|")})\\s*:\\s*([^\\n]+)`,
+            "i"
+        );
+
+        const match = String(text || "").match(re);
+        return match ? match[1].trim() : "";
+    }
+
+    function edrLongField(text, label, nextLabels) {
+        const next = nextLabels
+            .map(item => item.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
+            .join("|");
+
+        const safeLabel = label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+        const re = new RegExp(
+            `(?:^|\\n)\\s*${safeLabel}\\s*:\\s*([\\s\\S]*?)(?=\\n\\s*(?:${next})\\s*:|$)`,
+            "i"
+        );
+
+        const match = String(text || "").match(re);
+        return match ? match[1].trim() : "";
+    }
+
+    function edrParseRawReport(raw) {
+        const text = String(raw || "").replace(/\r/g, "").trim();
+        if (!text) return null;
+
+        const lines = text.split("\n").map(line => line.trim()).filter(Boolean);
+        let siteFloor = "";
+        let department = "CCTV";
+        let account = "";
+
+        const heading = lines.find(line =>
+            line.includes("|") &&
+            !/^(date|time observed|team leader|agent|account|incident|action taken|cctv clip)\s*:/i.test(line)
+        );
+
+        if (heading) {
+            const parts = heading.split("|").map(part => part.trim()).filter(Boolean);
+            siteFloor = parts[0] || "";
+            department = parts[1] || "CCTV";
+            account = parts[2] || "";
+        }
+
+        const parsedAccount = edrLabelValue(text, ["Account/Campaign", "Account", "Campaign"]);
+        if (parsedAccount) account = parsedAccount;
+
+        const cctvClipLine = edrLabelValue(text, ["CCTV Clip", "CCTV Link", "Clip"]);
+        const urlMatch = text.match(/https?:\/\/[^\s<>()]+/i);
+
+        return edrMakeEntry({
+            siteFloor,
+            department,
+            account,
+            date: edrLabelValue(text, ["Date"]),
+            timeObserved: edrLabelValue(text, ["Time Observed", "Observed Time", "Time"]),
+            teamLeader: edrLabelValue(text, ["Team Leader", "TL"]),
+            agents: edrLabelValue(text, ["Agent/s", "Agents", "Agent"]),
+            incident: edrLongField(text, "Incident", ["Action Taken", "CCTV Clip", "CCTV Link"]),
+            actionTaken: edrLongField(text, "Action Taken", ["CCTV Clip", "CCTV Link"]),
+            cctvClip: /^https?:\/\//i.test(cctvClipLine)
+                ? cctvClipLine
+                : (urlMatch ? urlMatch[0] : cctvClipLine)
+        });
+    }
+
+    function edrEntryHtml(entry, index) {
+        const inputId = `edr_shot_${entry.id}`;
+
+        return `
+            <article class="edr-entry-card" data-id="${edrEscape(entry.id)}">
+                <div class="edr-entry-head">
+                    <strong>Report ${index + 1}</strong>
+                    <button type="button" class="edr-entry-remove">Remove</button>
+                </div>
+
+                <div class="edr-entry-grid">
+                    <div class="edr-field edr-wide">
+                        <label>Site / Floor</label>
+                        <input class="edr-entry-input" data-field="siteFloor" type="text"
+                               value="${edrEscape(entry.siteFloor)}"
+                               placeholder="Example: Mabini Site A - Ground Floor">
+                    </div>
+
+                    <div class="edr-field">
+                        <label>Department</label>
+                        <input class="edr-entry-input" data-field="department" type="text"
+                               value="${edrEscape(entry.department)}"
+                               placeholder="CCTV">
+                    </div>
+
+                    <div class="edr-field">
+                        <label>Account / Campaign</label>
+                        <input class="edr-entry-input" data-field="account" type="text"
+                               value="${edrEscape(entry.account)}"
+                               placeholder="Example: HBW">
+                    </div>
+
+                    <div class="edr-field">
+                        <label>Date</label>
+                        <input class="edr-entry-input" data-field="date" type="text"
+                               value="${edrEscape(entry.date)}"
+                               placeholder="08/26/26">
+                    </div>
+
+                    <div class="edr-field">
+                        <label>Time Observed</label>
+                        <input class="edr-entry-input" data-field="timeObserved" type="text"
+                               value="${edrEscape(entry.timeObserved)}"
+                               placeholder="2:13:50 AM - 2:33:17 AM">
+                    </div>
+
+                    <div class="edr-field">
+                        <label>Team Leader</label>
+                        <input class="edr-entry-input" data-field="teamLeader" type="text"
+                               value="${edrEscape(entry.teamLeader)}"
+                               placeholder="Team Leader">
+                    </div>
+
+                    <div class="edr-field">
+                        <label>Agent/s</label>
+                        <input class="edr-entry-input" data-field="agents" type="text"
+                               value="${edrEscape(entry.agents)}"
+                               placeholder="Agent name/s">
+                    </div>
+
+                    <div class="edr-field edr-wide">
+                        <label>Incident</label>
+                        <textarea class="edr-entry-input" data-field="incident"
+                                  placeholder="Incident details...">${edrEscape(entry.incident)}</textarea>
+                    </div>
+
+                    <div class="edr-field edr-wide">
+                        <label>Action Taken</label>
+                        <textarea class="edr-entry-input" data-field="actionTaken"
+                                  placeholder="Action taken...">${edrEscape(entry.actionTaken)}</textarea>
+                    </div>
+
+                    <div class="edr-field edr-wide">
+                        <label>CCTV Clip Link</label>
+                        <input class="edr-entry-input" data-field="cctvClip" type="url"
+                               value="${edrEscape(entry.cctvClip)}"
+                               placeholder="https://...">
+                    </div>
+                </div>
+
+                <div class="edr-shot-zone">
+                    <div class="edr-shot-zone-head">
+                        <div>
+                            <strong>CCTV Screenshot</strong>
+                            <span>Paste with Ctrl+V after clicking this area, or choose image files.</span>
+                        </div>
+                        <label for="${inputId}" class="edr-outline-btn edr-file-button">Add Screenshot</label>
+                        <input id="${inputId}" class="edr-shot-input" type="file" accept="image/*" multiple hidden>
+                    </div>
+
+                    <div class="edr-shot-grid">
+                        ${
+                            entry.screenshots.length
+                                ? entry.screenshots.map((shot, shotIndex) => `
+                                    <div class="edr-shot-item">
+                                        <img src="${shot.dataUrl}" alt="CCTV screenshot ${shotIndex + 1}">
+                                        <div class="edr-shot-actions">
+                                            <button type="button" class="edr-copy-shot" data-shot-index="${shotIndex}">Copy Image</button>
+                                            <button type="button" class="edr-remove-shot" data-shot-index="${shotIndex}">Remove</button>
+                                        </div>
+                                    </div>
+                                `).join("")
+                                : `<div class="edr-empty-state">No screenshot added.</div>`
+                        }
+                    </div>
+                </div>
+            </article>
+        `;
+    }
+
+    function edrRenderEntries() {
+        const root = $edr("edrEntries");
+        if (!edrState.entries.length) {
+            edrState.entries.push(edrMakeEntry());
+        }
+
+        root.innerHTML = edrState.entries.map(edrEntryHtml).join("");
+        edrWireEntries();
+        edrRefreshPreview();
+    }
+
+    function edrGetEntry(id) {
+        return edrState.entries.find(entry => entry.id === id);
+    }
+
+    function edrWireEntries() {
+        document.querySelectorAll(".edr-entry-card").forEach(card => {
+            const entry = edrGetEntry(card.dataset.id);
+            if (!entry) return;
+
+            card.querySelectorAll(".edr-entry-input").forEach(control => {
+                control.addEventListener("input", () => {
+                    entry[control.dataset.field] = control.value;
+                    edrRefreshPreview();
+                });
+            });
+
+            card.querySelector(".edr-entry-remove").addEventListener("click", () => {
+                if (edrState.entries.length === 1) {
+                    edrState.entries[0] = edrMakeEntry();
+                } else {
+                    edrState.entries = edrState.entries.filter(item => item.id !== entry.id);
+                }
+                edrRenderEntries();
+            });
+
+            const fileInput = card.querySelector(".edr-shot-input");
+            fileInput.addEventListener("change", async () => {
+                await edrAddScreenshots(entry, [...fileInput.files]);
+                fileInput.value = "";
+            });
+
+            const zone = card.querySelector(".edr-shot-zone");
+            zone.addEventListener("paste", async event => {
+                const files = [...(event.clipboardData?.items || [])]
+                    .filter(item => item.type && item.type.startsWith("image/"))
+                    .map(item => item.getAsFile())
+                    .filter(Boolean);
+
+                if (!files.length) return;
+
+                event.preventDefault();
+                await edrAddScreenshots(entry, files);
+            });
+
+            card.querySelectorAll(".edr-remove-shot").forEach(button => {
+                button.addEventListener("click", () => {
+                    entry.screenshots.splice(Number(button.dataset.shotIndex), 1);
+                    edrRenderEntries();
+                });
+            });
+
+            card.querySelectorAll(".edr-copy-shot").forEach(button => {
+                button.addEventListener("click", () => {
+                    const shot = entry.screenshots[Number(button.dataset.shotIndex)];
+                    if (shot) edrCopyImage(shot.dataUrl);
+                });
+            });
+        });
+    }
+
+    function edrReadImage(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onerror = reject;
+            reader.onload = () => resolve({
+                name: file.name || "cctv-screenshot",
+                dataUrl: reader.result
+            });
+            reader.readAsDataURL(file);
+        });
+    }
+
+    async function edrAddScreenshots(entry, files) {
+        const images = files.filter(file => file && file.type.startsWith("image/")).slice(0, 12);
+        for (const file of images) {
+            try {
+                entry.screenshots.push(await edrReadImage(file));
+            } catch (error) {
+                console.error(error);
+            }
+        }
+        edrRenderEntries();
+    }
+
+    async function edrCopyImage(dataUrl) {
+        try {
+            const response = await fetch(dataUrl);
+            const sourceBlob = await response.blob();
+
+            const img = new Image();
+            const objectUrl = URL.createObjectURL(sourceBlob);
+
+            await new Promise((resolve, reject) => {
+                img.onload = resolve;
+                img.onerror = reject;
+                img.src = objectUrl;
+            });
+
+            const canvas = document.createElement("canvas");
+            canvas.width = img.naturalWidth || img.width;
+            canvas.height = img.naturalHeight || img.height;
+
+            const ctx = canvas.getContext("2d");
+            ctx.drawImage(img, 0, 0);
+
+            URL.revokeObjectURL(objectUrl);
+
+            const pngBlob = await new Promise(resolve => canvas.toBlob(resolve, "image/png"));
+
+            if (!pngBlob || !navigator.clipboard || typeof ClipboardItem === "undefined") {
+                throw new Error("Image clipboard is not supported.");
+            }
+
+            await navigator.clipboard.write([
+                new ClipboardItem({ "image/png": pngBlob })
+            ]);
+
+            edrToast("CCTV screenshot copied. Paste it into Teams with Ctrl+V.", "success");
+        } catch (error) {
+            console.error(error);
+            edrToast("Could not copy the image. You can still right-click or save/paste it manually.", "error");
+        }
+    }
+
+    function edrFacebookLines() {
+        return String($edr("edrFacebookLinks")?.value || "")
+            .split(/\r?\n/)
+            .map(line => line.trim())
+            .filter(Boolean);
+    }
+
+    function edrStaffLabel() {
+        const name = String($edr("edrStaffName")?.value || "Miles").trim();
+        return (name.split(/\s+/)[0] || "STAFF").toUpperCase();
+    }
+
+    function edrTeamsText() {
+        const date = edrDisplayDate($edr("edrDate")?.value || "");
+        const lines = [
+            `CCTV STAFF ${edrStaffLabel()}${date ? ` - ${date}` : ""}`,
+            ""
+        ];
+
+        edrState.entries.forEach((entry, index) => {
+            const entryHasData = [
+                entry.siteFloor,
+                entry.account,
+                entry.date,
+                entry.timeObserved,
+                entry.teamLeader,
+                entry.agents,
+                entry.incident,
+                entry.actionTaken,
+                entry.cctvClip
+            ].some(value => String(value || "").trim());
+
+            if (!entryHasData) return;
+
+            const heading = [
+                String(entry.siteFloor || "").trim(),
+                String(entry.department || "CCTV").trim(),
+                String(entry.account || "").trim()
+            ].filter(Boolean).join(" | ");
+
+            if (heading) lines.push(heading);
+            if (entry.date) lines.push(`Date: ${entry.date}`);
+            if (entry.timeObserved) lines.push(`Time Observed: ${entry.timeObserved}`);
+            if (entry.teamLeader) lines.push(`Team Leader: ${entry.teamLeader}`);
+            if (entry.agents) lines.push(`Agent/s: ${entry.agents}`);
+            if (entry.account) lines.push(`Account/Campaign: ${entry.account}`);
+
+            lines.push("");
+
+            if (entry.incident) lines.push(`Incident: ${entry.incident}`);
+            if (entry.actionTaken) lines.push(`Action Taken: ${entry.actionTaken}`);
+            if (entry.cctvClip) lines.push(`CCTV Clip: ${entry.cctvClip}`);
+
+            if (entry.screenshots.length) {
+                lines.push(`CCTV Screenshot${entry.screenshots.length === 1 ? "" : "s"}: ${entry.screenshots.length} image${entry.screenshots.length === 1 ? "" : "s"} ready to copy`);
+            }
+
+            lines.push("");
+
+            if (index < edrState.entries.length - 1) {
+                lines.push("----------------------------------------");
+                lines.push("");
+            }
+        });
+
+        const facebook = edrFacebookLines();
+        if (facebook.length) {
+            lines.push(`Facebook shared post${date ? ` ${date}` : ""}`);
+            facebook.forEach(link => lines.push(link));
+            lines.push("");
+        }
+
+        if (edrState.pdfs.length) {
+            lines.push("Maintenance Report PDFs:");
+            edrState.pdfs.forEach(file => lines.push(`- ${file.name}`));
+        }
+
+        return lines.join("\n").replace(/\n{4,}/g, "\n\n\n").trim();
+    }
+
+    function edrRefreshPreview() {
+        const preview = $edr("edrTeamsPreview");
+        if (preview) preview.textContent = edrTeamsText();
+    }
+
+    function edrToast(text, type = "info") {
+        let toast = document.getElementById("edrToast");
+        if (!toast) {
+            toast = document.createElement("div");
+            toast.id = "edrToast";
+            toast.className = "edr-toast";
+            document.body.appendChild(toast);
+        }
+
+        toast.textContent = text;
+        toast.className = `edr-toast show ${type}`;
+
+        clearTimeout(edrToast.timer);
+        edrToast.timer = setTimeout(() => {
+            toast.classList.remove("show");
+        }, 2800);
+    }
+
+    async function edrCopyTeamsPost() {
+        const text = edrTeamsText();
+        if (!text) {
+            edrToast("Add at least one EDR report first.", "error");
+            return;
+        }
+
+        try {
+            if (navigator.clipboard?.writeText) {
+                await navigator.clipboard.writeText(text);
+            } else {
+                const textarea = document.createElement("textarea");
+                textarea.value = text;
+                textarea.style.position = "fixed";
+                textarea.style.left = "-9999px";
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand("copy");
+                textarea.remove();
+            }
+
+            edrToast("Teams post copied. Paste it into the CCTV Teams channel.", "success");
+        } catch (error) {
+            console.error(error);
+            edrToast("Could not copy the Teams post.", "error");
+        }
+    }
+
+    function edrRenderPdfList() {
+        const root = $edr("edrPdfList");
+
+        if (!edrState.pdfs.length) {
+            root.innerHTML = `<div class="edr-empty-state">No PDF selected.</div>`;
+            edrRefreshPreview();
+            return;
+        }
+
+        root.innerHTML = edrState.pdfs.map((file, index) => `
+            <div class="edr-pdf-item">
+                <span title="${edrEscape(file.name)}">${edrEscape(file.name)}</span>
+                <button type="button" data-pdf-index="${index}">Remove</button>
+            </div>
+        `).join("");
+
+        root.querySelectorAll("button[data-pdf-index]").forEach(button => {
+            button.addEventListener("click", () => {
+                edrState.pdfs.splice(Number(button.dataset.pdfIndex), 1);
+                edrRenderPdfList();
+            });
+        });
+
+        edrRefreshPreview();
+    }
+
+    function edrClearAll() {
+        if (!confirm("Clear the current EDR workspace?")) return;
+
+        edrState = {
+            entries: [edrMakeEntry()],
+            pdfs: []
+        };
+
+        $edr("edrRawReport").value = "";
+        $edr("edrFacebookLinks").value = "";
+        $edr("edrPdfInput").value = "";
+        $edr("edrDate").value = edrTodayLocal();
+
+        edrRenderEntries();
+        edrRenderPdfList();
+        edrToast("EDR workspace cleared.", "info");
+    }
+
+    // EDR navigation
+    const edrBtn = $edr("edrTabBtn");
+    const edrPanel = $edr("edrPanel");
+    const cctvBtn = $edr("cctvTabBtn");
+    const maintenanceBtn = $edr("maintenanceTabBtn");
+    const eodBtn = $edr("eodTabBtn");
+
+    edrBtn.addEventListener("click", () => {
+        ["cctvPanel", "maintenancePanel", "eodPanel"].forEach(id => {
+            $edr(id)?.classList.remove("active");
+        });
+
+        [cctvBtn, maintenanceBtn, eodBtn].forEach(button => {
+            button?.classList.remove("active");
+            button?.setAttribute("aria-selected", "false");
+        });
+
+        edrPanel.classList.add("active");
+        edrBtn.classList.add("active");
+        edrBtn.setAttribute("aria-selected", "true");
+    });
+
+    [cctvBtn, maintenanceBtn, eodBtn].forEach(button => {
+        button?.addEventListener("click", () => {
+            edrPanel.classList.remove("active");
+            edrBtn.classList.remove("active");
+            edrBtn.setAttribute("aria-selected", "false");
+        });
+    });
+
+    $edr("edrParseBtn").addEventListener("click", () => {
+        const parsed = edrParseRawReport($edr("edrRawReport").value);
+
+        if (!parsed) {
+            edrToast("Paste a CCTV report first.", "error");
+            return;
+        }
+
+        const currentOnlyBlank =
+            edrState.entries.length === 1 &&
+            ![
+                edrState.entries[0].siteFloor,
+                edrState.entries[0].account,
+                edrState.entries[0].incident
+            ].some(Boolean);
+
+        if (currentOnlyBlank) {
+            edrState.entries[0] = parsed;
+        } else {
+            edrState.entries.push(parsed);
+        }
+
+        $edr("edrRawReport").value = "";
+        edrRenderEntries();
+        edrToast("CCTV report parsed into a new EDR entry.", "success");
+    });
+
+    $edr("edrClearRawBtn").addEventListener("click", () => {
+        $edr("edrRawReport").value = "";
+    });
+
+    $edr("edrAddEntryBtn").addEventListener("click", () => {
+        edrState.entries.push(edrMakeEntry());
+        edrRenderEntries();
+
+        setTimeout(() => {
+            const cards = document.querySelectorAll(".edr-entry-card");
+            cards[cards.length - 1]?.scrollIntoView({
+                behavior: "smooth",
+                block: "start"
+            });
+        }, 50);
+    });
+
+    $edr("edrFacebookLinks").addEventListener("input", edrRefreshPreview);
+    $edr("edrDate").addEventListener("change", edrRefreshPreview);
+    $edr("edrStaffName").addEventListener("input", edrRefreshPreview);
+
+    $edr("edrPdfInput").addEventListener("change", event => {
+        const files = [...event.target.files]
+            .filter(file =>
+                file.type === "application/pdf" ||
+                /\.pdf$/i.test(file.name)
+            );
+
+        files.forEach(file => {
+            if (!edrState.pdfs.some(existing =>
+                existing.name === file.name &&
+                existing.size === file.size
+            )) {
+                edrState.pdfs.push(file);
+            }
+        });
+
+        edrRenderPdfList();
+    });
+
+    $edr("edrCopyTeamsBtn").addEventListener("click", edrCopyTeamsPost);
+    $edr("edrClearAllBtn").addEventListener("click", edrClearAll);
+
+    $edr("edrDate").value = edrTodayLocal();
+    edrState.entries = [edrMakeEntry()];
+    edrRenderEntries();
+    edrRenderPdfList();
 })();
 </script>
 
