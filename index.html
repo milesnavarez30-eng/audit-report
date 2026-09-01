@@ -5832,7 +5832,7 @@
                 <div class="mini-sheet-toolbar">
                     <div>
                         <strong>Google Sheets Workspace</strong>
-                        <span>Auto-filled after Auto Sort by Floor. Click inside the workspace once, then use the keyboard shortcuts below.</span>
+                        <span>Auto-filled after Auto Sort by Floor. Drag across cells with the mouse to highlight a range. Double-click a cell to edit it.</span>
                     </div>
 
                     <div class="mini-sheet-shortcuts" aria-label="Google Sheets Workspace keyboard shortcuts">
@@ -5870,7 +5870,7 @@
                         <button type="button" id="miniSheetClearAllBtn" class="mini-sheet-clear-all"><span>Clear All</span></button>
                     </div>
                     <div class="mini-sheet-selection-help">
-                        Tip: click inside the sheet once to activate shortcuts. <strong>Ctrl+X</strong> copies + removes selected rows, while <strong>Ctrl+Shift+M</strong> sends the selected rows directly to Maintenance Report.
+                        Tip: <strong>click + drag</strong> across cells to highlight like Google Sheets. <strong>Double-click</strong> a cell to edit. Click a row number to select full rows for Maintenance Report.
                     </div>
                 </div>
 
@@ -6466,6 +6466,21 @@
     let lastAssignments = new Map();
     let miniSheetSelectedRows = new Set();
     let miniSheetSelectionAnchor = null;
+
+    // Google-Sheets-like rectangular cell selection.
+    const MINI_SHEET_FIELDS = [
+        "timestamp",
+        "date",
+        "tl",
+        "account",
+        "site",
+        "station",
+        "issue"
+    ];
+    let miniSheetCellSelection = null;
+    let miniSheetCellAnchor = null;
+    let miniSheetCellDragging = false;
+
     let miniSheetFindMatches = [];
     let miniSheetFindCursor = -1;
     let miniSheetKeyboardActive = false;
@@ -7324,6 +7339,350 @@
     }
 
 
+    function normalizeMiniSheetCellRange(a, b) {
+        if (!a || !b) return null;
+
+        return {
+            startRow: Math.min(a.row, b.row),
+            endRow: Math.max(a.row, b.row),
+            startCol: Math.min(a.col, b.col),
+            endCol: Math.max(a.col, b.col)
+        };
+    }
+
+    function hasMiniSheetCellSelection() {
+        return !!miniSheetCellSelection;
+    }
+
+    function miniSheetCellSelectionCount() {
+        if (!miniSheetCellSelection) return 0;
+
+        const rows =
+            miniSheetCellSelection.endRow -
+            miniSheetCellSelection.startRow + 1;
+        const cols =
+            miniSheetCellSelection.endCol -
+            miniSheetCellSelection.startCol + 1;
+
+        return Math.max(0, rows * cols);
+    }
+
+    function clearMiniSheetCellSelection(updateUi = true) {
+        miniSheetCellSelection = null;
+        miniSheetCellAnchor = null;
+        miniSheetCellDragging = false;
+
+        const sheet = byId("maintenanceMiniSheet");
+        if (sheet) {
+            sheet.classList.remove("cell-range-dragging");
+            sheet.querySelectorAll("td.cell-range-selected, td.cell-range-active")
+                .forEach(cell => {
+                    cell.classList.remove(
+                        "cell-range-selected",
+                        "cell-range-active"
+                    );
+                });
+        }
+
+        if (updateUi) updateMiniSheetSelectionUi();
+    }
+
+    function updateMiniSheetCellSelectionUi() {
+        const sheet = byId("maintenanceMiniSheet");
+        if (!sheet) return;
+
+        sheet.querySelectorAll("td.cell-range-selected, td.cell-range-active")
+            .forEach(cell => {
+                cell.classList.remove(
+                    "cell-range-selected",
+                    "cell-range-active"
+                );
+            });
+
+        if (!miniSheetCellSelection) return;
+
+        const {
+            startRow,
+            endRow,
+            startCol,
+            endCol
+        } = miniSheetCellSelection;
+
+        sheet.querySelectorAll(
+            'tbody td[data-row-index][data-col-index]'
+        ).forEach(cell => {
+            const row = Number(cell.dataset.rowIndex);
+            const col = Number(cell.dataset.colIndex);
+
+            const inside =
+                row >= startRow &&
+                row <= endRow &&
+                col >= startCol &&
+                col <= endCol;
+
+            if (inside) {
+                cell.classList.add("cell-range-selected");
+            }
+        });
+
+        const activeCell = sheet.querySelector(
+            `tbody td[data-row-index="${startRow}"][data-col-index="${startCol}"]`
+        );
+        if (activeCell) activeCell.classList.add("cell-range-active");
+    }
+
+    function setMiniSheetCellSelection(anchor, current = anchor) {
+        if (!anchor || !current) return;
+
+        const range = normalizeMiniSheetCellRange(anchor, current);
+        if (!range) return;
+
+        miniSheetCellSelection = range;
+        updateMiniSheetCellSelectionUi();
+        updateMiniSheetSelectionUi();
+    }
+
+    function selectedMiniSheetCellTsv() {
+        if (!miniSheetCellSelection) return "";
+
+        const {
+            startRow,
+            endRow,
+            startCol,
+            endCol
+        } = miniSheetCellSelection;
+
+        const lines = [];
+
+        for (let rowIndex = startRow; rowIndex <= endRow; rowIndex++) {
+            const row = lastAssignedRows[rowIndex];
+            if (!row) continue;
+
+            const values = rowToMiniSheetValues(row)
+                .slice(startCol, endCol + 1)
+                .map(value =>
+                    String(value == null ? "" : value)
+                        .replace(/\t/g, " ")
+                        .replace(/\r?\n/g, " ")
+                );
+
+            lines.push(values.join("\t"));
+        }
+
+        return lines.join("\n");
+    }
+
+    function clearSelectedMiniSheetCells() {
+        if (!miniSheetCellSelection) return;
+
+        const {
+            startRow,
+            endRow,
+            startCol,
+            endCol
+        } = miniSheetCellSelection;
+
+        for (let rowIndex = startRow; rowIndex <= endRow; rowIndex++) {
+            const row = lastAssignedRows[rowIndex];
+            if (!row) continue;
+
+            for (let colIndex = startCol; colIndex <= endCol; colIndex++) {
+                const field = MINI_SHEET_FIELDS[colIndex];
+                if (!field) continue;
+
+                row[field] = "";
+
+                if (field === "tl") {
+                    row.tlNames = [];
+                }
+            }
+        }
+
+        renderRows(lastAssignedRows);
+        showMessage(
+            `${miniSheetCellSelectionCount()} selected cell${miniSheetCellSelectionCount() === 1 ? "" : "s"} cleared.`,
+            "info"
+        );
+    }
+
+    async function copyMiniSheetSelection() {
+        if (hasMiniSheetCellSelection()) {
+            const text = selectedMiniSheetCellTsv();
+            const ok = await writeMiniSheetClipboard(text);
+
+            showMessage(
+                ok
+                    ? `${miniSheetCellSelectionCount()} selected cell${miniSheetCellSelectionCount() === 1 ? "" : "s"} copied.`
+                    : "Could not copy the selected cells.",
+                ok ? "success" : "error"
+            );
+            return;
+        }
+
+        await copySelectedMiniSheetRows();
+    }
+
+    async function cutMiniSheetSelection() {
+        if (hasMiniSheetCellSelection()) {
+            const text = selectedMiniSheetCellTsv();
+            const ok = await writeMiniSheetClipboard(text);
+
+            if (!ok) {
+                showMessage(
+                    "Could not copy the selected cells, so nothing was cleared.",
+                    "error"
+                );
+                return;
+            }
+
+            const count = miniSheetCellSelectionCount();
+
+            const {
+                startRow,
+                endRow,
+                startCol,
+                endCol
+            } = miniSheetCellSelection;
+
+            for (let rowIndex = startRow; rowIndex <= endRow; rowIndex++) {
+                const row = lastAssignedRows[rowIndex];
+                if (!row) continue;
+
+                for (let colIndex = startCol; colIndex <= endCol; colIndex++) {
+                    const field = MINI_SHEET_FIELDS[colIndex];
+                    if (!field) continue;
+
+                    row[field] = "";
+                    if (field === "tl") row.tlNames = [];
+                }
+            }
+
+            renderRows(lastAssignedRows);
+            showMessage(
+                `${count} selected cell${count === 1 ? "" : "s"} cut to clipboard.`,
+                "success"
+            );
+            return;
+        }
+
+        await cutSelectedMiniSheetRows();
+    }
+
+    function clearAnyMiniSheetSelection() {
+        if (hasMiniSheetCellSelection()) {
+            clearMiniSheetCellSelection();
+            return;
+        }
+
+        clearMiniSheetSelection();
+    }
+
+    function ensureMiniSheetRowExists(rowIndex) {
+        while (lastAssignedRows.length <= rowIndex) {
+            lastAssignedRows.push({
+                timestamp: "",
+                date: "",
+                tl: "",
+                account: "",
+                site: "",
+                station: "",
+                issue: "",
+                floor: FLOOR.REVIEW,
+                sortSource: "Added in Mini Sheet",
+                tlNames: []
+            });
+        }
+    }
+
+    function pasteIntoMiniSheetCellSelection(text) {
+        if (!miniSheetCellSelection) return false;
+
+        const raw = String(text || "").replace(/\r/g, "");
+        if (!raw.trim()) return false;
+
+        const pastedRows = raw
+            .split("\n")
+            .filter((line, index, all) =>
+                line !== "" || index < all.length - 1
+            )
+            .map(line => line.split("\t"));
+
+        if (!pastedRows.length) return false;
+
+        const startRow = miniSheetCellSelection.startRow;
+        const startCol = miniSheetCellSelection.startCol;
+
+        let maxColCount = 1;
+
+        pastedRows.forEach((cells, rowOffset) => {
+            const targetRowIndex = startRow + rowOffset;
+            ensureMiniSheetRowExists(targetRowIndex);
+
+            const row = lastAssignedRows[targetRowIndex];
+            maxColCount = Math.max(maxColCount, cells.length);
+
+            cells.forEach((value, colOffset) => {
+                const targetColIndex = startCol + colOffset;
+                const field = MINI_SHEET_FIELDS[targetColIndex];
+                if (!field) return;
+
+                row[field] = String(value || "").trim();
+
+                if (field === "tl") {
+                    row.tlNames = extractTLNames(row[field]);
+                }
+            });
+        });
+
+        const endRow = startRow + pastedRows.length - 1;
+        const endCol = Math.min(
+            MINI_SHEET_FIELDS.length - 1,
+            startCol + maxColCount - 1
+        );
+
+        miniSheetCellAnchor = {
+            row: startRow,
+            col: startCol
+        };
+        miniSheetCellSelection = {
+            startRow,
+            endRow,
+            startCol,
+            endCol
+        };
+
+        renderRows(lastAssignedRows);
+
+        setTimeout(() => {
+            updateMiniSheetCellSelectionUi();
+            updateMiniSheetSelectionUi();
+        }, 0);
+
+        showMessage(
+            `${pastedRows.length} row${pastedRows.length === 1 ? "" : "s"} pasted into the selected cells.`,
+            "success"
+        );
+
+        return true;
+    }
+
+    function beginMiniSheetCellEdit(cell) {
+        if (!cell) return;
+
+        miniSheetCellDragging = false;
+        cell.classList.add("cell-editing");
+        cell.dataset.editing = "true";
+        cell.focus();
+
+        const selection = window.getSelection();
+        const range = document.createRange();
+        range.selectNodeContents(cell);
+        range.collapse(false);
+
+        selection.removeAllRanges();
+        selection.addRange(range);
+    }
+
     function selectedMiniSheetIndexes() {
         return [...miniSheetSelectedRows]
             .filter(index => Number.isInteger(index) && index >= 0 && index < lastAssignedRows.length)
@@ -7332,36 +7691,54 @@
 
     function updateMiniSheetSelectionUi() {
         const indexes = selectedMiniSheetIndexes();
-        const count = indexes.length;
+        const rowCount = indexes.length;
+        const cellCount = miniSheetCellSelectionCount();
+        const hasCells = cellCount > 0;
 
         const selectedCount = byId("miniSheetSelectedCount");
-        if (selectedCount) selectedCount.textContent = `${count} selected`;
+        if (selectedCount) {
+            selectedCount.textContent = hasCells
+                ? `${cellCount} cell${cellCount === 1 ? "" : "s"} selected`
+                : `${rowCount} selected`;
+        }
+
+        const copyButton = byId("miniSheetCopyRowsBtn");
+        const cutButton = byId("miniSheetCutRowsBtn");
+        const clearButton = byId("miniSheetClearSelectionBtn");
+
+        if (copyButton) copyButton.disabled = !hasCells && rowCount === 0;
+        if (cutButton) cutButton.disabled = !hasCells && rowCount === 0;
+        if (clearButton) clearButton.disabled = !hasCells && rowCount === 0;
 
         [
-            "miniSheetCopyRowsBtn",
-            "miniSheetCutRowsBtn",
             "miniSheetToReportBtn",
-            "miniSheetClearSelectionBtn",
             "miniSheetRemoveRowBtn",
             "miniSheetSelectSameTlBtn"
         ].forEach(id => {
             const button = byId(id);
-            if (button) button.disabled = count === 0;
+            if (button) button.disabled = rowCount === 0;
         });
 
         const tbody = byId("maintenanceMiniSheet")?.querySelector("tbody");
         if (tbody) {
             tbody.querySelectorAll("tr").forEach(tr => {
                 const rowIndex = Number(tr.dataset.rowIndex);
-                tr.classList.toggle("selected-row", miniSheetSelectedRows.has(rowIndex));
+                tr.classList.toggle(
+                    "selected-row",
+                    miniSheetSelectedRows.has(rowIndex)
+                );
             });
         }
+
+        updateMiniSheetCellSelectionUi();
     }
 
     function selectMiniSheetRow(rowIndex, event = {}) {
         if (!Number.isInteger(rowIndex) || rowIndex < 0 || rowIndex >= lastAssignedRows.length) {
             return;
         }
+
+        clearMiniSheetCellSelection(false);
 
         const isToggle = !!(event.ctrlKey || event.metaKey);
         const isRange = !!event.shiftKey;
@@ -7555,6 +7932,7 @@
     function clearMiniSheetSelection() {
         miniSheetSelectedRows.clear();
         miniSheetSelectionAnchor = null;
+        clearMiniSheetCellSelection(false);
         updateMiniSheetSelectionUi();
     }
 
@@ -7877,11 +8255,12 @@
             return `
                 <tr data-row-index="${rowIndex}" class="${miniSheetSelectedRows.has(rowIndex) ? "selected-row" : ""}">
                     <th class="mini-sheet-row-number" scope="row" title="Click to select row. Shift+Click = range, Ctrl+Click = toggle.">${rowIndex + 2}</th>
-                    ${fields.map(field => `
+                    ${fields.map((field, colIndex) => `
                         <td
                             contenteditable="true"
                             spellcheck="false"
                             data-row-index="${rowIndex}"
+                            data-col-index="${colIndex}"
                             data-field="${field}"
                             aria-label="Row ${rowIndex + 2} ${field}">
                             ${escapeHtml(displayValues[field])}
@@ -7921,14 +8300,80 @@
         });
 
         tbody.querySelectorAll('td[contenteditable="true"]').forEach(cell => {
+            cell.addEventListener("mousedown", event => {
+                if (event.button !== 0) return;
+                if (cell.dataset.editing === "true") return;
+
+                event.preventDefault();
+                setMiniSheetKeyboardActive(true);
+
+                const point = {
+                    row: Number(cell.dataset.rowIndex),
+                    col: Number(cell.dataset.colIndex)
+                };
+
+                // Cell selection and row selection are separate modes.
+                miniSheetSelectedRows.clear();
+                miniSheetSelectionAnchor = null;
+
+                if (
+                    event.shiftKey &&
+                    miniSheetCellAnchor
+                ) {
+                    setMiniSheetCellSelection(
+                        miniSheetCellAnchor,
+                        point
+                    );
+                } else {
+                    miniSheetCellAnchor = point;
+                    setMiniSheetCellSelection(point, point);
+                }
+
+                miniSheetCellDragging = true;
+                sheet.classList.add("cell-range-dragging");
+            });
+
+            cell.addEventListener("mouseenter", () => {
+                if (!miniSheetCellDragging || !miniSheetCellAnchor) return;
+
+                setMiniSheetCellSelection(
+                    miniSheetCellAnchor,
+                    {
+                        row: Number(cell.dataset.rowIndex),
+                        col: Number(cell.dataset.colIndex)
+                    }
+                );
+            });
+
+            cell.addEventListener("dblclick", event => {
+                event.preventDefault();
+
+                const point = {
+                    row: Number(cell.dataset.rowIndex),
+                    col: Number(cell.dataset.colIndex)
+                };
+
+                miniSheetCellAnchor = point;
+                setMiniSheetCellSelection(point, point);
+                beginMiniSheetCellEdit(cell);
+            });
+
             cell.addEventListener("keydown", event => {
                 if (event.key === "Enter" && !event.shiftKey) {
+                    event.preventDefault();
+                    cell.blur();
+                }
+
+                if (event.key === "Escape") {
                     event.preventDefault();
                     cell.blur();
                 }
             });
 
             cell.addEventListener("blur", () => {
+                cell.classList.remove("cell-editing");
+                delete cell.dataset.editing;
+
                 const rowIndex = Number(cell.dataset.rowIndex);
                 const field = cell.dataset.field;
                 const row = lastAssignedRows[rowIndex];
@@ -7948,7 +8393,10 @@
 
                 // Keep hidden compatibility table and copy functions synchronized.
                 renderRows(lastAssignedRows, true);
-                showMessage("Mini Sheet edit saved in the current sorted result.", "success");
+                showMessage(
+                    "Mini Sheet edit saved in the current sorted result.",
+                    "success"
+                );
             });
         });
 
@@ -8121,10 +8569,10 @@
     byId("maintenanceTabBtn").addEventListener("click", () => showTab("maintenance"));
     byId("miniSheetRemoveRowBtn").addEventListener("click", removeSelectedMiniSheetRows);
     byId("miniSheetSelectSameTlBtn").addEventListener("click", selectSameTlMiniSheetRows);
-    byId("miniSheetCopyRowsBtn").addEventListener("click", () => copySelectedMiniSheetRows().catch(console.error));
-    byId("miniSheetCutRowsBtn").addEventListener("click", () => cutSelectedMiniSheetRows().catch(console.error));
+    byId("miniSheetCopyRowsBtn").addEventListener("click", () => copyMiniSheetSelection().catch(console.error));
+    byId("miniSheetCutRowsBtn").addEventListener("click", () => cutMiniSheetSelection().catch(console.error));
     byId("miniSheetToReportBtn").addEventListener("click", sendSelectedMiniSheetRowsToMaintenanceReport);
-    byId("miniSheetClearSelectionBtn").addEventListener("click", clearMiniSheetSelection);
+    byId("miniSheetClearSelectionBtn").addEventListener("click", clearAnyMiniSheetSelection);
     byId("miniSheetFindTlBtn").addEventListener("click", findTeamLeaderInMiniSheet);
     byId("miniSheetFindNextBtn").addEventListener("click", findNextTeamLeaderMatch);
     byId("miniSheetClearAllBtn").addEventListener("click", clearAllMiniSheetWorkspace);
@@ -8171,6 +8619,12 @@
 
             showMessage("Team Leader Floor Assignment was reset. Auto-learning will be used again.", "info");
         }
+    });
+
+    document.addEventListener("mouseup", () => {
+        if (!miniSheetCellDragging) return;
+        miniSheetCellDragging = false;
+        byId("maintenanceMiniSheet")?.classList.remove("cell-range-dragging");
     });
 
     // Activate shortcuts after the user clicks anywhere in the Google Sheets Workspace.
@@ -8236,9 +8690,9 @@
             !event.shiftKey &&
             event.key.toLowerCase() === "c"
         ) {
-            if (!miniSheetSelectedRows.size) return;
+            if (!hasMiniSheetCellSelection() && !miniSheetSelectedRows.size) return;
             event.preventDefault();
-            copySelectedMiniSheetRows().catch(console.error);
+            copyMiniSheetSelection().catch(console.error);
             return;
         }
 
@@ -8247,9 +8701,9 @@
             !event.shiftKey &&
             event.key.toLowerCase() === "x"
         ) {
-            if (!miniSheetSelectedRows.size) return;
+            if (!hasMiniSheetCellSelection() && !miniSheetSelectedRows.size) return;
             event.preventDefault();
-            cutSelectedMiniSheetRows().catch(console.error);
+            cutMiniSheetSelection().catch(console.error);
             return;
         }
 
@@ -8264,18 +8718,24 @@
             return;
         }
 
-        if (
-            event.key === "Delete" &&
-            miniSheetSelectedRows.size
-        ) {
-            event.preventDefault();
-            removeSelectedMiniSheetRows();
-            return;
+        if (event.key === "Delete") {
+            if (hasMiniSheetCellSelection()) {
+                event.preventDefault();
+                clearSelectedMiniSheetCells();
+                return;
+            }
+
+            if (miniSheetSelectedRows.size) {
+                event.preventDefault();
+                removeSelectedMiniSheetRows();
+                return;
+            }
         }
 
         if (event.key === "Escape") {
+            if (!hasMiniSheetCellSelection() && !miniSheetSelectedRows.size) return;
             event.preventDefault();
-            clearMiniSheetSelection();
+            clearAnyMiniSheetSelection();
             return;
         }
     });
@@ -8298,6 +8758,12 @@
         if (!text.trim()) return;
 
         event.preventDefault();
+
+        if (hasMiniSheetCellSelection()) {
+            pasteIntoMiniSheetCellSelection(text);
+            return;
+        }
+
         pasteRowsIntoMiniSheet(text);
     });
 })();
