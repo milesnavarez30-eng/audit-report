@@ -5598,317 +5598,43 @@
 </style>
 
 
-<style id="pro-design-upgrade">
-    /* =========================================================
-       PRO DESIGN UPGRADE
-       Cleaner hero, better spacing, richer surfaces, clearer hierarchy
-       ========================================================= */
-    :root {
-        --pro-page-glow-1: rgba(37, 99, 235, 0.14);
-        --pro-page-glow-2: rgba(16, 185, 129, 0.10);
-        --pro-page-glow-3: rgba(99, 102, 241, 0.08);
-        --pro-surface-soft: rgba(255, 255, 255, 0.72);
-        --pro-surface-strong: rgba(255, 255, 255, 0.92);
-        --pro-outline-strong: rgba(148, 163, 184, 0.26);
-        --pro-elevated-shadow: 0 22px 55px rgba(15, 23, 42, 0.08);
-        --pro-soft-shadow-2: 0 12px 30px rgba(15, 23, 42, 0.06);
-        --pro-chip-bg: rgba(255, 255, 255, 0.8);
-        --pro-chip-text: #0f172a;
-        --pro-hero-accent: linear-gradient(135deg, #2563eb 0%, #1d4ed8 40%, #10b981 100%);
-        --pro-hero-text: #0f172a;
-        --pro-hero-subtext: #334155;
-    }
-
-    body.dark-mode {
-        --pro-page-glow-1: rgba(59, 130, 246, 0.18);
-        --pro-page-glow-2: rgba(34, 197, 94, 0.11);
-        --pro-page-glow-3: rgba(168, 85, 247, 0.10);
-        --pro-surface-soft: rgba(15, 23, 42, 0.72);
-        --pro-surface-strong: rgba(15, 23, 42, 0.92);
-        --pro-outline-strong: rgba(148, 163, 184, 0.22);
-        --pro-elevated-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
-        --pro-soft-shadow-2: 0 16px 34px rgba(0, 0, 0, 0.22);
-        --pro-chip-bg: rgba(30, 41, 59, 0.86);
-        --pro-chip-text: #e5e7eb;
-        --pro-hero-text: #f8fafc;
-        --pro-hero-subtext: #cbd5e1;
-    }
-
-    body {
-        width: min(96%, 1460px) !important;
-        max-width: 1460px !important;
-        padding: 24px 12px 42px !important;
-        background:
-            radial-gradient(circle at top left, var(--pro-page-glow-1), transparent 26%),
-            radial-gradient(circle at 100% 10%, var(--pro-page-glow-2), transparent 22%),
-            radial-gradient(circle at 50% 100%, var(--pro-page-glow-3), transparent 20%),
-            var(--bg-color) !important;
-    }
-
-    body::before {
-        content: "";
-        position: fixed;
-        inset: 0;
-        pointer-events: none;
-        background:
-            linear-gradient(180deg, rgba(255,255,255,0.03), transparent 18%),
-            repeating-linear-gradient(90deg, transparent 0 39px, rgba(148,163,184,0.03) 39px 40px);
-        opacity: .65;
-        z-index: -1;
-    }
-
-    
-
-    
-
-    
-
-    
-
-    body.dark-mode 
-
-    
-
-    
-
-    
-
-    
-
-    #themeToggle {
-        top: 22px !important;
-        right: 22px !important;
-        width: 52px !important;
-        height: 52px !important;
-        border-radius: 18px !important;
-        border: 1px solid var(--pro-outline-strong) !important;
-        background: var(--pro-surface-strong) !important;
-        box-shadow: var(--pro-soft-shadow-2) !important;
-        backdrop-filter: blur(14px);
-    }
-
-    #themeToggle:hover {
-        transform: translateY(-2px) scale(1.04) !important;
-    }
-
-    .workspace-tabs {
-        position: sticky;
-        top: 16px;
-        z-index: 400;
-        width: min(100%, 1140px) !important;
-        margin: 0 auto 24px !important;
-        padding: 8px !important;
-        border-radius: 18px !important;
-        border: 1px solid var(--pro-outline-strong) !important;
-        background: var(--pro-surface-soft) !important;
-        box-shadow: var(--pro-soft-shadow-2) !important;
-        backdrop-filter: blur(16px);
-    }
-
-    .workspace-tab-btn {
-        min-height: 48px !important;
-        border-radius: 14px !important;
-        font-size: 13px !important;
-        letter-spacing: .01em;
-    }
-
-    .workspace-tab-btn:hover {
-        transform: translateY(-1px);
-        background: rgba(37, 99, 235, 0.08) !important;
-    }
-
-    .workspace-tab-btn.active {
-        background: var(--pro-hero-accent) !important;
-        color: #ffffff !important;
-        box-shadow: 0 12px 24px rgba(37, 99, 235, 0.22) !important;
-    }
-
-    .app-tab-panel {
-        animation: panelFadeIn .22s ease;
-    }
-
-    @keyframes panelFadeIn {
-        from { opacity: 0; transform: translateY(6px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-
-    .container,
-    #maintenancePanel .maintenance-shell,
-    #eodPanel .container.simple-eod-shell {
-        border-radius: 24px !important;
-        border: 1px solid var(--pro-outline-strong) !important;
-        background:
-            linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,0) 18%),
-            var(--container-bg) !important;
-        box-shadow: var(--pro-elevated-shadow) !important;
-    }
-
-    .form-section,
-    .grid-section,
-    #maintenancePanel .maintenance-shell,
-    #eodPanel .container.simple-eod-shell {
-        overflow: hidden;
-    }
-
-    h2,
-    #cctvPanel h2,
-    #maintenancePanel h2,
-    #eodPanel h2 {
-        display: flex !important;
-        align-items: center;
-        gap: 12px;
-        margin-bottom: 16px !important;
-        font-size: clamp(26px, 3vw, 34px) !important;
-        letter-spacing: -0.04em !important;
-    }
-
-    #cctvPanel h2::before,
-    #maintenancePanel h2::before,
-    #eodPanel h2::before {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        width: 42px;
-        height: 42px;
-        border-radius: 14px;
-        color: #fff;
-        font-size: 19px;
-        box-shadow: 0 10px 24px rgba(37,99,235,.16);
-    }
-
-    #cctvPanel h2::before {
-        content: "📋";
-        background: linear-gradient(135deg, #2563eb, #1d4ed8);
-    }
-
-    #maintenancePanel h2::before {
-        content: "✨";
-        background: linear-gradient(135deg, #7c3aed, #2563eb);
-    }
-
-    #eodPanel h2::before {
-        content: "📸";
-        background: linear-gradient(135deg, #10b981, #2563eb);
-    }
-
-    #cctvPanel .form-grid,
-    #eodPanel .simple-eod-top {
-        padding: 4px 0 0;
-    }
-
-    .table-container,
-    #maintenancePanel .maintenance-sheet-shell,
-    #maintenancePanel .mini-sheet-card,
-    #eodPanel .eod-block,
-    #eodPanel .simple-eod-top {
-        border-radius: 18px !important;
-        border: 1px solid var(--pro-outline-strong) !important;
-        box-shadow: var(--pro-soft-shadow-2) !important;
-        background: linear-gradient(180deg, rgba(255,255,255,.03), transparent 100%), var(--container-bg) !important;
-    }
-
-    input[type="text"],
-    input[type="date"],
-    input[type="url"],
-    select,
-    textarea {
-        min-height: 46px !important;
-        border-radius: 14px !important;
-        border-width: 1px !important;
-        box-shadow: inset 0 1px 0 rgba(255,255,255,0.3);
-    }
-
-    textarea {
-        min-height: 120px;
-    }
-
-    input:focus,
-    select:focus,
-    textarea:focus {
-        transform: translateY(-1px);
-    }
-
-    .button-group > button,
-    .maintenance-toolbar button,
-    .simple-eod-actions button,
-    .block-actions button,
-    .action-btns button,
-    .google-like-toolbar button,
-    .mini-sheet-toolbar button {
-        box-shadow: 0 8px 20px rgba(15,23,42,.08) !important;
-    }
-
-    .button-group > button:hover,
-    .maintenance-toolbar button:hover,
-    .simple-eod-actions button:hover,
-    .block-actions button:hover,
-    .action-btns button:hover,
-    .google-like-toolbar button:hover,
-    .mini-sheet-toolbar button:hover {
-        transform: translateY(-1px);
-    }
-
-    table {
-        font-size: 13.5px !important;
-    }
-
-    th {
-        letter-spacing: .04em;
-    }
-
-    .maintenance-intro,
-    .simple-eod-intro {
-        padding: 14px 16px;
-        border: 1px dashed var(--pro-outline-strong);
-        border-radius: 16px;
-        background: rgba(148, 163, 184, 0.05);
-    }
-
-    .maintenance-message,
-    .message {
-        border-radius: 14px !important;
-        box-shadow: var(--pro-soft-shadow-2);
-    }
-
-    @media (max-width: 900px) {
-        
-
-        
-
-        
-
-        .workspace-tabs {
-            top: 10px;
-        }
-    }
-
-    @media (max-width: 640px) {
-        
-
-        #themeToggle {
-            width: 46px !important;
-            height: 46px !important;
-            border-radius: 14px !important;
-        }
-    }
-</style>
-
+    <link rel="stylesheet" href="./style.css">
 </head>
 <body>
 
-<button id="themeToggle" onclick="toggleTheme()" title="Toggle Dark/Light Mode">🌙</button>
+<aside class="workspace-tabs admin-sidebar" role="tablist" aria-label="Audit workspace navigation">
+    <div class="sidebar-brand" aria-label="CCTV Operations Workspace">
+        <div class="sidebar-brand-mark">C</div>
+        <div class="sidebar-brand-copy">
+            <strong>CCTV OPS</strong>
+            <span>Operations Workspace</span>
+        </div>
+    </div>
 
+    <div class="sidebar-section-label">Workspace</div>
 
-<div class="workspace-tabs" role="tablist" aria-label="Audit workspace tabs">
-    <button type="button" class="workspace-tab-btn active" id="cctvTabBtn" role="tab" aria-selected="true" aria-controls="cctvPanel">📋 CCTV Audit</button>
-    <button type="button" class="workspace-tab-btn" id="maintenanceTabBtn" role="tab" aria-selected="false" aria-controls="maintenancePanel">✨ Maintenance AI Sorter</button>
-    <button type="button" class="workspace-tab-btn" id="eodTabBtn" role="tab" aria-selected="false" aria-controls="eodPanel">📸 Maintenance Report</button>
-</div>
+    <button type="button" class="workspace-tab-btn active" id="cctvTabBtn" role="tab" aria-selected="true" aria-controls="cctvPanel">
+        <span class="sidebar-nav-icon">📋</span><span>CCTV Audit</span>
+    </button>
+    <button type="button" class="workspace-tab-btn" id="maintenanceTabBtn" role="tab" aria-selected="false" aria-controls="maintenancePanel">
+        <span class="sidebar-nav-icon">✨</span><span>Maintenance AI Sorter</span>
+    </button>
+    <button type="button" class="workspace-tab-btn" id="eodTabBtn" role="tab" aria-selected="false" aria-controls="eodPanel">
+        <span class="sidebar-nav-icon">📸</span><span>Maintenance Report</span>
+    </button>
+
+    <div class="sidebar-spacer"></div>
+    <div class="sidebar-divider"></div>
+    <button id="themeToggle" onclick="toggleTheme()" title="Toggle Dark/Light Mode" class="sidebar-theme-btn">
+        <span class="sidebar-nav-icon">🌙</span><span>Appearance</span>
+    </button>
+</aside>
 
 <section id="cctvPanel" class="app-tab-panel active" role="tabpanel" aria-labelledby="cctvTabBtn">
 
 <div class="container form-section">
-    <h2>CCTV Audit Form</h2>
+    <h2>CCTV Audit</h2>
+    <p class="page-lead">Create audit entries, review the output grid, then copy the final data when ready.</p>
     
     <div class="form-grid">
         <div class="form-group field-date">
@@ -6024,6 +5750,7 @@
 <section id="maintenancePanel" class="app-tab-panel" role="tabpanel" aria-labelledby="maintenanceTabBtn">
     <div class="container maintenance-shell">
         <h2>Maintenance AI Sorter</h2>
+        <p class="page-lead">Paste maintenance rows, auto-sort them, then work directly inside the editable sheet workspace.</p>
         <div class="maintenance-intro">
             Paste your maintenance report from <strong>Google Sheets</strong> or a copied table. <strong>The header row is optional.</strong>
             The sorter uses your supplied <strong>Site A 1st Floor and 2nd Floor Team Leader + campaign references</strong>,
@@ -6167,6 +5894,7 @@
 <section id="eodPanel" class="app-tab-panel" role="tabpanel" aria-labelledby="eodTabBtn">
     <div class="container simple-eod-shell">
         <h2>Maintenance Report</h2>
+        <p class="page-lead">Build one report block per lane: IT Sheet rows, CCTV evidence, then remarks.</p>
         <div class="simple-eod-intro">
             Simple workflow: <strong>paste the lanes/table → paste or upload CCTV screenshot → add the observation note → add another block below</strong>.
             No floor selector and no time field—just repeat the blocks in the same order you want them to appear in the PDF.
@@ -6290,19 +6018,27 @@
 
 <script>
     // --- DARK / LIGHT MODE TOGGLE LOGIC ---
+    function setThemeToggleIcon(isDark) {
+        const toggle = document.getElementById('themeToggle');
+        if (!toggle) return;
+        const icon = toggle.querySelector('.sidebar-nav-icon');
+        if (icon) icon.textContent = isDark ? '☀️' : '🌙';
+        toggle.title = isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode';
+    }
+
     function toggleTheme() {
         document.body.classList.toggle('dark-mode');
         const isDark = document.body.classList.contains('dark-mode');
         localStorage.setItem('cctv_theme', isDark ? 'dark' : 'light');
-        document.getElementById('themeToggle').textContent = isDark ? '☀️' : '🌙';
+        setThemeToggleIcon(isDark);
     }
 
     const savedTheme = localStorage.getItem('cctv_theme');
     if (savedTheme === 'dark') {
         document.body.classList.add('dark-mode');
-        document.getElementById('themeToggle').textContent = '☀️';
+        setThemeToggleIcon(true);
     } else {
-        document.getElementById('themeToggle').textContent = '🌙';
+        setThemeToggleIcon(false);
     }
 
     // --- AUTO-SAVE LOGIC (LOCALSTORAGE) ---
