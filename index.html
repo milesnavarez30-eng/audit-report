@@ -5598,7 +5598,7 @@
 </style>
 
 
-    <link rel="stylesheet" href="./style.css?v=20260901-edr-cctv-bridge-2">
+    <link rel="stylesheet" href="./style.css?v=20260901-cctv-edr-count-sync-1">
 
 <style id="edrCriticalStyles">
 /* =========================================================
@@ -8177,6 +8177,44 @@ body.dark-mode .edr-audit-linked {
     color: #6ee7b7 !important;
 }
 </style>
+<style id="cctvEdrSentBadgeCritical">
+
+/* =========================================================
+   CCTV AUDIT - EDR SENT COUNT
+   ========================================================= */
+
+#cctvTabBtn {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 8px !important;
+}
+
+.cctv-edr-sent-badge {
+    flex: none;
+    min-width: 20px;
+    height: 20px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 6px;
+    border-radius: 999px;
+    background: rgba(59,130,246,.12);
+    color: #2563eb;
+    font: 850 8.5px/1 "Inter", "Roboto", Arial, sans-serif;
+    font-variant-numeric: tabular-nums;
+}
+
+#cctvTabBtn.active .cctv-edr-sent-badge {
+    background: rgba(255,255,255,.18);
+    color: inherit;
+}
+
+body.dark-mode #cctvTabBtn:not(.active) .cctv-edr-sent-badge {
+    background: rgba(96,165,250,.14);
+    color: #93c5fd;
+}
+</style>
 </head>
 <body>
 
@@ -8194,6 +8232,7 @@ body.dark-mode .edr-audit-linked {
 <aside class="workspace-tabs admin-sidebar" role="tablist" aria-label="Audit workspace navigation">
 <button type="button" class="workspace-tab-btn active" id="cctvTabBtn" role="tab" aria-selected="true" aria-controls="cctvPanel">
         <span>CCTV Audit</span>
+        <small class="cctv-edr-sent-badge" id="cctvEdrSentCount" title="EDRs sent to CCTV Audit">0</small>
     </button>
     <button type="button" class="workspace-tab-btn" id="maintenanceTabBtn" role="tab" aria-selected="false" aria-controls="maintenancePanel">
         <span>Maintenance AI Sorter</span>
@@ -9385,6 +9424,14 @@ https://www.facebook.com/share/..."></textarea>
             return entryList.some(entry => entry.sourceEdrId === edrId);
         },
 
+        countSentFromEdr() {
+            return linkedEdrAuditCount();
+        },
+
+        refreshIndicators() {
+            refreshCctvEdrSentIndicator();
+        },
+
         sendFromEdr(report) {
             if (!report?.id) {
                 throw new Error("EDR record is missing an ID.");
@@ -9461,6 +9508,29 @@ https://www.facebook.com/share/..."></textarea>
         }
     };
 
+
+    function linkedEdrAuditCount() {
+        return entryList.filter(entry => !!entry.sourceEdrId).length;
+    }
+
+    function refreshCctvEdrSentIndicator() {
+        const badge = document.getElementById("cctvEdrSentCount");
+        const count = linkedEdrAuditCount();
+
+        if (badge) {
+            badge.textContent = String(count);
+            badge.setAttribute(
+                "title",
+                `${count} EDR${count === 1 ? "" : "s"} sent to CCTV Audit`
+            );
+        }
+
+        // Keep EDR List buttons synchronized with the actual CCTV Audit list.
+        // If a linked CCTV row is removed, its EDR immediately returns to
+        // "Send to CCTV Audit".
+        window.refreshEdrAuditLinks?.();
+    }
+
     function renderTable() {
         const tbody = document.querySelector("#outputTable tbody");
         tbody.innerHTML = "";
@@ -9491,6 +9561,8 @@ https://www.facebook.com/share/..."></textarea>
         });
 
         refreshLucideIcons();
+
+        refreshCctvEdrSentIndicator();
     }
 
     function copyToClipboard() {
@@ -15486,6 +15558,12 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         });
     }
 
+
+
+    window.refreshEdrAuditLinks = function () {
+        if (!byId("edrReportList")) return;
+        renderList();
+    };
 
     async function sendEdrToCctvAudit(report) {
         if (!report) return;
