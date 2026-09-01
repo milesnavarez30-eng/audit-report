@@ -5598,7 +5598,7 @@
 </style>
 
 
-    <link rel="stylesheet" href="./style.css?v=20260901-live-clock-1">
+    <link rel="stylesheet" href="./style.css?v=20260901-live-clock-fix-2">
 
 <style id="edrCriticalStyles">
 /* =========================================================
@@ -11850,43 +11850,6 @@ https://www.facebook.com/share/..."></textarea>
                     </table>
                 
 
-<script id="sidebarLiveClockScript">
-(function () {
-    const dateEl = document.getElementById("sidebarLiveDate");
-    const timeEl = document.getElementById("sidebarLiveTime");
-
-    if (!dateEl || !timeEl) return;
-
-    const dateFormatter = new Intl.DateTimeFormat("en-US", {
-        timeZone: "Asia/Manila",
-        month: "short",
-        day: "2-digit",
-        year: "numeric"
-    });
-
-    const timeFormatter = new Intl.DateTimeFormat("en-US", {
-        timeZone: "Asia/Manila",
-        hour: "2-digit",
-        minute: "2-digit",
-        second: "2-digit",
-        hour12: true
-    });
-
-    function updateLiveClock() {
-        const now = new Date();
-        dateEl.textContent = dateFormatter.format(now);
-        timeEl.textContent = timeFormatter.format(now);
-    }
-
-    function scheduleNextTick() {
-        updateLiveClock();
-        const delay = 1000 - (Date.now() % 1000);
-        setTimeout(scheduleNextTick, delay);
-    }
-
-    scheduleNextTick();
-})();
-</script>
 
 </body>
             </html>
@@ -14834,6 +14797,48 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
 </script>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+<script id="sidebarLiveClockScript">
+(function () {
+    function startSidebarClock() {
+        const dateEl = document.getElementById("sidebarLiveDate");
+        const timeEl = document.getElementById("sidebarLiveTime");
+
+        if (!dateEl || !timeEl) return;
+
+        const dateFormatter = new Intl.DateTimeFormat("en-US", {
+            timeZone: "Asia/Manila",
+            month: "short",
+            day: "2-digit",
+            year: "numeric"
+        });
+
+        const timeFormatter = new Intl.DateTimeFormat("en-US", {
+            timeZone: "Asia/Manila",
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit",
+            hour12: true
+        });
+
+        function renderClock() {
+            const now = new Date();
+            dateEl.textContent = dateFormatter.format(now);
+            timeEl.textContent = timeFormatter.format(now);
+        }
+
+        renderClock();
+        window.setInterval(renderClock, 1000);
+    }
+
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", startSidebarClock, { once: true });
+    } else {
+        startSidebarClock();
+    }
+})();
+</script>
+
 </body>
 </html>
 <style>#tlSummarySection{display:none!important;}</style>
