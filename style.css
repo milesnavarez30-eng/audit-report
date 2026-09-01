@@ -3607,3 +3607,170 @@ body.dark-mode .sidebar-live-clock {
         flex: 0 0 auto;
     }
 }
+
+
+/* =========================================================
+   SIDEBAR GLOBAL HISTORY
+   ========================================================= */
+.sidebar-history-btn {
+    width: 100%;
+    min-height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-top: 6px;
+    padding: 8px 10px;
+    border: 1px solid var(--admin-line, var(--sidebar-border));
+    border-radius: 8px;
+    background: transparent;
+    color: var(--admin-text, var(--text-color));
+    font: 800 10px/1 "Inter", "Roboto", Arial, sans-serif;
+    cursor: pointer;
+}
+.sidebar-history-btn:hover {
+    border-color: rgba(59,130,246,.45);
+    background: rgba(59,130,246,.055);
+}
+.sidebar-history-btn small {
+    min-width: 20px;
+    padding: 3px 5px;
+    border-radius: 999px;
+    background: rgba(59,130,246,.11);
+    color: #3b82f6;
+    font: 850 8px/1 "Inter", sans-serif;
+    text-align: center;
+}
+
+/* =========================================================
+   TIME.IS EXACT MANILA CLOCK
+   ========================================================= */
+.sidebar-live-clock.timeis-clock {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 8px 9px;
+    border: 1px solid var(--admin-line, var(--sidebar-border));
+    border-radius: 9px;
+    background: var(--admin-panel-soft, rgba(148,163,184,.035));
+    text-align: left;
+}
+#Manila_z42c {
+    display: block;
+    line-height: 1.15;
+}
+#Manila_z42c .sidebar-live-date {
+    display: inline-block;
+    margin-bottom: 4px;
+    color: var(--admin-muted, var(--pro-muted));
+    font: 750 8.2px/1.2 "Inter", "Roboto", Arial, sans-serif;
+    letter-spacing: .02em;
+    white-space: normal;
+}
+#Manila_z42c .sidebar-live-time {
+    display: inline-block;
+    color: var(--admin-text, var(--text-color));
+    font: 850 11.5px/1 "Inter", "Roboto", Arial, sans-serif;
+    letter-spacing: .015em;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+}
+.timeis-source-link {
+    display: inline-block;
+    margin-top: 5px;
+    color: var(--admin-muted, var(--pro-muted)) !important;
+    font: 650 7px/1 "Inter", sans-serif;
+    text-decoration: none !important;
+    opacity: .72;
+}
+.timeis-source-link:hover {
+    opacity: 1;
+    text-decoration: underline !important;
+}
+
+/* =========================================================
+   GLOBAL HISTORY MODAL
+   ========================================================= */
+.global-history-dialog {
+    width: min(720px, 96vw);
+}
+.global-history-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+    margin-bottom: 10px;
+}
+.global-history-toolbar button:disabled {
+    opacity: .4 !important;
+    cursor: not-allowed !important;
+}
+.global-history-summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 8px;
+    color: var(--admin-muted, var(--pro-muted));
+    font: 700 9px/1.3 "Inter", sans-serif;
+}
+.global-history-list {
+    display: grid;
+    gap: 6px;
+    max-height: min(430px, 54vh);
+    overflow: auto;
+}
+.global-history-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 9px 10px;
+    border: 1px solid var(--admin-line, var(--input-border));
+    border-radius: 8px;
+    background: var(--admin-panel, var(--input-bg));
+}
+.global-history-item.current {
+    border-color: rgba(37,99,235,.52);
+    background: rgba(37,99,235,.075);
+}
+.global-history-item > div {
+    min-width: 0;
+}
+.global-history-item strong {
+    display: block;
+    overflow: hidden;
+    color: var(--admin-text, var(--text-color));
+    font: 750 10px/1.35 "Inter", sans-serif;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.global-history-item span {
+    display: block;
+    margin-top: 2px;
+    color: var(--admin-muted, var(--pro-muted));
+    font: 600 8.5px/1.25 "Inter", sans-serif;
+}
+.global-history-item small {
+    flex: none;
+    color: var(--admin-muted, var(--pro-muted));
+    font: 650 8.5px/1 "Inter", sans-serif;
+}
+.global-history-note {
+    margin-top: 10px;
+    padding: 9px 10px;
+    border: 1px solid var(--admin-line, var(--input-border));
+    border-radius: 8px;
+    background: rgba(59,130,246,.04);
+    color: var(--admin-muted, var(--pro-muted));
+    font: 550 9.5px/1.45 "Inter", sans-serif;
+}
+@media (max-width: 760px) {
+    .sidebar-history-btn {
+        width: auto;
+        min-width: 92px;
+        margin-top: 0;
+    }
+    .sidebar-live-clock.timeis-clock {
+        width: auto;
+        min-width: 180px;
+    }
+}
