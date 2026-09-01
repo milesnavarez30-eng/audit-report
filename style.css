@@ -147,23 +147,27 @@ body::after {
     position: relative;
     width: 100% !important;
     max-width: none !important;
-    min-height: 47px !important;
+    height: 42px !important;
+    min-height: 42px !important;
     display: flex !important;
     align-items: center !important;
     justify-content: flex-start !important;
-    gap: 11px !important;
-    padding: 10px 12px !important;
+    gap: 8px !important;
+    padding: 8px 10px !important;
+    margin: 0 !important;
     border: 1px solid transparent !important;
-    border-radius: 12px !important;
+    border-radius: 10px !important;
     background: transparent !important;
     color: #9ba9bc !important;
-    font-size: 12px !important;
-    font-weight: 800 !important;
+    font-size: 11px !important;
+    font-weight: 700 !important;
     text-align: left !important;
+    line-height: 1.1 !important;
     box-shadow: none !important;
     cursor: pointer;
-    overflow: visible !important;
+    overflow: hidden !important;
     transition: background .16s ease, color .16s ease, border-color .16s ease, transform .16s ease !important;
+}
 }
 
 .workspace-tab-btn:hover {
@@ -181,12 +185,12 @@ body::after {
 }
 
 .sidebar-nav-icon {
-    width: 24px;
-    height: 24px;
+    width: 18px;
+    height: 18px;
     display: inline-grid;
     place-items: center;
-    flex: 0 0 24px;
-    font-size: 15px;
+    flex: 0 0 18px;
+    font-size: 12px;
 }
 
 .sidebar-spacer { flex: 1 1 auto; min-height: 24px; }
@@ -199,20 +203,20 @@ body::after {
 #themeToggle.sidebar-theme-btn {
     position: static !important;
     width: 100% !important;
-    height: auto !important;
-    min-height: 44px !important;
+    height: 40px !important;
+    min-height: 40px !important;
     display: flex !important;
     align-items: center !important;
     justify-content: flex-start !important;
-    gap: 11px !important;
+    gap: 8px !important;
     margin: 0 !important;
-    padding: 9px 12px !important;
+    padding: 8px 10px !important;
     border: 1px solid rgba(148,163,184,.12) !important;
-    border-radius: 12px !important;
+    border-radius: 10px !important;
     background: rgba(255,255,255,.035) !important;
     color: #aeb9c8 !important;
-    font-size: 11.5px !important;
-    font-weight: 800 !important;
+    font-size: 11px !important;
+    font-weight: 700 !important;
     box-shadow: none !important;
 }
 
@@ -489,13 +493,14 @@ body.dark-mode .maintenance-table th {
         overflow-y: hidden !important;
     }
 
-    .sidebar-brand,
-    .sidebar-section-label,
-    .sidebar-spacer,
-    .sidebar-divider {
-        display: none !important;
-    }
-
+.sidebar-brand {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 46px;
+    margin: 0 2px 12px;
+    padding: 4px 2px;
+}
     .workspace-tab-btn {
         width: auto !important;
         min-width: max-content !important;
