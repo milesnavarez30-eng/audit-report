@@ -5598,7 +5598,7 @@
 </style>
 
 
-    <link rel="stylesheet" href="./style.css?v=20260901-pending-clean-notes-1">
+    <link rel="stylesheet" href="./style.css?v=20260901-masterlist-google-sheets-1">
 
 <style id="edrCriticalStyles">
 /* =========================================================
@@ -8832,6 +8832,422 @@ body.dark-mode #cctvTabBtn:not(.active) .cctv-edr-sent-badge {
     }
 }
 </style>
+<style id="masterlistGuideCritical">
+
+/* =========================================================
+   MASTERLIST GUIDE
+   ========================================================= */
+
+#masterlistTabBtn {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 8px !important;
+}
+
+.masterlist-sidebar-badge {
+    flex: none;
+    min-width: 27px;
+    height: 19px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 6px;
+    border-radius: 999px;
+    background: rgba(148,163,184,.13);
+    color: var(--admin-muted, var(--pro-muted));
+    font: 850 7.5px/1 "Inter", sans-serif;
+}
+
+.masterlist-sidebar-badge.is-live {
+    background: rgba(16,185,129,.12);
+    color: #059669;
+}
+
+.masterlist-sidebar-badge.is-syncing {
+    background: rgba(59,130,246,.12);
+    color: #2563eb;
+}
+
+.masterlist-sidebar-badge.is-error {
+    background: rgba(239,68,68,.12);
+    color: #dc2626;
+}
+
+#masterlistTabBtn.active .masterlist-sidebar-badge {
+    background: rgba(255,255,255,.18);
+    color: inherit;
+}
+
+.masterlist-shell {
+    width: 100% !important;
+    max-width: 1220px !important;
+    margin: 0 auto 28px !important;
+}
+
+.masterlist-page-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 14px;
+    margin-bottom: 11px;
+}
+
+.masterlist-refresh-btn {
+    flex: none;
+    min-width: 76px;
+}
+
+.masterlist-sync-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 10px;
+    padding: 9px 11px;
+    border: 1px solid var(--admin-line, var(--input-border));
+    border-radius: 9px;
+    background: var(--admin-panel, var(--input-bg));
+}
+
+.masterlist-sync-bar > div {
+    min-width: 0;
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.masterlist-sync-bar strong {
+    color: var(--admin-text, var(--text-color));
+    font: 800 9.5px/1.3 "Inter", sans-serif;
+}
+
+.masterlist-sync-bar span {
+    color: var(--admin-muted, var(--pro-muted));
+    font: 600 8.5px/1.35 "Inter", sans-serif;
+}
+
+#masterlistLastUpdated {
+    flex: none;
+    text-align: right;
+}
+
+.masterlist-search-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 7px;
+    margin-bottom: 11px;
+}
+
+.masterlist-search-row input {
+    width: 100%;
+    min-height: 38px;
+    box-sizing: border-box;
+    padding: 8px 10px;
+    border: 1px solid var(--admin-line, var(--input-border));
+    border-radius: 8px;
+    background: var(--admin-panel, var(--input-bg));
+    color: var(--admin-text, var(--text-color));
+    font: 600 10px/1.2 "Inter", sans-serif;
+}
+
+.masterlist-sticky-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    align-items: start;
+}
+
+.master-sticky {
+    position: relative;
+    min-width: 0;
+    min-height: 290px;
+    padding: 14px 13px 13px;
+    border: 1px solid rgba(15,23,42,.08);
+    border-radius: 6px 6px 11px 6px;
+    box-shadow:
+        0 7px 18px rgba(15,23,42,.055),
+        0 1px 2px rgba(15,23,42,.08);
+    overflow: hidden;
+}
+
+.master-sticky::after {
+    content: "";
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    width: 20px;
+    height: 20px;
+    background:
+        linear-gradient(
+            135deg,
+            rgba(255,255,255,.12) 0 48%,
+            rgba(15,23,42,.08) 49% 51%,
+            rgba(255,255,255,.5) 52% 100%
+        );
+    pointer-events: none;
+}
+
+.master-sticky-yellow {
+    background: #fff7c7;
+    color: #3f3a20;
+}
+
+.master-sticky-blue {
+    background: #dcefff;
+    color: #203b52;
+}
+
+.master-sticky-green {
+    background: #ddf5df;
+    color: #25462a;
+}
+
+.master-sticky-pink {
+    background: #ffe4ec;
+    color: #512e3c;
+}
+
+.master-sticky-purple {
+    background: #eee3ff;
+    color: #3f3157;
+}
+
+.master-sticky-peach {
+    background: #ffe6cf;
+    color: #553923;
+}
+
+body.dark-mode .master-sticky {
+    border-color: rgba(255,255,255,.05);
+    box-shadow:
+        0 8px 18px rgba(0,0,0,.20),
+        0 1px 2px rgba(0,0,0,.25);
+    filter: saturate(.74) brightness(.72);
+}
+
+.master-sticky-wide {
+    grid-column: span 3;
+    min-height: auto;
+}
+
+.master-sticky-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 9px;
+    margin-bottom: 11px;
+    padding-bottom: 8px;
+    border-bottom: 1px dashed rgba(15,23,42,.16);
+}
+
+.master-sticky-head h3 {
+    margin: 2px 0 0;
+    color: inherit;
+    font: 850 14px/1.2 "Inter", "Roboto", Arial, sans-serif;
+}
+
+.master-sticky-kicker {
+    display: block;
+    font: 800 7.5px/1.1 "Inter", sans-serif;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    opacity: .58;
+}
+
+.master-sticky-count {
+    flex: none;
+    min-width: 26px;
+    height: 23px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 7px;
+    border: 1px solid rgba(15,23,42,.08);
+    border-radius: 999px;
+    background: rgba(255,255,255,.38);
+    color: inherit;
+    font: 850 8px/1 "Inter", sans-serif;
+    font-variant-numeric: tabular-nums;
+}
+
+.master-sticky-body {
+    max-height: 310px;
+    overflow: auto;
+    padding-right: 3px;
+    scrollbar-width: thin;
+}
+
+.master-assigned-body,
+.master-email-body {
+    max-height: 430px;
+}
+
+.master-list-item {
+    padding: 6px 2px;
+    border-bottom: 1px solid rgba(15,23,42,.08);
+    font: 650 9.5px/1.35 "Inter", sans-serif;
+}
+
+.master-list-item:last-child {
+    border-bottom: 0;
+}
+
+.master-empty {
+    padding: 9px 2px;
+    font: 650 9px/1.45 "Inter", sans-serif;
+    opacity: .6;
+}
+
+.master-hr-row {
+    display: grid;
+    grid-template-columns: minmax(150px, .8fr) minmax(180px, 1.2fr) auto;
+    gap: 9px;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(15,23,42,.09);
+}
+
+.master-hr-main {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.master-hr-main strong {
+    font: 800 9.5px/1.25 "Inter", sans-serif;
+}
+
+.master-hr-main span {
+    font: 650 8.7px/1.3 "Inter", sans-serif;
+    opacity: .74;
+}
+
+.master-hr-meta {
+    min-width: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px 9px;
+    font: 650 8.5px/1.3 "Inter", sans-serif;
+    opacity: .76;
+}
+
+.master-copy-small,
+.master-copy-guide {
+    border: 1px solid rgba(15,23,42,.14);
+    border-radius: 6px;
+    background: rgba(255,255,255,.38);
+    color: inherit;
+    cursor: pointer;
+    font: 800 8px/1 "Inter", sans-serif;
+}
+
+.master-copy-small {
+    min-height: 28px;
+    padding: 5px 8px;
+}
+
+.master-email-guide {
+    padding: 10px 0 12px;
+    border-bottom: 1px solid rgba(15,23,42,.10);
+}
+
+.master-email-guide:last-child {
+    border-bottom: 0;
+}
+
+.master-email-guide-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 9px;
+    margin-bottom: 7px;
+}
+
+.master-email-guide-head strong {
+    font: 850 10px/1.3 "Inter", sans-serif;
+}
+
+.master-copy-guide {
+    flex: none;
+    min-width: 58px;
+    min-height: 29px;
+    padding: 5px 9px;
+}
+
+.master-email-guide-content {
+    display: grid;
+    gap: 7px;
+}
+
+.master-email-part > span {
+    display: block;
+    margin-bottom: 3px;
+    font: 800 7.8px/1.2 "Inter", sans-serif;
+    text-transform: uppercase;
+    letter-spacing: .035em;
+    opacity: .60;
+}
+
+.master-email-part pre {
+    margin: 0;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    font: 600 9px/1.5 "Inter", "Roboto", Arial, sans-serif;
+    color: inherit;
+}
+
+.master-no-match {
+    opacity: .40;
+}
+
+.masterlist-source-note {
+    margin-top: 10px;
+    color: var(--admin-muted, var(--pro-muted));
+    font: 600 8px/1.35 "Inter", sans-serif;
+    text-align: right;
+}
+
+@media (max-width: 980px) {
+    .masterlist-sticky-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .master-sticky-wide {
+        grid-column: span 2;
+    }
+}
+
+@media (max-width: 680px) {
+    .masterlist-page-head,
+    .masterlist-sync-bar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    #masterlistLastUpdated {
+        text-align: left;
+    }
+
+    .masterlist-sticky-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .master-sticky-wide {
+        grid-column: auto;
+    }
+
+    .master-hr-row {
+        grid-template-columns: 1fr;
+    }
+
+    .master-copy-small {
+        justify-self: start;
+    }
+}
+</style>
 </head>
 <body>
 
@@ -8864,6 +9280,10 @@ body.dark-mode #cctvTabBtn:not(.active) .cctv-edr-sent-badge {
     <button type="button" class="workspace-tab-btn" id="notesTabBtn" role="tab" aria-selected="false" aria-controls="notesPanel">
         <span>Notes</span>
         <small class="notes-sidebar-badge" id="notesSidebarBadge" title="Saved notes">0</small>
+    </button>
+    <button type="button" class="workspace-tab-btn" id="masterlistTabBtn" role="tab" aria-selected="false" aria-controls="masterlistPanel">
+        <span>Masterlist</span>
+        <small class="masterlist-sidebar-badge" id="masterlistSidebarBadge" title="Google Sheets sync status">Live</small>
     </button>
     <button type="button" class="workspace-tab-btn" id="edrTabBtn" role="tab" aria-selected="false" aria-controls="edrPanel">
         <span>EDR</span>
@@ -9350,6 +9770,125 @@ body.dark-mode #cctvTabBtn:not(.active) .cctv-edr-sent-badge {
 
         <div id="notesList" class="notes-list">
             <div class="edr-empty-state">No saved notes yet.</div>
+        </div>
+    </div>
+</section>
+
+
+<section id="masterlistPanel" class="app-tab-panel" role="tabpanel" aria-labelledby="masterlistTabBtn">
+    <div class="container masterlist-shell">
+        <div class="masterlist-page-head">
+            <div>
+                <h2>Masterlist Guide</h2>
+                <p class="page-lead">
+                    Live reference from your Google Sheets tracker. OM, Team Leaders, Campaigns, HR sites,
+                    assigned HR, and email guides update automatically.
+                </p>
+            </div>
+
+            <button type="button" class="edr-outline-btn masterlist-refresh-btn" id="masterlistRefreshBtn">
+                Refresh
+            </button>
+        </div>
+
+        <div class="masterlist-sync-bar">
+            <div>
+                <strong id="masterlistSyncTitle">Connecting to Google Sheets...</strong>
+                <span id="masterlistSyncDetail">Loading masterlist data.</span>
+            </div>
+            <span id="masterlistLastUpdated">Not synced yet</span>
+        </div>
+
+        <div class="masterlist-search-row">
+            <input type="search"
+                   id="masterlistSearch"
+                   placeholder="Search OM, TL, campaign, HR, site, email guide..."
+                   autocomplete="off">
+            <button type="button" class="edr-outline-btn" id="masterlistClearSearch">Clear</button>
+        </div>
+
+        <div class="masterlist-sticky-grid" id="masterlistStickyGrid">
+            <section class="master-sticky master-sticky-yellow" data-section="oms">
+                <div class="master-sticky-head">
+                    <div>
+                        <span class="master-sticky-kicker">Reference</span>
+                        <h3>OM Masterlist</h3>
+                    </div>
+                    <span class="master-sticky-count" id="masterOmCount">0</span>
+                </div>
+                <div class="master-sticky-body" id="masterOmList">
+                    <div class="master-empty">Loading...</div>
+                </div>
+            </section>
+
+            <section class="master-sticky master-sticky-blue" data-section="tls">
+                <div class="master-sticky-head">
+                    <div>
+                        <span class="master-sticky-kicker">Reference</span>
+                        <h3>Team Leaders</h3>
+                    </div>
+                    <span class="master-sticky-count" id="masterTlCount">0</span>
+                </div>
+                <div class="master-sticky-body" id="masterTlList">
+                    <div class="master-empty">Loading...</div>
+                </div>
+            </section>
+
+            <section class="master-sticky master-sticky-green" data-section="campaigns">
+                <div class="master-sticky-head">
+                    <div>
+                        <span class="master-sticky-kicker">Reference</span>
+                        <h3>Campaigns / Accounts</h3>
+                    </div>
+                    <span class="master-sticky-count" id="masterCampaignCount">0</span>
+                </div>
+                <div class="master-sticky-body" id="masterCampaignList">
+                    <div class="master-empty">Loading...</div>
+                </div>
+            </section>
+
+            <section class="master-sticky master-sticky-pink" data-section="hrSites">
+                <div class="master-sticky-head">
+                    <div>
+                        <span class="master-sticky-kicker">HR Guide</span>
+                        <h3>HR Sites</h3>
+                    </div>
+                    <span class="master-sticky-count" id="masterHrSiteCount">0</span>
+                </div>
+                <div class="master-sticky-body" id="masterHrSiteList">
+                    <div class="master-empty">Loading...</div>
+                </div>
+            </section>
+
+            <section class="master-sticky master-sticky-purple master-sticky-wide" data-section="assignedHr">
+                <div class="master-sticky-head">
+                    <div>
+                        <span class="master-sticky-kicker">HR Guide</span>
+                        <h3>Assigned HR per OM</h3>
+                    </div>
+                    <span class="master-sticky-count" id="masterAssignedHrCount">0</span>
+                </div>
+                <div class="master-sticky-body master-assigned-body" id="masterAssignedHrList">
+                    <div class="master-empty">Loading...</div>
+                </div>
+            </section>
+
+            <section class="master-sticky master-sticky-peach master-sticky-wide" data-section="emailGuide">
+                <div class="master-sticky-head">
+                    <div>
+                        <span class="master-sticky-kicker">Copy & Paste</span>
+                        <h3>Email Guide</h3>
+                    </div>
+                    <span class="master-sticky-count" id="masterEmailGuideCount">0</span>
+                </div>
+                <div class="master-sticky-body master-email-body" id="masterEmailGuideList">
+                    <div class="master-empty">Loading...</div>
+                </div>
+            </section>
+        </div>
+
+        <div class="masterlist-source-note">
+            Auto-refreshes every 5 minutes while this page is open.
         </div>
     </div>
 </section>
@@ -18247,6 +18786,724 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
 })();
 </script>
 
+
+<script id="masterlistGuideScript">
+(function () {
+    const API_URL = 'https://script.google.com/macros/s/AKfycbw2-7ERz3psAaUfsceoFHV6leNmqFf5HxgasRYORMHU8bbnte7DLbDIfX_YzjRrzMZh/exec';
+    const REFRESH_MS = 5 * 60 * 1000;
+    const CACHE_DB = "cctv_masterlist_cache_v1";
+    const CACHE_STORE = "state";
+    const CACHE_KEY = "latest";
+
+    let payload = null;
+    let derived = {
+        oms: [],
+        tls: [],
+        campaigns: [],
+        hrSites: [],
+        assignedHr: [],
+        emailGuide: []
+    };
+
+    const $ = id => document.getElementById(id);
+
+    function clean(value) {
+        return String(value == null ? "" : value)
+            .replace(/\s+/g, " ")
+            .trim();
+    }
+
+    function norm(value) {
+        return clean(value)
+            .toLowerCase()
+            .replace(/[_\/\\-]+/g, " ")
+            .replace(/[^a-z0-9@. ]+/g, " ")
+            .replace(/\s+/g, " ")
+            .trim();
+    }
+
+    function esc(value) {
+        return String(value == null ? "" : value)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
+
+    function unique(values) {
+        return [...new Set(
+            values
+                .map(clean)
+                .filter(Boolean)
+        )].sort((a, b) => a.localeCompare(b));
+    }
+
+    function rowsFrom(sheetName) {
+        const direct = payload?.[sheetName];
+        if (Array.isArray(direct)) return direct;
+
+        const nested = payload?.sheets?.[sheetName]?.rows;
+        return Array.isArray(nested) ? nested : [];
+    }
+
+    function allRows() {
+        return [
+            ...rowsFrom("masterList"),
+            ...rowsFrom("data"),
+            ...rowsFrom("tracker")
+        ];
+    }
+
+    function guideRows() {
+        return [
+            ...rowsFrom("masterList"),
+            ...rowsFrom("data")
+        ];
+    }
+
+    function matchingKeys(row, matcher) {
+        return Object.keys(row || {})
+            .filter(key => matcher(norm(key), key));
+    }
+
+    function valuesFromRows(rows, matcher) {
+        const out = [];
+
+        rows.forEach(row => {
+            matchingKeys(row, matcher).forEach(key => {
+                const value = clean(row[key]);
+                if (value) out.push(value);
+            });
+        });
+
+        return unique(out);
+    }
+
+    function firstValue(row, matcher) {
+        const key = Object.keys(row || {})
+            .find(key => matcher(norm(key), key));
+
+        return key ? clean(row[key]) : "";
+    }
+
+    function isOmKey(key) {
+        return (
+            key === "om" ||
+            key === "om name" ||
+            key === "operations manager" ||
+            key.includes("operations manager")
+        );
+    }
+
+    function isTlKey(key) {
+        return (
+            key === "tl" ||
+            key === "tl name" ||
+            key === "team leader" ||
+            key === "team leader name" ||
+            key.includes("team leader")
+        );
+    }
+
+    function isCampaignKey(key) {
+        return (
+            key === "account" ||
+            key === "campaign" ||
+            key === "account campaign" ||
+            key.includes("campaign") ||
+            key.includes("account")
+        );
+    }
+
+    function isHrSiteKey(key) {
+        return (
+            (key.includes("hr") && key.includes("site")) ||
+            key === "hr location" ||
+            key === "hr office"
+        );
+    }
+
+    function isHrPersonKey(key) {
+        return (
+            (
+                key === "hr" ||
+                key === "hr name" ||
+                key === "assigned hr" ||
+                key === "hr assigned" ||
+                key.includes("assigned hr") ||
+                key.includes("hr representative") ||
+                key.includes("hr personnel")
+            ) &&
+            !key.includes("site") &&
+            !key.includes("email")
+        );
+    }
+
+    function isHrEmailKey(key) {
+        return (
+            key.includes("hr") &&
+            key.includes("email")
+        );
+    }
+
+    function isSiteKey(key) {
+        return (
+            key === "site" ||
+            key === "hr site" ||
+            key.includes("site")
+        );
+    }
+
+    function emailGuideRows(rows) {
+        const results = [];
+
+        rows.forEach((row, index) => {
+            const guideKeys = Object.keys(row || {}).filter(rawKey => {
+                const key = norm(rawKey);
+                return (
+                    key.includes("email guide") ||
+                    key.includes("email template") ||
+                    key === "subject" ||
+                    key.includes("email subject") ||
+                    key.includes("email body") ||
+                    key === "body" ||
+                    key.includes("message template") ||
+                    key.includes("email message")
+                );
+            });
+
+            if (!guideKeys.length) return;
+
+            const parts = [];
+
+            guideKeys.forEach(key => {
+                const value = clean(row[key]);
+                if (!value) return;
+
+                const label = clean(key);
+                parts.push({
+                    label,
+                    value
+                });
+            });
+
+            if (!parts.length) return;
+
+            const title =
+                firstValue(row, k => k === "title" || k === "name" || k.includes("email guide name")) ||
+                `Email Guide ${results.length + 1}`;
+
+            results.push({
+                id: `email_${index}`,
+                title,
+                parts
+            });
+        });
+
+        return results;
+    }
+
+    function assignedHrRows(rows) {
+        const results = [];
+
+        rows.forEach(row => {
+            const om = firstValue(row, isOmKey);
+            const hr = firstValue(row, isHrPersonKey);
+            const hrEmail = firstValue(row, isHrEmailKey);
+            const site =
+                firstValue(row, isHrSiteKey) ||
+                (
+                    (hr || hrEmail)
+                        ? firstValue(row, isSiteKey)
+                        : ""
+                );
+
+            if (!om || (!hr && !hrEmail && !site)) return;
+
+            results.push({
+                om,
+                hr,
+                hrEmail,
+                site
+            });
+        });
+
+        const seen = new Set();
+
+        return results
+            .filter(item => {
+                const key = [
+                    item.om,
+                    item.hr,
+                    item.hrEmail,
+                    item.site
+                ].map(norm).join("|");
+
+                if (seen.has(key)) return false;
+                seen.add(key);
+                return true;
+            })
+            .sort((a, b) => a.om.localeCompare(b.om));
+    }
+
+    function derive() {
+        const rows = allRows();
+        const guides = guideRows();
+
+        const oms = valuesFromRows(rows, isOmKey);
+        const tls = valuesFromRows(rows, isTlKey);
+        const campaigns = valuesFromRows(rows, isCampaignKey);
+
+        let hrSites = valuesFromRows(guides, isHrSiteKey);
+
+        const assignedHr = assignedHrRows(guides);
+
+        if (!hrSites.length) {
+            hrSites = unique(
+                assignedHr
+                    .map(item => item.site)
+                    .filter(Boolean)
+            );
+        }
+
+        derived = {
+            oms,
+            tls,
+            campaigns,
+            hrSites,
+            assignedHr,
+            emailGuide: emailGuideRows(guides)
+        };
+    }
+
+    function listHtml(items) {
+        if (!items.length) {
+            return '<div class="master-empty">No matching data detected.</div>';
+        }
+
+        return items
+            .map(value => `
+                <div class="master-list-item" data-search="${esc(norm(value))}">
+                    ${esc(value)}
+                </div>
+            `)
+            .join("");
+    }
+
+    function assignedHrHtml(items) {
+        if (!items.length) {
+            return '<div class="master-empty">No OM → HR mapping detected in Master List / Data.</div>';
+        }
+
+        return items.map(item => {
+            const copyText = [
+                `OM: ${item.om}`,
+                item.hr ? `HR: ${item.hr}` : "",
+                item.site ? `Site: ${item.site}` : "",
+                item.hrEmail ? `Email: ${item.hrEmail}` : ""
+            ].filter(Boolean).join("\n");
+
+            return `
+                <article class="master-hr-row"
+                         data-search="${esc(norm(copyText))}">
+                    <div class="master-hr-main">
+                        <strong>${esc(item.om)}</strong>
+                        <span>${esc(item.hr || "HR not listed")}</span>
+                    </div>
+                    <div class="master-hr-meta">
+                        ${item.site ? `<span>${esc(item.site)}</span>` : ""}
+                        ${item.hrEmail ? `<span>${esc(item.hrEmail)}</span>` : ""}
+                    </div>
+                    <button type="button"
+                            class="master-copy-small"
+                            data-copy="${esc(copyText)}">
+                        Copy
+                    </button>
+                </article>
+            `;
+        }).join("");
+    }
+
+    function emailGuideHtml(items) {
+        if (!items.length) {
+            return '<div class="master-empty">No Email Guide columns detected in Master List / Data.</div>';
+        }
+
+        return items.map(item => {
+            const fullText = item.parts
+                .map(part => `${part.label}: ${part.value}`)
+                .join("\n\n");
+
+            return `
+                <article class="master-email-guide"
+                         data-search="${esc(norm(item.title + " " + fullText))}">
+                    <div class="master-email-guide-head">
+                        <strong>${esc(item.title)}</strong>
+                        <button type="button"
+                                class="master-copy-guide"
+                                data-copy="${esc(fullText)}">
+                            Copy
+                        </button>
+                    </div>
+                    <div class="master-email-guide-content">
+                        ${item.parts.map(part => `
+                            <div class="master-email-part">
+                                <span>${esc(part.label)}</span>
+                                <pre>${esc(part.value)}</pre>
+                            </div>
+                        `).join("")}
+                    </div>
+                </article>
+            `;
+        }).join("");
+    }
+
+    function render() {
+        $("masterOmCount").textContent = String(derived.oms.length);
+        $("masterTlCount").textContent = String(derived.tls.length);
+        $("masterCampaignCount").textContent = String(derived.campaigns.length);
+        $("masterHrSiteCount").textContent = String(derived.hrSites.length);
+        $("masterAssignedHrCount").textContent = String(derived.assignedHr.length);
+        $("masterEmailGuideCount").textContent = String(derived.emailGuide.length);
+
+        $("masterOmList").innerHTML = listHtml(derived.oms);
+        $("masterTlList").innerHTML = listHtml(derived.tls);
+        $("masterCampaignList").innerHTML = listHtml(derived.campaigns);
+        $("masterHrSiteList").innerHTML = listHtml(derived.hrSites);
+        $("masterAssignedHrList").innerHTML = assignedHrHtml(derived.assignedHr);
+        $("masterEmailGuideList").innerHTML = emailGuideHtml(derived.emailGuide);
+
+        wireCopyButtons();
+        applySearch();
+    }
+
+    async function copyText(value, button) {
+        if (!value) return;
+
+        try {
+            await navigator.clipboard.writeText(value);
+
+            if (button) {
+                const old = button.textContent;
+                button.textContent = "Copied";
+                window.setTimeout(() => {
+                    button.textContent = old;
+                }, 1200);
+            }
+        } catch (_) {
+            const area = document.createElement("textarea");
+            area.value = value;
+            area.style.position = "fixed";
+            area.style.opacity = "0";
+            document.body.appendChild(area);
+            area.select();
+            document.execCommand("copy");
+            area.remove();
+
+            if (button) {
+                const old = button.textContent;
+                button.textContent = "Copied";
+                window.setTimeout(() => {
+                    button.textContent = old;
+                }, 1200);
+            }
+        }
+    }
+
+    function wireCopyButtons() {
+        document.querySelectorAll(
+            "#masterlistPanel [data-copy]"
+        ).forEach(button => {
+            button.addEventListener("click", () => {
+                copyText(button.dataset.copy || "", button);
+            });
+        });
+    }
+
+    function applySearch() {
+        const query = norm($("masterlistSearch")?.value || "");
+
+        document.querySelectorAll(
+            "#masterlistPanel .master-list-item, " +
+            "#masterlistPanel .master-hr-row, " +
+            "#masterlistPanel .master-email-guide"
+        ).forEach(item => {
+            const text = item.dataset.search || norm(item.textContent);
+            item.hidden = !!query && !text.includes(query);
+        });
+
+        document.querySelectorAll(
+            "#masterlistPanel .master-sticky"
+        ).forEach(card => {
+            const candidates = card.querySelectorAll(
+                ".master-list-item, .master-hr-row, .master-email-guide"
+            );
+
+            if (!query) {
+                card.classList.remove("master-no-match");
+                return;
+            }
+
+            const visible = Array.from(candidates)
+                .some(item => !item.hidden);
+
+            card.classList.toggle(
+                "master-no-match",
+                candidates.length > 0 && !visible
+            );
+        });
+    }
+
+    function setSyncState(kind, title, detail) {
+        const root = $("masterlistSyncTitle");
+        const sub = $("masterlistSyncDetail");
+        const badge = $("masterlistSidebarBadge");
+
+        if (root) root.textContent = title;
+        if (sub) sub.textContent = detail;
+
+        if (badge) {
+            badge.classList.remove(
+                "is-live",
+                "is-syncing",
+                "is-error"
+            );
+
+            if (kind === "live") {
+                badge.textContent = "Live";
+                badge.classList.add("is-live");
+            } else if (kind === "syncing") {
+                badge.textContent = "...";
+                badge.classList.add("is-syncing");
+            } else {
+                badge.textContent = "!";
+                badge.classList.add("is-error");
+            }
+        }
+    }
+
+    function formatSyncTime(value) {
+        const d = value ? new Date(value) : new Date();
+
+        if (Number.isNaN(d.getTime())) return "Updated just now";
+
+        return "Updated " + d.toLocaleString([], {
+            month: "short",
+            day: "numeric",
+            hour: "2-digit",
+            minute: "2-digit"
+        });
+    }
+
+    function openCacheDb() {
+        return new Promise((resolve, reject) => {
+            const req = indexedDB.open(CACHE_DB, 1);
+
+            req.onupgradeneeded = () => {
+                const db = req.result;
+                if (!db.objectStoreNames.contains(CACHE_STORE)) {
+                    db.createObjectStore(CACHE_STORE);
+                }
+            };
+
+            req.onsuccess = () => resolve(req.result);
+            req.onerror = () => reject(req.error);
+        });
+    }
+
+    async function saveCache(data) {
+        try {
+            const db = await openCacheDb();
+
+            await new Promise((resolve, reject) => {
+                const tx = db.transaction(CACHE_STORE, "readwrite");
+                tx.objectStore(CACHE_STORE).put(data, CACHE_KEY);
+                tx.oncomplete = resolve;
+                tx.onerror = () => reject(tx.error);
+            });
+
+            db.close();
+        } catch (error) {
+            console.warn("Masterlist cache save failed:", error);
+        }
+    }
+
+    async function loadCache() {
+        try {
+            const db = await openCacheDb();
+
+            const saved = await new Promise((resolve, reject) => {
+                const tx = db.transaction(CACHE_STORE, "readonly");
+                const req = tx.objectStore(CACHE_STORE).get(CACHE_KEY);
+                req.onsuccess = () => resolve(req.result || null);
+                req.onerror = () => reject(req.error);
+            });
+
+            db.close();
+            return saved;
+        } catch (_) {
+            return null;
+        }
+    }
+
+    async function loadMasterlist(showFreshMessage = false) {
+        setSyncState(
+            "syncing",
+            "Syncing Google Sheets...",
+            "Checking Tracker, Master List, and Data."
+        );
+
+        try {
+            const separator = API_URL.includes("?") ? "&" : "?";
+            const response = await fetch(
+                API_URL + separator + "_=" + Date.now(),
+                {
+                    method: "GET",
+                    mode: "cors",
+                    credentials: "omit",
+                    cache: "no-store"
+                }
+            );
+
+            if (!response.ok) {
+                throw new Error(`Google Sheets API returned ${response.status}.`);
+            }
+
+            const data = await response.json();
+
+            if (data?.success === false) {
+                throw new Error(data.error || "Google Sheets API returned an error.");
+            }
+
+            payload = data;
+            derive();
+            render();
+            await saveCache(data);
+
+            const updatedAt = data.updatedAt || new Date().toISOString();
+
+            $("masterlistLastUpdated").textContent =
+                formatSyncTime(updatedAt);
+
+            const rowCount =
+                rowsFrom("tracker").length +
+                rowsFrom("masterList").length +
+                rowsFrom("data").length;
+
+            setSyncState(
+                "live",
+                "Google Sheets connected",
+                `${rowCount} source rows loaded. Auto-refresh every 5 minutes.`
+            );
+
+            if (showFreshMessage) {
+                const button = $("masterlistRefreshBtn");
+                if (button) {
+                    const old = button.textContent;
+                    button.textContent = "Updated";
+                    window.setTimeout(() => {
+                        button.textContent = old;
+                    }, 1200);
+                }
+            }
+
+            return true;
+        } catch (error) {
+            console.error("Masterlist sync failed:", error);
+
+            const cached = await loadCache();
+
+            if (cached) {
+                payload = cached;
+                derive();
+                render();
+
+                $("masterlistLastUpdated").textContent =
+                    "Showing last saved sync";
+
+                setSyncState(
+                    "error",
+                    "Live sync unavailable",
+                    "Showing the last saved masterlist. Click Refresh to try again."
+                );
+
+                return false;
+            }
+
+            setSyncState(
+                "error",
+                "Could not connect to Google Sheets",
+                error.message || "Check the Apps Script Web App deployment."
+            );
+
+            [
+                "masterOmList",
+                "masterTlList",
+                "masterCampaignList",
+                "masterHrSiteList",
+                "masterAssignedHrList",
+                "masterEmailGuideList"
+            ].forEach(id => {
+                const el = $(id);
+                if (el) {
+                    el.innerHTML =
+                        '<div class="master-empty">No synced data available yet.</div>';
+                }
+            });
+
+            return false;
+        }
+    }
+
+    $("masterlistSearch")?.addEventListener("input", applySearch);
+
+    $("masterlistClearSearch")?.addEventListener("click", () => {
+        $("masterlistSearch").value = "";
+        applySearch();
+        $("masterlistSearch").focus();
+    });
+
+    $("masterlistRefreshBtn")?.addEventListener("click", () => {
+        loadMasterlist(true);
+    });
+
+    $("masterlistTabBtn")?.addEventListener("click", () => {
+        if (!payload) {
+            loadMasterlist(false);
+        }
+    });
+
+    async function boot() {
+        const cached = await loadCache();
+
+        if (cached) {
+            payload = cached;
+            derive();
+            render();
+            $("masterlistLastUpdated").textContent =
+                "Showing saved data while syncing";
+        }
+
+        loadMasterlist(false);
+
+        window.setInterval(() => {
+            loadMasterlist(false);
+        }, REFRESH_MS);
+    }
+
+    if (document.readyState === "loading") {
+        document.addEventListener(
+            "DOMContentLoaded",
+            boot,
+            { once: true }
+        );
+    } else {
+        boot();
+    }
+})();
+</script>
+
 <!-- Global Workspace History -->
 <div id="globalHistoryModal" class="maintenance-modal" aria-hidden="true">
     <div class="maintenance-modal-backdrop" id="globalHistoryBackdrop"></div>
@@ -18867,6 +20124,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         ["eodTabBtn", "eodPanel"],
         ["pendingTabBtn", "pendingPanel"],
         ["notesTabBtn", "notesPanel"],
+        ["masterlistTabBtn", "masterlistPanel"],
         ["edrTabBtn", "edrPanel"]
     ];
 
