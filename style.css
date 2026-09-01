@@ -1923,3 +1923,71 @@ body:not(.dark-mode) .edr-teams-preview {
         flex: 1;
     }
 }
+
+
+/* EDR integration with the main admin UI */
+#edrPanel .container.edr-shell {
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 24px !important;
+    border: 1px solid var(--admin-line, var(--border-color)) !important;
+    border-radius: 18px !important;
+    background: var(--admin-panel, var(--container-bg)) !important;
+    box-shadow: var(--admin-shadow, none) !important;
+}
+
+#edrPanel h2 {
+    display: block !important;
+    margin: 0 0 6px !important;
+    padding: 0 !important;
+    border: 0 !important;
+    color: var(--admin-text, var(--text-color)) !important;
+    font-family: "Roboto", "Inter", Arial, sans-serif !important;
+    font-size: clamp(25px, 2.4vw, 32px) !important;
+    line-height: 1.1 !important;
+    font-weight: 900 !important;
+    letter-spacing: -.035em !important;
+    text-transform: none !important;
+}
+
+#edrPanel h2::before,
+#edrPanel h2::after {
+    display: none !important;
+}
+
+#edrPanel .page-lead {
+    margin: 0 !important;
+    color: var(--admin-muted, var(--pro-muted)) !important;
+    font-size: 12.5px !important;
+    line-height: 1.55 !important;
+}
+
+#edrPanel label {
+    color: var(--admin-muted, var(--pro-muted)) !important;
+    font-size: 10.5px !important;
+    font-weight: 900 !important;
+    letter-spacing: .055em !important;
+}
+
+#edrPanel input,
+#edrPanel textarea {
+    background: var(--admin-panel-soft, var(--input-bg)) !important;
+    color: var(--admin-text, var(--text-color)) !important;
+    border-color: var(--admin-line, var(--input-border)) !important;
+}
+
+#edrPanel .edr-source-card,
+#edrPanel .edr-side-card,
+#edrPanel .edr-preview-card,
+#edrPanel .edr-entry-card {
+    border-color: var(--admin-line, var(--pro-border)) !important;
+    background: var(--admin-panel, var(--container-bg)) !important;
+}
+
+#edrPanel .edr-top-grid,
+#edrPanel .edr-entry-head,
+#edrPanel .edr-shot-zone {
+    border-color: var(--admin-line, var(--pro-border)) !important;
+    background: var(--admin-panel-soft, rgba(148,163,184,.035)) !important;
+}
