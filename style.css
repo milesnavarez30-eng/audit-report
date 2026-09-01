@@ -1060,3 +1060,61 @@ body.dark-mode .sidebar-nav-icon svg {
 .maintenance-toolbar button {
     text-shadow: none !important;
 }
+
+
+/* =========================================================
+   PLAIN TEXT CONTROLS
+   No emoji / no decorative icons on navigation or buttons.
+   ========================================================= */
+
+.workspace-tabs.admin-sidebar > .workspace-tab-btn,
+#themeToggle.sidebar-theme-btn,
+.button-group > button,
+.maintenance-toolbar button,
+.simple-eod-actions button,
+.block-actions button,
+.mini-sheet-actions button,
+.mini-sheet-findbar button,
+.eod-proof-label {
+    gap: 0 !important;
+}
+
+/* Clean text-only sidebar navigation */
+.workspace-tabs.admin-sidebar > .workspace-tab-btn {
+    justify-content: flex-start !important;
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+}
+
+/* Appearance remains a simple text control */
+#themeToggle.sidebar-theme-btn {
+    justify-content: flex-start !important;
+    padding-left: 12px !important;
+}
+
+/* Text buttons should remain balanced after removing icons */
+.button-group > button,
+.maintenance-toolbar button,
+.simple-eod-actions button,
+.block-actions button,
+.mini-sheet-actions button,
+.mini-sheet-findbar button,
+.eod-proof-label {
+    justify-content: center !important;
+    line-height: 1.15 !important;
+}
+
+/* Edit/Delete remain readable compact text actions */
+.action-btns .edit-btn,
+.action-btns .delete-btn {
+    min-width: 54px !important;
+    padding: 7px 10px !important;
+    font-size: 10.5px !important;
+    font-weight: 700 !important;
+}
+
+/* Hide any accidentally remaining icon containers from older cached markup */
+.sidebar-nav-icon,
+.icon-spin {
+    display: none !important;
+}
