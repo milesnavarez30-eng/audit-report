@@ -5598,7 +5598,7 @@
 </style>
 
 
-    <link rel="stylesheet" href="./style.css?v=20260901-edr-panel-structure-fix-1">
+    <link rel="stylesheet" href="./style.css?v=20260901-edr-cctv-bridge-2">
 
 <style id="edrCriticalStyles">
 /* =========================================================
@@ -8127,6 +8127,56 @@ body .app-tab-panel:not(.active) {
     pointer-events: none !important;
 }
 </style>
+<style id="edrCctvBridgeCritical">
+
+/* =========================================================
+   EDR -> CCTV AUDIT
+   ========================================================= */
+
+.edr-row-audit {
+    min-height: 31px !important;
+    padding: 6px 9px !important;
+    border: 1px solid rgba(59,130,246,.38) !important;
+    border-radius: 7px !important;
+    background: rgba(59,130,246,.07) !important;
+    color: #2563eb !important;
+    font: 750 9px/1 "Inter", "Roboto", Arial, sans-serif !important;
+    cursor: pointer !important;
+}
+
+.edr-row-audit:hover {
+    border-color: rgba(59,130,246,.62) !important;
+    background: rgba(59,130,246,.12) !important;
+}
+
+.edr-row-audit.is-linked {
+    border-color: rgba(16,185,129,.38) !important;
+    background: rgba(16,185,129,.07) !important;
+    color: #059669 !important;
+}
+
+.edr-audit-linked {
+    display: inline-flex;
+    align-items: center;
+    margin-left: 7px;
+    padding: 2px 6px;
+    border: 1px solid rgba(16,185,129,.28);
+    border-radius: 999px;
+    background: rgba(16,185,129,.07);
+    color: #059669;
+    font: 750 8px/1 "Inter", sans-serif;
+    vertical-align: middle;
+}
+
+body.dark-mode .edr-row-audit {
+    color: #93c5fd !important;
+}
+
+body.dark-mode .edr-row-audit.is-linked,
+body.dark-mode .edr-audit-linked {
+    color: #6ee7b7 !important;
+}
+</style>
 </head>
 <body>
 
@@ -9133,15 +9183,33 @@ https://www.facebook.com/share/..."></textarea>
         if (!omSelection) { alert("Please select an OM."); return; }
         if (!accountSelection) { alert("Please select an Account."); return; }
 
+        const previousEntry =
+            editingIndex >= 0 && entryList[editingIndex]
+                ? entryList[editingIndex]
+                : null;
+
         const entry = {
-            rawDate: dateInput, 
-            year, month, formattedDate, auditorName, 
-            omName: omSelection, 
-            site, tlName, agentName, 
-            cleanAccount: accountSelection, 
+            rawDate: dateInput,
+            year, month, formattedDate, auditorName,
+            omName: omSelection,
+            site, tlName, agentName,
+            cleanAccount: accountSelection,
             reasonCode, noc, remarks
         };
-        
+
+        // Keep the source EDR link even when this CCTV Audit row is edited.
+        // NOC and Remarks always remain independent/editable here.
+        if (previousEntry?.sourceEdrId) {
+            entry.sourceEdrId = previousEntry.sourceEdrId;
+            entry.sourceEdrUpdatedAt = previousEntry.sourceEdrUpdatedAt || "";
+
+            // If the user manually changes CCTV Reason, preserve that
+            // manual choice during later "Update CCTV Audit" actions.
+            entry.sourceEdrReasonAuto =
+                previousEntry.sourceEdrReasonAuto !== false &&
+                reasonCode === previousEntry.reasonCode;
+        }
+
         if (editingIndex === -1) {
             entryList.push(entry);
         } else {
@@ -9195,6 +9263,203 @@ https://www.facebook.com/share/..."></textarea>
         saveEntries();
         renderTable();
     }
+
+
+    function ensureAuditDropdownValue(selectId, value) {
+        const cleanValue = String(value || "").trim();
+        if (!cleanValue) return;
+
+        if (!Array.isArray(currentDropdownData[selectId])) {
+            currentDropdownData[selectId] = [...(defaultData[selectId] || [])];
+        }
+
+        if (!currentDropdownData[selectId].includes(cleanValue)) {
+            currentDropdownData[selectId].push(cleanValue);
+
+            localStorage.setItem(
+                `cctv_dropdown_${selectId}`,
+                JSON.stringify(currentDropdownData[selectId])
+            );
+
+            renderDropdownOptions(selectId);
+        }
+    }
+
+    function auditSiteFromEdr(site) {
+        const value = String(site || "").trim();
+
+        if (/Mabini Site A/i.test(value)) return "Mabini Site A";
+        if (/Mabini Site B/i.test(value)) return "Mabini Site B";
+
+        return value || "Mabini Site A";
+    }
+
+    function auditReasonFromEdr(report) {
+        const text = [
+            report?.incident,
+            report?.action
+        ].filter(Boolean).join(" ").toUpperCase();
+
+        const rules = [
+            [/SLEEP|SLEEPING/, "SLEEPING"],
+            [/DRESS\s*CODE|UNIFORM|ATTIRE/, "DRESS CODE"],
+            [/BROWS|BROWSER|WEBSITE/, "BROWSING"],
+            [/WASTING\s*TIME|IDLE|LOITER/, "WASTING TIME"],
+            [/NON[-\s]*WOF|NON\s*WOF/, "BRINGING NON-WOF"],
+            [/EAT|FOOD|MEAL/, "EATING"],
+            [/HOUSE\s*KEEP|HOUSEKEEP|CLEANLINESS/, "IMPROPER HOUSE KEEPING"],
+            [/TAMPER|EQUIPMENT/, "EQUIPMENT TAMPERING"],
+            [/\bPDA\b|PUBLIC DISPLAY/, "PDA"],
+            [/DISORDER|DISRUPT/, "DISORDERLY CONDUCT"],
+            [/SMART\s*PHONE|SMARTPHONE|CELLPHONE|MOBILE\s*PHONE|PHONE/, "USING SMARTPHONE"],
+            [/THEFT|STEAL/, "THEFT"],
+            [/SELL|VEND/, "SELLING"]
+        ];
+
+        for (const [pattern, reason] of rules) {
+            if (pattern.test(text)) return reason;
+        }
+
+        return "OTHER / EDR";
+    }
+
+    function auditSharedFieldsFromEdr(report) {
+        const supervisorRole =
+            report?.supervisorRole === "OM"
+                ? "OM"
+                : "Team Leader";
+
+        const subjectType =
+            report?.subjectType === "Team Leader"
+                ? "Team Leader"
+                : "Agent/s";
+
+        const tlName =
+            subjectType === "Team Leader"
+                ? (report?.subjectName || "N/A")
+                : (
+                    supervisorRole === "Team Leader"
+                        ? (report?.supervisorName || "N/A")
+                        : "N/A"
+                );
+
+        const agentName =
+            subjectType === "Agent/s"
+                ? (report?.subjectName || "N/A")
+                : "N/A";
+
+        const omName =
+            supervisorRole === "OM"
+                ? (report?.supervisorName || "N/A")
+                : "N/A";
+
+        const rawDate = report?.date || new Date().toISOString().slice(0, 10);
+        const dateObj = new Date(`${rawDate}T00:00:00`);
+        const months = [
+            "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+            "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+        ];
+
+        return {
+            rawDate,
+            year: dateObj.getFullYear(),
+            month: months[dateObj.getMonth()],
+            formattedDate:
+                `${dateObj.getMonth() + 1}/${dateObj.getDate()}/${dateObj.getFullYear()}`,
+            auditorName: "Miles",
+            omName,
+            site: auditSiteFromEdr(report?.site),
+            tlName,
+            agentName,
+            cleanAccount: report?.account || "N/A",
+            reasonCode: auditReasonFromEdr(report)
+        };
+    }
+
+    window.cctvAuditBridge = {
+        findByEdrId(edrId) {
+            return entryList.find(entry => entry.sourceEdrId === edrId) || null;
+        },
+
+        hasEdr(edrId) {
+            return entryList.some(entry => entry.sourceEdrId === edrId);
+        },
+
+        sendFromEdr(report) {
+            if (!report?.id) {
+                throw new Error("EDR record is missing an ID.");
+            }
+
+            const shared = auditSharedFieldsFromEdr(report);
+
+            ensureAuditDropdownValue("site", shared.site);
+            ensureAuditDropdownValue("omName", shared.omName);
+            ensureAuditDropdownValue("account", shared.cleanAccount);
+            ensureAuditDropdownValue("reasonCode", shared.reasonCode);
+
+            const existingIndex = entryList.findIndex(
+                entry => entry.sourceEdrId === report.id
+            );
+
+            if (existingIndex === -1) {
+                const entry = {
+                    ...shared,
+
+                    // New EDR imports begin as Pending.
+                    // CCTV Audit still keeps YES / NO / Pending / Disputed.
+                    noc: "Pending",
+
+                    // Initial Remarks uses EDR Action Taken / Remarks.
+                    // It remains freely editable in CCTV Audit.
+                    remarks:
+                        String(report.action || report.incident || "N/A").trim() ||
+                        "N/A",
+
+                    sourceEdrId: report.id,
+                    sourceEdrUpdatedAt: report.updatedAt || "",
+                    sourceEdrReasonAuto: true
+                };
+
+                entryList.push(entry);
+                sortEntries();
+                saveEntries();
+                renderTable();
+
+                return { action: "created", entry };
+            }
+
+            const previous = entryList[existingIndex];
+
+            entryList[existingIndex] = {
+                ...previous,
+                ...shared,
+
+                // These are intentionally independent from the EDR.
+                noc: previous.noc || "Pending",
+                remarks: previous.remarks || "N/A",
+
+                // Preserve CCTV Reason if the user manually changed it.
+                reasonCode:
+                    previous.sourceEdrReasonAuto === false
+                        ? previous.reasonCode
+                        : shared.reasonCode,
+
+                sourceEdrId: report.id,
+                sourceEdrUpdatedAt: report.updatedAt || "",
+                sourceEdrReasonAuto:
+                    previous.sourceEdrReasonAuto !== false
+            };
+
+            sortEntries();
+            saveEntries();
+            renderTable();
+
+            return {
+                action: "updated",
+                entry: entryList.find(item => item.sourceEdrId === report.id)
+            };
+        }
+    };
 
     function renderTable() {
         const tbody = document.querySelector("#outputTable tbody");
@@ -15133,7 +15398,10 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
             return;
         }
 
-        root.innerHTML = edrReports.map((report, index) => `
+        root.innerHTML = edrReports.map((report, index) => {
+            const linkedToAudit = !!window.cctvAuditBridge?.hasEdr(report.id);
+
+            return `
             <article class="edr-list-item ${report.selected ? "is-selected" : ""}" data-id="${escapeHtml(report.id)}">
                 <label class="edr-select-box" title="Include this EDR">
                     <input type="checkbox" class="edr-row-check" ${report.selected ? "checked" : ""}>
@@ -15150,6 +15418,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
                     <div class="edr-list-sub">
                         ${escapeHtml(supervisorOutputLabel(report))}: ${escapeHtml(report.supervisorName)}
                         · ${escapeHtml(subjectOutputLabel(report))}: ${escapeHtml(report.subjectName)}
+                        ${linkedToAudit ? '<span class="edr-audit-linked">In CCTV Audit</span>' : ""}
                     </div>
 
                     ${report.expanded
@@ -15166,11 +15435,16 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
                                <button type="button" class="edr-row-ss-remove">Remove SS</button>`
                             : `<button type="button" class="edr-row-ss-add">Add SS</button>`
                     }
+                    <button type="button"
+                            class="edr-row-audit ${linkedToAudit ? "is-linked" : ""}">
+                        ${linkedToAudit ? "Update CCTV Audit" : "Send to CCTV Audit"}
+                    </button>
                     <button type="button" class="edr-row-edit">Edit</button>
                     <button type="button" class="edr-row-delete">Delete</button>
                 </div>
             </article>
-        `).join("");
+        `;
+        }).join("");
 
         root.querySelectorAll(".edr-list-item").forEach(card => {
             const id = card.dataset.id;
@@ -15203,9 +15477,56 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
                 removeSavedEdrScreenshot(report);
             });
 
+            card.querySelector(".edr-row-audit")?.addEventListener("click", () => {
+                sendEdrToCctvAudit(report);
+            });
+
             card.querySelector(".edr-row-edit").addEventListener("click", () => editReport(id));
             card.querySelector(".edr-row-delete").addEventListener("click", () => deleteReport(id));
         });
+    }
+
+
+    async function sendEdrToCctvAudit(report) {
+        if (!report) return;
+
+        if (!window.cctvAuditBridge?.sendFromEdr) {
+            showToast(
+                "CCTV Audit is not ready. Refresh the page and try again.",
+                "error"
+            );
+            return;
+        }
+
+        try {
+            const result = window.cctvAuditBridge.sendFromEdr(report);
+
+            renderList();
+
+            if (result.action === "created") {
+                showToast(
+                    "Added to CCTV Audit. NOC starts as Pending; Remarks can be edited anytime.",
+                    "success"
+                );
+            } else {
+                showToast(
+                    "CCTV Audit updated. Existing NOC and Remarks were kept.",
+                    "success"
+                );
+            }
+
+            await pushEdrHistory(
+                result.action === "created"
+                    ? "Sent EDR to CCTV Audit"
+                    : "Updated linked CCTV Audit"
+            );
+        } catch (error) {
+            console.error(error);
+            showToast(
+                error.message || "Could not send EDR to CCTV Audit.",
+                "error"
+            );
+        }
     }
 
     function outputText() {
