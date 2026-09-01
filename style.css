@@ -883,3 +883,180 @@ body.sidebar-collapsed .sidebar-collapse-toggle {
         padding: 0 11px !important;
     }
 }
+
+
+/* =========================================================
+   INTER + LUCIDE PROFESSIONAL UI
+   Clean task-management/admin visual language
+   ========================================================= */
+
+html,
+body,
+button,
+input,
+select,
+textarea,
+table,
+label,
+.workspace-tab-btn,
+.sidebar-brand-copy,
+.maintenance-toolbar,
+.simple-eod-actions,
+.mini-sheet-toolbar,
+.mini-sheet-findbar,
+.maintenance-modal {
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
+}
+
+/* More natural typography like modern SaaS/admin interfaces */
+body {
+    font-size: 14px !important;
+    letter-spacing: -0.005em;
+}
+
+h1, h2, h3, h4,
+.sidebar-brand-copy strong {
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
+    letter-spacing: -0.025em !important;
+}
+
+label {
+    letter-spacing: .035em !important;
+}
+
+/* Lucide icon sizing */
+.icon-button,
+.eod-proof-label {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 7px !important;
+}
+
+.icon-button > svg,
+.eod-proof-label > svg {
+    width: 15px !important;
+    height: 15px !important;
+    flex: 0 0 15px !important;
+    stroke-width: 1.8 !important;
+}
+
+.icon-only-button {
+    display: inline-grid !important;
+    place-items: center !important;
+}
+
+.icon-only-button > svg {
+    width: 14px !important;
+    height: 14px !important;
+    stroke-width: 1.9 !important;
+}
+
+.sidebar-nav-icon {
+    display: inline-grid !important;
+    place-items: center !important;
+}
+
+.sidebar-nav-icon svg {
+    width: 15px !important;
+    height: 15px !important;
+    stroke-width: 1.8 !important;
+}
+
+/* Spinner for sending / PDF generation */
+.icon-spin {
+    animation: lucideIconSpin .85s linear infinite;
+}
+
+@keyframes lucideIconSpin {
+    to { transform: rotate(360deg); }
+}
+
+/* Sidebar now feels closer to clean productivity/admin templates */
+.workspace-tabs.admin-sidebar > .workspace-tab-btn {
+    font-size: 10.5px !important;
+    font-weight: 600 !important;
+    letter-spacing: -0.01em !important;
+}
+
+.sidebar-brand-copy strong {
+    font-size: 10.5px !important;
+    font-weight: 750 !important;
+}
+
+.sidebar-brand-copy span {
+    font-size: 8.5px !important;
+    font-weight: 500 !important;
+}
+
+.sidebar-section-label {
+    font-weight: 700 !important;
+}
+
+/* Light mode: softer, cleaner productivity UI */
+body:not(.dark-mode) {
+    --bg-color: #f7f8fb !important;
+    --container-bg: #ffffff !important;
+    --text-color: #16181d !important;
+    --input-bg: #ffffff !important;
+    --input-border: #dfe3e8 !important;
+    --border-color: #e7e9ee !important;
+}
+
+body:not(.dark-mode) .container,
+body:not(.dark-mode) #maintenancePanel .maintenance-shell,
+body:not(.dark-mode) #eodPanel .container.simple-eod-shell {
+    background: #ffffff !important;
+    border-color: #e7e9ee !important;
+    box-shadow: 0 8px 24px rgba(17, 24, 39, .045) !important;
+}
+
+body:not(.dark-mode) input,
+body:not(.dark-mode) select,
+body:not(.dark-mode) textarea {
+    color: #202124 !important;
+    background: #ffffff !important;
+    border-color: #dfe3e8 !important;
+}
+
+body:not(.dark-mode) input::placeholder,
+body:not(.dark-mode) textarea::placeholder {
+    color: #9299a5 !important;
+}
+
+body:not(.dark-mode) .page-lead,
+body:not(.dark-mode) .maintenance-intro,
+body:not(.dark-mode) .simple-eod-intro {
+    color: #667085 !important;
+}
+
+/* Dark mode: retain contrast without glowing emoji colors */
+body.dark-mode .icon-button > svg,
+body.dark-mode .sidebar-nav-icon svg {
+    color: currentColor;
+}
+
+/* Action buttons feel cleaner with line icons */
+.button-group > button,
+.maintenance-toolbar button,
+.simple-eod-actions button,
+.block-actions button,
+.mini-sheet-actions button,
+.mini-sheet-findbar button {
+    font-weight: 650 !important;
+    letter-spacing: -0.01em !important;
+}
+
+/* Add Screenshot acts like a proper compact button */
+.eod-proof-label {
+    width: auto !important;
+    min-height: 38px !important;
+    padding: 8px 12px !important;
+}
+
+/* Remove any emoji-style oversized icon effects from older CSS */
+.workspace-tab-btn,
+.simple-eod-actions button,
+.maintenance-toolbar button {
+    text-shadow: none !important;
+}
