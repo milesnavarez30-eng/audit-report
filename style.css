@@ -553,3 +553,89 @@ body.dark-mode .maintenance-table th {
         flex-basis: 20px;
     }
 }
+
+
+/* =========================================================
+   COLLAPSIBLE SIDEBAR
+   Click the small arrow at the sidebar edge to hide/show it.
+   ========================================================= */
+
+body,
+.workspace-tabs.admin-sidebar,
+.sidebar-collapse-toggle {
+    transition:
+        padding-left .22s ease,
+        transform .22s ease,
+        left .22s ease,
+        opacity .18s ease !important;
+}
+
+/* Small handle at the right edge of the sidebar */
+.sidebar-collapse-toggle {
+    position: fixed;
+    top: 50%;
+    left: calc(var(--admin-sidebar) - 14px);
+    transform: translateY(-50%);
+    z-index: 1105;
+    width: 30px;
+    height: 54px;
+    display: grid;
+    place-items: center;
+    padding: 0;
+    border: 1px solid var(--admin-sidebar-border);
+    border-radius: 0 12px 12px 0;
+    background: var(--admin-sidebar-bg);
+    color: #dbe7f6;
+    font: 900 24px/1 Arial, sans-serif;
+    cursor: pointer;
+    box-shadow: 7px 0 18px rgba(2, 6, 23, .18);
+}
+
+.sidebar-collapse-toggle:hover {
+    color: #ffffff;
+    background: #122039;
+}
+
+/* Hide the sidebar completely and let the workspace use the width */
+body.sidebar-collapsed {
+    padding-left: 30px !important;
+}
+
+body.sidebar-collapsed .workspace-tabs.admin-sidebar {
+    transform: translateX(calc(-1 * var(--admin-sidebar) - 4px)) !important;
+    pointer-events: none;
+}
+
+body.sidebar-collapsed .sidebar-collapse-toggle {
+    left: 0;
+    border-radius: 0 12px 12px 0;
+}
+
+/* Light mode handle */
+body:not(.dark-mode) .sidebar-collapse-toggle {
+    background: #ffffff;
+    color: #334155;
+    border-color: rgba(15,23,42,.14);
+    box-shadow: 6px 0 16px rgba(15,23,42,.10);
+}
+
+body:not(.dark-mode) .sidebar-collapse-toggle:hover {
+    background: #f8fafc;
+    color: #0f172a;
+}
+
+/* On smaller screens the sidebar becomes a top bar; keep it visible. */
+@media (max-width: 920px) {
+    .sidebar-collapse-toggle {
+        display: none !important;
+    }
+
+    body.sidebar-collapsed {
+        padding: 88px 14px 32px !important;
+    }
+
+    body.sidebar-collapsed .workspace-tabs.admin-sidebar {
+        transform: none !important;
+        pointer-events: auto;
+    }
+}
