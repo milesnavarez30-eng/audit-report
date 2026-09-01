@@ -5598,7 +5598,7 @@
 </style>
 
 
-    <link rel="stylesheet" href="./style.css?v=20260901-edr-clean-ui-1">
+    <link rel="stylesheet" href="./style.css?v=20260901-edr-respondent-compact-1">
 
 <style id="edrCriticalStyles">
 /* =========================================================
@@ -7545,6 +7545,54 @@ body:not(.dark-mode) .edr-choice-btn.active {
     }
 }
 </style>
+<style id="edrRespondentCompactCritical">
+
+/* =========================================================
+   EDR RESPONDENT ROW - compact layout
+   Removes the large unused gap beside the role buttons.
+   ========================================================= */
+
+.edr-inline-pair {
+    display: grid;
+    grid-template-columns: max-content minmax(0, 1fr);
+    align-items: end;
+    gap: 12px;
+    min-width: 0;
+}
+
+.edr-compact-choice-field {
+    width: fit-content;
+    min-width: 0;
+}
+
+.edr-inline-name-field {
+    min-width: 0;
+}
+
+/* Keep role buttons only as wide as their labels. */
+.edr-compact-choice-field .edr-choice-group {
+    width: fit-content !important;
+}
+
+/* Name/search field consumes all remaining row width. */
+.edr-inline-name-field .edr-search-row,
+.edr-inline-name-field > input {
+    width: 100% !important;
+}
+
+/* On narrow screens, stack cleanly instead of creating squeeze. */
+@media (max-width: 720px) {
+    .edr-inline-pair {
+        grid-template-columns: 1fr;
+        align-items: stretch;
+        gap: 9px;
+    }
+
+    .edr-compact-choice-field {
+        width: fit-content;
+    }
+}
+</style>
 </head>
 <body>
 
@@ -7960,46 +8008,50 @@ body:not(.dark-mode) .edr-choice-btn.active {
                            placeholder="Paste time, e.g. 3:10:45 AM–3:18:01 AM">
                 </div>
 
-                <div class="edr-field">
-                    <label>Respondent</label>
-                    <input type="hidden" id="edrRespondentRole" value="Team Leader">
-                    <div class="edr-choice-group" id="edrRespondentRoleButtons" role="group" aria-label="Choose Team Leader or OM">
-                        <button type="button" class="edr-choice-btn active" data-value="Team Leader">Team Leader</button>
-                        <button type="button" class="edr-choice-btn" data-value="OM">OM</button>
+                <div class="edr-inline-pair edr-span-2">
+                    <div class="edr-field edr-compact-choice-field">
+                        <label>Respondent</label>
+                        <input type="hidden" id="edrSupervisorRole" value="Team Leader">
+                        <div class="edr-choice-group" id="edrSupervisorRoleButtons" role="group" aria-label="Choose Team Leader or OM">
+                            <button type="button" class="edr-choice-btn active" data-value="Team Leader">Team Leader</button>
+                            <button type="button" class="edr-choice-btn" data-value="OM">OM</button>
+                        </div>
+                    </div>
+
+                    <div class="edr-field edr-inline-name-field">
+                        <label for="edrSupervisorName" id="edrSupervisorNameLabel">Team Leader</label>
+                        <div class="edr-search-row">
+                            <input type="text"
+                                   id="edrSupervisorName"
+                                   list="edrSupervisorOptions"
+                                   autocomplete="off"
+                                   placeholder="Search Team Leader or OM...">
+                            <button type="button" class="edr-small-add" id="edrAddSupervisorOption" title="Add typed name">Add</button>
+                            <button type="button" class="edr-small-remove" id="edrRemoveSupervisorOption" title="Remove typed name from this session">Remove</button>
+                        </div>
+                        <datalist id="edrSupervisorOptions"></datalist>
                     </div>
                 </div>
 
-                <div class="edr-field">
-                    <label for="edrRespondentName" id="edrRespondentNameLabel">Team Leader</label>
-                    <div class="edr-search-row">
+                <div class="edr-inline-pair edr-span-2">
+                    <div class="edr-field edr-compact-choice-field">
+                        <label>Violation Subject</label>
+                        <input type="hidden" id="edrSubjectType" value="Agent/s">
+                        <div class="edr-choice-group" id="edrSubjectTypeButtons" role="group" aria-label="Choose Agent or Team Leader">
+                            <button type="button" class="edr-choice-btn active" data-value="Agent/s">Agent/s</button>
+                            <button type="button" class="edr-choice-btn" data-value="Team Leader">Team Leader</button>
+                        </div>
+                    </div>
+
+                    <div class="edr-field edr-inline-name-field">
+                        <label for="edrSubjectName" id="edrSubjectNameLabel">Agent/s</label>
                         <input type="text"
-                               id="edrRespondentName"
-                               list="edrRespondentOptions"
+                               id="edrSubjectName"
+                               list="edrSubjectOptions"
                                autocomplete="off"
-                               placeholder="Search Team Leader or OM...">
-                        <button type="button" class="edr-small-add" id="edrAddRespondentOption" title="Add typed name">Add</button>
-                        <button type="button" class="edr-small-remove" id="edrRemoveRespondentOption" title="Remove typed name from this session">Remove</button>
+                               placeholder="Enter or search the name...">
+                        <datalist id="edrSubjectOptions"></datalist>
                     </div>
-                    <datalist id="edrRespondentOptions"></datalist>
-                </div>
-
-                <div class="edr-field">
-                    <label>Violation Subject</label>
-                    <input type="hidden" id="edrSubjectType" value="Agent/s">
-                    <div class="edr-choice-group" id="edrSubjectTypeButtons" role="group" aria-label="Choose Agent or Team Leader">
-                        <button type="button" class="edr-choice-btn active" data-value="Agent/s">Agent/s</button>
-                        <button type="button" class="edr-choice-btn" data-value="Team Leader">Team Leader</button>
-                    </div>
-                </div>
-
-                <div class="edr-field">
-                    <label for="edrSubjectName" id="edrSubjectNameLabel">Agent/s</label>
-                    <input type="text"
-                           id="edrSubjectName"
-                           list="edrSubjectOptions"
-                           autocomplete="off"
-                           placeholder="Enter or search the name...">
-                    <datalist id="edrSubjectOptions"></datalist>
                 </div>
 
                 <div class="edr-field edr-span-2">
@@ -13108,8 +13160,8 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
             timeObserved: report.timeObserved || report.timeStart || "",
             timeStart: report.timeObserved || report.timeStart || "",
             timeEnd: "",
-            RespondentRole: report.RespondentRole || "Team Leader",
-            RespondentName: report.RespondentName || "",
+            supervisorRole: report.supervisorRole || "Team Leader",
+            supervisorName: report.supervisorName || "",
             subjectType: report.subjectType || "Agent/s",
             subjectName: report.subjectName || "",
             account: report.account || "",
@@ -13193,8 +13245,8 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
             timeObserved: record.timeObserved || record.timeStart || "",
             timeStart: record.timeObserved || record.timeStart || "",
             timeEnd: record.timeEnd || "",
-            RespondentRole: record.RespondentRole || "Team Leader",
-            RespondentName: record.RespondentName || "",
+            supervisorRole: record.supervisorRole || "Team Leader",
+            supervisorName: record.supervisorName || "",
             subjectType: record.subjectType || "Agent/s",
             subjectName: record.subjectName || "",
             account: record.account || "",
@@ -13384,8 +13436,8 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
             button.setAttribute("aria-pressed", active ? "true" : "false");
         });
 
-        if (inputId === "edrRespondentRole") {
-            const label = byId("edrRespondentNameLabel");
+        if (inputId === "edrSupervisorRole") {
+            const label = byId("edrSupervisorNameLabel");
             if (label) label.textContent = value === "OM" ? "OM" : "Team Leader";
         }
 
@@ -13407,10 +13459,10 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         });
     }
 
-    function refreshRespondentOptions() {
-        const role = byId("edrRespondentRole").value;
+    function refreshSupervisorOptions() {
+        const role = byId("edrSupervisorRole").value;
         fillDatalist(
-            byId("edrRespondentOptions"),
+            byId("edrSupervisorOptions"),
             role === "OM" ? omOptions : tlOptions
         );
     }
@@ -13473,8 +13525,8 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         return start || end || pasted || "";
     }
 
-    function RespondentOutputLabel(report) {
-        return report.RespondentRole === "OM" ? "OM" : "Team Leader";
+    function supervisorOutputLabel(report) {
+        return report.supervisorRole === "OM" ? "OM" : "Team Leader";
     }
 
     function subjectOutputLabel(report) {
@@ -13492,7 +13544,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
             topLine,
             `Date: ${formatDate(report.date)}`,
             `Time Observed: ${timeRange(report)}`,
-            `${RespondentOutputLabel(report)}: ${report.RespondentName}`,
+            `${supervisorOutputLabel(report)}: ${report.supervisorName}`,
             `${subjectOutputLabel(report)}: ${report.subjectName}`,
             `Account/Campaign: ${report.account}`,
             `Incident: ${report.incident}`,
@@ -13540,7 +13592,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
                 <div class="edr-rich-title">${escapeHtml(topLine)}</div>
                 <div class="edr-rich-line"><strong>Date:</strong> ${escapeHtml(formatDate(report.date))}</div>
                 <div class="edr-rich-line"><strong>Time Observed:</strong> ${escapeHtml(timeRange(report))}</div>
-                <div class="edr-rich-line"><strong>${escapeHtml(RespondentOutputLabel(report))}:</strong> ${escapeHtml(report.RespondentName)}</div>
+                <div class="edr-rich-line"><strong>${escapeHtml(supervisorOutputLabel(report))}:</strong> ${escapeHtml(report.supervisorName)}</div>
                 <div class="edr-rich-line"><strong>${escapeHtml(subjectOutputLabel(report))}:</strong> ${escapeHtml(report.subjectName)}</div>
                 <div class="edr-rich-line"><strong>Account/Campaign:</strong> ${escapeHtml(report.account)}</div>
                 <div class="edr-rich-line"><strong>Incident:</strong> ${escapeHtml(report.incident)}</div>
@@ -13559,8 +13611,8 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
             // Receiver compatibility: raw pasted time is stored in timeStart.
             timeStart: clean(byId("edrTimeObserved").value),
             timeEnd: "",
-            RespondentRole: byId("edrRespondentRole").value,
-            RespondentName: clean(byId("edrRespondentName").value),
+            supervisorRole: byId("edrSupervisorRole").value,
+            supervisorName: clean(byId("edrSupervisorName").value),
             subjectType: byId("edrSubjectType").value,
             subjectName: clean(byId("edrSubjectName").value),
             account: clean(byId("edrAccount").value),
@@ -13579,7 +13631,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         const required = [
             ["Date", report.date],
             ["Time Observed", report.timeObserved || report.timeStart],
-            ["Team Leader or OM name", report.RespondentName],
+            ["Team Leader or OM name", report.supervisorName],
             ["Agent/s or Team Leader", report.subjectName],
             ["Account / Campaign", report.account],
             ["Incident", report.incident],
@@ -13600,8 +13652,8 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         byId("edrSite").value = "Mabini Site A - 1st Floor";
         byId("edrDate").value = todayLocal();
         byId("edrTimeObserved").value = "";
-        setEdrChoice("edrRespondentRole", "edrRespondentRoleButtons", "Team Leader");
-        byId("edrRespondentName").value = "";
+        setEdrChoice("edrSupervisorRole", "edrSupervisorRoleButtons", "Team Leader");
+        byId("edrSupervisorName").value = "";
         setEdrChoice("edrSubjectType", "edrSubjectTypeButtons", "Agent/s");
         byId("edrSubjectName").value = "";
         byId("edrAccount").value = "";
@@ -13611,7 +13663,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         screenshotDirty = false;
         setCurrentScreenshot("", false);
 
-        refreshRespondentOptions();
+        refreshSupervisorOptions();
         refreshSubjectOptions();
 
         if (!options.keepEdit) {
@@ -13694,9 +13746,9 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         byId("edrSite").value = report.site;
         byId("edrDate").value = report.date;
         byId("edrTimeObserved").value = report.timeObserved || timeRange(report);
-        setEdrChoice("edrRespondentRole", "edrRespondentRoleButtons", report.RespondentRole || "Team Leader");
-        refreshRespondentOptions();
-        byId("edrRespondentName").value = report.RespondentName;
+        setEdrChoice("edrSupervisorRole", "edrSupervisorRoleButtons", report.supervisorRole || "Team Leader");
+        refreshSupervisorOptions();
+        byId("edrSupervisorName").value = report.supervisorName;
         setEdrChoice("edrSubjectType", "edrSubjectTypeButtons", report.subjectType === "Team Leader" ? "Team Leader" : "Agent/s");
         refreshSubjectOptions();
         byId("edrSubjectName").value = report.subjectName;
@@ -13788,7 +13840,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
                     </div>
 
                     <div class="edr-list-sub">
-                        ${escapeHtml(RespondentOutputLabel(report))}: ${escapeHtml(report.RespondentName)}
+                        ${escapeHtml(supervisorOutputLabel(report))}: ${escapeHtml(report.supervisorName)}
                         · ${escapeHtml(subjectOutputLabel(report))}: ${escapeHtml(report.subjectName)}
                     </div>
 
@@ -14254,15 +14306,15 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         }, 2400);
     }
 
-    async function addRespondentOption() {
-        const value = clean(byId("edrRespondentName").value);
+    async function addSupervisorOption() {
+        const value = clean(byId("edrSupervisorName").value);
 
         if (!value) {
             showToast("Type a Team Leader or OM name first.", "error");
             return;
         }
 
-        const role = byId("edrRespondentRole").value;
+        const role = byId("edrSupervisorRole").value;
         const list = role === "OM" ? omOptions : tlOptions;
         const added = uniquePush(list, value);
 
@@ -14271,20 +14323,20 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
             return;
         }
 
-        refreshRespondentOptions();
+        refreshSupervisorOptions();
         refreshSubjectOptions();
         showToast(`${value} added to the ${role} list for this session.`, "success");
     }
 
-    async function removeRespondentOption() {
-        const value = clean(byId("edrRespondentName").value);
+    async function removeSupervisorOption() {
+        const value = clean(byId("edrSupervisorName").value);
 
         if (!value) {
             showToast("Type or choose a name to remove.", "error");
             return;
         }
 
-        const role = byId("edrRespondentRole").value;
+        const role = byId("edrSupervisorRole").value;
         const sourceList = role === "OM" ? omOptions : tlOptions;
 
         if (!sourceList.some(item => item.localeCompare(value, undefined, { sensitivity: "base" }) === 0)) {
@@ -14306,8 +14358,8 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         if (role === "OM") omOptions = result.list;
         else tlOptions = result.list;
 
-        byId("edrRespondentName").value = "";
-        refreshRespondentOptions();
+        byId("edrSupervisorName").value = "";
+        refreshSupervisorOptions();
         refreshSubjectOptions();
         showToast(`${value} removed from the current ${role} list.`, "info");
     }
@@ -14406,9 +14458,9 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         });
     });
 
-    wireEdrChoiceGroup("edrRespondentRoleButtons", "edrRespondentRole", () => {
-        byId("edrRespondentName").value = "";
-        refreshRespondentOptions();
+    wireEdrChoiceGroup("edrSupervisorRoleButtons", "edrSupervisorRole", () => {
+        byId("edrSupervisorName").value = "";
+        refreshSupervisorOptions();
     });
 
     wireEdrChoiceGroup("edrSubjectTypeButtons", "edrSubjectType", () => {
@@ -14491,8 +14543,8 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         showToast("Edit cancelled.", "info");
     });
 
-    byId("edrAddRespondentOption").addEventListener("click", addRespondentOption);
-    byId("edrRemoveRespondentOption").addEventListener("click", removeRespondentOption);
+    byId("edrAddSupervisorOption").addEventListener("click", addSupervisorOption);
+    byId("edrRemoveSupervisorOption").addEventListener("click", removeSupervisorOption);
     byId("edrAddAccountOption").addEventListener("click", addAccountOption);
     byId("edrRemoveAccountOption").addEventListener("click", removeAccountOption);
 
@@ -14550,7 +14602,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         }
     });
 
-    refreshRespondentOptions();
+    refreshSupervisorOptions();
     refreshSubjectOptions();
     refreshAccountOptions();
     clearForm();
