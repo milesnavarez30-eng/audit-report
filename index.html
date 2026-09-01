@@ -5598,7 +5598,7 @@
 </style>
 
 
-    <link rel="stylesheet" href="./style.css?v=20260901-live-clock-fix-2">
+    <link rel="stylesheet" href="./style.css?v=20260901-edr-history-persist-1">
 
 <style id="edrCriticalStyles">
 /* =========================================================
@@ -7658,6 +7658,122 @@ body.dark-mode .sidebar-live-clock {
     }
 }
 </style>
+<style id="edrHistoryCriticalStyles">
+
+/* =========================================================
+   EDR PERSISTENCE + HISTORY
+   ========================================================= */
+
+.edr-header-tools {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 7px;
+}
+
+.edr-history-quick {
+    min-height: 38px !important;
+}
+
+.edr-history-quick:disabled,
+.edr-history-toolbar button:disabled {
+    opacity: .42 !important;
+    cursor: not-allowed !important;
+}
+
+.edr-history-dialog {
+    width: min(690px, 96vw);
+}
+
+.edr-history-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+    margin-bottom: 10px;
+}
+
+.edr-history-meta {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 8px;
+    color: var(--admin-muted, var(--pro-muted));
+    font: 700 9px/1.3 "Inter", sans-serif;
+}
+
+.edr-history-list {
+    display: grid;
+    gap: 6px;
+    max-height: min(430px, 52vh);
+    overflow: auto;
+    padding-right: 2px;
+}
+
+.edr-history-item {
+    width: 100% !important;
+    min-height: 42px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 12px !important;
+    padding: 9px 10px !important;
+    border: 1px solid var(--admin-line, var(--input-border)) !important;
+    border-radius: 8px !important;
+    background: var(--admin-panel, var(--input-bg)) !important;
+    color: var(--admin-text, var(--text-color)) !important;
+    text-align: left !important;
+    cursor: pointer;
+}
+
+.edr-history-item:hover {
+    border-color: rgba(59,130,246,.42) !important;
+}
+
+.edr-history-item.current {
+    border-color: rgba(37,99,235,.55) !important;
+    background: rgba(37,99,235,.08) !important;
+}
+
+.edr-history-item span {
+    min-width: 0;
+    overflow: hidden;
+    font: 750 10px/1.35 "Inter", sans-serif;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.edr-history-item small {
+    flex: none;
+    color: var(--admin-muted, var(--pro-muted));
+    font: 650 8.5px/1 "Inter", sans-serif;
+}
+
+.edr-history-note {
+    margin-top: 10px;
+    padding: 9px 10px;
+    border: 1px solid var(--admin-line, var(--input-border));
+    border-radius: 8px;
+    background: rgba(59,130,246,.04);
+    color: var(--admin-muted, var(--pro-muted));
+    font: 550 9.5px/1.45 "Inter", sans-serif;
+}
+
+@media (max-width: 760px) {
+    .edr-crud-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .edr-header-tools {
+        justify-content: flex-start;
+    }
+
+    .edr-header-tools > * {
+        flex: 0 0 auto;
+    }
+}
+</style>
 </head>
 <body>
 
@@ -8031,12 +8147,17 @@ body.dark-mode .sidebar-live-clock {
                 </p>
             </div>
 
-            <a class="edr-template-link"
-               href="https://docs.google.com/document/d/1-i54dxMosFgiNcdEO7fHqvN15yIsicdOjmsW0XTYbUw/edit?tab=t.ob2cyz0wou1"
-               target="_blank"
-               rel="noopener noreferrer">
-                Open EDR Template
-            </a>
+            <div class="edr-header-tools">
+                <button type="button" class="edr-outline-btn edr-history-quick" id="edrUndoBtn" disabled>Undo</button>
+                <button type="button" class="edr-outline-btn edr-history-quick" id="edrRedoBtn" disabled>Redo</button>
+                <button type="button" class="edr-outline-btn edr-history-quick" id="edrHistoryBtn">History</button>
+                <a class="edr-template-link"
+                   href="https://docs.google.com/document/d/1-i54dxMosFgiNcdEO7fHqvN15yIsicdOjmsW0XTYbUw/edit?tab=t.ob2cyz0wou1"
+                   target="_blank"
+                   rel="noopener noreferrer">
+                    Open EDR Template
+                </a>
+            </div>
         </div>
 
         <div class="edr-docs-sync-bar">
@@ -8251,6 +8372,51 @@ https://www.facebook.com/share/..."></textarea>
     <div class="edr-ss-dialog" role="dialog" aria-modal="true" aria-label="Saved CCTV screenshot">
         <button type="button" class="edr-ss-close" id="edrSavedScreenshotClose" aria-label="Close screenshot">×</button>
         <img id="edrSavedScreenshotImage" alt="Saved CCTV screenshot">
+    </div>
+</div>
+
+
+<!-- EDR History -->
+<div id="edrHistoryModal" class="maintenance-modal" aria-hidden="true">
+    <div class="maintenance-modal-backdrop" id="edrHistoryBackdrop"></div>
+    <div class="maintenance-drafts-dialog edr-history-dialog"
+         role="dialog"
+         aria-modal="true"
+         aria-labelledby="edrHistoryTitle">
+
+        <div class="maintenance-drafts-head">
+            <div>
+                <h3 id="edrHistoryTitle">EDR History</h3>
+                <p>
+                    Undo or redo recent EDR workspace changes. History is kept locally so Facebook links,
+                    form edits, selections, screenshots, and EDR actions can survive refresh.
+                </p>
+            </div>
+            <button type="button"
+                    id="edrHistoryClose"
+                    class="maintenance-modal-close static-close"
+                    aria-label="Close EDR History">×</button>
+        </div>
+
+        <div class="edr-history-toolbar">
+            <button type="button" class="edr-outline-btn" id="edrHistoryUndoBtn">Undo</button>
+            <button type="button" class="edr-outline-btn" id="edrHistoryRedoBtn">Redo</button>
+            <button type="button" class="edr-danger-btn" id="edrClearHistoryBtn">Clear History</button>
+        </div>
+
+        <div class="edr-history-meta">
+            <span id="edrHistoryCount">0 changes</span>
+            <span>Maximum 20 snapshots</span>
+        </div>
+
+        <div id="edrHistoryList" class="edr-history-list">
+            <div class="edr-empty-state">No history yet.</div>
+        </div>
+
+        <div class="edr-history-note">
+            Clear History removes old undo/redo snapshots only. It does not delete the current EDR List,
+            Facebook shared posts, or your Google Docs archive.
+        </div>
     </div>
 </div>
 
@@ -13029,6 +13195,493 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
 
     const EDR_DOCS_WEB_APP_KEY = "edr_google_docs_web_app_url_v1";
 
+    const EDR_WORKSPACE_DB = "cctv_edr_workspace_v2";
+    const EDR_WORKSPACE_STORE = "state";
+    const EDR_WORKSPACE_KEY = "current";
+    const EDR_HISTORY_KEY = "history";
+    const EDR_HISTORY_MAX = 20;
+
+    let edrHistory = [];
+    let edrHistoryIndex = -1;
+    let edrHistoryRestoring = false;
+    let edrFormHistoryTimer = null;
+    let edrFacebookHistoryTimer = null;
+
+
+    function openEdrWorkspaceDb() {
+        return new Promise((resolve, reject) => {
+            const request = indexedDB.open(EDR_WORKSPACE_DB, 1);
+
+            request.onupgradeneeded = () => {
+                const db = request.result;
+
+                if (!db.objectStoreNames.contains(EDR_WORKSPACE_STORE)) {
+                    db.createObjectStore(EDR_WORKSPACE_STORE, { keyPath: "key" });
+                }
+            };
+
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = () => reject(request.error);
+        });
+    }
+
+    async function edrDbGet(key) {
+        const db = await openEdrWorkspaceDb();
+
+        return new Promise((resolve, reject) => {
+            const tx = db.transaction(EDR_WORKSPACE_STORE, "readonly");
+            const request = tx.objectStore(EDR_WORKSPACE_STORE).get(key);
+
+            request.onsuccess = () => resolve(request.result ? request.result.value : null);
+            request.onerror = () => reject(request.error);
+            tx.oncomplete = () => db.close();
+        });
+    }
+
+    async function edrDbSet(key, value) {
+        const db = await openEdrWorkspaceDb();
+
+        return new Promise((resolve, reject) => {
+            const tx = db.transaction(EDR_WORKSPACE_STORE, "readwrite");
+            tx.objectStore(EDR_WORKSPACE_STORE).put({ key, value });
+
+            tx.oncomplete = () => {
+                db.close();
+                resolve(true);
+            };
+
+            tx.onerror = () => {
+                db.close();
+                reject(tx.error);
+            };
+        });
+    }
+
+    function cloneEdrData(value) {
+        try {
+            return structuredClone(value);
+        } catch (_) {
+            return JSON.parse(JSON.stringify(value));
+        }
+    }
+
+    function captureEdrFormState() {
+        return {
+            site: byId("edrSite")?.value || "Mabini Site A - 1st Floor",
+            date: byId("edrDate")?.value || "",
+            timeObserved: byId("edrTimeObserved")?.value || "",
+            supervisorRole: byId("edrSupervisorRole")?.value || "Team Leader",
+            supervisorName: byId("edrSupervisorName")?.value || "",
+            subjectType: byId("edrSubjectType")?.value || "Agent/s",
+            subjectName: byId("edrSubjectName")?.value || "",
+            account: byId("edrAccount")?.value || "",
+            incident: byId("edrIncident")?.value || "",
+            action: byId("edrActionRemarks")?.value || "",
+            clipLink: byId("edrClipLink")?.value || "",
+            screenshotData: currentScreenshot || "",
+            screenshotDirty: !!screenshotDirty,
+            editingId: editingId || null
+        };
+    }
+
+    function restoreEdrFormState(form = {}) {
+        if (!byId("edrSite")) return;
+
+        byId("edrSite").value = form.site || "Mabini Site A - 1st Floor";
+        byId("edrDate").value = form.date || todayLocal();
+        byId("edrTimeObserved").value = form.timeObserved || "";
+
+        setEdrChoice(
+            "edrSupervisorRole",
+            "edrSupervisorRoleButtons",
+            form.supervisorRole === "OM" ? "OM" : "Team Leader"
+        );
+        refreshSupervisorOptions();
+        byId("edrSupervisorName").value = form.supervisorName || "";
+
+        setEdrChoice(
+            "edrSubjectType",
+            "edrSubjectTypeButtons",
+            form.subjectType === "Team Leader" ? "Team Leader" : "Agent/s"
+        );
+        refreshSubjectOptions();
+        byId("edrSubjectName").value = form.subjectName || "";
+
+        byId("edrAccount").value = form.account || "";
+        byId("edrIncident").value = form.incident || "";
+        byId("edrActionRemarks").value = form.action || "";
+        byId("edrClipLink").value = form.clipLink || "";
+
+        editingId = form.editingId || null;
+        screenshotDirty = !!form.screenshotDirty;
+        setCurrentScreenshot(form.screenshotData || "", false);
+
+        if (editingId) {
+            byId("edrFormHeading").textContent = "Update EDR";
+            byId("edrSaveBtn").textContent = "Update EDR";
+            byId("edrCancelEditBtn").hidden = false;
+        } else {
+            byId("edrFormHeading").textContent = "Create EDR";
+            byId("edrSaveBtn").textContent = "Create EDR";
+            byId("edrCancelEditBtn").hidden = true;
+        }
+    }
+
+    function captureEdrWorkspaceState() {
+        return {
+            reports: cloneEdrData(edrReports),
+            facebookText: byId("edrFacebookText")?.value || "",
+            form: captureEdrFormState(),
+            tlOptions: cloneEdrData(tlOptions),
+            omOptions: cloneEdrData(omOptions),
+            accountOptions: cloneEdrData(accountOptions),
+            savedAt: new Date().toISOString()
+        };
+    }
+
+    async function persistEdrWorkspace() {
+        if (edrHistoryRestoring) return;
+
+        try {
+            await edrDbSet(EDR_WORKSPACE_KEY, captureEdrWorkspaceState());
+        } catch (error) {
+            console.error("EDR workspace autosave failed:", error);
+        }
+    }
+
+    function historyEntry(action) {
+        return {
+            action,
+            at: new Date().toISOString(),
+            state: captureEdrWorkspaceState()
+        };
+    }
+
+    async function persistEdrHistory() {
+        try {
+            await edrDbSet(EDR_HISTORY_KEY, {
+                entries: edrHistory,
+                index: edrHistoryIndex
+            });
+        } catch (error) {
+            console.error("EDR history save failed:", error);
+        }
+    }
+
+    function updateEdrHistoryButtons() {
+        const canUndo = edrHistoryIndex > 0;
+        const canRedo =
+            edrHistoryIndex >= 0 &&
+            edrHistoryIndex < edrHistory.length - 1;
+
+        [
+            byId("edrUndoBtn"),
+            byId("edrHistoryUndoBtn")
+        ].forEach(button => {
+            if (button) button.disabled = !canUndo;
+        });
+
+        [
+            byId("edrRedoBtn"),
+            byId("edrHistoryRedoBtn")
+        ].forEach(button => {
+            if (button) button.disabled = !canRedo;
+        });
+
+        const count = byId("edrHistoryCount");
+        if (count) {
+            const changes = Math.max(0, edrHistory.length - 1);
+            count.textContent = `${changes} change${changes === 1 ? "" : "s"}`;
+        }
+
+        renderEdrHistoryList();
+    }
+
+    function renderEdrHistoryList() {
+        const root = byId("edrHistoryList");
+        if (!root) return;
+
+        if (edrHistory.length <= 1) {
+            root.innerHTML = '<div class="edr-empty-state">No history yet.</div>';
+            return;
+        }
+
+        const entries = edrHistory
+            .map((entry, index) => ({ entry, index }))
+            .slice(1)
+            .reverse();
+
+        root.innerHTML = entries.map(({ entry, index }) => {
+            const date = new Date(entry.at);
+            const time = Number.isNaN(date.getTime())
+                ? ""
+                : date.toLocaleTimeString([], {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    second: "2-digit"
+                });
+
+            return `
+                <button type="button"
+                        class="edr-history-item ${index === edrHistoryIndex ? "current" : ""}"
+                        data-history-index="${index}">
+                    <span>${escapeHtml(entry.action || "EDR change")}</span>
+                    <small>${escapeHtml(time)}</small>
+                </button>
+            `;
+        }).join("");
+
+        root.querySelectorAll("[data-history-index]").forEach(button => {
+            button.addEventListener("click", () => {
+                restoreEdrHistoryIndex(Number(button.dataset.historyIndex), true);
+            });
+        });
+    }
+
+    async function pushEdrHistory(action) {
+        if (edrHistoryRestoring) return;
+
+        const entry = historyEntry(action);
+
+        if (edrHistoryIndex < edrHistory.length - 1) {
+            edrHistory = edrHistory.slice(0, edrHistoryIndex + 1);
+        }
+
+        edrHistory.push(entry);
+
+        if (edrHistory.length > EDR_HISTORY_MAX) {
+            edrHistory = edrHistory.slice(edrHistory.length - EDR_HISTORY_MAX);
+        }
+
+        edrHistoryIndex = edrHistory.length - 1;
+
+        await persistEdrWorkspace();
+        await persistEdrHistory();
+        updateEdrHistoryButtons();
+    }
+
+    function cloudComparableReport(report) {
+        if (!report) return null;
+
+        return {
+            id: report.id,
+            site: report.site || "",
+            date: report.date || "",
+            timeObserved: report.timeObserved || report.timeStart || "",
+            supervisorRole: report.supervisorRole || "Team Leader",
+            supervisorName: report.supervisorName || "",
+            subjectType: report.subjectType || "Agent/s",
+            subjectName: report.subjectName || "",
+            account: report.account || "",
+            incident: report.incident || "",
+            action: report.action || "",
+            clipLink: report.clipLink || "",
+            screenshotData: report.screenshotData || "",
+            screenshotFileId: report.screenshotFileId || ""
+        };
+    }
+
+    async function syncHistoryReportDiff(previousReports, nextReports) {
+        if (!isValidEdrDocsUrl(getEdrDocsWebAppUrl())) return;
+
+        const before = new Map(
+            (previousReports || []).map(report => [report.id, report])
+        );
+        const after = new Map(
+            (nextReports || []).map(report => [report.id, report])
+        );
+
+        for (const [id] of before) {
+            if (!after.has(id)) {
+                await deleteReportFromGoogleDocs(id);
+            }
+        }
+
+        for (const [id, report] of after) {
+            const oldReport = before.get(id);
+            const oldComparable = JSON.stringify(cloudComparableReport(oldReport));
+            const newComparable = JSON.stringify(cloudComparableReport(report));
+
+            if (!oldReport || oldComparable !== newComparable) {
+                if (!oldReport && report.screenshotData) {
+                    report.screenshotChanged = true;
+                    report.screenshotFileId = "";
+                }
+
+                await syncReportToGoogleDocs(report);
+            }
+        }
+    }
+
+    async function applyEdrWorkspaceState(state, syncCloud = false) {
+        if (!state) return;
+
+        const previousReports = cloneEdrData(edrReports);
+
+        edrHistoryRestoring = true;
+
+        try {
+            edrReports = cloneEdrData(state.reports || []);
+            tlOptions = cloneEdrData(state.tlOptions || tlOptions);
+            omOptions = cloneEdrData(state.omOptions || omOptions);
+            accountOptions = cloneEdrData(state.accountOptions || accountOptions);
+
+            refreshSupervisorOptions();
+            refreshSubjectOptions();
+            refreshAccountOptions();
+
+            if (byId("edrFacebookText")) {
+                byId("edrFacebookText").value = state.facebookText || "";
+            }
+
+            restoreEdrFormState(state.form || {});
+
+            renderList();
+            refreshOutput();
+
+            await edrDbSet(EDR_WORKSPACE_KEY, captureEdrWorkspaceState());
+        } finally {
+            edrHistoryRestoring = false;
+        }
+
+        if (syncCloud) {
+            await syncHistoryReportDiff(previousReports, edrReports);
+        }
+    }
+
+    async function restoreEdrHistoryIndex(index, syncCloud = true) {
+        if (
+            index < 0 ||
+            index >= edrHistory.length ||
+            index === edrHistoryIndex
+        ) return;
+
+        edrHistoryIndex = index;
+        await applyEdrWorkspaceState(edrHistory[index].state, syncCloud);
+        await persistEdrHistory();
+        updateEdrHistoryButtons();
+
+        showToast(
+            `Restored: ${edrHistory[index].action || "EDR change"}`,
+            "success"
+        );
+    }
+
+    async function undoEdrHistory() {
+        if (edrHistoryIndex <= 0) {
+            showToast("Nothing to undo.", "info");
+            return;
+        }
+
+        await restoreEdrHistoryIndex(edrHistoryIndex - 1, true);
+    }
+
+    async function redoEdrHistory() {
+        if (edrHistoryIndex >= edrHistory.length - 1) {
+            showToast("Nothing to redo.", "info");
+            return;
+        }
+
+        await restoreEdrHistoryIndex(edrHistoryIndex + 1, true);
+    }
+
+    async function clearEdrHistory() {
+        const approved = await appConfirm({
+            title: "Clear EDR history?",
+            message: "Undo/redo snapshots will be removed. Your current EDR List, Facebook posts, and Google Docs archive will stay.",
+            confirmText: "Clear History",
+            tone: "danger"
+        });
+
+        if (!approved) return;
+
+        const current = historyEntry("Current workspace");
+        edrHistory = [current];
+        edrHistoryIndex = 0;
+
+        await persistEdrHistory();
+        updateEdrHistoryButtons();
+
+        showToast("EDR history cleared. Current workspace was kept.", "info");
+    }
+
+    function openEdrHistoryModal() {
+        const modal = byId("edrHistoryModal");
+        if (!modal) return;
+
+        updateEdrHistoryButtons();
+        modal.classList.add("open");
+        modal.setAttribute("aria-hidden", "false");
+        document.body.classList.add("maintenance-modal-open");
+    }
+
+    function closeEdrHistoryModal() {
+        const modal = byId("edrHistoryModal");
+        if (!modal) return;
+
+        modal.classList.remove("open");
+        modal.setAttribute("aria-hidden", "true");
+        document.body.classList.remove("maintenance-modal-open");
+    }
+
+    async function restorePersistentEdrWorkspace() {
+        try {
+            const [workspace, history] = await Promise.all([
+                edrDbGet(EDR_WORKSPACE_KEY),
+                edrDbGet(EDR_HISTORY_KEY)
+            ]);
+
+            if (workspace) {
+                await applyEdrWorkspaceState(workspace, false);
+            }
+
+            if (
+                history &&
+                Array.isArray(history.entries) &&
+                history.entries.length
+            ) {
+                edrHistory = history.entries.slice(-EDR_HISTORY_MAX);
+                edrHistoryIndex = Math.min(
+                    Number.isInteger(history.index)
+                        ? history.index
+                        : edrHistory.length - 1,
+                    edrHistory.length - 1
+                );
+            } else {
+                edrHistory = [historyEntry("Workspace opened")];
+                edrHistoryIndex = 0;
+                await persistEdrHistory();
+            }
+
+            updateEdrHistoryButtons();
+            return !!workspace;
+        } catch (error) {
+            console.error("EDR workspace restore failed:", error);
+
+            edrHistory = [historyEntry("Workspace opened")];
+            edrHistoryIndex = 0;
+            updateEdrHistoryButtons();
+
+            return false;
+        }
+    }
+
+    function scheduleFormHistory() {
+        clearTimeout(edrFormHistoryTimer);
+
+        edrFormHistoryTimer = setTimeout(() => {
+            pushEdrHistory("Edited EDR form");
+        }, 700);
+    }
+
+    function scheduleFacebookHistory() {
+        clearTimeout(edrFacebookHistoryTimer);
+
+        edrFacebookHistoryTimer = setTimeout(() => {
+            pushEdrHistory("Updated Facebook shared posts");
+        }, 650);
+    }
+
     function getEdrDocsWebAppUrl() {
         return String(localStorage.getItem(EDR_DOCS_WEB_APP_KEY) || "").trim();
     }
@@ -13380,6 +14033,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
 
             renderList();
             refreshOutput();
+            await persistEdrWorkspace();
 
             setEdrDocsStatus(
                 `Connected · ${remote.length} saved EDR${remote.length === 1 ? "" : "s"} loaded from Google Docs.`,
@@ -13789,6 +14443,8 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         renderList();
         refreshOutput();
 
+        await pushEdrHistory(isUpdate ? "Updated EDR" : "Created EDR");
+
         showToast(
             isUpdate ? "EDR updated." : "EDR created and selected.",
             "success"
@@ -13864,6 +14520,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
 
         renderList();
         refreshOutput();
+        await pushEdrHistory("Deleted EDR");
         showToast("EDR deleted.", "info");
 
         if (isValidEdrDocsUrl(getEdrDocsWebAppUrl())) {
@@ -13954,6 +14611,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
 
                 renderList();
                 refreshOutput();
+                await pushEdrHistory(report.selected ? "Selected EDR" : "Unselected EDR");
             });
 
             card.querySelector(".edr-row-view").addEventListener("click", () => toggleExpanded(id));
@@ -14117,13 +14775,14 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         }
     }
 
-    function selectAll(value) {
+    async function selectAll(value) {
         edrReports.forEach(report => {
             report.selected = value;
         });
 
         renderList();
         refreshOutput();
+        await pushEdrHistory(value ? "Selected all EDRs" : "Unselected all EDRs");
     }
 
     async function clearAll() {
@@ -14144,6 +14803,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
 
         renderList();
         refreshOutput();
+        await pushEdrHistory("Cleared Teams-Ready Output");
 
         showToast("Teams-Ready Output cleared. Saved EDR List was kept.", "info");
     }
@@ -14318,6 +14978,9 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
 
                 renderList();
                 refreshOutput();
+                await pushEdrHistory(
+                    report.screenshotFileId ? "Replaced EDR screenshot" : "Added EDR screenshot"
+                );
 
                 if (isValidEdrDocsUrl(getEdrDocsWebAppUrl())) {
                     await syncReportToGoogleDocs(report);
@@ -14353,6 +15016,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
 
         renderList();
         refreshOutput();
+        await pushEdrHistory("Removed EDR screenshot");
 
         if (isValidEdrDocsUrl(getEdrDocsWebAppUrl())) {
             await syncReportToGoogleDocs(report);
@@ -14401,6 +15065,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
 
         refreshSupervisorOptions();
         refreshSubjectOptions();
+        await pushEdrHistory(`Added ${role} option`);
         showToast(`${value} added to the ${role} list for this session.`, "success");
     }
 
@@ -14437,10 +15102,11 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         byId("edrSupervisorName").value = "";
         refreshSupervisorOptions();
         refreshSubjectOptions();
+        await pushEdrHistory(`Removed ${role} option`);
         showToast(`${value} removed from the current ${role} list.`, "info");
     }
 
-    function addAccountOption() {
+    async function addAccountOption() {
         const value = clean(byId("edrAccount").value);
 
         if (!value) {
@@ -14456,6 +15122,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         }
 
         refreshAccountOptions();
+        await pushEdrHistory("Added campaign option");
         showToast(`${value} added to the campaign list for this session.`, "success");
     }
 
@@ -14485,6 +15152,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         accountOptions = result.list;
         byId("edrAccount").value = "";
         refreshAccountOptions();
+        await pushEdrHistory("Removed campaign option");
 
         showToast(`${value} removed from the current campaign list.`, "info");
     }
@@ -14537,11 +15205,15 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
     wireEdrChoiceGroup("edrSupervisorRoleButtons", "edrSupervisorRole", () => {
         byId("edrSupervisorName").value = "";
         refreshSupervisorOptions();
+        persistEdrWorkspace();
+        scheduleFormHistory();
     });
 
     wireEdrChoiceGroup("edrSubjectTypeButtons", "edrSubjectType", () => {
         byId("edrSubjectName").value = "";
         refreshSubjectOptions();
+        persistEdrWorkspace();
+        scheduleFormHistory();
     });
 
     const screenshotZone = byId("edrScreenshotZone");
@@ -14613,9 +15285,13 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
     });
 
     byId("edrSaveBtn").addEventListener("click", saveReport);
-    byId("edrClearFormBtn").addEventListener("click", () => clearForm());
-    byId("edrCancelEditBtn").addEventListener("click", () => {
+    byId("edrClearFormBtn").addEventListener("click", async () => {
         clearForm();
+        await pushEdrHistory("Cleared EDR form");
+    });
+    byId("edrCancelEditBtn").addEventListener("click", async () => {
+        clearForm();
+        await pushEdrHistory("Cancelled EDR edit");
         showToast("Edit cancelled.", "info");
     });
 
@@ -14626,12 +15302,38 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
 
     byId("edrSelectAllBtn").addEventListener("click", () => selectAll(true));
     byId("edrUnselectAllBtn").addEventListener("click", () => selectAll(false));
-    byId("edrFacebookText").addEventListener("input", refreshOutput);
+    byId("edrFacebookText").addEventListener("input", () => {
+        refreshOutput();
+        persistEdrWorkspace();
+        scheduleFacebookHistory();
+    });
     byId("edrClipLink").addEventListener("input", () => {
         if (editingId) return;
     });
     byId("edrCopyAllBtn").addEventListener("click", copyAll);
     byId("edrClearAllBtn").addEventListener("click", clearAll);
+
+    [
+        "edrSite",
+        "edrDate",
+        "edrTimeObserved",
+        "edrSupervisorName",
+        "edrSubjectName",
+        "edrAccount",
+        "edrIncident",
+        "edrActionRemarks",
+        "edrClipLink"
+    ].forEach(id => {
+        byId(id)?.addEventListener("input", () => {
+            persistEdrWorkspace();
+            scheduleFormHistory();
+        });
+
+        byId(id)?.addEventListener("change", () => {
+            persistEdrWorkspace();
+            scheduleFormHistory();
+        });
+    });
 
     byId("edrSavedScreenshotClose")?.addEventListener("click", closeSavedScreenshotModal);
     byId("edrSavedScreenshotBackdrop")?.addEventListener("click", closeSavedScreenshotModal);
@@ -14643,7 +15345,24 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         ) {
             closeSavedScreenshotModal();
         }
+
+        if (
+            event.key === "Escape" &&
+            byId("edrHistoryModal")?.classList.contains("open")
+        ) {
+            closeEdrHistoryModal();
+        }
     });
+
+    byId("edrUndoBtn")?.addEventListener("click", undoEdrHistory);
+    byId("edrRedoBtn")?.addEventListener("click", redoEdrHistory);
+    byId("edrHistoryBtn")?.addEventListener("click", openEdrHistoryModal);
+
+    byId("edrHistoryUndoBtn")?.addEventListener("click", undoEdrHistory);
+    byId("edrHistoryRedoBtn")?.addEventListener("click", redoEdrHistory);
+    byId("edrClearHistoryBtn")?.addEventListener("click", clearEdrHistory);
+    byId("edrHistoryClose")?.addEventListener("click", closeEdrHistoryModal);
+    byId("edrHistoryBackdrop")?.addEventListener("click", closeEdrHistoryModal);
 
     byId("edrDocsSetupBtn").addEventListener("click", openEdrDocsSetup);
     byId("edrDocsReloadBtn").addEventListener("click", () => loadSavedEdrsFromDocs(true));
@@ -14652,6 +15371,21 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
     byId("edrDocsSaveSetup").addEventListener("click", saveEdrDocsSetup);
     byId("edrDocsTestSetup").addEventListener("click", () => testEdrDocsConnection(true, byId("edrDocsWebAppUrl").value));
     byId("edrDocsClearSetup").addEventListener("click", clearEdrDocsSetup);
+
+    document.addEventListener("keydown", event => {
+        if (!byId("edrPanel")?.classList.contains("active")) return;
+        if (!(event.ctrlKey || event.metaKey)) return;
+
+        const key = String(event.key || "").toLowerCase();
+
+        if (key === "z" && !event.shiftKey) {
+            event.preventDefault();
+            undoEdrHistory();
+        } else if (key === "y" || (key === "z" && event.shiftKey)) {
+            event.preventDefault();
+            redoEdrHistory();
+        }
+    });
 
     byId("edrDocsWebAppUrl").addEventListener("keydown", event => {
         if (event.key === "Enter") {
@@ -14685,16 +15419,18 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
     renderList();
     refreshOutput();
 
-    if (isValidEdrDocsUrl(getEdrDocsWebAppUrl())) {
-        testEdrDocsConnection(false).then(connected => {
-            if (connected) loadSavedEdrsFromDocs(false);
-        });
-    } else {
-        setEdrDocsStatus(
-            "Not connected. Connect Google Docs once to auto-save and reload your EDR list.",
-            ""
-        );
-    }
+    restorePersistentEdrWorkspace().then(() => {
+        if (isValidEdrDocsUrl(getEdrDocsWebAppUrl())) {
+            testEdrDocsConnection(false).then(connected => {
+                if (connected) loadSavedEdrsFromDocs(false);
+            });
+        } else {
+            setEdrDocsStatus(
+                "Not connected. Connect Google Docs once to auto-save and reload your EDR list.",
+                ""
+            );
+        }
+    });
 })();
 </script>
 
