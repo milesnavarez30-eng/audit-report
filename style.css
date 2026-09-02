@@ -6630,7 +6630,7 @@ body.ops-redesign-v3 select:focus-visible {
     body.ops-redesign-v3 *,
     body.ops-redesign-v3 *::before,
     body.ops-redesign-v3 *::after {
-        scroll-behavior: auto !important;
+        scroll-behavior: auto !important; 
         transition-duration: .01ms !important;
         animation-duration: .01ms !important;
         animation-iteration-count: 1 !important;
