@@ -5598,7 +5598,7 @@
 </style>
 
 
-    <link rel="stylesheet" href="./style.css?v=20260902-edr-docs-new-receiver-1">
+    <link rel="stylesheet" href="./style.css?v=20260902-maintenance-history-crud-1">
 
 <style id="edrCriticalStyles">
 /* =========================================================
@@ -9010,6 +9010,140 @@ body.dark-mode #masterAssignedHrTable tbody tr:hover td {
     box-shadow: 0 0 0 3px rgba(37,99,235,.09) !important;
 }
 </style>
+<style id="workflowCrudHistoryFixCritical">
+
+/* Maintenance Report: hide the data table only, keep screenshots visible */
+.eod-block-data.is-hidden {
+    display: none !important;
+}
+
+.eod-data-hidden-note {
+    margin: 4px 0 10px;
+    padding: 7px 9px;
+    border: 1px dashed var(--admin-line, #d9e1ea);
+    border-radius: 7px;
+    background: var(--admin-panel-soft, #f8fafc);
+    color: var(--admin-muted, #64748b);
+    font: 600 8.5px/1.35 "Inter", sans-serif;
+}
+
+/* Master List HR CRUD */
+.master-hr-crud-form {
+    display: grid;
+    grid-template-columns: 160px minmax(220px, 1fr) minmax(200px, .8fr) auto;
+    gap: 7px;
+    align-items: end;
+    margin-bottom: 7px;
+    padding: 9px;
+    border: 1px solid var(--admin-line, #e2e8f0);
+    border-radius: 8px;
+    background: var(--admin-panel-soft, #f8fafc);
+}
+
+.master-hr-crud-form label > span {
+    display: block;
+    margin-bottom: 4px;
+    color: var(--admin-muted, #64748b);
+    font: 750 7.5px/1 "Inter", sans-serif;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+}
+
+.master-hr-crud-form input[type="text"] {
+    width: 100%;
+    min-height: 34px;
+    box-sizing: border-box;
+    padding: 6px 8px;
+    font: 600 9px/1.2 "Inter", sans-serif !important;
+}
+
+.master-hr-crud-actions {
+    display: flex;
+    gap: 5px;
+}
+
+.master-hr-crud-actions button {
+    min-height: 34px !important;
+    white-space: nowrap;
+}
+
+.master-hr-crud-status {
+    min-height: 16px;
+    margin: 0 0 7px;
+    color: var(--admin-muted, #64748b);
+    font: 650 8px/1.3 "Inter", sans-serif;
+}
+
+.master-hr-crud-status.is-success {
+    color: #059669;
+}
+
+.master-hr-crud-status.is-error {
+    color: #dc2626;
+}
+
+.master-hr-crud-status.is-local {
+    color: #d97706;
+}
+
+.master-hr-row-actions {
+    display: flex;
+    gap: 4px;
+}
+
+.master-hr-edit-btn,
+.master-hr-delete-btn {
+    min-height: 25px;
+    padding: 4px 7px;
+    border-radius: 5px;
+    background: transparent;
+    font: 750 7.5px/1 "Inter", sans-serif;
+    cursor: pointer;
+}
+
+.master-hr-edit-btn {
+    border: 1px solid rgba(37,99,235,.28);
+    color: #2563eb;
+}
+
+.master-hr-delete-btn {
+    border: 1px solid rgba(220,38,38,.28);
+    color: #dc2626;
+}
+
+#masterAssignedHrTable th:nth-child(4),
+#masterAssignedHrTable td:nth-child(4) {
+    width: 110px;
+}
+
+/* Global History: select and restore a specific change */
+.global-history-item {
+    grid-template-columns: 18px minmax(0, 1fr) auto !important;
+    cursor: pointer;
+}
+
+.global-history-item > input[type="radio"] {
+    width: 14px;
+    height: 14px;
+    margin: 1px 0 0;
+    accent-color: #2563eb;
+}
+
+.global-history-item.selected {
+    border-color: rgba(37,99,235,.42) !important;
+    background: rgba(37,99,235,.07) !important;
+}
+
+@media (max-width: 850px) {
+    .master-hr-crud-form {
+        grid-template-columns: 1fr;
+    }
+
+    .master-hr-crud-actions {
+        justify-content: flex-start;
+    }
+}
+</style>
 </head>
 <body>
 
@@ -9559,6 +9693,33 @@ body.dark-mode #masterAssignedHrTable tbody tr:hover td {
                 <span class="master-simple-count" id="masterAssignedHrCount">0</span>
             </div>
 
+            <div class="master-hr-crud-form">
+                <input type="hidden" id="masterHrEditId">
+                <input type="hidden" id="masterHrEditSource">
+
+                <label>
+                    <span>Site</span>
+                    <input type="text" id="masterHrSiteInput" placeholder="Mabini Site">
+                </label>
+
+                <label>
+                    <span>Team / OM / Campaign</span>
+                    <input type="text" id="masterHrTeamInput" placeholder="Team Mirah / OM Jordan">
+                </label>
+
+                <label>
+                    <span>HR Assigned</span>
+                    <input type="text" id="masterHrAssignedInput" placeholder="HR name">
+                </label>
+
+                <div class="master-hr-crud-actions">
+                    <button type="button" class="edr-primary-btn" id="masterHrSaveBtn">Add</button>
+                    <button type="button" class="edr-outline-btn" id="masterHrCancelBtn">Clear</button>
+                </div>
+            </div>
+
+            <div id="masterHrCrudStatus" class="master-hr-crud-status"></div>
+
             <div class="master-search-row">
                 <input type="search"
                        id="masterHrSearch"
@@ -9574,6 +9735,7 @@ body.dark-mode #masterAssignedHrTable tbody tr:hover td {
                             <th>Site</th>
                             <th>Team / OM / Campaign</th>
                             <th>HR Assigned</th>
+                            <th>Action</th>
                         </tr>
                     </thead>
                     <tbody id="masterAssignedHrBody"></tbody>
@@ -13249,7 +13411,8 @@ https://www.facebook.com/share/..."></textarea>
             id: uid(),
             lanesText: "",
             remarks: [""],
-            screenshots: []
+            screenshots: [],
+            dataHidden: false
         };
     }
 
@@ -13692,7 +13855,37 @@ https://www.facebook.com/share/..."></textarea>
 
         return rows
             .filter(row => row.some(cell => normalizeCell(cell) !== ""))
-            .map(alignRow);
+            .map(alignRow)
+            .filter(row => {
+                const [
+                    timestamp,
+                    date,
+                    tl,
+                    account,
+                    site,
+                    station,
+                    issue
+                ] = row.map(normalizeCell);
+
+                // Reject title/summary/accidental single-cell rows.
+                // This is the type of row that previously reached the tracker
+                // as one lone timestamp stretched across the sheet.
+                const nonEmpty = row.filter(cell => normalizeCell(cell) !== "").length;
+                if (nonEmpty < 5) return false;
+
+                // A real maintenance tracker row must have the physical
+                // station + issue, and at least one owner/account reference.
+                if (!site || !station || !issue) return false;
+                if (!tl && !account) return false;
+
+                // If a timestamp exists, keep only recognizable timestamps.
+                if (timestamp && !looksLikeTimestamp(timestamp)) return false;
+
+                // If a date exists, keep only recognizable dates.
+                if (date && !looksLikeDateOnly(date)) return false;
+
+                return true;
+            });
     }
 
 
@@ -14122,17 +14315,24 @@ https://www.facebook.com/share/..."></textarea>
                     </div>
                     <div class="working-badge">Active Block</div>
                     <div class="block-actions">
-<button type="button" class="btn-eod-outline duplicate-block"><span>Duplicate</span></button>
+                        <button type="button" class="btn-eod-outline toggle-block-data">
+                            <span>${block.dataHidden ? "Show Data" : "Hide Data"}</span>
+                        </button>
+                        <button type="button" class="btn-eod-outline duplicate-block"><span>Duplicate</span></button>
                         <button type="button" class="btn-eod-danger remove-block"><span>Remove</span></button>
                     </div>
                 </div>
 
-                <label>Paste Lanes / IT Sheet Rows</label>
-                <textarea class="eod-paste-area" placeholder="Paste the copied IT sheet lanes/rows here. The pasted data stays hidden for a cleaner workspace but will still appear in the PDF.">${escapeHtml(block.lanesText)}</textarea>
+                <div class="eod-block-data ${block.dataHidden ? "is-hidden" : ""}">
+                    <label>Paste Lanes / IT Sheet Rows</label>
+                    <textarea class="eod-paste-area" placeholder="Paste the copied IT sheet lanes/rows here. The pasted data stays hidden for a cleaner workspace but will still appear in the PDF.">${escapeHtml(block.lanesText)}</textarea>
 
-                <div class="eod-mini-preview">
-                    ${tableHtml(block.lanesText, false)}
+                    <div class="eod-mini-preview">
+                        ${tableHtml(block.lanesText, false)}
+                    </div>
                 </div>
+
+                ${block.dataHidden ? '<div class="eod-data-hidden-note">Data table hidden. Screenshot proof remains visible below.</div>' : ""}
 
                 <div class="eod-proof-zone" tabindex="0">
                     <p>
@@ -14225,9 +14425,20 @@ https://www.facebook.com/share/..."></textarea>
             });
             zone.addEventListener("focusin", activatePasteTarget);
 
-            textarea.addEventListener("input", () => {
-                block.lanesText = textarea.value;
-                card.querySelector(".eod-mini-preview").innerHTML = tableHtml(block.lanesText, false);
+            if (textarea) {
+                textarea.addEventListener("input", () => {
+                    block.lanesText = textarea.value;
+                    const preview = card.querySelector(".eod-mini-preview");
+                    if (preview) {
+                        preview.innerHTML = tableHtml(block.lanesText, false);
+                    }
+                    queueSave();
+                });
+            }
+
+            card.querySelector(".toggle-block-data")?.addEventListener("click", () => {
+                block.dataHidden = !block.dataHidden;
+                render();
                 queueSave();
             });
 
@@ -15048,6 +15259,12 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
             if (!Array.isArray(state.blocks) || !state.blocks.length) {
                 state.blocks = [makeBlock()];
             }
+
+            state.blocks.forEach(block => {
+                if (typeof block.dataHidden !== "boolean") {
+                    block.dataHidden = false;
+                }
+            });
 
             $("simpleEodSite").value =
                 state.title || "Mabini Site A - 1st & 2nd Floor";
@@ -18293,6 +18510,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
     const CACHE_STORE = "state";
     const CACHE_KEY = "latest";
     const NOTEPAD_KEY = "cctv_master_pending_miles_notepad_v1";
+    const HR_LOCAL_KEY = "cctv_master_hr_local_crud_v1";
 
     const BUILT_IN_HR_ASSIGNMENTS = [
         { id: "seed_hr_1", site: 'Mabini Site', omTeam: 'Team Mirah', hr: 'Marianne Perez', source: "seed" },
@@ -18337,6 +18555,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
     let payload = null;
     let pendingMiles = [];
     let hrAssignments = [];
+    let localHrChanges = loadLocalHrChanges();
 
     const $ = id => document.getElementById(id);
 
@@ -18362,6 +18581,43 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
             .replace(/>/g, "&gt;")
             .replace(/"/g, "&quot;")
             .replace(/'/g, "&#039;");
+    }
+
+    function loadLocalHrChanges() {
+        try {
+            const value = JSON.parse(localStorage.getItem(HR_LOCAL_KEY) || "[]");
+            return Array.isArray(value) ? value : [];
+        } catch (_) {
+            return [];
+        }
+    }
+
+    function saveLocalHrChanges() {
+        localStorage.setItem(HR_LOCAL_KEY, JSON.stringify(localHrChanges));
+    }
+
+    function hrGroupKey(item) {
+        return [
+            norm(item?.site),
+            norm(item?.omTeam)
+        ].join("|");
+    }
+
+    async function postHrAction(body) {
+        try {
+            await fetch(API_URL, {
+                method: "POST",
+                mode: "no-cors",
+                headers: {
+                    "Content-Type": "text/plain;charset=utf-8"
+                },
+                body: JSON.stringify(body)
+            });
+            return true;
+        } catch (error) {
+            console.warn("HR Google Sheets write failed:", error);
+            return false;
+        }
     }
 
     function rowsFrom(name) {
@@ -18494,15 +18750,28 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
             ...parseWebHrRows()
         ];
 
-        const seen = new Set();
+        const map = new Map();
 
-        hrAssignments = candidates
-            .filter(item => {
-                const key = assignmentKey(item);
-                if (seen.has(key)) return false;
-                seen.add(key);
-                return true;
-            })
+        // Base/reference and live sheet rows.
+        candidates.forEach(item => {
+            const key = hrGroupKey(item);
+            if (!key || key === "|") return;
+            map.set(key, { ...item });
+        });
+
+        // Local CRUD has highest priority so edits are visible immediately.
+        localHrChanges.forEach(item => {
+            const key = hrGroupKey(item);
+            if (!key || key === "|") return;
+
+            if (item.deleted) {
+                map.delete(key);
+            } else {
+                map.set(key, { ...item, source: item.source || "local" });
+            }
+        });
+
+        hrAssignments = [...map.values()]
             .sort((a, b) =>
                 clean(a.site).localeCompare(clean(b.site)) ||
                 clean(a.omTeam).localeCompare(clean(b.omTeam))
@@ -18577,13 +18846,80 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
             ].join(" "));
 
             return `
-                <tr data-search="${esc(search)}">
+                <tr data-search="${esc(search)}"
+                    data-id="${esc(item.id || "")}"
+                    data-source="${esc(item.source || "")}">
                     <td>${esc(item.site)}</td>
                     <td>${esc(item.omTeam)}</td>
                     <td>${esc(item.hr)}</td>
+                    <td>
+                        <div class="master-hr-row-actions">
+                            <button type="button" class="master-hr-edit-btn">Edit</button>
+                            <button type="button" class="master-hr-delete-btn">Delete</button>
+                        </div>
+                    </td>
                 </tr>
             `;
         }).join("");
+
+        body.querySelectorAll("tr[data-search]").forEach(row => {
+            const item = hrAssignments.find(entry =>
+                (entry.id || "") === (row.dataset.id || "") &&
+                (entry.source || "") === (row.dataset.source || "")
+            ) || hrAssignments.find(entry =>
+                norm(entry.site) === norm(row.children[0]?.textContent) &&
+                norm(entry.omTeam) === norm(row.children[1]?.textContent)
+            );
+
+            if (!item) return;
+
+            row.querySelector(".master-hr-edit-btn")?.addEventListener("click", () => {
+                $("masterHrEditId").value = item.id || "";
+                $("masterHrEditSource").value = item.source || "";
+                $("masterHrSiteInput").value = item.site || "";
+                $("masterHrTeamInput").value = item.omTeam || "";
+                $("masterHrAssignedInput").value = item.hr || "";
+                $("masterHrSaveBtn").textContent = "Update";
+                $("masterHrSiteInput").focus();
+            });
+
+            row.querySelector(".master-hr-delete-btn")?.addEventListener("click", async () => {
+                const approved = await window.appConfirm({
+                    title: "Delete HR assignment?",
+                    message: `${item.site} · ${item.omTeam} · ${item.hr}`,
+                    confirmText: "Delete Assignment",
+                    tone: "danger"
+                });
+
+                if (!approved) return;
+
+                const tombstone = {
+                    id: item.id || ("deleted_" + Date.now().toString(36)),
+                    site: item.site,
+                    omTeam: item.omTeam,
+                    hr: item.hr,
+                    deleted: true,
+                    source: "local"
+                };
+
+                localHrChanges = localHrChanges.filter(change =>
+                    hrGroupKey(change) !== hrGroupKey(item)
+                );
+                localHrChanges.push(tombstone);
+                saveLocalHrChanges();
+
+                if (item.source === "web" && item.id) {
+                    await postHrAction({
+                        action: "deleteHrAssignment",
+                        id: item.id
+                    });
+                }
+
+                derive();
+                renderHrAssignments();
+                setHrCrudStatus("Assignment removed.", "success");
+            });
+        });
 
         applyHrSearch();
     }
@@ -18811,6 +19147,96 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         $("masterNotepadStatus").textContent = "Notepad cleared";
     });
 
+    function clearHrCrudForm() {
+        $("masterHrEditId").value = "";
+        $("masterHrEditSource").value = "";
+        $("masterHrSiteInput").value = "";
+        $("masterHrTeamInput").value = "";
+        $("masterHrAssignedInput").value = "";
+        $("masterHrSaveBtn").textContent = "Add";
+    }
+
+    function setHrCrudStatus(message, kind = "") {
+        const el = $("masterHrCrudStatus");
+        if (!el) return;
+        el.textContent = message || "";
+        el.className = "master-hr-crud-status" + (kind ? " is-" + kind : "");
+    }
+
+    $("masterHrSaveBtn")?.addEventListener("click", async () => {
+        const site = clean($("masterHrSiteInput").value);
+        const omTeam = clean($("masterHrTeamInput").value);
+        const hr = clean($("masterHrAssignedInput").value);
+        const editId = clean($("masterHrEditId").value);
+
+        if (!site || !omTeam || !hr) {
+            setHrCrudStatus("Site, Team / OM / Campaign, and HR are required.", "error");
+            return;
+        }
+
+        const id = editId && !editId.startsWith("seed_")
+            ? editId
+            : "web_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 7);
+
+        const record = {
+            id,
+            site,
+            omTeam,
+            hr,
+            deleted: false,
+            source: "local"
+        };
+
+        // If the edited row changed its Site/Team key, hide the old key.
+        const oldItem = hrAssignments.find(item => item.id === editId);
+        if (oldItem && hrGroupKey(oldItem) !== hrGroupKey(record)) {
+            localHrChanges = localHrChanges.filter(change =>
+                hrGroupKey(change) !== hrGroupKey(oldItem)
+            );
+            localHrChanges.push({
+                id: oldItem.id || ("deleted_" + Date.now().toString(36)),
+                site: oldItem.site,
+                omTeam: oldItem.omTeam,
+                hr: oldItem.hr,
+                deleted: true,
+                source: "local"
+            });
+        }
+
+        localHrChanges = localHrChanges.filter(change =>
+            hrGroupKey(change) !== hrGroupKey(record)
+        );
+        localHrChanges.push(record);
+        saveLocalHrChanges();
+
+        const sent = await postHrAction({
+            action: "upsertHrAssignment",
+            record: {
+                id,
+                site,
+                omTeam,
+                hr,
+                remarks: ""
+            }
+        });
+
+        derive();
+        renderHrAssignments();
+        clearHrCrudForm();
+
+        setHrCrudStatus(
+            sent
+                ? "Saved. Google Sheets sync will confirm it on refresh."
+                : "Saved on this browser; Google Sheets write could not be confirmed.",
+            sent ? "success" : "local"
+        );
+    });
+
+    $("masterHrCancelBtn")?.addEventListener("click", () => {
+        clearHrCrudForm();
+        setHrCrudStatus("");
+    });
+
     $("masterHrSearch")?.addEventListener("input", applyHrSearch);
 
     $("masterHrSearchClear")?.addEventListener("click", () => {
@@ -18834,7 +19260,8 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
 
         snapshot() {
             return {
-                note: $("masterPendingNotepad")?.value || ""
+                note: $("masterPendingNotepad")?.value || "",
+                hrLocal: JSON.parse(JSON.stringify(localHrChanges || []))
             };
         },
 
@@ -18846,6 +19273,15 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
             }
 
             localStorage.setItem(NOTEPAD_KEY, note);
+
+            localHrChanges = Array.isArray(snapshot?.hrLocal)
+                ? JSON.parse(JSON.stringify(snapshot.hrLocal))
+                : [];
+            saveLocalHrChanges();
+
+            derive();
+            renderHrAssignments();
+
             $("masterNotepadStatus").textContent = "Restored from History";
         }
     };
@@ -18894,6 +19330,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         <div class="global-history-toolbar">
             <button type="button" class="edr-outline-btn" id="globalUndoBtn">Undo</button>
             <button type="button" class="edr-outline-btn" id="globalRedoBtn">Redo</button>
+            <button type="button" class="edr-outline-btn" id="globalRestoreSelectedBtn" disabled>Restore Selected</button>
             <button type="button" class="edr-danger-btn" id="globalClearHistoryBtn">Clear History</button>
         </div>
         <div class="global-history-summary">
@@ -18904,7 +19341,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
             <div class="edr-empty-state">No history yet.</div>
         </div>
         <div class="global-history-note">
-            Clear History removes undo/redo snapshots only. Your current data and Google Docs archive stay untouched.
+            Select one history item and use Restore Selected. Deleted rows/blocks/screenshots are restored without rolling back unrelated newer work when possible.
         </div>
     </div>
 </div>
@@ -19067,6 +19504,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
     let suppress = false;
     let pendingWorkspace = null;
     let pendingAction = null;
+    let selectedHistoryId = null;
 
     const $ = id => document.getElementById(id);
 
@@ -19247,6 +19685,234 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         }
     }
 
+    function collectionDescriptor(workspace, snapshot) {
+        if (workspace === "cctv") {
+            return {
+                items: Array.isArray(snapshot?.entries) ? snapshot.entries : [],
+                apply(target, items) {
+                    target.entries = items;
+                }
+            };
+        }
+
+        if (workspace === "maintenanceReport") {
+            return {
+                items: Array.isArray(snapshot?.blocks) ? snapshot.blocks : [],
+                apply(target, items) {
+                    target.blocks = items;
+                }
+            };
+        }
+
+        if (workspace === "pendingReports") {
+            return {
+                items: Array.isArray(snapshot) ? snapshot : [],
+                apply(target, items) {
+                    return items;
+                }
+            };
+        }
+
+        if (workspace === "edr") {
+            return {
+                items: Array.isArray(snapshot?.reports) ? snapshot.reports : [],
+                apply(target, items) {
+                    target.reports = items;
+                }
+            };
+        }
+
+        if (workspace === "aiSorter") {
+            return {
+                items: Array.isArray(snapshot?.rows) ? snapshot.rows : [],
+                apply(target, items) {
+                    target.rows = items;
+                }
+            };
+        }
+
+        if (workspace === "masterlist") {
+            return {
+                items: Array.isArray(snapshot?.hrLocal) ? snapshot.hrLocal : [],
+                apply(target, items) {
+                    target.hrLocal = items;
+                }
+            };
+        }
+
+        return null;
+    }
+
+    function historyItemIdentity(item) {
+        if (item && typeof item === "object") {
+            if (item.id) return "id:" + item.id;
+            if (item.sourceEdrId) return "edr:" + item.sourceEdrId;
+        }
+
+        return "json:" + stable(item);
+    }
+
+    function mergeDeletedItems(beforeItems, afterItems, currentItems) {
+        const afterIds = new Set(afterItems.map(historyItemIdentity));
+        const currentIds = new Set(currentItems.map(historyItemIdentity));
+
+        const deleted = beforeItems.filter(item =>
+            !afterIds.has(historyItemIdentity(item))
+        );
+
+        if (!deleted.length) {
+            return {
+                changed: false,
+                items: currentItems,
+                count: 0
+            };
+        }
+
+        const merged = currentItems.slice();
+
+        deleted.forEach(item => {
+            const id = historyItemIdentity(item);
+            if (!currentIds.has(id)) {
+                merged.push(clone(item));
+                currentIds.add(id);
+            }
+        });
+
+        return {
+            changed: merged.length !== currentItems.length,
+            items: merged,
+            count: deleted.length
+        };
+    }
+
+    function restoreNestedRemovedContent(workspace, before, after, current) {
+        let restored = 0;
+
+        // Maintenance screenshots removed from an existing block.
+        if (workspace === "maintenanceReport") {
+            const beforeBlocks = Array.isArray(before?.blocks) ? before.blocks : [];
+            const afterBlocks = Array.isArray(after?.blocks) ? after.blocks : [];
+            const currentBlocks = Array.isArray(current?.blocks) ? current.blocks : [];
+
+            beforeBlocks.forEach(beforeBlock => {
+                const afterBlock = afterBlocks.find(block => block.id === beforeBlock.id);
+                const currentBlock = currentBlocks.find(block => block.id === beforeBlock.id);
+                if (!afterBlock || !currentBlock) return;
+
+                const beforeShots = Array.isArray(beforeBlock.screenshots) ? beforeBlock.screenshots : [];
+                const afterShots = Array.isArray(afterBlock.screenshots) ? afterBlock.screenshots : [];
+                const currentShots = Array.isArray(currentBlock.screenshots) ? currentBlock.screenshots : [];
+
+                const afterIds = new Set(afterShots.map(historyItemIdentity));
+                const currentIds = new Set(currentShots.map(historyItemIdentity));
+
+                beforeShots.forEach(shot => {
+                    const id = historyItemIdentity(shot);
+                    if (!afterIds.has(id) && !currentIds.has(id)) {
+                        currentShots.push(clone(shot));
+                        currentIds.add(id);
+                        restored++;
+                    }
+                });
+
+                currentBlock.screenshots = currentShots;
+            });
+        }
+
+        // EDR screenshot removed from an existing EDR.
+        if (workspace === "edr") {
+            const beforeReports = Array.isArray(before?.reports) ? before.reports : [];
+            const afterReports = Array.isArray(after?.reports) ? after.reports : [];
+            const currentReports = Array.isArray(current?.reports) ? current.reports : [];
+
+            beforeReports.forEach(beforeReport => {
+                const afterReport = afterReports.find(report => report.id === beforeReport.id);
+                const currentReport = currentReports.find(report => report.id === beforeReport.id);
+
+                if (!afterReport || !currentReport) return;
+
+                if (
+                    beforeReport.screenshotData &&
+                    !afterReport.screenshotData &&
+                    !currentReport.screenshotData
+                ) {
+                    currentReport.screenshotData = beforeReport.screenshotData;
+                    currentReport.screenshotFileId = beforeReport.screenshotFileId || "";
+                    restored++;
+                }
+            });
+        }
+
+        return restored;
+    }
+
+    async function restoreSelectedEntry() {
+        const entry = entries.find(item => item.id === selectedHistoryId);
+        if (!entry) return;
+
+        const adapter = adapters()[entry.workspace];
+        if (!adapter?.restore) return;
+
+        const currentBefore = await takeSnapshot(entry.workspace);
+        if (currentBefore == null) return;
+
+        let next = clone(currentBefore);
+        let restoredCount = 0;
+
+        const beforeDesc = collectionDescriptor(entry.workspace, entry.before);
+        const afterDesc = collectionDescriptor(entry.workspace, entry.after);
+        const currentDesc = collectionDescriptor(entry.workspace, currentBefore);
+
+        if (beforeDesc && afterDesc && currentDesc) {
+            const merged = mergeDeletedItems(
+                beforeDesc.items,
+                afterDesc.items,
+                currentDesc.items
+            );
+
+            if (merged.changed) {
+                if (entry.workspace === "pendingReports") {
+                    next = merged.items;
+                } else {
+                    beforeDesc.apply(next, merged.items);
+                }
+
+                restoredCount += merged.count;
+            }
+        }
+
+        restoredCount += restoreNestedRemovedContent(
+            entry.workspace,
+            entry.before,
+            entry.after,
+            next
+        );
+
+        // If this history item was not a deletion/removal, restore its
+        // previous snapshot as the selected targeted rollback.
+        if (!restoredCount) {
+            next = clone(entry.before);
+        }
+
+        suppress = true;
+        try {
+            await adapter.restore(clone(next));
+        } finally {
+            suppress = false;
+        }
+
+        lastSnapshots[entry.workspace] = clone(currentBefore);
+        await captureIfChanged(
+            entry.workspace,
+            restoredCount
+                ? `Restored removed item · ${entry.action}`
+                : `Restored selected change · ${entry.action}`
+        );
+
+        selectedHistoryId = null;
+        updateUi();
+    }
+
     async function undo() {
         if (cursor < 0 || !entries[cursor]) return;
         const entry = entries[cursor];
@@ -19277,6 +19943,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
 
         entries = [];
         cursor = -1;
+        selectedHistoryId = null;
 
         try {
             const db = await openDb();
@@ -19332,23 +19999,39 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
             .map((entry, index) => ({ entry, index }))
             .reverse()
             .map(({ entry, index }) => `
-                <div class="global-history-item ${index === cursor ? "current" : ""}">
+                <label class="global-history-item ${index === cursor ? "current" : ""} ${entry.id === selectedHistoryId ? "selected" : ""}">
+                    <input type="radio"
+                           name="globalHistorySelection"
+                           value="${esc(entry.id)}"
+                           ${entry.id === selectedHistoryId ? "checked" : ""}>
                     <div>
                         <strong>${esc(entry.action)}</strong>
                         <span>${esc(workspaceNames[entry.workspace] || entry.workspace)}</span>
                     </div>
                     <small>${esc(formatTime(entry.at))}</small>
-                </div>
+                </label>
             `)
             .join("");
+
+        root.querySelectorAll('input[name="globalHistorySelection"]').forEach(input => {
+            input.addEventListener("change", () => {
+                selectedHistoryId = input.value;
+                updateUi();
+            });
+        });
     }
 
     function updateUi() {
         const undoBtn = $("globalUndoBtn");
         const redoBtn = $("globalRedoBtn");
+        const restoreBtn = $("globalRestoreSelectedBtn");
 
         if (undoBtn) undoBtn.disabled = cursor < 0;
         if (redoBtn) redoBtn.disabled = cursor >= entries.length - 1;
+        if (restoreBtn) {
+            restoreBtn.disabled = !selectedHistoryId ||
+                !entries.some(entry => entry.id === selectedHistoryId);
+        }
 
         const badge = $("globalHistoryCount");
         if (badge) badge.textContent = String(entries.length);
@@ -19449,6 +20132,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
     $("globalHistoryBackdrop")?.addEventListener("click", closeModal);
     $("globalUndoBtn")?.addEventListener("click", () => undo().catch(console.error));
     $("globalRedoBtn")?.addEventListener("click", () => redo().catch(console.error));
+    $("globalRestoreSelectedBtn")?.addEventListener("click", () => restoreSelectedEntry().catch(console.error));
     $("globalClearHistoryBtn")?.addEventListener("click", () => clearHistory().catch(console.error));
 
     document.addEventListener("keydown", event => {
