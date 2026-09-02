@@ -7250,3 +7250,124 @@ body.dark-mode .audit-guard-related-title{color:#fda29b}
   .audit-guard-metrics{grid-template-columns:1fr 1fr}.audit-guard-live{align-items:flex-start;flex-direction:column}
   .audit-guard-full-row-grid{grid-template-columns:1fr}.audit-guard-full-row-field.is-wide{grid-column:span 1}
 }
+
+
+/* =========================================================
+   SMART AUDIT GUARD V3 — LIVE ANOMALY FEED
+   TL spelling is authoritative; campaign spelling is ignored.
+   ========================================================= */
+.audit-guard-alert-feed{margin:0 20px 15px;border:1px solid var(--ops-border,#eaecf0);border-left:4px solid #98a2b3;border-radius:11px;background:var(--ops-card,#fff);overflow:hidden}
+.audit-guard-alert-feed.is-clear{border-left-color:#12b76a}.audit-guard-alert-feed.is-warning{border-left-color:#f79009}.audit-guard-alert-feed.is-danger{border-left-color:#f04438}
+.audit-guard-alert-feed-head{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:12px 13px;border-bottom:1px solid var(--ops-border,#eaecf0);background:var(--ops-subtle,#f9fafb)}
+.audit-guard-alert-feed-head>div{min-width:0}.audit-guard-alert-feed-head strong{display:block;color:var(--ops-text,#101828);font-size:11px;font-weight:850;line-height:1.4}.audit-guard-alert-feed-head p{margin:3px 0 0;color:var(--ops-muted,#667085);font-size:9px;line-height:1.45}
+.audit-guard-alert-list{display:grid;gap:1px;background:var(--ops-border,#eaecf0)}
+.audit-guard-alert-item{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:10px 12px;background:var(--ops-card,#fff)}
+.audit-guard-alert-item.is-danger{box-shadow:inset 3px 0 0 #f04438}.audit-guard-alert-item.is-warning{box-shadow:inset 3px 0 0 #f79009}
+.audit-guard-alert-item-main{min-width:0}.audit-guard-alert-kind{display:inline-flex;margin-bottom:5px;border:1px solid #e4e7ec;border-radius:999px;padding:3px 6px;background:#f2f4f7;color:#475467;font-size:7px;font-weight:850;letter-spacing:.045em;text-transform:uppercase}
+.audit-guard-alert-item strong{display:block;color:var(--ops-text,#101828);font-size:10px;font-weight:850;line-height:1.35}.audit-guard-alert-item p{margin:3px 0 0;color:var(--ops-muted,#667085);font-size:9px;line-height:1.45}.audit-guard-alert-item small{display:block;margin-top:5px;color:#175cd3;font-size:8px;font-weight:750;line-height:1.4}
+.audit-guard-alert-row{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;min-width:38px;min-height:24px;border:1px solid #b2ddff;border-radius:7px;background:#eff8ff;color:#175cd3;font-size:8px;font-weight:850}
+.audit-guard-alert-empty{padding:14px 12px;background:var(--ops-card,#fff);color:var(--ops-muted,#667085);font-size:9px;text-align:center}.audit-guard-alert-empty.is-clear{color:#027a48}.audit-guard-alert-more{padding:8px 10px;background:var(--ops-subtle,#f9fafb);color:var(--ops-muted,#667085);font-size:8px;font-weight:750;text-align:center}
+body.dark-mode .audit-guard-alert-feed{border-color:#263244;background:#0f1a29}body.dark-mode .audit-guard-alert-feed-head,body.dark-mode .audit-guard-alert-more{border-color:#263244;background:#101a29}body.dark-mode .audit-guard-alert-list{background:#263244}body.dark-mode .audit-guard-alert-item,body.dark-mode .audit-guard-alert-empty{background:#0f1a29}body.dark-mode .audit-guard-alert-kind{border-color:#344054;background:#172235;color:#cbd5e1}body.dark-mode .audit-guard-alert-row{border-color:rgba(47,128,237,.30);background:rgba(47,128,237,.13);color:#84adff}body.dark-mode .audit-guard-alert-item small{color:#84adff}body.dark-mode .audit-guard-alert-empty.is-clear{color:#6ce9a6}
+@media(max-width:560px){.audit-guard-alert-feed{margin-left:12px;margin-right:12px}.audit-guard-alert-feed-head{align-items:flex-start;flex-direction:column}.audit-guard-alert-item{gap:8px}.audit-guard-alert-row{min-width:32px}}
+
+
+/* ==========================================================
+   EDR SENT / DONE WORKFLOW
+   Copy All marks selected active EDRs Done without deleting them.
+   ========================================================== */
+
+.edr-list-item.is-done {
+    border-color: rgba(34,197,94,.30);
+    background:
+        linear-gradient(90deg, rgba(34,197,94,.055), transparent 72%),
+        var(--admin-panel, var(--container-bg));
+}
+
+.edr-list-item.is-done.is-selected {
+    border-color: rgba(34,197,94,.30);
+}
+
+.edr-done-chip {
+    display: inline-flex;
+    align-items: center;
+    min-height: 20px;
+    padding: 3px 8px;
+    border-radius: 999px;
+    border: 1px solid rgba(34,197,94,.28);
+    background: rgba(34,197,94,.11);
+    color: #16a34a !important;
+    font-size: 9px !important;
+    font-weight: 850;
+    letter-spacing: .02em;
+}
+
+.edr-done-meta {
+    display: inline-flex;
+    margin-left: 7px;
+    color: #16a34a !important;
+    font-weight: 750;
+}
+
+.edr-select-box.is-disabled {
+    cursor: not-allowed;
+    opacity: .45;
+}
+
+.edr-select-box.is-disabled > span {
+    border-color: rgba(34,197,94,.34);
+    background: rgba(34,197,94,.08);
+}
+
+.edr-row-done {
+    border: 1px solid rgba(34,197,94,.40) !important;
+    color: #16a34a !important;
+    font-weight: 800 !important;
+}
+
+.edr-row-done:hover {
+    background: rgba(34,197,94,.08) !important;
+}
+
+.edr-row-done.is-reopen {
+    border-color: rgba(148,163,184,.38) !important;
+    color: var(--admin-muted, var(--pro-muted)) !important;
+}
+
+.edr-row-done.is-reopen:hover {
+    background: var(--admin-panel-soft, var(--input-bg)) !important;
+}
+
+body.dark-mode .edr-done-chip,
+body.ops-redesign-v3.dark-mode .edr-done-chip {
+    color: #86efac !important;
+    background: rgba(34,197,94,.13);
+    border-color: rgba(74,222,128,.28);
+}
+
+body.dark-mode .edr-done-meta,
+body.ops-redesign-v3.dark-mode .edr-done-meta,
+body.dark-mode .edr-row-done,
+body.ops-redesign-v3.dark-mode .edr-row-done {
+    color: #86efac !important;
+}
+
+body.ops-redesign-v3 #edrPanel .edr-list-item.is-done {
+    border-color: rgba(34,197,94,.30) !important;
+    background:
+        linear-gradient(90deg, rgba(34,197,94,.06), transparent 72%),
+        var(--ops-panel) !important;
+}
+
+body.ops-redesign-v3 #edrPanel .edr-list-item.is-done.is-selected {
+    border-color: rgba(34,197,94,.30) !important;
+}
+
+#edrDoneCount {
+    border-color: rgba(34,197,94,.24);
+    color: #16a34a;
+}
+
+body.dark-mode #edrDoneCount {
+    color: #86efac;
+}
+
