@@ -6630,10 +6630,76 @@ body.ops-redesign-v3 select:focus-visible {
     body.ops-redesign-v3 *,
     body.ops-redesign-v3 *::before,
     body.ops-redesign-v3 *::after {
-        scroll-behavior: auto !important; 
+        scroll-behavior: auto !important;
         transition-duration: .01ms !important;
         animation-duration: .01ms !important;
         animation-iteration-count: 1 !important;
     }
 }
 
+
+
+/* ============================================================
+   MAINTENANCE REPORT — FULL BLOCK COLLAPSE
+   Hide Report now hides data + screenshot proof + remarks.
+   The header remains as a compact reopen bar.
+   ============================================================ */
+
+body.ops-redesign-v3 #eodPanel .eod-block-content.is-hidden {
+    display: none !important;
+}
+
+body.ops-redesign-v3 #eodPanel .eod-block.is-collapsed {
+    border-color: var(--ops-line) !important;
+    box-shadow: none !important;
+    background: var(--ops-panel) !important;
+}
+
+body.ops-redesign-v3 #eodPanel .eod-block.is-collapsed .eod-block-head {
+    min-height: 48px !important;
+    border-bottom: 0 !important;
+    background: var(--ops-panel) !important;
+}
+
+body.ops-redesign-v3 #eodPanel .eod-block.is-collapsed .eod-block-heading-copy {
+    min-width: 0;
+    flex: 1 1 auto;
+}
+
+body.ops-redesign-v3 #eodPanel .eod-block.is-collapsed .eod-block-title {
+    color: var(--ops-text) !important;
+}
+
+body.ops-redesign-v3 #eodPanel .eod-block.is-collapsed .eod-block-sub {
+    max-width: 760px;
+    overflow: hidden;
+    color: var(--ops-muted) !important;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 8px !important;
+}
+
+body.ops-redesign-v3 #eodPanel .eod-block.is-collapsed .working-badge {
+    display: none !important;
+}
+
+body.ops-redesign-v3 #eodPanel .eod-block.is-collapsed .toggle-block-data {
+    border-color: rgba(37,99,235,.25) !important;
+    background: var(--ops-accent-soft) !important;
+    color: var(--ops-accent) !important;
+}
+
+body.ops-redesign-v3 #eodPanel .eod-block.is-collapsed:hover {
+    border-color: var(--ops-line-strong) !important;
+    background: var(--ops-panel-2) !important;
+}
+
+@media (max-width: 720px) {
+    body.ops-redesign-v3 #eodPanel .eod-block.is-collapsed .eod-block-head {
+        align-items: stretch !important;
+    }
+
+    body.ops-redesign-v3 #eodPanel .eod-block.is-collapsed .block-actions {
+        justify-content: flex-start !important;
+    }
+}
