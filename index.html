@@ -5598,7 +5598,7 @@
 </style>
 
 
-    <link rel="stylesheet" href="./style.css?v=20260902-maintenance-full-collapse-1">
+    <link rel="stylesheet" href="./style.css?v=20260902-maintenance-collapse-status-1">
 
 <style id="edrCriticalStyles">
 /* =========================================================
@@ -10857,6 +10857,109 @@ body.ops-redesign-v3 #eodPanel .eod-block.is-collapsed:hover {
     }
 }
 </style>
+<style id="maintenanceCollapseStatusCritical">
+
+/* ============================================================
+   MAINTENANCE REPORT — COLLAPSED CONTENT STATUS
+   Green = report contains saved data/screenshots/remarks
+   Amber = report block is still empty
+   ============================================================ */
+
+body.ops-redesign-v3 #eodPanel .eod-block-title-row {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    flex-wrap: wrap;
+}
+
+body.ops-redesign-v3 #eodPanel .eod-collapse-state-badge {
+    min-height: 20px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 3px 7px;
+    border-radius: 999px;
+    font: 750 7.5px/1 "Inter", sans-serif;
+    white-space: nowrap;
+}
+
+body.ops-redesign-v3 #eodPanel .eod-collapse-state-badge.has-content {
+    border: 1px solid rgba(5,150,105,.22);
+    background: rgba(16,185,129,.11);
+    color: #047857;
+}
+
+body.ops-redesign-v3 #eodPanel .eod-collapse-state-badge.is-empty {
+    border: 1px solid rgba(217,119,6,.24);
+    background: rgba(245,158,11,.12);
+    color: #b45309;
+}
+
+/* Hidden block with content */
+body.ops-redesign-v3 #eodPanel .eod-block.is-collapsed.has-report-content {
+    border-color: rgba(5,150,105,.28) !important;
+    background: rgba(16,185,129,.045) !important;
+    box-shadow: inset 3px 0 0 #10b981 !important;
+}
+
+body.ops-redesign-v3 #eodPanel .eod-block.is-collapsed.has-report-content .eod-block-head {
+    background: rgba(16,185,129,.035) !important;
+}
+
+body.ops-redesign-v3 #eodPanel .eod-block.is-collapsed.has-report-content .toggle-block-data {
+    border-color: rgba(5,150,105,.25) !important;
+    background: rgba(16,185,129,.10) !important;
+    color: #047857 !important;
+}
+
+/* Hidden block without content */
+body.ops-redesign-v3 #eodPanel .eod-block.is-collapsed.is-empty-report {
+    border-color: rgba(217,119,6,.30) !important;
+    background: rgba(245,158,11,.045) !important;
+    box-shadow: inset 3px 0 0 #f59e0b !important;
+}
+
+body.ops-redesign-v3 #eodPanel .eod-block.is-collapsed.is-empty-report .eod-block-head {
+    background: rgba(245,158,11,.035) !important;
+}
+
+body.ops-redesign-v3 #eodPanel .eod-block.is-collapsed.is-empty-report .toggle-block-data {
+    border-color: rgba(217,119,6,.26) !important;
+    background: rgba(245,158,11,.11) !important;
+    color: #b45309 !important;
+}
+
+/* Dark mode tuning */
+body.ops-redesign-v3.dark-mode #eodPanel .eod-collapse-state-badge.has-content {
+    border-color: rgba(52,211,153,.25);
+    background: rgba(16,185,129,.14);
+    color: #6ee7b7;
+}
+
+body.ops-redesign-v3.dark-mode #eodPanel .eod-collapse-state-badge.is-empty {
+    border-color: rgba(251,191,36,.25);
+    background: rgba(245,158,11,.14);
+    color: #fcd34d;
+}
+
+body.ops-redesign-v3.dark-mode #eodPanel .eod-block.is-collapsed.has-report-content {
+    border-color: rgba(52,211,153,.24) !important;
+    background: rgba(16,185,129,.075) !important;
+}
+
+body.ops-redesign-v3.dark-mode #eodPanel .eod-block.is-collapsed.is-empty-report {
+    border-color: rgba(251,191,36,.24) !important;
+    background: rgba(245,158,11,.075) !important;
+}
+
+body.ops-redesign-v3.dark-mode #eodPanel .eod-block.is-collapsed.has-report-content .toggle-block-data {
+    color: #6ee7b7 !important;
+}
+
+body.ops-redesign-v3.dark-mode #eodPanel .eod-block.is-collapsed.is-empty-report .toggle-block-data {
+    color: #fcd34d !important;
+}
+</style>
 </head>
 <body class="ops-redesign-v3">
 
@@ -16030,10 +16133,27 @@ https://www.facebook.com/share/..."></textarea>
         const fileId = "proof_" + block.id;
 
         return `
-            <article class="eod-block ${block.dataHidden ? "is-collapsed" : ""}" data-id="${escapeHtml(block.id)}">
+            <article class="eod-block ${block.dataHidden ? "is-collapsed" : ""} ${
+                maintenanceRowsForSheets(block.lanesText).length || block.screenshots.length || noteText(block)
+                    ? "has-report-content"
+                    : "is-empty-report"
+            }" data-id="${escapeHtml(block.id)}">
                 <div class="eod-block-head">
                     <div class="eod-block-heading-copy">
-                        <div class="eod-block-title">Report Block ${index + 1}</div>
+                        <div class="eod-block-title-row">
+                            <div class="eod-block-title">Report Block ${index + 1}</div>
+                            ${block.dataHidden
+                                ? `<span class="eod-collapse-state-badge ${
+                                    maintenanceRowsForSheets(block.lanesText).length || block.screenshots.length || noteText(block)
+                                        ? "has-content"
+                                        : "is-empty"
+                                }">${
+                                    maintenanceRowsForSheets(block.lanesText).length || block.screenshots.length || noteText(block)
+                                        ? "Has Content"
+                                        : "Empty"
+                                }</span>`
+                                : ""}
+                        </div>
                         <div class="eod-block-sub">
                             ${block.dataHidden
                                 ? `${maintenanceRowsForSheets(block.lanesText).length} row${maintenanceRowsForSheets(block.lanesText).length === 1 ? "" : "s"} · ${block.screenshots.length} screenshot${block.screenshots.length === 1 ? "" : "s"} · ${noteText(block) ? "Remarks saved" : "No remarks"}`
