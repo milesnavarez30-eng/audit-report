@@ -11107,7 +11107,10 @@ body.auth-locked > .site-footer { visibility:hidden!important; pointer-events:no
 
     <div class="ops-sidebar-label">Workspaces</div>
 
-<button type="button" class="workspace-tab-btn active" id="cctvTabBtn" role="tab" aria-selected="true" aria-controls="cctvPanel">
+<button type="button" class="workspace-tab-btn" id="edrTabBtn" role="tab" aria-selected="false" aria-controls="edrPanel">
+        <span>EDR</span>
+    </button>
+    <button type="button" class="workspace-tab-btn active" id="cctvTabBtn" role="tab" aria-selected="true" aria-controls="cctvPanel">
         <span>CCTV Audit</span>
         <small class="cctv-edr-sent-badge" id="cctvEdrSentCount" title="EDRs sent to CCTV Audit">0</small>
     </button>
@@ -11117,16 +11120,13 @@ body.auth-locked > .site-footer { visibility:hidden!important; pointer-events:no
     <button type="button" class="workspace-tab-btn" id="eodTabBtn" role="tab" aria-selected="false" aria-controls="eodPanel">
         <span>Maintenance</span>
     </button>
-    <button type="button" class="workspace-tab-btn" id="pendingTabBtn" role="tab" aria-selected="false" aria-controls="pendingPanel">
-        <span>Pending</span>
-        <small class="pending-sidebar-badge" id="pendingSidebarBadge" title="Reports needing attention">0</small>
-    </button>
     <button type="button" class="workspace-tab-btn" id="masterlistTabBtn" role="tab" aria-selected="false" aria-controls="masterlistPanel">
-        <span>Master List</span>
+        <span>Masterlist</span>
         <small class="masterlist-sidebar-badge" id="masterlistSidebarBadge" title="Google Sheets sync status">Live</small>
     </button>
-<button type="button" class="workspace-tab-btn" id="edrTabBtn" role="tab" aria-selected="false" aria-controls="edrPanel">
-        <span>EDR</span>
+    <button type="button" class="workspace-tab-btn" id="followupTabBtn" role="tab" aria-selected="false" aria-controls="followupPanel">
+        <span>Follow Up Reports</span>
+        <small id="followupSidebarBadge" title="Open follow-up reports">0</small>
     </button>
 
     <div class="ops-sidebar-separator"></div>
@@ -11594,6 +11594,103 @@ body.auth-locked > .site-footer { visibility:hidden!important; pointer-events:no
     </div>
 </div>
 
+
+
+<section id="followupPanel" class="app-tab-panel" role="tabpanel" aria-labelledby="followupTabBtn">
+    <div class="container followup-shell">
+        <div class="followup-page-head">
+            <div>
+                <h2>Follow Up Reports</h2>
+                <p class="page-lead">Save the TL conversation screenshot, identify the OM group chat and date, then record the TL reply and what still needs verification.</p>
+            </div>
+            <div class="followup-head-count"><strong id="followupOpenCount">0</strong><span>open</span></div>
+        </div>
+
+        <section class="followup-add-card">
+            <div class="followup-add-head">
+                <div>
+                    <h3>Add Follow Up</h3>
+                    <p>Paste or upload the conversation screenshot. The screenshot stays large so the report is readable at a glance.</p>
+                </div>
+            </div>
+
+            <div class="followup-add-grid">
+                <label class="followup-field">
+                    <span>Date</span>
+                    <input type="date" id="followupDate">
+                </label>
+
+                <label class="followup-field">
+                    <span>OM / Group Chat</span>
+                    <input type="text" id="followupOm" list="followupOmOptions" placeholder="e.g. CCTV OM MIRAH" autocomplete="off">
+                    <datalist id="followupOmOptions"></datalist>
+                </label>
+
+                <label class="followup-field">
+                    <span>TL / Report</span>
+                    <input type="text" id="followupLabel" placeholder="Optional TL, agent, or report label" autocomplete="off">
+                </label>
+
+                <label class="followup-field">
+                    <span>Status</span>
+                    <select id="followupStatus">
+                        <option value="Waiting for TL">Waiting for TL</option>
+                        <option value="TL Replied">TL Replied</option>
+                        <option value="TL Disputed">TL Disputed</option>
+                        <option value="Need OM Verification">Need OM Verification</option>
+                        <option value="Verified by OM">Verified by OM</option>
+                        <option value="Resolved">Resolved</option>
+                    </select>
+                </label>
+
+                <div class="followup-field followup-add-shot-field">
+                    <span>TL Conversation Screenshot</span>
+                    <div id="followupAddShotZone" class="followup-add-shot-zone" tabindex="0">
+                        <input type="file" id="followupAddShotInput" accept="image/*" hidden>
+                        <div id="followupAddShotEmpty" class="followup-add-shot-empty">
+                            <button type="button" class="edr-outline-btn" id="followupChooseShotBtn">Add Screenshot</button>
+                            <strong>Drop image here or press Ctrl+V</strong>
+                            <small>Conversation screenshots are compressed before saving.</small>
+                        </div>
+                        <div id="followupAddShotPreviewWrap" class="followup-add-shot-preview" hidden>
+                            <img id="followupAddShotPreview" alt="Follow up conversation screenshot preview">
+                            <div class="followup-shot-preview-actions">
+                                <strong>Screenshot ready</strong>
+                                <button type="button" class="edr-outline-btn" id="followupReplaceAddShotBtn">Replace</button>
+                                <button type="button" class="edr-danger-soft-btn" id="followupRemoveAddShotBtn">Remove</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <label class="followup-field followup-remarks-field">
+                    <span>Remarks / TL Reply</span>
+                    <textarea id="followupRemarks" rows="5" placeholder="Example: TL disputed the report. Need to verify with OM because the TL may be defending the agent."></textarea>
+                </label>
+            </div>
+
+            <div class="followup-add-actions">
+                <button type="button" class="edr-primary-btn" id="followupAddBtn">Add Follow Up Report</button>
+                <button type="button" class="edr-outline-btn" id="followupClearBtn">Clear</button>
+            </div>
+            <div class="followup-form-message" id="followupMessage" aria-live="polite"></div>
+        </section>
+
+        <div id="followupReportList" class="followup-report-list">
+            <div class="edr-empty-state">No follow-up reports yet.</div>
+        </div>
+    </div>
+
+    <input type="file" id="followupReplaceInput" accept="image/*" hidden>
+</section>
+
+<div id="followupScreenshotModal" class="edr-ss-modal" aria-hidden="true">
+    <div class="edr-ss-backdrop" id="followupScreenshotBackdrop"></div>
+    <div class="edr-ss-dialog followup-ss-dialog" role="dialog" aria-modal="true" aria-label="Follow up conversation screenshot">
+        <button type="button" class="edr-ss-close" id="followupScreenshotClose" aria-label="Close screenshot">×</button>
+        <img id="followupScreenshotImage" alt="Follow up conversation screenshot">
+    </div>
+</div>
 
 
 <section id="masterlistPanel" class="app-tab-panel" role="tabpanel" aria-labelledby="masterlistTabBtn">
@@ -16094,6 +16191,72 @@ https://www.facebook.com/share/..."></textarea>
                 
 
 
+<style id="followupAndLightSidebarFinalStyles">
+
+/* FOLLOW UP REPORTS + TRUE LIGHT SIDEBAR */
+.followup-shell{max-width:1450px!important}
+.followup-page-head,.followup-add-head,.followup-card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px}
+.followup-page-head{margin-bottom:12px}
+.followup-head-count{min-width:74px;padding:9px 12px;border:1px solid var(--ops-line);border-radius:9px;background:var(--ops-panel);text-align:center}
+.followup-head-count strong,.followup-head-count span{display:block}.followup-head-count strong{color:var(--ops-text);font-size:20px}.followup-head-count span{margin-top:2px;color:var(--ops-muted);font-size:8px;text-transform:uppercase;letter-spacing:.05em}
+.followup-add-card,.followup-report-card{border:1px solid var(--ops-line);border-radius:11px;background:var(--ops-panel);box-shadow:var(--ops-shadow)}
+.followup-add-card{padding:13px;margin-bottom:12px}.followup-add-head{margin-bottom:10px}.followup-add-head h3{margin:0;color:var(--ops-text)}.followup-add-head p{margin:3px 0 0;color:var(--ops-muted);font-size:9px}
+.followup-add-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px}
+.followup-field{display:block;min-width:0}.followup-field>span,.followup-card-fields label>span{display:block;margin-bottom:5px;color:var(--ops-muted);font-size:8px;font-weight:750;text-transform:uppercase;letter-spacing:.035em}
+.followup-field input,.followup-field select,.followup-field textarea,.followup-card-fields input,.followup-card-fields select,.followup-card-fields textarea{width:100%;border:1px solid var(--ops-line)!important;border-radius:7px!important;background:var(--ops-panel-2)!important;color:var(--ops-text)!important;box-shadow:none!important}
+.followup-field input,.followup-field select,.followup-card-fields input,.followup-card-fields select{min-height:36px!important;padding:7px 9px!important;font-size:9px!important}
+.followup-field textarea,.followup-card-fields textarea{padding:8px 9px!important;font-size:9px!important;line-height:1.55;resize:vertical}
+.followup-add-shot-field{grid-column:1 / span 3}.followup-remarks-field{grid-column:4}
+.followup-add-shot-zone{min-height:250px;border:1px dashed var(--ops-line-strong);border-radius:9px;background:var(--ops-panel-2);display:grid;place-items:center;overflow:hidden;transition:.15s}
+.followup-add-shot-zone.dragover{border-color:#3b82f6;background:rgba(59,130,246,.06)}
+.followup-add-shot-empty{text-align:center;padding:24px}.followup-add-shot-empty strong,.followup-add-shot-empty small{display:block}.followup-add-shot-empty strong{margin-top:9px;color:var(--ops-text-2);font-size:9px}.followup-add-shot-empty small{margin-top:4px;color:var(--ops-muted);font-size:8px}
+.followup-add-shot-preview{width:100%;padding:8px}.followup-add-shot-preview img{display:block;width:100%;max-height:480px;object-fit:contain;border:1px solid var(--ops-line);border-radius:7px;background:#0a0f17}.followup-shot-preview-actions{display:flex;align-items:center;gap:6px;margin-top:7px}.followup-shot-preview-actions strong{margin-right:auto;color:var(--ops-text);font-size:9px}
+.followup-add-actions{display:flex;gap:7px;margin-top:10px}.followup-form-message{min-height:16px;margin-top:7px;color:var(--ops-muted);font-size:8.5px}.followup-form-message.is-success{color:#059669}.followup-form-message.is-error{color:#dc2626}
+.followup-report-list{display:grid;gap:12px}.followup-report-card{padding:11px}.followup-card-head{align-items:center;padding-bottom:9px;border-bottom:1px solid var(--ops-line)}
+.followup-card-title{color:var(--ops-text);font-size:12px;font-weight:800}.followup-card-meta{margin-top:3px;color:var(--ops-muted);font-size:8.5px}
+.followup-status-pill{display:inline-flex;align-items:center;min-height:24px;padding:4px 8px;border-radius:999px;font-size:7.5px;font-weight:800;white-space:nowrap;background:rgba(148,163,184,.11);color:var(--ops-muted)}
+.followup-status-pill.replied{background:rgba(37,99,235,.09);color:#2563eb}.followup-status-pill.disputed{background:rgba(220,38,38,.09);color:#dc2626}.followup-status-pill.verify{background:rgba(217,119,6,.1);color:#d97706}.followup-status-pill.verified,.followup-status-pill.resolved{background:rgba(5,150,105,.09);color:#059669}
+.followup-card-layout{display:grid;grid-template-columns:minmax(0,1.9fr) minmax(285px,.75fr);gap:11px;padding-top:10px;align-items:start}
+.followup-large-shot{width:100%;min-height:410px;max-height:720px;padding:7px;border:1px solid var(--ops-line);border-radius:9px;background:var(--ops-panel-2);display:grid;place-items:center;overflow:auto;cursor:zoom-in}
+.followup-large-shot img{display:block;width:100%;height:auto;max-height:690px;object-fit:contain;border-radius:5px;background:#0a0f17}.followup-large-shot.no-image{cursor:default;color:var(--ops-muted);font-size:9px}
+.followup-card-fields{display:grid;gap:8px}.followup-card-remarks textarea{min-height:170px}.followup-card-actions{display:flex;gap:6px;flex-wrap:wrap;padding-top:2px}
+.followup-ss-dialog{width:min(96vw,1500px)!important;height:min(94vh,1000px)!important;max-width:none!important}.followup-ss-dialog img{width:100%!important;height:100%!important;object-fit:contain!important}
+
+/* Light mode should make the sidebar light too. These selectors intentionally outrank the older redesign overrides. */
+html body.ops-redesign-v3:not(.dark-mode) aside.workspace-tabs.admin-sidebar{background:#f8fafc!important;border-right-color:#d9e2ec!important;box-shadow:8px 0 28px rgba(15,23,42,.06)!important}
+html body.ops-redesign-v3:not(.dark-mode) aside.workspace-tabs.admin-sidebar .ops-sidebar-brand{border-bottom-color:#e2e8f0!important}
+html body.ops-redesign-v3:not(.dark-mode) aside.workspace-tabs.admin-sidebar .ops-sidebar-brand strong{color:#0f172a!important}
+html body.ops-redesign-v3:not(.dark-mode) aside.workspace-tabs.admin-sidebar .ops-sidebar-brand span,
+html body.ops-redesign-v3:not(.dark-mode) aside.workspace-tabs.admin-sidebar .ops-sidebar-label{color:#64748b!important}
+html body.ops-redesign-v3:not(.dark-mode) aside.workspace-tabs.admin-sidebar > button.workspace-tab-btn,
+html body.ops-redesign-v3:not(.dark-mode) aside.workspace-tabs.admin-sidebar > button.sidebar-history-btn{color:#475569!important;background:transparent!important}
+html body.ops-redesign-v3:not(.dark-mode) aside.workspace-tabs.admin-sidebar > button.workspace-tab-btn:hover,
+html body.ops-redesign-v3:not(.dark-mode) aside.workspace-tabs.admin-sidebar > button.sidebar-history-btn:hover{border-color:#dbe3ec!important;background:#eef3f8!important;color:#0f172a!important}
+html body.ops-redesign-v3:not(.dark-mode) aside.workspace-tabs.admin-sidebar > button.workspace-tab-btn.active{border-color:#bfdbfe!important;background:linear-gradient(90deg,#dbeafe,#eff6ff)!important;color:#1e3a8a!important;box-shadow:inset 2px 0 0 #3b82f6!important}
+html body.ops-redesign-v3:not(.dark-mode) aside.workspace-tabs.admin-sidebar button small{background:#e7edf4!important;color:#526174!important}
+html body.ops-redesign-v3:not(.dark-mode) aside.workspace-tabs.admin-sidebar > button.workspace-tab-btn.active small{background:#dbeafe!important;color:#1d4ed8!important}
+html body.ops-redesign-v3:not(.dark-mode) aside.workspace-tabs.admin-sidebar .auth-sidebar-account{border-color:#dce4ed!important;background:#ffffff!important}
+html body.ops-redesign-v3:not(.dark-mode) aside.workspace-tabs.admin-sidebar .auth-sidebar-user strong{color:#0f172a!important}
+html body.ops-redesign-v3:not(.dark-mode) aside.workspace-tabs.admin-sidebar .auth-sidebar-user span{color:#64748b!important}
+html body.ops-redesign-v3:not(.dark-mode) aside.workspace-tabs.admin-sidebar #authLogoutBtn{border-color:#dce4ed!important;background:#f8fafc!important;color:#475569!important}
+html body.ops-redesign-v3:not(.dark-mode) aside.workspace-tabs.admin-sidebar .sidebar-live-clock{border-color:#dce4ed!important;background:#ffffff!important}
+html body.ops-redesign-v3:not(.dark-mode) aside.workspace-tabs.admin-sidebar .sidebar-live-date,
+html body.ops-redesign-v3:not(.dark-mode) aside.workspace-tabs.admin-sidebar .sidebar-live-time,
+html body.ops-redesign-v3:not(.dark-mode) aside.workspace-tabs.admin-sidebar #Manila_z42c{color:#334155!important}
+html body.ops-redesign-v3:not(.dark-mode) aside.workspace-tabs.admin-sidebar .sidebar-divider,
+html body.ops-redesign-v3:not(.dark-mode) aside.workspace-tabs.admin-sidebar .ops-sidebar-separator{background:#e2e8f0!important;border-color:#e2e8f0!important}
+html body.ops-redesign-v3:not(.dark-mode) aside.workspace-tabs.admin-sidebar #themeToggle.sidebar-theme-btn.theme-switch-control{border-color:#dce4ed!important;background:#ffffff!important}
+html body.ops-redesign-v3:not(.dark-mode) aside.workspace-tabs.admin-sidebar .theme-switch-label{color:#64748b!important}
+html body.ops-redesign-v3:not(.dark-mode) aside.workspace-tabs.admin-sidebar .theme-switch-track{background:#d8e0ea!important}
+html body.ops-redesign-v3:not(.dark-mode) button.sidebar-collapse-toggle{border-color:#d9e2ec!important;background:#f8fafc!important;color:#64748b!important}
+
+body.ops-redesign-v3.dark-mode .followup-add-shot-preview img,
+body.ops-redesign-v3.dark-mode .followup-large-shot img{background:#05080d}
+body.ops-redesign-v3.dark-mode .followup-status-pill.replied{color:#93c5fd}.dark-mode .followup-status-pill.disputed{color:#fca5a5}.dark-mode .followup-status-pill.verify{color:#fcd34d}.dark-mode .followup-status-pill.verified,.dark-mode .followup-status-pill.resolved{color:#6ee7b7}
+
+@media(max-width:1050px){.followup-add-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.followup-add-shot-field,.followup-remarks-field{grid-column:1/-1}.followup-card-layout{grid-template-columns:1fr}.followup-large-shot{min-height:320px}}
+@media(max-width:620px){.followup-page-head,.followup-card-head{align-items:stretch;flex-direction:column}.followup-head-count{width:100%;display:flex;align-items:baseline;justify-content:center;gap:5px}.followup-add-grid{grid-template-columns:1fr}.followup-add-shot-field,.followup-remarks-field{grid-column:auto}.followup-add-actions{flex-direction:column}.followup-add-actions button{width:100%}.followup-large-shot{min-height:250px;max-height:none}.followup-shot-preview-actions{flex-wrap:wrap}.followup-shot-preview-actions strong{width:100%}}
+</style>
 </body>
             </html>
         `;
@@ -21357,6 +21520,436 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
 })();
 </script>
 
+
+<script id="followupReportsScript">
+(function () {
+    const $ = id => document.getElementById(id);
+    const DB_NAME = "cctv_followup_reports_v1";
+    const STORE = "workspace";
+    const STATE_KEY = "reports";
+    const CLOSED = new Set(["Resolved"]);
+
+    let reports = [];
+    let addScreenshot = "";
+    let replaceTargetId = "";
+    let saveTimer = null;
+
+    const clone = value => {
+        try { return structuredClone(value); }
+        catch (_) { return JSON.parse(JSON.stringify(value)); }
+    };
+
+    const esc = value => String(value == null ? "" : value)
+        .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+
+    function todayLocal() {
+        const d = new Date();
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, "0");
+        const day = String(d.getDate()).padStart(2, "0");
+        return `${y}-${m}-${day}`;
+    }
+
+    function formatDate(value) {
+        if (!value) return "No date";
+        const d = /^\d{4}-\d{2}-\d{2}$/.test(value) ? new Date(value + "T00:00:00") : new Date(value);
+        if (Number.isNaN(d.getTime())) return value;
+        return d.toLocaleDateString([], { month: "short", day: "numeric", year: "numeric" });
+    }
+
+    function openDb() {
+        return new Promise((resolve, reject) => {
+            const req = indexedDB.open(DB_NAME, 1);
+            req.onupgradeneeded = () => {
+                const db = req.result;
+                if (!db.objectStoreNames.contains(STORE)) db.createObjectStore(STORE);
+            };
+            req.onsuccess = () => resolve(req.result);
+            req.onerror = () => reject(req.error);
+        });
+    }
+
+    async function saveReports() {
+        try {
+            const db = await openDb();
+            await new Promise((resolve, reject) => {
+                const tx = db.transaction(STORE, "readwrite");
+                tx.objectStore(STORE).put(clone(reports), STATE_KEY);
+                tx.oncomplete = resolve;
+                tx.onerror = () => reject(tx.error);
+            });
+            db.close();
+        } catch (error) {
+            console.error("Follow Up Reports save failed:", error);
+            showMessage("Could not save the follow-up reports on this browser.", "error");
+        }
+    }
+
+    async function loadReports() {
+        try {
+            const db = await openDb();
+            const saved = await new Promise((resolve, reject) => {
+                const tx = db.transaction(STORE, "readonly");
+                const req = tx.objectStore(STORE).get(STATE_KEY);
+                req.onsuccess = () => resolve(req.result || []);
+                req.onerror = () => reject(req.error);
+            });
+            db.close();
+            reports = Array.isArray(saved) ? saved : [];
+        } catch (error) {
+            console.error("Follow Up Reports load failed:", error);
+            reports = [];
+        }
+        render();
+    }
+
+    function showMessage(text, kind = "") {
+        const el = $("followupMessage");
+        if (!el) return;
+        el.textContent = text || "";
+        el.className = "followup-form-message" + (kind ? " is-" + kind : "");
+    }
+
+    function refreshOmOptions() {
+        const list = $("followupOmOptions");
+        if (!list) return;
+        const master = typeof window.getEdrOmOptions === "function" ? window.getEdrOmOptions() : [];
+        const formatted = master.map(name => `CCTV OM ${String(name).toUpperCase()}`);
+        const used = reports.map(r => String(r.om || "").trim()).filter(Boolean);
+        const values = [...new Set([...formatted, ...used])].sort((a, b) => a.localeCompare(b));
+        list.innerHTML = values.map(value => `<option value="${esc(value)}"></option>`).join("");
+    }
+
+    function updateCounts() {
+        const open = reports.filter(r => !CLOSED.has(r.status)).length;
+        if ($("followupOpenCount")) $("followupOpenCount").textContent = String(open);
+        const badge = $("followupSidebarBadge");
+        if (badge) {
+            badge.textContent = String(open);
+            badge.title = `${open} open follow-up report${open === 1 ? "" : "s"}`;
+        }
+    }
+
+    function statusClass(status) {
+        const key = String(status || "").toLowerCase();
+        if (key === "resolved") return "resolved";
+        if (key.includes("disputed")) return "disputed";
+        if (key.includes("verification")) return "verify";
+        if (key.includes("verified")) return "verified";
+        if (key.includes("replied")) return "replied";
+        return "waiting";
+    }
+
+    function reportHtml(report) {
+        const image = report.screenshotData || "";
+        return `
+        <article class="followup-report-card" data-id="${esc(report.id)}">
+            <div class="followup-card-head">
+                <div>
+                    <div class="followup-card-title">${esc(report.label || report.om || "Follow Up Report")}</div>
+                    <div class="followup-card-meta">${esc(formatDate(report.date))} · ${esc(report.om || "OM not set")}</div>
+                </div>
+                <span class="followup-status-pill ${statusClass(report.status)}">${esc(report.status || "Waiting for TL")}</span>
+            </div>
+
+            <div class="followup-card-layout">
+                <button type="button" class="followup-large-shot ${image ? "has-image" : "no-image"}" ${image ? "" : "disabled"} title="${image ? "Open full screenshot" : "No screenshot"}">
+                    ${image ? `<img src="${esc(image)}" alt="TL conversation screenshot">` : `<span>No conversation screenshot</span>`}
+                </button>
+
+                <div class="followup-card-fields">
+                    <label>
+                        <span>Date</span>
+                        <input class="followup-edit-date" type="date" value="${esc(report.date || "")}">
+                    </label>
+                    <label>
+                        <span>OM / Group Chat</span>
+                        <input class="followup-edit-om" type="text" list="followupOmOptions" value="${esc(report.om || "")}" placeholder="e.g. CCTV OM MIRAH">
+                    </label>
+                    <label>
+                        <span>TL / Report</span>
+                        <input class="followup-edit-label" type="text" value="${esc(report.label || "")}" placeholder="Optional label">
+                    </label>
+                    <label>
+                        <span>Status</span>
+                        <select class="followup-edit-status">
+                            ${["Waiting for TL","TL Replied","TL Disputed","Need OM Verification","Verified by OM","Resolved"].map(s => `<option value="${s}" ${s === report.status ? "selected" : ""}>${s}</option>`).join("")}
+                        </select>
+                    </label>
+                    <label class="followup-card-remarks">
+                        <span>Remarks / TL Reply</span>
+                        <textarea class="followup-edit-remarks" rows="7" placeholder="Write the TL reply and what still needs verification...">${esc(report.remarks || "")}</textarea>
+                    </label>
+                    <div class="followup-card-actions">
+                        <button type="button" class="edr-outline-btn followup-replace-btn">Replace Screenshot</button>
+                        <button type="button" class="edr-danger-soft-btn followup-delete-btn">Delete</button>
+                    </div>
+                </div>
+            </div>
+        </article>`;
+    }
+
+    function scheduleSave() {
+        clearTimeout(saveTimer);
+        saveTimer = setTimeout(() => saveReports().catch(console.error), 350);
+    }
+
+    function render() {
+        refreshOmOptions();
+        updateCounts();
+        const root = $("followupReportList");
+        if (!root) return;
+        if (!reports.length) {
+            root.innerHTML = '<div class="edr-empty-state">No follow-up reports yet.</div>';
+            return;
+        }
+
+        root.innerHTML = reports
+            .slice()
+            .sort((a, b) => {
+                const aClosed = CLOSED.has(a.status) ? 1 : 0;
+                const bClosed = CLOSED.has(b.status) ? 1 : 0;
+                if (aClosed !== bClosed) return aClosed - bClosed;
+                return String(b.date || "").localeCompare(String(a.date || "")) || String(b.createdAt || "").localeCompare(String(a.createdAt || ""));
+            })
+            .map(reportHtml).join("");
+
+        root.querySelectorAll(".followup-report-card").forEach(card => {
+            const report = reports.find(item => item.id === card.dataset.id);
+            if (!report) return;
+
+            card.querySelector(".followup-large-shot")?.addEventListener("click", () => {
+                if (report.screenshotData) openScreenshot(report.screenshotData);
+            });
+
+            const bind = (selector, key, eventName = "change") => {
+                const el = card.querySelector(selector);
+                el?.addEventListener(eventName, () => {
+                    report[key] = el.value;
+                    if (key === "status" || key === "om" || key === "label" || key === "date") render();
+                    else scheduleSave();
+                    scheduleSave();
+                });
+            };
+            bind(".followup-edit-date", "date");
+            bind(".followup-edit-om", "om");
+            bind(".followup-edit-label", "label");
+            bind(".followup-edit-status", "status");
+            bind(".followup-edit-remarks", "remarks", "input");
+
+            card.querySelector(".followup-replace-btn")?.addEventListener("click", () => {
+                replaceTargetId = report.id;
+                $("followupReplaceInput")?.click();
+            });
+
+            card.querySelector(".followup-delete-btn")?.addEventListener("click", async () => {
+                const ok = window.appConfirm
+                    ? await window.appConfirm({
+                        title: "Delete follow-up report?",
+                        message: "This removes the screenshot, OM, date, status, and remarks from Follow Up Reports.",
+                        confirmText: "Delete",
+                        tone: "danger"
+                    })
+                    : window.confirm("Delete this follow-up report?");
+                if (!ok) return;
+                reports = reports.filter(item => item.id !== report.id);
+                await saveReports();
+                render();
+            });
+        });
+    }
+
+    function resetAddForm() {
+        $("followupDate").value = todayLocal();
+        $("followupOm").value = "";
+        $("followupLabel").value = "";
+        $("followupStatus").value = "Waiting for TL";
+        $("followupRemarks").value = "";
+        addScreenshot = "";
+        updateAddScreenshot();
+        showMessage("");
+    }
+
+    function updateAddScreenshot() {
+        const empty = $("followupAddShotEmpty");
+        const wrap = $("followupAddShotPreviewWrap");
+        const img = $("followupAddShotPreview");
+        if (!empty || !wrap || !img) return;
+        empty.hidden = !!addScreenshot;
+        wrap.hidden = !addScreenshot;
+        if (addScreenshot) img.src = addScreenshot;
+        else img.removeAttribute("src");
+    }
+
+    function compressImage(file) {
+        return new Promise((resolve, reject) => {
+            if (!file || !String(file.type || "").startsWith("image/")) {
+                reject(new Error("Please choose an image file."));
+                return;
+            }
+            const reader = new FileReader();
+            reader.onerror = () => reject(reader.error || new Error("Could not read image."));
+            reader.onload = () => {
+                const img = new Image();
+                img.onerror = () => reject(new Error("Could not decode image."));
+                img.onload = () => {
+                    const maxW = 1800;
+                    const scale = Math.min(1, maxW / img.naturalWidth);
+                    const canvas = document.createElement("canvas");
+                    canvas.width = Math.max(1, Math.round(img.naturalWidth * scale));
+                    canvas.height = Math.max(1, Math.round(img.naturalHeight * scale));
+                    const ctx = canvas.getContext("2d");
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                    resolve(canvas.toDataURL("image/jpeg", 0.84));
+                };
+                img.src = reader.result;
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+
+    async function useAddFile(file) {
+        try {
+            showMessage("Preparing screenshot...");
+            addScreenshot = await compressImage(file);
+            updateAddScreenshot();
+            showMessage("Screenshot ready.", "success");
+        } catch (error) {
+            showMessage(error.message || "Could not add screenshot.", "error");
+        }
+    }
+
+    function openScreenshot(data) {
+        const modal = $("followupScreenshotModal");
+        const img = $("followupScreenshotImage");
+        if (!modal || !img || !data) return;
+        img.src = data;
+        modal.setAttribute("aria-hidden", "false");
+        modal.classList.add("open");
+        document.body.classList.add("edr-modal-open");
+    }
+
+    function closeScreenshot() {
+        const modal = $("followupScreenshotModal");
+        const img = $("followupScreenshotImage");
+        modal?.setAttribute("aria-hidden", "true");
+        modal?.classList.remove("open");
+        if (img) img.removeAttribute("src");
+        document.body.classList.remove("edr-modal-open");
+    }
+
+    $("followupChooseShotBtn")?.addEventListener("click", () => $("followupAddShotInput")?.click());
+    $("followupReplaceAddShotBtn")?.addEventListener("click", () => $("followupAddShotInput")?.click());
+    $("followupRemoveAddShotBtn")?.addEventListener("click", () => {
+        addScreenshot = "";
+        updateAddScreenshot();
+        showMessage("Screenshot removed from the new follow-up form.");
+    });
+    $("followupClearBtn")?.addEventListener("click", resetAddForm);
+
+    $("followupAddShotInput")?.addEventListener("change", event => {
+        const file = event.target.files?.[0];
+        if (file) useAddFile(file);
+        event.target.value = "";
+    });
+
+    const zone = $("followupAddShotZone");
+    ["dragenter", "dragover"].forEach(type => zone?.addEventListener(type, event => {
+        event.preventDefault(); zone.classList.add("dragover");
+    }));
+    ["dragleave", "drop"].forEach(type => zone?.addEventListener(type, event => {
+        event.preventDefault(); zone.classList.remove("dragover");
+    }));
+    zone?.addEventListener("drop", event => {
+        const file = [...(event.dataTransfer?.files || [])].find(f => String(f.type || "").startsWith("image/"));
+        if (file) useAddFile(file);
+    });
+
+    document.addEventListener("paste", event => {
+        if (!$("followupPanel")?.classList.contains("active")) return;
+        const target = event.target;
+        if (target && /^(INPUT|TEXTAREA|SELECT)$/i.test(target.tagName)) return;
+        const file = [...(event.clipboardData?.files || [])].find(f => String(f.type || "").startsWith("image/"));
+        if (!file) return;
+        event.preventDefault();
+        useAddFile(file);
+    });
+
+    $("followupAddBtn")?.addEventListener("click", async () => {
+        const om = String($("followupOm")?.value || "").trim();
+        const date = $("followupDate")?.value || todayLocal();
+        if (!addScreenshot) {
+            showMessage("Add the TL conversation screenshot first.", "error");
+            return;
+        }
+        if (!om) {
+            showMessage("Select or type the OM / group chat.", "error");
+            $("followupOm")?.focus();
+            return;
+        }
+
+        reports.unshift({
+            id: "fu_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 7),
+            date,
+            om,
+            label: String($("followupLabel")?.value || "").trim(),
+            status: $("followupStatus")?.value || "Waiting for TL",
+            remarks: String($("followupRemarks")?.value || "").trim(),
+            screenshotData: addScreenshot,
+            createdAt: new Date().toISOString()
+        });
+        await saveReports();
+        resetAddForm();
+        render();
+        showMessage("Follow-up report saved.", "success");
+    });
+
+    $("followupReplaceInput")?.addEventListener("change", async event => {
+        const file = event.target.files?.[0];
+        const report = reports.find(item => item.id === replaceTargetId);
+        event.target.value = "";
+        if (!file || !report) return;
+        try {
+            report.screenshotData = await compressImage(file);
+            await saveReports();
+            render();
+        } catch (error) {
+            showMessage(error.message || "Could not replace screenshot.", "error");
+        } finally {
+            replaceTargetId = "";
+        }
+    });
+
+    $("followupScreenshotClose")?.addEventListener("click", closeScreenshot);
+    $("followupScreenshotBackdrop")?.addEventListener("click", closeScreenshot);
+    document.addEventListener("keydown", event => {
+        if (event.key === "Escape" && $("followupScreenshotModal")?.classList.contains("open")) closeScreenshot();
+    });
+
+    window.__workspaceHistoryAdapters = window.__workspaceHistoryAdapters || {};
+    window.__workspaceHistoryAdapters.followupReports = {
+        label: "Follow Up Reports",
+        snapshot() { return clone(reports); },
+        async restore(snapshot) {
+            reports = Array.isArray(snapshot) ? clone(snapshot) : [];
+            await saveReports();
+            render();
+        }
+    };
+
+    function boot() {
+        if ($("followupDate")) $("followupDate").value = todayLocal();
+        resetAddForm();
+        loadReports();
+        $("followupTabBtn")?.addEventListener("click", refreshOmOptions);
+    }
+
+    if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot, { once: true });
+    else boot();
+})();
+</script>
+
 <!-- Global Workspace History -->
 <div id="globalHistoryModal" class="maintenance-modal" aria-hidden="true">
     <div class="maintenance-modal-backdrop" id="globalHistoryBackdrop"></div>
@@ -21528,6 +22121,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         maintenancePanel: "aiSorter",
         eodPanel: "maintenanceReport",
         pendingPanel: "pendingReports",
+        followupPanel: "followupReports",
         masterlistPanel: "masterlist",
         edrPanel: "edr"
     };
@@ -21537,6 +22131,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         aiSorter: "Maintenance AI Sorter",
         maintenanceReport: "Maintenance Report",
         pendingReports: "Pending Reports",
+        followupReports: "Follow Up Reports",
         masterlist: "Master List",
         edr: "EDR"
     };
@@ -21757,6 +22352,15 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
             };
         }
 
+        if (workspace === "followupReports") {
+            return {
+                items: Array.isArray(snapshot) ? snapshot : [],
+                apply(target, items) {
+                    return items;
+                }
+            };
+        }
+
         if (workspace === "edr") {
             return {
                 items: Array.isArray(snapshot?.reports) ? snapshot.reports : [],
@@ -21915,7 +22519,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
             );
 
             if (merged.changed) {
-                if (entry.workspace === "pendingReports") {
+                if (entry.workspace === "pendingReports" || entry.workspace === "followupReports") {
                     next = merged.items;
                 } else {
                     beforeDesc.apply(next, merged.items);
@@ -22224,6 +22828,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         ["maintenanceTabBtn", "maintenancePanel"],
         ["eodTabBtn", "eodPanel"],
         ["pendingTabBtn", "pendingPanel"],
+        ["followupTabBtn", "followupPanel"],
         ["masterlistTabBtn", "masterlistPanel"],
         ["adminTabBtn", "adminPanel"],
         ["edrTabBtn", "edrPanel"]
