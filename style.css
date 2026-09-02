@@ -4840,7 +4840,7 @@ body.dark-mode .master-data-table th {
 
 #masterAssignedHrTable td {
     white-space: normal !important;
-    line-height: 1.45 !important; 
+    line-height: 1.45 !important;
 }
 
 #masterAssignedHrTable tbody tr:hover td {
@@ -4858,4 +4858,137 @@ body.dark-mode #masterAssignedHrTable tbody tr:hover td {
 #masterHrSearch:focus {
     border-color: rgba(37,99,235,.55) !important;
     box-shadow: 0 0 0 3px rgba(37,99,235,.09) !important;
+}
+
+
+/* Maintenance Report: hide the data table only, keep screenshots visible */
+.eod-block-data.is-hidden {
+    display: none !important;
+}
+
+.eod-data-hidden-note {
+    margin: 4px 0 10px;
+    padding: 7px 9px;
+    border: 1px dashed var(--admin-line, #d9e1ea);
+    border-radius: 7px;
+    background: var(--admin-panel-soft, #f8fafc);
+    color: var(--admin-muted, #64748b);
+    font: 600 8.5px/1.35 "Inter", sans-serif;
+}
+
+/* Master List HR CRUD */
+.master-hr-crud-form {
+    display: grid;
+    grid-template-columns: 160px minmax(220px, 1fr) minmax(200px, .8fr) auto;
+    gap: 7px;
+    align-items: end;
+    margin-bottom: 7px;
+    padding: 9px;
+    border: 1px solid var(--admin-line, #e2e8f0);
+    border-radius: 8px;
+    background: var(--admin-panel-soft, #f8fafc);
+}
+
+.master-hr-crud-form label > span {
+    display: block;
+    margin-bottom: 4px;
+    color: var(--admin-muted, #64748b);
+    font: 750 7.5px/1 "Inter", sans-serif;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+}
+
+.master-hr-crud-form input[type="text"] {
+    width: 100%;
+    min-height: 34px;
+    box-sizing: border-box;
+    padding: 6px 8px;
+    font: 600 9px/1.2 "Inter", sans-serif !important;
+}
+
+.master-hr-crud-actions {
+    display: flex;
+    gap: 5px;
+}
+
+.master-hr-crud-actions button {
+    min-height: 34px !important;
+    white-space: nowrap;
+}
+
+.master-hr-crud-status {
+    min-height: 16px;
+    margin: 0 0 7px;
+    color: var(--admin-muted, #64748b);
+    font: 650 8px/1.3 "Inter", sans-serif;
+}
+
+.master-hr-crud-status.is-success {
+    color: #059669;
+}
+
+.master-hr-crud-status.is-error {
+    color: #dc2626;
+}
+
+.master-hr-crud-status.is-local {
+    color: #d97706;
+}
+
+.master-hr-row-actions {
+    display: flex;
+    gap: 4px;
+}
+
+.master-hr-edit-btn,
+.master-hr-delete-btn {
+    min-height: 25px;
+    padding: 4px 7px;
+    border-radius: 5px;
+    background: transparent;
+    font: 750 7.5px/1 "Inter", sans-serif;
+    cursor: pointer;
+}
+
+.master-hr-edit-btn {
+    border: 1px solid rgba(37,99,235,.28);
+    color: #2563eb;
+}
+
+.master-hr-delete-btn {
+    border: 1px solid rgba(220,38,38,.28);
+    color: #dc2626;
+}
+
+#masterAssignedHrTable th:nth-child(4),
+#masterAssignedHrTable td:nth-child(4) {
+    width: 110px;
+}
+
+/* Global History: select and restore a specific change */
+.global-history-item {
+    grid-template-columns: 18px minmax(0, 1fr) auto !important;
+    cursor: pointer;
+}
+
+.global-history-item > input[type="radio"] {
+    width: 14px;
+    height: 14px;
+    margin: 1px 0 0;
+    accent-color: #2563eb;
+}
+
+.global-history-item.selected {
+    border-color: rgba(37,99,235,.42) !important;
+    background: rgba(37,99,235,.07) !important;
+}
+
+@media (max-width: 850px) {
+    .master-hr-crud-form {
+        grid-template-columns: 1fr;
+    }
+
+    .master-hr-crud-actions {
+        justify-content: flex-start;
+    }
 }
