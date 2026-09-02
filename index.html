@@ -11192,7 +11192,7 @@ body.auth-locked > .site-footer { visibility:hidden!important; pointer-events:no
                     <h3 id="auditGuardTitle">Smart Audit Guard</h3>
                     <span class="audit-guard-state is-empty" id="auditGuardState">No tracker loaded</span>
                 </div>
-                <p>Checks your local tracker snapshot for duplicate audits, spelling variations, extra spaces, unusual values, and other data-quality issues. The original Google Sheet is never edited.</p>
+                <p>Checks your local tracker snapshot for duplicate audits, TL-name misspellings, TL extra spaces, unusual values, and other data-quality issues. Campaign wording/spelling differences are ignored. The original Google Sheet is never edited.</p>
             </div>
             <div class="audit-guard-actions">
                 <input type="file" id="trackerFileInput" accept=".xlsx,.xls,.csv,text/csv" hidden>
@@ -11217,6 +11217,20 @@ body.auth-locked > .site-footer { visibility:hidden!important; pointer-events:no
             </div>
             <button type="button" class="audit-guard-link-btn" id="trackerIssuesBtn" hidden>View Issues</button>
         </div>
+
+        <section class="audit-guard-alert-feed" id="auditGuardAlertFeed" aria-live="polite">
+            <div class="audit-guard-alert-feed-head">
+                <div>
+                    <span class="audit-guard-live-kicker">Live anomaly monitor</span>
+                    <strong id="auditGuardAlertTitle">Waiting for tracker snapshot.</strong>
+                    <p id="auditGuardAlertText">Alerts refresh automatically whenever you import or paste newer tracker rows.</p>
+                </div>
+                <button type="button" class="audit-guard-link-btn" id="trackerAlertsViewAllBtn" hidden>View all issues</button>
+            </div>
+            <div class="audit-guard-alert-list" id="auditGuardAlertList">
+                <div class="audit-guard-alert-empty">No tracker loaded yet.</div>
+            </div>
+        </section>
 
         <div class="audit-guard-match-list" id="auditGuardMatches" hidden></div>
 
@@ -12102,7 +12116,7 @@ body.auth-locked > .site-footer { visibility:hidden!important; pointer-events:no
             <div class="edr-list-head">
                 <div>
                     <h3>EDR List</h3>
-                    <p>Check the EDRs you want to include. Use Edit to update any report before copying.</p>
+                    <p>Check the EDRs you want to send. After a successful Copy All, the selected reports are automatically marked Done and removed from the Teams-ready selection so you do not send them twice.</p>
                 </div>
 
                 <div class="edr-list-actions">
@@ -12114,6 +12128,7 @@ body.auth-locked > .site-footer { visibility:hidden!important; pointer-events:no
             <div class="edr-list-summary">
                 <span id="edrReportCount">0 EDRs</span>
                 <span id="edrSelectedCount">0 selected</span>
+                <span id="edrDoneCount">0 done</span>
             </div>
 
             <div id="edrReportList" class="edr-report-list">
@@ -12139,7 +12154,7 @@ https://www.facebook.com/share/..."></textarea>
             <div class="edr-output-head">
                 <div>
                     <h3>Teams-Ready Output</h3>
-                    <p>Selected EDRs are generated in your requested template, followed by a divider and Facebook shared posts.</p>
+                    <p>Selected active EDRs appear here. Copy All marks those selected reports Done automatically; the saved EDRs remain in your list for reference.</p>
                 </div>
 
                 <div class="edr-output-actions">
@@ -13449,62 +13464,47 @@ https://www.facebook.com/share/..."></textarea>
                 }));
             }
 
-            [
-                ["auditor", "Auditor / Name"],
-                ["om", "OM"],
-                ["tl", "TL Name"],
-                ["agent", "Agent Name"],
-                ["account", "Account / Campaign"]
-            ].forEach(([field, label]) => {
-                if (!hasSpacingIssue(row.raw?.[field])) return;
-                const rawValue = String(row.raw?.[field] ?? "").replace(/\u00a0/g, " ");
+            // TL names are the authoritative spelling check. Campaign/Account wording differences are intentionally ignored.
+            if (hasSpacingIssue(row.raw?.tl)) {
+                const rawValue = String(row.raw?.tl ?? "").replace(/\u00a0/g, " ");
                 issues.push(createTrackerIssue({
                     type: "extra-space",
-                    level: "warning",
-                    title: `${label} contains extra spaces`,
-                    detail: `Row ${sourceRow} · “${rawValue}”`,
-                    suggestion: `Clean value: “${cleanText(rawValue)}”`,
+                    level: "danger",
+                    title: "TL Name contains extra spaces",
+                    detail: `Row ${sourceRow} · Current: “${rawValue}”`,
+                    suggestion: `Clean TL name: “${cleanText(rawValue)}”`,
                     row
                 }));
-            });
+            }
 
-            const canonicalChecks = [
-                { field: "tl", label: "TL Name", candidates: masters.tls, threshold: 0.90 },
-                { field: "om", label: "OM", candidates: masters.oms, threshold: 0.86 },
-                { field: "account", label: "Account / Campaign", candidates: masters.accounts, threshold: 0.90 }
-            ];
-
-            canonicalChecks.forEach(check => {
-                const value = cleanText(row[check.field]);
-                if (!value || !check.candidates.length) return;
-
-                const canonical = exactCanonical(value, check.candidates);
+            const tlValue = cleanText(row.tl);
+            if (tlValue && masters.tls.length) {
+                const canonical = exactCanonical(tlValue, masters.tls);
                 if (canonical) {
-                    if (canonical !== value && !hasSpacingIssue(row.raw?.[check.field])) {
+                    if (canonical !== tlValue && !hasSpacingIssue(row.raw?.tl)) {
                         issues.push(createTrackerIssue({
                             type: "formatting",
                             level: "warning",
-                            title: `${check.label} formatting differs from master list`,
-                            detail: `Row ${sourceRow} · Current: “${value}”`,
-                            suggestion: `Master list: “${canonical}”`,
+                            title: "TL Name formatting differs from master list",
+                            detail: `Row ${sourceRow} · Current: “${tlValue}”`,
+                            suggestion: `Master-list TL: “${canonical}”`,
                             row
                         }));
                     }
-                    return;
+                } else {
+                    const suggestion = bestCanonical(tlValue, masters.tls, 0.90);
+                    if (suggestion) {
+                        issues.push(createTrackerIssue({
+                            type: "spelling",
+                            level: "danger",
+                            title: "Possible TL Name misspelling",
+                            detail: `Row ${sourceRow} · Current: “${tlValue}”`,
+                            suggestion: `Possible correct TL: “${suggestion.value}” (${suggestion.score}% match)`,
+                            row
+                        }));
+                    }
                 }
-
-                const suggestion = bestCanonical(value, check.candidates, check.threshold);
-                if (suggestion) {
-                    issues.push(createTrackerIssue({
-                        type: "spelling",
-                        level: "danger",
-                        title: `Possible ${check.label} misspelling`,
-                        detail: `Row ${sourceRow} · Current: “${value}”`,
-                        suggestion: `Possible correct value: “${suggestion.value}” (${suggestion.score}% match)`,
-                        row
-                    }));
-                }
-            });
+            }
         });
 
         const duplicateGroups = [];
@@ -13723,8 +13723,6 @@ https://www.facebook.com/share/..."></textarea>
         }
 
         bestFor("tl", "TL Name", 5, 0.90, masters.tls);
-        bestFor("agent", "Agent Name", 5, 0.93);
-        bestFor("account", "Account / Campaign", 4, 0.90, masters.accounts);
         return suggestions;
     }
 
@@ -13821,10 +13819,76 @@ https://www.facebook.com/share/..."></textarea>
         } else {
             live.classList.add(result.spelling.length ? "is-warning" : "is-clear");
             title.textContent = result.spelling.length ? "No duplicate found, but check the spelling." : "Clear — no strong tracker match found.";
-            text.textContent = result.spelling.length ? "A name is very close to an existing tracker spelling." : "Based on your current local tracker snapshot.";
+            text.textContent = result.spelling.length ? "The TL name is very close to an official master-list name." : "Based on your current local tracker snapshot.";
         }
 
         renderGuardMatches(result);
+    }
+
+    function renderLiveTrackerAlerts() {
+        const feed = el("auditGuardAlertFeed");
+        const title = el("auditGuardAlertTitle");
+        const text = el("auditGuardAlertText");
+        const list = el("auditGuardAlertList");
+        const viewAll = el("trackerAlertsViewAllBtn");
+        if (!feed || !title || !text || !list) return;
+
+        feed.classList.remove("is-clear", "is-warning", "is-danger", "is-idle");
+
+        if (!trackerRows.length) {
+            feed.classList.add("is-idle");
+            title.textContent = "Waiting for tracker snapshot.";
+            text.textContent = "Import the tracker or paste the latest rows to start the live anomaly monitor.";
+            list.innerHTML = '<div class="audit-guard-alert-empty">No tracker loaded yet.</div>';
+            if (viewAll) viewAll.hidden = true;
+            return;
+        }
+
+        const issues = trackerAnalysis.issues || [];
+        const serious = issues.filter(issue => issue.level === "danger");
+        if (!issues.length) {
+            feed.classList.add("is-clear");
+            title.textContent = "No anomalies found in the loaded snapshot.";
+            text.textContent = `Monitoring ${trackerRows.length.toLocaleString()} tracker rows against the official TL master list.`;
+            list.innerHTML = '<div class="audit-guard-alert-empty is-clear">No duplicate, TL spelling, spacing, NOC, missing-field, or date issues detected.</div>';
+            if (viewAll) viewAll.hidden = true;
+            return;
+        }
+
+        feed.classList.add(serious.length ? "is-danger" : "is-warning");
+        title.textContent = `${issues.length.toLocaleString()} anomal${issues.length === 1 ? "y" : "ies"} need review.`;
+        text.textContent = `${serious.length.toLocaleString()} high-priority alert${serious.length === 1 ? "" : "s"}. TL names are checked against your official master list; campaign spelling differences are ignored.`;
+        if (viewAll) {
+            viewAll.hidden = false;
+            viewAll.textContent = `View all ${issues.length.toLocaleString()}`;
+        }
+
+        const top = issues.slice(0, 6);
+        list.innerHTML = top.map(issue => {
+            const row = issue.row;
+            const name = row?.tl || row?.agent || issue.subject || "Unknown";
+            const rowNo = row?.sourceRow || "?";
+            const typeLabel = {
+                duplicate: "Duplicate",
+                spelling: "TL Misspelling",
+                noc: "NOC",
+                "extra-space": "TL Extra Space",
+                formatting: "TL Format",
+                missing: "Missing Field",
+                "future-date": "Date"
+            }[issue.type] || "Review";
+            return `
+                <div class="audit-guard-alert-item ${issue.level === "danger" ? "is-danger" : "is-warning"}">
+                    <div class="audit-guard-alert-item-main">
+                        <span class="audit-guard-alert-kind">${htmlEscape(typeLabel)}</span>
+                        <strong>Row ${htmlEscape(rowNo)} · ${htmlEscape(name)}</strong>
+                        <p>${htmlEscape(issue.title)}</p>
+                        ${issue.suggestion ? `<small>${htmlEscape(issue.suggestion)}</small>` : ""}
+                    </div>
+                    <span class="audit-guard-alert-row">#${htmlEscape(rowNo)}</span>
+                </div>`;
+        }).join("") + (issues.length > top.length
+            ? `<div class="audit-guard-alert-more">+ ${(issues.length - top.length).toLocaleString()} more issue${issues.length - top.length === 1 ? "" : "s"}</div>` : "");
     }
 
     function renderTrackerIssues() {
@@ -13835,7 +13899,7 @@ https://www.facebook.com/share/..."></textarea>
             list.innerHTML = `
                 <div class="audit-guard-empty-state">
                     <strong>No obvious tracker issues found.</strong>
-                    <span>The current snapshot passed duplicate, spacing, spelling, and anomaly checks.</span>
+                    <span>The current snapshot passed duplicate, TL-name, NOC, missing-field, and date checks.</span>
                 </div>`;
             return;
         }
@@ -13919,6 +13983,7 @@ https://www.facebook.com/share/..."></textarea>
         }
 
         renderTrackerIssues();
+        renderLiveTrackerAlerts();
         renderLiveCheck();
         if (typeof renderTable === "function") renderTable();
     }
@@ -14172,6 +14237,13 @@ https://www.facebook.com/share/..."></textarea>
         panel.hidden = false;
         renderTrackerIssues();
     });
+    el("trackerAlertsViewAllBtn")?.addEventListener("click", () => {
+        const panel = el("trackerIssuesPanel");
+        if (panel) {
+            panel.hidden = false;
+            panel.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        }
+    });
     el("trackerIssuesCloseBtn")?.addEventListener("click", () => {
         el("trackerIssuesPanel").hidden = true;
     });
@@ -14202,6 +14274,9 @@ https://www.facebook.com/share/..."></textarea>
     };
 
     loadTrackerSnapshot();
+    window.addEventListener("load", () => {
+        if (trackerRows.length) renderTrackerSummary();
+    }, { once: true });
 })();
 </script>
 
@@ -19491,6 +19566,8 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
             screenshotData: report.screenshotData || "",
             screenshotChanged: !!report.screenshotChanged,
             screenshotFileId: report.screenshotFileId || "",
+            done: !!report.done,
+            doneAt: report.doneAt || "",
             createdAt: report.createdAt || "",
             updatedAt: new Date().toISOString()
         };
@@ -19555,6 +19632,8 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         return {
             id: record.id || uid(),
             selected: false,
+            done: !!record.done,
+            doneAt: record.doneAt || "",
             expanded: false,
             cloudSynced: true,
             screenshotData: record.screenshotData || "",
@@ -20018,6 +20097,8 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
             savedReport = {
                 id: uid(),
                 selected: true,
+                done: false,
+                doneAt: "",
                 expanded: false,
                 cloudSynced: false,
                 createdAt: new Date().toISOString(),
@@ -20134,15 +20215,66 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         renderList();
     }
 
+    function formatEdrDoneTime(value) {
+        if (!value) return "";
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) return "";
+        return date.toLocaleString([], {
+            month: "short",
+            day: "numeric",
+            hour: "2-digit",
+            minute: "2-digit"
+        });
+    }
+
+    async function toggleReportDone(id) {
+        const report = edrReports.find(item => item.id === id);
+        if (!report) return;
+
+        const makingDone = !report.done;
+
+        if (makingDone) {
+            report.done = true;
+            report.doneAt = new Date().toISOString();
+            report.selected = false;
+        } else {
+            report.done = false;
+            report.doneAt = "";
+            report.selected = false;
+        }
+
+        renderList();
+        refreshOutput();
+
+        await pushEdrHistory(makingDone ? "Marked EDR Done" : "Reopened EDR");
+
+        showToast(
+            makingDone
+                ? "EDR marked Done. It stays saved in the EDR List."
+                : "EDR reopened. Select it again when you need to send it.",
+            makingDone ? "success" : "info"
+        );
+
+        // Best-effort sync. Existing receiver versions may ignore Done metadata,
+        // while the local IndexedDB workspace always keeps it.
+        if (isValidEdrDocsUrl(getEdrDocsWebAppUrl())) {
+            syncReportToGoogleDocs(report).catch(() => {});
+        }
+    }
+
     function renderList() {
         const root = byId("edrReportList");
-        const selectedCount = edrReports.filter(item => item.selected).length;
+        const selectedCount = edrReports.filter(item => item.selected && !item.done).length;
+        const doneCount = edrReports.filter(item => item.done).length;
 
         byId("edrReportCount").textContent =
             `${edrReports.length} EDR${edrReports.length === 1 ? "" : "s"}`;
 
         byId("edrSelectedCount").textContent =
             `${selectedCount} selected`;
+
+        const doneSummary = byId("edrDoneCount");
+        if (doneSummary) doneSummary.textContent = `${doneCount} done`;
 
         if (!edrReports.length) {
             root.innerHTML = '<div class="edr-empty-state">No EDR reports created yet.</div>';
@@ -20151,11 +20283,14 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
 
         root.innerHTML = edrReports.map((report, index) => {
             const linkedToAudit = !!window.cctvAuditBridge?.hasEdr(report.id);
+            const isDone = !!report.done;
+            const selected = !!report.selected && !isDone;
+            const doneTime = formatEdrDoneTime(report.doneAt);
 
             return `
-            <article class="edr-list-item ${report.selected ? "is-selected" : ""}" data-id="${escapeHtml(report.id)}">
-                <label class="edr-select-box" title="Include this EDR">
-                    <input type="checkbox" class="edr-row-check" ${report.selected ? "checked" : ""}>
+            <article class="edr-list-item ${selected ? "is-selected" : ""} ${isDone ? "is-done" : ""}" data-id="${escapeHtml(report.id)}">
+                <label class="edr-select-box ${isDone ? "is-disabled" : ""}" title="${isDone ? "Reopen this EDR before selecting it again" : "Include this EDR"}">
+                    <input type="checkbox" class="edr-row-check" ${selected ? "checked" : ""} ${isDone ? "disabled" : ""}>
                     <span></span>
                 </label>
 
@@ -20164,12 +20299,14 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
                         <strong>${escapeHtml(formatDate(report.date) || `EDR ${index + 1}`)}</strong>
                         <span>${escapeHtml(report.site)}</span>
                         <span class="edr-account-chip">${escapeHtml(report.account)}</span>
+                        ${isDone ? `<span class="edr-done-chip" title="${escapeHtml(doneTime ? `Completed ${doneTime}` : "Completed")}">Done</span>` : ""}
                     </div>
 
                     <div class="edr-list-sub">
                         ${escapeHtml(supervisorOutputLabel(report))}: ${escapeHtml(report.supervisorName)}
                         · ${escapeHtml(subjectOutputLabel(report))}: ${escapeHtml(report.subjectName)}
                         ${linkedToAudit ? '<span class="edr-audit-linked">In CCTV Audit</span>' : ""}
+                        ${isDone ? `<span class="edr-done-meta">${escapeHtml(doneTime ? `Completed ${doneTime}` : "Completed")}</span>` : ""}
                     </div>
 
                     ${report.expanded
@@ -20178,6 +20315,9 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
                 </div>
 
                 <div class="edr-row-actions">
+                    <button type="button" class="edr-row-done ${isDone ? "is-reopen" : ""}">
+                        ${isDone ? "Reopen" : "Done"}
+                    </button>
                     <button type="button" class="edr-row-view">${report.expanded ? "Hide" : "View"}</button>
                     ${
                         report.screenshotData || report.screenshotFileId
@@ -20203,6 +20343,12 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
             if (!report) return;
 
             card.querySelector(".edr-row-check").addEventListener("change", async event => {
+                if (report.done) {
+                    event.target.checked = false;
+                    showToast("This EDR is already Done. Click Reopen first if you need to resend it.", "info");
+                    return;
+                }
+
                 report.selected = event.target.checked;
 
                 if (report.selected && !report.screenshotData && report.screenshotFileId) {
@@ -20212,6 +20358,10 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
                 renderList();
                 refreshOutput();
                 await pushEdrHistory(report.selected ? "Selected EDR" : "Unselected EDR");
+            });
+
+            card.querySelector(".edr-row-done")?.addEventListener("click", () => {
+                toggleReportDone(id);
             });
 
             card.querySelector(".edr-row-view").addEventListener("click", () => toggleExpanded(id));
@@ -20236,7 +20386,6 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
             card.querySelector(".edr-row-delete").addEventListener("click", () => deleteReport(id));
         });
     }
-
 
 
     window.refreshEdrAuditLinks = function () {
@@ -20287,7 +20436,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
     }
 
     function outputText() {
-        const selected = edrReports.filter(item => item.selected);
+        const selected = edrReports.filter(item => item.selected && !item.done);
         const facebook = byId("edrFacebookText").value.trim();
 
         const divider = "────────────────────────────────────────";
@@ -20338,7 +20487,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
     }
 
     function outputHtml() {
-        const selected = edrReports.filter(item => item.selected);
+        const selected = edrReports.filter(item => item.selected && !item.done);
 
         const reports = selected
             .map(report => `${reportHtml(report, true)}<hr class="edr-rich-divider">`)
@@ -20362,8 +20511,39 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         `;
     }
 
+    async function markCopiedReportsDone(reports) {
+        const active = (reports || []).filter(report => report && !report.done);
+        if (!active.length) return 0;
+
+        const completedAt = new Date().toISOString();
+
+        active.forEach(report => {
+            report.done = true;
+            report.doneAt = completedAt;
+            report.selected = false;
+        });
+
+        renderList();
+        refreshOutput();
+
+        await pushEdrHistory(
+            active.length === 1
+                ? "Copied and marked EDR Done"
+                : `Copied and marked ${active.length} EDRs Done`
+        );
+
+        // Best-effort cloud sync for receiver versions that preserve extra metadata.
+        if (isValidEdrDocsUrl(getEdrDocsWebAppUrl())) {
+            active.forEach(report => {
+                syncReportToGoogleDocs(report).catch(() => {});
+            });
+        }
+
+        return active.length;
+    }
+
     async function copyAll() {
-        const selectedReports = edrReports.filter(item => item.selected);
+        const selectedReports = edrReports.filter(item => item.selected && !item.done);
 
         for (const report of selectedReports) {
             if (!report.screenshotData && report.screenshotFileId) {
@@ -20377,9 +20557,12 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         const rich = outputHtml();
 
         if (!text && !rich) {
-            showToast("Create or select an EDR first.", "error");
+            showToast("Create or select an active EDR first.", "error");
             return;
         }
+
+        let copied = false;
+        let copyMode = "rich";
 
         try {
             if (navigator.clipboard && window.ClipboardItem && navigator.clipboard.write) {
@@ -20400,6 +20583,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
                 ]);
             } else if (navigator.clipboard && navigator.clipboard.writeText) {
                 await navigator.clipboard.writeText(text);
+                copyMode = "text";
             } else {
                 const textarea = document.createElement("textarea");
                 textarea.value = text;
@@ -20409,29 +20593,52 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
                 textarea.select();
                 document.execCommand("copy");
                 textarea.remove();
+                copyMode = "text";
             }
 
-            showToast("Copied with CCTV screenshot and clickable CCTV Clip link.", "success");
+            copied = true;
         } catch (error) {
             console.error(error);
 
             try {
                 await navigator.clipboard.writeText(text);
-                showToast("Copied as text. Browser blocked rich screenshot copy.", "info");
+                copied = true;
+                copyMode = "text";
             } catch {
-                showToast("Copy failed. Please try again.", "error");
+                showToast("Copy failed. Nothing was marked Done.", "error");
+                return;
             }
+        }
+
+        if (!copied) return;
+
+        const doneCount = await markCopiedReportsDone(selectedReports);
+
+        if (doneCount > 0) {
+            showToast(
+                copyMode === "rich"
+                    ? `Copied to clipboard. ${doneCount} selected EDR${doneCount === 1 ? "" : "s"} marked Done.`
+                    : `Copied as text. ${doneCount} selected EDR${doneCount === 1 ? "" : "s"} marked Done.`,
+                "success"
+            );
+        } else {
+            showToast(
+                copyMode === "rich"
+                    ? "Copied with CCTV screenshot and clickable CCTV Clip link."
+                    : "Copied as text.",
+                "success"
+            );
         }
     }
 
     async function selectAll(value) {
         edrReports.forEach(report => {
-            report.selected = value;
+            report.selected = value ? !report.done : false;
         });
 
         renderList();
         refreshOutput();
-        await pushEdrHistory(value ? "Selected all EDRs" : "Unselected all EDRs");
+        await pushEdrHistory(value ? "Selected all active EDRs" : "Unselected all EDRs");
     }
 
     async function clearAll() {
