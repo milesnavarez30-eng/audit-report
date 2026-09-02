@@ -328,7 +328,7 @@
     <style>
         /* =========================================================
            PROFESSIONAL UI ENHANCEMENTS
-           Added on top of the existing design — original styles kept.
+           Added on top of the existing design â€” original styles kept.
            ========================================================= */
 
         :root {
@@ -492,7 +492,7 @@
             color: var(--text-color);
         }
 
-        /* Existing cards — refined */
+        /* Existing cards â€” refined */
         .container {
             position: relative;
             overflow: hidden;
@@ -6299,7 +6299,7 @@ body:not(.dark-mode) .edr-teams-preview {
     background:var(--admin-panel,#fff); cursor:pointer;
 }
 .edr-simple-check input:checked + .edr-simple-checkbox { border-color:#2563eb; background:#2563eb; }
-.edr-simple-check input:checked + .edr-simple-checkbox::after { content:"✓"; color:#fff; font-size:12px; font-weight:900; }
+.edr-simple-check input:checked + .edr-simple-checkbox::after { content:"âœ“"; color:#fff; font-size:12px; font-weight:900; }
 .edr-simple-report-main { min-width:0; }
 .edr-simple-report-meta { display:flex; align-items:center; gap:7px; margin-bottom:3px; }
 .edr-simple-report-meta strong { color:var(--admin-text,var(--text-color)); font-size:11px; }
@@ -6851,7 +6851,7 @@ body.app-confirm-open {
 }
 
 .edr-select-box input:checked + span::after {
-    content: "✓";
+    content: "âœ“";
     color: #fff;
     font: 900 12px/1 "Inter", sans-serif;
 }
@@ -8670,7 +8670,7 @@ body.dark-mode #cctvTabBtn:not(.active) .cctv-edr-sent-badge {
 <style id="masterlistSimpleCritical">
 
 /* =========================================================
-   MASTER LIST — SIMPLE PENDING MILES + HR GUIDE
+   MASTER LIST â€” SIMPLE PENDING MILES + HR GUIDE
    ========================================================= */
 
 #masterlistTabBtn {
@@ -8967,7 +8967,7 @@ body.dark-mode .master-data-table th {
 </style>
 <style id="masterHrGuideRefineCritical">
 
-/* Assigned HR per OM — cleaner 3-column searchable guide */
+/* Assigned HR per OM â€” cleaner 3-column searchable guide */
 #masterAssignedHrTable {
     width: 100% !important;
     min-width: 760px !important;
@@ -9137,11 +9137,654 @@ body.dark-mode #masterAssignedHrTable tbody tr:hover td {
 @media (max-width: 850px) {
     .master-hr-crud-form {
         grid-template-columns: 1fr;
-    }
+}
 
-    .master-hr-crud-actions {
-        justify-content: flex-start;
+/* =========================================================
+   PRODUCTIVITY COMMAND PALETTE (CTRL + K)
+   ========================================================= */
+.cmd-palette-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 210000;
+    display: none;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 60px 20px 20px;
+}
+
+.cmd-palette-modal.open {
+    display: flex;
+}
+
+.cmd-palette-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(2, 6, 23, 0.68);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+}
+
+.cmd-palette-dialog {
+    position: relative;
+    z-index: 1;
+    width: min(640px, 96vw);
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border: 1px solid var(--admin-line, var(--border-color));
+    border-radius: 16px;
+    background: var(--admin-panel, var(--container-bg));
+    color: var(--admin-text, var(--text-color));
+    box-shadow: 0 25px 70px rgba(0, 0, 0, 0.42), 0 0 0 1px rgba(255, 255, 255, 0.05);
+    animation: cmdPop .16s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes cmdPop {
+    from { opacity: 0; transform: translateY(-10px) scale(0.98); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.cmd-palette-searchbar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--admin-line, var(--border-color));
+    background: var(--admin-panel-soft, rgba(148, 163, 184, 0.035));
+}
+
+.cmd-palette-searchbar svg {
+    flex: none;
+    width: 20px;
+    height: 20px;
+    color: var(--admin-muted, var(--pro-muted));
+}
+
+.cmd-palette-input {
+    width: 100% !important;
+    min-height: auto !important;
+    padding: 0 !important;
+    border: 0 !important;
+    background: transparent !important;
+    color: var(--admin-text, var(--text-color)) !important;
+    font: 600 15px/1.3 "Inter", "Roboto", Arial, sans-serif !important;
+    box-shadow: none !important;
+    outline: none !important;
+}
+
+.cmd-palette-input::placeholder {
+    color: var(--admin-muted, var(--pro-muted));
+    font-weight: 500;
+}
+
+.cmd-palette-esc {
+    padding: 4px 7px;
+    border: 1px solid var(--admin-line, var(--input-border));
+    border-radius: 6px;
+    background: var(--admin-panel, var(--input-bg));
+    color: var(--admin-muted, var(--pro-muted));
+    font: 700 10px/1 "Inter", sans-serif;
+}
+
+.cmd-palette-body {
+    padding: 10px;
+    overflow-y: auto;
+    max-height: 52vh;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.cmd-group-label {
+    padding: 8px 10px 4px;
+    color: var(--admin-muted, var(--pro-muted));
+    font: 800 9.5px/1 "Inter", sans-serif;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.cmd-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 12px;
+    border-radius: 9px;
+    background: transparent;
+    border: 0;
+    color: var(--admin-text, var(--text-color));
+    font: 600 12.5px/1.3 "Inter", "Roboto", Arial, sans-serif;
+    cursor: pointer;
+    text-align: left;
+    transition: background 0.12s ease, color 0.12s ease;
+}
+
+.cmd-item:hover,
+.cmd-item.active {
+    background: rgba(37, 99, 235, 0.12);
+    color: #2563eb;
+}
+
+body.dark-mode .cmd-item:hover,
+body.dark-mode .cmd-item.active {
+    background: rgba(59, 130, 246, 0.18);
+    color: #93c5fd;
+}
+
+.cmd-item-main {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+}
+
+.cmd-item-icon {
+    width: 24px;
+    height: 24px;
+    display: grid;
+    place-items: center;
+    border-radius: 6px;
+    background: rgba(148, 163, 184, 0.12);
+    font-size: 13px;
+    flex: none;
+}
+
+.cmd-item-title {
+    font-weight: 650;
+}
+
+.cmd-item-sub {
+    font-size: 11px;
+    color: var(--admin-muted, var(--pro-muted));
+    margin-left: 6px;
+}
+
+.cmd-item-badge {
+    flex: none;
+    padding: 3px 6px;
+    border: 1px solid var(--admin-line, var(--input-border));
+    border-radius: 6px;
+    background: var(--admin-panel-soft, var(--input-bg));
+    color: var(--admin-muted, var(--pro-muted));
+    font: 700 9.5px/1 "Inter", sans-serif;
+}
+
+.cmd-palette-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 9px 16px;
+    border-top: 1px solid var(--admin-line, var(--border-color));
+    background: var(--admin-panel-soft, rgba(148, 163, 184, 0.02));
+    color: var(--admin-muted, var(--pro-muted));
+    font: 550 10.5px/1.4 "Inter", sans-serif;
+}
+
+.cmd-palette-footer kbd {
+    padding: 2px 5px;
+    border: 1px solid var(--admin-line, var(--input-border));
+    border-radius: 4px;
+    background: var(--admin-panel, var(--input-bg));
+    font: 700 9px/1 monospace;
+}
+
+/* =========================================================
+   MULTI-TASK QUICK DRAWER / SCRATCHPAD (ALT + N)
+   ========================================================= */
+.quick-drawer {
+    position: fixed;
+    top: 0;
+    right: -420px;
+    width: min(390px, 92vw);
+    height: 100vh;
+    z-index: 180000;
+    display: flex;
+    flex-direction: column;
+    border-left: 1px solid var(--admin-line, var(--border-color));
+    background: var(--admin-panel, var(--container-bg));
+    color: var(--admin-text, var(--text-color));
+    box-shadow: -15px 0 45px rgba(0, 0, 0, 0.28);
+    transition: right 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.quick-drawer.open {
+    right: 0;
+}
+
+.quick-drawer-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 179999;
+    background: rgba(2, 6, 23, 0.45);
+    backdrop-filter: blur(2px);
+    display: none;
+}
+
+.quick-drawer-backdrop.open {
+    display: block;
+}
+
+.quick-drawer-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 15px 16px;
+    border-bottom: 1px solid var(--admin-line, var(--border-color));
+    background: var(--admin-panel-soft, rgba(148, 163, 184, 0.035));
+}
+
+.quick-drawer-header h3 {
+    margin: 0;
+    font: 850 14px/1.2 "Inter", "Roboto", Arial, sans-serif;
+    color: var(--admin-text, var(--text-color));
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.quick-drawer-close {
+    width: 32px;
+    height: 32px;
+    border: 1px solid var(--admin-line, var(--input-border));
+    border-radius: 8px;
+    background: transparent;
+    color: var(--admin-text, var(--text-color));
+    font-size: 16px;
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+}
+
+.quick-drawer-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.quick-scratchpad-area {
+    width: 100% !important;
+    height: 220px !important;
+    box-sizing: border-box !important;
+    padding: 12px !important;
+    border: 1px solid var(--admin-line, var(--input-border)) !important;
+    border-radius: 10px !important;
+    background: var(--admin-panel-soft, var(--input-bg)) !important;
+    color: var(--admin-text, var(--text-color)) !important;
+    font: 500 12px/1.55 "Inter", "Roboto", Arial, sans-serif !important;
+    resize: none !important;
+}
+
+.quick-drawer-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+.quick-action-btn {
+    min-height: 36px;
+    padding: 7px 10px;
+    border-radius: 8px;
+    border: 1px solid var(--admin-line, var(--input-border));
+    background: var(--admin-panel, transparent);
+    color: var(--admin-text, var(--text-color));
+    font: 750 10.5px/1.2 "Inter", sans-serif;
+    cursor: pointer;
+    transition: 0.15s ease;
+    text-align: center;
+}
+
+.quick-action-btn:hover {
+    border-color: #3b82f6;
+    color: #2563eb;
+    background: rgba(59, 130, 246, 0.08);
+}
+
+.quick-drawer-floating-btn {
+    position: fixed;
+    bottom: 22px;
+    right: 22px;
+    z-index: 150000;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 999px;
+    background: linear-gradient(135deg, #1d4ed8, #2563eb);
+    color: #ffffff;
+    font: 800 11.5px/1 "Inter", sans-serif;
+    box-shadow: 0 10px 25px rgba(37, 99, 235, 0.35);
+    cursor: pointer;
+    transition: transform 0.16s ease, box-shadow 0.16s ease;
+}
+
+.quick-drawer-floating-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 14px 30px rgba(37, 99, 235, 0.45);
+}
+
+/* =========================================================
+   SMART AUTO-FILL COMPONENT
+   ========================================================= */
+.smart-autofill-wrap {
+    margin-bottom: 14px;
+    padding: 12px 14px;
+    border: 1px solid rgba(34, 197, 94, 0.28);
+    border-radius: 12px;
+    background: linear-gradient(90deg, rgba(34, 197, 94, 0.05), transparent 80%), var(--admin-panel-soft, var(--container-bg));
+}
+
+.smart-autofill-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 8px;
+}
+
+.smart-autofill-head strong {
+    color: #16a34a;
+    font: 850 11px/1.2 "Inter", sans-serif;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.smart-autofill-head span {
+    color: var(--admin-muted, var(--pro-muted));
+    font: 550 9.5px/1 "Inter", sans-serif;
+}
+
+.smart-autofill-input-row {
+    display: flex;
+    gap: 8px;
+}
+
+.smart-autofill-input {
+    flex: 1;
+    min-height: 38px !important;
+    padding: 7px 11px !important;
+    border: 1px solid var(--admin-line, var(--input-border)) !important;
+    border-radius: 8px !important;
+    background: var(--admin-panel, var(--input-bg)) !important;
+    color: var(--admin-text, var(--text-color)) !important;
+    font: 500 11.5px/1.4 "Inter", sans-serif !important;
+}
+
+.smart-autofill-btn {
+    flex: none;
+    min-height: 38px;
+    padding: 8px 14px;
+    border: 1px solid #16a34a;
+    border-radius: 8px;
+    background: #16a34a;
+    color: #ffffff;
+    font: 800 11px/1 "Inter", sans-serif;
+    cursor: pointer;
+    transition: 0.15s ease;
+}
+
+.smart-autofill-btn:hover {
+    background: #15803d;
+}
+
+/* Sidebar Quick Action & Sync Buttons */
+.sidebar-action-btn {
+    width: 100%;
+    min-height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 7px 10px;
+    border: 1px solid var(--admin-line, var(--sidebar-border));
+    border-radius: 8px;
+    background: var(--admin-panel-soft, rgba(148, 163, 184, 0.04));
+    color: var(--admin-text, var(--text-color));
+    font: 750 10.5px/1 "Inter", sans-serif;
+    cursor: pointer;
+    transition: 0.15s ease;
+    margin-bottom: 4px;
+}
+
+.sidebar-action-btn:hover {
+    border-color: #3b82f6;
+    color: #2563eb;
+    background: rgba(59, 130, 246, 0.08);
+}
+
+.sidebar-action-btn kbd {
+    padding: 2px 4px;
+    border: 1px solid var(--admin-line, var(--input-border));
+    border-radius: 4px;
+    background: var(--admin-panel, var(--input-bg));
+    color: var(--admin-muted, var(--pro-muted));
+    font: 700 8.5px/1 monospace;
+}
+</style>
+
+<style id="proStaticGeneratorTheme">
+/* =========================================================
+   PRO STATIC SITE GENERATOR & ENTERPRISE DASHBOARD THEME
+   Inspired by Vercel, Linear, Supabase, and Next.js Pro UI
+   ========================================================= */
+
+:root {
+    --pro-brand-primary: #2563eb;
+    --pro-brand-primary-hover: #1d4ed8;
+    --pro-brand-gradient: linear-gradient(135deg, #2563eb 0%, #3b82f6 50%, #10b981 100%);
+    --pro-success-gradient: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    --pro-glow: 0 0 20px rgba(37, 99, 235, 0.18);
+    --pro-card-radius: 14px;
+    --pro-transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Global Smooth Transitions & Micro Animations */
+* {
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+body {
+    background-attachment: fixed !important;
+    letter-spacing: -0.01em;
+}
+
+/* Pro Background Gradient Texture */
+body::before {
+    content: "" !important;
+    position: fixed !important;
+    inset: 0 !important;
+    z-index: -2 !important;
+    pointer-events: none !important;
+    background: 
+        radial-gradient(circle at 15% 10%, rgba(37, 99, 235, 0.08), transparent 35%),
+        radial-gradient(circle at 85% 90%, rgba(16, 185, 129, 0.07), transparent 35%) !important;
+}
+
+body.dark-mode {
+    --bg-color: #0b0f17 !important;
+    --container-bg: #111827 !important;
+    --admin-panel: #111827 !important;
+    --admin-panel-soft: #162032 !important;
+    --admin-line: rgba(255, 255, 255, 0.09) !important;
+    --border-color: rgba(255, 255, 255, 0.09) !important;
+    --input-bg: #172236 !important;
+    --input-border: #27364f !important;
+    --text-color: #f8fafc !important;
+    --pro-muted: #94a3b8 !important;
+    --admin-muted: #94a3b8 !important;
+}
+
+body:not(.dark-mode) {
+    --bg-color: #f3f5f9 !important;
+    --container-bg: #ffffff !important;
+    --admin-panel: #ffffff !important;
+    --admin-panel-soft: #f8fafc !important;
+    --admin-line: rgba(15, 23, 42, 0.08) !important;
+    --border-color: rgba(15, 23, 42, 0.08) !important;
+    --input-bg: #ffffff !important;
+    --input-border: #d1d5db !important;
+    --text-color: #0f172a !important;
+    --pro-muted: #64748b !important;
+    --admin-muted: #64748b !important;
+}
+
+/* Elevated Pro Container Cards */
+.container,
+.form-section,
+.grid-section,
+.edr-crud-card,
+.master-simple-card,
+.eod-block {
+    border-radius: var(--pro-card-radius) !important;
+    border: 1px solid var(--admin-line, rgba(148, 163, 184, 0.18)) !important;
+    box-shadow: 
+        0 10px 30px rgba(0, 0, 0, 0.04),
+        0 1px 2px rgba(0, 0, 0, 0.02) !important;
+}
+
+body.dark-mode .container,
+body.dark-mode .edr-crud-card,
+body.dark-mode .master-simple-card,
+body.dark-mode .eod-block {
+    box-shadow: 
+        0 14px 40px rgba(0, 0, 0, 0.38),
+        0 0 0 1px rgba(255, 255, 255, 0.04) inset !important;
+}
+
+/* Workspace Smooth Enter Animation */
+.app-tab-panel.active {
+    animation: proPanelEnter 0.24s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+}
+
+@keyframes proPanelEnter {
+    from {
+        opacity: 0;
+        transform: translateY(6px);
     }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Pro Headings with Subtle Accent */
+h2 {
+    font-weight: 850 !important;
+    letter-spacing: -0.03em !important;
+}
+
+/* Pro Sidebar Polish */
+.workspace-tabs.admin-sidebar {
+    border-radius: 16px !important;
+    border: 1px solid var(--admin-line, rgba(148, 163, 184, 0.15)) !important;
+    backdrop-filter: blur(16px) !important;
+    -webkit-backdrop-filter: blur(16px) !important;
+}
+
+.workspace-tab-btn {
+    border-radius: 10px !important;
+    font-weight: 750 !important;
+    transition: var(--pro-transition) !important;
+}
+
+.workspace-tab-btn:hover {
+    transform: translateX(2px) !important;
+}
+
+.workspace-tab-btn.active {
+    background: linear-gradient(135deg, #2563eb, #1d4ed8) !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 14px rgba(37, 99, 235, 0.32) !important;
+}
+
+/* Pro Input Fields & Selects */
+input[type="text"],
+input[type="date"],
+input[type="url"],
+select,
+textarea {
+    border-radius: 10px !important;
+    font-weight: 500 !important;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease !important;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+    border-color: #3b82f6 !important;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15) !important;
+}
+
+/* Pro Buttons */
+button {
+    transition: transform 0.14s ease, filter 0.14s ease, box-shadow 0.14s ease !important;
+}
+
+button:hover:not(:disabled) {
+    transform: translateY(-1px) !important;
+}
+
+button:active:not(:disabled) {
+    transform: translateY(1px) scale(0.99) !important;
+}
+
+.button-group > button,
+.edr-primary-btn,
+.btn-eod-primary {
+    background: linear-gradient(135deg, #16a34a, #15803d) !important;
+    border-radius: 10px !important;
+    box-shadow: 0 4px 14px rgba(22, 163, 74, 0.28) !important;
+}
+
+.button-group > button:hover,
+.edr-primary-btn:hover,
+.btn-eod-primary:hover {
+    filter: brightness(1.06) !important;
+    box-shadow: 0 6px 18px rgba(22, 163, 74, 0.38) !important;
+}
+
+/* Pro Tables */
+table {
+    border-collapse: separate !important;
+    border-spacing: 0 !important;
+}
+
+th {
+    font-weight: 800 !important;
+    letter-spacing: 0.04em !important;
+    text-transform: uppercase !important;
+}
+
+tbody tr {
+    transition: background-color 0.12s ease !important;
+}
+
+tbody tr:hover {
+    background-color: rgba(59, 130, 246, 0.05) !important;
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+    width: 7px;
+    height: 7px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(148, 163, 184, 0.25);
+    border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(148, 163, 184, 0.45);
 }
 </style>
 </head>
@@ -9154,7 +9797,7 @@ body.dark-mode #masterAssignedHrTable tbody tr:hover td {
     aria-label="Hide sidebar"
     aria-expanded="true"
     title="Hide sidebar">
-    ‹
+    â€¹
 </button>
 
 
@@ -9185,6 +9828,17 @@ body.dark-mode #masterAssignedHrTable tbody tr:hover td {
         <span>History</span>
         <small id="globalHistoryCount">0</small>
     </button>
+
+    <div style="margin: 8px 0 4px; display: grid; gap: 4px;">
+        <button type="button" class="sidebar-action-btn" id="openCmdPaletteBtn" onclick="toggleCommandPalette(true)" title="Quick Jump across tabs and search (Ctrl + K)">
+            <span>ðŸ” Quick Jump</span>
+            <kbd>Ctrl+K</kbd>
+        </button>
+        <button type="button" class="sidebar-action-btn" id="openScratchpadBtn" onclick="toggleQuickDrawer(true)" title="Multi-Task Quick Scratchpad (Alt + N)">
+            <span>ðŸ“ Scratchpad</span>
+            <kbd>Alt+N</kbd>
+        </button>
+    </div>
 
     <div class="sidebar-spacer"></div>
 
@@ -9218,6 +9872,17 @@ body.dark-mode #masterAssignedHrTable tbody tr:hover td {
 <div class="container form-section">
     <h2>CCTV Audit</h2>
     <p class="page-lead">Create audit entries, review the output grid, then copy the final data when ready.</p>
+    
+    <div class="smart-autofill-wrap" id="cctvSmartAutoFillWrap">
+        <div class="smart-autofill-head">
+            <strong>âš¡ Smart Auto-Fill & Quick Parser</strong>
+            <span>Paste raw Teams/Email lines (e.g., "TL: John | Agent: Sarah | Site: Site 1 | OM: Mike")</span>
+        </div>
+        <div class="smart-autofill-input-row">
+            <input type="text" id="cctvSmartInput" class="smart-autofill-input" placeholder="Paste raw audit line, Teams notification, or pipe/tab-separated values...">
+            <button type="button" id="cctvSmartParseBtn" class="smart-autofill-btn" onclick="parseAndFillCctv()">âš¡ Auto-Fill</button>
+        </div>
+    </div>
     
     <div class="form-grid">
         <div class="form-group field-date">
@@ -9347,13 +10012,13 @@ body.dark-mode #masterAssignedHrTable tbody tr:hover td {
 
         <label for="maintenanceInput">Paste Maintenance Report</label>
         <div class="maintenance-header-optional-note">
-            Header optional — you can paste the data rows directly in the normal order:
-            <strong>TIMESTAMP → DATE → TL → ACCOUNT → SITE → STATION NO. → STATION ISSUE</strong>.
+            Header optional â€” you can paste the data rows directly in the normal order:
+            <strong>TIMESTAMP â†’ DATE â†’ TL â†’ ACCOUNT â†’ SITE â†’ STATION NO. â†’ STATION ISSUE</strong>.
         </div>
         <textarea
             id="maintenanceInput"
             class="maintenance-textarea"
-            placeholder="Paste maintenance rows directly — header is optional. Standard order: TIMESTAMP, DATE, TL, ACCOUNT, SITE, STATION NO., STATION ISSUE"></textarea>
+            placeholder="Paste maintenance rows directly â€” header is optional. Standard order: TIMESTAMP, DATE, TL, ACCOUNT, SITE, STATION NO., STATION ISSUE"></textarea>
 
         <div class="maintenance-toolbar">
             <button type="button" class="maintenance-primary" id="maintenanceSortBtn"><span>Auto Sort by Floor</span></button>
@@ -9404,7 +10069,7 @@ body.dark-mode #masterAssignedHrTable tbody tr:hover td {
                         <span><kbd>Ctrl</kbd>+<kbd>C</kbd> Copy</span>
                         <span><kbd>Ctrl</kbd>+<kbd>X</kbd> Cut</span>
                         <span><kbd>Ctrl</kbd>+<kbd>V</kbd> Paste rows</span>
-                        <span><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>M</kbd> → Report</span>
+                        <span><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>M</kbd> â†’ Report</span>
                         <span><kbd>Delete</kbd> Remove</span>
                         <span><kbd>Esc</kbd> Clear selection</span>
                     </div>
@@ -9479,8 +10144,8 @@ body.dark-mode #masterAssignedHrTable tbody tr:hover td {
         <h2>Maintenance Report</h2>
         <p class="page-lead">Build one report block per lane: IT Sheet rows, CCTV evidence, then remarks.</p>
         <div class="simple-eod-intro">
-            Simple workflow: <strong>paste the lanes/table → paste or upload CCTV screenshot → add the observation note → add another block below</strong>.
-            No floor selector and no time field—just repeat the blocks in the same order you want them to appear in the PDF.
+            Simple workflow: <strong>paste the lanes/table â†’ paste or upload CCTV screenshot â†’ add the observation note â†’ add another block below</strong>.
+            No floor selector and no time fieldâ€”just repeat the blocks in the same order you want them to appear in the PDF.
         </div>
 
         <div class="simple-eod-top">
@@ -9503,7 +10168,7 @@ body.dark-mode #masterAssignedHrTable tbody tr:hover td {
             <button type="button" class="btn-eod-secondary" id="simpleEodPreviewBtn"><span>Preview / Print</span></button>
             <button type="button" class="btn-eod-primary" id="simpleEodPdfBtn"><span>Download PDF</span></button>
             <button type="button" class="btn-eod-danger" id="simpleEodClearBtn"><span>Clear All</span></button>
-            <span id="simpleEodAutosaveStatus" class="maintenance-autosave-status saved">● Auto-save active</span>
+            <span id="simpleEodAutosaveStatus" class="maintenance-autosave-status saved">â— Auto-save active</span>
         </div>
 
         <div class="maintenance-sheets-copy-hint">
@@ -9624,7 +10289,7 @@ body.dark-mode #masterAssignedHrTable tbody tr:hover td {
 <div id="pendingScreenshotModal" class="edr-ss-modal" aria-hidden="true">
     <div class="edr-ss-backdrop" id="pendingScreenshotBackdrop"></div>
     <div class="edr-ss-dialog" role="dialog" aria-modal="true" aria-label="Pending report screenshot">
-        <button type="button" class="edr-ss-close" id="pendingScreenshotClose" aria-label="Close screenshot">×</button>
+        <button type="button" class="edr-ss-close" id="pendingScreenshotClose" aria-label="Close screenshot">Ã—</button>
         <img id="pendingScreenshotImage" alt="Pending report screenshot">
     </div>
 </div>
@@ -9810,7 +10475,7 @@ body.dark-mode #masterAssignedHrTable tbody tr:hover td {
                     <input type="text"
                            id="edrTimeObserved"
                            autocomplete="off"
-                           placeholder="Paste time, e.g. 3:10:45 AM–3:18:01 AM">
+                           placeholder="Paste time, e.g. 3:10:45 AMâ€“3:18:01 AM">
                 </div>
 
                 <div class="edr-inline-pair edr-span-2">
@@ -9925,7 +10590,7 @@ body.dark-mode #masterAssignedHrTable tbody tr:hover td {
                            id="edrClipLink"
                            placeholder="Paste Google Drive link here, e.g. https://drive.google.com/...">
                     <div class="edr-fixed-cctv">
-                        In the generated EDR this becomes <strong>CCTV Clip: <u>Click here!</u></strong> with “Click here!” linked to this URL.
+                        In the generated EDR this becomes <strong>CCTV Clip: <u>Click here!</u></strong> with â€œClick here!â€ linked to this URL.
                     </div>
                 </div>
             </div>
@@ -9964,7 +10629,7 @@ body.dark-mode #masterAssignedHrTable tbody tr:hover td {
             <div class="edr-card-heading">
                 <div>
                     <h3>Facebook Shared Posts</h3>
-                    <p>Paste the Facebook shared-post links or text. The Facebook shared-post date uses today’s date automatically.</p>
+                    <p>Paste the Facebook shared-post links or text. The Facebook shared-post date uses todayâ€™s date automatically.</p>
                 </div>
             </div>
 
@@ -9998,7 +10663,7 @@ https://www.facebook.com/share/..."></textarea>
 <div id="edrSavedScreenshotModal" class="edr-ss-modal" aria-hidden="true">
     <div class="edr-ss-backdrop" id="edrSavedScreenshotBackdrop"></div>
     <div class="edr-ss-dialog" role="dialog" aria-modal="true" aria-label="Saved CCTV screenshot">
-        <button type="button" class="edr-ss-close" id="edrSavedScreenshotClose" aria-label="Close screenshot">×</button>
+        <button type="button" class="edr-ss-close" id="edrSavedScreenshotClose" aria-label="Close screenshot">Ã—</button>
         <img id="edrSavedScreenshotImage" alt="Saved CCTV screenshot">
     </div>
 </div>
@@ -10023,7 +10688,7 @@ https://www.facebook.com/share/..."></textarea>
             <button type="button"
                     id="edrHistoryClose"
                     class="maintenance-modal-close static-close"
-                    aria-label="Close EDR History">×</button>
+                    aria-label="Close EDR History">Ã—</button>
         </div>
 
         <div class="edr-history-toolbar">
@@ -10067,7 +10732,7 @@ https://www.facebook.com/share/..."></textarea>
             <button type="button"
                     id="edrDocsSetupClose"
                     class="maintenance-modal-close static-close"
-                    aria-label="Close EDR Google Docs setup">×</button>
+                    aria-label="Close EDR Google Docs setup">Ã—</button>
         </div>
 
         <label for="edrDocsWebAppUrl">Apps Script Web App URL</label>
@@ -10128,7 +10793,7 @@ https://www.facebook.com/share/..."></textarea>
 <div id="maintenanceImageViewer" class="maintenance-modal" aria-hidden="true">
     <div class="maintenance-modal-backdrop" id="maintenanceImageBackdrop"></div>
     <div class="maintenance-image-dialog" role="dialog" aria-modal="true" aria-label="Screenshot preview">
-        <button type="button" id="maintenanceImageClose" class="maintenance-modal-close" aria-label="Close">×</button>
+        <button type="button" id="maintenanceImageClose" class="maintenance-modal-close" aria-label="Close">Ã—</button>
         <img id="maintenanceImageFull" src="" alt="Full CCTV screenshot">
     </div>
 </div>
@@ -10140,9 +10805,9 @@ https://www.facebook.com/share/..."></textarea>
         <div class="maintenance-drafts-head">
             <div>
                 <h3 id="maintenanceDraftsTitle">Maintenance Report Drafts</h3>
-                <p>Your work auto-saves continuously. “Save to Drafts” stores a working draft here; you can also save separate named snapshots.</p>
+                <p>Your work auto-saves continuously. â€œSave to Draftsâ€ stores a working draft here; you can also save separate named snapshots.</p>
             </div>
-            <button type="button" id="maintenanceDraftsClose" class="maintenance-modal-close static-close" aria-label="Close drafts">×</button>
+            <button type="button" id="maintenanceDraftsClose" class="maintenance-modal-close static-close" aria-label="Close drafts">Ã—</button>
         </div>
 
         <div class="maintenance-draft-save-row">
@@ -10170,7 +10835,7 @@ https://www.facebook.com/share/..."></textarea>
             <button type="button"
                     id="maintenanceSheetSetupClose"
                     class="maintenance-modal-close static-close"
-                    aria-label="Close Google Sheets setup">×</button>
+                    aria-label="Close Google Sheets setup">Ã—</button>
         </div>
 
         <label for="maintenanceSheetWebAppUrl">Apps Script Web App URL</label>
@@ -10200,7 +10865,7 @@ https://www.facebook.com/share/..."></textarea>
 
 
 <div class="site-footer">
-    <strong>CCTV Audit</strong> • Internal Operations Workspace
+    <strong>CCTV Audit</strong> â€¢ Internal Operations Workspace
 </div>
 
 
@@ -10450,7 +11115,7 @@ https://www.facebook.com/share/..."></textarea>
 
         const approved = await appConfirm({
             title: "Remove CCTV Audit entry?",
-            message: `${entry.formattedDate || "This entry"} · ${entry.tlName || "No TL"} · ${entry.agentName || "No agent"}`,
+            message: `${entry.formattedDate || "This entry"} Â· ${entry.tlName || "No TL"} Â· ${entry.agentName || "No agent"}`,
             confirmText: "Remove Entry",
             tone: "danger"
         });
@@ -11365,7 +12030,7 @@ https://www.facebook.com/share/..."></textarea>
         const raw = String(station || "").trim();
         const s = raw
             .toUpperCase()
-            .replace(/[–—]/g, "-")
+            .replace(/[â€“â€”]/g, "-")
             .replace(/\s+/g, " ")
             .trim();
 
@@ -11649,7 +12314,7 @@ https://www.facebook.com/share/..."></textarea>
             // use a floor-specific campaign if available.
             else if (row.campaignFloor) {
                 floor = row.campaignFloor;
-                source = "New TL — sorted by campaign";
+                source = "New TL â€” sorted by campaign";
             }
             // PRIORITY 5: Reference hints can still help, unless conflicting.
             else if (row.referenceHints && row.referenceHints.length) {
@@ -11657,7 +12322,7 @@ https://www.facebook.com/share/..."></textarea>
                 if (hintFloors.length === 1) {
                     floor = hintFloors[0];
                     source = row.referenceHints.some(h => h.campaignFallback)
-                        ? "New TL — sorted by campaign"
+                        ? "New TL â€” sorted by campaign"
                         : "Official TL/campaign floor reference";
                 } else {
                     floor = FLOOR.REVIEW;
@@ -11718,7 +12383,7 @@ https://www.facebook.com/share/..."></textarea>
         const meta = [];
         if (ev.referenceHits) meta.push(`${ev.referenceHits} reference hit${ev.referenceHits === 1 ? "" : "s"}`);
         if (ev.stationHits) meta.push(`${ev.stationHits} station hit${ev.stationHits === 1 ? "" : "s"}`);
-        return `GF ${g} • 1F ${f1} • 2F ${f2}${meta.length ? " • " + meta.join(" / ") : ""}`;
+        return `GF ${g} â€¢ 1F ${f1} â€¢ 2F ${f2}${meta.length ? " â€¢ " + meta.join(" / ") : ""}`;
     }
 
     function renderSummary(assignments) {
@@ -11766,7 +12431,7 @@ https://www.facebook.com/share/..."></textarea>
                             class="tl-floor-editor"
                             data-original-tl="${encodeURIComponent(name)}"
                             aria-label="Floor assignment for ${escapeHtml(shownName)}">
-                            <option value="" ${manual === "" ? "selected" : ""}>Auto — ${escapeHtml(detected)}</option>
+                            <option value="" ${manual === "" ? "selected" : ""}>Auto â€” ${escapeHtml(detected)}</option>
                             <option value="${FLOOR.GROUND}" ${manual === FLOOR.GROUND ? "selected" : ""}>Ground Floor</option>
                             <option value="${FLOOR.FIRST}" ${manual === FLOOR.FIRST ? "selected" : ""}>1st Floor</option>
                             <option value="${FLOOR.SECOND}" ${manual === FLOOR.SECOND ? "selected" : ""}>2nd Floor</option>
@@ -14346,7 +15011,7 @@ https://www.facebook.com/share/..."></textarea>
                         ${block.screenshots.map((shot, shotIndex) => `
                             <div class="eod-proof-item">
                                 <img src="${shot.dataUrl}" alt="CCTV screenshot proof ${shotIndex + 1}">
-                                <button type="button" class="eod-proof-remove" data-shot-index="${shotIndex}" title="Remove screenshot">×</button>
+                                <button type="button" class="eod-proof-remove" data-shot-index="${shotIndex}" title="Remove screenshot">Ã—</button>
                             </div>
                         `).join("")}
                     </div>
@@ -14695,7 +15360,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         db.close();
 
         showMessage("Saved to Drafts. Saving again will update this working draft.", "success");
-        setAutosaveStatus("● Saved to Drafts", "saved");
+        setAutosaveStatus("â— Saved to Drafts", "saved");
     }
 
     async function getNamedDrafts() {
@@ -14730,7 +15395,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
                     <div class="maintenance-draft-item">
                         <div class="maintenance-draft-info">
                             <strong>${escapeHtml(draft.name)}</strong>
-                            <span>${escapeHtml(when)} • ${blocks} block${blocks === 1 ? "" : "s"}</span>
+                            <span>${escapeHtml(when)} â€¢ ${blocks} block${blocks === 1 ? "" : "s"}</span>
                         </div>
                         <div class="maintenance-draft-actions">
                             <button type="button" class="draft-load" data-id="${escapeHtml(draft.id)}">Load</button>
@@ -15000,7 +15665,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
 
     async function saveDraft(silent = false) {
         syncTop();
-        setAutosaveStatus("● Saving...", "saving");
+        setAutosaveStatus("â— Saving...", "saving");
 
         try {
             const db = await openDb();
@@ -15013,13 +15678,13 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
             });
 
             db.close();
-            setAutosaveStatus("● Auto-saved", "saved");
+            setAutosaveStatus("â— Auto-saved", "saved");
 
             if (!silent) {
                 showMessage("Draft saved locally in this browser.", "success");
             }
         } catch (error) {
-            setAutosaveStatus("● Auto-save failed", "error");
+            setAutosaveStatus("â— Auto-save failed", "error");
             throw error;
         }
     }
@@ -15135,7 +15800,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         saveWorkingDraftToDrafts().catch(error => {
             console.error(error);
             showMessage("Could not save to Drafts.", "error");
-            setAutosaveStatus("● Save failed", "error");
+            setAutosaveStatus("â— Save failed", "error");
         });
     });
     $("simpleEodSheetSetupBtn").addEventListener("click", openMaintenanceSheetSetup);
@@ -15290,7 +15955,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
 
     function updateSidebarToggle() {
         const collapsed = document.body.classList.contains("sidebar-collapsed");
-        toggle.textContent = collapsed ? "›" : "‹";
+        toggle.textContent = collapsed ? "â€º" : "â€¹";
         toggle.setAttribute("aria-expanded", collapsed ? "false" : "true");
         toggle.setAttribute("aria-label", collapsed ? "Show sidebar" : "Hide sidebar");
         toggle.title = collapsed ? "Show sidebar" : "Hide sidebar";
@@ -15311,7 +15976,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
 (function () {
     const byId = id => document.getElementById(id);
 
-    const SOURCE_TLS = ["Abegail Llena", "Abigail Calo", "Adana Salaveria", "Adrian Balbuena", "Adrian Crisht Lontiong", "Adrian Paolo Tangonan", "Aiza Pearl Sablas", "Al Joven Malda", "Albert Samsico", "Albert Tumilap", "Alexis Fe Ginez", "Allan Albert Sadili", "Alliana Melgarejo Suaner", "Allysa San Luis", "Almar Bongcac", "Alyssa Jane Gainsan", "Amethyst Jeanne Patani", "Amilyn Vicente", "Analou Madanlo", "Andrea Agudera", "Andrea Kyle Herrero", "Andro Agad", "Angel Omas-as", "Angelica Lantic", "Angelie Ceballos", "Angeline Melgo", "Angelito Carsano", "Angelo Trazona", "Angie Cabaluna", "Angiely Soriano", "Anna Lou Pedregosa", "Annalie Manmano", "Annalou Gonzales", "Anthony Autentico", "Antonette Noran", "Apple Grace Terec", "April Jay Sitoy", "April Ranulo", "April Rose Rabor", "Ara Shaine Villegas", "Archel Cole", "Arianne Agao-Agao", "Ariel Facturan", "Arnel Vicente", "Arrah Mae Sanchez", "Ashley Kim Esplagera", "Aura Rey Velasco", "Ayra Porras", "Bai Indera Diocolano", "Beethoven Diaz", "Benign Borral", "Benjie Cabalhin", "Beverly Origenes", "Bless Dian Buga-as", "Bryan Rey Tabares", "Carl Anthony Galvez", "Carlo Rubia", "Carmena Dagaraga", "Cedric Michael Gianan", "Celestino Bravo", "Chady Flores", "Charisse Romasanta", "Charlene Mae Ruiz", "Charles Ethan Arcilla", "Charles Vincent Vidanes", "Charlotte Danica Dauz", "Charyl Diatras", "Cherry Mae Astorga", "Christian Arcilla", "Christian Estrera", "Christian Jay Corsiga", "Christian Nicko Rosales", "Christine Monique Labastida", "Christine Olasiman", "Christine Urdaneta", "Claire Charl Belover-Cabanas", "Clarissa Cyrine Aguanta", "Connie Fe Villanueva", "Crea Amorte", "Cresil Fe Duhig", "Cris Arandilla", "Cristine Olasiman", "Cristoper Cavan", "Crystal Paulene Delmo", "Cyfer Marie Diapolet", "Dames Alfred Veloso", "Dan Ric Abendaño", "Daniel Algario", "Dannevy Salvador", "Dante Tahuran", "Dar Benjie Limikid", "Darben Esperanza", "Dareen Mhyvie Caliguid", "Darhyl John Bauyot", "Dariel Cardiente", "Dariel John Duco", "Darlene Barcelo", "Darlene Grace Sornido", "Darryl De Guzman", "Datun Mamasainged", "Dave Leezer Sodusta", "David Gabut", "Dether Languido", "Dianne Sombilon", "Dinah Grace Rio", "Divi Ann Alcontin", "Divi Anne Alcontin", "Dorrisse Jane De Vera", "Edelaido Roble Jr.", "Edgie Clarin Alcarion", "Edrianne Delos Santos", "Edylyn Tallorin", "EJ Oribe", "Ejjie Madjire", "Elijah Felipe", "Elisha Bayona", "Ellame Pantojan", "Emmaruel James Alao", "Ephraim June Vismanos", "Erik Jan Martillan", "Erika Gerado", "Erika Jane Almerez", "Erika Sabdullah", "Erly Jade Jadap", "Ethel Grace Paberan Habanes", "Exequiel Edorosas", "Ezel Jean Sebandal Mahinay", "Flora May Maño", "Floramae Palma", "Francis Alta", "Francis Brylle Cane", "Francis Lian Ramos", "Freda Apuda", "Frederick Jopia", "Fritz Cales", "Garyll Castillo", "Geharchelle Fuentes", "Gemark Cardanio", "Genibie Trasmonte", "Gerramie Mendoza-Racoma", "Gilbert Murillo", "Ginalyn Mariano", "Glaithe Hienze Perero", "Gliza Mae Samelin", "Glyze Morgado", "Grazelle Tagadiad", "Hani Precious Serna", "Hani Serna", "Hanz Rosetham Tolentino", "Hanzel Umpad", "Harlene Candel", "Hazel Gorgoya", "Henie Alvarez", "Hiezel Heart Bariquit", "Honey Glaze Pialago", "Honey-lyn Dalos", "Ian Greg Mandalupe", "Ian Lauroza", "Irene Fuentes", "Ivan Strauss Castillon", "Ivan Taala", "Ivy Balandan", "Ivy Decenilla", "Jade Rocacorba", "Jaime Arisgado", "Jake Dimpas", "Jake Maghanoy", "Jake Montajes", "James Matthew Quintana", "Jamiel Leyson", "Jan Andes Noel", "Jan Gabriel Pariolan", "Jan Laurence Amacanim", "Jan Noel Andes", "Jan Sield Molinas", "Janice Jugarap", "Janice Salubre", "Jastine Ann Casayas", "Jastine Karl Pracueles", "Jave Mamontayao", "Jay Besedor", "Jay Catito", "Jayboi Tuling", "Jaycee Zabate", "Je Ann Jy Ramos", "Jefferson Egoy", "Jeffrey Juan", "Jeiryld Abella", "Jenesis Mabasa", "Jenessa Subteniente", "Jenette Hisola", "Jennifer Toroba", "Jenny Rose Aquino", "Jeremiah Quesada", "Jerome Uyanguren", "Jerrylyn Guinto", "Jesbonnin Sudaria", "Jessa Lopez", "Jessa Mae Amihan", "Jessa Mae Bacus", "Jethro Gerali", "Jexeer Khent Trinidad", "Jhon Carlos Santos", "Jhon Kenan Baran", "Jhon Rex Mantilla", "Jhuly Basmayor", "Jhun Carlo San", "Jim Fernandez", "Jinelyn Ligtas", "Joecel Villegas", "Joevinyll Palabrica", "John Alvin Despogado", "John Dave Barzo", "John Eric Momo", "John Joshua Bahinting", "John Karl Butaslac", "John Lloyd Pogoy", "John Peter Ano-os", "John Raphael Toledo", "John Rel Lagura", "John Rey Salise", "John Vincent Sotto", "Jollie Berjes", "Jomar Linaza", "Jomar Manla Daie", "Jomira Aquino", "Jonalyn Mamaba", "Jonas Haguyahay", "Jonel Delgado", "Jonell Bisnar", "Joneza Gementiza", "Jose Manila", "Jose Rino Hontiveros", "Joseph Dagatan", "Joshua Bahinting", "Joshua Bañez", "Joshua Salva", "Jovert Monticayan", "Juan Miguel Aleos", "Juddy Ann Tumazar", "Judel Gabunilas", "Judy Ann Ero", "Juliah Monte", "Julina Flores", "Juniper Arquisola", "Jupel Hemolatan", "Juren Davies Buhawe", "Justine Aninion", "Justine Karl Pracueles", "Justine Magandam", "Justine Pleños", "Kathleen Joy Sulaiman", "Kathlyn Yuba", "Kathrine Mae Arce", "Kehn Angelo Egdamin", "Kerjean Labi", "Kevin John Oroc", "Kevin Kyle Omiping", "Khemyajaira Paquit", "Kimberly Quirabo", "Kin Batomalaque", "Kirk Daniel Ripley", "Kristine Bulonos", "Kristine Jay Salvadora", "Kristine Laarnee Lucariza", "Krizzna Berang", "Krystyl Jean Daclag", "Kurt Calvin Cajeles", "Kyle Ryan Gaviola", "Kylene Cabanada", "Kyzer Bacle", "Larry Lloyd Rodriguez", "Laurence Dave Sindol", "Lemuel Rosalejos", "Leo Jones Sayago", "Leslie Deparene", "Lezmar Teh", "Lhoyd Mondinido", "Liezl Joy Lodonia", "Lloyd Vincent Orquina", "Lorence Gucor", "Lorenz Calm Fabellar", "Louie Roy Casang", "Louise Anne Litao", "Lovelle Famorcan", "Luke Zedric Jun Lopez", "Luz Dela Peña", "Ma. Czalthea Obed", "Madelyn Mahinay", "Mae Ann Espina", "Maia Isla", "Maica Estafia", "Maica Mambaling", "Marc Jardenico", "Marco Paolo Salazar", "Marecar Suerte", "Margie Gracia", "Marianette Aradilla", "Maribeth Georpe", "Maricel Sungkip", "Maridel Salon", "Marie Fe Palen", "Marie Mogan", "Marie Rose Mutia", "Mark Anthony Arellano", "Mark Clint Encallado", "Mark Conrad Pinton", "Mark Cortez", "Mark Edejer", "Mark Gervacio", "Mark Glendel Embudo", "Mark Lloyd Pielago", "Mark Loeh Salaysay", "Mark Nelcone Grullo", "Marwen Diel", "Mary Abegail Gabrielle Amora", "Mary Ann De Leon", "Mary Grace Ybañez", "Maxx De Vera", "Maxy Jodelle Alota", "May Jean Romaguera", "Mc Jordan Costan", "Mc Reden De Vera", "Meilah Deocares", "Mel Jan Cole", "Melissa Liceralde", "Melvin Balaba", "Melvinson Laguting", "Michael Angelo Rosauro", "Michael James Macabingkil", "Michael Jan Bangoy", "Michael Mogan", "Michael Ocampo", "Michael Ralph Montejo", "Michelle Pantujan", "Mickie Jhon Absin", "Mina Joy Ramirez", "Mirah Paris Macaorao", "Moktar Ibrahim", "Nasrudin Sailila", "Neil Jarencio", "Nelboy Campaner", "Neña May Barientos", "Noel Ulalan", "Nomar Dagmil", "Norjahid Akmad", "Norman Lindo", "Noronisa Mante", "Odesa Lacadwe", "Oliver Dela Cruz", "Omar Langco", "Omar Mallari", "Pablito Janeo", "Pam Cuizon", "Pamela Villanueva", "Patricia Paula Therese Martinez", "Patrick James Mariano", "Patrick Jhon Misagal", "Patrick Llamasarez", "Paul Angelo Maguad", "Paul Anthony Rica", "Pauline Grace Genon", "Philip Baaria Lomada", "Prince Borras", "Princess Angel Barinque", "Princess Catabay", "Princess Jay Cadungog", "Princess Robles", "Queendolyn Pama", "Rachel Joyce Carillo", "Raena Rosos", "Ralph Raul Montero", "Ramil Ramos", "Raphael Montiague", "Ray Allen Baracao", "Raymund Ordinario", "Reah Mae Manangca", "Recci George Crodua", "Recy Pagangpang", "Remer Tancontian", "Renato Feria", "Rene Fernandez", "Resamy Crausos", "Rex Mantilla", "Rey Adrian Candilada", "Rey Mark Ibañez", "Reyland Sumael", "Reynaldo Arreza", "Reynaldo Ligad", "Reynan Arellano", "Rhea Elises", "Rhea Liezyl Naol", "Rhea Mae Manangca", "Rhelford Allawan", "Rhocky Resma", "Rhusty Lascuña", "Rica Gingone", "Rica Micaella Suan", "Ricardo Traya Jr.", "Richell Saavedra", "Rieven John Catipay", "Rigel Conejar", "Rio Ubaldo", "Risaldo Castellon Jr.", "Risha May Memoracion", "Ritchie Crispe", "Rizel Abanes", "Robina Tai", "Rogelyn Boligao", "Rojon Rosales", "Roleen Joy Juntong", "Rolly Acaso Lasala", "Romel Biliran", "Romelyn Samar", "Ron Jay Socia", "Ronnel Ragas", "Rosalia Mandawe", "Rosalinda Erellana", "Rosalyn Darang", "Rosanna Bergavera", "Roselle Novecio", "Rowaida Faisal", "Rowena Lamatan", "Rubie Ramos", "Ryan Patrick Balicog", "Samantha Gen Cruz", "Shaira Mae Olasiman", "Shaira May Divinagracia", "Shayne Erasmo", "Sheila Emmanuelle Nueza", "Sheila Mae Cuison", "Shekinah Grace Javar", "Shella Caangay", "Shella Mae Caangay", "Sherlak Culanag", "Sherwin James Solier", "Shiela Sales Sarmiento", "Shiella Marie Miñoza", "Simforiano Gerongco", "Stacey Verdeflor", "Stanley Rojas", "Stephanie Pombo", "Suzette Rose Dayaday", "Switzel Condor", "TBA", "Thea Tanya Bete", "Thirdie Galedo", "Val Sandingay", "Venus Cua", "Vicente Sumagabac", "Vincent Lapasigue", "Vinette Sanchez", "Vowin Cordova", "Walter Jay Carrasca", "Warren Mansueto", "Willy Mark Callao", "Xyzel Saludares", "Yancy Camingue", "Zady Daguat", "Zaila Faye Soreño", "Zaldy John Garcia", "Zheenab Datu-dacula", "Zoe Cordova", "Zyrie Christian Wasil"];
+    const SOURCE_TLS = ["Abegail Llena", "Abigail Calo", "Adana Salaveria", "Adrian Balbuena", "Adrian Crisht Lontiong", "Adrian Paolo Tangonan", "Aiza Pearl Sablas", "Al Joven Malda", "Albert Samsico", "Albert Tumilap", "Alexis Fe Ginez", "Allan Albert Sadili", "Alliana Melgarejo Suaner", "Allysa San Luis", "Almar Bongcac", "Alyssa Jane Gainsan", "Amethyst Jeanne Patani", "Amilyn Vicente", "Analou Madanlo", "Andrea Agudera", "Andrea Kyle Herrero", "Andro Agad", "Angel Omas-as", "Angelica Lantic", "Angelie Ceballos", "Angeline Melgo", "Angelito Carsano", "Angelo Trazona", "Angie Cabaluna", "Angiely Soriano", "Anna Lou Pedregosa", "Annalie Manmano", "Annalou Gonzales", "Anthony Autentico", "Antonette Noran", "Apple Grace Terec", "April Jay Sitoy", "April Ranulo", "April Rose Rabor", "Ara Shaine Villegas", "Archel Cole", "Arianne Agao-Agao", "Ariel Facturan", "Arnel Vicente", "Arrah Mae Sanchez", "Ashley Kim Esplagera", "Aura Rey Velasco", "Ayra Porras", "Bai Indera Diocolano", "Beethoven Diaz", "Benign Borral", "Benjie Cabalhin", "Beverly Origenes", "Bless Dian Buga-as", "Bryan Rey Tabares", "Carl Anthony Galvez", "Carlo Rubia", "Carmena Dagaraga", "Cedric Michael Gianan", "Celestino Bravo", "Chady Flores", "Charisse Romasanta", "Charlene Mae Ruiz", "Charles Ethan Arcilla", "Charles Vincent Vidanes", "Charlotte Danica Dauz", "Charyl Diatras", "Cherry Mae Astorga", "Christian Arcilla", "Christian Estrera", "Christian Jay Corsiga", "Christian Nicko Rosales", "Christine Monique Labastida", "Christine Olasiman", "Christine Urdaneta", "Claire Charl Belover-Cabanas", "Clarissa Cyrine Aguanta", "Connie Fe Villanueva", "Crea Amorte", "Cresil Fe Duhig", "Cris Arandilla", "Cristine Olasiman", "Cristoper Cavan", "Crystal Paulene Delmo", "Cyfer Marie Diapolet", "Dames Alfred Veloso", "Dan Ric AbendaÃ±o", "Daniel Algario", "Dannevy Salvador", "Dante Tahuran", "Dar Benjie Limikid", "Darben Esperanza", "Dareen Mhyvie Caliguid", "Darhyl John Bauyot", "Dariel Cardiente", "Dariel John Duco", "Darlene Barcelo", "Darlene Grace Sornido", "Darryl De Guzman", "Datun Mamasainged", "Dave Leezer Sodusta", "David Gabut", "Dether Languido", "Dianne Sombilon", "Dinah Grace Rio", "Divi Ann Alcontin", "Divi Anne Alcontin", "Dorrisse Jane De Vera", "Edelaido Roble Jr.", "Edgie Clarin Alcarion", "Edrianne Delos Santos", "Edylyn Tallorin", "EJ Oribe", "Ejjie Madjire", "Elijah Felipe", "Elisha Bayona", "Ellame Pantojan", "Emmaruel James Alao", "Ephraim June Vismanos", "Erik Jan Martillan", "Erika Gerado", "Erika Jane Almerez", "Erika Sabdullah", "Erly Jade Jadap", "Ethel Grace Paberan Habanes", "Exequiel Edorosas", "Ezel Jean Sebandal Mahinay", "Flora May MaÃ±o", "Floramae Palma", "Francis Alta", "Francis Brylle Cane", "Francis Lian Ramos", "Freda Apuda", "Frederick Jopia", "Fritz Cales", "Garyll Castillo", "Geharchelle Fuentes", "Gemark Cardanio", "Genibie Trasmonte", "Gerramie Mendoza-Racoma", "Gilbert Murillo", "Ginalyn Mariano", "Glaithe Hienze Perero", "Gliza Mae Samelin", "Glyze Morgado", "Grazelle Tagadiad", "Hani Precious Serna", "Hani Serna", "Hanz Rosetham Tolentino", "Hanzel Umpad", "Harlene Candel", "Hazel Gorgoya", "Henie Alvarez", "Hiezel Heart Bariquit", "Honey Glaze Pialago", "Honey-lyn Dalos", "Ian Greg Mandalupe", "Ian Lauroza", "Irene Fuentes", "Ivan Strauss Castillon", "Ivan Taala", "Ivy Balandan", "Ivy Decenilla", "Jade Rocacorba", "Jaime Arisgado", "Jake Dimpas", "Jake Maghanoy", "Jake Montajes", "James Matthew Quintana", "Jamiel Leyson", "Jan Andes Noel", "Jan Gabriel Pariolan", "Jan Laurence Amacanim", "Jan Noel Andes", "Jan Sield Molinas", "Janice Jugarap", "Janice Salubre", "Jastine Ann Casayas", "Jastine Karl Pracueles", "Jave Mamontayao", "Jay Besedor", "Jay Catito", "Jayboi Tuling", "Jaycee Zabate", "Je Ann Jy Ramos", "Jefferson Egoy", "Jeffrey Juan", "Jeiryld Abella", "Jenesis Mabasa", "Jenessa Subteniente", "Jenette Hisola", "Jennifer Toroba", "Jenny Rose Aquino", "Jeremiah Quesada", "Jerome Uyanguren", "Jerrylyn Guinto", "Jesbonnin Sudaria", "Jessa Lopez", "Jessa Mae Amihan", "Jessa Mae Bacus", "Jethro Gerali", "Jexeer Khent Trinidad", "Jhon Carlos Santos", "Jhon Kenan Baran", "Jhon Rex Mantilla", "Jhuly Basmayor", "Jhun Carlo San", "Jim Fernandez", "Jinelyn Ligtas", "Joecel Villegas", "Joevinyll Palabrica", "John Alvin Despogado", "John Dave Barzo", "John Eric Momo", "John Joshua Bahinting", "John Karl Butaslac", "John Lloyd Pogoy", "John Peter Ano-os", "John Raphael Toledo", "John Rel Lagura", "John Rey Salise", "John Vincent Sotto", "Jollie Berjes", "Jomar Linaza", "Jomar Manla Daie", "Jomira Aquino", "Jonalyn Mamaba", "Jonas Haguyahay", "Jonel Delgado", "Jonell Bisnar", "Joneza Gementiza", "Jose Manila", "Jose Rino Hontiveros", "Joseph Dagatan", "Joshua Bahinting", "Joshua BaÃ±ez", "Joshua Salva", "Jovert Monticayan", "Juan Miguel Aleos", "Juddy Ann Tumazar", "Judel Gabunilas", "Judy Ann Ero", "Juliah Monte", "Julina Flores", "Juniper Arquisola", "Jupel Hemolatan", "Juren Davies Buhawe", "Justine Aninion", "Justine Karl Pracueles", "Justine Magandam", "Justine PleÃ±os", "Kathleen Joy Sulaiman", "Kathlyn Yuba", "Kathrine Mae Arce", "Kehn Angelo Egdamin", "Kerjean Labi", "Kevin John Oroc", "Kevin Kyle Omiping", "Khemyajaira Paquit", "Kimberly Quirabo", "Kin Batomalaque", "Kirk Daniel Ripley", "Kristine Bulonos", "Kristine Jay Salvadora", "Kristine Laarnee Lucariza", "Krizzna Berang", "Krystyl Jean Daclag", "Kurt Calvin Cajeles", "Kyle Ryan Gaviola", "Kylene Cabanada", "Kyzer Bacle", "Larry Lloyd Rodriguez", "Laurence Dave Sindol", "Lemuel Rosalejos", "Leo Jones Sayago", "Leslie Deparene", "Lezmar Teh", "Lhoyd Mondinido", "Liezl Joy Lodonia", "Lloyd Vincent Orquina", "Lorence Gucor", "Lorenz Calm Fabellar", "Louie Roy Casang", "Louise Anne Litao", "Lovelle Famorcan", "Luke Zedric Jun Lopez", "Luz Dela PeÃ±a", "Ma. Czalthea Obed", "Madelyn Mahinay", "Mae Ann Espina", "Maia Isla", "Maica Estafia", "Maica Mambaling", "Marc Jardenico", "Marco Paolo Salazar", "Marecar Suerte", "Margie Gracia", "Marianette Aradilla", "Maribeth Georpe", "Maricel Sungkip", "Maridel Salon", "Marie Fe Palen", "Marie Mogan", "Marie Rose Mutia", "Mark Anthony Arellano", "Mark Clint Encallado", "Mark Conrad Pinton", "Mark Cortez", "Mark Edejer", "Mark Gervacio", "Mark Glendel Embudo", "Mark Lloyd Pielago", "Mark Loeh Salaysay", "Mark Nelcone Grullo", "Marwen Diel", "Mary Abegail Gabrielle Amora", "Mary Ann De Leon", "Mary Grace YbaÃ±ez", "Maxx De Vera", "Maxy Jodelle Alota", "May Jean Romaguera", "Mc Jordan Costan", "Mc Reden De Vera", "Meilah Deocares", "Mel Jan Cole", "Melissa Liceralde", "Melvin Balaba", "Melvinson Laguting", "Michael Angelo Rosauro", "Michael James Macabingkil", "Michael Jan Bangoy", "Michael Mogan", "Michael Ocampo", "Michael Ralph Montejo", "Michelle Pantujan", "Mickie Jhon Absin", "Mina Joy Ramirez", "Mirah Paris Macaorao", "Moktar Ibrahim", "Nasrudin Sailila", "Neil Jarencio", "Nelboy Campaner", "NeÃ±a May Barientos", "Noel Ulalan", "Nomar Dagmil", "Norjahid Akmad", "Norman Lindo", "Noronisa Mante", "Odesa Lacadwe", "Oliver Dela Cruz", "Omar Langco", "Omar Mallari", "Pablito Janeo", "Pam Cuizon", "Pamela Villanueva", "Patricia Paula Therese Martinez", "Patrick James Mariano", "Patrick Jhon Misagal", "Patrick Llamasarez", "Paul Angelo Maguad", "Paul Anthony Rica", "Pauline Grace Genon", "Philip Baaria Lomada", "Prince Borras", "Princess Angel Barinque", "Princess Catabay", "Princess Jay Cadungog", "Princess Robles", "Queendolyn Pama", "Rachel Joyce Carillo", "Raena Rosos", "Ralph Raul Montero", "Ramil Ramos", "Raphael Montiague", "Ray Allen Baracao", "Raymund Ordinario", "Reah Mae Manangca", "Recci George Crodua", "Recy Pagangpang", "Remer Tancontian", "Renato Feria", "Rene Fernandez", "Resamy Crausos", "Rex Mantilla", "Rey Adrian Candilada", "Rey Mark IbaÃ±ez", "Reyland Sumael", "Reynaldo Arreza", "Reynaldo Ligad", "Reynan Arellano", "Rhea Elises", "Rhea Liezyl Naol", "Rhea Mae Manangca", "Rhelford Allawan", "Rhocky Resma", "Rhusty LascuÃ±a", "Rica Gingone", "Rica Micaella Suan", "Ricardo Traya Jr.", "Richell Saavedra", "Rieven John Catipay", "Rigel Conejar", "Rio Ubaldo", "Risaldo Castellon Jr.", "Risha May Memoracion", "Ritchie Crispe", "Rizel Abanes", "Robina Tai", "Rogelyn Boligao", "Rojon Rosales", "Roleen Joy Juntong", "Rolly Acaso Lasala", "Romel Biliran", "Romelyn Samar", "Ron Jay Socia", "Ronnel Ragas", "Rosalia Mandawe", "Rosalinda Erellana", "Rosalyn Darang", "Rosanna Bergavera", "Roselle Novecio", "Rowaida Faisal", "Rowena Lamatan", "Rubie Ramos", "Ryan Patrick Balicog", "Samantha Gen Cruz", "Shaira Mae Olasiman", "Shaira May Divinagracia", "Shayne Erasmo", "Sheila Emmanuelle Nueza", "Sheila Mae Cuison", "Shekinah Grace Javar", "Shella Caangay", "Shella Mae Caangay", "Sherlak Culanag", "Sherwin James Solier", "Shiela Sales Sarmiento", "Shiella Marie MiÃ±oza", "Simforiano Gerongco", "Stacey Verdeflor", "Stanley Rojas", "Stephanie Pombo", "Suzette Rose Dayaday", "Switzel Condor", "TBA", "Thea Tanya Bete", "Thirdie Galedo", "Val Sandingay", "Venus Cua", "Vicente Sumagabac", "Vincent Lapasigue", "Vinette Sanchez", "Vowin Cordova", "Walter Jay Carrasca", "Warren Mansueto", "Willy Mark Callao", "Xyzel Saludares", "Yancy Camingue", "Zady Daguat", "Zaila Faye SoreÃ±o", "Zaldy John Garcia", "Zheenab Datu-dacula", "Zoe Cordova", "Zyrie Christian Wasil"];
     const SOURCE_OMS = ["Abby", "Beth", "BIGO - Thirdy", "CFC", "Cherry", "Crystal", "Derline", "Freda", "Gerramie", "Irene", "Marc Jardenico", "McJordan", "Michelle", "Mirah", "Mogan", "Norman", "Renato", "Rhelford", "Ruth", "Shayne", "Sheila", "Shey", "SP - James", "SP - Marc", "SP - MJ", "SP - Ryan", "Willy"];
     const SOURCE_ACCOUNTS = ["123 Employee", "123 Employee - Echo Mortgage", "123 Employee - Hallandale Pharmacy", "123 Employee - Mercantile Property", "123 Robotics", "123Employee | HUB International", "212 Dental Care", "611 VA", "ACB", "Adams International", "Advocacy Refund Group", "Aeroex Technology Inc.", "AFP", "Ahabi", "Airbills", "Alibaba", "All Pro Pay", "Allen Institute Mouse", "Allied Pain and Spine Institute", "AMG", "AMR", "AMR CSR", "Angel Oak Mortgage Solution", "Another Star", "ARS", "AU Store", "AU Tax", "AUXGP", "BathroomX", "Bayou Braces", "Bentino", "BIGO - DIGOS", "BIGO - ECOLAND", "BIGO - Mabini", "Brianna Thaxton LLC", "BrightDelivery", "CapLink Group", "CFC", "CFC OB", "CGP", "CIG", "CITUS HR SOLUTIONS", "Clear Insights Group", "Clinic P", "COD Logistics", "Commercial Enterprise", "Commercial Merchant Acquisition", "Content Quality Assurance", "Corazon Company LLC", "CORE LOGIX", "Cupshe", "DASCO", "DASCO BACK OFFICE", "DASCO CSR", "DAVI", "Dental Back Office Admin", "DG Dial", "DIAL EXPRESS", "DLG", "DLPC", "DNE", "DNO L1", "DNO L2", "Duque Immigration", "EDJ DATA", "EIMS", "EIMS - Data Validator/QA", "eJam", "eJam Inside Sales", "ENC", "Envera", "EOR Project: Future Proof", "ESIM", "Everlife", "EVMS", "EWC", "Eyesurf", "FBB", "FBB QA", "Flexscale Next-Level Recruitment", "Flexscale Truth Finance", "Flexscale Truth Financial", "Flywire", "Franklin Hamilton", "FWC", "GARDENS", "Gardens Alive & Shared", "Glamcor", "GLO", "Globalcom - Mountain Valley", "Globalcom RTA", "GRAB", "GRAB - Commercial Enterprise", "GRAB - MPH", "Grab - MY", "GRAB - PH", "GRAB - Quality Assurance", "GRAB - SG", "GrabRentals Voice and Digital Support", "Green Health Docs", "Greenfoot", "HBW", "Herb joy", "Hotel Revel", "IADU/IAVU PH", "IAVU/IADU SG Support", "IDENT", "iMarketing", "iMarketing Frontline", "iMile Logistics", "Industry Rock Star", "Insight Financial Associates Ltd. (SixEleven Project)", "Integrity Financial Solutions", "J&T Express", "Jethro Mobile", "JJILL", "Justlife", "KCDO", "KCDO - Billing", "KCDO - Inbound", "KCDO - Outbound", "KCDO - RCM", "Kombea Fivestrata", "Kombea Kingkong", "KOMBEA MPI", "Kombea Pro Speaking", "Kraven Bahamas", "LEADMINER", "LedUp", "Legal Solutions 4U", "Leisure-tec", "LifeMD", "List Simple", "LM Consulting", "LOGISTICS", "LSM", "Luxor Eye Institute", "Mallory Headset", "MAPUA", "MBC Consulting Group Inc.", "Mehboob Law Firm", "Mi Care", "MMG", "MoneyHero Group", "Moon River Therapy", "Mousewire", "NationGraph", "Neiline", "NetworX", "NextgenID", "NextgenID SRIP", "NISSAN PH", "NLR", "Nomad eSIM", "NOX", "NVT", "OBRB MY", "Origin", "PB&J TV", "Pearl Source", "Phoenix Direct", "Pinnacle Ozone Solutions", "Pivot", "POINT CO", "QA OJR", "QC", "Quick Contractors", "Reflex Media", "Renogy", "Revel Hotel", "RPI (1voiceSolution)", "SBI", "Seesaw", "SFP", "SHARED", "Shopee", "Shopee - Buybox", "Shopee - Buybox - Smart UI", "Shopee - Buyer Chat and Email", "Shopee - Buyer CS", "Shopee - Buyer Logistics", "Shopee - Buyer Non-Logistics", "Shopee - CB-SCS", "Shopee - CCS", "Shopee - CS", "Shopee - CS and Non-CS", "Shopee - Data Labelling - Buybox", "Shopee - Data Labelling - Non SPU", "Shopee - Data Labelling - SPU", "Shopee - Email", "Shopee - FBS", "Shopee - Keywords", "Shopee - L1 Buyer - Email", "Shopee - Listing Pages", "Shopee - Listings Data Labelling - LLM", "Shopee - Listings Data Labelling - SQE", "Shopee - Listings Data Labelling - Task Center", "Shopee - Listings QC", "Shopee - Live Stream Marketing", "Shopee - LiveStream", "Shopee - Lovito", "Shopee - Non-CS", "Shopee - PH - Chat Bot", "Shopee - PIC", "Shopee - QA", "Shopee - QAC Department", "Shopee - RTA", "Shopee - SBS", "Shopee - SCS", "Shopee - Seller Chats and Email", "Shopee - Seller Log x RR", "Shopee - SIP AME", "Shopee - SIP BR & LATAM", "Shopee - SIP Global", "Shopee - SIP Global - PH", "Shopee - SIP L2", "Shopee - SIP Malaysia", "Shopee - SIP Singapore", "Shopee - SIP Taiwan", "Shopee - SIP Thailand", "Shopee - SIP Vietnam", "Shopee - SPU Listings", "Shopee - SPX", "Shopee - SPX NSS Outbound", "Shopee - SPX SSC and NSS", "Shopee - Trainee", "Shopee - Training", "Shopee - Video", "Shopee - Video QC", "Shopee - WFM", "Shopee - WFM/RTA", "SLEEPDYNAMICS", "Smart Circle", "Smart Staffing Support - Renters", "Solution That Matter", "SPEAK UP", "Spectee", "Spyfly", "Spypoint", "Spypoint Outbound", "SRIP L2 Support", "Superdial", "Talixo", "Talixo Dispatch", "TelMDFirst", "TEMU - 1404", "TEMU - 140X (RSL)", "TEMU - 4029", "TEMU - BATCH 6", "TEMU - BATCH 7", "TEMU - BATCH 8", "TEMU - CPC", "TEMU - LOB-1", "TEMU - LOB-2", "TEMU - LOB-3", "TEN28", "The James Group, LLC", "Ticket Management System SL", "TMS", "Together Network", "TOP MOVING SOLUTIONS", "Triple B", "TV COMMERCIAL TRAFFIC", "Two Birds Supplements", "TWV", "Uplift Healthcare LLC", "Veritas", "ViewQwest CSR", "ViewQwest Telesales", "Virtual Staffing", "WanderJoy", "Wiz AI", "Zetta"];
 
@@ -16188,7 +16853,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
             await persistEdrWorkspace();
 
             setEdrDocsStatus(
-                `Connected · ${remote.length} saved EDR${remote.length === 1 ? "" : "s"} loaded from Google Docs.`,
+                `Connected Â· ${remote.length} saved EDR${remote.length === 1 ? "" : "s"} loaded from Google Docs.`,
                 "connected"
             );
 
@@ -16403,7 +17068,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         const start = formatTime(report.timeStart);
         const end = formatTime(report.timeEnd);
 
-        if (start && end) return `${start}–${end}`;
+        if (start && end) return `${start}â€“${end}`;
         return start || end || pasted || "";
     }
 
@@ -16729,7 +17394,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
 
                     <div class="edr-list-sub">
                         ${escapeHtml(supervisorOutputLabel(report))}: ${escapeHtml(report.supervisorName)}
-                        · ${escapeHtml(subjectOutputLabel(report))}: ${escapeHtml(report.subjectName)}
+                        Â· ${escapeHtml(subjectOutputLabel(report))}: ${escapeHtml(report.subjectName)}
                         ${linkedToAudit ? '<span class="edr-audit-linked">In CCTV Audit</span>' : ""}
                     </div>
 
@@ -16851,7 +17516,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         const selected = edrReports.filter(item => item.selected);
         const facebook = byId("edrFacebookText").value.trim();
 
-        const divider = "────────────────────────────────────────";
+        const divider = "â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€";
 
         const edrText = selected
             .map(report => `${reportText(report)}\n\n${divider}`)
@@ -17948,11 +18613,11 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
                 }
                 if (email) {
                     pieces.push(
-                        `<strong>${email}</strong> report${email === 1 ? "" : "s"} reached 4 days — send email`
+                        `<strong>${email}</strong> report${email === 1 ? "" : "s"} reached 4 days â€” send email`
                     );
                 }
 
-                banner.innerHTML = pieces.join(" · ");
+                banner.innerHTML = pieces.join(" Â· ");
             }
         }
 
@@ -17994,8 +18659,8 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
                                    placeholder="Report / Agent">
                             <div class="pending-card-meta">
                                 Reported ${esc(formatDate(report.reportDate))}
-                                · Age ${esc(ageText(reportAgeMs(report)))}
-                                · ${esc(followupMeta)}
+                                Â· Age ${esc(ageText(reportAgeMs(report)))}
+                                Â· ${esc(followupMeta)}
                             </div>
                         </div>
 
@@ -18886,7 +19551,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
             row.querySelector(".master-hr-delete-btn")?.addEventListener("click", async () => {
                 const approved = await window.appConfirm({
                     title: "Delete HR assignment?",
-                    message: `${item.site} · ${item.omTeam} · ${item.hr}`,
+                    message: `${item.site} Â· ${item.omTeam} Â· ${item.hr}`,
                     confirmText: "Delete Assignment",
                     tone: "danger"
                 });
@@ -19064,7 +19729,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
             setSyncState(
                 "live",
                 "Google Sheets connected",
-                `${pendingMiles.length} Pending Miles · ${hrAssignments.length} HR assignments loaded.`
+                `${pendingMiles.length} Pending Miles Â· ${hrAssignments.length} HR assignments loaded.`
             );
 
             if (showFresh) {
@@ -19325,7 +19990,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
             </div>
             <button type="button" id="globalHistoryClose"
                     class="maintenance-modal-close static-close"
-                    aria-label="Close History">×</button>
+                    aria-label="Close History">Ã—</button>
         </div>
         <div class="global-history-toolbar">
             <button type="button" class="edr-outline-btn" id="globalUndoBtn">Undo</button>
@@ -19544,7 +20209,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
 
         const text = String(raw).replace(/\s+/g, " ").trim();
         return text
-            ? `${text} · ${workspaceNames[workspace]}`
+            ? `${text} Â· ${workspaceNames[workspace]}`
             : `Updated ${workspaceNames[workspace]}`;
     }
 
@@ -19905,8 +20570,8 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         await captureIfChanged(
             entry.workspace,
             restoredCount
-                ? `Restored removed item · ${entry.action}`
-                : `Restored selected change · ${entry.action}`
+                ? `Restored removed item Â· ${entry.action}`
+                : `Restored selected change Â· ${entry.action}`
         );
 
         selectedHistoryId = null;
@@ -20252,6 +20917,478 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         if (!pair) return;
         enforceWorkspace(pair[0], pair[1]);
     };
+})();
+</script>
+
+<!-- =========================================================
+     PRODUCTIVITY COMMAND PALETTE MODAL (CTRL + K)
+     ========================================================= -->
+<div id="cmdPaletteModal" class="cmd-palette-modal" aria-hidden="true">
+    <div class="cmd-palette-backdrop" onclick="toggleCommandPalette(false)"></div>
+    <div class="cmd-palette-dialog" role="dialog" aria-modal="true" aria-label="Command Palette">
+        <div class="cmd-palette-searchbar">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <input type="text" id="cmdPaletteInput" class="cmd-palette-input" placeholder="Type a command, search workspace, TL, or OM..." autocomplete="off">
+            <span class="cmd-palette-esc">ESC</span>
+        </div>
+        <div class="cmd-palette-body" id="cmdPaletteList">
+            <!-- Dynamic items rendered by JS -->
+        </div>
+        <div class="cmd-palette-footer">
+            <span><kbd>â†‘</kbd> <kbd>â†“</kbd> to navigate &bull; <kbd>â†µ</kbd> to select</span>
+            <span><kbd>Ctrl</kbd> + <kbd>K</kbd> to open anytime</span>
+        </div>
+    </div>
+</div>
+
+<!-- =========================================================
+     MULTI-TASK QUICK DRAWER & SCRATCHPAD (ALT + N)
+     ========================================================= -->
+<div id="quickDrawerBackdrop" class="quick-drawer-backdrop" onclick="toggleQuickDrawer(false)"></div>
+<aside id="quickScratchpadDrawer" class="quick-drawer" aria-label="Multi-Task Quick Notes">
+    <div class="quick-drawer-header">
+        <h3>ðŸ“ Multi-Task Scratchpad</h3>
+        <button type="button" class="quick-drawer-close" onclick="toggleQuickDrawer(false)" title="Close Scratchpad">âœ•</button>
+    </div>
+    <div class="quick-drawer-body">
+        <div>
+            <label style="display:block; margin-bottom:6px; font-size:11px; font-weight:800; color:var(--admin-muted, var(--pro-muted));">LIVE SCRATCHPAD (AUTO-SAVED)</label>
+            <textarea id="quickScratchpadText" class="quick-scratchpad-area" placeholder="Jot down notes, temporary incident details, station numbers, or evidence snippets here while multitasking across tabs..."></textarea>
+        </div>
+        
+        <div class="quick-drawer-actions">
+            <button type="button" class="quick-action-btn" onclick="transferNoteToCctv()" title="Insert into CCTV Audit remarks">âž¡ï¸ To CCTV</button>
+            <button type="button" class="quick-action-btn" onclick="transferNoteToEdr()" title="Insert into EDR builder">âž¡ï¸ To EDR</button>
+            <button type="button" class="quick-action-btn" onclick="copyScratchpadNotes()" title="Copy all scratchpad text">ðŸ“‹ Copy All</button>
+            <button type="button" class="quick-action-btn" onclick="clearScratchpadNotes()" style="color:#ef4444;" title="Clear scratchpad">ðŸ§¹ Clear</button>
+        </div>
+
+        <div style="padding: 12px; border: 1px solid var(--admin-line, var(--border-color)); border-radius: 10px; background: var(--admin-panel-soft, rgba(148,163,184,0.03));">
+            <strong style="display:block; margin-bottom:6px; font-size:11px; color:var(--admin-text, var(--text-color));">âš¡ Multitasking Pro-Tips</strong>
+            <ul style="margin: 0; padding-left: 18px; font-size: 10.5px; color: var(--admin-muted, var(--pro-muted)); line-height: 1.5;">
+                <li>Press <kbd>Ctrl+K</kbd> to jump between tabs instantly.</li>
+                <li>Press <kbd>Alt+N</kbd> anywhere to slide this scratchpad open/closed.</li>
+                <li>Press <kbd>Alt+T</kbd> to switch Light / Dark theme.</li>
+                <li>Press <kbd>Ctrl+1</kbd> to <kbd>Ctrl+6</kbd> for direct tab hopping.</li>
+            </ul>
+        </div>
+    </div>
+</aside>
+
+<!-- Floating Scratchpad Trigger Button -->
+<button type="button" id="quickDrawerFloatBtn" class="quick-drawer-floating-btn" onclick="toggleQuickDrawer()" title="Open Quick Scratchpad (Alt + N)">
+    <span>ðŸ“ Notes</span>
+</button>
+
+<!-- =========================================================
+     PRODUCTIVITY JAVASCRIPT CONTROLLER
+     ========================================================= -->
+<script>
+(function() {
+    // --- 1. MULTI-TASK SCRATCHPAD LOGIC ---
+    const scratchpadArea = document.getElementById("quickScratchpadText");
+    const scratchpadDrawer = document.getElementById("quickScratchpadDrawer");
+    const scratchpadBackdrop = document.getElementById("quickDrawerBackdrop");
+    const STORAGE_KEY = "agy_cctv_quick_scratchpad_v1";
+
+    if (scratchpadArea) {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) scratchpadArea.value = saved;
+
+        scratchpadArea.addEventListener("input", () => {
+            localStorage.setItem(STORAGE_KEY, scratchpadArea.value);
+        });
+    }
+
+    window.toggleQuickDrawer = function(forceOpen) {
+        const isOpen = scratchpadDrawer.classList.contains("open");
+        const nextState = forceOpen !== undefined ? forceOpen : !isOpen;
+        scratchpadDrawer.classList.toggle("open", nextState);
+        scratchpadBackdrop.classList.toggle("open", nextState);
+        if (nextState && scratchpadArea) {
+            setTimeout(() => scratchpadArea.focus(), 150);
+        }
+    };
+
+    window.copyScratchpadNotes = function() {
+        if (!scratchpadArea || !scratchpadArea.value.trim()) {
+            showToastMessage("Scratchpad is empty", "info");
+            return;
+        }
+        navigator.clipboard.writeText(scratchpadArea.value).then(() => {
+            showToastMessage("Scratchpad copied to clipboard!", "success");
+        }).catch(() => {
+            scratchpadArea.select();
+            document.execCommand("copy");
+            showToastMessage("Scratchpad copied!", "success");
+        });
+    };
+
+    window.clearScratchpadNotes = function() {
+        if (!scratchpadArea || !scratchpadArea.value.trim()) return;
+        if (confirm("Clear all text in the quick scratchpad?")) {
+            scratchpadArea.value = "";
+            localStorage.removeItem(STORAGE_KEY);
+            showToastMessage("Scratchpad cleared", "info");
+        }
+    };
+
+    window.transferNoteToCctv = function() {
+        if (!scratchpadArea || !scratchpadArea.value.trim()) {
+            showToastMessage("Scratchpad is empty", "info");
+            return;
+        }
+        const note = scratchpadArea.value.trim();
+        const remarksInput = document.getElementById("remarks");
+        if (remarksInput) {
+            remarksInput.value = remarksInput.value ? remarksInput.value + " | " + note : note;
+            if (typeof window.showWorkspaceOnly === "function") {
+                window.showWorkspaceOnly("cctvPanel");
+            }
+            toggleQuickDrawer(false);
+            remarksInput.focus();
+            showToastMessage("Transferred to CCTV Remarks!", "success");
+        }
+    };
+
+    window.transferNoteToEdr = function() {
+        if (!scratchpadArea || !scratchpadArea.value.trim()) {
+            showToastMessage("Scratchpad is empty", "info");
+            return;
+        }
+        const note = scratchpadArea.value.trim();
+        const edrRemarks = document.getElementById("edrRemarks") || document.getElementById("edrRawReport");
+        if (edrRemarks) {
+            edrRemarks.value = edrRemarks.value ? edrRemarks.value + "\n" + note : note;
+            if (typeof window.showWorkspaceOnly === "function") {
+                window.showWorkspaceOnly("edrPanel");
+            }
+            toggleQuickDrawer(false);
+            edrRemarks.focus();
+            showToastMessage("Transferred to EDR Hub!", "success");
+        }
+    };
+
+    // --- 2. COMMAND PALETTE (CTRL + K) LOGIC ---
+    const cmdModal = document.getElementById("cmdPaletteModal");
+    const cmdInput = document.getElementById("cmdPaletteInput");
+    const cmdList = document.getElementById("cmdPaletteList");
+    let activeCmdIndex = 0;
+
+    const baseCommands = [
+        { id: "cctvPanel", category: "Workspaces", title: "CCTV Audit", sub: "Create audit entries & data grid", icon: "ðŸŽ¥", shortcut: "Ctrl+1", action: () => window.showWorkspaceOnly("cctvPanel") },
+        { id: "maintenancePanel", category: "Workspaces", title: "Maintenance AI Sorter", sub: "Interactive floor sorter sheet", icon: "ðŸ¤–", shortcut: "Ctrl+2", action: () => window.showWorkspaceOnly("maintenancePanel") },
+        { id: "eodPanel", category: "Workspaces", title: "Maintenance Report", sub: "Build report blocks & export PDF", icon: "ðŸ“‹", shortcut: "Ctrl+3", action: () => window.showWorkspaceOnly("eodPanel") },
+        { id: "pendingPanel", category: "Workspaces", title: "Pending Reports", sub: "Track OM assignments & Teams log", icon: "â³", shortcut: "Ctrl+4", action: () => window.showWorkspaceOnly("pendingPanel") },
+        { id: "masterlistPanel", category: "Workspaces", title: "Master List", sub: "Pending Miles & Assigned HR per OM", icon: "ðŸ“‘", shortcut: "Ctrl+5", action: () => window.showWorkspaceOnly("masterlistPanel") },
+        { id: "edrPanel", category: "Workspaces", title: "EDR Hub", sub: "Generate Teams EDR post & Doc sync", icon: "ðŸš¨", shortcut: "Ctrl+6", action: () => window.showWorkspaceOnly("edrPanel") },
+        { id: "actionScratchpad", category: "Quick Actions", title: "Open Multi-Task Scratchpad", sub: "Floating quick notes drawer", icon: "ðŸ“", shortcut: "Alt+N", action: () => toggleQuickDrawer(true) },
+        { id: "actionTheme", category: "Quick Actions", title: "Toggle Light / Dark Theme", sub: "Switch color mode", icon: "ðŸŒ“", shortcut: "Alt+T", action: () => { if (typeof toggleTheme === "function") toggleTheme(); } },
+        { id: "actionHistory", category: "Quick Actions", title: "Open Workspace History", sub: "Global Undo / Redo changelog", icon: "ðŸ“œ", action: () => { const btn = document.getElementById("globalHistoryBtn"); if (btn) btn.click(); } },
+        { id: "actionSheets", category: "Quick Actions", title: "Google Sheets Connection", sub: "Configure Apps Script Web App sync", icon: "ðŸ“Š", action: () => { const btn = document.getElementById("maintenanceSetupBtn") || document.getElementById("openSheetsModalBtn"); if (btn) btn.click(); } },
+        { id: "actionDocs", category: "Quick Actions", title: "EDR Google Docs Sync", sub: "Configure EDR Google Docs endpoint", icon: "ðŸ“„", action: () => { const btn = document.getElementById("edrDocsSetupBtn"); if (btn) btn.click(); } }
+    ];
+
+    window.toggleCommandPalette = function(forceOpen) {
+        const isOpen = cmdModal.classList.contains("open");
+        const nextState = forceOpen !== undefined ? forceOpen : !isOpen;
+        cmdModal.classList.toggle("open", nextState);
+        if (nextState) {
+            cmdInput.value = "";
+            activeCmdIndex = 0;
+            renderCommandList("");
+            setTimeout(() => cmdInput.focus(), 100);
+        }
+    };
+
+    function getDynamicSearchItems() {
+        const items = [];
+        // Extract TLs from masterlist or select
+        const tlSelect = document.getElementById("tlName");
+        const omSelect = document.getElementById("omName");
+        if (omSelect && omSelect.options) {
+            for (let i = 0; i < omSelect.options.length; i++) {
+                const val = omSelect.options[i].text.trim();
+                if (val && !val.startsWith("Select") && !val.startsWith("New")) {
+                    items.push({
+                        category: "OM Reference",
+                        title: `OM: ${val}`,
+                        sub: "Select in CCTV form",
+                        icon: "ðŸ‘¤",
+                        action: () => {
+                            window.showWorkspaceOnly("cctvPanel");
+                            omSelect.value = omSelect.options[i].value;
+                        }
+                    });
+                }
+            }
+        }
+        return items;
+    }
+
+    function renderCommandList(query) {
+        const q = (query || "").toLowerCase().trim();
+        const dynamicItems = getDynamicSearchItems();
+        const allItems = [...baseCommands, ...dynamicItems];
+
+        const filtered = allItems.filter(item => {
+            if (!q) return true;
+            return item.title.toLowerCase().includes(q) ||
+                   (item.sub && item.sub.toLowerCase().includes(q)) ||
+                   (item.category && item.category.toLowerCase().includes(q));
+        });
+
+        cmdList.innerHTML = "";
+        if (filtered.length === 0) {
+            cmdList.innerHTML = `<div style="padding: 20px; text-align: center; color: var(--admin-muted, var(--pro-muted)); font-size: 12px;">No matching actions found</div>`;
+            return;
+        }
+
+        let currentCategory = "";
+        filtered.forEach((item, idx) => {
+            if (item.category !== currentCategory) {
+                currentCategory = item.category;
+                const catEl = document.createElement("div");
+                catEl.className = "cmd-group-label";
+                catEl.textContent = currentCategory;
+                cmdList.appendChild(catEl);
+            }
+
+            const btn = document.createElement("button");
+            btn.type = "button";
+            btn.className = "cmd-item" + (idx === activeCmdIndex ? " active" : "");
+            btn.innerHTML = `
+                <div class="cmd-item-main">
+                    <span class="cmd-item-icon">${item.icon}</span>
+                    <div>
+                        <span class="cmd-item-title">${item.title}</span>
+                        ${item.sub ? `<span class="cmd-item-sub">â€” ${item.sub}</span>` : ""}
+                    </div>
+                </div>
+                ${item.shortcut ? `<span class="cmd-item-badge">${item.shortcut}</span>` : ""}
+            `;
+
+            btn.addEventListener("click", () => {
+                toggleCommandPalette(false);
+                if (typeof item.action === "function") item.action();
+            });
+
+            cmdList.appendChild(btn);
+        });
+    }
+
+    if (cmdInput) {
+        cmdInput.addEventListener("input", (e) => {
+            activeCmdIndex = 0;
+            renderCommandList(e.target.value);
+        });
+
+        cmdInput.addEventListener("keydown", (e) => {
+            const items = cmdList.querySelectorAll(".cmd-item");
+            if (!items.length) return;
+
+            if (e.key === "ArrowDown") {
+                e.preventDefault();
+                activeCmdIndex = (activeCmdIndex + 1) % items.length;
+                updateActiveCmd(items);
+            } else if (e.key === "ArrowUp") {
+                e.preventDefault();
+                activeCmdIndex = (activeCmdIndex - 1 + items.length) % items.length;
+                updateActiveCmd(items);
+            } else if (e.key === "Enter") {
+                e.preventDefault();
+                if (items[activeCmdIndex]) items[activeCmdIndex].click();
+            } else if (e.key === "Escape") {
+                toggleCommandPalette(false);
+            }
+        });
+    }
+
+    function updateActiveCmd(items) {
+        items.forEach((it, idx) => {
+            it.classList.toggle("active", idx === activeCmdIndex);
+            if (idx === activeCmdIndex) {
+                it.scrollIntoView({ block: "nearest" });
+            }
+        });
+    }
+
+    // --- 3. GLOBAL KEYBOARD SHORTCUTS ---
+    document.addEventListener("keydown", (e) => {
+        const isInput = ["INPUT", "TEXTAREA", "SELECT"].includes(document.activeElement.tagName);
+
+        // Ctrl + K -> Open Command Palette
+        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
+            e.preventDefault();
+            toggleCommandPalette();
+            return;
+        }
+
+        // Alt + N -> Open Scratchpad
+        if (e.altKey && e.key.toLowerCase() === "n") {
+            e.preventDefault();
+            toggleQuickDrawer();
+            return;
+        }
+
+        // Alt + T -> Toggle Theme
+        if (e.altKey && e.key.toLowerCase() === "t") {
+            e.preventDefault();
+            if (typeof toggleTheme === "function") toggleTheme();
+            return;
+        }
+
+        // ESC -> Close modals
+        if (e.key === "Escape") {
+            if (cmdModal && cmdModal.classList.contains("open")) {
+                toggleCommandPalette(false);
+            }
+            if (scratchpadDrawer && scratchpadDrawer.classList.contains("open")) {
+                toggleQuickDrawer(false);
+            }
+        }
+
+        // Direct tab hopping Ctrl + 1..6 (when not typing inside inputs)
+        if ((e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey && !isInput) {
+            const tabs = ["cctvPanel", "maintenancePanel", "eodPanel", "pendingPanel", "masterlistPanel", "edrPanel"];
+            const keyNum = parseInt(e.key, 10);
+            if (keyNum >= 1 && keyNum <= tabs.length) {
+                e.preventDefault();
+                if (typeof window.showWorkspaceOnly === "function") {
+                    window.showWorkspaceOnly(tabs[keyNum - 1]);
+                }
+            }
+        }
+    });
+
+    // --- 4. SMART AUTO-FILL PARSER ---
+    window.parseAndFillCctv = function() {
+        const input = document.getElementById("cctvSmartInput");
+        if (!input || !input.value.trim()) {
+            showToastMessage("Please paste text into the auto-fill bar first", "info");
+            return;
+        }
+        const text = input.value.trim();
+
+        // Regex patterns for flexible key-value parsing
+        const extract = (patterns) => {
+            for (const p of patterns) {
+                const match = text.match(p);
+                if (match && match[1]) return match[1].trim();
+            }
+            return "";
+        };
+
+        const dateVal = extract([/date[:\s=]+([0-9\-\/]+)/i, /([0-9]{4}-[0-9]{2}-[0-9]{2})/]);
+        const siteVal = extract([/site[:\s=]+([^|,\n;]+)/i]);
+        const tlVal = extract([/tl(?:\s*name)?[:\s=]+([^|,\n;]+)/i, /team\s*leader[:\s=]+([^|,\n;]+)/i]);
+        const agentVal = extract([/agent(?:\s*name)?[:\s=]+([^|,\n;]+)/i]);
+        const omVal = extract([/om(?:\s*name)?[:\s=]+([^|,\n;]+)/i, /operations\s*manager[:\s=]+([^|,\n;]+)/i]);
+        const accountVal = extract([/account(?:\/campaign)?[:\s=]+([^|,\n;]+)/i, /campaign[:\s=]+([^|,\n;]+)/i]);
+        const reasonVal = extract([/reason(?:\s*code)?[:\s=]+([^|,\n;]+)/i, /issue[:\s=]+([^|,\n;]+)/i]);
+        const nocVal = extract([/noc[:\s=]+([^|,\n;]+)/i, /status[:\s=]+(YES|NO|Pending|Disputed)/i]);
+        const remarksVal = extract([/remarks?[:\s=]+([^|\n;]+)/i, /summary[:\s=]+([^|\n;]+)/i]);
+
+        let filledCount = 0;
+
+        if (dateVal) {
+            const dateInput = document.getElementById("auditDate");
+            if (dateInput) { dateInput.value = dateVal; filledCount++; }
+        }
+        if (siteVal) {
+            const siteSelect = document.getElementById("site");
+            if (siteSelect) { setSelectOrAdd(siteSelect, siteVal); filledCount++; }
+        }
+        if (tlVal) {
+            const tlInput = document.getElementById("tlName");
+            if (tlInput) { tlInput.value = tlVal; filledCount++; }
+        }
+        if (agentVal) {
+            const agentInput = document.getElementById("agentName");
+            if (agentInput) { agentInput.value = agentVal; filledCount++; }
+        }
+        if (omVal) {
+            const omSelect = document.getElementById("omName");
+            if (omSelect) { setSelectOrAdd(omSelect, omVal); filledCount++; }
+        }
+        if (accountVal) {
+            const accountSelect = document.getElementById("account");
+            if (accountSelect) { setSelectOrAdd(accountSelect, accountVal); filledCount++; }
+        }
+        if (reasonVal) {
+            const reasonSelect = document.getElementById("reasonCode");
+            if (reasonSelect) { setSelectOrAdd(reasonSelect, reasonVal); filledCount++; }
+        }
+        if (nocVal) {
+            const nocSelect = document.getElementById("noc");
+            if (nocSelect) {
+                for (let i = 0; i < nocSelect.options.length; i++) {
+                    if (nocSelect.options[i].value.toLowerCase() === nocVal.toLowerCase()) {
+                        nocSelect.selectedIndex = i;
+                        filledCount++;
+                        break;
+                    }
+                }
+            }
+        }
+        if (remarksVal) {
+            const remarksInput = document.getElementById("remarks");
+            if (remarksInput) { remarksInput.value = remarksVal; filledCount++; }
+        }
+
+        // If no key-value matched, parse tab or pipe separated values directly
+        if (filledCount === 0 && (text.includes("\t") || text.includes("|"))) {
+            const parts = text.split(/[\t|]/).map(s => s.trim()).filter(Boolean);
+            if (parts.length >= 3) {
+                if (parts[0]) document.getElementById("auditDate").value = parts[0];
+                if (parts[1]) setSelectOrAdd(document.getElementById("site"), parts[1]);
+                if (parts[2]) document.getElementById("tlName").value = parts[2];
+                if (parts[3]) document.getElementById("agentName").value = parts[3];
+                if (parts[4]) setSelectOrAdd(document.getElementById("omName"), parts[4]);
+                if (parts[5]) setSelectOrAdd(document.getElementById("account"), parts[5]);
+                if (parts[6]) setSelectOrAdd(document.getElementById("reasonCode"), parts[6]);
+                if (parts[7]) document.getElementById("remarks").value = parts[7];
+                filledCount = parts.length;
+            }
+        }
+
+        if (filledCount > 0) {
+            showToastMessage(`âš¡ Auto-filled ${filledCount} fields!`, "success");
+            input.value = "";
+        } else {
+            showToastMessage("Could not auto-detect fields. Check format.", "info");
+        }
+    };
+
+    function setSelectOrAdd(selectEl, textVal) {
+        if (!selectEl || !textVal) return;
+        const normalized = textVal.toLowerCase();
+        for (let i = 0; i < selectEl.options.length; i++) {
+            if (selectEl.options[i].text.toLowerCase() === normalized || selectEl.options[i].value.toLowerCase() === normalized) {
+                selectEl.selectedIndex = i;
+                return;
+            }
+        }
+        // Option doesn't exist, create it
+        const opt = new Option(textVal, textVal);
+        selectEl.add(opt);
+        selectEl.value = textVal;
+    }
+
+    // Helper toast message
+    function showToastMessage(msg, type) {
+        const toast = document.getElementById("edrToast") || document.getElementById("edrCrudToast");
+        if (toast) {
+            toast.textContent = msg;
+            toast.className = `edr-crud-toast show ${type || "success"}`;
+            setTimeout(() => { toast.classList.remove("show"); }, 3000);
+        } else {
+            alert(msg);
+        }
+    }
 })();
 </script>
 
