@@ -7539,3 +7539,178 @@ body.ops-redesign-v3 #edrPanel .edr-layout-action {
     }
 }
 
+
+/* ==========================================================
+   EDR FORM ARRANGEMENT V6 — COMPACT ALIGNED DETAILS
+   Desktop:
+   Row 1: Site 8 | Date 4
+   Row 2: Time 4 | Respondent 2 | Respondent Name 6
+   Row 3: Violation Subject 3 | Subject Name 4 | Account 5
+   ========================================================== */
+
+body.ops-redesign-v3 #edrPanel .edr-form-grid {
+    display: grid !important;
+    grid-template-columns: repeat(12, minmax(0, 1fr)) !important;
+    grid-auto-flow: row !important;
+    column-gap: 10px !important;
+    row-gap: 12px !important;
+    align-items: end !important;
+}
+
+body.ops-redesign-v3 #edrPanel .edr-form-grid > .edr-layout-site {
+    grid-column: span 8 !important;
+}
+
+body.ops-redesign-v3 #edrPanel .edr-form-grid > .edr-layout-date {
+    grid-column: span 4 !important;
+}
+
+body.ops-redesign-v3 #edrPanel .edr-form-grid > .edr-layout-time {
+    grid-column: span 4 !important;
+}
+
+body.ops-redesign-v3 #edrPanel .edr-form-grid > .edr-layout-respondent-role {
+    grid-column: span 2 !important;
+}
+
+body.ops-redesign-v3 #edrPanel .edr-form-grid > .edr-layout-respondent-name {
+    grid-column: span 6 !important;
+}
+
+body.ops-redesign-v3 #edrPanel .edr-form-grid > .edr-layout-subject-role {
+    grid-column: span 3 !important;
+}
+
+body.ops-redesign-v3 #edrPanel .edr-form-grid > .edr-layout-subject-name {
+    grid-column: span 4 !important;
+}
+
+body.ops-redesign-v3 #edrPanel .edr-form-grid > .edr-layout-account {
+    grid-column: span 5 !important;
+}
+
+body.ops-redesign-v3 #edrPanel .edr-form-grid > .edr-layout-incident,
+body.ops-redesign-v3 #edrPanel .edr-form-grid > .edr-layout-action,
+body.ops-redesign-v3 #edrPanel .edr-form-grid > .edr-layout-screenshot,
+body.ops-redesign-v3 #edrPanel .edr-form-grid > .edr-layout-clip {
+    grid-column: span 6 !important;
+}
+
+/* Every compact control in the two detail rows shares the same visual height. */
+body.ops-redesign-v3 #edrPanel .edr-layout-time input,
+body.ops-redesign-v3 #edrPanel .edr-layout-respondent-name input,
+body.ops-redesign-v3 #edrPanel .edr-layout-subject-name input,
+body.ops-redesign-v3 #edrPanel .edr-layout-account input {
+    min-height: 41px !important;
+    height: 41px !important;
+}
+
+body.ops-redesign-v3 #edrPanel .edr-layout-respondent-role .edr-choice-group,
+body.ops-redesign-v3 #edrPanel .edr-layout-subject-role .edr-choice-group {
+    min-height: 41px !important;
+    display: inline-flex !important;
+    align-items: stretch !important;
+    width: 100% !important;
+}
+
+body.ops-redesign-v3 #edrPanel .edr-layout-respondent-role .edr-choice-btn,
+body.ops-redesign-v3 #edrPanel .edr-layout-subject-role .edr-choice-btn {
+    min-height: 41px !important;
+    flex: 1 1 auto !important;
+    justify-content: center !important;
+    white-space: nowrap !important;
+}
+
+/* Name + Add / Remove buttons stay on one line. */
+body.ops-redesign-v3 #edrPanel .edr-layout-respondent-name .edr-search-row,
+body.ops-redesign-v3 #edrPanel .edr-layout-account .edr-search-row {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto auto !important;
+    gap: 7px !important;
+    align-items: stretch !important;
+}
+
+body.ops-redesign-v3 #edrPanel .edr-layout-respondent-name .edr-small-add,
+body.ops-redesign-v3 #edrPanel .edr-layout-respondent-name .edr-small-remove,
+body.ops-redesign-v3 #edrPanel .edr-layout-account .edr-small-add,
+body.ops-redesign-v3 #edrPanel .edr-layout-account .edr-small-remove {
+    min-height: 41px !important;
+    height: 41px !important;
+}
+
+/* Prevent old paired-layout rules from affecting the new flat grid. */
+body.ops-redesign-v3 #edrPanel .edr-layout-respondent-role,
+body.ops-redesign-v3 #edrPanel .edr-layout-respondent-name,
+body.ops-redesign-v3 #edrPanel .edr-layout-subject-role,
+body.ops-redesign-v3 #edrPanel .edr-layout-subject-name {
+    display: block !important;
+    min-width: 0 !important;
+    align-self: end !important;
+}
+
+body.ops-redesign-v3 #edrPanel .edr-layout-site {
+    align-self: end !important;
+}
+
+/* Keep helper text beneath Site from stretching the rest of the first row. */
+body.ops-redesign-v3 #edrPanel .edr-fixed-cctv {
+    margin-top: 5px !important;
+    min-height: 0 !important;
+}
+
+/* Tablet: turn the compact section into balanced pairs. */
+@media (max-width: 1050px) {
+    body.ops-redesign-v3 #edrPanel .edr-form-grid > .edr-layout-time {
+        grid-column: span 4 !important;
+    }
+
+    body.ops-redesign-v3 #edrPanel .edr-form-grid > .edr-layout-respondent-role {
+        grid-column: span 3 !important;
+    }
+
+    body.ops-redesign-v3 #edrPanel .edr-form-grid > .edr-layout-respondent-name {
+        grid-column: span 5 !important;
+    }
+
+    body.ops-redesign-v3 #edrPanel .edr-form-grid > .edr-layout-subject-role {
+        grid-column: span 4 !important;
+    }
+
+    body.ops-redesign-v3 #edrPanel .edr-form-grid > .edr-layout-subject-name {
+        grid-column: span 4 !important;
+    }
+
+    body.ops-redesign-v3 #edrPanel .edr-form-grid > .edr-layout-account {
+        grid-column: span 4 !important;
+    }
+}
+
+/* Small screens: straightforward single column, no cramped choices. */
+@media (max-width: 760px) {
+    body.ops-redesign-v3 #edrPanel .edr-form-grid {
+        grid-template-columns: 1fr !important;
+        align-items: stretch !important;
+    }
+
+    body.ops-redesign-v3 #edrPanel .edr-form-grid > .edr-layout-site,
+    body.ops-redesign-v3 #edrPanel .edr-form-grid > .edr-layout-date,
+    body.ops-redesign-v3 #edrPanel .edr-form-grid > .edr-layout-time,
+    body.ops-redesign-v3 #edrPanel .edr-form-grid > .edr-layout-respondent-role,
+    body.ops-redesign-v3 #edrPanel .edr-form-grid > .edr-layout-respondent-name,
+    body.ops-redesign-v3 #edrPanel .edr-form-grid > .edr-layout-subject-role,
+    body.ops-redesign-v3 #edrPanel .edr-form-grid > .edr-layout-subject-name,
+    body.ops-redesign-v3 #edrPanel .edr-form-grid > .edr-layout-account,
+    body.ops-redesign-v3 #edrPanel .edr-form-grid > .edr-layout-incident,
+    body.ops-redesign-v3 #edrPanel .edr-form-grid > .edr-layout-action,
+    body.ops-redesign-v3 #edrPanel .edr-form-grid > .edr-layout-screenshot,
+    body.ops-redesign-v3 #edrPanel .edr-form-grid > .edr-layout-clip {
+        grid-column: 1 / -1 !important;
+    }
+
+    body.ops-redesign-v3 #edrPanel .edr-layout-respondent-role .edr-choice-group,
+    body.ops-redesign-v3 #edrPanel .edr-layout-subject-role .edr-choice-group {
+        width: fit-content !important;
+        min-width: 220px !important;
+    }
+}
+
