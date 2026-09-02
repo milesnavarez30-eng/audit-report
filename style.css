@@ -6869,3 +6869,68 @@ body.auth-locked > .site-footer { visibility:hidden!important; pointer-events:no
 .auth-password-toggle .auth-eye-closed{display:none}
 .auth-password-toggle.is-visible .auth-eye-open{display:none}
 .auth-password-toggle.is-visible .auth-eye-closed{display:block}
+
+/* FOLLOW UP REPORTS + TRUE LIGHT SIDEBAR */
+.followup-shell{max-width:1450px!important}
+.followup-page-head,.followup-add-head,.followup-card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px}
+.followup-page-head{margin-bottom:12px}
+.followup-head-count{min-width:74px;padding:9px 12px;border:1px solid var(--ops-line);border-radius:9px;background:var(--ops-panel);text-align:center}
+.followup-head-count strong,.followup-head-count span{display:block}.followup-head-count strong{color:var(--ops-text);font-size:20px}.followup-head-count span{margin-top:2px;color:var(--ops-muted);font-size:8px;text-transform:uppercase;letter-spacing:.05em}
+.followup-add-card,.followup-report-card{border:1px solid var(--ops-line);border-radius:11px;background:var(--ops-panel);box-shadow:var(--ops-shadow)}
+.followup-add-card{padding:13px;margin-bottom:12px}.followup-add-head{margin-bottom:10px}.followup-add-head h3{margin:0;color:var(--ops-text)}.followup-add-head p{margin:3px 0 0;color:var(--ops-muted);font-size:9px}
+.followup-add-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px}
+.followup-field{display:block;min-width:0}.followup-field>span,.followup-card-fields label>span{display:block;margin-bottom:5px;color:var(--ops-muted);font-size:8px;font-weight:750;text-transform:uppercase;letter-spacing:.035em}
+.followup-field input,.followup-field select,.followup-field textarea,.followup-card-fields input,.followup-card-fields select,.followup-card-fields textarea{width:100%;border:1px solid var(--ops-line)!important;border-radius:7px!important;background:var(--ops-panel-2)!important;color:var(--ops-text)!important;box-shadow:none!important}
+.followup-field input,.followup-field select,.followup-card-fields input,.followup-card-fields select{min-height:36px!important;padding:7px 9px!important;font-size:9px!important}
+.followup-field textarea,.followup-card-fields textarea{padding:8px 9px!important;font-size:9px!important;line-height:1.55;resize:vertical}
+.followup-add-shot-field{grid-column:1 / span 3}.followup-remarks-field{grid-column:4}
+.followup-add-shot-zone{min-height:250px;border:1px dashed var(--ops-line-strong);border-radius:9px;background:var(--ops-panel-2);display:grid;place-items:center;overflow:hidden;transition:.15s}
+.followup-add-shot-zone.dragover{border-color:#3b82f6;background:rgba(59,130,246,.06)}
+.followup-add-shot-empty{text-align:center;padding:24px}.followup-add-shot-empty strong,.followup-add-shot-empty small{display:block}.followup-add-shot-empty strong{margin-top:9px;color:var(--ops-text-2);font-size:9px}.followup-add-shot-empty small{margin-top:4px;color:var(--ops-muted);font-size:8px}
+.followup-add-shot-preview{width:100%;padding:8px}.followup-add-shot-preview img{display:block;width:100%;max-height:480px;object-fit:contain;border:1px solid var(--ops-line);border-radius:7px;background:#0a0f17}.followup-shot-preview-actions{display:flex;align-items:center;gap:6px;margin-top:7px}.followup-shot-preview-actions strong{margin-right:auto;color:var(--ops-text);font-size:9px}
+.followup-add-actions{display:flex;gap:7px;margin-top:10px}.followup-form-message{min-height:16px;margin-top:7px;color:var(--ops-muted);font-size:8.5px}.followup-form-message.is-success{color:#059669}.followup-form-message.is-error{color:#dc2626}
+.followup-report-list{display:grid;gap:12px}.followup-report-card{padding:11px}.followup-card-head{align-items:center;padding-bottom:9px;border-bottom:1px solid var(--ops-line)}
+.followup-card-title{color:var(--ops-text);font-size:12px;font-weight:800}.followup-card-meta{margin-top:3px;color:var(--ops-muted);font-size:8.5px}
+.followup-status-pill{display:inline-flex;align-items:center;min-height:24px;padding:4px 8px;border-radius:999px;font-size:7.5px;font-weight:800;white-space:nowrap;background:rgba(148,163,184,.11);color:var(--ops-muted)}
+.followup-status-pill.replied{background:rgba(37,99,235,.09);color:#2563eb}.followup-status-pill.disputed{background:rgba(220,38,38,.09);color:#dc2626}.followup-status-pill.verify{background:rgba(217,119,6,.1);color:#d97706}.followup-status-pill.verified,.followup-status-pill.resolved{background:rgba(5,150,105,.09);color:#059669}
+.followup-card-layout{display:grid;grid-template-columns:minmax(0,1.9fr) minmax(285px,.75fr);gap:11px;padding-top:10px;align-items:start}
+.followup-large-shot{width:100%;min-height:410px;max-height:720px;padding:7px;border:1px solid var(--ops-line);border-radius:9px;background:var(--ops-panel-2);display:grid;place-items:center;overflow:auto;cursor:zoom-in}
+.followup-large-shot img{display:block;width:100%;height:auto;max-height:690px;object-fit:contain;border-radius:5px;background:#0a0f17}.followup-large-shot.no-image{cursor:default;color:var(--ops-muted);font-size:9px}
+.followup-card-fields{display:grid;gap:8px}.followup-card-remarks textarea{min-height:170px}.followup-card-actions{display:flex;gap:6px;flex-wrap:wrap;padding-top:2px}
+.followup-ss-dialog{width:min(96vw,1500px)!important;height:min(94vh,1000px)!important;max-width:none!important}.followup-ss-dialog img{width:100%!important;height:100%!important;object-fit:contain!important}
+
+/* Light mode should make the sidebar light too. These selectors intentionally outrank the older redesign overrides. */
+html body.ops-redesign-v3:not(.dark-mode) aside.workspace-tabs.admin-sidebar{background:#f8fafc!important;border-right-color:#d9e2ec!important;box-shadow:8px 0 28px rgba(15,23,42,.06)!important}
+html body.ops-redesign-v3:not(.dark-mode) aside.workspace-tabs.admin-sidebar .ops-sidebar-brand{border-bottom-color:#e2e8f0!important}
+html body.ops-redesign-v3:not(.dark-mode) aside.workspace-tabs.admin-sidebar .ops-sidebar-brand strong{color:#0f172a!important}
+html body.ops-redesign-v3:not(.dark-mode) aside.workspace-tabs.admin-sidebar .ops-sidebar-brand span,
+html body.ops-redesign-v3:not(.dark-mode) aside.workspace-tabs.admin-sidebar .ops-sidebar-label{color:#64748b!important}
+html body.ops-redesign-v3:not(.dark-mode) aside.workspace-tabs.admin-sidebar > button.workspace-tab-btn,
+html body.ops-redesign-v3:not(.dark-mode) aside.workspace-tabs.admin-sidebar > button.sidebar-history-btn{color:#475569!important;background:transparent!important}
+html body.ops-redesign-v3:not(.dark-mode) aside.workspace-tabs.admin-sidebar > button.workspace-tab-btn:hover,
+html body.ops-redesign-v3:not(.dark-mode) aside.workspace-tabs.admin-sidebar > button.sidebar-history-btn:hover{border-color:#dbe3ec!important;background:#eef3f8!important;color:#0f172a!important}
+html body.ops-redesign-v3:not(.dark-mode) aside.workspace-tabs.admin-sidebar > button.workspace-tab-btn.active{border-color:#bfdbfe!important;background:linear-gradient(90deg,#dbeafe,#eff6ff)!important;color:#1e3a8a!important;box-shadow:inset 2px 0 0 #3b82f6!important}
+html body.ops-redesign-v3:not(.dark-mode) aside.workspace-tabs.admin-sidebar button small{background:#e7edf4!important;color:#526174!important}
+html body.ops-redesign-v3:not(.dark-mode) aside.workspace-tabs.admin-sidebar > button.workspace-tab-btn.active small{background:#dbeafe!important;color:#1d4ed8!important}
+html body.ops-redesign-v3:not(.dark-mode) aside.workspace-tabs.admin-sidebar .auth-sidebar-account{border-color:#dce4ed!important;background:#ffffff!important}
+html body.ops-redesign-v3:not(.dark-mode) aside.workspace-tabs.admin-sidebar .auth-sidebar-user strong{color:#0f172a!important}
+html body.ops-redesign-v3:not(.dark-mode) aside.workspace-tabs.admin-sidebar .auth-sidebar-user span{color:#64748b!important}
+html body.ops-redesign-v3:not(.dark-mode) aside.workspace-tabs.admin-sidebar #authLogoutBtn{border-color:#dce4ed!important;background:#f8fafc!important;color:#475569!important}
+html body.ops-redesign-v3:not(.dark-mode) aside.workspace-tabs.admin-sidebar .sidebar-live-clock{border-color:#dce4ed!important;background:#ffffff!important}
+html body.ops-redesign-v3:not(.dark-mode) aside.workspace-tabs.admin-sidebar .sidebar-live-date,
+html body.ops-redesign-v3:not(.dark-mode) aside.workspace-tabs.admin-sidebar .sidebar-live-time,
+html body.ops-redesign-v3:not(.dark-mode) aside.workspace-tabs.admin-sidebar #Manila_z42c{color:#334155!important}
+html body.ops-redesign-v3:not(.dark-mode) aside.workspace-tabs.admin-sidebar .sidebar-divider,
+html body.ops-redesign-v3:not(.dark-mode) aside.workspace-tabs.admin-sidebar .ops-sidebar-separator{background:#e2e8f0!important;border-color:#e2e8f0!important}
+html body.ops-redesign-v3:not(.dark-mode) aside.workspace-tabs.admin-sidebar #themeToggle.sidebar-theme-btn.theme-switch-control{border-color:#dce4ed!important;background:#ffffff!important}
+html body.ops-redesign-v3:not(.dark-mode) aside.workspace-tabs.admin-sidebar .theme-switch-label{color:#64748b!important}
+html body.ops-redesign-v3:not(.dark-mode) aside.workspace-tabs.admin-sidebar .theme-switch-track{background:#d8e0ea!important}
+html body.ops-redesign-v3:not(.dark-mode) button.sidebar-collapse-toggle{border-color:#d9e2ec!important;background:#f8fafc!important;color:#64748b!important}
+
+body.ops-redesign-v3.dark-mode .followup-add-shot-preview img,
+body.ops-redesign-v3.dark-mode .followup-large-shot img{background:#05080d}
+body.ops-redesign-v3.dark-mode .followup-status-pill.replied{color:#93c5fd}.dark-mode .followup-status-pill.disputed{color:#fca5a5}.dark-mode .followup-status-pill.verify{color:#fcd34d}.dark-mode .followup-status-pill.verified,.dark-mode .followup-status-pill.resolved{color:#6ee7b7}
+
+@media(max-width:1050px){.followup-add-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.followup-add-shot-field,.followup-remarks-field{grid-column:1/-1}.followup-card-layout{grid-template-columns:1fr}.followup-large-shot{min-height:320px}}
+@media(max-width:620px){.followup-page-head,.followup-card-head{align-items:stretch;flex-direction:column}.followup-head-count{width:100%;display:flex;align-items:baseline;justify-content:center;gap:5px}.followup-add-grid{grid-template-columns:1fr}.followup-add-shot-field,.followup-remarks-field{grid-column:auto}.followup-add-actions{flex-direction:column}.followup-add-actions button{width:100%}.followup-large-shot{min-height:250px;max-height:none}.followup-shot-preview-actions{flex-wrap:wrap}.followup-shot-preview-actions strong{width:100%}}
+
