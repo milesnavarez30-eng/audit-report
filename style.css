@@ -4840,7 +4840,7 @@ body.dark-mode .master-data-table th {
 
 #masterAssignedHrTable td {
     white-space: normal !important;
-    line-height: 1.45 !important;
+    line-height: 1.45 !important; 
 }
 
 #masterAssignedHrTable tbody tr:hover td {
