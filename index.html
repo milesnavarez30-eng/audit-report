@@ -11960,7 +11960,7 @@ body.auth-locked > .site-footer { visibility:hidden!important; pointer-events:no
             <div class="edr-card-heading">
                 <div>
                     <h3 id="edrFormHeading">Create EDR</h3>
-                    <p>Complete the audit details from top to bottom. Respondent and violation details are grouped for faster encoding.</p>
+                    <p>Compact encoding layout: time, respondent, names, and campaign stay aligned in two clean rows.</p>
                 </div>
                 <span class="edr-session-note" id="edrCloudBadge">Local until Google Docs is connected</span>
             </div>
@@ -11988,50 +11988,46 @@ body.auth-locked > .site-footer { visibility:hidden!important; pointer-events:no
                            placeholder="Paste time, e.g. 3:10:45 AM–3:18:01 AM">
                 </div>
 
-                <div class="edr-inline-pair edr-span-2 edr-layout-respondent">
-                    <div class="edr-field edr-compact-choice-field">
-                        <label>Respondent</label>
-                        <input type="hidden" id="edrSupervisorRole" value="Team Leader">
-                        <div class="edr-choice-group" id="edrSupervisorRoleButtons" role="group" aria-label="Choose Team Leader or OM">
-                            <button type="button" class="edr-choice-btn active" data-value="Team Leader">Team Leader</button>
-                            <button type="button" class="edr-choice-btn" data-value="OM">OM</button>
-                        </div>
-                    </div>
-
-                    <div class="edr-field edr-inline-name-field">
-                        <label for="edrSupervisorName" id="edrSupervisorNameLabel">Team Leader</label>
-                        <div class="edr-search-row">
-                            <input type="text"
-                                   id="edrSupervisorName"
-                                   list="edrSupervisorOptions"
-                                   autocomplete="off"
-                                   placeholder="Search Team Leader or OM...">
-                            <button type="button" class="edr-small-add" id="edrAddSupervisorOption" title="Add typed name">Add</button>
-                            <button type="button" class="edr-small-remove" id="edrRemoveSupervisorOption" title="Remove typed name from this session">Remove</button>
-                        </div>
-                        <datalist id="edrSupervisorOptions"></datalist>
+                <div class="edr-field edr-layout-respondent-role">
+                    <label>Respondent</label>
+                    <input type="hidden" id="edrSupervisorRole" value="Team Leader">
+                    <div class="edr-choice-group" id="edrSupervisorRoleButtons" role="group" aria-label="Choose Team Leader or OM">
+                        <button type="button" class="edr-choice-btn active" data-value="Team Leader">Team Leader</button>
+                        <button type="button" class="edr-choice-btn" data-value="OM">OM</button>
                     </div>
                 </div>
 
-                <div class="edr-inline-pair edr-span-2 edr-layout-subject">
-                    <div class="edr-field edr-compact-choice-field">
-                        <label>Violation Subject</label>
-                        <input type="hidden" id="edrSubjectType" value="Agent/s">
-                        <div class="edr-choice-group" id="edrSubjectTypeButtons" role="group" aria-label="Choose Agent or Team Leader">
-                            <button type="button" class="edr-choice-btn active" data-value="Agent/s">Agent/s</button>
-                            <button type="button" class="edr-choice-btn" data-value="Team Leader">Team Leader</button>
-                        </div>
-                    </div>
-
-                    <div class="edr-field edr-inline-name-field">
-                        <label for="edrSubjectName" id="edrSubjectNameLabel">Agent/s</label>
+                <div class="edr-field edr-layout-respondent-name">
+                    <label for="edrSupervisorName" id="edrSupervisorNameLabel">Team Leader</label>
+                    <div class="edr-search-row">
                         <input type="text"
-                               id="edrSubjectName"
-                               list="edrSubjectOptions"
+                               id="edrSupervisorName"
+                               list="edrSupervisorOptions"
                                autocomplete="off"
-                               placeholder="Enter or search the name...">
-                        <datalist id="edrSubjectOptions"></datalist>
+                               placeholder="Search Team Leader or OM...">
+                        <button type="button" class="edr-small-add" id="edrAddSupervisorOption" title="Add typed name">Add</button>
+                        <button type="button" class="edr-small-remove" id="edrRemoveSupervisorOption" title="Remove typed name from this session">Remove</button>
                     </div>
+                    <datalist id="edrSupervisorOptions"></datalist>
+                </div>
+
+                <div class="edr-field edr-layout-subject-role">
+                    <label>Violation Subject</label>
+                    <input type="hidden" id="edrSubjectType" value="Agent/s">
+                    <div class="edr-choice-group" id="edrSubjectTypeButtons" role="group" aria-label="Choose Agent or Team Leader">
+                        <button type="button" class="edr-choice-btn active" data-value="Agent/s">Agent/s</button>
+                        <button type="button" class="edr-choice-btn" data-value="Team Leader">Team Leader</button>
+                    </div>
+                </div>
+
+                <div class="edr-field edr-layout-subject-name">
+                    <label for="edrSubjectName" id="edrSubjectNameLabel">Agent/s</label>
+                    <input type="text"
+                           id="edrSubjectName"
+                           list="edrSubjectOptions"
+                           autocomplete="off"
+                           placeholder="Enter or search the name...">
+                    <datalist id="edrSubjectOptions"></datalist>
                 </div>
 
                 <div class="edr-field edr-span-2 edr-layout-account">
