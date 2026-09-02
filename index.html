@@ -11187,11 +11187,12 @@ body.auth-locked > .site-footer { visibility:hidden!important; pointer-events:no
     <section class="audit-guard-card" id="auditGuardCard" aria-labelledby="auditGuardTitle">
         <div class="audit-guard-head">
             <div>
+                <span class="audit-guard-eyebrow">Tracker Quality Control</span>
                 <div class="audit-guard-title-row">
                     <h3 id="auditGuardTitle">Smart Audit Guard</h3>
                     <span class="audit-guard-state is-empty" id="auditGuardState">No tracker loaded</span>
                 </div>
-                <p>Local duplicate, spelling, and anomaly checks. Your tracker snapshot stays in this browser and is never written back to the original Google Sheet.</p>
+                <p>Checks your local tracker snapshot for duplicate audits, spelling variations, extra spaces, unusual values, and other data-quality issues. The original Google Sheet is never edited.</p>
             </div>
             <div class="audit-guard-actions">
                 <input type="file" id="trackerFileInput" accept=".xlsx,.xls,.csv,text/csv" hidden>
@@ -13167,10 +13168,11 @@ https://www.facebook.com/share/..."></textarea>
     }
 
     function rowFromArray(values, mapping, sourceRow) {
-        const get = (field, fallbackIndex) => {
+        const rawGet = (field, fallbackIndex) => {
             const idx = mapping && Number.isInteger(mapping[field]) ? mapping[field] : fallbackIndex;
-            return cleanText(values[idx]);
+            return values[idx] == null ? "" : String(values[idx]);
         };
+        const get = (field, fallbackIndex) => cleanText(rawGet(field, fallbackIndex));
 
         const row = {
             year: get("year", 0),
@@ -13185,7 +13187,21 @@ https://www.facebook.com/share/..."></textarea>
             reason: get("reason", 9),
             noc: get("noc", 10),
             remarks: get("remarks", 11),
-            sourceRow: sourceRow || 0
+            sourceRow: sourceRow || 0,
+            raw: {
+                year: rawGet("year", 0),
+                month: rawGet("month", 1),
+                date: rawGet("date", 2),
+                auditor: rawGet("auditor", 3),
+                om: rawGet("om", 4),
+                site: rawGet("site", 5),
+                tl: rawGet("tl", 6),
+                agent: rawGet("agent", 7),
+                account: rawGet("account", 8),
+                reason: rawGet("reason", 9),
+                noc: rawGet("noc", 10),
+                remarks: rawGet("remarks", 11)
+            }
         };
 
         if (!row.year && row.date) row.year = row.date.slice(0, 4);
@@ -13296,14 +13312,106 @@ https://www.facebook.com/share/..."></textarea>
         return maxLen ? 1 - levenshtein(na, nb) / maxLen : 0;
     }
 
+    function canonicalMasterLists() {
+        const tls = Array.isArray(window.CCTV_AUDIT_MASTER_TLS) ? window.CCTV_AUDIT_MASTER_TLS : [];
+        const oms = Array.isArray(window.CCTV_AUDIT_MASTER_OMS) ? window.CCTV_AUDIT_MASTER_OMS : [];
+        const accounts = Array.isArray(window.CCTV_AUDIT_MASTER_ACCOUNTS) ? window.CCTV_AUDIT_MASTER_ACCOUNTS : [];
+        return {
+            tls: [...new Set(tls.map(cleanText).filter(Boolean))],
+            oms: [...new Set(oms.map(cleanText).filter(Boolean))],
+            accounts: [...new Set(accounts.map(cleanText).filter(Boolean))]
+        };
+    }
+
+    function exactCanonical(value, candidates) {
+        const key = norm(value);
+        if (!key) return "";
+        return (candidates || []).find(candidate => norm(candidate) === key) || "";
+    }
+
+    function bestCanonical(value, candidates, threshold = 0.91) {
+        const typed = cleanText(value);
+        const typedNorm = norm(typed);
+        if (!typedNorm) return null;
+        let best = null;
+
+        (candidates || []).forEach(candidate => {
+            const cleanCandidate = cleanText(candidate);
+            const candidateNorm = norm(cleanCandidate);
+            if (!candidateNorm || candidateNorm === typedNorm) return;
+            if (Math.abs(candidateNorm.length - typedNorm.length) > 5) return;
+
+            const score = similarity(typed, cleanCandidate);
+            if (score >= threshold && (!best || score > best.score)) {
+                best = { value: cleanCandidate, score };
+            }
+        });
+
+        return best ? { value: best.value, score: Math.round(best.score * 100) } : null;
+    }
+
+    function hasSpacingIssue(rawValue) {
+        const raw = String(rawValue == null ? "" : rawValue).replace(/\u00a0/g, " ");
+        return !!raw && (raw !== raw.trim() || /\s{2,}/.test(raw));
+    }
+
+    function rowSubject(row) {
+        return cleanText(row?.agent) || cleanText(row?.tl) || cleanText(row?.account) || cleanText(row?.auditor) || "Unknown row";
+    }
+
+    function createTrackerIssue({ type, level = "warning", title, detail = "", row = null, suggestion = "", groupRows = [] }) {
+        return {
+            type,
+            level,
+            title,
+            detail,
+            row,
+            suggestion,
+            groupRows,
+            subject: rowSubject(row || groupRows?.[0] || {})
+        };
+    }
+
+    function fullRowSummaryHtml(row, label = "") {
+        if (!row) return "";
+        const fields = [
+            ["Row", row.sourceRow || "—"],
+            ["Year", row.year || "—"],
+            ["Month", row.month || "—"],
+            ["Date", prettyIsoDate(row.date)],
+            ["Auditor", row.auditor || "—"],
+            ["OM", row.om || "—"],
+            ["Site", row.site || "—"],
+            ["TL", row.tl || "—"],
+            ["Agent", row.agent || "—"],
+            ["Account / Campaign", row.account || "—"],
+            ["Reason", row.reason || "—"],
+            ["NOC", row.noc || "—"],
+            ["Remarks", row.remarks || "—"]
+        ];
+        return `
+            <div class="audit-guard-full-row">
+                ${label ? `<div class="audit-guard-full-row-label">${htmlEscape(label)}</div>` : ""}
+                <div class="audit-guard-full-row-grid">
+                    ${fields.map(([name, value]) => `
+                        <div class="audit-guard-full-row-field ${name === "Remarks" ? "is-wide" : ""}">
+                            <span>${htmlEscape(name)}</span>
+                            <strong>${htmlEscape(value)}</strong>
+                        </div>`).join("")}
+                </div>
+            </div>`;
+    }
+
     function trackerGuardAnalyze(rows) {
         const duplicateMap = new Map();
         const issues = [];
         const today = dateOnlyToday();
+        const masters = canonicalMasterLists();
 
         rows.forEach((row, idx) => {
             const sourceRow = row.sourceRow || idx + 2;
             const key = coreKey(row);
+
             if (key && !key.split("|").every(v => !v)) {
                 if (!duplicateMap.has(key)) duplicateMap.set(key, []);
                 duplicateMap.get(key).push(row);
@@ -13311,46 +13419,117 @@ https://www.facebook.com/share/..."></textarea>
 
             const missing = CORE_FIELDS.filter(field => !cleanText(row[field]));
             if (missing.length) {
-                issues.push({
+                issues.push(createTrackerIssue({
                     type: "missing",
                     level: "warning",
-                    title: `Row ${sourceRow}: missing ${missing.join(", ")}`,
-                    detail: [row.agent, row.tl, row.account].filter(Boolean).join(" · ") || "Incomplete tracker row"
-                });
+                    title: `Missing required field${missing.length > 1 ? "s" : ""}: ${missing.join(", ")}`,
+                    detail: `Row ${sourceRow} · ${rowSubject(row)}`,
+                    row
+                }));
             }
 
             const noc = norm(row.noc);
             if (noc && !ALLOWED_NOC.has(noc)) {
-                issues.push({
+                issues.push(createTrackerIssue({
                     type: "noc",
                     level: "danger",
-                    title: `Row ${sourceRow}: unusual NOC value “${row.noc}”`,
-                    detail: `${row.agent || "No agent"} · ${row.reason || "No reason"}`
-                });
+                    title: `Unusual NOC value: “${row.noc}”`,
+                    detail: `Row ${sourceRow} · ${rowSubject(row)}`,
+                    row
+                }));
             }
 
             if (row.date && row.date > today) {
-                issues.push({
-                    type: "future",
+                issues.push(createTrackerIssue({
+                    type: "future-date",
                     level: "warning",
-                    title: `Row ${sourceRow}: future audit date ${prettyIsoDate(row.date)}`,
-                    detail: `${row.agent || "No agent"} · ${row.account || "No account"}`
-                });
+                    title: `Future audit date: ${prettyIsoDate(row.date)}`,
+                    detail: `Row ${sourceRow} · ${rowSubject(row)}`,
+                    row
+                }));
             }
+
+            [
+                ["auditor", "Auditor / Name"],
+                ["om", "OM"],
+                ["tl", "TL Name"],
+                ["agent", "Agent Name"],
+                ["account", "Account / Campaign"]
+            ].forEach(([field, label]) => {
+                if (!hasSpacingIssue(row.raw?.[field])) return;
+                const rawValue = String(row.raw?.[field] ?? "").replace(/\u00a0/g, " ");
+                issues.push(createTrackerIssue({
+                    type: "extra-space",
+                    level: "warning",
+                    title: `${label} contains extra spaces`,
+                    detail: `Row ${sourceRow} · “${rawValue}”`,
+                    suggestion: `Clean value: “${cleanText(rawValue)}”`,
+                    row
+                }));
+            });
+
+            const canonicalChecks = [
+                { field: "tl", label: "TL Name", candidates: masters.tls, threshold: 0.90 },
+                { field: "om", label: "OM", candidates: masters.oms, threshold: 0.86 },
+                { field: "account", label: "Account / Campaign", candidates: masters.accounts, threshold: 0.90 }
+            ];
+
+            canonicalChecks.forEach(check => {
+                const value = cleanText(row[check.field]);
+                if (!value || !check.candidates.length) return;
+
+                const canonical = exactCanonical(value, check.candidates);
+                if (canonical) {
+                    if (canonical !== value && !hasSpacingIssue(row.raw?.[check.field])) {
+                        issues.push(createTrackerIssue({
+                            type: "formatting",
+                            level: "warning",
+                            title: `${check.label} formatting differs from master list`,
+                            detail: `Row ${sourceRow} · Current: “${value}”`,
+                            suggestion: `Master list: “${canonical}”`,
+                            row
+                        }));
+                    }
+                    return;
+                }
+
+                const suggestion = bestCanonical(value, check.candidates, check.threshold);
+                if (suggestion) {
+                    issues.push(createTrackerIssue({
+                        type: "spelling",
+                        level: "danger",
+                        title: `Possible ${check.label} misspelling`,
+                        detail: `Row ${sourceRow} · Current: “${value}”`,
+                        suggestion: `Possible correct value: “${suggestion.value}” (${suggestion.score}% match)`,
+                        row
+                    }));
+                }
+            });
         });
 
         const duplicateGroups = [];
         duplicateMap.forEach(group => {
-            if (group.length > 1) {
-                duplicateGroups.push(group);
-                const refs = group.map(r => r.sourceRow || "?").join(", ");
-                issues.push({
-                    type: "duplicate",
-                    level: "warning",
-                    title: `Possible duplicate tracker rows: ${refs}`,
-                    detail: `${group[0].agent || "No agent"} · ${group[0].account || "No account"} · ${group[0].reason || "No reason"}`
-                });
-            }
+            if (group.length <= 1) return;
+            duplicateGroups.push(group);
+
+            const refs = group.map(r => r.sourceRow || "?").join(", ");
+            const people = group.map(r => `${r.sourceRow || "?"}: ${r.agent || r.tl || "No name"}`).join(" · ");
+            issues.push(createTrackerIssue({
+                type: "duplicate",
+                level: "danger",
+                title: `Possible duplicate audit rows: ${refs}`,
+                detail: people,
+                row: group[0],
+                groupRows: group
+            }));
+        });
+
+        const priority = { duplicate: 0, spelling: 1, noc: 2, "extra-space": 3, formatting: 4, missing: 5, "future-date": 6 };
+        issues.sort((a, b) => {
+            const pa = priority[a.type] ?? 99;
+            const pb = priority[b.type] ?? 99;
+            if (pa !== pb) return pa - pb;
+            return (a.row?.sourceRow || 0) - (b.row?.sourceRow || 0);
         });
 
         return { duplicateGroups, issues };
@@ -13478,16 +13657,47 @@ https://www.facebook.com/share/..."></textarea>
         const suggestions = [];
         if (!trackerRows.length) return suggestions;
 
+        const masters = canonicalMasterLists();
         const contexts = trackerRows.filter(row => {
             const accountOk = !draft.account || norm(row.account) === norm(draft.account);
             const siteOk = !draft.site || norm(row.site) === norm(draft.site);
             return accountOk && siteOk;
         });
 
-        function bestFor(field, label, minLength, threshold) {
+        function bestFor(field, label, minLength, threshold, canonicalCandidates = []) {
             const typed = cleanText(draft[field]);
             if (typed.length < minLength) return;
             const typedNorm = norm(typed);
+
+            if (canonicalCandidates.length) {
+                const canonical = exactCanonical(typed, canonicalCandidates);
+                if (canonical) {
+                    if (canonical !== typed) {
+                        suggestions.push({
+                            field,
+                            label,
+                            typed,
+                            candidate: canonical,
+                            score: 100,
+                            row: null
+                        });
+                    }
+                    return;
+                }
+                const best = bestCanonical(typed, canonicalCandidates, threshold);
+                if (best) {
+                    suggestions.push({
+                        field,
+                        label,
+                        typed,
+                        candidate: best.value,
+                        score: best.score,
+                        row: null
+                    });
+                }
+                return;
+            }
+
             let best = null;
             const seen = new Set();
             contexts.forEach(row => {
@@ -13512,8 +13722,9 @@ https://www.facebook.com/share/..."></textarea>
             }
         }
 
-        bestFor("tl", "TL Name", 5, 0.91);
+        bestFor("tl", "TL Name", 5, 0.90, masters.tls);
         bestFor("agent", "Agent Name", 5, 0.93);
+        bestFor("account", "Account / Campaign", 4, 0.90, masters.accounts);
         return suggestions;
     }
 
@@ -13619,16 +13830,58 @@ https://www.facebook.com/share/..."></textarea>
     function renderTrackerIssues() {
         const list = el("trackerIssuesList");
         if (!list) return;
+
         if (!trackerAnalysis.issues.length) {
-            list.innerHTML = '<div class="audit-guard-empty-issues">No obvious tracker anomalies found in this snapshot.</div>';
+            list.innerHTML = `
+                <div class="audit-guard-empty-state">
+                    <strong>No obvious tracker issues found.</strong>
+                    <span>The current snapshot passed duplicate, spacing, spelling, and anomaly checks.</span>
+                </div>`;
             return;
         }
-        const limited = trackerAnalysis.issues.slice(0, 80);
-        list.innerHTML = limited.map(issue => `
-            <div class="audit-guard-issue ${issue.level === "danger" ? "is-danger" : "is-warning"}">
-                <strong>${htmlEscape(issue.title)}</strong>
-                <span>${htmlEscape(issue.detail || "")}</span>
-            </div>`).join("") + (trackerAnalysis.issues.length > limited.length
+
+        const limited = trackerAnalysis.issues.slice(0, 120);
+        list.innerHTML = limited.map(issue => {
+            const row = issue.row;
+            const rowLabel = row?.sourceRow ? `Row ${row.sourceRow}` : "Tracker issue";
+            const person = issue.subject || rowSubject(row);
+
+            let relatedRows = "";
+            if (Array.isArray(issue.groupRows) && issue.groupRows.length > 1) {
+                relatedRows = `
+                    <div class="audit-guard-related-rows">
+                        <div class="audit-guard-related-title">Rows involved in this duplicate group</div>
+                        ${issue.groupRows.map((related, index) =>
+                            fullRowSummaryHtml(related, `Duplicate ${index + 1} · Row ${related.sourceRow || "?"} · ${rowSubject(related)}`)
+                        ).join("")}
+                    </div>`;
+            }
+
+            const typeLabel = {
+                duplicate: "Duplicate",
+                spelling: "Possible Misspelling",
+                noc: "NOC Value",
+                "extra-space": "Extra Space",
+                formatting: "Master List Format",
+                missing: "Missing Field",
+                "future-date": "Date Issue"
+            }[issue.type] || "Review";
+
+            return `
+                <article class="audit-guard-issue-card ${issue.level === "danger" ? "is-danger" : "is-warning"}">
+                    <div class="audit-guard-issue-top">
+                        <div class="audit-guard-issue-meta">
+                            <span class="audit-guard-issue-type">${htmlEscape(typeLabel)}</span>
+                            <span class="audit-guard-issue-row">${htmlEscape(rowLabel)}</span>
+                            <span class="audit-guard-issue-person">${htmlEscape(person)}</span>
+                        </div>
+                        <strong class="audit-guard-issue-title">${htmlEscape(issue.title)}</strong>
+                        ${issue.detail ? `<p class="audit-guard-issue-detail">${htmlEscape(issue.detail)}</p>` : ""}
+                        ${issue.suggestion ? `<div class="audit-guard-issue-suggestion">${htmlEscape(issue.suggestion)}</div>` : ""}
+                    </div>
+                    ${issue.groupRows?.length > 1 ? relatedRows : fullRowSummaryHtml(row, `${rowLabel} · ${person}`)}
+                </article>`;
+        }).join("") + (trackerAnalysis.issues.length > limited.length
             ? `<div class="audit-guard-more">Showing ${limited.length} of ${trackerAnalysis.issues.length} issues.</div>` : "");
     }
 
@@ -13647,7 +13900,10 @@ https://www.facebook.com/share/..."></textarea>
         if (dup) dup.textContent = trackerAnalysis.duplicateGroups.length.toLocaleString();
         if (issue) issue.textContent = trackerAnalysis.issues.length.toLocaleString();
         if (clearBtn) clearBtn.hidden = !trackerRows.length;
-        if (issuesBtn) issuesBtn.hidden = !trackerRows.length;
+        if (issuesBtn) {
+            issuesBtn.hidden = !trackerRows.length;
+            issuesBtn.textContent = `View Issues (${trackerAnalysis.issues.length.toLocaleString()})`;
+        }
 
         if (state) {
             state.classList.remove("is-empty", "is-ready", "is-stale");
@@ -18491,9 +18747,16 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
     const SOURCE_OMS = ["Abby", "Beth", "BIGO - Thirdy", "CFC", "Cherry", "Crystal", "Derline", "Freda", "Gerramie", "Irene", "Marc Jardenico", "McJordan", "Michelle", "Mirah", "Mogan", "Norman", "Renato", "Rhelford", "Ruth", "Shayne", "Sheila", "Shey", "SP - James", "SP - Marc", "SP - MJ", "SP - Ryan", "Willy"];
     const SOURCE_ACCOUNTS = ["123 Employee", "123 Employee - Echo Mortgage", "123 Employee - Hallandale Pharmacy", "123 Employee - Mercantile Property", "123 Robotics", "123Employee | HUB International", "212 Dental Care", "611 VA", "ACB", "Adams International", "Advocacy Refund Group", "Aeroex Technology Inc.", "AFP", "Ahabi", "Airbills", "Alibaba", "All Pro Pay", "Allen Institute Mouse", "Allied Pain and Spine Institute", "AMG", "AMR", "AMR CSR", "Angel Oak Mortgage Solution", "Another Star", "ARS", "AU Store", "AU Tax", "AUXGP", "BathroomX", "Bayou Braces", "Bentino", "BIGO - DIGOS", "BIGO - ECOLAND", "BIGO - Mabini", "Brianna Thaxton LLC", "BrightDelivery", "CapLink Group", "CFC", "CFC OB", "CGP", "CIG", "CITUS HR SOLUTIONS", "Clear Insights Group", "Clinic P", "COD Logistics", "Commercial Enterprise", "Commercial Merchant Acquisition", "Content Quality Assurance", "Corazon Company LLC", "CORE LOGIX", "Cupshe", "DASCO", "DASCO BACK OFFICE", "DASCO CSR", "DAVI", "Dental Back Office Admin", "DG Dial", "DIAL EXPRESS", "DLG", "DLPC", "DNE", "DNO L1", "DNO L2", "Duque Immigration", "EDJ DATA", "EIMS", "EIMS - Data Validator/QA", "eJam", "eJam Inside Sales", "ENC", "Envera", "EOR Project: Future Proof", "ESIM", "Everlife", "EVMS", "EWC", "Eyesurf", "FBB", "FBB QA", "Flexscale Next-Level Recruitment", "Flexscale Truth Finance", "Flexscale Truth Financial", "Flywire", "Franklin Hamilton", "FWC", "GARDENS", "Gardens Alive & Shared", "Glamcor", "GLO", "Globalcom - Mountain Valley", "Globalcom RTA", "GRAB", "GRAB - Commercial Enterprise", "GRAB - MPH", "Grab - MY", "GRAB - PH", "GRAB - Quality Assurance", "GRAB - SG", "GrabRentals Voice and Digital Support", "Green Health Docs", "Greenfoot", "HBW", "Herb joy", "Hotel Revel", "IADU/IAVU PH", "IAVU/IADU SG Support", "IDENT", "iMarketing", "iMarketing Frontline", "iMile Logistics", "Industry Rock Star", "Insight Financial Associates Ltd. (SixEleven Project)", "Integrity Financial Solutions", "J&T Express", "Jethro Mobile", "JJILL", "Justlife", "KCDO", "KCDO - Billing", "KCDO - Inbound", "KCDO - Outbound", "KCDO - RCM", "Kombea Fivestrata", "Kombea Kingkong", "KOMBEA MPI", "Kombea Pro Speaking", "Kraven Bahamas", "LEADMINER", "LedUp", "Legal Solutions 4U", "Leisure-tec", "LifeMD", "List Simple", "LM Consulting", "LOGISTICS", "LSM", "Luxor Eye Institute", "Mallory Headset", "MAPUA", "MBC Consulting Group Inc.", "Mehboob Law Firm", "Mi Care", "MMG", "MoneyHero Group", "Moon River Therapy", "Mousewire", "NationGraph", "Neiline", "NetworX", "NextgenID", "NextgenID SRIP", "NISSAN PH", "NLR", "Nomad eSIM", "NOX", "NVT", "OBRB MY", "Origin", "PB&J TV", "Pearl Source", "Phoenix Direct", "Pinnacle Ozone Solutions", "Pivot", "POINT CO", "QA OJR", "QC", "Quick Contractors", "Reflex Media", "Renogy", "Revel Hotel", "RPI (1voiceSolution)", "SBI", "Seesaw", "SFP", "SHARED", "Shopee", "Shopee - Buybox", "Shopee - Buybox - Smart UI", "Shopee - Buyer Chat and Email", "Shopee - Buyer CS", "Shopee - Buyer Logistics", "Shopee - Buyer Non-Logistics", "Shopee - CB-SCS", "Shopee - CCS", "Shopee - CS", "Shopee - CS and Non-CS", "Shopee - Data Labelling - Buybox", "Shopee - Data Labelling - Non SPU", "Shopee - Data Labelling - SPU", "Shopee - Email", "Shopee - FBS", "Shopee - Keywords", "Shopee - L1 Buyer - Email", "Shopee - Listing Pages", "Shopee - Listings Data Labelling - LLM", "Shopee - Listings Data Labelling - SQE", "Shopee - Listings Data Labelling - Task Center", "Shopee - Listings QC", "Shopee - Live Stream Marketing", "Shopee - LiveStream", "Shopee - Lovito", "Shopee - Non-CS", "Shopee - PH - Chat Bot", "Shopee - PIC", "Shopee - QA", "Shopee - QAC Department", "Shopee - RTA", "Shopee - SBS", "Shopee - SCS", "Shopee - Seller Chats and Email", "Shopee - Seller Log x RR", "Shopee - SIP AME", "Shopee - SIP BR & LATAM", "Shopee - SIP Global", "Shopee - SIP Global - PH", "Shopee - SIP L2", "Shopee - SIP Malaysia", "Shopee - SIP Singapore", "Shopee - SIP Taiwan", "Shopee - SIP Thailand", "Shopee - SIP Vietnam", "Shopee - SPU Listings", "Shopee - SPX", "Shopee - SPX NSS Outbound", "Shopee - SPX SSC and NSS", "Shopee - Trainee", "Shopee - Training", "Shopee - Video", "Shopee - Video QC", "Shopee - WFM", "Shopee - WFM/RTA", "SLEEPDYNAMICS", "Smart Circle", "Smart Staffing Support - Renters", "Solution That Matter", "SPEAK UP", "Spectee", "Spyfly", "Spypoint", "Spypoint Outbound", "SRIP L2 Support", "Superdial", "Talixo", "Talixo Dispatch", "TelMDFirst", "TEMU - 1404", "TEMU - 140X (RSL)", "TEMU - 4029", "TEMU - BATCH 6", "TEMU - BATCH 7", "TEMU - BATCH 8", "TEMU - CPC", "TEMU - LOB-1", "TEMU - LOB-2", "TEMU - LOB-3", "TEN28", "The James Group, LLC", "Ticket Management System SL", "TMS", "Together Network", "TOP MOVING SOLUTIONS", "Triple B", "TV COMMERCIAL TRAFFIC", "Two Birds Supplements", "TWV", "Uplift Healthcare LLC", "Veritas", "ViewQwest CSR", "ViewQwest Telesales", "Virtual Staffing", "WanderJoy", "Wiz AI", "Zetta"];
 
+    window.CCTV_AUDIT_MASTER_TLS = [...SOURCE_TLS];
+    window.CCTV_AUDIT_MASTER_OMS = [...SOURCE_OMS];
+    window.CCTV_AUDIT_MASTER_ACCOUNTS = [...SOURCE_ACCOUNTS];
+
     let tlOptions = [...SOURCE_TLS];
     let omOptions = [...SOURCE_OMS];
     let accountOptions = [...SOURCE_ACCOUNTS];
+
+    // Re-run tracker quality checks after the official TL / OM / campaign masters are available.
+    setTimeout(() => window.CCTVTrackerGuard?.refresh?.(), 0);
 
     window.getEdrOmOptions = function () {
         return [...omOptions];
