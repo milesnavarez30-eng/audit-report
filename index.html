@@ -5598,7 +5598,7 @@
 </style>
 
 
-    <link rel="stylesheet" href="./style.css?v=20260902-account-auth-1">
+    <link rel="stylesheet" href="./style.css?v=20260902-audit-guard-1">
 
 <style id="edrCriticalStyles">
 /* =========================================================
@@ -11183,6 +11183,59 @@ body.auth-locked > .site-footer { visibility:hidden!important; pointer-events:no
 <div class="container form-section">
     <h2>CCTV Audit</h2>
     <p class="page-lead">Create audit entries, review the output grid, then copy the final data when ready.</p>
+
+    <section class="audit-guard-card" id="auditGuardCard" aria-labelledby="auditGuardTitle">
+        <div class="audit-guard-head">
+            <div>
+                <div class="audit-guard-title-row">
+                    <h3 id="auditGuardTitle">Smart Audit Guard</h3>
+                    <span class="audit-guard-state is-empty" id="auditGuardState">No tracker loaded</span>
+                </div>
+                <p>Local duplicate, spelling, and anomaly checks. Your tracker snapshot stays in this browser and is never written back to the original Google Sheet.</p>
+            </div>
+            <div class="audit-guard-actions">
+                <input type="file" id="trackerFileInput" accept=".xlsx,.xls,.csv,text/csv" hidden>
+                <button type="button" class="audit-guard-btn primary" id="trackerImportBtn">Import Tracker</button>
+                <button type="button" class="audit-guard-btn" id="trackerPasteBtn">Paste Latest Rows</button>
+                <button type="button" class="audit-guard-btn danger" id="trackerClearBtn" hidden>Clear Snapshot</button>
+            </div>
+        </div>
+
+        <div class="audit-guard-metrics" aria-live="polite">
+            <div class="audit-guard-metric"><span>Records</span><strong id="trackerRecordCount">0</strong></div>
+            <div class="audit-guard-metric"><span>Last Sync</span><strong id="trackerLastSync">—</strong></div>
+            <div class="audit-guard-metric"><span>Duplicate Groups</span><strong id="trackerDuplicateCount">0</strong></div>
+            <div class="audit-guard-metric"><span>Issues</span><strong id="trackerIssueCount">0</strong></div>
+        </div>
+
+        <div class="audit-guard-live is-idle" id="auditGuardLive">
+            <div>
+                <span class="audit-guard-live-kicker">Current audit check</span>
+                <strong id="auditGuardLiveTitle">Import a tracker snapshot to start checking.</strong>
+                <p id="auditGuardLiveText">You can import the full .xlsx tracker, then use Paste Latest Rows for quick refreshes.</p>
+            </div>
+            <button type="button" class="audit-guard-link-btn" id="trackerIssuesBtn" hidden>View Issues</button>
+        </div>
+
+        <div class="audit-guard-match-list" id="auditGuardMatches" hidden></div>
+
+        <div class="audit-guard-paste" id="trackerPastePanel" hidden>
+            <label for="trackerPasteInput">Paste rows copied from Google Sheets</label>
+            <textarea id="trackerPasteInput" rows="7" placeholder="Header is optional. Expected order: Year, Month, Date, Name, OM, SITE, TL, Agent Name, Account, CCTV Reason Codes, NOC, Remarks"></textarea>
+            <div class="audit-guard-paste-actions">
+                <button type="button" class="audit-guard-btn primary" id="trackerPasteApplyBtn">Merge Pasted Rows</button>
+                <button type="button" class="audit-guard-btn" id="trackerPasteCancelBtn">Cancel</button>
+            </div>
+        </div>
+
+        <div class="audit-guard-issues" id="trackerIssuesPanel" hidden>
+            <div class="audit-guard-issues-head">
+                <strong>Tracker review</strong>
+                <button type="button" class="audit-guard-link-btn" id="trackerIssuesCloseBtn">Close</button>
+            </div>
+            <div id="trackerIssuesList"></div>
+        </div>
+    </section>
     
     <div class="form-grid">
         <div class="form-group field-date">
@@ -11266,6 +11319,7 @@ body.auth-locked > .site-footer { visibility:hidden!important; pointer-events:no
             <thead>
                 <tr>
                     <th>Actions</th>
+                    <th>Tracker</th>
                     <th>Year</th>
                     <th>Month</th>
                     <th>Date</th>
@@ -12979,6 +13033,921 @@ https://www.facebook.com/share/..."></textarea>
 
 </script>
 
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script>
+(function () {
+    "use strict";
+
+    const DB_NAME = "cctv_tracker_guard_v1";
+    const DB_STORE = "snapshots";
+    const DB_KEY = "current";
+    const ALLOWED_NOC = new Set(["yes", "no", "pending", "disputed"]);
+    const TRACKER_FIELDS = ["year", "month", "date", "auditor", "om", "site", "tl", "agent", "account", "reason", "noc", "remarks"];
+    const CORE_FIELDS = ["date", "om", "site", "tl", "agent", "account", "reason", "noc"];
+
+    let trackerSnapshot = null;
+    let trackerRows = [];
+    let trackerAnalysis = { duplicateGroups: [], issues: [] };
+    let guardDebounce = 0;
+
+    const el = (id) => document.getElementById(id);
+
+    function cleanText(value) {
+        return String(value == null ? "" : value).replace(/\u00a0/g, " ").replace(/\s+/g, " ").trim();
+    }
+
+    function norm(value) {
+        return cleanText(value)
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .toLowerCase()
+            .replace(/&/g, " and ")
+            .replace(/[^a-z0-9]+/g, " ")
+            .replace(/\s+/g, " ")
+            .trim();
+    }
+
+    function htmlEscape(value) {
+        return String(value == null ? "" : value)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
+
+    function formatLocalTime(iso) {
+        if (!iso) return "—";
+        const d = new Date(iso);
+        if (Number.isNaN(d.getTime())) return "—";
+        return d.toLocaleString([], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+    }
+
+    function dateOnlyToday() {
+        const d = new Date();
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    }
+
+    function excelSerialToIso(serial) {
+        const n = Number(serial);
+        if (!Number.isFinite(n) || n < 20000 || n > 90000) return "";
+        const ms = Date.UTC(1899, 11, 30) + Math.round(n * 86400000);
+        const d = new Date(ms);
+        return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}-${String(d.getUTCDate()).padStart(2, "0")}`;
+    }
+
+    function parseDateToIso(value) {
+        if (value instanceof Date && !Number.isNaN(value.getTime())) {
+            return `${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2, "0")}-${String(value.getDate()).padStart(2, "0")}`;
+        }
+
+        const raw = cleanText(value);
+        if (!raw) return "";
+
+        if (/^\d+(?:\.\d+)?$/.test(raw)) {
+            const serial = excelSerialToIso(raw);
+            if (serial) return serial;
+        }
+
+        let m = raw.match(/^(\d{4})[-\/.](\d{1,2})[-\/.](\d{1,2})$/);
+        if (m) return `${m[1]}-${m[2].padStart(2, "0")}-${m[3].padStart(2, "0")}`;
+
+        m = raw.match(/^(\d{1,2})[-\/.](\d{1,2})[-\/.](\d{2,4})$/);
+        if (m) {
+            let year = Number(m[3]);
+            if (year < 100) year += 2000;
+            return `${year}-${m[1].padStart(2, "0")}-${m[2].padStart(2, "0")}`;
+        }
+
+        const parsed = new Date(raw);
+        if (!Number.isNaN(parsed.getTime())) {
+            return `${parsed.getFullYear()}-${String(parsed.getMonth() + 1).padStart(2, "0")}-${String(parsed.getDate()).padStart(2, "0")}`;
+        }
+        return "";
+    }
+
+    function prettyIsoDate(iso) {
+        const m = String(iso || "").match(/^(\d{4})-(\d{2})-(\d{2})$/);
+        if (!m) return cleanText(iso) || "—";
+        return `${Number(m[2])}/${Number(m[3])}/${m[1]}`;
+    }
+
+    function headerNorm(value) {
+        return norm(value).replace(/\bof\b/g, " ").replace(/\s+/g, " ").trim();
+    }
+
+    const HEADER_ALIASES = {
+        year: ["year"],
+        month: ["month"],
+        date: ["date", "date audit", "audit date"],
+        auditor: ["name", "auditor", "auditor name"],
+        om: ["om", "om name", "operations manager"],
+        site: ["site", "location"],
+        tl: ["tl", "tl name", "team leader", "team leader name"],
+        agent: ["agent", "agent name", "respondent", "respondent name"],
+        account: ["account", "account campaign", "campaign", "account name"],
+        reason: ["cctv reason codes", "cctv reason code", "cctv reason", "reason code", "reason"],
+        noc: ["noc", "noc status", "status"],
+        remarks: ["remarks", "remark", "comments", "comment"]
+    };
+
+    function mapHeaders(row) {
+        const normalized = row.map(headerNorm);
+        const mapping = {};
+        Object.entries(HEADER_ALIASES).forEach(([field, aliases]) => {
+            const idx = normalized.findIndex(h => aliases.includes(h));
+            if (idx >= 0) mapping[field] = idx;
+        });
+        return mapping;
+    }
+
+    function headerScore(row) {
+        const m = mapHeaders(row);
+        return Object.keys(m).length;
+    }
+
+    function rowFromArray(values, mapping, sourceRow) {
+        const get = (field, fallbackIndex) => {
+            const idx = mapping && Number.isInteger(mapping[field]) ? mapping[field] : fallbackIndex;
+            return cleanText(values[idx]);
+        };
+
+        const row = {
+            year: get("year", 0),
+            month: get("month", 1),
+            date: parseDateToIso(get("date", 2)),
+            auditor: get("auditor", 3),
+            om: get("om", 4),
+            site: get("site", 5),
+            tl: get("tl", 6),
+            agent: get("agent", 7),
+            account: get("account", 8),
+            reason: get("reason", 9),
+            noc: get("noc", 10),
+            remarks: get("remarks", 11),
+            sourceRow: sourceRow || 0
+        };
+
+        if (!row.year && row.date) row.year = row.date.slice(0, 4);
+        if (!row.month && row.date) {
+            const mi = Number(row.date.slice(5, 7)) - 1;
+            row.month = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][mi] || "";
+        }
+        return row;
+    }
+
+    function isDataRow(row) {
+        const populated = [row.date, row.om, row.site, row.tl, row.agent, row.account, row.reason, row.noc]
+            .filter(v => cleanText(v)).length;
+        // Month-only separator rows in the source workbook are intentionally ignored.
+        return populated >= 3;
+    }
+
+    function parseMatrix(matrix, sourceLabel) {
+        const rows = Array.isArray(matrix) ? matrix : [];
+        if (!rows.length) return { rows: [], headerRow: -1 };
+
+        let headerRow = -1;
+        let mapping = null;
+        const maxScan = Math.min(rows.length, 12);
+        for (let i = 0; i < maxScan; i++) {
+            const score = headerScore(rows[i] || []);
+            if (score >= 7) {
+                headerRow = i;
+                mapping = mapHeaders(rows[i] || []);
+                break;
+            }
+        }
+
+        const start = headerRow >= 0 ? headerRow + 1 : 0;
+        const parsed = [];
+        for (let i = start; i < rows.length; i++) {
+            const arr = Array.isArray(rows[i]) ? rows[i] : [];
+            if (!arr.some(v => cleanText(v))) continue;
+            const row = rowFromArray(arr, mapping, i + 1);
+            if (isDataRow(row)) parsed.push(row);
+        }
+        return { rows: parsed, headerRow, sourceLabel };
+    }
+
+    function splitPastedText(text) {
+        const lines = String(text || "").replace(/\r\n/g, "\n").replace(/\r/g, "\n").split("\n").filter(line => line.trim() !== "");
+        return lines.map(line => {
+            if (line.includes("\t")) return line.split("\t");
+            // Simple CSV fallback. Quoted commas are supported.
+            const out = [];
+            let cur = "", quoted = false;
+            for (let i = 0; i < line.length; i++) {
+                const ch = line[i];
+                if (ch === '"') {
+                    if (quoted && line[i + 1] === '"') { cur += '"'; i++; }
+                    else quoted = !quoted;
+                } else if (ch === "," && !quoted) {
+                    out.push(cur); cur = "";
+                } else cur += ch;
+            }
+            out.push(cur);
+            return out;
+        });
+    }
+
+    function rowSignature(row) {
+        return TRACKER_FIELDS.map(field => norm(row[field])).join("|");
+    }
+
+    function coreKey(row) {
+        return [row.date, row.site, row.tl, row.agent, row.account, row.reason]
+            .map(norm).join("|");
+    }
+
+    function strongMatchKey(row) {
+        return [row.date, row.site, row.agent, row.account, row.reason]
+            .map(norm).join("|");
+    }
+
+    function levenshtein(a, b) {
+        a = norm(a); b = norm(b);
+        if (a === b) return 0;
+        if (!a) return b.length;
+        if (!b) return a.length;
+        if (Math.abs(a.length - b.length) > 4) return Math.abs(a.length - b.length) + 4;
+        const prev = new Array(b.length + 1);
+        const cur = new Array(b.length + 1);
+        for (let j = 0; j <= b.length; j++) prev[j] = j;
+        for (let i = 1; i <= a.length; i++) {
+            cur[0] = i;
+            for (let j = 1; j <= b.length; j++) {
+                cur[j] = Math.min(
+                    cur[j - 1] + 1,
+                    prev[j] + 1,
+                    prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1)
+                );
+            }
+            for (let j = 0; j <= b.length; j++) prev[j] = cur[j];
+        }
+        return prev[b.length];
+    }
+
+    function similarity(a, b) {
+        const na = norm(a), nb = norm(b);
+        if (!na || !nb) return 0;
+        if (na === nb) return 1;
+        const maxLen = Math.max(na.length, nb.length);
+        return maxLen ? 1 - levenshtein(na, nb) / maxLen : 0;
+    }
+
+    function trackerGuardAnalyze(rows) {
+        const duplicateMap = new Map();
+        const issues = [];
+        const today = dateOnlyToday();
+
+        rows.forEach((row, idx) => {
+            const sourceRow = row.sourceRow || idx + 2;
+            const key = coreKey(row);
+            if (key && !key.split("|").every(v => !v)) {
+                if (!duplicateMap.has(key)) duplicateMap.set(key, []);
+                duplicateMap.get(key).push(row);
+            }
+
+            const missing = CORE_FIELDS.filter(field => !cleanText(row[field]));
+            if (missing.length) {
+                issues.push({
+                    type: "missing",
+                    level: "warning",
+                    title: `Row ${sourceRow}: missing ${missing.join(", ")}`,
+                    detail: [row.agent, row.tl, row.account].filter(Boolean).join(" · ") || "Incomplete tracker row"
+                });
+            }
+
+            const noc = norm(row.noc);
+            if (noc && !ALLOWED_NOC.has(noc)) {
+                issues.push({
+                    type: "noc",
+                    level: "danger",
+                    title: `Row ${sourceRow}: unusual NOC value “${row.noc}”`,
+                    detail: `${row.agent || "No agent"} · ${row.reason || "No reason"}`
+                });
+            }
+
+            if (row.date && row.date > today) {
+                issues.push({
+                    type: "future",
+                    level: "warning",
+                    title: `Row ${sourceRow}: future audit date ${prettyIsoDate(row.date)}`,
+                    detail: `${row.agent || "No agent"} · ${row.account || "No account"}`
+                });
+            }
+        });
+
+        const duplicateGroups = [];
+        duplicateMap.forEach(group => {
+            if (group.length > 1) {
+                duplicateGroups.push(group);
+                const refs = group.map(r => r.sourceRow || "?").join(", ");
+                issues.push({
+                    type: "duplicate",
+                    level: "warning",
+                    title: `Possible duplicate tracker rows: ${refs}`,
+                    detail: `${group[0].agent || "No agent"} · ${group[0].account || "No account"} · ${group[0].reason || "No reason"}`
+                });
+            }
+        });
+
+        return { duplicateGroups, issues };
+    }
+
+    function trackerDbOpen() {
+        return new Promise((resolve, reject) => {
+            const req = indexedDB.open(DB_NAME, 1);
+            req.onupgradeneeded = () => {
+                const db = req.result;
+                if (!db.objectStoreNames.contains(DB_STORE)) db.createObjectStore(DB_STORE);
+            };
+            req.onsuccess = () => resolve(req.result);
+            req.onerror = () => reject(req.error);
+        });
+    }
+
+    async function trackerDbGet() {
+        const db = await trackerDbOpen();
+        return new Promise((resolve, reject) => {
+            const tx = db.transaction(DB_STORE, "readonly");
+            const req = tx.objectStore(DB_STORE).get(DB_KEY);
+            req.onsuccess = () => resolve(req.result || null);
+            req.onerror = () => reject(req.error);
+            tx.oncomplete = () => db.close();
+        });
+    }
+
+    async function trackerDbSet(value) {
+        const db = await trackerDbOpen();
+        return new Promise((resolve, reject) => {
+            const tx = db.transaction(DB_STORE, "readwrite");
+            tx.objectStore(DB_STORE).put(value, DB_KEY);
+            tx.oncomplete = () => { db.close(); resolve(); };
+            tx.onerror = () => { db.close(); reject(tx.error); };
+        });
+    }
+
+    async function trackerDbClear() {
+        const db = await trackerDbOpen();
+        return new Promise((resolve, reject) => {
+            const tx = db.transaction(DB_STORE, "readwrite");
+            tx.objectStore(DB_STORE).delete(DB_KEY);
+            tx.oncomplete = () => { db.close(); resolve(); };
+            tx.onerror = () => { db.close(); reject(tx.error); };
+        });
+    }
+
+    function currentAuditDraft() {
+        const date = el("auditDate")?.value || "";
+        return {
+            date,
+            om: el("omName")?.value || "",
+            site: el("site")?.value || "",
+            tl: el("tlName")?.value || "",
+            agent: el("agentName")?.value || "",
+            account: el("account")?.value || "",
+            reason: el("reasonCode")?.value || "",
+            noc: el("noc")?.value || "",
+            remarks: el("remarks")?.value || ""
+        };
+    }
+
+    function entryToGuardRow(entry) {
+        return {
+            date: entry?.rawDate || parseDateToIso(entry?.formattedDate),
+            om: entry?.omName || "",
+            site: entry?.site || "",
+            tl: entry?.tlName || "",
+            agent: entry?.agentName || "",
+            account: entry?.cleanAccount || "",
+            reason: entry?.reasonCode || "",
+            noc: entry?.noc || "",
+            remarks: entry?.remarks || ""
+        };
+    }
+
+    function sameEnoughContext(draft, row) {
+        const exactDate = draft.date && row.date && draft.date === row.date;
+        const sameSite = norm(draft.site) && norm(draft.site) === norm(row.site);
+        const sameAccount = norm(draft.account) && norm(draft.account) === norm(row.account);
+        const sameReason = norm(draft.reason) && norm(draft.reason) === norm(row.reason);
+        const sameTl = norm(draft.tl) && norm(draft.tl) === norm(row.tl);
+        return { exactDate, sameSite, sameAccount, sameReason, sameTl };
+    }
+
+    function checkAgainstTracker(draft) {
+        if (!trackerRows.length) return { level: "none", matches: [], spelling: [] };
+        const required = [draft.date, draft.agent, draft.account, draft.reason].filter(Boolean).length;
+        if (required < 4) return { level: "incomplete", matches: [], spelling: [] };
+
+        const matches = [];
+        trackerRows.forEach(row => {
+            const ctx = sameEnoughContext(draft, row);
+            const agentExact = norm(draft.agent) === norm(row.agent) && !!norm(draft.agent);
+            const agentSim = agentExact ? 1 : similarity(draft.agent, row.agent);
+            const tlSim = norm(draft.tl) && norm(row.tl) ? similarity(draft.tl, row.tl) : 0;
+
+            if (ctx.exactDate && agentExact && ctx.sameAccount && ctx.sameReason && (ctx.sameSite || ctx.sameTl)) {
+                matches.push({ row, level: "strong", score: 100 });
+                return;
+            }
+
+            let score = 0;
+            if (ctx.exactDate) score += 30;
+            if (agentExact) score += 35;
+            else if (agentSim >= 0.92) score += 27;
+            if (ctx.sameAccount) score += 15;
+            if (ctx.sameReason) score += 12;
+            if (ctx.sameSite) score += 5;
+            if (ctx.sameTl) score += 5;
+            else if (tlSim >= 0.92) score += 3;
+
+            if (score >= 75) matches.push({ row, level: "possible", score });
+        });
+
+        matches.sort((a, b) => b.score - a.score || (a.row.sourceRow || 0) - (b.row.sourceRow || 0));
+
+        const spelling = findSpellingSuggestions(draft);
+        const strong = matches.some(m => m.level === "strong");
+        return { level: strong ? "strong" : matches.length ? "possible" : "clear", matches: matches.slice(0, 5), spelling };
+    }
+
+    function findSpellingSuggestions(draft) {
+        const suggestions = [];
+        if (!trackerRows.length) return suggestions;
+
+        const contexts = trackerRows.filter(row => {
+            const accountOk = !draft.account || norm(row.account) === norm(draft.account);
+            const siteOk = !draft.site || norm(row.site) === norm(draft.site);
+            return accountOk && siteOk;
+        });
+
+        function bestFor(field, label, minLength, threshold) {
+            const typed = cleanText(draft[field]);
+            if (typed.length < minLength) return;
+            const typedNorm = norm(typed);
+            let best = null;
+            const seen = new Set();
+            contexts.forEach(row => {
+                const candidate = cleanText(row[field]);
+                const cn = norm(candidate);
+                if (!candidate || !cn || cn === typedNorm || seen.has(cn)) return;
+                seen.add(cn);
+                if (Math.abs(cn.length - typedNorm.length) > 3) return;
+                if (cn[0] !== typedNorm[0]) return;
+                const sim = similarity(typed, candidate);
+                if (sim >= threshold && (!best || sim > best.sim)) best = { candidate, sim, row };
+            });
+            if (best) {
+                suggestions.push({
+                    field,
+                    label,
+                    typed,
+                    candidate: best.candidate,
+                    score: Math.round(best.sim * 100),
+                    row: best.row
+                });
+            }
+        }
+
+        bestFor("tl", "TL Name", 5, 0.91);
+        bestFor("agent", "Agent Name", 5, 0.93);
+        return suggestions;
+    }
+
+    function checkAgainstCurrentList(draft, ignoreIndex = -1) {
+        if (!Array.isArray(window.entryList) && typeof entryList === "undefined") return [];
+        const list = typeof entryList !== "undefined" ? entryList : window.entryList;
+        if (!Array.isArray(list)) return [];
+        const key = strongMatchKey(draft);
+        if (!key || key.replace(/\|/g, "") === "") return [];
+        return list
+            .map((entry, index) => ({ entry, index, row: entryToGuardRow(entry) }))
+            .filter(item => item.index !== ignoreIndex && strongMatchKey(item.row) === key);
+    }
+
+    function statusForEntry(entry, index) {
+        if (!trackerRows.length) return { kind: "none", label: "No Snapshot", title: "Import the tracker to check this row." };
+        const draft = entryToGuardRow(entry);
+        const result = checkAgainstTracker(draft);
+        if (result.level === "strong") {
+            const row = result.matches[0]?.row;
+            return { kind: "sent", label: "Already Sent", title: row ? `Likely match: tracker row ${row.sourceRow}` : "Likely already in tracker" };
+        }
+        if (result.level === "possible") {
+            const row = result.matches[0]?.row;
+            return { kind: "possible", label: "Possible", title: row ? `Possible match: tracker row ${row.sourceRow}` : "Possible tracker match" };
+        }
+        return { kind: "clear", label: "Not Found", title: "No strong match in the current tracker snapshot." };
+    }
+
+    function renderGuardMatches(result) {
+        const box = el("auditGuardMatches");
+        if (!box) return;
+        const items = [];
+
+        (result.matches || []).forEach(match => {
+            const r = match.row;
+            items.push(`
+                <div class="audit-guard-match ${match.level === "strong" ? "is-strong" : "is-possible"}">
+                    <div><strong>Tracker row ${htmlEscape(r.sourceRow || "?")}</strong><span>${htmlEscape(prettyIsoDate(r.date))} · ${htmlEscape(r.site || "No site")}</span></div>
+                    <p>${htmlEscape(r.agent || "No agent")} · ${htmlEscape(r.tl || "No TL")} · ${htmlEscape(r.account || "No account")} · ${htmlEscape(r.reason || "No reason")} · NOC ${htmlEscape(r.noc || "—")}</p>
+                </div>`);
+        });
+
+        (result.spelling || []).forEach(s => {
+            items.push(`
+                <div class="audit-guard-match is-spelling">
+                    <div><strong>Check ${htmlEscape(s.label)} spelling</strong><span>${s.score}% similar</span></div>
+                    <p>Typed “${htmlEscape(s.typed)}” · tracker commonly shows “${htmlEscape(s.candidate)}”${s.row?.sourceRow ? ` · row ${htmlEscape(s.row.sourceRow)}` : ""}</p>
+                </div>`);
+        });
+
+        box.innerHTML = items.join("");
+        box.hidden = items.length === 0;
+    }
+
+    function renderLiveCheck() {
+        const live = el("auditGuardLive");
+        const title = el("auditGuardLiveTitle");
+        const text = el("auditGuardLiveText");
+        if (!live || !title || !text) return;
+
+        live.classList.remove("is-idle", "is-clear", "is-warning", "is-danger");
+
+        if (!trackerRows.length) {
+            live.classList.add("is-idle");
+            title.textContent = "Import a tracker snapshot to start checking.";
+            text.textContent = "The checker will compare your current audit and Data Output Grid against the imported tracker.";
+            renderGuardMatches({ matches: [], spelling: [] });
+            return;
+        }
+
+        const draft = currentAuditDraft();
+        const result = checkAgainstTracker(draft);
+        const localDupes = checkAgainstCurrentList(draft, typeof editingIndex !== "undefined" ? editingIndex : -1);
+
+        if (localDupes.length) {
+            live.classList.add("is-danger");
+            title.textContent = "Duplicate already exists in your Data Output Grid.";
+            text.textContent = `This current form closely matches ${localDupes.length} row${localDupes.length === 1 ? "" : "s"} you already added.`;
+        } else if (result.level === "incomplete") {
+            live.classList.add("is-idle");
+            title.textContent = "Complete Date, Agent, Account, and Reason to check.";
+            text.textContent = `Tracker loaded: ${trackerRows.length.toLocaleString()} records.`;
+        } else if (result.level === "strong") {
+            live.classList.add("is-danger");
+            const row = result.matches[0]?.row;
+            title.textContent = "Likely already sent / filed.";
+            text.textContent = row ? `Strong match found in tracker row ${row.sourceRow}. Review before adding or copying again.` : "Strong tracker match found.";
+        } else if (result.level === "possible") {
+            live.classList.add("is-warning");
+            const row = result.matches[0]?.row;
+            title.textContent = "Possible existing audit found.";
+            text.textContent = row ? `Closest match is tracker row ${row.sourceRow}. Check the details below before sending.` : "Review the possible match below.";
+        } else {
+            live.classList.add(result.spelling.length ? "is-warning" : "is-clear");
+            title.textContent = result.spelling.length ? "No duplicate found, but check the spelling." : "Clear — no strong tracker match found.";
+            text.textContent = result.spelling.length ? "A name is very close to an existing tracker spelling." : "Based on your current local tracker snapshot.";
+        }
+
+        renderGuardMatches(result);
+    }
+
+    function renderTrackerIssues() {
+        const list = el("trackerIssuesList");
+        if (!list) return;
+        if (!trackerAnalysis.issues.length) {
+            list.innerHTML = '<div class="audit-guard-empty-issues">No obvious tracker anomalies found in this snapshot.</div>';
+            return;
+        }
+        const limited = trackerAnalysis.issues.slice(0, 80);
+        list.innerHTML = limited.map(issue => `
+            <div class="audit-guard-issue ${issue.level === "danger" ? "is-danger" : "is-warning"}">
+                <strong>${htmlEscape(issue.title)}</strong>
+                <span>${htmlEscape(issue.detail || "")}</span>
+            </div>`).join("") + (trackerAnalysis.issues.length > limited.length
+            ? `<div class="audit-guard-more">Showing ${limited.length} of ${trackerAnalysis.issues.length} issues.</div>` : "");
+    }
+
+    function renderTrackerSummary() {
+        trackerAnalysis = trackerGuardAnalyze(trackerRows);
+        const state = el("auditGuardState");
+        const count = el("trackerRecordCount");
+        const last = el("trackerLastSync");
+        const dup = el("trackerDuplicateCount");
+        const issue = el("trackerIssueCount");
+        const clearBtn = el("trackerClearBtn");
+        const issuesBtn = el("trackerIssuesBtn");
+
+        if (count) count.textContent = trackerRows.length.toLocaleString();
+        if (last) last.textContent = trackerSnapshot ? formatLocalTime(trackerSnapshot.syncedAt) : "—";
+        if (dup) dup.textContent = trackerAnalysis.duplicateGroups.length.toLocaleString();
+        if (issue) issue.textContent = trackerAnalysis.issues.length.toLocaleString();
+        if (clearBtn) clearBtn.hidden = !trackerRows.length;
+        if (issuesBtn) issuesBtn.hidden = !trackerRows.length;
+
+        if (state) {
+            state.classList.remove("is-empty", "is-ready", "is-stale");
+            if (!trackerRows.length) {
+                state.classList.add("is-empty");
+                state.textContent = "No tracker loaded";
+            } else {
+                const age = trackerSnapshot?.syncedAt ? Date.now() - new Date(trackerSnapshot.syncedAt).getTime() : 0;
+                const stale = age > 6 * 60 * 60 * 1000;
+                state.classList.add(stale ? "is-stale" : "is-ready");
+                state.textContent = stale ? "Refresh recommended" : `${trackerSnapshot?.sheetName || "Tracker"} loaded`;
+            }
+        }
+
+        renderTrackerIssues();
+        renderLiveCheck();
+        if (typeof renderTable === "function") renderTable();
+    }
+
+    async function saveTrackerSnapshot(snapshot) {
+        trackerSnapshot = snapshot;
+        trackerRows = Array.isArray(snapshot?.rows) ? snapshot.rows : [];
+        await trackerDbSet(snapshot);
+        renderTrackerSummary();
+    }
+
+    async function loadTrackerSnapshot() {
+        try {
+            const saved = await trackerDbGet();
+            if (saved && Array.isArray(saved.rows)) {
+                trackerSnapshot = saved;
+                trackerRows = saved.rows;
+            }
+        } catch (err) {
+            console.warn("Tracker Guard snapshot could not be loaded", err);
+        }
+        renderTrackerSummary();
+    }
+
+    function chooseAuditSheet(workbook) {
+        const names = workbook.SheetNames || [];
+        const exact = names.find(n => /^\s*AUDIT\s*2026\s*$/i.test(n));
+        if (exact) return exact;
+
+        const preferred = names.find(n => /audit/i.test(n) && !/maintenance|pivot|summary/i.test(n));
+        if (preferred) return preferred;
+
+        let best = { name: names[0] || "", score: -1 };
+        names.forEach(name => {
+            try {
+                const matrix = XLSX.utils.sheet_to_json(workbook.Sheets[name], { header: 1, defval: "", raw: false, range: "A1:L12" });
+                let score = 0;
+                matrix.forEach(r => score = Math.max(score, headerScore(r || [])));
+                if (score > best.score) best = { name, score };
+            } catch (_) {}
+        });
+        return best.name;
+    }
+
+    async function importTrackerFile(file) {
+        if (!file) return;
+        if (!window.XLSX) {
+            alert("The .xlsx reader did not load. Please refresh the page, or use Paste Latest Rows.");
+            return;
+        }
+
+        try {
+            const buffer = await file.arrayBuffer();
+            const workbook = XLSX.read(buffer, { type: "array", cellDates: true });
+            const sheetName = chooseAuditSheet(workbook);
+            if (!sheetName || !workbook.Sheets[sheetName]) throw new Error("No audit sheet found.");
+            const matrix = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], {
+                header: 1,
+                defval: "",
+                raw: false,
+                dateNF: "m/d/yyyy",
+                blankrows: false
+            });
+            const parsed = parseMatrix(matrix, `${file.name} · ${sheetName}`);
+            if (!parsed.rows.length) throw new Error("No recognizable audit rows found.");
+
+            await saveTrackerSnapshot({
+                version: 1,
+                sourceName: file.name,
+                sheetName,
+                syncedAt: new Date().toISOString(),
+                rows: parsed.rows
+            });
+
+            const summary = trackerAnalysis;
+            const extra = summary.issues.length ? ` Found ${summary.issues.length} item${summary.issues.length === 1 ? "" : "s"} to review.` : " No obvious anomalies found.";
+            alert(`Tracker imported: ${parsed.rows.length.toLocaleString()} audit rows from “${sheetName}”.${extra}`);
+        } catch (err) {
+            console.error(err);
+            alert(`Could not import the tracker: ${err.message || err}`);
+        } finally {
+            if (el("trackerFileInput")) el("trackerFileInput").value = "";
+        }
+    }
+
+    async function mergePastedRows() {
+        const text = el("trackerPasteInput")?.value || "";
+        if (!text.trim()) {
+            alert("Paste the latest tracker rows first.");
+            return;
+        }
+        const matrix = splitPastedText(text);
+        const parsed = parseMatrix(matrix, "Pasted latest rows");
+        if (!parsed.rows.length) {
+            alert("No recognizable audit rows were found in the pasted data.");
+            return;
+        }
+
+        const merged = [];
+        const seen = new Set();
+        [...trackerRows, ...parsed.rows].forEach(row => {
+            const sig = rowSignature(row);
+            if (!sig || seen.has(sig)) return;
+            seen.add(sig);
+            merged.push(row);
+        });
+
+        await saveTrackerSnapshot({
+            version: 1,
+            sourceName: trackerSnapshot?.sourceName || "Pasted tracker rows",
+            sheetName: trackerSnapshot?.sheetName || "Local snapshot",
+            syncedAt: new Date().toISOString(),
+            rows: merged
+        });
+
+        el("trackerPasteInput").value = "";
+        el("trackerPastePanel").hidden = true;
+        alert(`Latest rows merged. Tracker snapshot now has ${merged.length.toLocaleString()} records.`);
+    }
+
+    function scheduleLiveCheck() {
+        clearTimeout(guardDebounce);
+        guardDebounce = setTimeout(renderLiveCheck, 220);
+    }
+
+    async function confirmLikelyDuplicateBeforeAdd() {
+        if (!trackerRows.length) return true;
+        const draft = currentAuditDraft();
+        const result = checkAgainstTracker(draft);
+        const localDupes = checkAgainstCurrentList(draft, typeof editingIndex !== "undefined" ? editingIndex : -1);
+
+        if (!localDupes.length && result.level !== "strong") return true;
+
+        const trackerRow = result.matches?.[0]?.row;
+        const messageParts = [];
+        if (localDupes.length) messageParts.push(`Already matches ${localDupes.length} row${localDupes.length === 1 ? "" : "s"} in your Data Output Grid.`);
+        if (trackerRow) messageParts.push(`Likely already exists in tracker row ${trackerRow.sourceRow}.`);
+        messageParts.push("Add it anyway only if this is a different incident.");
+
+        if (window.appConfirm) {
+            return await window.appConfirm({
+                title: "Possible duplicate audit",
+                message: messageParts.join(" "),
+                confirmText: "Add Anyway",
+                tone: "danger"
+            });
+        }
+        return window.confirm(messageParts.join("\n\n"));
+    }
+
+    async function confirmTrackerDuplicatesBeforeCopy() {
+        if (!trackerRows.length || typeof entryList === "undefined" || !Array.isArray(entryList) || !entryList.length) return true;
+        const matched = entryList.map((entry, index) => ({ index, status: statusForEntry(entry, index) })).filter(x => x.status.kind === "sent");
+        if (!matched.length) return true;
+
+        const message = `${matched.length} row${matched.length === 1 ? "" : "s"} in your Data Output Grid already have a strong match in the tracker snapshot. Copying them again may create duplicates.`;
+        if (window.appConfirm) {
+            return await window.appConfirm({
+                title: "Already-sent rows detected",
+                message,
+                confirmText: "Copy Anyway",
+                tone: "danger"
+            });
+        }
+        return window.confirm(message);
+    }
+
+    // Wrap existing CCTV functions without removing their original behavior.
+    const originalSubmitEntry = typeof submitEntry === "function" ? submitEntry : null;
+    if (originalSubmitEntry) {
+        submitEntry = async function () {
+            const ok = await confirmLikelyDuplicateBeforeAdd();
+            if (!ok) return;
+            const result = originalSubmitEntry.apply(this, arguments);
+            setTimeout(() => { renderLiveCheck(); if (typeof renderTable === "function") renderTable(); }, 0);
+            return result;
+        };
+    }
+
+    const originalCopyToClipboard = typeof copyToClipboard === "function" ? copyToClipboard : null;
+    if (originalCopyToClipboard) {
+        copyToClipboard = async function () {
+            const ok = await confirmTrackerDuplicatesBeforeCopy();
+            if (!ok) return;
+            return originalCopyToClipboard.apply(this, arguments);
+        };
+    }
+
+    const originalRenderTable = typeof renderTable === "function" ? renderTable : null;
+    if (originalRenderTable) {
+        renderTable = function () {
+            const result = originalRenderTable.apply(this, arguments);
+            const rows = document.querySelectorAll("#outputTable tbody tr");
+            rows.forEach((tr, index) => {
+                if (tr.querySelector(".audit-guard-table-cell")) return;
+                const entry = typeof entryList !== "undefined" && Array.isArray(entryList) ? entryList[index] : null;
+                const status = statusForEntry(entry, index);
+                const td = document.createElement("td");
+                td.className = "audit-guard-table-cell";
+                td.innerHTML = `<span class="audit-guard-row-status is-${status.kind}" title="${htmlEscape(status.title)}">${htmlEscape(status.label)}</span>`;
+                const first = tr.children[0];
+                if (first) first.insertAdjacentElement("afterend", td);
+                else tr.appendChild(td);
+            });
+            return result;
+        };
+    }
+
+    const originalEditEntry = typeof editEntry === "function" ? editEntry : null;
+    if (originalEditEntry) {
+        editEntry = function () {
+            const result = originalEditEntry.apply(this, arguments);
+            setTimeout(renderLiveCheck, 0);
+            return result;
+        };
+    }
+
+    const originalClearForm = typeof clearForm === "function" ? clearForm : null;
+    if (originalClearForm) {
+        clearForm = function () {
+            const result = originalClearForm.apply(this, arguments);
+            setTimeout(renderLiveCheck, 0);
+            return result;
+        };
+    }
+
+    ["auditDate", "site", "tlName", "agentName", "omName", "account", "reasonCode", "noc", "remarks"].forEach(id => {
+        const node = el(id);
+        if (!node) return;
+        node.addEventListener("input", scheduleLiveCheck);
+        node.addEventListener("change", scheduleLiveCheck);
+    });
+
+    el("trackerImportBtn")?.addEventListener("click", () => el("trackerFileInput")?.click());
+    el("trackerFileInput")?.addEventListener("change", event => importTrackerFile(event.target.files?.[0]));
+
+    el("trackerPasteBtn")?.addEventListener("click", () => {
+        const panel = el("trackerPastePanel");
+        if (!panel) return;
+        panel.hidden = !panel.hidden;
+        if (!panel.hidden) el("trackerPasteInput")?.focus();
+    });
+    el("trackerPasteCancelBtn")?.addEventListener("click", () => {
+        el("trackerPastePanel").hidden = true;
+    });
+    el("trackerPasteApplyBtn")?.addEventListener("click", mergePastedRows);
+
+    el("trackerIssuesBtn")?.addEventListener("click", () => {
+        const panel = el("trackerIssuesPanel");
+        if (!panel) return;
+        panel.hidden = false;
+        renderTrackerIssues();
+    });
+    el("trackerIssuesCloseBtn")?.addEventListener("click", () => {
+        el("trackerIssuesPanel").hidden = true;
+    });
+
+    el("trackerClearBtn")?.addEventListener("click", async () => {
+        let ok = true;
+        if (window.appConfirm) {
+            ok = await window.appConfirm({
+                title: "Clear local tracker snapshot?",
+                message: "This only removes the imported tracker copy from this browser. It does not change the original Google Sheet.",
+                confirmText: "Clear Snapshot",
+                tone: "danger"
+            });
+        } else ok = window.confirm("Clear the local tracker snapshot?");
+        if (!ok) return;
+        await trackerDbClear();
+        trackerSnapshot = null;
+        trackerRows = [];
+        trackerAnalysis = { duplicateGroups: [], issues: [] };
+        renderTrackerSummary();
+    });
+
+    window.CCTVTrackerGuard = {
+        get snapshot() { return trackerSnapshot; },
+        get rows() { return trackerRows.slice(); },
+        check: checkAgainstTracker,
+        refresh: renderTrackerSummary
+    };
+
+    loadTrackerSnapshot();
+})();
+</script>
 
 <script>
 (function () {
