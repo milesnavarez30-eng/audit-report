@@ -11960,13 +11960,13 @@ body.auth-locked > .site-footer { visibility:hidden!important; pointer-events:no
             <div class="edr-card-heading">
                 <div>
                     <h3 id="edrFormHeading">Create EDR</h3>
-                    <p>Searchable Team Leader, OM, and Account/Campaign fields are already loaded below.</p>
+                    <p>Complete the audit details from top to bottom. Respondent and violation details are grouped for faster encoding.</p>
                 </div>
                 <span class="edr-session-note" id="edrCloudBadge">Local until Google Docs is connected</span>
             </div>
 
             <div class="edr-form-grid">
-                <div class="edr-field edr-span-2">
+                <div class="edr-field edr-span-2 edr-layout-site">
                     <label for="edrSite">Site</label>
                     <select id="edrSite">
                         <option value="Mabini Site A - 1st Floor">Mabini Site A - 1st Floor</option>
@@ -11975,12 +11975,12 @@ body.auth-locked > .site-footer { visibility:hidden!important; pointer-events:no
                     <div class="edr-fixed-cctv">CCTV is added automatically to the generated template.</div>
                 </div>
 
-                <div class="edr-field">
+                <div class="edr-field edr-layout-date">
                     <label for="edrDate">Date</label>
                     <input type="date" id="edrDate">
                 </div>
 
-                <div class="edr-field">
+                <div class="edr-field edr-layout-time">
                     <label for="edrTimeObserved">Time Observed</label>
                     <input type="text"
                            id="edrTimeObserved"
@@ -11988,7 +11988,7 @@ body.auth-locked > .site-footer { visibility:hidden!important; pointer-events:no
                            placeholder="Paste time, e.g. 3:10:45 AM–3:18:01 AM">
                 </div>
 
-                <div class="edr-inline-pair edr-span-2">
+                <div class="edr-inline-pair edr-span-2 edr-layout-respondent">
                     <div class="edr-field edr-compact-choice-field">
                         <label>Respondent</label>
                         <input type="hidden" id="edrSupervisorRole" value="Team Leader">
@@ -12013,7 +12013,7 @@ body.auth-locked > .site-footer { visibility:hidden!important; pointer-events:no
                     </div>
                 </div>
 
-                <div class="edr-inline-pair edr-span-2">
+                <div class="edr-inline-pair edr-span-2 edr-layout-subject">
                     <div class="edr-field edr-compact-choice-field">
                         <label>Violation Subject</label>
                         <input type="hidden" id="edrSubjectType" value="Agent/s">
@@ -12034,7 +12034,7 @@ body.auth-locked > .site-footer { visibility:hidden!important; pointer-events:no
                     </div>
                 </div>
 
-                <div class="edr-field edr-span-2">
+                <div class="edr-field edr-span-2 edr-layout-account">
                     <label for="edrAccount">Account / Campaign</label>
                     <div class="edr-search-row">
                         <input type="text"
@@ -12048,19 +12048,19 @@ body.auth-locked > .site-footer { visibility:hidden!important; pointer-events:no
                     <datalist id="edrAccountOptions"></datalist>
                 </div>
 
-                <div class="edr-field edr-span-2">
+                <div class="edr-field edr-span-2 edr-layout-incident">
                     <label for="edrIncident">Incident</label>
                     <textarea id="edrIncident"
                               placeholder="Example: Agent was observed loitering away from her workstation while the PC was turned off during work hours."></textarea>
                 </div>
 
-                <div class="edr-field edr-span-2">
+                <div class="edr-field edr-span-2 edr-layout-action">
                     <label for="edrActionRemarks">Action Taken / Remarks</label>
                     <textarea id="edrActionRemarks"
                               placeholder="Example: TL confirmed the agent had completed her audits and was assisting another agent while waiting for the next audit."></textarea>
                 </div>
 
-                <div class="edr-field edr-span-2">
+                <div class="edr-field edr-span-2 edr-layout-screenshot">
                     <label>CCTV Screenshot</label>
                     <div id="edrScreenshotZone"
                          class="edr-screenshot-zone edr-screenshot-minimal"
@@ -12094,7 +12094,7 @@ body.auth-locked > .site-footer { visibility:hidden!important; pointer-events:no
                     </div>
                 </div>
 
-                <div class="edr-field edr-span-2">
+                <div class="edr-field edr-span-2 edr-layout-clip">
                     <label for="edrClipLink">CCTV Clip - Google Drive Link</label>
                     <input type="url"
                            id="edrClipLink"
