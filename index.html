@@ -5598,7 +5598,7 @@
 </style>
 
 
-    <link rel="stylesheet" href="./style.css?v=20260902-maintenance-collapse-status-1">
+    <link rel="stylesheet" href="./style.css?v=20260902-account-auth-1">
 
 <style id="edrCriticalStyles">
 /* =========================================================
@@ -10960,8 +10960,109 @@ body.ops-redesign-v3.dark-mode #eodPanel .eod-block.is-collapsed.is-empty-report
     color: #fcd34d !important;
 }
 </style>
+<style id="accountAuthCriticalStyles">
+/* ACCOUNT ACCESS */
+body.auth-locked { overflow:hidden!important; }
+body.auth-locked > .workspace-tabs,
+body.auth-locked > .app-tab-panel,
+body.auth-locked > .sidebar-collapse-toggle,
+body.auth-locked > .site-footer { visibility:hidden!important; pointer-events:none!important; }
+
+.auth-gate{position:fixed;inset:0;z-index:9999999;display:grid;place-items:center;padding:22px}
+.auth-gate[hidden]{display:none!important}
+.auth-gate-bg{position:absolute;inset:0;background:radial-gradient(circle at 20% 0%,rgba(37,99,235,.23),transparent 34%),linear-gradient(145deg,#07101c,#0d1827 55%,#07101c)}
+.auth-card{position:relative;z-index:1;width:min(100%,430px);padding:20px;border:1px solid rgba(148,163,184,.16);border-radius:16px;background:rgba(15,23,42,.95);color:#e5edf6;box-shadow:0 30px 80px rgba(0,0,0,.38)}
+.auth-brand{display:flex;justify-content:space-between;gap:12px;margin-bottom:17px;padding-bottom:13px;border-bottom:1px solid rgba(148,163,184,.12)}
+.auth-brand strong,.auth-brand span{display:block}.auth-brand strong{color:#fff;font-size:14px;font-weight:850}.auth-brand span{margin-top:3px;color:#8190a5;font-size:9px}
+.auth-brand small{height:max-content;padding:5px 7px;border-radius:999px;background:rgba(59,130,246,.11);color:#93c5fd;font-size:7.5px;font-weight:750}
+.auth-tabs{display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-bottom:17px;padding:4px;border:1px solid rgba(148,163,184,.11);border-radius:9px;background:rgba(255,255,255,.025)}
+.auth-tab{min-height:34px;border:0;border-radius:7px;background:transparent;color:#8696aa;font:700 10px/1 Inter,sans-serif;cursor:pointer}.auth-tab.active{background:rgba(59,130,246,.15);color:#dbeafe}
+.auth-form{display:grid;gap:11px}.auth-form[hidden]{display:none!important}
+.auth-heading h1,.auth-state-card h1{margin:0 0 5px;color:#f8fafc!important;font-size:20px!important;font-weight:780!important}.auth-heading p,.auth-state-card p{margin:0;color:#8fa0b6;font-size:10px;line-height:1.55}
+.auth-form label>span{display:block;margin-bottom:5px;color:#aab6c6!important;font-size:8.5px!important;font-weight:700!important}
+.auth-form input{width:100%;min-height:40px!important;padding:8px 10px!important;border:1px solid rgba(148,163,184,.18)!important;border-radius:8px!important;background:rgba(255,255,255,.045)!important;color:#f8fafc!important;font-size:11px!important}
+.auth-primary-btn,.auth-secondary-btn{width:100%;min-height:40px;border-radius:8px;font:750 10px/1 Inter,sans-serif;cursor:pointer}.auth-primary-btn{border:1px solid #2563eb;background:#2563eb;color:#fff}.auth-secondary-btn{margin-top:14px;border:1px solid rgba(148,163,184,.18);background:rgba(255,255,255,.04);color:#dbe4ee}
+.auth-message,.auth-config-missing{margin-top:12px;padding:9px 10px;border-radius:8px;font-size:9px;line-height:1.5}.auth-message{border:1px solid rgba(248,113,113,.22);background:rgba(239,68,68,.08);color:#fecaca}.auth-message.success{border-color:rgba(52,211,153,.2);background:rgba(16,185,129,.08);color:#a7f3d0}
+.auth-config-missing{display:grid;gap:4px;border:1px solid rgba(251,191,36,.2);background:rgba(245,158,11,.08);color:#fde68a}
+.auth-state-card[hidden]{display:none!important}.auth-state-pill{display:inline-flex;margin-bottom:12px;padding:5px 8px;border-radius:999px;font-size:8px;font-weight:800}.auth-state-pill.pending{background:rgba(245,158,11,.10);color:#fcd34d}.auth-state-pill.rejected{background:rgba(239,68,68,.10);color:#fca5a5}
+.auth-state-email{margin:13px 0 5px;color:#dbeafe;font-size:10px;font-weight:700}.auth-state-card small{color:#74849a;font-size:8.5px}
+
+.auth-sidebar-account{flex:none;margin:0 2px 8px;padding:8px;border:1px solid rgba(148,163,184,.09);border-radius:8px;background:rgba(255,255,255,.025)}
+.auth-sidebar-user strong,.auth-sidebar-user span{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.auth-sidebar-user strong{color:#e8eef6;font-size:9px}.auth-sidebar-user span{margin-top:2px;color:#718197;font-size:7.5px}
+#authLogoutBtn{width:100%;min-height:28px;margin-top:7px;border:1px solid rgba(148,163,184,.1);border-radius:6px;background:rgba(255,255,255,.025);color:#94a3b8;font:700 8px/1 Inter,sans-serif;cursor:pointer}
+
+.auth-admin-head,.auth-admin-card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}.auth-admin-head{margin-bottom:10px}
+.auth-admin-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:10px}.auth-admin-summary>div{padding:10px;border:1px solid var(--ops-line);border-radius:9px;background:var(--ops-panel-2)}.auth-admin-summary span,.auth-admin-summary strong{display:block}.auth-admin-summary span{color:var(--ops-muted);font-size:8px}.auth-admin-summary strong{margin-top:3px;color:var(--ops-text);font-size:18px}.auth-admin-summary .pending strong{color:#d97706}.auth-admin-summary .recent strong{color:#059669}
+.auth-admin-card{margin-bottom:10px;padding:11px;border:1px solid var(--ops-line);border-radius:10px;background:var(--ops-panel)}.auth-admin-card-head{align-items:center;margin-bottom:8px}.auth-admin-card-head h3{margin:0}.auth-admin-card-head p,#adminActivityUpdated{margin:2px 0 0;color:var(--ops-muted);font-size:8px}#adminUserSearch{width:min(100%,280px);min-height:34px}
+.auth-admin-table-wrap{width:100%;max-height:440px;overflow:auto;border:1px solid var(--ops-line);border-radius:8px}.auth-admin-table{width:100%;min-width:900px;border-collapse:separate;border-spacing:0;font-size:9px}.auth-admin-table th,.auth-admin-table td{padding:7px 8px;border-right:1px solid var(--ops-line);border-bottom:1px solid var(--ops-line);color:var(--ops-text-2);text-align:left}.auth-admin-table th{position:sticky;top:0;z-index:2;background:var(--ops-panel-2);color:var(--ops-muted);font-size:7.5px;text-transform:uppercase}
+.auth-admin-user-cell strong,.auth-admin-user-cell span{display:block}.auth-admin-user-cell strong{color:var(--ops-text);font-size:9px}.auth-admin-user-cell span{margin-top:2px;color:var(--ops-muted);font-size:7.5px}
+.auth-user-status,.auth-role-pill,.auth-event-pill{display:inline-flex;padding:4px 7px;border-radius:999px;font-size:7.5px;font-weight:780}.auth-user-status.approved{background:rgba(16,185,129,.1);color:#059669}.auth-user-status.pending{background:rgba(245,158,11,.1);color:#d97706}.auth-user-status.rejected{background:rgba(239,68,68,.09);color:#dc2626}.auth-role-pill{background:var(--ops-panel-3);color:var(--ops-muted)}.auth-role-pill.admin{background:rgba(37,99,235,.09);color:#2563eb}
+.auth-event-pill.page_open{background:rgba(59,130,246,.09);color:#2563eb}.auth-event-pill.sign_in{background:rgba(16,185,129,.09);color:#059669}.auth-event-pill.sign_out{background:rgba(148,163,184,.12);color:var(--ops-muted)}
+.auth-admin-actions{display:flex;gap:4px;flex-wrap:wrap}.auth-admin-actions button{min-height:27px;padding:4px 7px;border-radius:6px;background:transparent;font:750 7.5px/1 Inter,sans-serif;cursor:pointer}.auth-approve-btn{border:1px solid rgba(5,150,105,.22);color:#059669}.auth-reject-btn{border:1px solid rgba(217,119,6,.25);color:#d97706}.auth-remove-user-btn{border:1px solid rgba(220,38,38,.24);color:#dc2626}.auth-self-label{color:var(--ops-muted);font-size:8px}.auth-admin-empty{padding:18px!important;text-align:center!important;color:var(--ops-muted)!important}
+.auth-account-toast{position:fixed;right:18px;bottom:18px;z-index:999999;max-width:330px;padding:10px 12px;border-radius:9px;background:#111827;color:#e5edf6;box-shadow:0 18px 45px rgba(0,0,0,.24);font:650 9px/1.45 Inter,sans-serif;opacity:0;transform:translateY(8px);transition:.16s}.auth-account-toast.show{opacity:1;transform:none}
+
+@media(max-width:920px){.auth-admin-summary{grid-template-columns:1fr}.auth-sidebar-account{display:flex;gap:8px;align-items:center;min-width:180px;margin:0!important}.auth-sidebar-user{flex:1}#authLogoutBtn{width:auto;margin:0;padding:0 8px}}
+@media(max-width:620px){.auth-gate{padding:12px}.auth-card{padding:16px}.auth-admin-head,.auth-admin-card-head{flex-direction:column;align-items:stretch}#adminUserSearch{width:100%}}
+</style>
 </head>
-<body class="ops-redesign-v3">
+<body class="ops-redesign-v3 auth-locked">
+<div id="authGate" class="auth-gate">
+  <div class="auth-gate-bg"></div>
+  <section class="auth-card">
+    <div class="auth-brand">
+      <div><strong>CCTV OPS</strong><span>Secure operations workspace</span></div>
+      <small>Account Access</small>
+    </div>
+
+    <div id="authConfigMissing" class="auth-config-missing" hidden>
+      <strong>Supabase setup required.</strong>
+      <span>Complete the supplied setup steps, then fill in <code>auth-config.js</code>.</span>
+    </div>
+
+    <div id="authForms">
+      <div class="auth-tabs">
+        <button type="button" id="authSignInTab" class="auth-tab active">Sign In</button>
+        <button type="button" id="authSignUpTab" class="auth-tab">Sign Up</button>
+      </div>
+
+      <form id="authSignInForm" class="auth-form">
+        <div class="auth-heading"><h1>Welcome back</h1><p>Use your approved account.</p></div>
+        <label><span>Email</span><input type="email" id="authSignInEmail" required autocomplete="email"></label>
+        <label><span>Password</span><input type="password" id="authSignInPassword" required autocomplete="current-password"></label>
+        <button type="submit" class="auth-primary-btn" id="authSignInBtn">Sign In</button>
+      </form>
+
+      <form id="authSignUpForm" class="auth-form" hidden>
+        <div class="auth-heading"><h1>Create account</h1><p>Your account must be approved by the admin.</p></div>
+        <label><span>Name</span><input type="text" id="authSignUpName" required autocomplete="name"></label>
+        <label><span>Email</span><input type="email" id="authSignUpEmail" required autocomplete="email"></label>
+        <label><span>Password</span><input type="password" id="authSignUpPassword" minlength="8" required autocomplete="new-password"></label>
+        <label><span>Confirm Password</span><input type="password" id="authSignUpConfirm" minlength="8" required autocomplete="new-password"></label>
+        <button type="submit" class="auth-primary-btn" id="authSignUpBtn">Create Account</button>
+      </form>
+    </div>
+
+    <div id="authWaitingState" class="auth-state-card" hidden>
+      <span class="auth-state-pill pending">Pending Approval</span>
+      <h1>Waiting for admin</h1>
+      <p>Your account is created. You cannot open the workspace until the admin approves it.</p>
+      <div class="auth-state-email" id="authWaitingEmail"></div>
+      <small>Status checks automatically.</small>
+      <button type="button" class="auth-secondary-btn" id="authPendingLogoutBtn">Log Out</button>
+    </div>
+
+    <div id="authRejectedState" class="auth-state-card" hidden>
+      <span class="auth-state-pill rejected">Disapproved</span>
+      <h1>Access unavailable</h1>
+      <p>This account is not approved for CCTV OPS.</p>
+      <div class="auth-state-email" id="authRejectedEmail"></div>
+      <button type="button" class="auth-secondary-btn" id="authRejectedLogoutBtn">Log Out</button>
+    </div>
+
+    <div id="authMessage" class="auth-message" hidden></div>
+  </section>
+</div>
+
 
 <button
     type="button"
@@ -11012,7 +11113,21 @@ body.ops-redesign-v3.dark-mode #eodPanel .eod-block.is-collapsed.is-empty-report
         <small id="globalHistoryCount">0</small>
     </button>
 
+    <button type="button" class="sidebar-history-btn" id="adminTabBtn"
+            role="tab" aria-selected="false" aria-controls="adminPanel" hidden>
+        <span>Accounts</span>
+        <small id="adminPendingCount">0</small>
+    </button>
+
     <div class="sidebar-spacer"></div>
+
+    <div class="auth-sidebar-account" id="authSidebarAccount" hidden>
+        <div class="auth-sidebar-user">
+            <strong id="authSidebarName">Account</strong>
+            <span id="authSidebarEmail"></span>
+        </div>
+        <button type="button" id="authLogoutBtn">Log Out</button>
+    </div>
 
     <div class="sidebar-live-clock timeis-clock" id="sidebarLiveClock" title="Exact Manila time">
         <span id="Manila_z42c"></span>
@@ -11575,6 +11690,50 @@ body.ops-redesign-v3.dark-mode #eodPanel .eod-block.is-collapsed.is-empty-report
     </div>
 </section>
 
+
+<section id="adminPanel" class="app-tab-panel" role="tabpanel" aria-labelledby="adminTabBtn" hidden>
+  <div class="container auth-admin-shell">
+    <div class="auth-admin-head">
+      <div>
+        <h2>Account Administration</h2>
+        <p class="page-lead">Approve users, disapprove access, remove accounts, and monitor who opened the website.</p>
+      </div>
+      <button type="button" class="edr-outline-btn" id="adminRefreshBtn">Refresh</button>
+    </div>
+
+    <div class="auth-admin-summary">
+      <div><span>Total Accounts</span><strong id="adminTotalUsers">0</strong></div>
+      <div class="pending"><span>Pending</span><strong id="adminPendingUsers">0</strong></div>
+      <div class="recent"><span>Active in 24h</span><strong id="adminRecentUsers">0</strong></div>
+    </div>
+
+    <section class="auth-admin-card">
+      <div class="auth-admin-card-head">
+        <div><h3>User Accounts</h3><p>Approve, disapprove, or permanently remove.</p></div>
+        <input type="search" id="adminUserSearch" placeholder="Find name or email..." autocomplete="off">
+      </div>
+      <div class="auth-admin-table-wrap">
+        <table class="auth-admin-table">
+          <thead><tr><th>User</th><th>Status</th><th>Role</th><th>Created</th><th>Last Active</th><th>Action</th></tr></thead>
+          <tbody id="adminUsersBody"><tr><td colspan="6">Loading...</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="auth-admin-card">
+      <div class="auth-admin-card-head">
+        <div><h3>Access Activity</h3><p>Latest sign-ins, opens, and logouts.</p></div>
+        <span id="adminActivityUpdated"></span>
+      </div>
+      <div class="auth-admin-table-wrap">
+        <table class="auth-admin-table">
+          <thead><tr><th>User</th><th>Event</th><th>Date / Time</th><th>Page</th></tr></thead>
+          <tbody id="adminActivityBody"><tr><td colspan="4">No activity yet.</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+</section>
 <section id="edrPanel" class="app-tab-panel" role="tabpanel" aria-labelledby="edrTabBtn">
     <div class="container edr-crud-shell">
         <div class="edr-crud-header">
@@ -22042,6 +22201,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         ["eodTabBtn", "eodPanel"],
         ["pendingTabBtn", "pendingPanel"],
         ["masterlistTabBtn", "masterlistPanel"],
+        ["adminTabBtn", "adminPanel"],
         ["edrTabBtn", "edrPanel"]
     ];
 
@@ -22113,6 +22273,490 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         if (!pair) return;
         enforceWorkspace(pair[0], pair[1]);
     };
+})();
+</script>
+
+
+<script src="./auth-config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script id="cctvAccountAuthScript">
+(function () {
+    const $ = id => document.getElementById(id);
+    const cfg = window.CCTV_AUTH_CONFIG || {};
+
+    let client = null;
+    let user = null;
+    let profile = null;
+    let pendingTimer = null;
+    let adminTimer = null;
+    let lastPendingCount = 0;
+    let openedLoggedFor = null;
+    let usersCache = [];
+
+    const clean = v => String(v == null ? "" : v).trim();
+    const esc = v => String(v == null ? "" : v)
+        .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")
+        .replace(/"/g,"&quot;").replace(/'/g,"&#039;");
+
+    function configReady() {
+        return /^https:\/\/.+\.supabase\.co$/i.test(clean(cfg.SUPABASE_URL)) &&
+            clean(cfg.SUPABASE_PUBLIC_KEY) &&
+            !clean(cfg.SUPABASE_PUBLIC_KEY).includes("PASTE_");
+    }
+
+    function message(text, kind = "error") {
+        const el = $("authMessage");
+        if (!text) {
+            el.hidden = true;
+            el.textContent = "";
+            el.className = "auth-message";
+            return;
+        }
+        el.hidden = false;
+        el.textContent = text;
+        el.className = "auth-message " + kind;
+    }
+
+    function busy(btn, on, text) {
+        if (!btn) return;
+        if (on) {
+            btn.dataset.old = btn.textContent;
+            btn.textContent = text || "Please wait...";
+            btn.disabled = true;
+        } else {
+            btn.textContent = btn.dataset.old || btn.textContent;
+            btn.disabled = false;
+        }
+    }
+
+    function showForm(type = "signin") {
+        $("authForms").hidden = false;
+        $("authWaitingState").hidden = true;
+        $("authRejectedState").hidden = true;
+        $("authSignInForm").hidden = type !== "signin";
+        $("authSignUpForm").hidden = type !== "signup";
+        $("authSignInTab").classList.toggle("active", type === "signin");
+        $("authSignUpTab").classList.toggle("active", type === "signup");
+        message("");
+    }
+
+    function lockPending(u) {
+        document.body.classList.add("auth-locked");
+        $("authGate").hidden = false;
+        $("authForms").hidden = true;
+        $("authRejectedState").hidden = true;
+        $("authWaitingState").hidden = false;
+        $("authWaitingEmail").textContent = u?.email || "";
+        startPendingCheck();
+    }
+
+    function lockRejected(u) {
+        document.body.classList.add("auth-locked");
+        $("authGate").hidden = false;
+        $("authForms").hidden = true;
+        $("authWaitingState").hidden = true;
+        $("authRejectedState").hidden = false;
+        $("authRejectedEmail").textContent = u?.email || "";
+        stopPendingCheck();
+    }
+
+    function signedOut() {
+        user = null;
+        profile = null;
+        openedLoggedFor = null;
+        document.body.classList.add("auth-locked");
+        $("authGate").hidden = false;
+        $("authSidebarAccount").hidden = true;
+        $("adminTabBtn").hidden = true;
+        $("adminPanel").hidden = true;
+        stopPendingCheck();
+        stopAdminMonitor();
+        showForm("signin");
+    }
+
+    async function readProfile(uid) {
+        for (let i = 0; i < 4; i++) {
+            const { data, error } = await client
+                .from("profiles")
+                .select("id,email,display_name,status,role,created_at,last_seen_at")
+                .eq("id", uid)
+                .maybeSingle();
+
+            if (!error && data) return data;
+            await new Promise(r => setTimeout(r, 350));
+        }
+        return null;
+    }
+
+    async function applySession(session, eventName = "") {
+        const u = session?.user;
+        if (!u) return signedOut();
+
+        user = u;
+        const p = await readProfile(u.id);
+
+        if (!p || p.status === "pending") return lockPending(u);
+        if (p.status === "rejected") return lockRejected(u);
+
+        profile = p;
+        document.body.classList.remove("auth-locked");
+        $("authGate").hidden = true;
+        $("authSidebarAccount").hidden = false;
+        $("authSidebarName").textContent = p.display_name || u.email?.split("@")[0] || "Account";
+        $("authSidebarEmail").textContent = u.email || "";
+
+        const isAdmin = p.role === "admin";
+        $("adminTabBtn").hidden = !isAdmin;
+
+        if (isAdmin) startAdminMonitor();
+        else stopAdminMonitor();
+
+        stopPendingCheck();
+
+        if (openedLoggedFor !== u.id) {
+            openedLoggedFor = u.id;
+            await logAccess("page_open");
+        }
+        if (eventName === "SIGNED_IN") await logAccess("sign_in");
+    }
+
+    async function logAccess(eventName) {
+        if (!client || !user) return;
+        try {
+            await client.rpc("log_my_access", {
+                p_event: eventName,
+                p_meta: {
+                    path: location.pathname,
+                    title: document.title,
+                    user_agent: navigator.userAgent
+                }
+            });
+        } catch (_) {}
+    }
+
+    function startPendingCheck() {
+        stopPendingCheck();
+        pendingTimer = setInterval(async () => {
+            if (!user) return;
+            const p = await readProfile(user.id);
+            if (!p) return;
+            if (p.status === "approved") applySession({ user }, "APPROVED");
+            else if (p.status === "rejected") lockRejected(user);
+        }, 12000);
+    }
+
+    function stopPendingCheck() {
+        if (pendingTimer) clearInterval(pendingTimer);
+        pendingTimer = null;
+    }
+
+    function toast(text) {
+        if (typeof window.showToast === "function") {
+            window.showToast(text, "info");
+            return;
+        }
+        let el = $("authAccountToast");
+        if (!el) {
+            el = document.createElement("div");
+            el.id = "authAccountToast";
+            el.className = "auth-account-toast";
+            document.body.appendChild(el);
+        }
+        el.textContent = text;
+        el.classList.add("show");
+        clearTimeout(toast.t);
+        toast.t = setTimeout(() => el.classList.remove("show"), 3300);
+    }
+
+    function startAdminMonitor() {
+        stopAdminMonitor();
+        checkPending(true);
+        adminTimer = setInterval(() => checkPending(true), 20000);
+    }
+
+    function stopAdminMonitor() {
+        if (adminTimer) clearInterval(adminTimer);
+        adminTimer = null;
+        lastPendingCount = 0;
+        if ($("adminPendingCount")) $("adminPendingCount").textContent = "0";
+    }
+
+    async function checkPending(notify) {
+        if (profile?.role !== "admin") return;
+        const { count, error } = await client
+            .from("profiles")
+            .select("id", { count: "exact", head: true })
+            .eq("status", "pending");
+        if (error) return;
+
+        const n = Number(count || 0);
+        $("adminPendingCount").textContent = String(n);
+
+        if (notify && n > lastPendingCount && n > 0) {
+            toast(`${n - lastPendingCount} new account request${n - lastPendingCount === 1 ? "" : "s"}.`);
+        }
+        lastPendingCount = n;
+    }
+
+    const dt = value => {
+        if (!value) return "—";
+        const d = new Date(value);
+        if (Number.isNaN(d.getTime())) return "—";
+        return d.toLocaleString([], {
+            month:"short", day:"numeric", year:"numeric",
+            hour:"2-digit", minute:"2-digit"
+        });
+    };
+
+    const statusPill = status => {
+        const text = status === "approved" ? "Approved" :
+            status === "rejected" ? "Disapproved" : "Pending";
+        return `<span class="auth-user-status ${esc(status)}">${text}</span>`;
+    };
+
+    function filterUsers() {
+        const q = clean($("adminUserSearch")?.value).toLowerCase();
+        $("adminUsersBody")?.querySelectorAll("tr[data-search]").forEach(row => {
+            row.hidden = !!q && !row.dataset.search.includes(q);
+        });
+    }
+
+    function renderUsers(rows) {
+        const body = $("adminUsersBody");
+        if (!rows.length) {
+            body.innerHTML = '<tr><td colspan="6" class="auth-admin-empty">No accounts.</td></tr>';
+            return;
+        }
+
+        body.innerHTML = rows.map(item => {
+            const self = item.id === user?.id;
+            const search = ((item.display_name || "") + " " + (item.email || "")).toLowerCase();
+            return `
+            <tr data-search="${esc(search)}">
+              <td><div class="auth-admin-user-cell"><strong>${esc(item.display_name || item.email || "User")}</strong><span>${esc(item.email || "")}</span></div></td>
+              <td>${statusPill(item.status)}</td>
+              <td><span class="auth-role-pill ${esc(item.role)}">${item.role === "admin" ? "Admin" : "User"}</span></td>
+              <td>${esc(dt(item.created_at))}</td>
+              <td>${esc(dt(item.last_seen_at))}</td>
+              <td><div class="auth-admin-actions">
+                ${item.status !== "approved" ? `<button class="auth-approve-btn" data-id="${esc(item.id)}">Approve</button>` : ""}
+                ${!self && item.status !== "rejected" ? `<button class="auth-reject-btn" data-id="${esc(item.id)}">Disapprove</button>` : ""}
+                ${!self ? `<button class="auth-remove-user-btn" data-id="${esc(item.id)}">Remove</button>` : '<span class="auth-self-label">You</span>'}
+              </div></td>
+            </tr>`;
+        }).join("");
+
+        body.querySelectorAll(".auth-approve-btn").forEach(btn =>
+            btn.addEventListener("click", () => setStatus(btn.dataset.id, "approved"))
+        );
+
+        body.querySelectorAll(".auth-reject-btn").forEach(btn =>
+            btn.addEventListener("click", async () => {
+                const item = rows.find(x => x.id === btn.dataset.id);
+                const ok = await window.appConfirm({
+                    title: "Disapprove account?",
+                    message: `${item?.display_name || item?.email || "This user"} will lose access.`,
+                    confirmText: "Disapprove",
+                    tone: "danger"
+                });
+                if (ok) setStatus(btn.dataset.id, "rejected");
+            })
+        );
+
+        body.querySelectorAll(".auth-remove-user-btn").forEach(btn =>
+            btn.addEventListener("click", async () => {
+                const item = rows.find(x => x.id === btn.dataset.id);
+                const ok = await window.appConfirm({
+                    title: "Remove account?",
+                    message: `${item?.display_name || item?.email || "This user"} will be permanently deleted.`,
+                    confirmText: "Remove Account",
+                    tone: "danger"
+                });
+                if (ok) removeUser(btn.dataset.id);
+            })
+        );
+
+        filterUsers();
+    }
+
+    function renderActivity(logs, rows) {
+        const body = $("adminActivityBody");
+        const map = new Map(rows.map(x => [x.id, x]));
+
+        if (!logs.length) {
+            body.innerHTML = '<tr><td colspan="4" class="auth-admin-empty">No activity yet.</td></tr>';
+            return;
+        }
+
+        body.innerHTML = logs.map(log => {
+            const who = map.get(log.user_id);
+            const label = log.event === "sign_in" ? "Signed In" :
+                log.event === "sign_out" ? "Logged Out" : "Opened Website";
+            return `<tr>
+              <td><div class="auth-admin-user-cell"><strong>${esc(who?.display_name || who?.email || "Removed User")}</strong><span>${esc(who?.email || "")}</span></div></td>
+              <td><span class="auth-event-pill ${esc(log.event)}">${label}</span></td>
+              <td>${esc(dt(log.created_at))}</td>
+              <td>${esc(log.meta?.path || "/")}</td>
+            </tr>`;
+        }).join("");
+    }
+
+    async function loadAdmin() {
+        if (profile?.role !== "admin") return;
+        busy($("adminRefreshBtn"), true, "Refreshing...");
+
+        try {
+            const [p, l] = await Promise.all([
+                client.from("profiles")
+                    .select("id,email,display_name,status,role,created_at,last_seen_at")
+                    .order("created_at", { ascending:false }),
+                client.from("access_logs")
+                    .select("id,user_id,event,meta,created_at")
+                    .order("created_at", { ascending:false })
+                    .limit(100)
+            ]);
+
+            if (p.error) throw p.error;
+            if (l.error) throw l.error;
+
+            usersCache = p.data || [];
+            renderUsers(usersCache);
+            renderActivity(l.data || [], usersCache);
+
+            const pending = usersCache.filter(x => x.status === "pending").length;
+            const cutoff = Date.now() - 86400000;
+            const recent = usersCache.filter(x => x.last_seen_at && new Date(x.last_seen_at).getTime() >= cutoff).length;
+
+            $("adminTotalUsers").textContent = String(usersCache.length);
+            $("adminPendingUsers").textContent = String(pending);
+            $("adminRecentUsers").textContent = String(recent);
+            $("adminPendingCount").textContent = String(pending);
+            $("adminActivityUpdated").textContent = "Updated " + new Date().toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"});
+            lastPendingCount = pending;
+        } catch (e) {
+            toast(e.message || "Could not load accounts.");
+        } finally {
+            busy($("adminRefreshBtn"), false);
+        }
+    }
+
+    async function setStatus(id, status) {
+        const { error } = await client.rpc("admin_set_user_status", {
+            p_target: id,
+            p_status: status
+        });
+        if (error) return toast(error.message);
+        toast(status === "approved" ? "Account approved." : "Account disapproved.");
+        loadAdmin();
+    }
+
+    async function removeUser(id) {
+        const { error } = await client.rpc("admin_remove_user", { p_target: id });
+        if (error) return toast(error.message);
+        toast("Account removed.");
+        loadAdmin();
+    }
+
+    async function logout() {
+        if (!client) return;
+        if (user) await logAccess("sign_out");
+        await client.auth.signOut();
+        signedOut();
+    }
+
+    async function boot() {
+        if (!configReady() || !window.supabase?.createClient) {
+            $("authConfigMissing").hidden = false;
+            $("authForms").hidden = true;
+            return;
+        }
+
+        $("authConfigMissing").hidden = true;
+        client = window.supabase.createClient(
+            cfg.SUPABASE_URL,
+            cfg.SUPABASE_PUBLIC_KEY,
+            { auth:{ persistSession:true, autoRefreshToken:true, detectSessionInUrl:true } }
+        );
+
+        client.auth.onAuthStateChange((event, session) => {
+            setTimeout(() => applySession(session, event).catch(console.error), 0);
+        });
+
+        const { data, error } = await client.auth.getSession();
+        if (error) {
+            message(error.message);
+            signedOut();
+            return;
+        }
+        await applySession(data.session, "INITIAL_SESSION");
+    }
+
+    $("authSignInTab")?.addEventListener("click", () => showForm("signin"));
+    $("authSignUpTab")?.addEventListener("click", () => showForm("signup"));
+
+    $("authSignInForm")?.addEventListener("submit", async e => {
+        e.preventDefault();
+        message("");
+        const btn = $("authSignInBtn");
+        busy(btn, true, "Signing in...");
+        try {
+            const { data, error } = await client.auth.signInWithPassword({
+                email: clean($("authSignInEmail").value),
+                password: $("authSignInPassword").value
+            });
+            if (error) throw error;
+            await applySession(data.session, "SIGNED_IN");
+        } catch (err) {
+            message(err.message === "Invalid login credentials" ? "Incorrect email or password." : err.message);
+        } finally {
+            busy(btn, false);
+        }
+    });
+
+    $("authSignUpForm")?.addEventListener("submit", async e => {
+        e.preventDefault();
+        message("");
+        const pw = $("authSignUpPassword").value;
+        const confirm = $("authSignUpConfirm").value;
+        if (pw.length < 8) return message("Password must be at least 8 characters.");
+        if (pw !== confirm) return message("Passwords do not match.");
+
+        const btn = $("authSignUpBtn");
+        busy(btn, true, "Creating...");
+        try {
+            const { data, error } = await client.auth.signUp({
+                email: clean($("authSignUpEmail").value),
+                password: pw,
+                options:{ data:{ display_name: clean($("authSignUpName").value) } }
+            });
+            if (error) throw error;
+
+            if (data.session) {
+                user = data.user;
+                lockPending(data.user);
+            } else {
+                showForm("signin");
+                message("Account created. Confirm your email if required, then sign in. Admin approval is still required.", "success");
+            }
+        } catch (err) {
+            message(err.message || "Could not create account.");
+        } finally {
+            busy(btn, false);
+        }
+    });
+
+    $("authLogoutBtn")?.addEventListener("click", logout);
+    $("authPendingLogoutBtn")?.addEventListener("click", logout);
+    $("authRejectedLogoutBtn")?.addEventListener("click", logout);
+    $("adminRefreshBtn")?.addEventListener("click", loadAdmin);
+    $("adminUserSearch")?.addEventListener("input", filterUsers);
+    $("adminTabBtn")?.addEventListener("click", () => setTimeout(loadAdmin, 0));
+
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", boot, { once:true });
+    } else {
+        boot();
+    }
 })();
 </script>
 
