@@ -6848,3 +6848,24 @@ body.auth-locked > .site-footer { visibility:hidden!important; pointer-events:no
 
 @media(max-width:920px){.auth-admin-summary{grid-template-columns:1fr}.auth-sidebar-account{display:flex;gap:8px;align-items:center;min-width:180px;margin:0!important}.auth-sidebar-user{flex:1}#authLogoutBtn{width:auto;margin:0;padding:0 8px}}
 @media(max-width:620px){.auth-gate{padding:12px}.auth-card{padding:16px}.auth-admin-head,.auth-admin-card-head{flex-direction:column;align-items:stretch}#adminUserSearch{width:100%}}
+
+
+/* Auth password visibility control + hidden-state fix */
+.auth-config-missing[hidden]{display:none!important}
+.auth-password-wrap{position:relative;width:100%}
+.auth-password-wrap>input{padding-right:42px!important}
+.auth-password-toggle{
+  position:absolute;right:7px;top:50%;transform:translateY(-50%);
+  width:30px;height:30px;border:0;border-radius:6px;
+  background:transparent;color:#aab6c6;display:grid;place-items:center;
+  cursor:pointer;padding:0
+}
+.auth-password-toggle:hover{background:rgba(255,255,255,.06);color:#f8fafc}
+.auth-password-toggle:focus-visible{outline:2px solid rgba(96,165,250,.9);outline-offset:1px}
+.auth-password-toggle svg{
+  width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8;
+  stroke-linecap:round;stroke-linejoin:round
+}
+.auth-password-toggle .auth-eye-closed{display:none}
+.auth-password-toggle.is-visible .auth-eye-open{display:none}
+.auth-password-toggle.is-visible .auth-eye-closed{display:block}
