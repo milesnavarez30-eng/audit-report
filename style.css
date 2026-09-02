@@ -6934,3 +6934,206 @@ body.ops-redesign-v3.dark-mode .followup-status-pill.replied{color:#93c5fd}.dark
 @media(max-width:1050px){.followup-add-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.followup-add-shot-field,.followup-remarks-field{grid-column:1/-1}.followup-card-layout{grid-template-columns:1fr}.followup-large-shot{min-height:320px}}
 @media(max-width:620px){.followup-page-head,.followup-card-head{align-items:stretch;flex-direction:column}.followup-head-count{width:100%;display:flex;align-items:baseline;justify-content:center;gap:5px}.followup-add-grid{grid-template-columns:1fr}.followup-add-shot-field,.followup-remarks-field{grid-column:auto}.followup-add-actions{flex-direction:column}.followup-add-actions button{width:100%}.followup-large-shot{min-height:250px;max-height:none}.followup-shot-preview-actions{flex-wrap:wrap}.followup-shot-preview-actions strong{width:100%}}
 
+
+
+/* =========================================================
+   CCTV AUDIT — SMART AUDIT GUARD
+   Local tracker snapshot only; never writes to Google Sheets.
+   ========================================================= */
+#auditGuardCard.audit-guard-card {
+    margin: 16px 0 18px;
+    border: 1px solid var(--ops-border, #d9e0e8);
+    border-radius: 12px;
+    background: var(--ops-card, #ffffff);
+    box-shadow: 0 5px 18px rgba(15, 23, 42, .05);
+    overflow: hidden;
+}
+
+.audit-guard-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 18px;
+    padding: 16px 18px 13px;
+}
+
+.audit-guard-head > div:first-child { min-width: 0; }
+.audit-guard-title-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.audit-guard-title-row h3 {
+    margin: 0;
+    font-size: 15px;
+    line-height: 1.25;
+    color: var(--ops-text, #172033);
+    letter-spacing: -.01em;
+}
+.audit-guard-head p {
+    margin: 6px 0 0;
+    max-width: 740px;
+    color: var(--ops-muted, #667085);
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+.audit-guard-state,
+.audit-guard-row-status {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 22px;
+    padding: 3px 8px;
+    border-radius: 999px;
+    border: 1px solid transparent;
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 1.15;
+    white-space: nowrap;
+}
+.audit-guard-state.is-empty { background: #f2f4f7; color: #667085; border-color: #e4e7ec; }
+.audit-guard-state.is-ready { background: #ecfdf3; color: #027a48; border-color: #abefc6; }
+.audit-guard-state.is-stale { background: #fffaeb; color: #b54708; border-color: #fedf89; }
+
+.audit-guard-actions { display: flex; gap: 7px; flex-wrap: wrap; justify-content: flex-end; }
+.audit-guard-btn,
+.audit-guard-link-btn {
+    appearance: none;
+    border: 1px solid var(--ops-border, #d0d5dd);
+    background: var(--ops-card, #fff);
+    color: var(--ops-text, #344054);
+    border-radius: 7px;
+    font-family: inherit;
+    font-size: 11px;
+    font-weight: 650;
+    line-height: 1;
+    cursor: pointer;
+    transition: border-color .15s ease, background .15s ease, color .15s ease;
+}
+.audit-guard-btn { min-height: 34px; padding: 0 11px; }
+.audit-guard-btn:hover,
+.audit-guard-link-btn:hover { border-color: #98a2b3; }
+.audit-guard-btn.primary { background: #101828; border-color: #101828; color: #fff; }
+.audit-guard-btn.primary:hover { background: #1d2939; }
+.audit-guard-btn.danger { color: #b42318; }
+.audit-guard-link-btn { min-height: 30px; padding: 0 9px; background: transparent; }
+
+.audit-guard-metrics {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    border-top: 1px solid var(--ops-border, #eaecf0);
+    border-bottom: 1px solid var(--ops-border, #eaecf0);
+    background: var(--ops-soft, #f8fafc);
+}
+.audit-guard-metric { padding: 11px 16px; min-width: 0; }
+.audit-guard-metric + .audit-guard-metric { border-left: 1px solid var(--ops-border, #eaecf0); }
+.audit-guard-metric span { display: block; color: var(--ops-muted, #667085); font-size: 10px; font-weight: 650; margin-bottom: 4px; }
+.audit-guard-metric strong { display: block; color: var(--ops-text, #101828); font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.audit-guard-live {
+    margin: 13px 16px 15px;
+    border: 1px solid var(--ops-border, #e4e7ec);
+    border-left-width: 4px;
+    border-radius: 8px;
+    padding: 12px 13px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    background: var(--ops-card, #fff);
+}
+.audit-guard-live.is-idle { border-left-color: #98a2b3; }
+.audit-guard-live.is-clear { border-left-color: #12b76a; background: rgba(18, 183, 106, .045); }
+.audit-guard-live.is-warning { border-left-color: #f79009; background: rgba(247, 144, 9, .055); }
+.audit-guard-live.is-danger { border-left-color: #f04438; background: rgba(240, 68, 56, .055); }
+.audit-guard-live-kicker { display: block; color: var(--ops-muted, #667085); font-size: 9px; font-weight: 750; text-transform: uppercase; letter-spacing: .07em; margin-bottom: 3px; }
+.audit-guard-live strong { color: var(--ops-text, #101828); font-size: 12px; }
+.audit-guard-live p { margin: 4px 0 0; color: var(--ops-muted, #667085); font-size: 11px; line-height: 1.45; }
+
+.audit-guard-match-list { margin: -4px 16px 15px; display: grid; gap: 7px; }
+.audit-guard-match {
+    border: 1px solid var(--ops-border, #e4e7ec);
+    border-radius: 7px;
+    padding: 9px 11px;
+    background: var(--ops-card, #fff);
+}
+.audit-guard-match.is-strong { border-color: #fda29b; }
+.audit-guard-match.is-possible { border-color: #fec84b; }
+.audit-guard-match.is-spelling { border-color: #84adff; }
+.audit-guard-match > div { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; }
+.audit-guard-match strong { color: var(--ops-text, #101828); font-size: 11px; }
+.audit-guard-match span { color: var(--ops-muted, #667085); font-size: 10px; white-space: nowrap; }
+.audit-guard-match p { margin: 4px 0 0; color: var(--ops-muted, #667085); font-size: 10px; line-height: 1.45; }
+
+.audit-guard-paste,
+.audit-guard-issues {
+    margin: 0 16px 15px;
+    padding: 12px;
+    border: 1px solid var(--ops-border, #e4e7ec);
+    border-radius: 8px;
+    background: var(--ops-soft, #f8fafc);
+}
+.audit-guard-paste label { display: block; color: var(--ops-text, #344054); font-size: 11px; font-weight: 700; margin-bottom: 7px; }
+.audit-guard-paste textarea {
+    width: 100%;
+    min-height: 132px;
+    resize: vertical;
+    border: 1px solid var(--ops-border, #d0d5dd);
+    border-radius: 7px;
+    padding: 10px;
+    background: var(--ops-card, #fff);
+    color: var(--ops-text, #101828);
+    font: 11px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+.audit-guard-paste-actions { display: flex; gap: 7px; justify-content: flex-end; margin-top: 8px; }
+.audit-guard-issues-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
+.audit-guard-issues-head strong { color: var(--ops-text, #101828); font-size: 12px; }
+#trackerIssuesList { display: grid; gap: 6px; max-height: 330px; overflow: auto; padding-right: 2px; }
+.audit-guard-issue { display: grid; gap: 3px; padding: 8px 9px; border-radius: 6px; border-left: 3px solid #f79009; background: var(--ops-card, #fff); }
+.audit-guard-issue.is-danger { border-left-color: #f04438; }
+.audit-guard-issue strong { color: var(--ops-text, #101828); font-size: 10px; }
+.audit-guard-issue span { color: var(--ops-muted, #667085); font-size: 10px; }
+.audit-guard-empty-issues,
+.audit-guard-more { color: var(--ops-muted, #667085); font-size: 10px; padding: 7px 2px; }
+
+.audit-guard-table-cell { text-align: center !important; min-width: 92px; }
+.audit-guard-row-status.is-none { background: #f2f4f7; color: #667085; border-color: #e4e7ec; }
+.audit-guard-row-status.is-clear { background: #ecfdf3; color: #027a48; border-color: #abefc6; }
+.audit-guard-row-status.is-possible { background: #fffaeb; color: #b54708; border-color: #fedf89; }
+.audit-guard-row-status.is-sent { background: #fef3f2; color: #b42318; border-color: #fecdca; }
+
+body.dark-mode #auditGuardCard.audit-guard-card,
+body.dark-mode .audit-guard-match,
+body.dark-mode .audit-guard-paste textarea,
+body.dark-mode .audit-guard-issue,
+body.dark-mode .audit-guard-btn:not(.primary) {
+    background: #18212f;
+}
+body.dark-mode .audit-guard-metrics,
+body.dark-mode .audit-guard-paste,
+body.dark-mode .audit-guard-issues { background: #111827; }
+body.dark-mode .audit-guard-live.is-clear { background: rgba(18, 183, 106, .08); }
+body.dark-mode .audit-guard-live.is-warning { background: rgba(247, 144, 9, .08); }
+body.dark-mode .audit-guard-live.is-danger { background: rgba(240, 68, 56, .08); }
+body.dark-mode .audit-guard-state.is-empty,
+body.dark-mode .audit-guard-row-status.is-none { background: #273142; color: #cbd5e1; border-color: #3b4658; }
+body.dark-mode .audit-guard-state.is-ready,
+body.dark-mode .audit-guard-row-status.is-clear { background: rgba(2, 122, 72, .18); color: #6ce9a6; border-color: rgba(18, 183, 106, .35); }
+body.dark-mode .audit-guard-state.is-stale,
+body.dark-mode .audit-guard-row-status.is-possible { background: rgba(181, 71, 8, .18); color: #fec84b; border-color: rgba(247, 144, 9, .35); }
+body.dark-mode .audit-guard-row-status.is-sent { background: rgba(180, 35, 24, .20); color: #fda29b; border-color: rgba(240, 68, 56, .35); }
+
+@media (max-width: 900px) {
+    .audit-guard-head { flex-direction: column; }
+    .audit-guard-actions { justify-content: flex-start; width: 100%; }
+    .audit-guard-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .audit-guard-metric:nth-child(3) { border-left: 0; border-top: 1px solid var(--ops-border, #eaecf0); }
+    .audit-guard-metric:nth-child(4) { border-top: 1px solid var(--ops-border, #eaecf0); }
+}
+
+@media (max-width: 560px) {
+    .audit-guard-head { padding: 14px 13px 11px; }
+    .audit-guard-actions { display: grid; grid-template-columns: 1fr 1fr; }
+    .audit-guard-btn { width: 100%; }
+    .audit-guard-live { margin-left: 12px; margin-right: 12px; align-items: flex-start; flex-direction: column; }
+    .audit-guard-match-list,
+    .audit-guard-paste,
+    .audit-guard-issues { margin-left: 12px; margin-right: 12px; }
+}
