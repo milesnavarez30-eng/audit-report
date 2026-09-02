@@ -5598,7 +5598,7 @@
 </style>
 
 
-    <link rel="stylesheet" href="./style.css?v=20260901-master-hr-list-1">
+    <link rel="stylesheet" href="./style.css?v=20260902-edr-docs-new-receiver-1">
 
 <style id="edrCriticalStyles">
 /* =========================================================
@@ -9611,7 +9611,7 @@ body.dark-mode #masterAssignedHrTable tbody tr:hover td {
         <div class="edr-docs-sync-bar">
             <div class="edr-docs-sync-copy">
                 <strong>Google Docs Archive</strong>
-                <span id="edrDocsSyncStatus">Not connected. Connect once to auto-save and reload your EDR list.</span>
+                <span id="edrDocsSyncStatus">Connecting to the configured Google Docs receiver...</span>
             </div>
             <div class="edr-docs-sync-actions">
                 <button type="button" class="edr-outline-btn" id="edrDocsReloadBtn">Reload Saved EDRs</button>
@@ -15113,6 +15113,22 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
     let edrDocsLoadedOnce = false;
 
     const EDR_DOCS_WEB_APP_KEY = "edr_google_docs_web_app_url_v1";
+    const EDR_DOCS_DEFAULT_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzwpNfdCCEWySxVa6-DkwFBizVrLSiB-5okhD4mJo-tu-bRQ9tD4GID_4QO1FHtxKYy/exec";
+    const EDR_DOCS_RECEIVER_MIGRATION_KEY = "edr_google_docs_receiver_font_fix_v1";
+
+    // One-time migration to the new EDR Google Docs receiver.
+    // This replaces any previously saved receiver URL once, then respects
+    // future manual Connect/Clear actions from the setup modal.
+    if (!localStorage.getItem(EDR_DOCS_RECEIVER_MIGRATION_KEY)) {
+        localStorage.setItem(
+            EDR_DOCS_WEB_APP_KEY,
+            EDR_DOCS_DEFAULT_WEB_APP_URL
+        );
+        localStorage.setItem(
+            EDR_DOCS_RECEIVER_MIGRATION_KEY,
+            "done"
+        );
+    }
 
     const EDR_WORKSPACE_DB = "cctv_edr_workspace_v2";
     const EDR_WORKSPACE_STORE = "state";
