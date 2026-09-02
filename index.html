@@ -5598,7 +5598,7 @@
 </style>
 
 
-    <link rel="stylesheet" href="./style.css?v=20260902-ops-redesign-v3">
+    <link rel="stylesheet" href="./style.css?v=20260902-maintenance-full-collapse-1">
 
 <style id="edrCriticalStyles">
 /* =========================================================
@@ -10790,6 +10790,73 @@ body.ops-redesign-v3 select:focus-visible {
 }
 
 </style>
+<style id="maintenanceFullCollapseCritical">
+
+/* ============================================================
+   MAINTENANCE REPORT — FULL BLOCK COLLAPSE
+   Hide Report now hides data + screenshot proof + remarks.
+   The header remains as a compact reopen bar.
+   ============================================================ */
+
+body.ops-redesign-v3 #eodPanel .eod-block-content.is-hidden {
+    display: none !important;
+}
+
+body.ops-redesign-v3 #eodPanel .eod-block.is-collapsed {
+    border-color: var(--ops-line) !important;
+    box-shadow: none !important;
+    background: var(--ops-panel) !important;
+}
+
+body.ops-redesign-v3 #eodPanel .eod-block.is-collapsed .eod-block-head {
+    min-height: 48px !important;
+    border-bottom: 0 !important;
+    background: var(--ops-panel) !important;
+}
+
+body.ops-redesign-v3 #eodPanel .eod-block.is-collapsed .eod-block-heading-copy {
+    min-width: 0;
+    flex: 1 1 auto;
+}
+
+body.ops-redesign-v3 #eodPanel .eod-block.is-collapsed .eod-block-title {
+    color: var(--ops-text) !important;
+}
+
+body.ops-redesign-v3 #eodPanel .eod-block.is-collapsed .eod-block-sub {
+    max-width: 760px;
+    overflow: hidden;
+    color: var(--ops-muted) !important;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 8px !important;
+}
+
+body.ops-redesign-v3 #eodPanel .eod-block.is-collapsed .working-badge {
+    display: none !important;
+}
+
+body.ops-redesign-v3 #eodPanel .eod-block.is-collapsed .toggle-block-data {
+    border-color: rgba(37,99,235,.25) !important;
+    background: var(--ops-accent-soft) !important;
+    color: var(--ops-accent) !important;
+}
+
+body.ops-redesign-v3 #eodPanel .eod-block.is-collapsed:hover {
+    border-color: var(--ops-line-strong) !important;
+    background: var(--ops-panel-2) !important;
+}
+
+@media (max-width: 720px) {
+    body.ops-redesign-v3 #eodPanel .eod-block.is-collapsed .eod-block-head {
+        align-items: stretch !important;
+    }
+
+    body.ops-redesign-v3 #eodPanel .eod-block.is-collapsed .block-actions {
+        justify-content: flex-start !important;
+    }
+}
+</style>
 </head>
 <body class="ops-redesign-v3">
 
@@ -15963,56 +16030,64 @@ https://www.facebook.com/share/..."></textarea>
         const fileId = "proof_" + block.id;
 
         return `
-            <article class="eod-block" data-id="${escapeHtml(block.id)}">
+            <article class="eod-block ${block.dataHidden ? "is-collapsed" : ""}" data-id="${escapeHtml(block.id)}">
                 <div class="eod-block-head">
-                    <div>
+                    <div class="eod-block-heading-copy">
                         <div class="eod-block-title">Report Block ${index + 1}</div>
-                        <div class="eod-block-sub">Paste the lanes, attach CCTV screenshot proof, then add one or more remarks.</div>
+                        <div class="eod-block-sub">
+                            ${block.dataHidden
+                                ? `${maintenanceRowsForSheets(block.lanesText).length} row${maintenanceRowsForSheets(block.lanesText).length === 1 ? "" : "s"} · ${block.screenshots.length} screenshot${block.screenshots.length === 1 ? "" : "s"} · ${noteText(block) ? "Remarks saved" : "No remarks"}`
+                                : "Paste the lanes, attach CCTV screenshot proof, then add remarks."}
+                        </div>
                     </div>
+
                     <div class="working-badge">Active Block</div>
+
                     <div class="block-actions">
-                        <button type="button" class="btn-eod-outline toggle-block-data">
-                            <span>${block.dataHidden ? "Show Data" : "Hide Data"}</span>
+                        <button type="button"
+                                class="btn-eod-outline toggle-block-data"
+                                aria-expanded="${block.dataHidden ? "false" : "true"}">
+                            <span>${block.dataHidden ? "Show Report" : "Hide Report"}</span>
                         </button>
                         <button type="button" class="btn-eod-outline duplicate-block"><span>Duplicate</span></button>
                         <button type="button" class="btn-eod-danger remove-block"><span>Remove</span></button>
                     </div>
                 </div>
 
-                <div class="eod-block-data ${block.dataHidden ? "is-hidden" : ""}">
-                    <label>Paste Lanes / IT Sheet Rows</label>
-                    <textarea class="eod-paste-area" placeholder="Paste the copied IT sheet lanes/rows here. The pasted data stays hidden for a cleaner workspace but will still appear in the PDF.">${escapeHtml(block.lanesText)}</textarea>
+                <div class="eod-block-content ${block.dataHidden ? "is-hidden" : ""}">
+                    <div class="eod-block-data">
+                        <label>Paste Lanes / IT Sheet Rows</label>
+                        <textarea class="eod-paste-area" placeholder="Paste the copied IT sheet lanes/rows here.">${escapeHtml(block.lanesText)}</textarea>
 
-                    <div class="eod-mini-preview">
-                        ${tableHtml(block.lanesText, false)}
+                        <div class="eod-mini-preview">
+                            ${tableHtml(block.lanesText, false)}
+                        </div>
                     </div>
-                </div>
 
-                ${block.dataHidden ? '<div class="eod-data-hidden-note">Data table hidden. Screenshot proof remains visible below.</div>' : ""}
-
-                <div class="eod-proof-zone" tabindex="0">
-                    <p>
-                        <strong>Screenshot Proof</strong><br>
-                        Take a Snip/Screenshot, then press <strong>Ctrl+V</strong>. One paste = one screenshot. Click a thumbnail to view it full-size.
-                    </p>
-                    <label class="eod-proof-label" for="${fileId}"><span>Add Screenshot</span></label>
-                    <input id="${fileId}" class="eod-file-input" type="file" accept="image/*" multiple>
-                    <div class="maintenance-paste-indicator">Ctrl+V screenshot will paste here</div>
-                    <div class="eod-proof-grid">
-                        ${block.screenshots.map((shot, shotIndex) => `
-                            <div class="eod-proof-item">
-                                <img src="${shot.dataUrl}" alt="CCTV screenshot proof ${shotIndex + 1}">
-                                <button type="button" class="eod-proof-remove" data-shot-index="${shotIndex}" title="Remove screenshot">×</button>
-                            </div>
-                        `).join("")}
+                    <div class="eod-proof-zone" tabindex="0">
+                        <p>
+                            <strong>Screenshot Proof</strong><br>
+                            Take a Snip/Screenshot, then press <strong>Ctrl+V</strong>. One paste = one screenshot. Click a thumbnail to view it full-size.
+                        </p>
+                        <label class="eod-proof-label" for="${fileId}"><span>Add Screenshot</span></label>
+                        <input id="${fileId}" class="eod-file-input" type="file" accept="image/*" multiple>
+                        <div class="maintenance-paste-indicator">Ctrl+V screenshot will paste here</div>
+                        <div class="eod-proof-grid">
+                            ${block.screenshots.map((shot, shotIndex) => `
+                                <div class="eod-proof-item">
+                                    <img src="${shot.dataUrl}" alt="CCTV screenshot proof ${shotIndex + 1}">
+                                    <button type="button" class="eod-proof-remove" data-shot-index="${shotIndex}" title="Remove screenshot">×</button>
+                                </div>
+                            `).join("")}
+                        </div>
                     </div>
-                </div>
 
-                <div class="remarks-section simple-single-remark">
-                    <label>Remarks</label>
-                    <textarea class="remark-text single-remark-text" placeholder="Type your remarks here...">${escapeHtml(
-                        Array.isArray(block.remarks) ? block.remarks.filter(Boolean).join("\n") : ""
-                    )}</textarea>
+                    <div class="remarks-section simple-single-remark">
+                        <label>Remarks</label>
+                        <textarea class="remark-text single-remark-text" placeholder="Type your remarks here...">${escapeHtml(
+                            Array.isArray(block.remarks) ? block.remarks.filter(Boolean).join("\n") : ""
+                        )}</textarea>
+                    </div>
                 </div>
             </article>
         `;
@@ -16068,6 +16143,8 @@ https://www.facebook.com/share/..."></textarea>
             });
 
             function activatePasteTarget() {
+                if (block.dataHidden || !zone) return;
+
                 activateWorkingBlock();
 
                 activePasteBlockId = block.id;
@@ -16094,6 +16171,14 @@ https://www.facebook.com/share/..."></textarea>
 
             card.querySelector(".toggle-block-data")?.addEventListener("click", () => {
                 block.dataHidden = !block.dataHidden;
+
+                if (block.dataHidden && activePasteBlockId === block.id) {
+                    const nextVisible = state.blocks.find(item =>
+                        item.id !== block.id && !item.dataHidden
+                    );
+                    activePasteBlockId = nextVisible ? nextVisible.id : null;
+                }
+
                 render();
                 queueSave();
             });
