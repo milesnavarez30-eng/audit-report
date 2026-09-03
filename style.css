@@ -8128,7 +8128,7 @@ body.ops-redesign-v3 #globalHistoryModal .global-history-note {
     padding: 0 2px;
     color: var(--ops-muted, #667085);
     font-size: 10px;
-    line-height: 1.45; 
+    line-height: 1.45;
 }
 
 .maintenance-sheet-test-result.is-ok { color: #027a48; }
