@@ -25772,7 +25772,11 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
     }
 
     async function createStaffAccount() {
-        if (profile?.role !== "admin") return;
+        if (profile?.role !== "admin") {
+            toast("Admin access required.");
+            return;
+        }
+
         const name = clean($("adminCreateName")?.value);
         const username = cleanUsername($("adminCreateUsername")?.value);
         const password = $("adminCreatePassword")?.value || "";
@@ -25780,61 +25784,184 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         const status = $("adminCreateAccountStatus");
         const btn = $("adminCreateAccountBtn");
 
-        if (!name || !validUsername(username) || password.length < 8) {
-            if (status) status.textContent = "Enter a name, a 3–32 character username (letters, numbers, dot, underscore, or dash), and a password with at least 8 characters.";
+        const setStatus = (text, kind = "") => {
+            if (!status) return;
+            status.textContent = text;
+            status.classList.remove("is-success", "is-error", "is-info");
+            if (kind) status.classList.add(`is-${kind}`);
+        };
+
+        if (!name) {
+            setStatus("Enter the staff member's name.", "error");
+            $("adminCreateName")?.focus();
+            return;
+        }
+
+        if (!validUsername(username)) {
+            setStatus("Username must be 3–32 characters using letters, numbers, dot, underscore, or dash only.", "error");
+            $("adminCreateUsername")?.focus();
+            return;
+        }
+
+        if (password.length < 8) {
+            setStatus("Temporary password must contain at least 8 characters.", "error");
+            $("adminCreatePassword")?.focus();
             return;
         }
 
         busy(btn, true, "Creating...");
-        if (status) status.textContent = "Creating account...";
+        setStatus("Creating Supabase login...", "info");
+
+        let createdUserId = "";
+
         try {
             const existingEmail = await resolveUsernameEmail(username);
-            if (existingEmail) throw new Error("That username is already in use.");
+            if (existingEmail) {
+                throw new Error(`Username "${username}" is already in use.`);
+            }
 
             const email = usernameLoginEmail(username);
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 20000);
 
-            // Separate non-persistent client: creating a staff login will not log the admin out.
-            const tempClient = window.supabase.createClient(
-                cfg.SUPABASE_URL,
-                cfg.SUPABASE_PUBLIC_KEY,
-                { auth:{ persistSession:false, autoRefreshToken:false, detectSessionInUrl:false, storageKey:"cctv-admin-create-temp" } }
-            );
-            const { data, error } = await tempClient.auth.signUp({
-                email,
-                password,
-                options:{ data:{ display_name:name, username } }
-            });
-            if (error) throw error;
-            if (!data?.user?.id) throw new Error("Account was not created.");
+            let signupResponse;
+            try {
+                signupResponse = await fetch(
+                    `${String(cfg.SUPABASE_URL).replace(/\/+$/, "")}/auth/v1/signup`,
+                    {
+                        method: "POST",
+                        signal: controller.signal,
+                        headers: {
+                            "Content-Type": "application/json",
+                            "apikey": cfg.SUPABASE_PUBLIC_KEY,
+                            "Authorization": `Bearer ${cfg.SUPABASE_PUBLIC_KEY}`
+                        },
+                        body: JSON.stringify({
+                            email,
+                            password,
+                            data: {
+                                display_name: name,
+                                username
+                            }
+                        })
+                    }
+                );
+            } catch (requestError) {
+                if (requestError?.name === "AbortError") {
+                    throw new Error("Supabase account creation timed out. Try again.");
+                }
+                throw new Error(`Could not reach Supabase: ${requestError?.message || "network error"}`);
+            } finally {
+                clearTimeout(timeoutId);
+            }
+
+            let signupData = {};
+            try {
+                signupData = await signupResponse.json();
+            } catch (_) {}
+
+            if (!signupResponse.ok) {
+                throw new Error(
+                    signupData?.msg ||
+                    signupData?.message ||
+                    signupData?.error_description ||
+                    signupData?.error ||
+                    `Supabase signup failed (${signupResponse.status}).`
+                );
+            }
+
+            createdUserId =
+                signupData?.user?.id ||
+                signupData?.id ||
+                "";
+
+            if (!createdUserId) {
+                throw new Error("Supabase did not return the new user's ID.");
+            }
+
+            setStatus("Login created. Applying website access...", "info");
+
+            // The profile trigger runs with auth.users creation.
+            // Poll briefly so we never race the profile row/RPC.
+            let profileReady = false;
+            for (let attempt = 0; attempt < 8; attempt++) {
+                const { data: profileRow, error: profileError } = await client
+                    .from("profiles")
+                    .select("id, username")
+                    .eq("id", createdUserId)
+                    .maybeSingle();
+
+                if (!profileError && profileRow?.id) {
+                    profileReady = true;
+                    break;
+                }
+
+                await new Promise(resolve => setTimeout(resolve, 350));
+            }
+
+            if (!profileReady) {
+                throw new Error(
+                    "The login was created, but its website profile was not ready. Refresh Accounts; the new user may appear as Pending."
+                );
+            }
 
             const permissions = defaultPermissionsForRole(role);
-            const { error: accessError } = await client.rpc("admin_set_user_access", {
-                p_target: data.user.id,
-                p_role: role,
-                p_permissions: permissions
-            });
+
+            const { data: accessResult, error: accessError } = await client.rpc(
+                "admin_set_user_access",
+                {
+                    p_target: createdUserId,
+                    p_role: role,
+                    p_permissions: permissions
+                }
+            );
+
             if (accessError) throw accessError;
+            if (accessResult === false) {
+                throw new Error("The login was created, but access settings were not applied.");
+            }
 
-            // Admin-created accounts are ready immediately.
-            const { error: statusError } = await client.rpc("admin_set_user_status", {
-                p_target: data.user.id,
-                p_status: "approved"
-            });
-            if (statusError) throw statusError;
+            // admin_set_user_access already approves the profile in V8 SQL.
+            // Keep this RPC as a compatibility fallback with earlier account SQL.
+            try {
+                const { error: statusError } = await client.rpc(
+                    "admin_set_user_status",
+                    {
+                        p_target: createdUserId,
+                        p_status: "approved"
+                    }
+                );
+                if (statusError && !/function|does not exist/i.test(statusError.message || "")) {
+                    console.warn("Approval compatibility RPC:", statusError);
+                }
+            } catch (approvalError) {
+                console.warn("Approval compatibility RPC skipped:", approvalError);
+            }
 
-            try { await tempClient.auth.signOut(); } catch (_) {}
+            setStatus(
+                `${name} created successfully · Username: ${username} · ${role === "admin" ? "Admin" : "User"}`,
+                "success"
+            );
+            toast(`${name} account created successfully.`);
 
             $("adminCreateName").value = "";
             $("adminCreateUsername").value = "";
             $("adminCreatePassword").value = "";
             $("adminCreateRole").value = "user";
 
-            if (status) status.textContent = `${name} created as ${role === "admin" ? "Admin" : "User"} · Username: ${username}`;
-            toast(`${name} account created.`);
             await loadAdmin();
         } catch (e) {
-            if (status) status.textContent = e.message || "Could not create account.";
-            toast(e.message || "Could not create account.");
+            console.error("Admin account creation failed:", e);
+
+            const partialNote = createdUserId
+                ? " The Supabase login may already exist; click Refresh before trying again."
+                : "";
+
+            setStatus(
+                (e?.message || "Could not create account.") + partialNote,
+                "error"
+            );
+            toast(e?.message || "Could not create account.");
         } finally {
             busy(btn, false);
         }
@@ -25986,6 +26113,13 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
     $("authPendingLogoutBtn")?.addEventListener("click", logout);
     $("authRejectedLogoutBtn")?.addEventListener("click", logout);
     $("adminCreateAccountBtn")?.addEventListener("click", createStaffAccount);
+    ["adminCreateName", "adminCreateUsername", "adminCreatePassword", "adminCreateRole"].forEach(id => {
+        $(id)?.addEventListener("keydown", event => {
+            if (event.key !== "Enter") return;
+            event.preventDefault();
+            createStaffAccount();
+        });
+    });
     $("adminAccessRole")?.addEventListener("change", refreshAccessRoleUi);
     $("adminAccessSave")?.addEventListener("click", saveAccessEditor);
     $("adminAccessCancel")?.addEventListener("click", closeAccessEditor);
