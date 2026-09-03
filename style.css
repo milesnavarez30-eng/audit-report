@@ -8135,7 +8135,7 @@ body.ops-redesign-v3 #globalHistoryModal .global-history-note {
 .maintenance-sheet-test-result.is-error { color: #b42318; }
 
 body.dark-mode .maintenance-sheet-connection-state.is-ok,
-body.ops-redesign-v3.dark-mode .maintenance-sheet-connection-state.is-ok,
+body.ops-redesign-v3.dark-mode .maintenance-sheet-connection-state.is-ok, 
 body.dark-mode .maintenance-sheet-test-result.is-ok {
     color: #6ce9a6;
 }
