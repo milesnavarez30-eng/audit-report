@@ -11145,7 +11145,7 @@ body.ops-redesign-v3.dark-mode #maintenancePanel .mini-sheet-findbar input::plac
 
       <form id="authSignInForm" class="auth-form">
         <div class="auth-heading"><h1>Welcome back</h1><p>Use your approved account.</p></div>
-        <label><span>Username</span><input type="text" id="authSignInUsername" required autocomplete="username" placeholder="e.g. Miles123" maxlength="32"></label>
+        <label><span>Username or Email</span><input type="text" id="authSignInUsername" required autocomplete="username" placeholder="e.g. Miles123 or your@email.com" maxlength="120"></label>
         <label><span>Password</span>
           <div class="auth-password-wrap">
             <input type="password" id="authSignInPassword" required autocomplete="current-password">
@@ -24866,6 +24866,57 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")
         .replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 
+    const USERNAME_RE = /^[A-Za-z0-9._-]{3,32}$/;
+    const TECH_LOGIN_DOMAIN = "cctvops.example.com";
+
+    function cleanUsername(value) {
+        return clean(value).replace(/^@+/, "");
+    }
+
+    function usernameKey(value) {
+        return cleanUsername(value).toLowerCase();
+    }
+
+    function validUsername(value) {
+        return USERNAME_RE.test(cleanUsername(value));
+    }
+
+    function usernameLoginEmail(value) {
+        return `${usernameKey(value)}@${TECH_LOGIN_DOMAIN}`;
+    }
+
+    function profileUsername(p, u) {
+        return cleanUsername(
+            p?.username ||
+            u?.user_metadata?.username ||
+            u?.raw_user_meta_data?.username ||
+            u?.email?.split("@")[0] ||
+            ""
+        );
+    }
+
+    function usernameLabel(value) {
+        const username = cleanUsername(value);
+        return username ? `@${username}` : "";
+    }
+
+    async function resolveUsernameEmail(value) {
+        const username = cleanUsername(value);
+        if (!validUsername(username)) return null;
+        const { data, error } = await client.rpc("resolve_login_username", {
+            p_username: username
+        });
+        if (error) throw error;
+        return clean(data) || null;
+    }
+
+    async function resolveLoginIdentifier(value) {
+        const raw = clean(value);
+        if (!raw) return null;
+        if (raw.includes("@")) return raw.toLowerCase();
+        return resolveUsernameEmail(raw);
+    }
+
     function configReady() {
         return /^https:\/\/.+\.supabase\.co$/i.test(clean(cfg.SUPABASE_URL)) &&
             clean(cfg.SUPABASE_PUBLIC_KEY) &&
@@ -25527,11 +25578,14 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         const btn = $("authSignInBtn");
         busy(btn, true, "Signing in...");
         try {
-            const username = cleanUsername($("authSignInUsername").value);
-            if (!validUsername(username)) throw new Error("Enter a valid username.");
+            const loginValue = clean($("authSignInUsername").value);
+            if (!loginValue) throw new Error("Enter your username or email.");
+            if (!loginValue.includes("@") && !validUsername(loginValue)) {
+                throw new Error("Enter a valid username or email.");
+            }
 
-            const email = await resolveUsernameEmail(username);
-            if (!email) throw new Error("Incorrect username or password.");
+            const email = await resolveLoginIdentifier(loginValue);
+            if (!email) throw new Error("Incorrect username/email or password.");
 
             const { data, error } = await client.auth.signInWithPassword({
                 email,
@@ -25540,7 +25594,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
             if (error) throw error;
             await applySession(data.session, "SIGNED_IN");
         } catch (err) {
-            message(err.message === "Invalid login credentials" ? "Incorrect username or password." : err.message);
+            message(err.message === "Invalid login credentials" ? "Incorrect username/email or password." : err.message);
         } finally {
             busy(btn, false);
         }
