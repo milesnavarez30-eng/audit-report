@@ -18250,15 +18250,24 @@ body.ops-redesign-v3.dark-mode .followup-status-pill.replied{color:#93c5fd}.dark
         const rowCount = payload.blocks.reduce((sum, block) => sum + block.rows.length, 0);
         const screenshotCount = payload.blocks.reduce((sum, block) => sum + block.screenshots.length, 0);
         const remarksCount = payload.blocks.reduce((sum, block) => sum + block.remarks.length, 0);
-        const visibleScreenshotCount = state.blocks.reduce(
-            (sum, block) => sum + (Array.isArray(block.screenshots) ? block.screenshots.length : 0),
-            0
-        );
 
-        if (visibleScreenshotCount !== screenshotCount) {
-            const missingScreenshots = Math.max(0, visibleScreenshotCount - screenshotCount);
+        const screenshotMismatches = state.blocks.map((block, index) => {
+            const savedCount = Array.isArray(block.screenshots) ? block.screenshots.length : 0;
+            const sendableCount = payload.blocks[index]?.screenshots?.length || 0;
+            return {
+                blockNumber: index + 1,
+                savedCount,
+                sendableCount
+            };
+        }).filter(item => item.savedCount !== item.sendableCount);
+
+        if (screenshotMismatches.length) {
+            const details = screenshotMismatches
+                .map(item => `Block ${item.blockNumber}: ${item.sendableCount}/${item.savedCount} readable`)
+                .join(" · ");
+
             showMessage(
-                `Screenshot check stopped the send: ${screenshotCount} of ${visibleScreenshotCount} CCTV screenshot${visibleScreenshotCount === 1 ? "" : "s"} are readable for Google Sheets. ${missingScreenshots} saved screenshot${missingScreenshots === 1 ? "" : "s"} must be removed and re-added once before sending.`,
+                `Screenshot check stopped the send. ${details}. Remove and re-add only the unreadable screenshot(s), then send again.`,
                 "error"
             );
             return;
@@ -18291,17 +18300,32 @@ body.ops-redesign-v3.dark-mode .followup-status-pill.replied{color:#93c5fd}.dark
             const startRow = result.startingRow ? ` starting at row ${result.startingRow}` : "";
             const endRow = result.endingRow ? ` through row ${result.endingRow}` : "";
             const insertedImages = Number(result.insertedImageCount ?? result.screenshotCount ?? 0);
+            const blockResults = Array.isArray(result.blockResults) ? result.blockResults : [];
 
-            if (screenshotCount > 0 && insertedImages < screenshotCount) {
+            if (screenshotCount > 0 && insertedImages !== screenshotCount) {
                 throw new Error(
-                    `Rows were written, but only ${insertedImages} of ${screenshotCount} CCTV screenshot${screenshotCount === 1 ? "" : "s"} were inserted.`
+                    `Rows were written, but Google Sheets confirmed ${insertedImages} of ${screenshotCount} CCTV screenshot${screenshotCount === 1 ? "" : "s"}.`
+                );
+            }
+
+            const blockImageMismatch = blockResults.find(item =>
+                Number(item.expectedImages || 0) !== Number(item.insertedImages || 0)
+            );
+
+            if (blockImageMismatch) {
+                throw new Error(
+                    `Block ${blockImageMismatch.blockNumber} screenshot failed: ${blockImageMismatch.insertedImages}/${blockImageMismatch.expectedImages} image(s) inserted.`
                 );
             }
 
             setMaintenanceSheetConnectionState("is-ok", "Sheets: connected");
 
+            const imageText = screenshotCount
+                ? `${insertedImages} CCTV image${insertedImages === 1 ? "" : "s"} placed below their own report block${insertedImages === 1 ? "" : "s"}`
+                : "no CCTV images";
+
             showMessage(
-                `Google Sheets confirmed: ${rowCount} row${rowCount === 1 ? "" : "s"}, ${insertedImages} CCTV image${insertedImages === 1 ? "" : "s"}, and ${remarksCount} remark${remarksCount === 1 ? "" : "s"} written${startRow}${endRow}.`,
+                `Google Sheets confirmed: ${rowCount} row${rowCount === 1 ? "" : "s"}, ${imageText}, and ${remarksCount} remark${remarksCount === 1 ? "" : "s"} written${startRow}${endRow}.`,
                 "success"
             );
         } catch (error) {
