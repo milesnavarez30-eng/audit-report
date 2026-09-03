@@ -18069,122 +18069,145 @@ body.ops-redesign-v3.dark-mode .followup-status-pill.replied{color:#93c5fd}.dark
     }
 
 
-    function submitMaintenancePayloadViaIframe(url, payload) {
+    function utf8ToBase64(text) {
+        const bytes = new TextEncoder().encode(String(text || ""));
+        let binary = "";
+        const step = 0x8000;
+        for (let i = 0; i < bytes.length; i += step) {
+            binary += String.fromCharCode(...bytes.subarray(i, i + step));
+        }
+        return btoa(binary);
+    }
+
+    function loadDataUrlImage(dataUrl) {
         return new Promise((resolve, reject) => {
-            const iframeName = `maintenancePostFrame_${Date.now()}_${Math.random().toString(36).slice(2)}`;
-            const iframe = document.createElement("iframe");
-            const form = document.createElement("form");
-            const payloadInput = document.createElement("input");
-            const submissionInput = document.createElement("input");
-            const actionInput = document.createElement("input");
-
-            iframe.name = iframeName;
-            iframe.style.display = "none";
-            iframe.setAttribute("aria-hidden", "true");
-
-            form.method = "POST";
-            form.action = url;
-            form.target = iframeName;
-            form.style.display = "none";
-
-            payloadInput.type = "hidden";
-            payloadInput.name = "payload";
-            payloadInput.value = JSON.stringify(payload);
-
-            submissionInput.type = "hidden";
-            submissionInput.name = "submissionId";
-            submissionInput.value = payload.submissionId || "";
-
-            actionInput.type = "hidden";
-            actionInput.name = "action";
-            actionInput.value = "appendMaintenanceReport";
-
-            form.append(payloadInput, submissionInput, actionInput);
-
-            let submitted = false;
-            const cleanup = () => {
-                setTimeout(() => {
-                    try { form.remove(); } catch {}
-                    try { iframe.remove(); } catch {}
-                }, 1200);
-            };
-
-            iframe.addEventListener("load", () => {
-                // The first load can be about:blank. Resolve only after submit.
-                if (!submitted) return;
-                cleanup();
-                resolve(true);
-            });
-
-            iframe.addEventListener("error", () => {
-                cleanup();
-                reject(new Error("Browser could not submit the report to Apps Script."));
-            });
-
-            document.body.appendChild(iframe);
-            document.body.appendChild(form);
-
-            try {
-                submitted = true;
-                form.submit();
-                // Do not wait indefinitely for the cross-origin iframe load.
-                setTimeout(() => {
-                    cleanup();
-                    resolve(true);
-                }, 1400);
-            } catch (error) {
-                cleanup();
-                reject(error);
-            }
+            const img = new Image();
+            img.onload = () => resolve(img);
+            img.onerror = () => reject(new Error("Could not prepare a CCTV screenshot for Google Sheets."));
+            img.src = dataUrl;
         });
     }
 
-    async function waitForMaintenanceSubmission(url, submissionId) {
-        const attempts = 18;
-        let lastStatus = null;
+    async function compressScreenshotForSheets(dataUrl) {
+        const raw = String(dataUrl || "");
+        if (!/^data:image\//i.test(raw)) return raw;
 
-        for (let i = 0; i < attempts; i++) {
-            await new Promise(resolve => setTimeout(resolve, i === 0 ? 700 : 900));
+        try {
+            const img = await loadDataUrlImage(raw);
+            const maxWidth = 960;
+            const maxHeight = 680;
+            const scale = Math.min(1, maxWidth / img.naturalWidth, maxHeight / img.naturalHeight);
 
-            try {
-                const status = await maintenanceJsonp(
-                    url,
-                    { action: "status", submissionId },
-                    7000
-                );
+            // If already small, still convert to JPEG so the transport stays compact.
+            const width = Math.max(1, Math.round(img.naturalWidth * scale));
+            const height = Math.max(1, Math.round(img.naturalHeight * scale));
 
-                lastStatus = status || null;
+            const canvas = document.createElement("canvas");
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext("2d", { alpha: false });
+            ctx.fillStyle = "#ffffff";
+            ctx.fillRect(0, 0, width, height);
+            ctx.drawImage(img, 0, 0, width, height);
 
-                if (status?.found && status?.state === "success") {
-                    return status;
+            return canvas.toDataURL("image/jpeg", 0.62);
+        } catch (error) {
+            console.warn("Screenshot compression failed; using original image.", error);
+            return raw;
+        }
+    }
+
+    async function prepareMaintenancePayloadForTransport(payload, button) {
+        const prepared = JSON.parse(JSON.stringify(payload));
+        const screenshotRefs = [];
+
+        prepared.blocks.forEach((block, blockIndex) => {
+            (block.screenshots || []).forEach((shot, shotIndex) => {
+                screenshotRefs.push({ blockIndex, shotIndex, shot });
+            });
+        });
+
+        if (!screenshotRefs.length) return prepared;
+
+        for (let i = 0; i < screenshotRefs.length; i++) {
+            if (button) button.textContent = `Preparing images ${i + 1}/${screenshotRefs.length}...`;
+            const ref = screenshotRefs[i];
+            prepared.blocks[ref.blockIndex].screenshots[ref.shotIndex] =
+                await compressScreenshotForSheets(ref.shot);
+        }
+
+        return prepared;
+    }
+
+    async function uploadMaintenanceChunks(url, submissionId, chunks, button) {
+        // JSONP GET is already proven to work with this Apps Script Web App.
+        // Upload in small batches to avoid browser/Google request bursts.
+        const concurrency = 4;
+        let nextIndex = 0;
+        let completed = 0;
+
+        async function worker() {
+            while (true) {
+                const index = nextIndex++;
+                if (index >= chunks.length) return;
+
+                const response = await maintenanceJsonp(url, {
+                    action: "uploadChunk",
+                    submissionId,
+                    index,
+                    total: chunks.length,
+                    data: chunks[index]
+                }, 12000);
+
+                if (!response?.ok) {
+                    throw new Error(response?.error || `Chunk ${index + 1} upload failed.`);
                 }
 
-                if (status?.found && status?.state === "error") {
-                    return status;
-                }
-
-                // "received" / "processing" means the receiver definitely got it;
-                // continue polling until it finishes.
-            } catch (error) {
-                if (i === attempts - 1) throw error;
+                completed++;
+                if (button) button.textContent = `Uploading ${completed}/${chunks.length}...`;
             }
         }
 
-        if (lastStatus?.found) {
-            return {
-                ok: false,
-                found: true,
-                state: lastStatus.state || "processing",
-                error: "Apps Script received the report but did not finish within the confirmation window. Check Apps Script Executions."
-            };
+        await Promise.all(
+            Array.from({ length: Math.min(concurrency, chunks.length) }, () => worker())
+        );
+    }
+
+    async function sendMaintenancePayloadViaJsonp(url, payload, button) {
+        const prepared = await prepareMaintenancePayloadForTransport(payload, button);
+
+        if (button) button.textContent = "Preparing data...";
+
+        const encoded = utf8ToBase64(JSON.stringify(prepared));
+        const chunkSize = 4200;
+        const chunks = [];
+
+        for (let i = 0; i < encoded.length; i += chunkSize) {
+            chunks.push(encoded.slice(i, i + chunkSize));
         }
 
-        return {
-            ok: false,
-            found: false,
-            error: "Apps Script did not register this submission. Re-deploy V8.4 and confirm the Web App is Execute as Me / Anyone."
-        };
+        if (!chunks.length) throw new Error("Nothing to send.");
+
+        await uploadMaintenanceChunks(url, payload.submissionId, chunks, button);
+
+        if (button) button.textContent = "Writing to Sheets...";
+
+        const committed = await maintenanceJsonp(url, {
+            action: "commit",
+            submissionId: payload.submissionId,
+            total: chunks.length
+        }, 90000);
+
+        if (!committed?.ok || committed?.state !== "success") {
+            throw new Error(
+                committed?.error ||
+                `Receiver state: ${committed?.state || "unknown"}.`
+            );
+        }
+
+        return committed;
     }
+
 
     async function sendMaintenanceReportToGoogleSheets() {
         const url = getMaintenanceSheetsWebAppUrl();
@@ -18227,22 +18250,9 @@ body.ops-redesign-v3.dark-mode .followup-status-pill.replied{color:#93c5fd}.dark
                 );
             }
 
-            button.textContent = "Sending...";
+            const resultEnvelope = await sendMaintenancePayloadViaJsonp(url, payload, button);
+            const result = resultEnvelope.result || {};
 
-            await submitMaintenancePayloadViaIframe(url, payload);
-
-            button.textContent = "Confirming...";
-
-            const status = await waitForMaintenanceSubmission(url, payload.submissionId);
-
-            if (!status?.found || status?.state !== "success" || status?.ok !== true) {
-                throw new Error(
-                    status?.error ||
-                    `Receiver state: ${status?.state || "not found"}. The report was not confirmed as written.`
-                );
-            }
-
-            const result = status.result || {};
             const startRow = result.startingRow ? ` starting at row ${result.startingRow}` : "";
             const endRow = result.endingRow ? ` through row ${result.endingRow}` : "";
 
