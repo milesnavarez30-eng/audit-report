@@ -8158,3 +8158,37 @@ body.ops-redesign-v3.dark-mode .maintenance-sheet-connection-state.is-checking {
     cursor: wait !important;
     opacity: .92 !important;
 }
+
+
+/* Admin account creation feedback V8.13 */
+.auth-create-status {
+    min-height: 20px;
+    margin-top: 9px;
+    padding: 0 2px;
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 1.45;
+}
+
+.auth-create-status.is-info {
+    color: var(--ops-muted, #667085);
+}
+
+.auth-create-status.is-success {
+    color: #027a48;
+}
+
+.auth-create-status.is-error {
+    color: #b42318;
+}
+
+body.dark-mode .auth-create-status.is-success,
+body.ops-redesign-v3.dark-mode .auth-create-status.is-success {
+    color: #6ce9a6;
+}
+
+body.dark-mode .auth-create-status.is-error,
+body.ops-redesign-v3.dark-mode .auth-create-status.is-error {
+    color: #fda29b;
+}
+
