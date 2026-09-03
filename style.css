@@ -8151,3 +8151,10 @@ body.ops-redesign-v3.dark-mode .maintenance-sheet-connection-state.is-checking {
     color: #fec84b;
 }
 
+
+
+/* V8.9 one-click Google Sheets send */
+#simpleEodSendSheetsBtn:disabled {
+    cursor: wait !important;
+    opacity: .92 !important;
+}
