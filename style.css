@@ -8192,3 +8192,28 @@ body.ops-redesign-v3.dark-mode .auth-create-status.is-error {
     color: #fda29b;
 }
 
+
+/* ==========================================================
+   V8.14 — STRICT USER / ADMIN UI SEPARATION
+   ========================================================== */
+
+body.auth-role-user #adminTabBtn,
+body.auth-role-user #adminPanel,
+body.auth-role-user #cctvPanel .add-btn,
+body.auth-role-user #cctvPanel .remove-btn,
+body.auth-role-user #edrAddSupervisorOption,
+body.auth-role-user #edrRemoveSupervisorOption,
+body.auth-role-user #edrAddAccountOption,
+body.auth-role-user #edrRemoveAccountOption,
+body.auth-role-user #masterlistPanel .master-hr-crud-form,
+body.auth-role-user #masterlistPanel #masterHrCrudStatus,
+body.auth-role-user #masterAssignedHrTable .master-hr-edit-btn,
+body.auth-role-user #masterAssignedHrTable .master-hr-delete-btn,
+body.auth-role-user .auth-access-manage {
+    display: none !important;
+}
+
+/* Normal users keep operational actions:
+   create/edit their own EDRs, add CCTV Audit entries, create Maintenance reports,
+   follow-ups, and use their own History. Only master-option administration is hidden. */
+
