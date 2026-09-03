@@ -11004,6 +11004,124 @@ body.auth-locked > .site-footer { visibility:hidden!important; pointer-events:no
 @media(max-width:920px){.auth-admin-summary{grid-template-columns:1fr}.auth-sidebar-account{display:flex;gap:8px;align-items:center;min-width:180px;margin:0!important}.auth-sidebar-user{flex:1}#authLogoutBtn{width:auto;margin:0;padding:0 8px}}
 @media(max-width:620px){.auth-gate{padding:12px}.auth-card{padding:16px}.auth-admin-head,.auth-admin-card-head{flex-direction:column;align-items:stretch}#adminUserSearch{width:100%}}
 </style>
+
+<style id="v8FinalVisualFixes">
+/* =========================================================
+   V8 FINAL PDF COLOR LOCK
+   The generated Maintenance PDF is always white/black regardless
+   of website light/dark mode. Table header is pure black.
+   ========================================================= */
+#simpleEodPrintRoot,
+#simpleEodPrintRoot .grouped-pdf,
+body.dark-mode #simpleEodPrintRoot,
+body.dark-mode #simpleEodPrintRoot .grouped-pdf,
+body.ops-redesign-v3.dark-mode #simpleEodPrintRoot .grouped-pdf {
+    background: #ffffff !important;
+    color: #000000 !important;
+}
+
+#simpleEodPrintRoot .grouped-pdf-header,
+#simpleEodPrintRoot .grouped-report-block,
+#simpleEodPrintRoot .simple-pdf-table-wrap,
+#simpleEodPrintRoot .simple-pdf-table,
+#simpleEodPrintRoot .simple-pdf-table tr,
+#simpleEodPrintRoot .grouped-photo-row {
+    background: #ffffff !important;
+}
+
+#simpleEodPrintRoot .grouped-pdf-header h1,
+#simpleEodPrintRoot .grouped-pdf-date,
+#simpleEodPrintRoot .simple-pdf-table td,
+#simpleEodPrintRoot .grouped-remarks,
+#simpleEodPrintRoot .grouped-remarks > span,
+#simpleEodPrintRoot .grouped-remarks > div {
+    color: #000000 !important;
+}
+
+#simpleEodPrintRoot .simple-pdf-table th {
+    background: #000000 !important;
+    color: #ffffff !important;
+    border-color: #000000 !important;
+}
+
+#simpleEodPrintRoot .simple-pdf-table td {
+    background: #ffffff !important;
+    border-bottom-color: #d1d5db !important;
+}
+
+#simpleEodPrintRoot .grouped-remarks {
+    background: #ffffff !important;
+    border-left-color: #000000 !important;
+}
+
+#simpleEodPrintRoot img {
+    background: #ffffff !important;
+}
+
+/* =========================================================
+   GOOGLE SHEETS WORKSPACE — ALWAYS GOOGLE-LIGHT
+   Keeps the spreadsheet area readable even when CCTV OPS is dark.
+   ========================================================= */
+body.ops-redesign-v3.dark-mode #maintenancePanel .mini-sheet-card {
+    background: #ffffff !important;
+    border-color: #dadce0 !important;
+}
+
+body.ops-redesign-v3.dark-mode #maintenancePanel .mini-sheet-toolbar,
+body.ops-redesign-v3.dark-mode #maintenancePanel .mini-sheet-findbar,
+body.ops-redesign-v3.dark-mode #maintenancePanel .mini-sheet-actions,
+body.ops-redesign-v3.dark-mode #maintenancePanel .mini-sheet-selection-help,
+body.ops-redesign-v3.dark-mode #maintenancePanel .mini-sheet-column-letters th,
+body.ops-redesign-v3.dark-mode #maintenancePanel .mini-sheet-row-number {
+    background: #f8f9fa !important;
+    color: #5f6368 !important;
+    border-color: #dadce0 !important;
+}
+
+body.ops-redesign-v3.dark-mode #maintenancePanel .mini-sheet-toolbar strong {
+    color: #202124 !important;
+}
+
+body.ops-redesign-v3.dark-mode #maintenancePanel .mini-sheet-toolbar span,
+body.ops-redesign-v3.dark-mode #maintenancePanel .mini-sheet-selection-help,
+body.ops-redesign-v3.dark-mode #maintenancePanel .mini-sheet-shortcuts,
+body.ops-redesign-v3.dark-mode #maintenancePanel .mini-sheet-shortcuts span {
+    color: #5f6368 !important;
+}
+
+body.ops-redesign-v3.dark-mode #maintenancePanel .mini-sheet-shortcuts kbd {
+    background: #ffffff !important;
+    color: #202124 !important;
+    border-color: #bdc1c6 !important;
+    box-shadow: none !important;
+}
+
+body.ops-redesign-v3.dark-mode #maintenancePanel .mini-sheet-scroll,
+body.ops-redesign-v3.dark-mode #maintenancePanel .mini-sheet,
+body.ops-redesign-v3.dark-mode #maintenancePanel .mini-sheet td,
+body.ops-redesign-v3.dark-mode #maintenancePanel .mini-sheet-header-row th {
+    background: #ffffff !important;
+    color: #202124 !important;
+    border-color: #dadce0 !important;
+}
+
+body.ops-redesign-v3.dark-mode #maintenancePanel .mini-sheet-findbar input {
+    background: #ffffff !important;
+    color: #202124 !important;
+    border-color: #bdc1c6 !important;
+}
+
+body.ops-redesign-v3.dark-mode #maintenancePanel .mini-sheet-findbar input::placeholder {
+    color: #80868b !important;
+}
+
+/* Username labels fit cleanly in account screens. */
+.auth-state-email {
+    color: #dbeafe !important;
+    letter-spacing: .01em;
+}
+</style>
+
 </head>
 <body class="ops-redesign-v3 auth-locked">
 <div id="authGate" class="auth-gate">
@@ -11027,7 +11145,7 @@ body.auth-locked > .site-footer { visibility:hidden!important; pointer-events:no
 
       <form id="authSignInForm" class="auth-form">
         <div class="auth-heading"><h1>Welcome back</h1><p>Use your approved account.</p></div>
-        <label><span>Email</span><input type="email" id="authSignInEmail" required autocomplete="email"></label>
+        <label><span>Username</span><input type="text" id="authSignInUsername" required autocomplete="username" placeholder="e.g. Miles123" maxlength="32"></label>
         <label><span>Password</span>
           <div class="auth-password-wrap">
             <input type="password" id="authSignInPassword" required autocomplete="current-password">
@@ -11041,9 +11159,9 @@ body.auth-locked > .site-footer { visibility:hidden!important; pointer-events:no
       </form>
 
       <form id="authSignUpForm" class="auth-form" hidden>
-        <div class="auth-heading"><h1>Create account</h1><p>Your account must be approved by the admin.</p></div>
+        <div class="auth-heading"><h1>Create account</h1><p>Create a username and password. Your account must be approved by an admin before you can enter.</p></div>
         <label><span>Name</span><input type="text" id="authSignUpName" required autocomplete="name"></label>
-        <label><span>Email</span><input type="email" id="authSignUpEmail" required autocomplete="email"></label>
+        <label><span>Username</span><input type="text" id="authSignUpUsername" required autocomplete="username" placeholder="Create a username" maxlength="32"></label>
         <label><span>Password</span>
           <div class="auth-password-wrap">
             <input type="password" id="authSignUpPassword" minlength="8" required autocomplete="new-password">
@@ -11524,7 +11642,7 @@ body.auth-locked > .site-footer { visibility:hidden!important; pointer-events:no
             </div>
             <div>
                 <label for="simpleEodSite">Site / Report Title</label>
-                <input type="text" id="simpleEodSite" value="Mabini Site A - 1st & 2nd Floor">
+                <input type="text" id="simpleEodSite" list="allCctvSiteOptions" value="Mabini Site A - 1st Floor">
             </div>
         </div>
 
@@ -11700,6 +11818,11 @@ body.auth-locked > .site-footer { visibility:hidden!important; pointer-events:no
                     <input type="text" id="followupLabel" placeholder="Optional TL, agent, or report label" autocomplete="off">
                 </label>
 
+                <label class="followup-field followup-link-field">
+                    <span>CCTV Link / Teams Message Link</span>
+                    <input type="url" id="followupCctvLink" placeholder="Paste the Microsoft Teams message link here" autocomplete="off">
+                </label>
+
                 <label class="followup-field">
                     <span>Status</span>
                     <select id="followupStatus">
@@ -11768,7 +11891,7 @@ body.auth-locked > .site-footer { visibility:hidden!important; pointer-events:no
             <div>
                 <h2>Master List</h2>
                 <p class="page-lead">
-                    Quick live reference for your Pending Miles audits and HR assignment per OM.
+                    Live pending trackers for Miles, Seth, Wendie, Kenneth, and JR, plus HR assignment per OM.
                 </p>
             </div>
             <button type="button" class="edr-outline-btn" id="masterlistRefreshBtn">Refresh</button>
@@ -11785,10 +11908,18 @@ body.auth-locked > .site-footer { visibility:hidden!important; pointer-events:no
         <section class="master-simple-card master-pending-card">
             <div class="master-simple-card-head">
                 <div>
-                    <span class="master-simple-kicker">Tracker</span>
-                    <h3>Pending Miles</h3>
+                    <span class="master-simple-kicker">Pending Trackers</span>
+                    <h3 id="masterPendingTitle">Pending Miles</h3>
                 </div>
                 <span class="master-simple-count" id="masterPendingMilesCount">0</span>
+            </div>
+
+            <div class="master-pending-tabs" id="masterPendingTabs">
+                <button type="button" class="active" data-pending-key="miles">Miles</button>
+                <button type="button" data-pending-key="seth">Seth</button>
+                <button type="button" data-pending-key="wendie">Wendie</button>
+                <button type="button" data-pending-key="kenneth">Kenneth</button>
+                <button type="button" data-pending-key="jr">JR</button>
             </div>
 
             <div class="master-table-wrap">
@@ -11802,7 +11933,7 @@ body.auth-locked > .site-footer { visibility:hidden!important; pointer-events:no
                 <div class="master-notepad-head">
                     <div>
                         <span class="master-simple-kicker">Notepad</span>
-                        <strong>Pending Miles Notes</strong>
+                        <strong id="masterPendingNotesTitle">Pending Miles Notes</strong>
                     </div>
                     <span id="masterNotepadStatus">Saved locally</span>
                 </div>
@@ -11830,7 +11961,7 @@ body.auth-locked > .site-footer { visibility:hidden!important; pointer-events:no
 
                 <label>
                     <span>Site</span>
-                    <input type="text" id="masterHrSiteInput" placeholder="Mabini Site">
+                    <input type="text" id="masterHrSiteInput" list="allCctvSiteOptions" placeholder="Select or type site">
                 </label>
 
                 <label>
@@ -11886,7 +12017,7 @@ body.auth-locked > .site-footer { visibility:hidden!important; pointer-events:no
     <div class="auth-admin-head">
       <div>
         <h2>Account Administration</h2>
-        <p class="page-lead">Approve users, disapprove access, remove accounts, and monitor who opened the website.</p>
+        <p class="page-lead">Create Username + Password accounts, approve signup requests, control workspace access, and monitor website activity.</p>
       </div>
       <button type="button" class="edr-outline-btn" id="adminRefreshBtn">Refresh</button>
     </div>
@@ -11897,10 +12028,24 @@ body.auth-locked > .site-footer { visibility:hidden!important; pointer-events:no
       <div class="recent"><span>Active in 24h</span><strong id="adminRecentUsers">0</strong></div>
     </div>
 
+    <section class="auth-admin-card auth-create-account-card">
+      <div class="auth-admin-card-head">
+        <div><h3>Create Account</h3><p>Create a ready-to-use Username + Password account. Admin-created accounts are approved immediately.</p></div>
+      </div>
+      <div class="auth-create-account-grid">
+        <label><span>Name</span><input type="text" id="adminCreateName" value="Daniel Gabriel Roda" placeholder="Staff name"></label>
+        <label><span>Username</span><input type="text" id="adminCreateUsername" value="DanielRoda" placeholder="e.g. DanielRoda" maxlength="32" autocomplete="off"></label>
+        <label><span>Temporary Password</span><input type="password" id="adminCreatePassword" minlength="8" placeholder="At least 8 characters"></label>
+        <label><span>Role</span><select id="adminCreateRole"><option value="user">User</option><option value="admin" selected>Admin</option></select></label>
+        <button type="button" class="edr-primary-btn" id="adminCreateAccountBtn">Create Account</button>
+      </div>
+      <div id="adminCreateAccountStatus" class="auth-create-status"></div>
+    </section>
+
     <section class="auth-admin-card">
       <div class="auth-admin-card-head">
-        <div><h3>User Accounts</h3><p>Approve, disapprove, or permanently remove.</p></div>
-        <input type="search" id="adminUserSearch" placeholder="Find name or email..." autocomplete="off">
+        <div><h3>User Accounts</h3><p>Approve, change role/access, disapprove, or permanently remove.</p></div>
+        <input type="search" id="adminUserSearch" placeholder="Find name or username..." autocomplete="off">
       </div>
       <div class="auth-admin-table-wrap">
         <table class="auth-admin-table">
@@ -11924,6 +12069,33 @@ body.auth-locked > .site-footer { visibility:hidden!important; pointer-events:no
     </section>
   </div>
 </section>
+
+<div id="adminAccessModal" class="maintenance-modal" aria-hidden="true">
+  <div class="maintenance-modal-backdrop" id="adminAccessBackdrop"></div>
+  <div class="maintenance-drafts-dialog auth-access-dialog" role="dialog" aria-modal="true" aria-labelledby="adminAccessTitle">
+    <div class="maintenance-drafts-head">
+      <div><h3 id="adminAccessTitle">Account Access</h3><p id="adminAccessUserLabel">Choose the role and workspaces this account can open.</p></div>
+      <button type="button" class="maintenance-modal-close static-close" id="adminAccessClose" aria-label="Close">×</button>
+    </div>
+    <input type="hidden" id="adminAccessTargetId">
+    <label class="auth-access-role"><span>Role</span><select id="adminAccessRole"><option value="user">User</option><option value="admin">Admin</option></select></label>
+    <div class="auth-access-grid" id="adminAccessGrid">
+      <label><input type="checkbox" data-permission="edr"> EDR</label>
+      <label><input type="checkbox" data-permission="cctv"> CCTV Audit</label>
+      <label><input type="checkbox" data-permission="aiSorter"> AI Sorter</label>
+      <label><input type="checkbox" data-permission="maintenance"> Maintenance</label>
+      <label><input type="checkbox" data-permission="masterlist"> Master List</label>
+      <label><input type="checkbox" data-permission="followup"> Follow Up Reports</label>
+      <label><input type="checkbox" data-permission="history"> History</label>
+      <label class="auth-access-manage"><input type="checkbox" data-permission="manageOptions"> Manage site / OM / campaign / master options</label>
+    </div>
+    <div class="auth-access-note">Admin = full access. User access can be changed anytime.</div>
+    <div class="maintenance-modal-actions">
+      <button type="button" class="edr-outline-btn" id="adminAccessCancel">Cancel</button>
+      <button type="button" class="edr-primary-btn" id="adminAccessSave">Save Access</button>
+    </div>
+  </div>
+</div>
 <section id="edrPanel" class="app-tab-panel" role="tabpanel" aria-labelledby="edrTabBtn">
     <div class="container edr-crud-shell">
         <div class="edr-crud-header">
@@ -11971,6 +12143,16 @@ body.auth-locked > .site-footer { visibility:hidden!important; pointer-events:no
                     <select id="edrSite">
                         <option value="Mabini Site A - 1st Floor">Mabini Site A - 1st Floor</option>
                         <option value="Mabini Site A - 2nd Floor">Mabini Site A - 2nd Floor</option>
+                        <option value="Mabini Site B1 - 2nd Floor">Mabini Site B1 - 2nd Floor</option>
+                        <option value="Mabini Site B2 - 3rd Floor">Mabini Site B2 - 3rd Floor</option>
+                        <option value="Mabini Site B2 - 4th Floor">Mabini Site B2 - 4th Floor</option>
+                        <option value="Ecoland Site">Ecoland Site</option>
+                        <option value="MAA 4th Floor">MAA 4th Floor</option>
+                        <option value="MAA 5th Floor">MAA 5th Floor</option>
+                        <option value="MAA 6th Floor">MAA 6th Floor</option>
+                        <option value="Gensan Site">Gensan Site</option>
+                        <option value="CDO Site">CDO Site</option>
+                        <option value="Digos Site">Digos Site</option>
                     </select>
                     <div class="edr-fixed-cctv">CCTV is added automatically to the generated template.</div>
                 </div>
@@ -12009,6 +12191,16 @@ body.auth-locked > .site-footer { visibility:hidden!important; pointer-events:no
                         <button type="button" class="edr-small-remove" id="edrRemoveSupervisorOption" title="Remove typed name from this session">Remove</button>
                     </div>
                     <datalist id="edrSupervisorOptions"></datalist>
+                </div>
+
+                <div class="edr-field edr-layout-om">
+                    <label for="edrOmName">OM</label>
+                    <input type="text"
+                           id="edrOmName"
+                           list="edrOmOptionsDedicated"
+                           autocomplete="off"
+                           placeholder="Search OM...">
+                    <datalist id="edrOmOptionsDedicated"></datalist>
                 </div>
 
                 <div class="edr-field edr-layout-subject-role">
@@ -12371,6 +12563,21 @@ https://www.facebook.com/share/..."></textarea>
 
 
 
+<datalist id="allCctvSiteOptions">
+    <option value="Mabini Site A - 1st Floor"></option>
+    <option value="Mabini Site A - 2nd Floor"></option>
+    <option value="Mabini Site B1 - 2nd Floor"></option>
+    <option value="Mabini Site B2 - 3rd Floor"></option>
+    <option value="Mabini Site B2 - 4th Floor"></option>
+    <option value="Ecoland Site"></option>
+    <option value="MAA 4th Floor"></option>
+    <option value="MAA 5th Floor"></option>
+    <option value="MAA 6th Floor"></option>
+    <option value="Gensan Site"></option>
+    <option value="CDO Site"></option>
+    <option value="Digos Site"></option>
+</datalist>
+
 <div class="site-footer">
     <strong>CCTV Audit</strong> • Internal Operations Workspace
 </div>
@@ -12413,7 +12620,7 @@ https://www.facebook.com/share/..."></textarea>
     }
 
     const defaultData = {
-        site: ["Mabini Site A", "Mabini Site B"],
+        site: ["Mabini Site A - 1st Floor", "Mabini Site A - 2nd Floor", "Mabini Site B1 - 2nd Floor", "Mabini Site B2 - 3rd Floor", "Mabini Site B2 - 4th Floor", "Ecoland Site", "MAA 4th Floor", "MAA 5th Floor", "MAA 6th Floor", "Gensan Site", "CDO Site", "Digos Site"],
         omName: processRaw(rawOmData),
         account: processRaw(rawCampaignData),
         reasonCode: ["SLEEPING", "DRESS CODE", "BROWSING", "WASTING TIME", "BRINGING NON-WOF", "EATING", "IMPROPER HOUSE KEEPING", "EQUIPMENT TAMPERING", "PDA", "DISORDERLY CONDUCT", "USING SMARTPHONE", "THEFT", "SELLING"]
@@ -12459,7 +12666,9 @@ https://www.facebook.com/share/..."></textarea>
         
         try {
             if (stored) {
-                currentDropdownData[selectId] = JSON.parse(stored);
+                const savedValues = Array.isArray(JSON.parse(stored)) ? JSON.parse(stored) : [];
+                currentDropdownData[selectId] = [...new Set([...(defaultData[selectId] || []), ...savedValues])];
+                localStorage.setItem(storageKey, JSON.stringify(currentDropdownData[selectId]));
             } else {
                 currentDropdownData[selectId] = [...defaultData[selectId]];
                 localStorage.setItem(storageKey, JSON.stringify(currentDropdownData[selectId]));
@@ -12491,6 +12700,7 @@ https://www.facebook.com/share/..."></textarea>
     }
 
     function addNewOption(selectId, promptText) {
+        if (window.CCTV_ACCESS && !window.CCTV_ACCESS.canManageOptions()) { alert("Admin access is required to add dropdown options."); return; }
         const newValue = prompt(`Enter ${promptText}:`);
         
         if (newValue && newValue.trim() !== "") {
@@ -12508,6 +12718,7 @@ https://www.facebook.com/share/..."></textarea>
     }
 
     async function removeSelectedOption(selectId) {
+        if (window.CCTV_ACCESS && !window.CCTV_ACCESS.canManageOptions()) { alert("Admin access is required to remove dropdown options."); return; }
         const select = document.getElementById(selectId);
         const selectedIndex = select.selectedIndex;
         
@@ -12663,11 +12874,7 @@ https://www.facebook.com/share/..."></textarea>
 
     function auditSiteFromEdr(site) {
         const value = String(site || "").trim();
-
-        if (/Mabini Site A/i.test(value)) return "Mabini Site A";
-        if (/Mabini Site B/i.test(value)) return "Mabini Site B";
-
-        return value || "Mabini Site A";
+        return value || "Mabini Site A - 1st Floor";
     }
 
     function auditReasonFromEdr(report) {
@@ -12725,9 +12932,8 @@ https://www.facebook.com/share/..."></textarea>
                 : "N/A";
 
         const omName =
-            supervisorRole === "OM"
-                ? (report?.supervisorName || "N/A")
-                : "N/A";
+            String(report?.omName || "").trim() ||
+            (supervisorRole === "OM" ? (report?.supervisorName || "N/A") : "N/A");
 
         const rawDate = report?.date || new Date().toISOString().slice(0, 10);
         const dateObj = new Date(`${rawDate}T00:00:00`);
@@ -16796,7 +17002,7 @@ https://www.facebook.com/share/..."></textarea>
 
     let state = {
         date: "",
-        title: "Mabini Site A - 1st & 2nd Floor",
+        title: "Mabini Site A - 1st Floor",
         blocks: []
     };
 
@@ -16897,6 +17103,50 @@ https://www.facebook.com/share/..."></textarea>
 
     function clean(value) {
         return String(value == null ? "" : value).trim();
+    }
+
+    const USERNAME_RE = /^[A-Za-z0-9._-]{3,32}$/;
+    const TECH_LOGIN_DOMAIN = "cctvops.example.com";
+
+    function cleanUsername(value) {
+        return clean(value).replace(/^@+/, "");
+    }
+
+    function usernameKey(value) {
+        return cleanUsername(value).toLowerCase();
+    }
+
+    function validUsername(value) {
+        return USERNAME_RE.test(cleanUsername(value));
+    }
+
+    function usernameLoginEmail(value) {
+        return `${usernameKey(value)}@${TECH_LOGIN_DOMAIN}`;
+    }
+
+    function profileUsername(p, u) {
+        return cleanUsername(
+            p?.username ||
+            u?.user_metadata?.username ||
+            u?.raw_user_meta_data?.username ||
+            u?.email?.split("@")[0] ||
+            ""
+        );
+    }
+
+    function usernameLabel(value) {
+        const username = cleanUsername(value);
+        return username ? `@${username}` : "";
+    }
+
+    async function resolveUsernameEmail(value) {
+        const username = cleanUsername(value);
+        if (!validUsername(username)) return null;
+        const { data, error } = await client.rpc("resolve_login_username", {
+            p_username: username
+        });
+        if (error) throw error;
+        return clean(data) || null;
     }
 
     function splitMarkdownLine(line) {
@@ -17307,7 +17557,7 @@ https://www.facebook.com/share/..."></textarea>
         syncTop();
 
         const headers = maintenanceReportSheetHeaders();
-        const cleanTitle = String(state.title || "Mabini Site A - 1st & 2nd Floor")
+        const cleanTitle = String(state.title || "Mabini Site A - 1st Floor")
             .replace(/\s*Maintenance\s+Report\s*$/i, "")
             .trim();
         const reportDate = state.date ? formatDateForTitle(state.date) : "";
@@ -17357,7 +17607,7 @@ https://www.facebook.com/share/..."></textarea>
         syncTop();
 
         const headers = maintenanceReportSheetHeaders();
-        const cleanTitle = String(state.title || "Mabini Site A - 1st & 2nd Floor")
+        const cleanTitle = String(state.title || "Mabini Site A - 1st Floor")
             .replace(/\s*Maintenance\s+Report\s*$/i, "")
             .trim();
         const reportDate = state.date ? formatDateForTitle(state.date) : "";
@@ -17675,7 +17925,7 @@ body.ops-redesign-v3.dark-mode .followup-status-pill.replied{color:#93c5fd}.dark
     function buildMaintenanceSheetsPayload() {
         syncTop();
 
-        const cleanTitle = String(state.title || "Mabini Site A - 1st & 2nd Floor")
+        const cleanTitle = String(state.title || "Mabini Site A - 1st Floor")
             .replace(/\s*Maintenance\s+Report\s*$/i, "")
             .trim();
 
@@ -18290,7 +18540,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         }
 
         $("simpleEodDate").value = state.date || todayLocal();
-        $("simpleEodSite").value = state.title || "Mabini Site A - 1st & 2nd Floor";
+        $("simpleEodSite").value = state.title || "Mabini Site A - 1st Floor";
         activePasteBlockId = null;
         render();
         await saveDraft(true);
@@ -18327,7 +18577,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
 
     function syncTop() {
         state.date = $("simpleEodDate").value;
-        state.title = $("simpleEodSite").value.trim() || "Mabini Site A - 1st & 2nd Floor";
+        state.title = $("simpleEodSite").value.trim() || "Mabini Site A - 1st Floor";
     }
 
     function formatDateForTitle(date) {
@@ -18345,7 +18595,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
     function buildPrint() {
         syncTop();
 
-        const cleanTitle = String(state.title || "Mabini Site A - 1st & 2nd Floor")
+        const cleanTitle = String(state.title || "Mabini Site A - 1st Floor")
             .replace(/\s*Maintenance\s+Report\s*$/i, "")
             .trim();
 
@@ -18466,7 +18716,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
 
                 pdf.setFont("helvetica", "normal");
                 pdf.setFontSize(6.5);
-                pdf.setTextColor(145, 150, 158);
+                pdf.setTextColor(0, 0, 0);
                 pdf.text(`Page ${page} of ${totalPages}`, width - 8, height - 5, { align: "right" });
             }
 
@@ -18562,7 +18812,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
 
         if (!state.blocks || !state.blocks.length) state.blocks = [makeBlock()];
 
-        $("simpleEodSite").value = state.title || "Mabini Site A - 1st & 2nd Floor";
+        $("simpleEodSite").value = state.title || "Mabini Site A - 1st Floor";
         $("simpleEodDate").value = state.date || todayLocal();
         state.date = $("simpleEodDate").value;
         render();
@@ -18598,7 +18848,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
 
         state = {
             date: todayLocal(),
-            title: "Mabini Site A - 1st & 2nd Floor",
+            title: "Mabini Site A - 1st Floor",
             blocks: [makeBlock()]
         };
 
@@ -18770,7 +19020,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
             });
 
             $("simpleEodSite").value =
-                state.title || "Mabini Site A - 1st & 2nd Floor";
+                state.title || "Mabini Site A - 1st Floor";
             $("simpleEodDate").value = state.date || todayLocal();
 
             activePasteBlockId = null;
@@ -18814,7 +19064,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
 (function () {
     const byId = id => document.getElementById(id);
 
-    const SOURCE_TLS = ["Abegail Llena", "Abigail Calo", "Adana Salaveria", "Adrian Balbuena", "Adrian Crisht Lontiong", "Adrian Paolo Tangonan", "Aiza Pearl Sablas", "Al Joven Malda", "Albert Samsico", "Albert Tumilap", "Alexis Fe Ginez", "Allan Albert Sadili", "Alliana Melgarejo Suaner", "Allysa San Luis", "Almar Bongcac", "Alyssa Jane Gainsan", "Amethyst Jeanne Patani", "Amilyn Vicente", "Analou Madanlo", "Andrea Agudera", "Andrea Kyle Herrero", "Andro Agad", "Angel Omas-as", "Angelica Lantic", "Angelie Ceballos", "Angeline Melgo", "Angelito Carsano", "Angelo Trazona", "Angie Cabaluna", "Angiely Soriano", "Anna Lou Pedregosa", "Annalie Manmano", "Annalou Gonzales", "Anthony Autentico", "Antonette Noran", "Apple Grace Terec", "April Jay Sitoy", "April Ranulo", "April Rose Rabor", "Ara Shaine Villegas", "Archel Cole", "Arianne Agao-Agao", "Ariel Facturan", "Arnel Vicente", "Arrah Mae Sanchez", "Ashley Kim Esplagera", "Aura Rey Velasco", "Ayra Porras", "Bai Indera Diocolano", "Beethoven Diaz", "Benign Borral", "Benjie Cabalhin", "Beverly Origenes", "Bless Dian Buga-as", "Bryan Rey Tabares", "Carl Anthony Galvez", "Carlo Rubia", "Carmena Dagaraga", "Cedric Michael Gianan", "Celestino Bravo", "Chady Flores", "Charisse Romasanta", "Charlene Mae Ruiz", "Charles Ethan Arcilla", "Charles Vincent Vidanes", "Charlotte Danica Dauz", "Charyl Diatras", "Cherry Mae Astorga", "Christian Arcilla", "Christian Estrera", "Christian Jay Corsiga", "Christian Nicko Rosales", "Christine Monique Labastida", "Christine Olasiman", "Christine Urdaneta", "Claire Charl Belover-Cabanas", "Clarissa Cyrine Aguanta", "Connie Fe Villanueva", "Crea Amorte", "Cresil Fe Duhig", "Cris Arandilla", "Cristine Olasiman", "Cristoper Cavan", "Crystal Paulene Delmo", "Cyfer Marie Diapolet", "Dames Alfred Veloso", "Dan Ric Abendaño", "Daniel Algario", "Dannevy Salvador", "Dante Tahuran", "Dar Benjie Limikid", "Darben Esperanza", "Dareen Mhyvie Caliguid", "Darhyl John Bauyot", "Dariel Cardiente", "Dariel John Duco", "Darlene Barcelo", "Darlene Grace Sornido", "Darryl De Guzman", "Datun Mamasainged", "Dave Leezer Sodusta", "David Gabut", "Dether Languido", "Dianne Sombilon", "Dinah Grace Rio", "Divi Ann Alcontin", "Divi Anne Alcontin", "Dorrisse Jane De Vera", "Edelaido Roble Jr.", "Edgie Clarin Alcarion", "Edrianne Delos Santos", "Edylyn Tallorin", "EJ Oribe", "Ejjie Madjire", "Elijah Felipe", "Elisha Bayona", "Ellame Pantojan", "Emmaruel James Alao", "Ephraim June Vismanos", "Erik Jan Martillan", "Erika Gerado", "Erika Jane Almerez", "Erika Sabdullah", "Erly Jade Jadap", "Ethel Grace Paberan Habanes", "Exequiel Edorosas", "Ezel Jean Sebandal Mahinay", "Flora May Maño", "Floramae Palma", "Francis Alta", "Francis Brylle Cane", "Francis Lian Ramos", "Freda Apuda", "Frederick Jopia", "Fritz Cales", "Garyll Castillo", "Geharchelle Fuentes", "Gemark Cardanio", "Genibie Trasmonte", "Gerramie Mendoza-Racoma", "Gilbert Murillo", "Ginalyn Mariano", "Glaithe Hienze Perero", "Gliza Mae Samelin", "Glyze Morgado", "Grazelle Tagadiad", "Hani Precious Serna", "Hani Serna", "Hanz Rosetham Tolentino", "Hanzel Umpad", "Harlene Candel", "Hazel Gorgoya", "Henie Alvarez", "Hiezel Heart Bariquit", "Honey Glaze Pialago", "Honey-lyn Dalos", "Ian Greg Mandalupe", "Ian Lauroza", "Irene Fuentes", "Ivan Strauss Castillon", "Ivan Taala", "Ivy Balandan", "Ivy Decenilla", "Jade Rocacorba", "Jaime Arisgado", "Jake Dimpas", "Jake Maghanoy", "Jake Montajes", "James Matthew Quintana", "Jamiel Leyson", "Jan Andes Noel", "Jan Gabriel Pariolan", "Jan Laurence Amacanim", "Jan Noel Andes", "Jan Sield Molinas", "Janice Jugarap", "Janice Salubre", "Jastine Ann Casayas", "Jastine Karl Pracueles", "Jave Mamontayao", "Jay Besedor", "Jay Catito", "Jayboi Tuling", "Jaycee Zabate", "Je Ann Jy Ramos", "Jefferson Egoy", "Jeffrey Juan", "Jeiryld Abella", "Jenesis Mabasa", "Jenessa Subteniente", "Jenette Hisola", "Jennifer Toroba", "Jenny Rose Aquino", "Jeremiah Quesada", "Jerome Uyanguren", "Jerrylyn Guinto", "Jesbonnin Sudaria", "Jessa Lopez", "Jessa Mae Amihan", "Jessa Mae Bacus", "Jethro Gerali", "Jexeer Khent Trinidad", "Jhon Carlos Santos", "Jhon Kenan Baran", "Jhon Rex Mantilla", "Jhuly Basmayor", "Jhun Carlo San", "Jim Fernandez", "Jinelyn Ligtas", "Joecel Villegas", "Joevinyll Palabrica", "John Alvin Despogado", "John Dave Barzo", "John Eric Momo", "John Joshua Bahinting", "John Karl Butaslac", "John Lloyd Pogoy", "John Peter Ano-os", "John Raphael Toledo", "John Rel Lagura", "John Rey Salise", "John Vincent Sotto", "Jollie Berjes", "Jomar Linaza", "Jomar Manla Daie", "Jomira Aquino", "Jonalyn Mamaba", "Jonas Haguyahay", "Jonel Delgado", "Jonell Bisnar", "Joneza Gementiza", "Jose Manila", "Jose Rino Hontiveros", "Joseph Dagatan", "Joshua Bahinting", "Joshua Bañez", "Joshua Salva", "Jovert Monticayan", "Juan Miguel Aleos", "Juddy Ann Tumazar", "Judel Gabunilas", "Judy Ann Ero", "Juliah Monte", "Julina Flores", "Juniper Arquisola", "Jupel Hemolatan", "Juren Davies Buhawe", "Justine Aninion", "Justine Karl Pracueles", "Justine Magandam", "Justine Pleños", "Kathleen Joy Sulaiman", "Kathlyn Yuba", "Kathrine Mae Arce", "Kehn Angelo Egdamin", "Kerjean Labi", "Kevin John Oroc", "Kevin Kyle Omiping", "Khemyajaira Paquit", "Kimberly Quirabo", "Kin Batomalaque", "Kirk Daniel Ripley", "Kristine Bulonos", "Kristine Jay Salvadora", "Kristine Laarnee Lucariza", "Krizzna Berang", "Krystyl Jean Daclag", "Kurt Calvin Cajeles", "Kyle Ryan Gaviola", "Kylene Cabanada", "Kyzer Bacle", "Larry Lloyd Rodriguez", "Laurence Dave Sindol", "Lemuel Rosalejos", "Leo Jones Sayago", "Leslie Deparene", "Lezmar Teh", "Lhoyd Mondinido", "Liezl Joy Lodonia", "Lloyd Vincent Orquina", "Lorence Gucor", "Lorenz Calm Fabellar", "Louie Roy Casang", "Louise Anne Litao", "Lovelle Famorcan", "Luke Zedric Jun Lopez", "Luz Dela Peña", "Ma. Czalthea Obed", "Madelyn Mahinay", "Mae Ann Espina", "Maia Isla", "Maica Estafia", "Maica Mambaling", "Marc Jardenico", "Marco Paolo Salazar", "Marecar Suerte", "Margie Gracia", "Marianette Aradilla", "Maribeth Georpe", "Maricel Sungkip", "Maridel Salon", "Marie Fe Palen", "Marie Mogan", "Marie Rose Mutia", "Mark Anthony Arellano", "Mark Clint Encallado", "Mark Conrad Pinton", "Mark Cortez", "Mark Edejer", "Mark Gervacio", "Mark Glendel Embudo", "Mark Lloyd Pielago", "Mark Loeh Salaysay", "Mark Nelcone Grullo", "Marwen Diel", "Mary Abegail Gabrielle Amora", "Mary Ann De Leon", "Mary Grace Ybañez", "Maxx De Vera", "Maxy Jodelle Alota", "May Jean Romaguera", "Mc Jordan Costan", "Mc Reden De Vera", "Meilah Deocares", "Mel Jan Cole", "Melissa Liceralde", "Melvin Balaba", "Melvinson Laguting", "Michael Angelo Rosauro", "Michael James Macabingkil", "Michael Jan Bangoy", "Michael Mogan", "Michael Ocampo", "Michael Ralph Montejo", "Michelle Pantujan", "Mickie Jhon Absin", "Mina Joy Ramirez", "Mirah Paris Macaorao", "Moktar Ibrahim", "Nasrudin Sailila", "Neil Jarencio", "Nelboy Campaner", "Neña May Barientos", "Noel Ulalan", "Nomar Dagmil", "Norjahid Akmad", "Norman Lindo", "Noronisa Mante", "Odesa Lacadwe", "Oliver Dela Cruz", "Omar Langco", "Omar Mallari", "Pablito Janeo", "Pam Cuizon", "Pamela Villanueva", "Patricia Paula Therese Martinez", "Patrick James Mariano", "Patrick Jhon Misagal", "Patrick Llamasarez", "Paul Angelo Maguad", "Paul Anthony Rica", "Pauline Grace Genon", "Philip Baaria Lomada", "Prince Borras", "Princess Angel Barinque", "Princess Catabay", "Princess Jay Cadungog", "Princess Robles", "Queendolyn Pama", "Rachel Joyce Carillo", "Raena Rosos", "Ralph Raul Montero", "Ramil Ramos", "Raphael Montiague", "Ray Allen Baracao", "Raymund Ordinario", "Reah Mae Manangca", "Recci George Crodua", "Recy Pagangpang", "Remer Tancontian", "Renato Feria", "Rene Fernandez", "Resamy Crausos", "Rex Mantilla", "Rey Adrian Candilada", "Rey Mark Ibañez", "Reyland Sumael", "Reynaldo Arreza", "Reynaldo Ligad", "Reynan Arellano", "Rhea Elises", "Rhea Liezyl Naol", "Rhea Mae Manangca", "Rhelford Allawan", "Rhocky Resma", "Rhusty Lascuña", "Rica Gingone", "Rica Micaella Suan", "Ricardo Traya Jr.", "Richell Saavedra", "Rieven John Catipay", "Rigel Conejar", "Rio Ubaldo", "Risaldo Castellon Jr.", "Risha May Memoracion", "Ritchie Crispe", "Rizel Abanes", "Robina Tai", "Rogelyn Boligao", "Rojon Rosales", "Roleen Joy Juntong", "Rolly Acaso Lasala", "Romel Biliran", "Romelyn Samar", "Ron Jay Socia", "Ronnel Ragas", "Rosalia Mandawe", "Rosalinda Erellana", "Rosalyn Darang", "Rosanna Bergavera", "Roselle Novecio", "Rowaida Faisal", "Rowena Lamatan", "Rubie Ramos", "Ryan Patrick Balicog", "Samantha Gen Cruz", "Shaira Mae Olasiman", "Shaira May Divinagracia", "Shayne Erasmo", "Sheila Emmanuelle Nueza", "Sheila Mae Cuison", "Shekinah Grace Javar", "Shella Caangay", "Shella Mae Caangay", "Sherlak Culanag", "Sherwin James Solier", "Shiela Sales Sarmiento", "Shiella Marie Miñoza", "Simforiano Gerongco", "Stacey Verdeflor", "Stanley Rojas", "Stephanie Pombo", "Suzette Rose Dayaday", "Switzel Condor", "TBA", "Thea Tanya Bete", "Thirdie Galedo", "Val Sandingay", "Venus Cua", "Vicente Sumagabac", "Vincent Lapasigue", "Vinette Sanchez", "Vowin Cordova", "Walter Jay Carrasca", "Warren Mansueto", "Willy Mark Callao", "Xyzel Saludares", "Yancy Camingue", "Zady Daguat", "Zaila Faye Soreño", "Zaldy John Garcia", "Zheenab Datu-dacula", "Zoe Cordova", "Zyrie Christian Wasil"];
+    const SOURCE_TLS = ["Abegail Llena", "Abigail Calo", "Adana Salaveria", "Adrian Balbuena", "Adrian Crisht Lontiong", "Adrian Paolo Tangonan", "Aiza Pearl Sablas", "Al Joven Malda", "Albert Samsico", "Albert Tumilap", "Alexis Fe Ginez", "Allan Albert Sadili", "Alliana Melgarejo Suaner", "Allysa San Luis", "Almar Bongcac", "Alyssa Jane Gainsan", "Amethyst Jeanne Patani", "Amilyn Vicente", "Analou Madanlo", "Andrea Agudera", "Andrea Kyle Herrero", "Andro Agad", "Angel Omas-as", "Angelica Lantic", "Angelie Ceballos", "Angeline Melgo", "Angelito Carsano", "Angelo Trazona", "Angie Cabaluna", "Angiely Soriano", "Anna Lou Pedregosa", "Annalie Manmano", "Annalou Gonzales", "Anthony Autentico", "Antonette Noran", "Apple Grace Terec", "April Jay Sitoy", "April Ranulo", "April Rose Rabor", "Ara Shaine Villegas", "Archel Cole", "Arianne Agao-Agao", "Ariel Facturan", "Arnel Vicente", "Arrah Mae Sanchez", "Ashley Kim Esplagera", "Aura Rey Velasco", "Ayra Porras", "Bai Indera Diocolano", "Beethoven Diaz", "Benign Borral", "Benjie Cabalhin", "Beverly Origenes", "Bless Dian Buga-as", "Bryan Rey Tabares", "Carl Anthony Galvez", "Carlo Rubia", "Carmena Dagaraga", "Cedric Michael Gianan", "Celestino Bravo", "Chady Flores", "Charisse Romasanta", "Charlene Mae Ruiz", "Charles Ethan Arcilla", "Charles Vincent Vidanes", "Charlotte Danica Dauz", "Charyl Diatras", "Cherry Mae Astorga", "Christian Arcilla", "Christian Estrera", "Christian Jay Corsiga", "Christian Nicko Rosales", "Christine Monique Labastida", "Christine Olasiman", "Christine Urdaneta", "Claire Charl Belover-Cabanas", "Clarissa Cyrine Aguanta", "Connie Fe Villanueva", "Crea Amorte", "Cresil Fe Duhig", "Cris Arandilla", "Cristine Olasiman", "Cristoper Cavan", "Crystal Paulene Delmo", "Cyfer Marie Diapolet", "Dames Alfred Veloso", "Dan Ric Abendaño", "Daniel Algario", "Daniel Gabriel Roda", "Dannevy Salvador", "Dante Tahuran", "Dar Benjie Limikid", "Darben Esperanza", "Dareen Mhyvie Caliguid", "Darhyl John Bauyot", "Dariel Cardiente", "Dariel John Duco", "Darlene Barcelo", "Darlene Grace Sornido", "Darryl De Guzman", "Datun Mamasainged", "Dave Leezer Sodusta", "David Gabut", "Dether Languido", "Dianne Sombilon", "Dinah Grace Rio", "Divi Ann Alcontin", "Divi Anne Alcontin", "Dorrisse Jane De Vera", "Edelaido Roble Jr.", "Edgie Clarin Alcarion", "Edrianne Delos Santos", "Edylyn Tallorin", "EJ Oribe", "Ejjie Madjire", "Elijah Felipe", "Elisha Bayona", "Ellame Pantojan", "Emmaruel James Alao", "Ephraim June Vismanos", "Erik Jan Martillan", "Erika Gerado", "Erika Jane Almerez", "Erika Sabdullah", "Erly Jade Jadap", "Ethel Grace Paberan Habanes", "Exequiel Edorosas", "Ezel Jean Sebandal Mahinay", "Flora May Maño", "Floramae Palma", "Francis Alta", "Francis Brylle Cane", "Francis Lian Ramos", "Freda Apuda", "Frederick Jopia", "Fritz Cales", "Garyll Castillo", "Geharchelle Fuentes", "Gemark Cardanio", "Genibie Trasmonte", "Gerramie Mendoza-Racoma", "Gilbert Murillo", "Ginalyn Mariano", "Glaithe Hienze Perero", "Gliza Mae Samelin", "Glyze Morgado", "Grazelle Tagadiad", "Hani Precious Serna", "Hani Serna", "Hanz Rosetham Tolentino", "Hanzel Umpad", "Harlene Candel", "Hazel Gorgoya", "Henie Alvarez", "Hiezel Heart Bariquit", "Honey Glaze Pialago", "Honey-lyn Dalos", "Ian Greg Mandalupe", "Ian Lauroza", "Irene Fuentes", "Ivan Strauss Castillon", "Ivan Taala", "Ivy Balandan", "Ivy Decenilla", "Jade Rocacorba", "Jaime Arisgado", "Jake Dimpas", "Jake Maghanoy", "Jake Montajes", "James Matthew Quintana", "Jamiel Leyson", "Jan Andes Noel", "Jan Gabriel Pariolan", "Jan Laurence Amacanim", "Jan Noel Andes", "Jan Sield Molinas", "Janice Jugarap", "Janice Salubre", "Jastine Ann Casayas", "Jastine Karl Pracueles", "Jave Mamontayao", "Jay Besedor", "Jay Catito", "Jayboi Tuling", "Jaycee Zabate", "Je Ann Jy Ramos", "Jefferson Egoy", "Jeffrey Juan", "Jeiryld Abella", "Jenesis Mabasa", "Jenessa Subteniente", "Jenette Hisola", "Jennifer Toroba", "Jenny Rose Aquino", "Jeremiah Quesada", "Jerome Uyanguren", "Jerrylyn Guinto", "Jesbonnin Sudaria", "Jessa Lopez", "Jessa Mae Amihan", "Jessa Mae Bacus", "Jethro Gerali", "Jexeer Khent Trinidad", "Jhon Carlos Santos", "Jhon Kenan Baran", "Jhon Rex Mantilla", "Jhuly Basmayor", "Jhun Carlo San", "Jim Fernandez", "Jinelyn Ligtas", "Joecel Villegas", "Joevinyll Palabrica", "John Alvin Despogado", "John Dave Barzo", "John Eric Momo", "John Joshua Bahinting", "John Karl Butaslac", "John Lloyd Pogoy", "John Peter Ano-os", "John Raphael Toledo", "John Rel Lagura", "John Rey Salise", "John Vincent Sotto", "Jollie Berjes", "Jomar Linaza", "Jomar Manla Daie", "Jomira Aquino", "Jonalyn Mamaba", "Jonas Haguyahay", "Jonel Delgado", "Jonell Bisnar", "Joneza Gementiza", "Jose Manila", "Jose Rino Hontiveros", "Joseph Dagatan", "Joshua Bahinting", "Joshua Bañez", "Joshua Salva", "Jovert Monticayan", "Juan Miguel Aleos", "Juddy Ann Tumazar", "Judel Gabunilas", "Judy Ann Ero", "Juliah Monte", "Julina Flores", "Juniper Arquisola", "Jupel Hemolatan", "Juren Davies Buhawe", "Justine Aninion", "Justine Karl Pracueles", "Justine Magandam", "Justine Pleños", "Kathleen Joy Sulaiman", "Kathlyn Yuba", "Kathrine Mae Arce", "Kehn Angelo Egdamin", "Kerjean Labi", "Kevin John Oroc", "Kevin Kyle Omiping", "Khemyajaira Paquit", "Kimberly Quirabo", "Kin Batomalaque", "Kirk Daniel Ripley", "Kristine Bulonos", "Kristine Jay Salvadora", "Kristine Laarnee Lucariza", "Krizzna Berang", "Krystyl Jean Daclag", "Kurt Calvin Cajeles", "Kyle Ryan Gaviola", "Kylene Cabanada", "Kyzer Bacle", "Larry Lloyd Rodriguez", "Laurence Dave Sindol", "Lemuel Rosalejos", "Leo Jones Sayago", "Leslie Deparene", "Lezmar Teh", "Lhoyd Mondinido", "Liezl Joy Lodonia", "Lloyd Vincent Orquina", "Lorence Gucor", "Lorenz Calm Fabellar", "Louie Roy Casang", "Louise Anne Litao", "Lovelle Famorcan", "Luke Zedric Jun Lopez", "Luz Dela Peña", "Ma. Czalthea Obed", "Madelyn Mahinay", "Mae Ann Espina", "Maia Isla", "Maica Estafia", "Maica Mambaling", "Marc Jardenico", "Marco Paolo Salazar", "Marecar Suerte", "Margie Gracia", "Marianette Aradilla", "Maribeth Georpe", "Maricel Sungkip", "Maridel Salon", "Marie Fe Palen", "Marie Mogan", "Marie Rose Mutia", "Mark Anthony Arellano", "Mark Clint Encallado", "Mark Conrad Pinton", "Mark Cortez", "Mark Edejer", "Mark Gervacio", "Mark Glendel Embudo", "Mark Lloyd Pielago", "Mark Loeh Salaysay", "Mark Nelcone Grullo", "Marwen Diel", "Mary Abegail Gabrielle Amora", "Mary Ann De Leon", "Mary Grace Ybañez", "Maxx De Vera", "Maxy Jodelle Alota", "May Jean Romaguera", "Mc Jordan Costan", "Mc Reden De Vera", "Meilah Deocares", "Mel Jan Cole", "Melissa Liceralde", "Melvin Balaba", "Melvinson Laguting", "Michael Angelo Rosauro", "Michael James Macabingkil", "Michael Jan Bangoy", "Michael Mogan", "Michael Ocampo", "Michael Ralph Montejo", "Michelle Pantujan", "Mickie Jhon Absin", "Mina Joy Ramirez", "Mirah Paris Macaorao", "Moktar Ibrahim", "Nasrudin Sailila", "Neil Jarencio", "Nelboy Campaner", "Neña May Barientos", "Noel Ulalan", "Nomar Dagmil", "Norjahid Akmad", "Norman Lindo", "Noronisa Mante", "Odesa Lacadwe", "Oliver Dela Cruz", "Omar Langco", "Omar Mallari", "Pablito Janeo", "Pam Cuizon", "Pamela Villanueva", "Patricia Paula Therese Martinez", "Patrick James Mariano", "Patrick Jhon Misagal", "Patrick Llamasarez", "Paul Angelo Maguad", "Paul Anthony Rica", "Pauline Grace Genon", "Philip Baaria Lomada", "Prince Borras", "Princess Angel Barinque", "Princess Catabay", "Princess Jay Cadungog", "Princess Robles", "Queendolyn Pama", "Rachel Joyce Carillo", "Raena Rosos", "Ralph Raul Montero", "Ramil Ramos", "Raphael Montiague", "Ray Allen Baracao", "Raymund Ordinario", "Reah Mae Manangca", "Recci George Crodua", "Recy Pagangpang", "Remer Tancontian", "Renato Feria", "Rene Fernandez", "Resamy Crausos", "Rex Mantilla", "Rey Adrian Candilada", "Rey Mark Ibañez", "Reyland Sumael", "Reynaldo Arreza", "Reynaldo Ligad", "Reynan Arellano", "Rhea Elises", "Rhea Liezyl Naol", "Rhea Mae Manangca", "Rhelford Allawan", "Rhocky Resma", "Rhusty Lascuña", "Rica Gingone", "Rica Micaella Suan", "Ricardo Traya Jr.", "Richell Saavedra", "Rieven John Catipay", "Rigel Conejar", "Rio Ubaldo", "Risaldo Castellon Jr.", "Risha May Memoracion", "Ritchie Crispe", "Rizel Abanes", "Robina Tai", "Rogelyn Boligao", "Rojon Rosales", "Roleen Joy Juntong", "Rolly Acaso Lasala", "Romel Biliran", "Romelyn Samar", "Ron Jay Socia", "Ronnel Ragas", "Rosalia Mandawe", "Rosalinda Erellana", "Rosalyn Darang", "Rosanna Bergavera", "Roselle Novecio", "Rowaida Faisal", "Rowena Lamatan", "Rubie Ramos", "Ryan Patrick Balicog", "Samantha Gen Cruz", "Shaira Mae Olasiman", "Shaira May Divinagracia", "Shayne Erasmo", "Sheila Emmanuelle Nueza", "Sheila Mae Cuison", "Shekinah Grace Javar", "Shella Caangay", "Shella Mae Caangay", "Sherlak Culanag", "Sherwin James Solier", "Shiela Sales Sarmiento", "Shiella Marie Miñoza", "Simforiano Gerongco", "Stacey Verdeflor", "Stanley Rojas", "Stephanie Pombo", "Suzette Rose Dayaday", "Switzel Condor", "TBA", "Thea Tanya Bete", "Thirdie Galedo", "Val Sandingay", "Venus Cua", "Vicente Sumagabac", "Vincent Lapasigue", "Vinette Sanchez", "Vowin Cordova", "Walter Jay Carrasca", "Warren Mansueto", "Willy Mark Callao", "Xyzel Saludares", "Yancy Camingue", "Zady Daguat", "Zaila Faye Soreño", "Zaldy John Garcia", "Zheenab Datu-dacula", "Zoe Cordova", "Zyrie Christian Wasil"];
     const SOURCE_OMS = ["Abby", "Beth", "BIGO - Thirdy", "CFC", "Cherry", "Crystal", "Derline", "Freda", "Gerramie", "Irene", "Marc Jardenico", "McJordan", "Michelle", "Mirah", "Mogan", "Norman", "Renato", "Rhelford", "Ruth", "Shayne", "Sheila", "Shey", "SP - James", "SP - Marc", "SP - MJ", "SP - Ryan", "Willy"];
     const SOURCE_ACCOUNTS = ["123 Employee", "123 Employee - Echo Mortgage", "123 Employee - Hallandale Pharmacy", "123 Employee - Mercantile Property", "123 Robotics", "123Employee | HUB International", "212 Dental Care", "611 VA", "ACB", "Adams International", "Advocacy Refund Group", "Aeroex Technology Inc.", "AFP", "Ahabi", "Airbills", "Alibaba", "All Pro Pay", "Allen Institute Mouse", "Allied Pain and Spine Institute", "AMG", "AMR", "AMR CSR", "Angel Oak Mortgage Solution", "Another Star", "ARS", "AU Store", "AU Tax", "AUXGP", "BathroomX", "Bayou Braces", "Bentino", "BIGO - DIGOS", "BIGO - ECOLAND", "BIGO - Mabini", "Brianna Thaxton LLC", "BrightDelivery", "CapLink Group", "CFC", "CFC OB", "CGP", "CIG", "CITUS HR SOLUTIONS", "Clear Insights Group", "Clinic P", "COD Logistics", "Commercial Enterprise", "Commercial Merchant Acquisition", "Content Quality Assurance", "Corazon Company LLC", "CORE LOGIX", "Cupshe", "DASCO", "DASCO BACK OFFICE", "DASCO CSR", "DAVI", "Dental Back Office Admin", "DG Dial", "DIAL EXPRESS", "DLG", "DLPC", "DNE", "DNO L1", "DNO L2", "Duque Immigration", "EDJ DATA", "EIMS", "EIMS - Data Validator/QA", "eJam", "eJam Inside Sales", "ENC", "Envera", "EOR Project: Future Proof", "ESIM", "Everlife", "EVMS", "EWC", "Eyesurf", "FBB", "FBB QA", "Flexscale Next-Level Recruitment", "Flexscale Truth Finance", "Flexscale Truth Financial", "Flywire", "Franklin Hamilton", "FWC", "GARDENS", "Gardens Alive & Shared", "Glamcor", "GLO", "Globalcom - Mountain Valley", "Globalcom RTA", "GRAB", "GRAB - Commercial Enterprise", "GRAB - MPH", "Grab - MY", "GRAB - PH", "GRAB - Quality Assurance", "GRAB - SG", "GrabRentals Voice and Digital Support", "Green Health Docs", "Greenfoot", "HBW", "Herb joy", "Hotel Revel", "IADU/IAVU PH", "IAVU/IADU SG Support", "IDENT", "iMarketing", "iMarketing Frontline", "iMile Logistics", "Industry Rock Star", "Insight Financial Associates Ltd. (SixEleven Project)", "Integrity Financial Solutions", "J&T Express", "Jethro Mobile", "JJILL", "Justlife", "KCDO", "KCDO - Billing", "KCDO - Inbound", "KCDO - Outbound", "KCDO - RCM", "Kombea Fivestrata", "Kombea Kingkong", "KOMBEA MPI", "Kombea Pro Speaking", "Kraven Bahamas", "LEADMINER", "LedUp", "Legal Solutions 4U", "Leisure-tec", "LifeMD", "List Simple", "LM Consulting", "LOGISTICS", "LSM", "Luxor Eye Institute", "Mallory Headset", "MAPUA", "MBC Consulting Group Inc.", "Mehboob Law Firm", "Mi Care", "MMG", "MoneyHero Group", "Moon River Therapy", "Mousewire", "NationGraph", "Neiline", "NetworX", "NextgenID", "NextgenID SRIP", "NISSAN PH", "NLR", "Nomad eSIM", "NOX", "NVT", "OBRB MY", "Origin", "PB&J TV", "Pearl Source", "Phoenix Direct", "Pinnacle Ozone Solutions", "Pivot", "POINT CO", "QA OJR", "QC", "Quick Contractors", "Reflex Media", "Renogy", "Revel Hotel", "RPI (1voiceSolution)", "SBI", "Seesaw", "SFP", "SHARED", "Shopee", "Shopee - Buybox", "Shopee - Buybox - Smart UI", "Shopee - Buyer Chat and Email", "Shopee - Buyer CS", "Shopee - Buyer Logistics", "Shopee - Buyer Non-Logistics", "Shopee - CB-SCS", "Shopee - CCS", "Shopee - CS", "Shopee - CS and Non-CS", "Shopee - Data Labelling - Buybox", "Shopee - Data Labelling - Non SPU", "Shopee - Data Labelling - SPU", "Shopee - Email", "Shopee - FBS", "Shopee - Keywords", "Shopee - L1 Buyer - Email", "Shopee - Listing Pages", "Shopee - Listings Data Labelling - LLM", "Shopee - Listings Data Labelling - SQE", "Shopee - Listings Data Labelling - Task Center", "Shopee - Listings QC", "Shopee - Live Stream Marketing", "Shopee - LiveStream", "Shopee - Lovito", "Shopee - Non-CS", "Shopee - PH - Chat Bot", "Shopee - PIC", "Shopee - QA", "Shopee - QAC Department", "Shopee - RTA", "Shopee - SBS", "Shopee - SCS", "Shopee - Seller Chats and Email", "Shopee - Seller Log x RR", "Shopee - SIP AME", "Shopee - SIP BR & LATAM", "Shopee - SIP Global", "Shopee - SIP Global - PH", "Shopee - SIP L2", "Shopee - SIP Malaysia", "Shopee - SIP Singapore", "Shopee - SIP Taiwan", "Shopee - SIP Thailand", "Shopee - SIP Vietnam", "Shopee - SPU Listings", "Shopee - SPX", "Shopee - SPX NSS Outbound", "Shopee - SPX SSC and NSS", "Shopee - Trainee", "Shopee - Training", "Shopee - Video", "Shopee - Video QC", "Shopee - WFM", "Shopee - WFM/RTA", "SLEEPDYNAMICS", "Smart Circle", "Smart Staffing Support - Renters", "Solution That Matter", "SPEAK UP", "Spectee", "Spyfly", "Spypoint", "Spypoint Outbound", "SRIP L2 Support", "Superdial", "Talixo", "Talixo Dispatch", "TelMDFirst", "TEMU - 1404", "TEMU - 140X (RSL)", "TEMU - 4029", "TEMU - BATCH 6", "TEMU - BATCH 7", "TEMU - BATCH 8", "TEMU - CPC", "TEMU - LOB-1", "TEMU - LOB-2", "TEMU - LOB-3", "TEN28", "The James Group, LLC", "Ticket Management System SL", "TMS", "Together Network", "TOP MOVING SOLUTIONS", "Triple B", "TV COMMERCIAL TRAFFIC", "Two Birds Supplements", "TWV", "Uplift Healthcare LLC", "Veritas", "ViewQwest CSR", "ViewQwest Telesales", "Virtual Staffing", "WanderJoy", "Wiz AI", "Zetta"];
 
@@ -18832,6 +19082,16 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
     window.getEdrOmOptions = function () {
         return [...omOptions];
     };
+
+    function refreshDedicatedOmOptions() {
+        const list = byId("edrOmOptionsDedicated");
+        if (!list) return;
+        list.innerHTML = omOptions
+            .slice()
+            .sort((a, b) => a.localeCompare(b))
+            .map(name => `<option value="${escapeHtml(name)}"></option>`)
+            .join("");
+    }
 
     let edrReports = [];
     let editingId = null;
@@ -18934,6 +19194,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
             timeObserved: byId("edrTimeObserved")?.value || "",
             supervisorRole: byId("edrSupervisorRole")?.value || "Team Leader",
             supervisorName: byId("edrSupervisorName")?.value || "",
+            omName: byId("edrOmName")?.value || "",
             subjectType: byId("edrSubjectType")?.value || "Agent/s",
             subjectName: byId("edrSubjectName")?.value || "",
             account: byId("edrAccount")?.value || "",
@@ -18960,6 +19221,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         );
         refreshSupervisorOptions();
         byId("edrSupervisorName").value = form.supervisorName || "";
+        if (byId("edrOmName")) byId("edrOmName").value = form.omName || "";
 
         setEdrChoice(
             "edrSubjectType",
@@ -19132,6 +19394,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
             timeObserved: report.timeObserved || report.timeStart || "",
             supervisorRole: report.supervisorRole || "Team Leader",
             supervisorName: report.supervisorName || "",
+            omName: report.omName || "",
             subjectType: report.subjectType || "Agent/s",
             subjectName: report.subjectName || "",
             account: report.account || "",
@@ -19553,6 +19816,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
             timeEnd: "",
             supervisorRole: report.supervisorRole || "Team Leader",
             supervisorName: report.supervisorName || "",
+            omName: report.omName || "",
             subjectType: report.subjectType || "Agent/s",
             subjectName: report.subjectName || "",
             account: report.account || "",
@@ -19642,6 +19906,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
             timeEnd: record.timeEnd || "",
             supervisorRole: record.supervisorRole || "Team Leader",
             supervisorName: record.supervisorName || "",
+            omName: record.omName || "",
             subjectType: record.subjectType || "Agent/s",
             subjectName: record.subjectName || "",
             account: record.account || "",
@@ -20009,6 +20274,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
             timeEnd: "",
             supervisorRole: byId("edrSupervisorRole").value,
             supervisorName: clean(byId("edrSupervisorName").value),
+            omName: clean(byId("edrOmName")?.value),
             subjectType: byId("edrSubjectType").value,
             subjectName: clean(byId("edrSubjectName").value),
             account: clean(byId("edrAccount").value),
@@ -20028,6 +20294,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
             ["Date", report.date],
             ["Time Observed", report.timeObserved || report.timeStart],
             ["Team Leader or OM name", report.supervisorName],
+            ["OM", report.omName],
             ["Agent/s or Team Leader", report.subjectName],
             ["Account / Campaign", report.account],
             ["Incident", report.incident],
@@ -20050,6 +20317,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         byId("edrTimeObserved").value = "";
         setEdrChoice("edrSupervisorRole", "edrSupervisorRoleButtons", "Team Leader");
         byId("edrSupervisorName").value = "";
+        if (byId("edrOmName")) byId("edrOmName").value = "";
         setEdrChoice("edrSubjectType", "edrSubjectTypeButtons", "Agent/s");
         byId("edrSubjectName").value = "";
         byId("edrAccount").value = "";
@@ -20060,6 +20328,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         setCurrentScreenshot("", false);
 
         refreshSupervisorOptions();
+        refreshDedicatedOmOptions();
         refreshSubjectOptions();
 
         if (!options.keepEdit) {
@@ -20149,6 +20418,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         setEdrChoice("edrSupervisorRole", "edrSupervisorRoleButtons", report.supervisorRole || "Team Leader");
         refreshSupervisorOptions();
         byId("edrSupervisorName").value = report.supervisorName;
+        if (byId("edrOmName")) byId("edrOmName").value = report.omName || (report.supervisorRole === "OM" ? report.supervisorName : "");
         setEdrChoice("edrSubjectType", "edrSubjectTypeButtons", report.subjectType === "Team Leader" ? "Team Leader" : "Agent/s");
         refreshSubjectOptions();
         byId("edrSubjectName").value = report.subjectName;
@@ -20912,6 +21182,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
     }
 
     async function addSupervisorOption() {
+        if (window.CCTV_ACCESS && !window.CCTV_ACCESS.canManageOptions()) { showToast("Admin access is required to manage EDR options.", "error"); return; }
         const value = clean(byId("edrSupervisorName").value);
 
         if (!value) {
@@ -20929,12 +21200,14 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         }
 
         refreshSupervisorOptions();
+        refreshDedicatedOmOptions();
         refreshSubjectOptions();
         await pushEdrHistory(`Added ${role} option`);
         showToast(`${value} added to the ${role} list for this session.`, "success");
     }
 
     async function removeSupervisorOption() {
+        if (window.CCTV_ACCESS && !window.CCTV_ACCESS.canManageOptions()) { showToast("Admin access is required to manage EDR options.", "error"); return; }
         const value = clean(byId("edrSupervisorName").value);
 
         if (!value) {
@@ -20966,12 +21239,14 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
 
         byId("edrSupervisorName").value = "";
         refreshSupervisorOptions();
+        refreshDedicatedOmOptions();
         refreshSubjectOptions();
         await pushEdrHistory(`Removed ${role} option`);
         showToast(`${value} removed from the current ${role} list.`, "info");
     }
 
     async function addAccountOption() {
+        if (window.CCTV_ACCESS && !window.CCTV_ACCESS.canManageOptions()) { showToast("Admin access is required to manage EDR options.", "error"); return; }
         const value = clean(byId("edrAccount").value);
 
         if (!value) {
@@ -20992,6 +21267,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
     }
 
     async function removeAccountOption() {
+        if (window.CCTV_ACCESS && !window.CCTV_ACCESS.canManageOptions()) { showToast("Admin access is required to manage EDR options.", "error"); return; }
         const value = clean(byId("edrAccount").value);
 
         if (!value) {
@@ -21180,6 +21456,10 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         await pushEdrHistory("Cancelled EDR edit");
         showToast("Edit cancelled.", "info");
     });
+
+    byId("edrOmName")?.addEventListener("input", scheduleFormHistory);
+    byId("edrOmName")?.addEventListener("change", scheduleFormHistory);
+    refreshDedicatedOmOptions();
 
     byId("edrAddSupervisorOption").addEventListener("click", addSupervisorOption);
     byId("edrRemoveSupervisorOption").addEventListener("click", removeSupervisorOption);
@@ -22151,7 +22431,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
     const CACHE_DB = "cctv_masterlist_simple_v1";
     const CACHE_STORE = "state";
     const CACHE_KEY = "latest";
-    const NOTEPAD_KEY = "cctv_master_pending_miles_notepad_v1";
+    const NOTEPAD_KEY_PREFIX = "cctv_master_pending_notes_v2_";
     const HR_LOCAL_KEY = "cctv_master_hr_local_crud_v1";
 
     const BUILT_IN_HR_ASSIGNMENTS = [
@@ -22196,6 +22476,8 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
 
     let payload = null;
     let pendingMiles = [];
+    let pendingTrackers = { miles: [], seth: [], wendie: [], kenneth: [], jr: [] };
+    let activePendingKey = localStorage.getItem("cctv_master_active_pending_v2") || "miles";
     let hrAssignments = [];
     let localHrChanges = loadLocalHrChanges();
 
@@ -22294,6 +22576,42 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         return rowVal(row, ["noc"]);
     }
 
+    const PENDING_LABELS = { miles: "Miles", seth: "Seth", wendie: "Wendie", kenneth: "Kenneth", jr: "JR" };
+    const PENDING_COLUMNS = ["Year","Month","Date","Name","OM","SITE","TL","Agent Name","Account","CCTV Reason Codes","NOC","Remarks"];
+
+    function pendingOnly(rows) {
+        const source = Array.isArray(rows) ? rows : [];
+        const hasNoc = source.some(row => clean(trackerNoc(row)));
+        return hasNoc ? source.filter(row => norm(trackerNoc(row)) === "pending") : source;
+    }
+
+    function currentPendingRows() {
+        return pendingTrackers[activePendingKey] || [];
+    }
+
+    function notepadKey() {
+        return NOTEPAD_KEY_PREFIX + activePendingKey;
+    }
+
+    function loadActiveNotepad() {
+        if (!$("masterPendingNotepad")) return;
+        $("masterPendingNotepad").value = localStorage.getItem(notepadKey()) || "";
+        const label = PENDING_LABELS[activePendingKey] || activePendingKey;
+        if ($("masterPendingNotesTitle")) $("masterPendingNotesTitle").textContent = `Pending ${label} Notes`;
+        if ($("masterNotepadStatus")) $("masterNotepadStatus").textContent = "Saved locally";
+    }
+
+    function selectPendingTracker(key) {
+        if (!PENDING_LABELS[key]) return;
+        activePendingKey = key;
+        localStorage.setItem("cctv_master_active_pending_v2", key);
+        $("masterPendingTabs")?.querySelectorAll("[data-pending-key]").forEach(btn => {
+            btn.classList.toggle("active", btn.dataset.pendingKey === key);
+        });
+        renderPendingMiles();
+        loadActiveNotepad();
+    }
+
     function webHrRows() {
         const direct = payload?.webHrAssignments;
         if (Array.isArray(direct)) return direct;
@@ -22385,6 +22703,14 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
             norm(trackerNoc(row)) === "pending"
         );
 
+        pendingTrackers = {
+            miles: pendingMiles,
+            seth: pendingOnly(rowsFrom("pendingSeth")),
+            wendie: pendingOnly(rowsFrom("pendingWendie")),
+            kenneth: pendingOnly(rowsFrom("pendingKenneth")),
+            jr: pendingOnly(rowsFrom("pendingJr"))
+        };
+
         const candidates = [
             ...BUILT_IN_HR_ASSIGNMENTS,
             ...extractHrTableFromGrid(gridFrom("masterList"), "masterList"),
@@ -22420,51 +22746,55 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
             );
     }
 
-    function tableColumns(rows) {
-        const preferred = [
-            "Year", "Month", "Date", "OM", "SITE", "TL",
-            "Agent Name", "Account", "CCTV Reason Codes", "NOC", "Remarks"
-        ];
+    function findRowKey(row, wanted) {
+        const keys = Object.keys(row || {});
+        return keys.find(key => norm(key) === norm(wanted)) ||
+            keys.find(key => norm(key).includes(norm(wanted))) || "";
+    }
 
-        const all = [];
-
-        rows.slice(0, 100).forEach(row => {
-            Object.keys(row || {}).forEach(key => {
-                if (!all.includes(key)) all.push(key);
-            });
-        });
-
-        const preferredFound = preferred
-            .map(wanted => all.find(key => norm(key) === norm(wanted)))
-            .filter(Boolean);
-
-        const rest = all.filter(key => !preferredFound.includes(key));
-
-        return [...preferredFound, ...rest];
+    function valueForPendingColumn(row, column) {
+        const aliases = {
+            "Year": ["Year"],
+            "Month": ["Month"],
+            "Date": ["Date"],
+            "Name": ["Name"],
+            "OM": ["OM"],
+            "SITE": ["SITE", "Site"],
+            "TL": ["TL", "Team Leader"],
+            "Agent Name": ["Agent Name", "Agent"],
+            "Account": ["Account", "Campaign"],
+            "CCTV Reason Codes": ["CCTV Reason Codes", "CCTV Reason Code", "Reason"],
+            "NOC": ["NOC", "Status"],
+            "Remarks": ["Remarks", "Remark"]
+        };
+        for (const alias of aliases[column] || [column]) {
+            const key = findRowKey(row, alias);
+            if (key) return clean(row[key]);
+        }
+        return "";
     }
 
     function renderPendingMiles() {
         const table = $("masterPendingMilesTable");
         const thead = table.querySelector("thead");
         const tbody = table.querySelector("tbody");
+        const rows = currentPendingRows();
+        const label = PENDING_LABELS[activePendingKey] || activePendingKey;
 
-        $("masterPendingMilesCount").textContent = String(pendingMiles.length);
+        $("masterPendingMilesCount").textContent = String(rows.length);
+        if ($("masterPendingTitle")) $("masterPendingTitle").textContent = `Pending ${label}`;
 
-        if (!pendingMiles.length) {
-            thead.innerHTML = "";
-            tbody.innerHTML =
-                '<tr><td class="master-empty-cell">No Pending Miles rows found.</td></tr>';
+        if (!rows.length) {
+            thead.innerHTML = `<tr>${PENDING_COLUMNS.map(col => `<th>${esc(col)}</th>`).join("")}</tr>`;
+            const apiHint = activePendingKey === "miles" ? "" : " If this tracker should have rows, redeploy the supplied Master List API v3 first.";
+            tbody.innerHTML = `<tr><td colspan="${PENDING_COLUMNS.length}" class="master-empty-cell">No Pending ${esc(label)} rows found.${esc(apiHint)}</td></tr>`;
             return;
         }
 
-        const columns = tableColumns(pendingMiles);
-
-        thead.innerHTML =
-            `<tr>${columns.map(col => `<th>${esc(col)}</th>`).join("")}</tr>`;
-
-        tbody.innerHTML = pendingMiles.map(row => `
+        thead.innerHTML = `<tr>${PENDING_COLUMNS.map(col => `<th>${esc(col)}</th>`).join("")}</tr>`;
+        tbody.innerHTML = rows.map(row => `
             <tr>
-                ${columns.map(col => `<td>${esc(clean(row[col]))}</td>`).join("")}
+                ${PENDING_COLUMNS.map(col => `<td>${esc(valueForPendingColumn(row, col))}</td>`).join("")}
             </tr>
         `).join("");
     }
@@ -22516,6 +22846,10 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
             if (!item) return;
 
             row.querySelector(".master-hr-edit-btn")?.addEventListener("click", () => {
+                if (window.CCTV_ACCESS && !window.CCTV_ACCESS.canManageOptions()) {
+                    setHrCrudStatus("Admin access is required to edit HR assignments.", "error");
+                    return;
+                }
                 $("masterHrEditId").value = item.id || "";
                 $("masterHrEditSource").value = item.source || "";
                 $("masterHrSiteInput").value = item.site || "";
@@ -22526,6 +22860,10 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
             });
 
             row.querySelector(".master-hr-delete-btn")?.addEventListener("click", async () => {
+                if (window.CCTV_ACCESS && !window.CCTV_ACCESS.canManageOptions()) {
+                    setHrCrudStatus("Admin access is required to delete HR assignments.", "error");
+                    return;
+                }
                 const approved = await window.appConfirm({
                     title: "Delete HR assignment?",
                     message: `${item.site} · ${item.omTeam} · ${item.hr}`,
@@ -22706,7 +23044,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
             setSyncState(
                 "live",
                 "Google Sheets connected",
-                `${pendingMiles.length} Pending Miles · ${hrAssignments.length} HR assignments loaded.`
+                `${Object.values(pendingTrackers).reduce((sum, rows) => sum + rows.length, 0)} pending rows · ${hrAssignments.length} HR assignments loaded.`
             );
 
             if (showFresh) {
@@ -22749,8 +23087,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
     }
 
     function loadNotepad() {
-        $("masterPendingNotepad").value =
-            localStorage.getItem(NOTEPAD_KEY) || "";
+        loadActiveNotepad();
     }
 
     let noteTimer = null;
@@ -22762,7 +23099,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
 
         noteTimer = setTimeout(() => {
             localStorage.setItem(
-                NOTEPAD_KEY,
+                notepadKey(),
                 $("masterPendingNotepad").value
             );
 
@@ -22775,9 +23112,10 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
     });
 
     $("masterNotepadClearBtn")?.addEventListener("click", async () => {
+        const pendingLabel = PENDING_LABELS[activePendingKey] || activePendingKey;
         const approved = await window.appConfirm({
-            title: "Clear Pending Miles notepad?",
-            message: "This will remove the saved notes from this browser.",
+            title: `Clear Pending ${pendingLabel} notepad?`,
+            message: "This will remove the saved notes for this pending tracker from this browser.",
             confirmText: "Clear Notepad",
             tone: "danger"
         });
@@ -22785,7 +23123,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         if (!approved) return;
 
         $("masterPendingNotepad").value = "";
-        localStorage.removeItem(NOTEPAD_KEY);
+        localStorage.removeItem(notepadKey());
         $("masterNotepadStatus").textContent = "Notepad cleared";
     });
 
@@ -22806,6 +23144,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
     }
 
     $("masterHrSaveBtn")?.addEventListener("click", async () => {
+        if (window.CCTV_ACCESS && !window.CCTV_ACCESS.canManageOptions()) { setHrCrudStatus("Admin access is required to change HR assignments.", "error"); return; }
         const site = clean($("masterHrSiteInput").value);
         const omTeam = clean($("masterHrTeamInput").value);
         const hr = clean($("masterHrAssignedInput").value);
@@ -22887,6 +23226,11 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         $("masterHrSearch").focus();
     });
 
+    $("masterPendingTabs")?.querySelectorAll("[data-pending-key]").forEach(btn => {
+        btn.addEventListener("click", () => selectPendingTracker(btn.dataset.pendingKey));
+    });
+    selectPendingTracker(activePendingKey);
+
     $("masterlistRefreshBtn")?.addEventListener("click", () => {
         loadMasterList(true);
     });
@@ -22914,7 +23258,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
                 $("masterPendingNotepad").value = note;
             }
 
-            localStorage.setItem(NOTEPAD_KEY, note);
+            localStorage.setItem(notepadKey(), note);
 
             localHrChanges = Array.isArray(snapshot?.hrLocal)
                 ? JSON.parse(JSON.stringify(snapshot.hrLocal))
@@ -23076,6 +23420,17 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         return "waiting";
     }
 
+    function safeWebUrl(value) {
+        const raw = String(value || "").trim();
+        if (!raw) return "";
+        try {
+            const url = new URL(raw);
+            return /^https?:$/i.test(url.protocol) ? url.href : "";
+        } catch (_) {
+            return "";
+        }
+    }
+
     function reportHtml(report) {
         const image = report.screenshotData || "";
         return `
@@ -23105,6 +23460,13 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
                     <label>
                         <span>TL / Report</span>
                         <input class="followup-edit-label" type="text" value="${esc(report.label || "")}" placeholder="Optional label">
+                    </label>
+                    <label class="followup-card-link">
+                        <span>CCTV Link / Teams Message</span>
+                        <div class="followup-link-row">
+                            <input class="followup-edit-link" type="url" value="${esc(report.cctvLink || "")}" placeholder="Paste Teams message link">
+                            <button type="button" class="edr-outline-btn followup-open-link-btn" ${safeWebUrl(report.cctvLink) ? "" : "disabled"}>Open</button>
+                        </div>
                     </label>
                     <label>
                         <span>Status</span>
@@ -23170,8 +23532,20 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
             bind(".followup-edit-date", "date");
             bind(".followup-edit-om", "om");
             bind(".followup-edit-label", "label");
+            bind(".followup-edit-link", "cctvLink", "input");
+            const followupLinkInput = card.querySelector(".followup-edit-link");
+            const followupOpenBtn = card.querySelector(".followup-open-link-btn");
+            followupLinkInput?.addEventListener("input", () => {
+                if (followupOpenBtn) followupOpenBtn.disabled = !safeWebUrl(followupLinkInput.value);
+            });
             bind(".followup-edit-status", "status");
             bind(".followup-edit-remarks", "remarks", "input");
+
+            card.querySelector(".followup-open-link-btn")?.addEventListener("click", () => {
+                const url = safeWebUrl(report.cctvLink);
+                if (!url) return;
+                window.open(url, "_blank", "noopener,noreferrer");
+            });
 
             card.querySelector(".followup-replace-btn")?.addEventListener("click", () => {
                 replaceTargetId = report.id;
@@ -23199,6 +23573,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         $("followupDate").value = todayLocal();
         $("followupOm").value = "";
         $("followupLabel").value = "";
+        if ($("followupCctvLink")) $("followupCctvLink").value = "";
         $("followupStatus").value = "Waiting for TL";
         $("followupRemarks").value = "";
         addScreenshot = "";
@@ -23329,6 +23704,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
             date,
             om,
             label: String($("followupLabel")?.value || "").trim(),
+            cctvLink: String($("followupCctvLink")?.value || "").trim(),
             status: $("followupStatus")?.value || "Waiting for TL",
             remarks: String($("followupRemarks")?.value || "").trim(),
             screenshotData: addScreenshot,
@@ -23393,7 +23769,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         <div class="maintenance-drafts-head">
             <div>
                 <h3 id="globalHistoryTitle">Workspace History</h3>
-                <p>Undo and redo changes from CCTV Audit, Maintenance AI Sorter, Maintenance Report, Pending Reports, Master List, and EDR.</p>
+                <p>Undo, redo, and inspect changes from CCTV Audit, AI Sorter, Maintenance, Master List, Follow Up Reports, and EDR.</p>
             </div>
             <button type="button" id="globalHistoryClose"
                     class="maintenance-modal-close static-close"
@@ -23409,8 +23785,13 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
             <span id="globalHistorySummary">No changes recorded yet.</span>
             <span>Max 20 changes</span>
         </div>
-        <div id="globalHistoryList" class="global-history-list">
-            <div class="edr-empty-state">No history yet.</div>
+        <div class="global-history-layout">
+            <div id="globalHistoryList" class="global-history-list">
+                <div class="edr-empty-state">No history yet.</div>
+            </div>
+            <aside id="globalHistoryPreview" class="global-history-preview">
+                <div class="global-history-preview-empty">Select a history item to see the affected report or data.</div>
+            </aside>
         </div>
         <div class="global-history-note">
             Select one history item and use Restore Selected. Deleted rows/blocks/screenshots are restored without rolling back unrelated newer work when possible.
@@ -24069,6 +24450,123 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         });
     }
 
+    function historyValue(v) {
+        return String(v == null ? "" : v).trim() || "—";
+    }
+
+    function historyItemLabel(workspace, item) {
+        if (!item) return "Unknown item";
+        if (workspace === "cctv") {
+            return [item.formattedDate || item.rawDate, item.tlName, item.agentName, item.cleanAccount || item.account, item.noc]
+                .filter(Boolean).join(" · ");
+        }
+        if (workspace === "edr") {
+            return [item.date, item.site, item.supervisorName, item.subjectName, item.account]
+                .filter(Boolean).join(" · ");
+        }
+        if (workspace === "followupReports" || workspace === "pendingReports") {
+            return [item.date, item.om, item.label || item.tl || item.agent, item.status]
+                .filter(Boolean).join(" · ");
+        }
+        if (workspace === "maintenanceReport") {
+            return [item.title || item.site || item.id, `${(item.rows || item.data || []).length || 0} rows`, `${(item.screenshots || []).length} screenshots`]
+                .filter(Boolean).join(" · ");
+        }
+        if (workspace === "aiSorter") {
+            if (Array.isArray(item)) return item.slice(0, 7).map(historyValue).join(" · ");
+            return Object.values(item).slice(0, 7).map(historyValue).join(" · ");
+        }
+        if (workspace === "masterlist") {
+            return [item.site, item.omTeam, item.hr].filter(Boolean).join(" · ");
+        }
+        return JSON.stringify(item).slice(0, 220);
+    }
+
+    function historyEntrySummary(entry) {
+        if (!entry) return "";
+        const beforeDesc = collectionDescriptor(entry.workspace, entry.before);
+        const afterDesc = collectionDescriptor(entry.workspace, entry.after);
+        if (beforeDesc && afterDesc) {
+            const beforeMap = new Map(beforeDesc.items.map(item => [historyItemIdentity(item), item]));
+            const afterMap = new Map(afterDesc.items.map(item => [historyItemIdentity(item), item]));
+            for (const [id, item] of afterMap) {
+                if (!beforeMap.has(id)) return `Added: ${historyItemLabel(entry.workspace, item)}`;
+                if (stable(beforeMap.get(id)) !== stable(item)) return `Updated: ${historyItemLabel(entry.workspace, item)}`;
+            }
+            for (const [id, item] of beforeMap) {
+                if (!afterMap.has(id)) return `Removed: ${historyItemLabel(entry.workspace, item)}`;
+            }
+        }
+        if (entry.workspace === "cctv" || entry.workspace === "edr") {
+            const a = entry.after?.form || {};
+            const label = historyItemLabel(entry.workspace, a);
+            if (label && label !== "Unknown item") return `Form: ${label}`;
+        }
+        if (entry.workspace === "masterlist" && (entry.before?.note || "") !== (entry.after?.note || "")) {
+            return "Pending tracker notepad changed";
+        }
+        return "";
+    }
+
+    function renderHistoryPreview(entry) {
+        const root = $("globalHistoryPreview");
+        if (!root) return;
+        if (!entry) {
+            root.innerHTML = '<div class="global-history-preview-empty">Select a history item to see the affected report or data.</div>';
+            return;
+        }
+
+        const beforeDesc = collectionDescriptor(entry.workspace, entry.before);
+        const afterDesc = collectionDescriptor(entry.workspace, entry.after);
+        let rows = [];
+        if (beforeDesc && afterDesc) {
+            const beforeMap = new Map(beforeDesc.items.map(item => [historyItemIdentity(item), item]));
+            const afterMap = new Map(afterDesc.items.map(item => [historyItemIdentity(item), item]));
+            afterMap.forEach((item, id) => {
+                if (!beforeMap.has(id)) rows.push({ kind:"Added", item });
+                else if (stable(beforeMap.get(id)) !== stable(item)) rows.push({ kind:"Updated", item, before:beforeMap.get(id) });
+            });
+            beforeMap.forEach((item, id) => {
+                if (!afterMap.has(id)) rows.push({ kind:"Removed", item });
+            });
+        }
+
+        // Form/notepad-only changes may not affect the primary collection.
+        if (!rows.length && entry.workspace === "cctv") {
+            const b = entry.before?.form || {};
+            const a = entry.after?.form || {};
+            const changed = Object.keys({ ...b, ...a }).filter(key => String(b[key] || "") !== String(a[key] || ""));
+            if (changed.length) rows.push({ kind:"Form", text: changed.map(key => `${key}: ${historyValue(a[key])}`).join(" · ") });
+        }
+        if (!rows.length && entry.workspace === "edr") {
+            const b = entry.before?.form || {};
+            const a = entry.after?.form || {};
+            const changed = Object.keys({ ...b, ...a }).filter(key => String(b[key] || "") !== String(a[key] || ""));
+            if (changed.length) rows.push({ kind:"Form", text: changed.map(key => `${key}: ${historyValue(a[key])}`).join(" · ") });
+        }
+        if (!rows.length && entry.workspace === "masterlist") {
+            const beforeNote = entry.before?.note || "";
+            const afterNote = entry.after?.note || "";
+            if (beforeNote !== afterNote) rows.push({ kind:"Notepad", text: afterNote || "Notepad cleared" });
+        }
+
+        root.innerHTML = `
+            <div class="global-history-preview-head">
+                <span>${esc(workspaceNames[entry.workspace] || entry.workspace)}</span>
+                <strong>${esc(entry.action || "Change")}</strong>
+                <small>${esc(new Date(entry.at).toLocaleString())}</small>
+            </div>
+            <div class="global-history-preview-list">
+                ${rows.length ? rows.slice(0, 12).map(row => `
+                    <div class="global-history-preview-row kind-${esc(row.kind.toLowerCase())}">
+                        <b>${esc(row.kind)}</b>
+                        <span>${esc(row.text || historyItemLabel(entry.workspace, row.item))}</span>
+                        ${row.before ? `<small>Previous: ${esc(historyItemLabel(entry.workspace, row.before))}</small>` : ""}
+                    </div>
+                `).join("") : '<div class="global-history-preview-empty">Snapshot saved. No single row difference could be isolated, but Restore Selected can still restore this state.</div>'}
+            </div>`;
+    }
+
     function renderList() {
         const root = $("globalHistoryList");
         if (!root) return;
@@ -24090,6 +24588,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
                     <div>
                         <strong>${esc(entry.action)}</strong>
                         <span>${esc(workspaceNames[entry.workspace] || entry.workspace)}</span>
+                        <em>${esc(historyEntrySummary(entry))}</em>
                     </div>
                     <small>${esc(formatTime(entry.at))}</small>
                 </label>
@@ -24099,6 +24598,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         root.querySelectorAll('input[name="globalHistorySelection"]').forEach(input => {
             input.addEventListener("change", () => {
                 selectedHistoryId = input.value;
+                renderHistoryPreview(entries.find(item => item.id === selectedHistoryId));
                 updateUi();
             });
         });
@@ -24127,6 +24627,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         }
 
         renderList();
+        renderHistoryPreview(entries.find(item => item.id === selectedHistoryId) || null);
     }
 
     function openModal() {
@@ -24356,6 +24857,9 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
     let lastPendingCount = 0;
     let openedLoggedFor = null;
     let usersCache = [];
+    let pendingSeenIds = new Set();
+    let accessEditingUser = null;
+    let signInLoggedFor = null;
 
     const clean = v => String(v == null ? "" : v).trim();
     const esc = v => String(v == null ? "" : v)
@@ -24410,7 +24914,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         $("authForms").hidden = true;
         $("authRejectedState").hidden = true;
         $("authWaitingState").hidden = false;
-        $("authWaitingEmail").textContent = u?.email || "";
+        $("authWaitingEmail").textContent = usernameLabel(profileUsername(profile, u));
         startPendingCheck();
     }
 
@@ -24420,7 +24924,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         $("authForms").hidden = true;
         $("authWaitingState").hidden = true;
         $("authRejectedState").hidden = false;
-        $("authRejectedEmail").textContent = u?.email || "";
+        $("authRejectedEmail").textContent = usernameLabel(profileUsername(profile, u));
         stopPendingCheck();
     }
 
@@ -24428,6 +24932,9 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         user = null;
         profile = null;
         openedLoggedFor = null;
+        signInLoggedFor = null;
+        window.CCTV_ACCOUNT_CONTEXT = null;
+        document.body.classList.remove("auth-role-admin", "auth-role-user");
         document.body.classList.add("auth-locked");
         $("authGate").hidden = false;
         $("authSidebarAccount").hidden = true;
@@ -24442,7 +24949,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         for (let i = 0; i < 4; i++) {
             const { data, error } = await client
                 .from("profiles")
-                .select("id,email,display_name,status,role,created_at,last_seen_at")
+                .select("id,email,username,display_name,status,role,permissions,created_at,last_seen_at")
                 .eq("id", uid)
                 .maybeSingle();
 
@@ -24450,6 +24957,91 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
             await new Promise(r => setTimeout(r, 350));
         }
         return null;
+    }
+
+    const DEFAULT_USER_PERMISSIONS = {
+        edr: true,
+        cctv: true,
+        aiSorter: true,
+        maintenance: true,
+        masterlist: true,
+        followup: true,
+        history: true,
+        manageOptions: false
+    };
+
+    const FULL_ADMIN_PERMISSIONS = {
+        edr: true,
+        cctv: true,
+        aiSorter: true,
+        maintenance: true,
+        masterlist: true,
+        followup: true,
+        history: true,
+        manageOptions: true
+    };
+
+    function normalizedPermissions(p) {
+        return { ...DEFAULT_USER_PERMISSIONS, ...(p?.permissions || {}) };
+    }
+
+    function isAdminProfile(p = profile) {
+        return p?.role === "admin" && p?.status === "approved";
+    }
+
+    function applyPermissionUi(p) {
+        if (!p) return;
+        const admin = isAdminProfile(p);
+        const perms = admin ? FULL_ADMIN_PERMISSIONS : normalizedPermissions(p);
+
+        document.body.classList.toggle("auth-role-admin", admin);
+        document.body.classList.toggle("auth-role-user", !admin);
+
+        const workspaceMap = {
+            edr: ["edrTabBtn", "edrPanel"],
+            cctv: ["cctvTabBtn", "cctvPanel"],
+            aiSorter: ["maintenanceTabBtn", "maintenancePanel"],
+            maintenance: ["eodTabBtn", "eodPanel"],
+            masterlist: ["masterlistTabBtn", "masterlistPanel"],
+            followup: ["followupTabBtn", "followupPanel"]
+        };
+
+        Object.entries(workspaceMap).forEach(([key, ids]) => {
+            const allowed = admin || perms[key] !== false;
+            const btn = $(ids[0]);
+            const panel = $(ids[1]);
+            if (btn) btn.hidden = !allowed;
+            if (panel && !allowed) {
+                panel.hidden = true;
+                panel.classList.remove("active");
+            }
+        });
+
+        if ($("globalHistoryBtn")) $("globalHistoryBtn").hidden = !(admin || perms.history !== false);
+        if ($("adminTabBtn")) $("adminTabBtn").hidden = !admin;
+
+        // Option/master-data management is intentionally admin-only by default.
+        const canManage = admin || perms.manageOptions === true;
+        document.querySelectorAll("#cctvPanel .add-btn, #cctvPanel .remove-btn, #edrAddSupervisorOption, #edrRemoveSupervisorOption, #edrAddAccountOption, #edrRemoveAccountOption")
+            .forEach(node => node.hidden = !canManage);
+
+        window.CCTV_ACCESS = {
+            isAdmin: () => admin,
+            canManageOptions: () => canManage,
+            can: key => admin || perms[key] !== false,
+            permissions: { ...perms }
+        };
+
+        window.CCTV_ACCOUNT_CONTEXT = { client, user, profile: p };
+        window.dispatchEvent(new CustomEvent("cctv:account-ready", { detail: { profile: p, isAdmin: admin, permissions: perms } }));
+
+        // If the current workspace is no longer allowed, open the first allowed one.
+        const activePanel = document.querySelector(".app-tab-panel.active");
+        const activePair = Object.entries(workspaceMap).find(([, ids]) => ids[1] === activePanel?.id);
+        if (activePair && !(admin || perms[activePair[0]] !== false)) {
+            const first = Object.entries(workspaceMap).find(([key, ids]) => (admin || perms[key] !== false) && !$(ids[0])?.hidden);
+            if (first) window.showWorkspaceOnly?.(first[1][1]);
+        }
     }
 
     async function applySession(session, eventName = "") {
@@ -24466,11 +25058,11 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         document.body.classList.remove("auth-locked");
         $("authGate").hidden = true;
         $("authSidebarAccount").hidden = false;
-        $("authSidebarName").textContent = p.display_name || u.email?.split("@")[0] || "Account";
-        $("authSidebarEmail").textContent = u.email || "";
+        $("authSidebarName").textContent = p.display_name || p.username || "Account";
+        $("authSidebarEmail").textContent = usernameLabel(p.username || profileUsername(p, u));
 
-        const isAdmin = p.role === "admin";
-        $("adminTabBtn").hidden = !isAdmin;
+        const isAdmin = isAdminProfile(p);
+        applyPermissionUi(p);
 
         if (isAdmin) startAdminMonitor();
         else stopAdminMonitor();
@@ -24481,7 +25073,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
             openedLoggedFor = u.id;
             await logAccess("page_open");
         }
-        if (eventName === "SIGNED_IN") await logAccess("sign_in");
+        if (eventName === "SIGNED_IN" && signInLoggedFor !== u.id) { signInLoggedFor = u.id; await logAccess("sign_in"); }
     }
 
     async function logAccess(eventName) {
@@ -24542,23 +25134,35 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         if (adminTimer) clearInterval(adminTimer);
         adminTimer = null;
         lastPendingCount = 0;
+        pendingSeenIds = new Set();
         if ($("adminPendingCount")) $("adminPendingCount").textContent = "0";
     }
 
     async function checkPending(notify) {
         if (profile?.role !== "admin") return;
-        const { count, error } = await client
+        const { data, error } = await client
             .from("profiles")
-            .select("id", { count: "exact", head: true })
-            .eq("status", "pending");
+            .select("id,email,username,display_name,created_at")
+            .eq("status", "pending")
+            .order("created_at", { ascending:false });
         if (error) return;
 
-        const n = Number(count || 0);
+        const rows = data || [];
+        const n = rows.length;
         $("adminPendingCount").textContent = String(n);
 
-        if (notify && n > lastPendingCount && n > 0) {
-            toast(`${n - lastPendingCount} new account request${n - lastPendingCount === 1 ? "" : "s"}.`);
+        const ids = new Set(rows.map(item => item.id));
+        if (notify && pendingSeenIds.size) {
+            const fresh = rows.filter(item => !pendingSeenIds.has(item.id));
+            if (fresh.length) {
+                const newest = fresh[0];
+                toast(`New account request: ${newest.display_name || usernameLabel(newest.username) || "Staff user"}`);
+            }
+        } else if (notify && !pendingSeenIds.size && n > 0) {
+            const newest = rows[0];
+            toast(`${n} pending account request${n === 1 ? "" : "s"}${newest ? ` · Latest: ${newest.display_name || usernameLabel(newest.username)}` : ""}`);
         }
+        pendingSeenIds = ids;
         lastPendingCount = n;
     }
 
@@ -24594,16 +25198,18 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
 
         body.innerHTML = rows.map(item => {
             const self = item.id === user?.id;
-            const search = ((item.display_name || "") + " " + (item.email || "")).toLowerCase();
+            const search = ((item.display_name || "") + " " + (item.username || "")).toLowerCase();
+            const roleLabel = item.role === "admin" ? "Admin" : "User";
             return `
             <tr data-search="${esc(search)}">
-              <td><div class="auth-admin-user-cell"><strong>${esc(item.display_name || item.email || "User")}</strong><span>${esc(item.email || "")}</span></div></td>
+              <td><div class="auth-admin-user-cell"><strong>${esc(item.display_name || item.username || "User")}</strong><span>${esc(usernameLabel(item.username))}</span></div></td>
               <td>${statusPill(item.status)}</td>
-              <td><span class="auth-role-pill ${esc(item.role)}">${item.role === "admin" ? "Admin" : "User"}</span></td>
+              <td><span class="auth-role-pill ${esc(item.role)}">${roleLabel}</span></td>
               <td>${esc(dt(item.created_at))}</td>
               <td>${esc(dt(item.last_seen_at))}</td>
               <td><div class="auth-admin-actions">
                 ${item.status !== "approved" ? `<button class="auth-approve-btn" data-id="${esc(item.id)}">Approve</button>` : ""}
+                <button class="auth-access-btn" data-id="${esc(item.id)}">Access</button>
                 ${!self && item.status !== "rejected" ? `<button class="auth-reject-btn" data-id="${esc(item.id)}">Disapprove</button>` : ""}
                 ${!self ? `<button class="auth-remove-user-btn" data-id="${esc(item.id)}">Remove</button>` : '<span class="auth-self-label">You</span>'}
               </div></td>
@@ -24614,12 +25220,16 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
             btn.addEventListener("click", () => setStatus(btn.dataset.id, "approved"))
         );
 
+        body.querySelectorAll(".auth-access-btn").forEach(btn =>
+            btn.addEventListener("click", () => openAccessEditor(btn.dataset.id))
+        );
+
         body.querySelectorAll(".auth-reject-btn").forEach(btn =>
             btn.addEventListener("click", async () => {
                 const item = rows.find(x => x.id === btn.dataset.id);
                 const ok = await window.appConfirm({
                     title: "Disapprove account?",
-                    message: `${item?.display_name || item?.email || "This user"} will lose access.`,
+                    message: `${item?.display_name || usernameLabel(item?.username) || "This user"} will lose access.`,
                     confirmText: "Disapprove",
                     tone: "danger"
                 });
@@ -24632,7 +25242,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
                 const item = rows.find(x => x.id === btn.dataset.id);
                 const ok = await window.appConfirm({
                     title: "Remove account?",
-                    message: `${item?.display_name || item?.email || "This user"} will be permanently deleted.`,
+                    message: `${item?.display_name || usernameLabel(item?.username) || "This user"} will be permanently deleted.`,
                     confirmText: "Remove Account",
                     tone: "danger"
                 });
@@ -24657,7 +25267,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
             const label = log.event === "sign_in" ? "Signed In" :
                 log.event === "sign_out" ? "Logged Out" : "Opened Website";
             return `<tr>
-              <td><div class="auth-admin-user-cell"><strong>${esc(who?.display_name || who?.email || "Removed User")}</strong><span>${esc(who?.email || "")}</span></div></td>
+              <td><div class="auth-admin-user-cell"><strong>${esc(who?.display_name || who?.username || "Removed User")}</strong><span>${esc(usernameLabel(who?.username))}</span></div></td>
               <td><span class="auth-event-pill ${esc(log.event)}">${label}</span></td>
               <td>${esc(dt(log.created_at))}</td>
               <td>${esc(log.meta?.path || "/")}</td>
@@ -24672,7 +25282,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         try {
             const [p, l] = await Promise.all([
                 client.from("profiles")
-                    .select("id,email,display_name,status,role,created_at,last_seen_at")
+                    .select("id,email,username,display_name,status,role,permissions,created_at,last_seen_at")
                     .order("created_at", { ascending:false }),
                 client.from("access_logs")
                     .select("id,user_id,event,meta,created_at")
@@ -24701,6 +25311,141 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
             toast(e.message || "Could not load accounts.");
         } finally {
             busy($("adminRefreshBtn"), false);
+        }
+    }
+
+    function defaultPermissionsForRole(role) {
+        return role === "admin" ? { ...FULL_ADMIN_PERMISSIONS } : { ...DEFAULT_USER_PERMISSIONS };
+    }
+
+    function openAccessEditor(id) {
+        const item = usersCache.find(x => x.id === id);
+        if (!item) return;
+        accessEditingUser = item;
+        $("adminAccessTargetId").value = item.id;
+        $("adminAccessUserLabel").textContent = `${item.display_name || item.username || "User"} · ${usernameLabel(item.username)}`;
+        $("adminAccessRole").value = item.role === "admin" ? "admin" : "user";
+        const perms = item.role === "admin" ? FULL_ADMIN_PERMISSIONS : { ...DEFAULT_USER_PERMISSIONS, ...(item.permissions || {}) };
+        $("adminAccessGrid")?.querySelectorAll("[data-permission]").forEach(input => {
+            input.checked = !!perms[input.dataset.permission];
+        });
+        refreshAccessRoleUi();
+        $("adminAccessModal").classList.add("open");
+        $("adminAccessModal").setAttribute("aria-hidden", "false");
+        document.body.classList.add("maintenance-modal-open");
+    }
+
+    function closeAccessEditor() {
+        $("adminAccessModal")?.classList.remove("open");
+        $("adminAccessModal")?.setAttribute("aria-hidden", "true");
+        document.body.classList.remove("maintenance-modal-open");
+        accessEditingUser = null;
+    }
+
+    function refreshAccessRoleUi() {
+        const admin = $("adminAccessRole")?.value === "admin";
+        $("adminAccessGrid")?.querySelectorAll("[data-permission]").forEach(input => {
+            if (admin) input.checked = true;
+            input.disabled = admin;
+        });
+    }
+
+    async function saveAccessEditor() {
+        const id = $("adminAccessTargetId")?.value;
+        if (!id) return;
+        const role = $("adminAccessRole")?.value === "admin" ? "admin" : "user";
+        const permissions = {};
+        $("adminAccessGrid")?.querySelectorAll("[data-permission]").forEach(input => {
+            permissions[input.dataset.permission] = role === "admin" ? true : !!input.checked;
+        });
+        busy($("adminAccessSave"), true, "Saving...");
+        try {
+            const { error } = await client.rpc("admin_set_user_access", {
+                p_target: id,
+                p_role: role,
+                p_permissions: permissions
+            });
+            if (error) throw error;
+            toast(role === "admin" ? "Admin access saved." : "User access updated.");
+            closeAccessEditor();
+            await loadAdmin();
+            if (id === user?.id) {
+                const fresh = await readProfile(user.id);
+                if (fresh) { profile = fresh; applyPermissionUi(profile); }
+            }
+        } catch (e) {
+            toast(e.message || "Could not update access.");
+        } finally {
+            busy($("adminAccessSave"), false);
+        }
+    }
+
+    async function createStaffAccount() {
+        if (profile?.role !== "admin") return;
+        const name = clean($("adminCreateName")?.value);
+        const username = cleanUsername($("adminCreateUsername")?.value);
+        const password = $("adminCreatePassword")?.value || "";
+        const role = $("adminCreateRole")?.value === "admin" ? "admin" : "user";
+        const status = $("adminCreateAccountStatus");
+        const btn = $("adminCreateAccountBtn");
+
+        if (!name || !validUsername(username) || password.length < 8) {
+            if (status) status.textContent = "Enter a name, a 3–32 character username (letters, numbers, dot, underscore, or dash), and a password with at least 8 characters.";
+            return;
+        }
+
+        busy(btn, true, "Creating...");
+        if (status) status.textContent = "Creating account...";
+        try {
+            const existingEmail = await resolveUsernameEmail(username);
+            if (existingEmail) throw new Error("That username is already in use.");
+
+            const email = usernameLoginEmail(username);
+
+            // Separate non-persistent client: creating a staff login will not log the admin out.
+            const tempClient = window.supabase.createClient(
+                cfg.SUPABASE_URL,
+                cfg.SUPABASE_PUBLIC_KEY,
+                { auth:{ persistSession:false, autoRefreshToken:false, detectSessionInUrl:false, storageKey:"cctv-admin-create-temp" } }
+            );
+            const { data, error } = await tempClient.auth.signUp({
+                email,
+                password,
+                options:{ data:{ display_name:name, username } }
+            });
+            if (error) throw error;
+            if (!data?.user?.id) throw new Error("Account was not created.");
+
+            const permissions = defaultPermissionsForRole(role);
+            const { error: accessError } = await client.rpc("admin_set_user_access", {
+                p_target: data.user.id,
+                p_role: role,
+                p_permissions: permissions
+            });
+            if (accessError) throw accessError;
+
+            // Admin-created accounts are ready immediately.
+            const { error: statusError } = await client.rpc("admin_set_user_status", {
+                p_target: data.user.id,
+                p_status: "approved"
+            });
+            if (statusError) throw statusError;
+
+            try { await tempClient.auth.signOut(); } catch (_) {}
+
+            $("adminCreateName").value = "";
+            $("adminCreateUsername").value = "";
+            $("adminCreatePassword").value = "";
+            $("adminCreateRole").value = "user";
+
+            if (status) status.textContent = `${name} created as ${role === "admin" ? "Admin" : "User"} · Username: ${username}`;
+            toast(`${name} account created.`);
+            await loadAdmin();
+        } catch (e) {
+            if (status) status.textContent = e.message || "Could not create account.";
+            toast(e.message || "Could not create account.");
+        } finally {
+            busy(btn, false);
         }
     }
 
@@ -24782,14 +25527,20 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         const btn = $("authSignInBtn");
         busy(btn, true, "Signing in...");
         try {
+            const username = cleanUsername($("authSignInUsername").value);
+            if (!validUsername(username)) throw new Error("Enter a valid username.");
+
+            const email = await resolveUsernameEmail(username);
+            if (!email) throw new Error("Incorrect username or password.");
+
             const { data, error } = await client.auth.signInWithPassword({
-                email: clean($("authSignInEmail").value),
+                email,
                 password: $("authSignInPassword").value
             });
             if (error) throw error;
             await applySession(data.session, "SIGNED_IN");
         } catch (err) {
-            message(err.message === "Invalid login credentials" ? "Incorrect email or password." : err.message);
+            message(err.message === "Invalid login credentials" ? "Incorrect username or password." : err.message);
         } finally {
             busy(btn, false);
         }
@@ -24798,27 +25549,37 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
     $("authSignUpForm")?.addEventListener("submit", async e => {
         e.preventDefault();
         message("");
+
+        const name = clean($("authSignUpName").value);
+        const username = cleanUsername($("authSignUpUsername").value);
         const pw = $("authSignUpPassword").value;
         const confirm = $("authSignUpConfirm").value;
+
+        if (!name) return message("Enter your name.");
+        if (!validUsername(username)) return message("Username must be 3–32 characters using letters, numbers, dot, underscore, or dash.");
         if (pw.length < 8) return message("Password must be at least 8 characters.");
         if (pw !== confirm) return message("Passwords do not match.");
 
         const btn = $("authSignUpBtn");
         busy(btn, true, "Creating...");
         try {
+            const existingEmail = await resolveUsernameEmail(username);
+            if (existingEmail) throw new Error("That username is already in use.");
+
             const { data, error } = await client.auth.signUp({
-                email: clean($("authSignUpEmail").value),
+                email: usernameLoginEmail(username),
                 password: pw,
-                options:{ data:{ display_name: clean($("authSignUpName").value) } }
+                options:{ data:{ display_name:name, username } }
             });
             if (error) throw error;
 
             if (data.session) {
                 user = data.user;
+                profile = await readProfile(data.user.id);
                 lockPending(data.user);
             } else {
                 showForm("signin");
-                message("Account created. Confirm your email if required, then sign in. Admin approval is still required.", "success");
+                message("Account request created. Sign in with your username and wait for admin approval.", "success");
             }
         } catch (err) {
             message(err.message || "Could not create account.");
@@ -24830,6 +25591,13 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
     $("authLogoutBtn")?.addEventListener("click", logout);
     $("authPendingLogoutBtn")?.addEventListener("click", logout);
     $("authRejectedLogoutBtn")?.addEventListener("click", logout);
+    $("adminCreateAccountBtn")?.addEventListener("click", createStaffAccount);
+    $("adminAccessRole")?.addEventListener("change", refreshAccessRoleUi);
+    $("adminAccessSave")?.addEventListener("click", saveAccessEditor);
+    $("adminAccessCancel")?.addEventListener("click", closeAccessEditor);
+    $("adminAccessClose")?.addEventListener("click", closeAccessEditor);
+    $("adminAccessBackdrop")?.addEventListener("click", closeAccessEditor);
+
     $("adminRefreshBtn")?.addEventListener("click", loadAdmin);
     $("adminUserSearch")?.addEventListener("input", filterUsers);
     $("adminTabBtn")?.addEventListener("click", () => setTimeout(loadAdmin, 0));
