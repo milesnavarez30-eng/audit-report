@@ -17934,6 +17934,28 @@ body.ops-redesign-v3.dark-mode .followup-status-pill.replied{color:#93c5fd}.dark
         showMessage("Google Sheets connection cleared.", "info");
     }
 
+    function maintenanceScreenshotSource(shot) {
+        if (!shot) return "";
+        if (typeof shot === "string") return shot;
+
+        const candidates = [
+            shot.dataUrl,
+            shot.src,
+            shot.imageData,
+            shot.url,
+            shot.preview,
+            shot.data,
+            shot.content
+        ];
+
+        return String(candidates.find(value => /^data:image\//i.test(String(value || ""))) || "");
+    }
+
+    function maintenanceReadableScreenshotCount(block) {
+        if (!Array.isArray(block?.screenshots)) return 0;
+        return block.screenshots.filter(shot => !!maintenanceScreenshotSource(shot)).length;
+    }
+
     function buildMaintenanceSheetsPayload() {
         syncTop();
 
@@ -17952,12 +17974,8 @@ body.ops-redesign-v3.dark-mode .followup-status-pill.replied{color:#93c5fd}.dark
                 rows: maintenanceRowsForSheets(block.lanesText || ""),
                 screenshots: Array.isArray(block.screenshots)
                     ? block.screenshots
-                        .map(shot => {
-                            if (!shot) return "";
-                            if (typeof shot === "string") return shot;
-                            return shot.dataUrl || shot.src || shot.imageData || shot.url || "";
-                        })
-                        .filter(value => /^data:image\//i.test(String(value || "")))
+                        .map(maintenanceScreenshotSource)
+                        .filter(Boolean)
                     : [],
                 remarks: Array.isArray(block.remarks)
                     ? block.remarks
@@ -18237,9 +18255,10 @@ body.ops-redesign-v3.dark-mode .followup-status-pill.replied{color:#93c5fd}.dark
             0
         );
 
-        if (visibleScreenshotCount > 0 && screenshotCount === 0) {
+        if (visibleScreenshotCount !== screenshotCount) {
+            const missingScreenshots = Math.max(0, visibleScreenshotCount - screenshotCount);
             showMessage(
-                "CCTV screenshots are visible in this report, but the send payload could not read them. Re-add the screenshot once, then send again.",
+                `Screenshot check stopped the send: ${screenshotCount} of ${visibleScreenshotCount} CCTV screenshot${visibleScreenshotCount === 1 ? "" : "s"} are readable for Google Sheets. ${missingScreenshots} saved screenshot${missingScreenshots === 1 ? "" : "s"} must be removed and re-added once before sending.`,
                 "error"
             );
             return;
@@ -18577,9 +18596,9 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
     async function addScreenshots(block, files) {
         if (!files.length) return;
 
-        showMessage("Processing screenshot...", "info");
+        showMessage(files.length > 1 ? `Processing ${files.length} screenshots...` : "Processing screenshot...", "info");
 
-        for (const file of files.slice(0, 8)) {
+        for (const file of files) {
             if (!file.type.startsWith("image/")) continue;
             try {
                 block.screenshots.push({
@@ -18593,7 +18612,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
 
         render();
         await saveDraft(true);
-        showMessage("Screenshot added and auto-saved.", "success");
+        showMessage(files.length > 1 ? `${files.length} screenshots added and auto-saved.` : "Screenshot added and auto-saved.", "success");
     }
 
     function compressImage(file) {
