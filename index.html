@@ -18152,13 +18152,18 @@ body.ops-redesign-v3.dark-mode .followup-status-pill.replied{color:#93c5fd}.dark
         if (!screenshotRefs.length) return prepared;
 
         for (let i = 0; i < screenshotRefs.length; i++) {
-            if (button) button.textContent = `Preparing images ${i + 1}/${screenshotRefs.length}...`;
+            if (button) setMaintenanceSendBusy(button);
             const ref = screenshotRefs[i];
             prepared.blocks[ref.blockIndex].screenshots[ref.shotIndex] =
                 await compressScreenshotForSheets(ref.shot);
         }
 
         return prepared;
+    }
+
+    function setMaintenanceSendBusy(button, text = "Sending...") {
+        if (!button) return;
+        button.textContent = text;
     }
 
     async function uploadMaintenanceChunks(url, submissionId, chunks, button) {
@@ -18186,7 +18191,7 @@ body.ops-redesign-v3.dark-mode .followup-status-pill.replied{color:#93c5fd}.dark
                 }
 
                 completed++;
-                if (button) button.textContent = `Uploading ${completed}/${chunks.length}...`;
+                if (button) setMaintenanceSendBusy(button);
             }
         }
 
@@ -18198,7 +18203,7 @@ body.ops-redesign-v3.dark-mode .followup-status-pill.replied{color:#93c5fd}.dark
     async function sendMaintenancePayloadViaJsonp(url, payload, button) {
         const prepared = await prepareMaintenancePayloadForTransport(payload, button);
 
-        if (button) button.textContent = "Preparing data...";
+        if (button) setMaintenanceSendBusy(button);
 
         const encoded = utf8ToBase64(JSON.stringify(prepared));
         const chunkSize = 4200;
@@ -18212,7 +18217,7 @@ body.ops-redesign-v3.dark-mode .followup-status-pill.replied{color:#93c5fd}.dark
 
         await uploadMaintenanceChunks(url, payload.submissionId, chunks, button);
 
-        if (button) button.textContent = "Writing to Sheets...";
+        if (button) setMaintenanceSendBusy(button);
 
         const committed = await maintenanceJsonp(url, {
             action: "commit",
@@ -18280,20 +18285,20 @@ body.ops-redesign-v3.dark-mode .followup-status-pill.replied{color:#93c5fd}.dark
 
         const button = $("simpleEodSendSheetsBtn");
         const originalHtml = button.innerHTML;
+        setMaintenanceSheetConnectionState("is-checking", "Sheets: sending...");
         button.disabled = true;
-        button.textContent = "Checking...";
+        setMaintenanceSendBusy(button);
 
         try {
-            const health = await testMaintenanceSheetsConnection(false);
-
-            if (!health?.ok) {
-                openMaintenanceSheetSetup();
-                throw new Error(
-                    health?.error ||
-                    "Google Sheets receiver is not reachable. Check Sheet Setup."
-                );
+            let health = null;
+            try {
+                health = await testMaintenanceSheetsConnection(false);
+            } catch (error) {
+                console.warn("Silent Sheet health check skipped:", error);
             }
 
+            // One-click behavior: even if the pre-check times out, try the real send.
+            // The actual receiver result remains the source of truth.
             const resultEnvelope = await sendMaintenancePayloadViaJsonp(url, payload, button);
             const result = resultEnvelope.result || {};
 
@@ -18325,7 +18330,7 @@ body.ops-redesign-v3.dark-mode .followup-status-pill.replied{color:#93c5fd}.dark
                 : "no CCTV images";
 
             showMessage(
-                `Google Sheets confirmed: ${rowCount} row${rowCount === 1 ? "" : "s"}, ${imageText}, and ${remarksCount} remark${remarksCount === 1 ? "" : "s"} written${startRow}${endRow}.`,
+                `Sent successfully to Google Sheets: ${rowCount} row${rowCount === 1 ? "" : "s"}, ${imageText}, and ${remarksCount} remark${remarksCount === 1 ? "" : "s"} written${startRow}${endRow}.`,
                 "success"
             );
         } catch (error) {
