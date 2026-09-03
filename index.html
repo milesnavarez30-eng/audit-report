@@ -4,6 +4,169 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>CCTV Audit</title>
+
+    <script id="cctvPerAccountDataScope">
+    (() => {
+        const native = {
+            getItem: Storage.prototype.getItem,
+            setItem: Storage.prototype.setItem,
+            removeItem: Storage.prototype.removeItem,
+            key: Storage.prototype.key,
+            clear: Storage.prototype.clear,
+            idbOpen: indexedDB.open.bind(indexedDB),
+            idbDelete: indexedDB.deleteDatabase.bind(indexedDB)
+        };
+
+        const LEGACY_OWNER_KEY = "__cctv_scope_legacy_owner_v1";
+        const ACTIVE_USER_KEY = "__cctv_scope_active_user_v1";
+
+        // Connection/config values are not operational report data.
+        // Keep them shared on the same browser so every account can use
+        // the already-configured receivers without exposing another user's reports.
+        const GLOBAL_APP_KEYS = new Set([
+            "maintenance_google_sheets_web_app_url_v1",
+            "edr_google_docs_web_app_url_v1",
+            "edr_google_docs_receiver_font_fix_v1"
+        ]);
+
+        const rawGet = key => native.getItem.call(window.localStorage, key);
+        const rawSet = (key, value) => native.setItem.call(window.localStorage, key, String(value));
+        const rawRemove = key => native.removeItem.call(window.localStorage, key);
+
+        function detectSupabaseUserId() {
+            try {
+                for (let i = 0; i < window.localStorage.length; i++) {
+                    const key = native.key.call(window.localStorage, i);
+                    if (!key || !/^sb-.*-auth-token$/i.test(key)) continue;
+
+                    const parsed = JSON.parse(native.getItem.call(window.localStorage, key) || "null");
+                    const id =
+                        parsed?.user?.id ||
+                        parsed?.currentSession?.user?.id ||
+                        parsed?.session?.user?.id ||
+                        null;
+
+                    if (id) return String(id);
+                }
+            } catch (error) {
+                console.warn("Could not detect Supabase user for local data scope.", error);
+            }
+            return null;
+        }
+
+        let legacyOwner = rawGet(LEGACY_OWNER_KEY) || "";
+        let currentUserId = detectSupabaseUserId() || rawGet(ACTIVE_USER_KEY) || "";
+
+        function prefixFor(userId) {
+            if (!userId) return "__cctv_guest__::";
+            if (legacyOwner && legacyOwner === userId) return "";
+            return `__cctv_user_${userId}__::`;
+        }
+
+        let currentPrefix = prefixFor(currentUserId);
+
+        function isGlobalStorageKey(key) {
+            const text = String(key || "");
+            return (
+                /^sb-/i.test(text) ||
+                text === LEGACY_OWNER_KEY ||
+                text === ACTIVE_USER_KEY ||
+                GLOBAL_APP_KEYS.has(text)
+            );
+        }
+
+        function scopedStorageKey(key) {
+            const text = String(key || "");
+            if (isGlobalStorageKey(text)) return text;
+            return currentPrefix + text;
+        }
+
+        Storage.prototype.getItem = function(key) {
+            if (this === window.localStorage) {
+                return native.getItem.call(this, scopedStorageKey(key));
+            }
+            return native.getItem.call(this, key);
+        };
+
+        Storage.prototype.setItem = function(key, value) {
+            if (this === window.localStorage) {
+                return native.setItem.call(this, scopedStorageKey(key), value);
+            }
+            return native.setItem.call(this, key, value);
+        };
+
+        Storage.prototype.removeItem = function(key) {
+            if (this === window.localStorage) {
+                return native.removeItem.call(this, scopedStorageKey(key));
+            }
+            return native.removeItem.call(this, key);
+        };
+
+        // App databases are isolated by authenticated account.
+        function scopedDbName(name) {
+            const text = String(name || "");
+            if (!/^(cctv_|maintenance_)/i.test(text)) return text;
+            return currentPrefix + text;
+        }
+
+        indexedDB.open = function(name, version) {
+            const scoped = scopedDbName(name);
+            return version === undefined
+                ? native.idbOpen(scoped)
+                : native.idbOpen(scoped, version);
+        };
+
+        indexedDB.deleteDatabase = function(name) {
+            return native.idbDelete(scopedDbName(name));
+        };
+
+        window.CCTV_DATA_SCOPE = {
+            activate(userId, isAdmin) {
+                const id = String(userId || "");
+                if (!id) return false;
+
+                let claimedLegacy = false;
+
+                // Existing pre-V8.14 data belongs to the first approved Admin
+                // who opens this update. This preserves Miles' existing EDR/Audit data
+                // while preventing newly-created users from seeing it.
+                if (isAdmin && !legacyOwner) {
+                    legacyOwner = id;
+                    rawSet(LEGACY_OWNER_KEY, id);
+                    claimedLegacy = true;
+                }
+
+                const desiredPrefix = prefixFor(id);
+                const changed =
+                    currentUserId !== id ||
+                    currentPrefix !== desiredPrefix ||
+                    claimedLegacy;
+
+                currentUserId = id;
+                currentPrefix = desiredPrefix;
+                rawSet(ACTIVE_USER_KEY, id);
+
+                return changed;
+            },
+
+            deactivate() {
+                const hadUser = !!currentUserId;
+                currentUserId = "";
+                currentPrefix = prefixFor("");
+                rawRemove(ACTIVE_USER_KEY);
+                return hadUser;
+            },
+
+            info() {
+                return {
+                    userId: currentUserId,
+                    isLegacyOwner: !!currentUserId && legacyOwner === currentUserId,
+                    prefix: currentPrefix
+                };
+            }
+        };
+    })();
+    </script>
     
     <link rel="icon" type="image/x-icon" href="./favicon.ico">
 
@@ -25320,6 +25483,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
     }
 
     function signedOut() {
+        const scopeNeedsReload = !!window.CCTV_DATA_SCOPE?.deactivate?.();
         user = null;
         profile = null;
         openedLoggedFor = null;
@@ -25334,6 +25498,12 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         stopPendingCheck();
         stopAdminMonitor();
         showForm("signin");
+
+        // Prevent the next account on the same browser from inheriting
+        // in-memory EDR/Audit/Maintenance state from the previous account.
+        if (scopeNeedsReload) {
+            setTimeout(() => location.reload(), 0);
+        }
     }
 
     async function readProfile(uid) {
@@ -25412,8 +25582,18 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         if ($("adminTabBtn")) $("adminTabBtn").hidden = !admin;
 
         // Option/master-data management is intentionally admin-only by default.
-        const canManage = admin || perms.manageOptions === true;
-        document.querySelectorAll("#cctvPanel .add-btn, #cctvPanel .remove-btn, #edrAddSupervisorOption, #edrRemoveSupervisorOption, #edrAddAccountOption, #edrRemoveAccountOption")
+        const canManage = admin;
+        document.querySelectorAll([
+            "#cctvPanel .add-btn",
+            "#cctvPanel .remove-btn",
+            "#edrAddSupervisorOption",
+            "#edrRemoveSupervisorOption",
+            "#edrAddAccountOption",
+            "#edrRemoveAccountOption",
+            "#masterlistPanel .master-hr-crud-form",
+            "#masterAssignedHrTable .master-hr-edit-btn",
+            "#masterAssignedHrTable .master-hr-delete-btn"
+        ].join(","))
             .forEach(node => node.hidden = !canManage);
 
         window.CCTV_ACCESS = {
@@ -25444,6 +25624,19 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
 
         if (!p || p.status === "pending") return lockPending(u);
         if (p.status === "rejected") return lockRejected(u);
+
+        // Activate this account's private browser storage before opening
+        // any workspace. A reload occurs only when switching accounts or
+        // when the existing Admin data is claimed for the first time.
+        const scopeNeedsReload = !!window.CCTV_DATA_SCOPE?.activate?.(
+            u.id,
+            p.role === "admin" && p.status === "approved"
+        );
+
+        if (scopeNeedsReload) {
+            location.reload();
+            return;
+        }
 
         profile = p;
         document.body.classList.remove("auth-locked");
@@ -25735,9 +25928,15 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
 
     function refreshAccessRoleUi() {
         const admin = $("adminAccessRole")?.value === "admin";
+
         $("adminAccessGrid")?.querySelectorAll("[data-permission]").forEach(input => {
+            const isManageOptions = input.dataset.permission === "manageOptions";
+
             if (admin) input.checked = true;
-            input.disabled = admin;
+            if (!admin && isManageOptions) input.checked = false;
+
+            input.disabled = admin || isManageOptions;
+            input.closest("label")?.toggleAttribute("hidden", isManageOptions);
         });
     }
 
@@ -25747,7 +25946,10 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         const role = $("adminAccessRole")?.value === "admin" ? "admin" : "user";
         const permissions = {};
         $("adminAccessGrid")?.querySelectorAll("[data-permission]").forEach(input => {
-            permissions[input.dataset.permission] = role === "admin" ? true : !!input.checked;
+            permissions[input.dataset.permission] =
+                input.dataset.permission === "manageOptions"
+                    ? role === "admin"
+                    : (role === "admin" ? true : !!input.checked);
         });
         busy($("adminAccessSave"), true, "Saving...");
         try {
