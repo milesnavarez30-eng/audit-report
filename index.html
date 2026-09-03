@@ -11652,6 +11652,7 @@ body.ops-redesign-v3.dark-mode #maintenancePanel .mini-sheet-findbar input::plac
             <button type="button" class="btn-eod-sheet-copy" id="simpleEodCopySheetsBtn"><span>Copy Full Report to Sheets</span></button>
             <button type="button" class="btn-eod-sheet-send" id="simpleEodSendSheetsBtn"><span>Send to Google Sheets</span></button>
             <button type="button" class="btn-eod-outline" id="simpleEodSheetSetupBtn"><span>Sheet Setup</span></button>
+            <span class="maintenance-sheet-connection-state is-unchecked" id="maintenanceSheetConnectionState">Sheets: not checked</span>
             <button type="button" class="btn-eod-secondary" id="simpleEodPreviewBtn"><span>Preview / Print</span></button>
             <button type="button" class="btn-eod-primary" id="simpleEodPdfBtn"><span>Download PDF</span></button>
             <button type="button" class="btn-eod-danger" id="simpleEodClearBtn"><span>Clear All</span></button>
@@ -11659,7 +11660,7 @@ body.ops-redesign-v3.dark-mode #maintenancePanel .mini-sheet-findbar input::plac
         </div>
 
         <div class="maintenance-sheets-copy-hint">
-            <strong>Send to Google Sheets</strong> can send the report title/date, all maintenance rows, CCTV screenshots, and remarks directly to your tracker. Use <strong>Sheet Setup</strong> once to save the Apps Script connection.
+            <strong>Send to Google Sheets</strong> now verifies the Apps Script receiver before sending and confirms the submission after it is written. If it fails, the exact receiver error is shown instead of a false success message.
         </div>
 
         <div id="simpleEodMessage" class="simple-eod-message" aria-live="polite"></div>
@@ -12548,6 +12549,9 @@ https://www.facebook.com/share/..."></textarea>
         </div>
 
         <div class="maintenance-sheet-setup-actions">
+            <button type="button" class="btn-eod-outline" id="maintenanceTestSheetSetup">
+                Test Connection
+            </button>
             <button type="button" class="btn-eod-primary" id="maintenanceSaveSheetSetup">
                 Save Connection
             </button>
@@ -12555,6 +12559,7 @@ https://www.facebook.com/share/..."></textarea>
                 Clear Connection
             </button>
         </div>
+        <div class="maintenance-sheet-test-result" id="maintenanceSheetTestResult" aria-live="polite"></div>
     </div>
 </div>
 
@@ -17912,13 +17917,20 @@ body.ops-redesign-v3.dark-mode .followup-status-pill.replied{color:#93c5fd}.dark
         }
 
         localStorage.setItem(MAINTENANCE_SHEETS_WEB_APP_KEY, value);
+        setMaintenanceSheetConnectionState("is-unchecked", "Sheets: not checked");
         closeMaintenanceSheetSetup();
-        showMessage("Google Sheets connection saved in this browser.", "success");
+        showMessage("Google Sheets connection saved. Click Send or Test Connection to verify.", "success");
     }
 
     function clearMaintenanceSheetSetup() {
         localStorage.removeItem(MAINTENANCE_SHEETS_WEB_APP_KEY);
         $("maintenanceSheetWebAppUrl").value = "";
+        setMaintenanceSheetConnectionState("is-unchecked", "Sheets: not checked");
+        const result = $("maintenanceSheetTestResult");
+        if (result) {
+            result.className = "maintenance-sheet-test-result";
+            result.textContent = "";
+        }
         showMessage("Google Sheets connection cleared.", "info");
     }
 
@@ -17931,6 +17943,7 @@ body.ops-redesign-v3.dark-mode .followup-status-pill.replied{color:#93c5fd}.dark
 
         return {
             action: "appendMaintenanceReport",
+            submissionId: `maintenance_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`,
             reportTitle: cleanTitle,
             reportDate: state.date || "",
             sentAt: new Date().toISOString(),
@@ -17948,6 +17961,136 @@ body.ops-redesign-v3.dark-mode .followup-status-pill.replied{color:#93c5fd}.dark
                         .filter(Boolean)
                     : []
             }))
+        };
+    }
+
+
+    function setMaintenanceSheetConnectionState(kind, text) {
+        const chip = $("maintenanceSheetConnectionState");
+        if (!chip) return;
+        chip.classList.remove("is-unchecked", "is-ok", "is-error", "is-checking");
+        chip.classList.add(kind || "is-unchecked");
+        chip.textContent = text || "Sheets: not checked";
+    }
+
+    function maintenanceJsonp(url, params = {}, timeoutMs = 8000) {
+        return new Promise((resolve, reject) => {
+            const callbackName = `__maintenanceSheetsCb_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+            const script = document.createElement("script");
+            let settled = false;
+
+            const cleanup = () => {
+                try { delete window[callbackName]; } catch {}
+                script.remove();
+            };
+
+            const timer = setTimeout(() => {
+                if (settled) return;
+                settled = true;
+                cleanup();
+                reject(new Error("Connection timed out."));
+            }, timeoutMs);
+
+            window[callbackName] = data => {
+                if (settled) return;
+                settled = true;
+                clearTimeout(timer);
+                cleanup();
+                resolve(data || {});
+            };
+
+            const target = new URL(url);
+            Object.entries(params || {}).forEach(([key, value]) => {
+                target.searchParams.set(key, String(value ?? ""));
+            });
+            target.searchParams.set("callback", callbackName);
+            target.searchParams.set("_", String(Date.now()));
+
+            script.onerror = () => {
+                if (settled) return;
+                settled = true;
+                clearTimeout(timer);
+                cleanup();
+                reject(new Error("Could not reach the Apps Script receiver."));
+            };
+
+            script.src = target.toString();
+            document.head.appendChild(script);
+        });
+    }
+
+    async function testMaintenanceSheetsConnection(showUi = true) {
+        const url = getMaintenanceSheetsWebAppUrl() || String($("maintenanceSheetWebAppUrl")?.value || "").trim();
+
+        if (!isValidAppsScriptWebAppUrl(url)) {
+            setMaintenanceSheetConnectionState("is-error", "Sheets: setup needed");
+            if (showUi) {
+                const result = $("maintenanceSheetTestResult");
+                if (result) {
+                    result.className = "maintenance-sheet-test-result is-error";
+                    result.textContent = "Paste a valid Apps Script Web App URL ending in /exec.";
+                }
+            }
+            return { ok: false, error: "Invalid Apps Script Web App URL." };
+        }
+
+        setMaintenanceSheetConnectionState("is-checking", "Sheets: checking...");
+
+        try {
+            const data = await maintenanceJsonp(url, { action: "health" }, 9000);
+            if (!data || data.ok !== true) {
+                throw new Error(data?.error || "Receiver health check failed.");
+            }
+
+            setMaintenanceSheetConnectionState("is-ok", "Sheets: connected");
+
+            if (showUi) {
+                const result = $("maintenanceSheetTestResult");
+                if (result) {
+                    result.className = "maintenance-sheet-test-result is-ok";
+                    result.textContent = `Connected: ${data.spreadsheetName || "Google Sheet"} → ${data.sheetName || "target tab"}.`;
+                }
+            }
+
+            return data;
+        } catch (error) {
+            setMaintenanceSheetConnectionState("is-error", "Sheets: connection failed");
+
+            if (showUi) {
+                const result = $("maintenanceSheetTestResult");
+                if (result) {
+                    result.className = "maintenance-sheet-test-result is-error";
+                    result.textContent = error?.message || "Connection failed.";
+                }
+            }
+
+            return { ok: false, error: error?.message || "Connection failed." };
+        }
+    }
+
+    async function waitForMaintenanceSubmission(url, submissionId) {
+        const attempts = 7;
+
+        for (let i = 0; i < attempts; i++) {
+            await new Promise(resolve => setTimeout(resolve, i === 0 ? 850 : 1050));
+
+            try {
+                const status = await maintenanceJsonp(
+                    url,
+                    { action: "status", submissionId },
+                    7000
+                );
+
+                if (status?.found) return status;
+            } catch (error) {
+                if (i === attempts - 1) throw error;
+            }
+        }
+
+        return {
+            ok: false,
+            found: false,
+            error: "The request was sent, but the receiver did not confirm the write. Open Apps Script Executions to check the latest run."
         };
     }
 
@@ -17979,14 +18122,21 @@ body.ops-redesign-v3.dark-mode .followup-status-pill.replied{color:#93c5fd}.dark
         const button = $("simpleEodSendSheetsBtn");
         const originalHtml = button.innerHTML;
         button.disabled = true;
-        button.textContent = "Sending...";
+        button.textContent = "Checking...";
 
         try {
-            /*
-              Google Apps Script Web Apps do not reliably expose CORS headers.
-              text/plain + no-cors sends the complete JSON payload, including
-              base64 screenshot data, without the browser blocking the request.
-            */
+            const health = await testMaintenanceSheetsConnection(false);
+
+            if (!health?.ok) {
+                openMaintenanceSheetSetup();
+                throw new Error(
+                    health?.error ||
+                    "Google Sheets receiver is not reachable. Check Sheet Setup."
+                );
+            }
+
+            button.textContent = "Sending...";
+
             await fetch(url, {
                 method: "POST",
                 mode: "no-cors",
@@ -17996,14 +18146,32 @@ body.ops-redesign-v3.dark-mode .followup-status-pill.replied{color:#93c5fd}.dark
                 body: JSON.stringify(payload)
             });
 
+            button.textContent = "Confirming...";
+
+            const status = await waitForMaintenanceSubmission(url, payload.submissionId);
+
+            if (!status?.found || status?.ok !== true) {
+                throw new Error(
+                    status?.error ||
+                    "The receiver did not confirm that the report was written."
+                );
+            }
+
+            const result = status.result || {};
+            const startRow = result.startingRow ? ` starting at row ${result.startingRow}` : "";
+            const endRow = result.endingRow ? ` through row ${result.endingRow}` : "";
+
+            setMaintenanceSheetConnectionState("is-ok", "Sheets: connected");
+
             showMessage(
-                `Report sent to Google Sheets: ${rowCount} row${rowCount === 1 ? "" : "s"}, ${screenshotCount} screenshot${screenshotCount === 1 ? "" : "s"}, and ${remarksCount} remark${remarksCount === 1 ? "" : "s"}. Check the tracker to confirm.`,
+                `Google Sheets confirmed: ${rowCount} row${rowCount === 1 ? "" : "s"}, ${screenshotCount} screenshot${screenshotCount === 1 ? "" : "s"}, and ${remarksCount} remark${remarksCount === 1 ? "" : "s"} written${startRow}${endRow}.`,
                 "success"
             );
         } catch (error) {
             console.error(error);
+            setMaintenanceSheetConnectionState("is-error", "Sheets: send failed");
             showMessage(
-                "Could not send the report. Check the Apps Script URL and your internet connection.",
+                `Google Sheets send failed: ${error?.message || "Unknown receiver error."}`,
                 "error"
             );
         } finally {
@@ -18892,7 +19060,13 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         });
     });
     $("simpleEodSheetSetupBtn").addEventListener("click", openMaintenanceSheetSetup);
+    setMaintenanceSheetConnectionState(
+        getMaintenanceSheetsWebAppUrl() ? "is-unchecked" : "is-error",
+        getMaintenanceSheetsWebAppUrl() ? "Sheets: not checked" : "Sheets: setup needed"
+    );
+
     $("simpleEodSendSheetsBtn").addEventListener("click", sendMaintenanceReportToGoogleSheets);
+    $("maintenanceTestSheetSetup").addEventListener("click", () => testMaintenanceSheetsConnection(true));
     $("maintenanceSaveSheetSetup").addEventListener("click", saveMaintenanceSheetSetup);
     $("maintenanceClearSheetSetup").addEventListener("click", clearMaintenanceSheetSetup);
     $("maintenanceSheetSetupClose").addEventListener("click", closeMaintenanceSheetSetup);
