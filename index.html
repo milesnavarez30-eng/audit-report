@@ -17952,8 +17952,12 @@ body.ops-redesign-v3.dark-mode .followup-status-pill.replied{color:#93c5fd}.dark
                 rows: maintenanceRowsForSheets(block.lanesText || ""),
                 screenshots: Array.isArray(block.screenshots)
                     ? block.screenshots
-                        .filter(shot => shot && shot.dataUrl)
-                        .map(shot => shot.dataUrl)
+                        .map(shot => {
+                            if (!shot) return "";
+                            if (typeof shot === "string") return shot;
+                            return shot.dataUrl || shot.src || shot.imageData || shot.url || "";
+                        })
+                        .filter(value => /^data:image\//i.test(String(value || "")))
                     : [],
                 remarks: Array.isArray(block.remarks)
                     ? block.remarks
@@ -18228,6 +18232,18 @@ body.ops-redesign-v3.dark-mode .followup-status-pill.replied{color:#93c5fd}.dark
         const rowCount = payload.blocks.reduce((sum, block) => sum + block.rows.length, 0);
         const screenshotCount = payload.blocks.reduce((sum, block) => sum + block.screenshots.length, 0);
         const remarksCount = payload.blocks.reduce((sum, block) => sum + block.remarks.length, 0);
+        const visibleScreenshotCount = state.blocks.reduce(
+            (sum, block) => sum + (Array.isArray(block.screenshots) ? block.screenshots.length : 0),
+            0
+        );
+
+        if (visibleScreenshotCount > 0 && screenshotCount === 0) {
+            showMessage(
+                "CCTV screenshots are visible in this report, but the send payload could not read them. Re-add the screenshot once, then send again.",
+                "error"
+            );
+            return;
+        }
 
         if (!rowCount) {
             showMessage("Walay maintenance data nga ma-send. Paste lanes/data first.", "error");
@@ -18255,11 +18271,18 @@ body.ops-redesign-v3.dark-mode .followup-status-pill.replied{color:#93c5fd}.dark
 
             const startRow = result.startingRow ? ` starting at row ${result.startingRow}` : "";
             const endRow = result.endingRow ? ` through row ${result.endingRow}` : "";
+            const insertedImages = Number(result.insertedImageCount ?? result.screenshotCount ?? 0);
+
+            if (screenshotCount > 0 && insertedImages < screenshotCount) {
+                throw new Error(
+                    `Rows were written, but only ${insertedImages} of ${screenshotCount} CCTV screenshot${screenshotCount === 1 ? "" : "s"} were inserted.`
+                );
+            }
 
             setMaintenanceSheetConnectionState("is-ok", "Sheets: connected");
 
             showMessage(
-                `Google Sheets confirmed: ${rowCount} row${rowCount === 1 ? "" : "s"}, ${screenshotCount} screenshot${screenshotCount === 1 ? "" : "s"}, and ${remarksCount} remark${remarksCount === 1 ? "" : "s"} written${startRow}${endRow}.`,
+                `Google Sheets confirmed: ${rowCount} row${rowCount === 1 ? "" : "s"}, ${insertedImages} CCTV image${insertedImages === 1 ? "" : "s"}, and ${remarksCount} remark${remarksCount === 1 ? "" : "s"} written${startRow}${endRow}.`,
                 "success"
             );
         } catch (error) {
