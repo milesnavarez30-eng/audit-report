@@ -7714,3 +7714,88 @@ body.ops-redesign-v3 #edrPanel .edr-fixed-cctv {
     }
 }
 
+/* ==========================================================
+   CCTV OPS TEAM ACCESS V7
+   ========================================================== */
+
+/* EDR: new dedicated OM field and 12-column compact flow. */
+body.ops-redesign-v3 #edrPanel .edr-form-grid > .edr-layout-time { grid-column: span 3 !important; }
+body.ops-redesign-v3 #edrPanel .edr-form-grid > .edr-layout-respondent-role { grid-column: span 2 !important; }
+body.ops-redesign-v3 #edrPanel .edr-form-grid > .edr-layout-respondent-name { grid-column: span 4 !important; }
+body.ops-redesign-v3 #edrPanel .edr-form-grid > .edr-layout-om { grid-column: span 3 !important; }
+body.ops-redesign-v3 #edrPanel .edr-layout-om input { min-height:41px!important;height:41px!important; }
+
+/* Follow-up direct Teams link. */
+.followup-link-field{grid-column:1 / -1}
+.followup-card-link{grid-column:1 / -1}
+.followup-link-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:7px;align-items:stretch}
+.followup-link-row .edr-outline-btn{min-height:36px;white-space:nowrap}
+
+/* Pending tracker tabs. */
+.master-pending-tabs{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 10px;padding:8px;border:1px solid var(--ops-line);border-radius:9px;background:var(--ops-panel-2)}
+.master-pending-tabs button{min-height:30px;padding:0 11px;border:1px solid transparent;border-radius:7px;background:transparent;color:var(--ops-muted);font:750 8.5px/1 Inter,sans-serif;cursor:pointer}
+.master-pending-tabs button:hover{color:var(--ops-text);background:var(--ops-panel)}
+.master-pending-tabs button.active{border-color:rgba(37,99,235,.24);background:var(--ops-accent-soft);color:var(--ops-accent)}
+
+/* Admin-created accounts + access editor. */
+.auth-create-account-grid{display:grid;grid-template-columns:1.2fr 1.4fr 1.2fr .7fr auto;gap:8px;align-items:end}
+.auth-create-account-grid label>span,.auth-access-role>span{display:block;margin-bottom:5px;color:var(--ops-muted);font-size:8px;font-weight:750;text-transform:uppercase;letter-spacing:.04em}
+.auth-create-account-grid input,.auth-create-account-grid select,.auth-access-role select{width:100%;min-height:36px;border:1px solid var(--ops-line);border-radius:7px;background:var(--ops-panel-2);color:var(--ops-text);padding:7px 9px;font-size:9px}
+.auth-create-account-grid button{min-height:36px;white-space:nowrap}
+.auth-create-status{min-height:14px;margin-top:7px;color:var(--ops-muted);font-size:8.5px}
+.auth-access-btn{border:1px solid rgba(37,99,235,.25);color:#2563eb}
+.auth-access-dialog{width:min(650px,calc(100vw - 24px))!important}
+.auth-access-role{display:block;margin:12px 0}
+.auth-access-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.auth-access-grid label{display:flex;align-items:center;gap:8px;min-height:38px;padding:8px 10px;border:1px solid var(--ops-line);border-radius:8px;background:var(--ops-panel-2);color:var(--ops-text-2);font-size:9px;font-weight:650}
+.auth-access-grid input{accent-color:#2563eb}
+.auth-access-manage{grid-column:1 / -1}
+.auth-access-note{margin:10px 0;color:var(--ops-muted);font-size:8.5px}
+
+/* Non-admins can work normally, but option/master-data management stays admin-only. */
+body.auth-role-user #masterlistPanel .master-hr-crud-form,
+body.auth-role-user #masterlistPanel #masterHrCrudStatus{display:none!important}
+body.auth-role-user #masterAssignedHrTable th:nth-child(4),
+body.auth-role-user #masterAssignedHrTable td:nth-child(4){display:none!important}
+
+/* History: list + detailed affected report/data preview. */
+.global-history-layout{display:grid;grid-template-columns:minmax(300px,.9fr) minmax(360px,1.1fr);gap:10px;min-height:330px}
+.global-history-layout .global-history-list{max-height:440px;overflow:auto}
+.global-history-preview{min-width:0;padding:12px;border:1px solid var(--ops-line);border-radius:9px;background:var(--ops-panel-2);overflow:auto;max-height:440px}
+.global-history-preview-empty{display:grid;place-items:center;min-height:130px;color:var(--ops-muted);font-size:9px;text-align:center}
+.global-history-preview-head{padding-bottom:9px;margin-bottom:9px;border-bottom:1px solid var(--ops-line)}
+.global-history-preview-head span,.global-history-preview-head strong,.global-history-preview-head small{display:block}
+.global-history-preview-head span{color:var(--ops-accent);font-size:8px;font-weight:800;text-transform:uppercase;letter-spacing:.05em}
+.global-history-preview-head strong{margin-top:4px;color:var(--ops-text);font-size:12px}
+.global-history-preview-head small{margin-top:3px;color:var(--ops-muted);font-size:8px}
+.global-history-preview-list{display:grid;gap:7px}
+.global-history-preview-row{padding:9px;border:1px solid var(--ops-line);border-left:3px solid #64748b;border-radius:7px;background:var(--ops-panel)}
+.global-history-preview-row.kind-added{border-left-color:#10b981}.global-history-preview-row.kind-updated{border-left-color:#3b82f6}.global-history-preview-row.kind-removed{border-left-color:#ef4444}.global-history-preview-row.kind-form,.global-history-preview-row.kind-notepad{border-left-color:#f59e0b}
+.global-history-preview-row b,.global-history-preview-row span,.global-history-preview-row small{display:block}
+.global-history-preview-row b{color:var(--ops-text);font-size:8px;text-transform:uppercase;letter-spacing:.04em}
+.global-history-preview-row span{margin-top:4px;color:var(--ops-text-2);font-size:9px;line-height:1.45}
+.global-history-preview-row small{margin-top:4px;color:var(--ops-muted);font-size:8px;line-height:1.4}
+.global-history-item em{display:block;max-width:420px;margin-top:2px;color:var(--ops-muted);font-size:7.5px;font-style:normal;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+@media(max-width:1050px){
+  .auth-create-account-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.auth-create-account-grid button{grid-column:1/-1}
+  body.ops-redesign-v3 #edrPanel .edr-form-grid > .edr-layout-time{grid-column:span 4!important}
+  body.ops-redesign-v3 #edrPanel .edr-form-grid > .edr-layout-respondent-role{grid-column:span 3!important}
+  body.ops-redesign-v3 #edrPanel .edr-form-grid > .edr-layout-respondent-name{grid-column:span 5!important}
+  body.ops-redesign-v3 #edrPanel .edr-form-grid > .edr-layout-om{grid-column:span 4!important}
+}
+@media(max-width:760px){
+  body.ops-redesign-v3 #edrPanel .edr-form-grid > .edr-layout-om{grid-column:1/-1!important}
+  .global-history-layout{grid-template-columns:1fr}.global-history-preview{max-height:none}
+  .auth-access-grid,.auth-create-account-grid{grid-template-columns:1fr}.auth-access-manage,.auth-create-account-grid button{grid-column:auto}
+  .followup-link-row{grid-template-columns:1fr}.followup-link-row .edr-outline-btn{width:100%}
+}
+
+
+
+/* V8 account username form refinement */
+#adminCreateUsername,
+#authSignInUsername,
+#authSignUpUsername {
+    font-variant-numeric: lining-nums;
+}
