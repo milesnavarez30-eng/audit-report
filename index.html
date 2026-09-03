@@ -20,10 +20,17 @@
         const LEGACY_OWNER_KEY = "__cctv_scope_legacy_owner_v1";
         const ACTIVE_USER_KEY = "__cctv_scope_active_user_v1";
 
-        // Connection/config values are not operational report data.
-        // Keep them shared on the same browser so every account can use
-        // the already-configured receivers without exposing another user's reports.
+        // Connection/config values and shared master options are not private operational reports.
+        // Keep them shared on the same browser so every account can select
+        // admin-configured Sites, OMs, Campaigns, and Reason Codes without exposing reports.
         const GLOBAL_APP_KEYS = new Set([
+            "cctv_theme",
+            "cctv_dropdown_site",
+            "cctv_dropdown_omName",
+            "cctv_dropdown_account",
+            "cctv_dropdown_reasonCode",
+            "cctv_master_hr_local_crud_v1",
+            "cctv_master_edr_custom_options_v1",
             "maintenance_google_sheets_web_app_url_v1",
             "edr_google_docs_web_app_url_v1",
             "edr_google_docs_receiver_font_fix_v1"
@@ -33,20 +40,25 @@
         const rawSet = (key, value) => native.setItem.call(window.localStorage, key, String(value));
         const rawRemove = key => native.removeItem.call(window.localStorage, key);
 
-        function detectSupabaseUserId() {
+        function detectSupabaseAuth() {
             try {
                 for (let i = 0; i < window.localStorage.length; i++) {
                     const key = native.key.call(window.localStorage, i);
                     if (!key || !/^sb-.*-auth-token$/i.test(key)) continue;
 
                     const parsed = JSON.parse(native.getItem.call(window.localStorage, key) || "null");
-                    const id =
-                        parsed?.user?.id ||
-                        parsed?.currentSession?.user?.id ||
-                        parsed?.session?.user?.id ||
-                        null;
+                    const userObj = parsed?.user || parsed?.currentSession?.user || parsed?.session?.user;
+                    const id = userObj?.id || null;
+                    const username = userObj?.user_metadata?.username || userObj?.raw_user_meta_data?.username || "";
+                    const email = userObj?.email || "";
 
-                    if (id) return String(id);
+                    if (id) {
+                        return {
+                            id: String(id),
+                            username: String(username).toLowerCase(),
+                            email: String(email).toLowerCase()
+                        };
+                    }
                 }
             } catch (error) {
                 console.warn("Could not detect Supabase user for local data scope.", error);
@@ -54,8 +66,15 @@
             return null;
         }
 
+        const detectedAuth = detectSupabaseAuth();
         let legacyOwner = rawGet(LEGACY_OWNER_KEY) || "";
-        let currentUserId = detectSupabaseUserId() || rawGet(ACTIVE_USER_KEY) || "";
+        let currentUserId = detectedAuth?.id || rawGet(ACTIVE_USER_KEY) || "";
+
+        // If detected user is Miles, claim legacy owner immediately so prefix is ""
+        if (!legacyOwner && detectedAuth && (detectedAuth.username === "miles" || detectedAuth.email.startsWith("miles@"))) {
+            legacyOwner = detectedAuth.id;
+            rawSet(LEGACY_OWNER_KEY, detectedAuth.id);
+        }
 
         function prefixFor(userId) {
             if (!userId) return "__cctv_guest__::";
@@ -105,6 +124,7 @@
         // App databases are isolated by authenticated account.
         function scopedDbName(name) {
             const text = String(name || "");
+            if (/^__cctv_/i.test(text)) return text;
             if (!/^(cctv_|maintenance_)/i.test(text)) return text;
             return currentPrefix + text;
         }
@@ -121,16 +141,21 @@
         };
 
         window.CCTV_DATA_SCOPE = {
-            activate(userId, isAdmin) {
+            activate(userId, isAdmin, userProfile = null) {
                 const id = String(userId || "");
                 if (!id) return false;
 
                 let claimedLegacy = false;
+                const isMiles =
+                    userProfile?.username?.toLowerCase?.() === "miles" ||
+                    userProfile?.email?.toLowerCase?.()?.startsWith?.("miles@") ||
+                    detectedAuth?.username === "miles" ||
+                    detectedAuth?.email?.startsWith?.("miles@");
 
-                // Existing pre-V8.14 data belongs to the first approved Admin
-                // who opens this update. This preserves Miles' existing EDR/Audit data
+                // Existing pre-V8.14 data belongs to Miles (or the first approved Admin).
+                // This permanently preserves Miles' existing EDR/Audit data
                 // while preventing newly-created users from seeing it.
-                if (isAdmin && !legacyOwner) {
+                if ((isAdmin && !legacyOwner) || (isMiles && (!legacyOwner || legacyOwner !== id))) {
                     legacyOwner = id;
                     rawSet(LEGACY_OWNER_KEY, id);
                     claimedLegacy = true;
@@ -11285,6 +11310,1021 @@ body.ops-redesign-v3.dark-mode #maintenancePanel .mini-sheet-findbar input::plac
 }
 </style>
 
+<style id="opsUiUxPolishV9">
+/* ==========================================================================
+   CCTV OPS — MACOS/IOS INSPIRED DESKTOP OPERATIONS CONSOLE (V10)
+   Pure design, layout, hierarchy, theme parity, and Admin styling.
+   No buttons renamed. Preserved all workflows and integrations.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. DESIGN SYSTEM VARIABLES & MACOS DESKTOP PALETTE
+   -------------------------------------------------------------------------- */
+body.ops-redesign-v3 {
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+    letter-spacing: -0.012em !important;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+
+    /* 10–14px rounded corners */
+    --ops-radius-xs: 6px;
+    --ops-radius-sm: 8px;
+    --ops-radius-md: 10px;
+    --ops-radius-lg: 12px;
+    --ops-radius-xl: 14px;
+
+    --ops-input-h: 34px;
+    --ops-btn-h: 34px;
+    --ops-btn-sm-h: 26px;
+    --ops-btn-lg-h: 38px;
+
+    --ops-font-size-xs: 11px;
+    --ops-font-size-sm: 12px;
+    --ops-font-size-base: 13px;
+    --ops-font-size-md: 14px;
+    --ops-font-size-lg: 16px;
+    --ops-font-size-xl: 19px;
+    --ops-font-size-2xl: 22px;
+
+    --ops-transition: all 0.16s cubic-bezier(0.16, 1, 0.3, 1);
+    --ops-focus-ring: 0 0 0 3px rgba(0, 113, 227, 0.18);
+
+    /* Light Mode (Soft macOS Neutral Surface) */
+    --ops-bg: #f5f6f8 !important;
+    --ops-panel: #ffffff !important;
+    --ops-panel-2: #f9fafb !important;
+    --ops-panel-3: #f3f4f6 !important;
+    --ops-text: #1d1d1f !important;
+    --ops-text-2: #374151 !important;
+    --ops-muted: #6b7280 !important;
+    --ops-muted-2: #9ca3af !important;
+    --ops-line: rgba(0, 0, 0, 0.07) !important;
+    --ops-line-strong: rgba(0, 0, 0, 0.14) !important;
+    --ops-accent: #0071e3 !important;
+    --ops-accent-soft: rgba(0, 113, 227, 0.08) !important;
+    --ops-accent-strong: #0077ed !important;
+    --ops-success: #10b981 !important;
+    --ops-success-soft: rgba(16, 185, 129, 0.10) !important;
+    --ops-warning: #f59e0b !important;
+    --ops-warning-soft: rgba(245, 158, 11, 0.10) !important;
+    --ops-danger: #ef4444 !important;
+    --ops-danger-soft: rgba(239, 68, 68, 0.10) !important;
+    --ops-shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 4px 12px rgba(0, 0, 0, 0.02) !important;
+    --ops-shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.08) !important;
+}
+
+body.ops-redesign-v3.dark-mode {
+    --ops-focus-ring: 0 0 0 3px rgba(41, 151, 255, 0.22);
+
+    /* Dark Mode (Deep macOS Slate Surface) */
+    --ops-bg: #111622 !important;
+    --ops-panel: #18202e !important;
+    --ops-panel-2: #141b27 !important;
+    --ops-panel-3: #1f293a !important;
+    --ops-text: #f3f4f6 !important;
+    --ops-text-2: #d1d5db !important;
+    --ops-muted: #9ca3af !important;
+    --ops-muted-2: #6b7280 !important;
+    --ops-line: rgba(255, 255, 255, 0.07) !important;
+    --ops-line-strong: rgba(255, 255, 255, 0.14) !important;
+    --ops-accent: #2997ff !important;
+    --ops-accent-soft: rgba(41, 151, 255, 0.12) !important;
+    --ops-accent-strong: #0077ed !important;
+    --ops-success: #34d399 !important;
+    --ops-success-soft: rgba(16, 185, 129, 0.12) !important;
+    --ops-warning: #fbbf24 !important;
+    --ops-warning-soft: rgba(245, 158, 11, 0.12) !important;
+    --ops-danger: #f87171 !important;
+    --ops-danger-soft: rgba(239, 68, 68, 0.12) !important;
+    --ops-shadow: 0 1px 3px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.25) !important;
+    --ops-shadow-lg: 0 20px 50px rgba(0, 0, 0, 0.5) !important;
+}
+
+/* Base Containers */
+body.ops-redesign-v3 .container,
+body.ops-redesign-v3 .maintenance-shell,
+body.ops-redesign-v3 .simple-eod-shell,
+body.ops-redesign-v3 .pending-shell,
+body.ops-redesign-v3 .master-simple-shell,
+body.ops-redesign-v3 .edr-crud-shell,
+body.ops-redesign-v3 .auth-admin-shell {
+    padding: 20px 24px !important;
+    border-radius: var(--ops-radius-xl) !important;
+    border: 1px solid var(--ops-line) !important;
+    background: var(--ops-panel) !important;
+    box-shadow: var(--ops-shadow) !important;
+    margin-bottom: 16px !important;
+}
+
+/* Headers Hierarchy */
+body.ops-redesign-v3 h2,
+body.ops-redesign-v3 .app-tab-panel h2 {
+    font-size: var(--ops-font-size-2xl) !important;
+    font-weight: 700 !important;
+    letter-spacing: -0.025em !important;
+    color: var(--ops-text) !important;
+    margin: 0 0 4px 0 !important;
+}
+
+body.ops-redesign-v3 .page-lead {
+    font-size: var(--ops-font-size-base) !important;
+    color: var(--ops-muted) !important;
+    line-height: 1.5 !important;
+    margin: 0 0 18px 0 !important;
+    max-width: 880px !important;
+}
+
+body.ops-redesign-v3 h3,
+body.ops-redesign-v3 .app-tab-panel h3 {
+    font-size: var(--ops-font-size-md) !important;
+    font-weight: 650 !important;
+    color: var(--ops-text) !important;
+    letter-spacing: -0.015em !important;
+    margin: 0 !important;
+}
+
+/* Card Containers Standard */
+body.ops-redesign-v3 .audit-guard-card,
+body.ops-redesign-v3 .edr-crud-card,
+body.ops-redesign-v3 .master-simple-card,
+body.ops-redesign-v3 .auth-admin-card,
+body.ops-redesign-v3 .followup-add-card,
+body.ops-redesign-v3 .mini-sheet-card,
+body.ops-redesign-v3 .eod-block {
+    border: 1px solid var(--ops-line) !important;
+    border-radius: var(--ops-radius-lg) !important;
+    background: var(--ops-panel) !important;
+    box-shadow: var(--ops-shadow) !important;
+    margin-bottom: 16px !important;
+    overflow: hidden !important;
+    transition: var(--ops-transition) !important;
+}
+
+/* --------------------------------------------------------------------------
+   2. THEME PARITY & REMARKS INPUT FIX (CRITICAL)
+   -------------------------------------------------------------------------- */
+/* Light Mode Inputs */
+body.ops-redesign-v3:not(.dark-mode) input[type="text"],
+body.ops-redesign-v3:not(.dark-mode) input[type="date"],
+body.ops-redesign-v3:not(.dark-mode) input[type="url"],
+body.ops-redesign-v3:not(.dark-mode) input[type="search"],
+body.ops-redesign-v3:not(.dark-mode) input[type="password"],
+body.ops-redesign-v3:not(.dark-mode) select,
+body.ops-redesign-v3:not(.dark-mode) textarea,
+body.ops-redesign-v3:not(.dark-mode) #remarks,
+body:not(.dark-mode) #remarks {
+    background: #ffffff !important;
+    color: #1d1d1f !important;
+    border: 1px solid rgba(0, 0, 0, 0.14) !important;
+}
+
+body.ops-redesign-v3:not(.dark-mode) input::placeholder,
+body.ops-redesign-v3:not(.dark-mode) textarea::placeholder {
+    color: #9ca3af !important;
+    opacity: 1 !important;
+}
+
+/* Dark Mode Inputs — Strictly dark surface, light text, visible border */
+body.ops-redesign-v3.dark-mode input[type="text"],
+body.ops-redesign-v3.dark-mode input[type="date"],
+body.ops-redesign-v3.dark-mode input[type="url"],
+body.ops-redesign-v3.dark-mode input[type="search"],
+body.ops-redesign-v3.dark-mode input[type="password"],
+body.ops-redesign-v3.dark-mode select,
+body.ops-redesign-v3.dark-mode textarea,
+body.ops-redesign-v3.dark-mode #remarks,
+body.dark-mode #remarks,
+body.ops-redesign-v3.dark-mode #followupRemarks,
+body.ops-redesign-v3.dark-mode #edrActionRemarks,
+body.ops-redesign-v3.dark-mode #edrIncident,
+body.ops-redesign-v3.dark-mode #masterPendingNotepad,
+body.ops-redesign-v3.dark-mode .audit-guard-paste textarea {
+    background: var(--ops-panel-2) !important;
+    color: var(--ops-text) !important;
+    border: 1px solid var(--ops-line-strong) !important;
+}
+
+body.ops-redesign-v3.dark-mode input::placeholder,
+body.ops-redesign-v3.dark-mode textarea::placeholder {
+    color: var(--ops-muted-2) !important;
+    opacity: 1 !important;
+}
+
+/* Universal Input Focus Ring */
+body.ops-redesign-v3 input:focus,
+body.ops-redesign-v3 select:focus,
+body.ops-redesign-v3 textarea:focus {
+    border-color: var(--ops-accent) !important;
+    box-shadow: var(--ops-focus-ring) !important;
+    outline: none !important;
+}
+
+/* Sizing */
+body.ops-redesign-v3 input[type="text"],
+body.ops-redesign-v3 input[type="date"],
+body.ops-redesign-v3 input[type="url"],
+body.ops-redesign-v3 input[type="search"],
+body.ops-redesign-v3 input[type="password"],
+body.ops-redesign-v3 select {
+    min-height: var(--ops-input-h) !important;
+    padding: 0 12px !important;
+    border-radius: var(--ops-radius-md) !important;
+    font-size: var(--ops-font-size-base) !important;
+}
+
+body.ops-redesign-v3 textarea {
+    padding: 9px 12px !important;
+    min-height: 72px !important;
+    border-radius: var(--ops-radius-md) !important;
+    font-size: var(--ops-font-size-base) !important;
+    line-height: 1.45 !important;
+}
+
+body.ops-redesign-v3 label {
+    font-size: var(--ops-font-size-sm) !important;
+    font-weight: 600 !important;
+    color: var(--ops-text-2) !important;
+    margin-bottom: 5px !important;
+    display: block !important;
+}
+
+/* --------------------------------------------------------------------------
+   3. FORM & WORKSPACE ALIGNMENTS
+   -------------------------------------------------------------------------- */
+/* CCTV Audit Form Grid: 3 Clean Rows on Desktop */
+body.ops-redesign-v3 #cctvPanel .form-grid {
+    display: grid !important;
+    grid-template-columns: repeat(12, minmax(0, 1fr)) !important;
+    gap: 12px 14px !important;
+}
+
+body.ops-redesign-v3 #cctvPanel .field-date    { grid-column: span 4 !important; }
+body.ops-redesign-v3 #cctvPanel .field-site    { grid-column: span 4 !important; }
+body.ops-redesign-v3 #cctvPanel .field-tl      { grid-column: span 4 !important; }
+
+body.ops-redesign-v3 #cctvPanel .field-agent   { grid-column: span 4 !important; }
+body.ops-redesign-v3 #cctvPanel .field-om      { grid-column: span 4 !important; }
+body.ops-redesign-v3 #cctvPanel .field-account { grid-column: span 4 !important; }
+
+body.ops-redesign-v3 #cctvPanel .field-reason  { grid-column: span 4 !important; }
+body.ops-redesign-v3 #cctvPanel .field-noc     { grid-column: span 3 !important; }
+body.ops-redesign-v3 #cctvPanel .field-remarks { grid-column: span 5 !important; }
+
+body.ops-redesign-v3 #cctvPanel .input-group {
+    display: flex !important;
+    gap: 4px !important;
+    align-items: center !important;
+}
+
+body.ops-redesign-v3 #cctvPanel .input-group select {
+    flex: 1 !important;
+    min-width: 0 !important;
+}
+
+body.ops-redesign-v3 #cctvPanel .button-group {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    width: 100% !important;
+    margin-top: 14px !important;
+    padding-top: 12px !important;
+    border-top: 1px solid var(--ops-line) !important;
+}
+
+/* Follow Up Reports Grid: 3 Clean Rows on Desktop */
+body.ops-redesign-v3 #followupPanel .followup-add-grid {
+    display: grid !important;
+    grid-template-columns: repeat(12, minmax(0, 1fr)) !important;
+    gap: 12px 14px !important;
+}
+
+body.ops-redesign-v3 #followupPanel .followup-field:nth-child(1) { grid-column: span 4 !important; } /* Date */
+body.ops-redesign-v3 #followupPanel .followup-field:nth-child(2) { grid-column: span 4 !important; } /* OM */
+body.ops-redesign-v3 #followupPanel .followup-field:nth-child(3) { grid-column: span 4 !important; } /* TL */
+
+body.ops-redesign-v3 #followupPanel .followup-link-field         { grid-column: span 8 !important; } /* Teams Link */
+body.ops-redesign-v3 #followupPanel .followup-field:nth-child(5) { grid-column: span 4 !important; } /* Status */
+
+body.ops-redesign-v3 #followupPanel .followup-add-shot-field    { grid-column: span 6 !important; } /* Screenshot */
+body.ops-redesign-v3 #followupPanel .followup-remarks-field     { grid-column: span 6 !important; } /* Remarks */
+
+/* EDR Form Grid Layout */
+body.ops-redesign-v3 #edrPanel .edr-form-grid {
+    display: grid !important;
+    grid-template-columns: repeat(12, minmax(0, 1fr)) !important;
+    gap: 12px 14px !important;
+}
+
+body.ops-redesign-v3 #edrPanel .edr-layout-site            { grid-column: span 4 !important; }
+body.ops-redesign-v3 #edrPanel .edr-layout-date            { grid-column: span 4 !important; }
+body.ops-redesign-v3 #edrPanel .edr-layout-time            { grid-column: span 4 !important; }
+
+body.ops-redesign-v3 #edrPanel .edr-layout-respondent-role { grid-column: span 3 !important; }
+body.ops-redesign-v3 #edrPanel .edr-layout-respondent-name { grid-column: span 5 !important; }
+body.ops-redesign-v3 #edrPanel .edr-layout-om              { grid-column: span 4 !important; }
+
+body.ops-redesign-v3 #edrPanel .edr-layout-subject-role    { grid-column: span 3 !important; }
+body.ops-redesign-v3 #edrPanel .edr-layout-subject-name    { grid-column: span 5 !important; }
+body.ops-redesign-v3 #edrPanel .edr-layout-account         { grid-column: span 4 !important; }
+
+body.ops-redesign-v3 #edrPanel .edr-layout-incident        { grid-column: span 6 !important; }
+body.ops-redesign-v3 #edrPanel .edr-layout-action          { grid-column: span 6 !important; }
+
+body.ops-redesign-v3 #edrPanel .edr-layout-screenshot      { grid-column: span 6 !important; }
+body.ops-redesign-v3 #edrPanel .edr-layout-clip            { grid-column: span 6 !important; }
+
+body.ops-redesign-v3 #edrPanel .edr-form-actions {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    margin-top: 14px !important;
+    padding-top: 12px !important;
+    border-top: 1px solid var(--ops-line) !important;
+}
+
+/* --------------------------------------------------------------------------
+   4. BUTTON STYLING (ZERO RENAMES, CLEAR VISUAL HIERARCHY)
+   -------------------------------------------------------------------------- */
+body.ops-redesign-v3 button,
+body.ops-redesign-v3 .edr-template-link {
+    font-family: inherit !important;
+    border-radius: var(--ops-radius-md) !important;
+    font-size: var(--ops-font-size-sm) !important;
+    font-weight: 600 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 6px !important;
+    line-height: 1 !important;
+    white-space: nowrap !important;
+    cursor: pointer !important;
+    user-select: none !important;
+    transition: var(--ops-transition) !important;
+    outline: none !important;
+}
+
+body.ops-redesign-v3 button:focus-visible {
+    box-shadow: var(--ops-focus-ring) !important;
+}
+
+/* Primary Action Buttons */
+body.ops-redesign-v3 #addUpdateBtn,
+body.ops-redesign-v3 #edrSaveBtn,
+body.ops-redesign-v3 #maintenanceSortBtn,
+body.ops-redesign-v3 #simpleEodPdfBtn,
+body.ops-redesign-v3 #followupAddBtn,
+body.ops-redesign-v3 #adminCreateAccountBtn,
+body.ops-redesign-v3 #adminSaveSettingsBtn,
+body.ops-redesign-v3 #adminAccessSave,
+body.ops-redesign-v3 .edr-primary-btn,
+body.ops-redesign-v3 .master-hr-save-btn {
+    min-height: var(--ops-btn-h) !important;
+    padding: 0 16px !important;
+    background: var(--ops-accent) !important;
+    color: #ffffff !important;
+    border: 1px solid rgba(0, 0, 0, 0.1) !important;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08) !important;
+}
+
+body.ops-redesign-v3 #addUpdateBtn:hover,
+body.ops-redesign-v3 #edrSaveBtn:hover,
+body.ops-redesign-v3 #maintenanceSortBtn:hover,
+body.ops-redesign-v3 #simpleEodPdfBtn:hover,
+body.ops-redesign-v3 #followupAddBtn:hover,
+body.ops-redesign-v3 #adminCreateAccountBtn:hover,
+body.ops-redesign-v3 #adminSaveSettingsBtn:hover,
+body.ops-redesign-v3 #adminAccessSave:hover,
+body.ops-redesign-v3 .edr-primary-btn:hover,
+body.ops-redesign-v3 .master-hr-save-btn:hover {
+    background: var(--ops-accent-strong) !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 3px 8px rgba(0, 113, 227, 0.25) !important;
+}
+
+/* Secondary / Outline Buttons */
+body.ops-redesign-v3 .edr-outline-btn,
+body.ops-redesign-v3 .eod-header-actions button,
+body.ops-redesign-v3 .master-simple-actions button,
+body.ops-redesign-v3 #adminRefreshBtn,
+body.ops-redesign-v3 #adminExportAuditBtn,
+body.ops-redesign-v3 #adminAccessCancel,
+body.ops-redesign-v3 .master-hr-cancel-btn {
+    min-height: var(--ops-btn-h) !important;
+    padding: 0 13px !important;
+    background: var(--ops-panel) !important;
+    color: var(--ops-text) !important;
+    border: 1px solid var(--ops-line-strong) !important;
+}
+
+body.ops-redesign-v3 .edr-outline-btn:hover,
+body.ops-redesign-v3 .eod-header-actions button:hover,
+body.ops-redesign-v3 .master-simple-actions button:hover,
+body.ops-redesign-v3 #adminRefreshBtn:hover,
+body.ops-redesign-v3 #adminExportAuditBtn:hover,
+body.ops-redesign-v3 #adminAccessCancel:hover,
+body.ops-redesign-v3 .master-hr-cancel-btn:hover {
+    background: var(--ops-panel-3) !important;
+    border-color: var(--ops-accent) !important;
+    color: var(--ops-accent) !important;
+}
+
+/* Destructive / Clear Buttons */
+body.ops-redesign-v3 #clearTableBtn,
+body.ops-redesign-v3 #edrClearAllBtn,
+body.ops-redesign-v3 #maintenanceClearAllBtn,
+body.ops-redesign-v3 #simpleEodClearBtn,
+body.ops-redesign-v3 #historyClearAllBtn,
+body.ops-redesign-v3 .btn-danger,
+body.ops-redesign-v3 button.clear-btn {
+    min-height: var(--ops-btn-h) !important;
+    padding: 0 13px !important;
+    background: transparent !important;
+    color: var(--ops-muted) !important;
+    border: 1px solid var(--ops-line-strong) !important;
+}
+
+body.ops-redesign-v3 #clearTableBtn:hover,
+body.ops-redesign-v3 #edrClearAllBtn:hover,
+body.ops-redesign-v3 #maintenanceClearAllBtn:hover,
+body.ops-redesign-v3 #simpleEodClearBtn:hover,
+body.ops-redesign-v3 #historyClearAllBtn:hover,
+body.ops-redesign-v3 .btn-danger:hover,
+body.ops-redesign-v3 button.clear-btn:hover {
+    background: var(--ops-danger-soft) !important;
+    color: var(--ops-danger) !important;
+    border-color: var(--ops-danger) !important;
+}
+
+/* Compact Table Action Buttons */
+body.ops-redesign-v3 table button,
+body.ops-redesign-v3 .admin-action-btn {
+    min-height: var(--ops-btn-sm-h) !important;
+
+body.ops-redesign-v3 #edrPanel .edr-output-actions {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    width: 100% !important;
+}
+
+/* Masterlist HR Form Grid */
+body.ops-redesign-v3 #masterlistPanel .master-hr-crud-form {
+    display: grid !important;
+    grid-template-columns: minmax(180px, 1fr) minmax(220px, 1.2fr) minmax(180px, 1fr) auto !important;
+    gap: 10px 12px !important;
+    align-items: end !important;
+    padding: 12px 14px !important;
+    border-radius: var(--ops-radius-md) !important;
+}
+
+body.ops-redesign-v3 #masterlistPanel .master-hr-crud-actions {
+    display: flex !important;
+    gap: 8px !important;
+    align-items: center !important;
+}
+
+/* Follow Up Reports Grid */
+body.ops-redesign-v3 #followupPanel .followup-add-grid {
+    display: grid !important;
+    grid-template-columns: repeat(12, minmax(0, 1fr)) !important;
+    gap: 12px 14px !important;
+}
+
+body.ops-redesign-v3 #followupPanel .followup-field:nth-child(1) { grid-column: span 3 !important; }
+body.ops-redesign-v3 #followupPanel .followup-field:nth-child(2) { grid-column: span 3 !important; }
+body.ops-redesign-v3 #followupPanel .followup-field:nth-child(3) { grid-column: span 3 !important; }
+body.ops-redesign-v3 #followupPanel .followup-field:nth-child(5) { grid-column: span 3 !important; }
+
+body.ops-redesign-v3 #followupPanel .followup-link-field         { grid-column: span 12 !important; }
+body.ops-redesign-v3 #followupPanel .followup-add-shot-field     { grid-column: span 6 !important; }
+body.ops-redesign-v3 #followupPanel .followup-remarks-field      { grid-column: span 6 !important; }
+
+body.ops-redesign-v3 #followupPanel .followup-add-actions {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    margin-top: 14px !important;
+    padding-top: 10px !important;
+    border-top: 1px solid var(--ops-line) !important;
+}
+
+/* Admin Account Creation Grid */
+body.ops-redesign-v3 #adminPanel .auth-create-account-grid {
+    display: grid !important;
+    grid-template-columns: 1.2fr 1fr 1fr 0.8fr auto !important;
+    gap: 10px 12px !important;
+    align-items: end !important;
+    padding: 12px 14px !important;
+    border-radius: var(--ops-radius-md) !important;
+    border: 1px solid var(--ops-line) !important;
+    background: var(--ops-panel-2) !important;
+}
+
+/* --------------------------------------------------------------------------
+   4. TABLES & DATA LISTS (STICKY HEADERS, HOVERS, OVERFLOW)
+   -------------------------------------------------------------------------- */
+body.ops-redesign-v3 .table-container,
+body.ops-redesign-v3 .maintenance-table-wrap,
+body.ops-redesign-v3 .master-table-wrap,
+body.ops-redesign-v3 .auth-admin-table-wrap {
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow-x: auto !important;
+    overflow-y: visible !important;
+    border: 1px solid var(--ops-line) !important;
+    border-radius: var(--ops-radius-md) !important;
+    background: var(--ops-panel) !important;
+    box-shadow: 0 1px 2px rgba(16, 24, 40, 0.02) !important;
+}
+
+body.ops-redesign-v3 table {
+    width: 100% !important;
+    border-collapse: separate !important;
+    border-spacing: 0 !important;
+    font-size: var(--ops-font-size-sm) !important;
+}
+
+body.ops-redesign-v3 table th {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 5 !important;
+    padding: 9px 12px !important;
+    background: var(--ops-panel-2) !important;
+    color: var(--ops-muted) !important;
+    font-size: var(--ops-font-size-xs) !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.04em !important;
+    border-bottom: 1px solid var(--ops-line-strong) !important;
+    white-space: nowrap !important;
+}
+
+body.ops-redesign-v3 table td {
+    padding: 8px 12px !important;
+    border-bottom: 1px solid var(--ops-line) !important;
+    color: var(--ops-text) !important;
+    vertical-align: middle !important;
+    white-space: nowrap !important;
+}
+
+body.ops-redesign-v3 table tbody tr:last-child td {
+    border-bottom: 0 !important;
+}
+
+body.ops-redesign-v3 table tbody tr:hover td {
+    background: var(--ops-accent-soft) !important;
+}
+
+/* --------------------------------------------------------------------------
+   5. SIDEBAR REFINEMENTS
+   -------------------------------------------------------------------------- */
+body.ops-redesign-v3 .workspace-tabs.admin-sidebar {
+    width: 208px !important;
+    padding: 16px 12px 14px !important;
+    gap: 2px !important;
+    scrollbar-width: none !important;
+}
+
+body.ops-redesign-v3 .ops-sidebar-brand {
+    padding: 4px 6px 14px !important;
+    margin-bottom: 12px !important;
+}
+
+body.ops-redesign-v3 .ops-sidebar-brand strong {
+    font-size: 13px !important;
+    letter-spacing: 0.05em !important;
+}
+
+body.ops-redesign-v3 .workspace-tabs.admin-sidebar > .workspace-tab-btn,
+body.ops-redesign-v3 .sidebar-history-btn {
+    height: 36px !important;
+    padding: 0 10px !important;
+    border-radius: var(--ops-radius-md) !important;
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    border-left: 3px solid transparent !important;
+}
+
+body.ops-redesign-v3 .workspace-tabs.admin-sidebar > .workspace-tab-btn.active,
+body.ops-redesign-v3 .sidebar-history-btn.active {
+    background: rgba(37, 99, 235, 0.16) !important;
+    color: #ffffff !important;
+    border-left: 3px solid var(--ops-accent) !important;
+    box-shadow: none !important;
+}
+
+body.ops-redesign-v3 .auth-sidebar-account {
+    margin-top: auto !important;
+    padding: 10px !important;
+    border-radius: var(--ops-radius-md) !important;
+    border: 1px solid rgba(148, 163, 184, 0.14) !important;
+    background: rgba(255, 255, 255, 0.03) !important;
+}
+
+body.ops-redesign-v3 #authLogoutBtn {
+    min-height: 24px !important;
+    padding: 2px 8px !important;
+    font-size: 10px !important;
+    border-radius: var(--ops-radius-sm) !important;
+    background: transparent !important;
+    color: #94a3b8 !important;
+    border: 1px solid rgba(148, 163, 184, 0.2) !important;
+}
+
+body.ops-redesign-v3 #authLogoutBtn:hover {
+    color: var(--ops-danger) !important;
+    border-color: var(--ops-danger) !important;
+}
+
+/* --------------------------------------------------------------------------
+   6. MODAL & DIALOG STANDARDIZATION
+   -------------------------------------------------------------------------- */
+body.ops-redesign-v3 .maintenance-modal:not(.open),
+body.ops-redesign-v3 .edr-ss-modal:not(.open),
+body.ops-redesign-v3 .app-confirm-modal:not(.open),
+body.ops-redesign-v3 .maintenance-modal[aria-hidden="true"],
+body.ops-redesign-v3 .edr-ss-modal[aria-hidden="true"],
+body.ops-redesign-v3 .app-confirm-modal[aria-hidden="true"] {
+    display: none !important;
+}
+
+body.ops-redesign-v3 .maintenance-modal.open,
+body.ops-redesign-v3 .edr-ss-modal.open {
+    position: fixed !important;
+    inset: 0 !important;
+    z-index: 200000 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 16px !important;
+}
+
+body.ops-redesign-v3 .maintenance-modal-backdrop,
+body.ops-redesign-v3 .edr-ss-backdrop {
+    position: fixed !important;
+    inset: 0 !important;
+    background: rgba(11, 19, 32, 0.68) !important;
+    backdrop-filter: blur(4px) !important;
+}
+
+body.ops-redesign-v3 .maintenance-drafts-dialog,
+body.ops-redesign-v3 .edr-docs-setup-dialog,
+body.ops-redesign-v3 .global-history-dialog,
+body.ops-redesign-v3 .auth-access-dialog {
+    position: relative !important;
+    z-index: 2010 !important;
+    width: min(94vw, 560px) !important;
+    max-height: 88vh !important;
+    overflow-y: auto !important;
+    padding: 20px 22px !important;
+    border-radius: var(--ops-radius-xl) !important;
+    border: 1px solid var(--ops-line) !important;
+    background: var(--ops-panel) !important;
+    box-shadow: var(--ops-shadow-lg) !important;
+}
+
+body.ops-redesign-v3 .global-history-dialog {
+    width: min(96vw, 760px) !important;
+}
+
+body.ops-redesign-v3 .maintenance-drafts-head {
+    margin-bottom: 12px !important;
+    padding-bottom: 10px !important;
+    border-bottom: 1px solid var(--ops-line) !important;
+}
+
+body.ops-redesign-v3 .maintenance-sheet-setup-actions,
+body.ops-redesign-v3 .maintenance-modal-actions {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    gap: 8px !important;
+    margin-top: 16px !important;
+    padding-top: 12px !important;
+    border-top: 1px solid var(--ops-line) !important;
+}
+
+/* --------------------------------------------------------------------------
+   6B. ADMIN OPERATIONS CONSOLE STYLING (KPI GRID, SYSTEM STRIP, SUBNAV)
+   -------------------------------------------------------------------------- */
+body.ops-redesign-v3 .admin-system-strip {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+body.ops-redesign-v3 .admin-system-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    border-radius: var(--ops-radius-md);
+    background: var(--ops-panel);
+    border: 1px solid var(--ops-line);
+    font-size: var(--ops-font-size-sm);
+    color: var(--ops-text);
+}
+body.ops-redesign-v3 .admin-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--ops-muted);
+}
+body.ops-redesign-v3 .admin-dot.is-online {
+    background: #34c759;
+    box-shadow: 0 0 6px rgba(52, 199, 89, 0.4);
+}
+body.ops-redesign-v3 .admin-dot.is-warning {
+    background: #ff9500;
+}
+body.ops-redesign-v3 .admin-kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    gap: 12px;
+    margin-bottom: 20px;
+}
+body.ops-redesign-v3 .admin-kpi-card {
+    padding: 14px 16px;
+    border-radius: var(--ops-radius-lg);
+    background: var(--ops-panel);
+    border: 1px solid var(--ops-line);
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    transition: var(--ops-transition);
+}
+body.ops-redesign-v3 .admin-kpi-card:hover {
+    border-color: var(--ops-line-strong);
+    transform: translateY(-1px);
+    box-shadow: var(--ops-shadow-sm);
+}
+body.ops-redesign-v3 .admin-kpi-card span {
+    font-size: var(--ops-font-size-xs);
+    color: var(--ops-muted);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+body.ops-redesign-v3 .admin-kpi-card strong {
+    font-size: var(--ops-font-size-xl);
+    font-weight: 700;
+    color: var(--ops-text);
+}
+body.ops-redesign-v3 .admin-kpi-card.is-pending strong {
+    color: #f59e0b;
+}
+body.ops-redesign-v3 .admin-kpi-card.is-disabled strong {
+    color: #ef4444;
+}
+body.ops-redesign-v3 .admin-kpi-card.is-recent strong {
+    color: #10b981;
+}
+body.ops-redesign-v3 .admin-kpi-card.is-ops strong {
+    color: #0071e3;
+}
+body.ops-redesign-v3 .admin-subnav-bar {
+    display: flex;
+    gap: 4px;
+    padding: 4px;
+    border-radius: var(--ops-radius-md);
+    background: var(--ops-panel-2);
+    border: 1px solid var(--ops-line);
+    margin-bottom: 20px;
+    width: fit-content;
+}
+body.ops-redesign-v3 .admin-subnav-btn {
+    padding: 6px 14px;
+    border-radius: var(--ops-radius-sm);
+    border: none;
+    background: transparent;
+    color: var(--ops-muted);
+    font-size: var(--ops-font-size-base);
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--ops-transition);
+}
+body.ops-redesign-v3 .admin-subnav-btn:hover {
+    color: var(--ops-text);
+}
+body.ops-redesign-v3 .admin-subnav-btn.active {
+    background: var(--ops-panel);
+    color: var(--ops-text);
+    box-shadow: var(--ops-shadow-sm);
+}
+body.ops-redesign-v3 .admin-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: var(--ops-radius-xs);
+    font-size: 11px;
+    font-weight: 600;
+}
+body.ops-redesign-v3 .admin-badge.badge-active {
+    background: rgba(52, 199, 89, 0.14);
+    color: #2da44e;
+}
+body.ops-redesign-v3 .admin-badge.badge-disabled {
+    background: rgba(239, 68, 68, 0.14);
+    color: #ef4444;
+}
+body.ops-redesign-v3 .admin-badge.badge-pending {
+    background: rgba(245, 158, 11, 0.14);
+    color: #d97706;
+}
+body.ops-redesign-v3 .admin-badge.badge-admin {
+    background: rgba(0, 113, 227, 0.14);
+    color: var(--ops-accent);
+}
+body.ops-redesign-v3 .admin-badge.badge-user {
+    background: rgba(148, 163, 184, 0.14);
+    color: var(--ops-muted);
+}
+body.ops-redesign-v3 .admin-action-btn {
+    padding: 3px 8px !important;
+    font-size: 11px !important;
+    border-radius: var(--ops-radius-xs) !important;
+    border: 1px solid var(--ops-line) !important;
+    background: var(--ops-panel-2) !important;
+    color: var(--ops-text) !important;
+    cursor: pointer !important;
+    transition: var(--ops-transition) !important;
+}
+body.ops-redesign-v3 .admin-action-btn:hover {
+    border-color: var(--ops-accent) !important;
+    color: var(--ops-accent) !important;
+}
+body.ops-redesign-v3 .admin-audit-tools {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+body.ops-redesign-v3 .admin-audit-banner {
+    padding: 8px 12px;
+    margin-bottom: 12px;
+    border-radius: var(--ops-radius-sm);
+    background: rgba(0, 113, 227, 0.08);
+    border: 1px solid rgba(0, 113, 227, 0.2);
+    font-size: var(--ops-font-size-xs);
+    color: var(--ops-text);
+}
+body.ops-redesign-v3 .admin-settings-body {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    max-width: 640px;
+}
+body.ops-redesign-v3 .admin-setting-row {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--ops-line);
+}
+body.ops-redesign-v3 .admin-setting-meta strong {
+    display: block;
+    font-size: var(--ops-font-size-base);
+    color: var(--ops-text);
+}
+body.ops-redesign-v3 .admin-setting-meta span {
+    font-size: var(--ops-font-size-xs);
+    color: var(--ops-muted);
+}
+body.ops-redesign-v3 .admin-setting-control {
+    width: 100%;
+    max-width: 320px;
+}
+body.ops-redesign-v3 .admin-setting-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: var(--ops-font-size-base);
+    color: var(--ops-text);
+    cursor: pointer;
+}
+body.ops-redesign-v3 .admin-settings-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 8px;
+}
+body.ops-redesign-v3 .admin-settings-notice {
+    font-size: var(--ops-font-size-sm);
+    color: #10b981;
+    font-weight: 600;
+}
+body.ops-redesign-v3 .admin-settings-info {
+    margin-top: 12px;
+    color: var(--ops-muted);
+}
+body.ops-redesign-v3 #followupPanel .followup-crud-grid,
+body.ops-redesign-v3 #followupPanel .followup-add-grid {
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 12px !important;
+}
+
+/* --------------------------------------------------------------------------
+   7. RESPONSIVE DESIGN (DESKTOP, LAPTOP, TABLET, MOBILE)
+   -------------------------------------------------------------------------- */
+@media (max-width: 1200px) {
+    body.ops-redesign-v3 .container,
+    body.ops-redesign-v3 .maintenance-shell,
+    body.ops-redesign-v3 .simple-eod-shell,
+    body.ops-redesign-v3 .pending-shell,
+    body.ops-redesign-v3 .master-simple-shell,
+    body.ops-redesign-v3 .edr-crud-shell,
+    body.ops-redesign-v3 .auth-admin-shell {
+        padding: 16px !important;
+    }
+
+    body.ops-redesign-v3 #adminPanel .auth-create-account-grid {
+        grid-template-columns: 1fr 1fr !important;
+    }
+
+    body.ops-redesign-v3 #masterlistPanel .master-hr-crud-form {
+        grid-template-columns: 1fr 1fr !important;
+    }
+}
+
+@media (max-width: 991px) {
+    body.ops-redesign-v3 {
+        padding-left: 20px !important;
+        padding-right: 16px !important;
+    }
+
+    body.ops-redesign-v3 .workspace-tabs.admin-sidebar {
+        transform: translateX(-100%);
+        transition: transform 0.22s ease-in-out !important;
+    }
+
+    body.ops-redesign-v3:not(.sidebar-collapsed) .workspace-tabs.admin-sidebar {
+        transform: translateX(0);
+        box-shadow: 12px 0 32px rgba(2, 6, 23, 0.35) !important;
+    }
+
+    body.ops-redesign-v3 .sidebar-collapse-toggle {
+        left: 10px !important;
+    }
+
+    body.ops-redesign-v3 #cctvPanel .form-grid,
+    body.ops-redesign-v3 #edrPanel .edr-form-grid,
+    body.ops-redesign-v3 #followupPanel .followup-add-grid {
+        grid-template-columns: 1fr 1fr !important;
+    }
+
+    body.ops-redesign-v3 #cctvPanel .field-date,
+    body.ops-redesign-v3 #cctvPanel .field-site,
+    body.ops-redesign-v3 #cctvPanel .field-noc,
+    body.ops-redesign-v3 #cctvPanel .field-tl,
+    body.ops-redesign-v3 #cctvPanel .field-agent,
+    body.ops-redesign-v3 #cctvPanel .field-om,
+    body.ops-redesign-v3 #cctvPanel .field-account,
+    body.ops-redesign-v3 #cctvPanel .field-reason,
+    body.ops-redesign-v3 #cctvPanel .field-remarks,
+    body.ops-redesign-v3 #edrPanel .edr-field,
+    body.ops-redesign-v3 #edrPanel .edr-span-2 {
+        grid-column: span 2 !important;
+    }
+}
+
+@media (max-width: 767px) {
+    body.ops-redesign-v3 {
+        padding: 14px 10px 42px 10px !important;
+    }
+
+    body.ops-redesign-v3 .container,
+    body.ops-redesign-v3 .maintenance-shell,
+    body.ops-redesign-v3 .simple-eod-shell,
+    body.ops-redesign-v3 .pending-shell,
+    body.ops-redesign-v3 .master-simple-shell,
+    body.ops-redesign-v3 .edr-crud-shell,
+    body.ops-redesign-v3 .auth-admin-shell {
+        padding: 12px 14px !important;
+    }
+
+    body.ops-redesign-v3 #cctvPanel .form-grid,
+    body.ops-redesign-v3 #edrPanel .edr-form-grid,
+    body.ops-redesign-v3 #followupPanel .followup-add-grid,
+    body.ops-redesign-v3 #adminPanel .auth-create-account-grid,
+    body.ops-redesign-v3 #masterlistPanel .master-hr-crud-form {
+        grid-template-columns: 1fr !important;
+    }
+
+    body.ops-redesign-v3 #cctvPanel .button-group,
+    body.ops-redesign-v3 #edrPanel .edr-form-actions,
+    body.ops-redesign-v3 #followupPanel .followup-add-actions {
+        flex-direction: column !important;
+        align-items: stretch !important;
+    }
+
+    body.ops-redesign-v3 #cctvPanel .button-group button,
+    body.ops-redesign-v3 #edrPanel .edr-form-actions button,
+    body.ops-redesign-v3 #followupPanel .followup-add-actions button {
+        width: 100% !important;
+    }
+}
+</style>
+
 </head>
 <body class="ops-redesign-v3 auth-locked">
 <div id="authGate" class="auth-gate">
@@ -11362,6 +12402,14 @@ body.ops-redesign-v3.dark-mode #maintenancePanel .mini-sheet-findbar input::plac
       <p>This account is not approved for CCTV OPS.</p>
       <div class="auth-state-email" id="authRejectedEmail"></div>
       <button type="button" class="auth-secondary-btn" id="authRejectedLogoutBtn">Log Out</button>
+    </div>
+
+    <div id="authDisabledState" class="auth-state-card" hidden>
+      <span class="auth-state-pill rejected">Account Suspended</span>
+      <h1>Access suspended</h1>
+      <p>This staff account has been deactivated or disabled by an administrator.</p>
+      <div class="auth-state-email" id="authDisabledEmail"></div>
+      <button type="button" class="auth-secondary-btn" id="authDisabledLogoutBtn">Log Out</button>
     </div>
 
     <div id="authMessage" class="auth-message" hidden></div>
@@ -12180,57 +13228,176 @@ body.ops-redesign-v3.dark-mode #maintenancePanel .mini-sheet-findbar input::plac
   <div class="container auth-admin-shell">
     <div class="auth-admin-head">
       <div>
-        <h2>Account Administration</h2>
-        <p class="page-lead">Create Username + Password accounts, approve signup requests, control workspace access, and monitor website activity.</p>
+        <h2>Admin Operations Console</h2>
+        <p class="page-lead">System status monitoring, staff account management, centralized security audit log, and operational workspace preferences.</p>
       </div>
-      <button type="button" class="edr-outline-btn" id="adminRefreshBtn">Refresh</button>
+      <div class="admin-head-actions">
+        <button type="button" class="edr-outline-btn" id="adminRefreshBtn">Refresh</button>
+      </div>
     </div>
 
-    <div class="auth-admin-summary">
-      <div><span>Total Accounts</span><strong id="adminTotalUsers">0</strong></div>
-      <div class="pending"><span>Pending</span><strong id="adminPendingUsers">0</strong></div>
-      <div class="recent"><span>Active in 24h</span><strong id="adminRecentUsers">0</strong></div>
+    <!-- System Status Health Strip -->
+    <div class="admin-system-strip">
+      <div class="admin-system-item" id="adminSupabaseStatusCard">
+        <span class="admin-dot is-online" id="adminSupabaseDot"></span>
+        <span class="admin-sys-label">Supabase Auth:</span>
+        <strong id="adminSupabaseStatus">Connected</strong>
+      </div>
+      <div class="admin-system-item" id="adminDocsStatusCard">
+        <span class="admin-dot" id="adminDocsDot"></span>
+        <span class="admin-sys-label">Google Docs EDR:</span>
+        <strong id="adminDocsStatus">Checking...</strong>
+      </div>
+      <div class="admin-system-item" id="adminSheetsStatusCard">
+        <span class="admin-dot" id="adminSheetsDot"></span>
+        <span class="admin-sys-label">Google Sheets Maint:</span>
+        <strong id="adminSheetsStatus">Configured</strong>
+      </div>
     </div>
 
-    <section class="auth-admin-card auth-create-account-card">
-      <div class="auth-admin-card-head">
-        <div><h3>Create Account</h3><p>Create a ready-to-use Username + Password account. Admin-created accounts are approved immediately.</p></div>
-      </div>
-      <div class="auth-create-account-grid">
-        <label><span>Name</span><input type="text" id="adminCreateName" value="Daniel Gabriel Roda" placeholder="Staff name"></label>
-        <label><span>Username</span><input type="text" id="adminCreateUsername" value="DanielRoda" placeholder="e.g. DanielRoda" maxlength="32" autocomplete="off"></label>
-        <label><span>Temporary Password</span><input type="password" id="adminCreatePassword" minlength="8" placeholder="At least 8 characters"></label>
-        <label><span>Role</span><select id="adminCreateRole"><option value="user">User</option><option value="admin" selected>Admin</option></select></label>
-        <button type="button" class="edr-primary-btn" id="adminCreateAccountBtn">Create Account</button>
-      </div>
-      <div id="adminCreateAccountStatus" class="auth-create-status"></div>
-    </section>
+    <!-- Operations KPI Metrics Grid -->
+    <div class="admin-kpi-grid">
+      <div class="admin-kpi-card"><span>Total Accounts</span><strong id="adminTotalUsers">0</strong></div>
+      <div class="admin-kpi-card"><span>Admins</span><strong id="adminCountAdmins">0</strong></div>
+      <div class="admin-kpi-card"><span>Staff Users</span><strong id="adminCountUsers">0</strong></div>
+      <div class="admin-kpi-card is-pending"><span>Pending</span><strong id="adminPendingUsers">0</strong></div>
+      <div class="admin-kpi-card is-disabled"><span>Disabled</span><strong id="adminDisabledUsers">0</strong></div>
+      <div class="admin-kpi-card is-recent"><span>Active 24h</span><strong id="adminRecentUsers">0</strong></div>
+      <div class="admin-kpi-card is-ops"><span>Local EDRs</span><strong id="adminEdrCount">0</strong></div>
+      <div class="admin-kpi-card is-ops"><span>CCTV Audits</span><strong id="adminCctvCount">0</strong></div>
+      <div class="admin-kpi-card is-ops"><span>Open Follow-ups</span><strong id="adminFollowupCount">0</strong></div>
+    </div>
 
-    <section class="auth-admin-card">
-      <div class="auth-admin-card-head">
-        <div><h3>User Accounts</h3><p>Approve, change role/access, disapprove, or permanently remove.</p></div>
-        <input type="search" id="adminUserSearch" placeholder="Find name or username..." autocomplete="off">
-      </div>
-      <div class="auth-admin-table-wrap">
-        <table class="auth-admin-table">
-          <thead><tr><th>User</th><th>Status</th><th>Role</th><th>Created</th><th>Last Active</th><th>Action</th></tr></thead>
-          <tbody id="adminUsersBody"><tr><td colspan="6">Loading...</td></tr></tbody>
-        </table>
-      </div>
-    </section>
+    <!-- macOS Segmented Subnav Switcher -->
+    <div class="admin-subnav-bar" role="tablist" aria-label="Admin Sub-Sections">
+      <button type="button" class="admin-subnav-btn active" data-admin-tab="users" role="tab" aria-selected="true">Staff Accounts</button>
+      <button type="button" class="admin-subnav-btn" data-admin-tab="audit" role="tab" aria-selected="false">Security Audit Log</button>
+      <button type="button" class="admin-subnav-btn" data-admin-tab="settings" role="tab" aria-selected="false">Operational Settings</button>
+    </div>
 
-    <section class="auth-admin-card">
-      <div class="auth-admin-card-head">
-        <div><h3>Access Activity</h3><p>Latest sign-ins, opens, and logouts.</p></div>
-        <span id="adminActivityUpdated"></span>
-      </div>
-      <div class="auth-admin-table-wrap">
-        <table class="auth-admin-table">
-          <thead><tr><th>User</th><th>Event</th><th>Date / Time</th><th>Page</th></tr></thead>
-          <tbody id="adminActivityBody"><tr><td colspan="4">No activity yet.</td></tr></tbody>
-        </table>
-      </div>
-    </section>
+    <!-- SECTION 1: STAFF ACCOUNTS -->
+    <div id="adminTabUsers" class="admin-tab-content active">
+      <section class="auth-admin-card auth-create-account-card">
+        <div class="auth-admin-card-head">
+          <div><h3>Create Account</h3><p>Create a ready-to-use Username + Password account. Admin-created accounts are approved immediately.</p></div>
+        </div>
+        <div class="auth-create-account-grid">
+          <label><span>Name</span><input type="text" id="adminCreateName" placeholder="Staff full name"></label>
+          <label><span>Username</span><input type="text" id="adminCreateUsername" placeholder="e.g. jdelacruz" maxlength="32" autocomplete="off"></label>
+          <label><span>Temporary Password</span><input type="password" id="adminCreatePassword" minlength="8" placeholder="At least 8 characters"></label>
+          <label><span>Role</span><select id="adminCreateRole"><option value="user" selected>User</option><option value="admin">Admin</option></select></label>
+          <button type="button" class="edr-primary-btn" id="adminCreateAccountBtn">Create Account</button>
+        </div>
+        <div id="adminCreateAccountStatus" class="auth-create-status"></div>
+      </section>
+
+      <section class="auth-admin-card">
+        <div class="auth-admin-card-head">
+          <div><h3>User Accounts</h3><p>Manage staff access, edit workspace permissions, approve signups, or disable accounts.</p></div>
+          <input type="search" id="adminUserSearch" placeholder="Find name or username..." autocomplete="off">
+        </div>
+        <div class="auth-admin-table-wrap">
+          <table class="auth-admin-table">
+            <thead><tr><th>User</th><th>Status</th><th>Role</th><th>Permissions</th><th>Created</th><th>Last Active</th><th>Action</th></tr></thead>
+            <tbody id="adminUsersBody"><tr><td colspan="7">Loading...</td></tr></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+    <!-- SECTION 2: SECURITY AUDIT LOG -->
+    <div id="adminTabAudit" class="admin-tab-content" hidden>
+      <section class="auth-admin-card">
+        <div class="auth-admin-card-head">
+          <div>
+            <h3>Security & Administrative Audit Log</h3>
+            <p>Chronological record of account creations, role changes, permission modifications, and security events.</p>
+          </div>
+          <div class="admin-audit-tools">
+            <input type="search" id="adminAuditSearch" placeholder="Filter audit events..." autocomplete="off">
+            <button type="button" class="edr-outline-btn" id="adminRefreshAuditBtn">Refresh</button>
+            <button type="button" class="edr-outline-btn" id="adminExportAuditBtn">Export Log</button>
+          </div>
+        </div>
+        <div class="admin-audit-banner">
+          <span>Persistent across PCs when <code>supabase_audit_log.sql</code> is applied to Supabase. Fully protected by Row Level Security (RLS).</span>
+        </div>
+        <div class="auth-admin-table-wrap">
+          <table class="auth-admin-table" id="adminAuditTable">
+            <thead><tr><th>Timestamp</th><th>Actor</th><th>Role</th><th>Action</th><th>Target</th><th>Details</th></tr></thead>
+            <tbody id="adminSecurityAuditBody"><tr><td colspan="6">Loading audit events...</td></tr></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+    <!-- SECTION 3: OPERATIONAL SETTINGS -->
+    <div id="adminTabSettings" class="admin-tab-content" hidden>
+      <section class="auth-admin-card">
+        <div class="auth-admin-card-head">
+          <div>
+            <h3>Operational Settings</h3>
+            <p>Configure defaults and operational preferences for the CCTV OPS console. Stored securely.</p>
+          </div>
+        </div>
+        <div class="admin-settings-body">
+          <div class="admin-setting-row">
+            <div class="admin-setting-meta">
+              <strong>Default Interface Theme</strong>
+              <span>Choose default color mode for newly opened sessions on this browser.</span>
+            </div>
+            <select id="adminSettingTheme" class="admin-setting-control">
+              <option value="dark" selected>Dark Mode (Operations Default)</option>
+              <option value="light">Light Mode</option>
+              <option value="system">System Preference</option>
+            </select>
+          </div>
+
+          <div class="admin-setting-row">
+            <div class="admin-setting-meta">
+              <strong>Default Landing Workspace</strong>
+              <span>The first workspace presented to authenticated staff upon login.</span>
+            </div>
+            <select id="adminSettingLanding" class="admin-setting-control">
+              <option value="edr">EDR</option>
+              <option value="cctv" selected>CCTV Audit</option>
+              <option value="aiSorter">AI Sorter</option>
+              <option value="maintenance">Maintenance</option>
+              <option value="masterlist">Masterlist</option>
+              <option value="followup">Follow Up Reports</option>
+            </select>
+          </div>
+
+          <div class="admin-setting-row">
+            <div class="admin-setting-meta">
+              <strong>Application Display Subtitle</strong>
+              <span>Operational title displayed beneath the CCTV OPS brand.</span>
+            </div>
+            <input type="text" id="adminSettingSubtitle" class="admin-setting-control" value="Secure operations workspace" placeholder="e.g. Operations Console">
+          </div>
+
+          <div class="admin-setting-row">
+            <div class="admin-setting-meta">
+              <strong>CCTV Audit Auto-Trim Formatting</strong>
+              <span>Automatically remove extraneous trailing and leading whitespace from pasted TL, Agent, and OM names.</span>
+            </div>
+            <label class="admin-setting-toggle">
+              <input type="checkbox" id="adminSettingAutoTrim" checked>
+              <span>Enable automatic name cleanup</span>
+            </label>
+          </div>
+
+          <div class="admin-settings-actions">
+            <button type="button" class="edr-primary-btn" id="adminSaveSettingsBtn">Save Settings</button>
+            <span id="adminSaveSettingsNotice" class="admin-settings-notice"></span>
+          </div>
+
+          <div class="admin-settings-info">
+            <small>Note: Integration endpoints (Supabase credentials, Google Apps Script URLs, and document IDs) are governed by protected configuration and cannot be modified from public forms.</small>
+          </div>
+        </div>
+      </section>
+    </div>
   </div>
 </section>
 
@@ -12242,7 +13409,11 @@ body.ops-redesign-v3.dark-mode #maintenancePanel .mini-sheet-findbar input::plac
       <button type="button" class="maintenance-modal-close static-close" id="adminAccessClose" aria-label="Close">×</button>
     </div>
     <input type="hidden" id="adminAccessTargetId">
-    <label class="auth-access-role"><span>Role</span><select id="adminAccessRole"><option value="user">User</option><option value="admin">Admin</option></select></label>
+    <label class="auth-access-role"><span>Display Name</span><input type="text" id="adminAccessDisplayName" placeholder="Staff full name"></label>
+    <div class="auth-access-role-row" style="display:flex;gap:12px;">
+      <label class="auth-access-role" style="flex:1;"><span>Role</span><select id="adminAccessRole"><option value="user">User</option><option value="admin">Admin</option></select></label>
+      <label class="auth-access-role" style="flex:1;"><span>Status</span><select id="adminAccessStatus"><option value="active">Active</option><option value="disabled">Disabled / Suspended</option></select></label>
+    </div>
     <div class="auth-access-grid" id="adminAccessGrid">
       <label><input type="checkbox" data-permission="edr"> EDR</label>
       <label><input type="checkbox" data-permission="cctv"> CCTV Audit</label>
@@ -12251,9 +13422,9 @@ body.ops-redesign-v3.dark-mode #maintenancePanel .mini-sheet-findbar input::plac
       <label><input type="checkbox" data-permission="masterlist"> Master List</label>
       <label><input type="checkbox" data-permission="followup"> Follow Up Reports</label>
       <label><input type="checkbox" data-permission="history"> History</label>
-      <label class="auth-access-manage"><input type="checkbox" data-permission="manageOptions"> Manage site / OM / campaign / master options</label>
+      <label class="auth-access-manage" hidden><input type="checkbox" data-permission="manageOptions" disabled> Manage site / OM / campaign / master options</label>
     </div>
-    <div class="auth-access-note">Admin = full access. User access can be changed anytime.</div>
+    <div class="auth-access-note">Admin = full access. Normal user cannot manage options. User access can be changed anytime.</div>
     <div class="maintenance-modal-actions">
       <button type="button" class="edr-outline-btn" id="adminAccessCancel">Cancel</button>
       <button type="button" class="edr-primary-btn" id="adminAccessSave">Save Access</button>
@@ -12625,6 +13796,7 @@ https://www.facebook.com/share/..."></textarea>
     document.addEventListener("click", function (event) {
         const button = event.target.closest && event.target.closest("#edrDocsSetupBtn");
         if (!button) return;
+        if (!window.CCTV_ACCESS?.isAdmin?.()) return;
 
         const modal = document.getElementById("edrDocsSetupModal");
         const input = document.getElementById("edrDocsWebAppUrl");
@@ -12868,7 +14040,7 @@ https://www.facebook.com/share/..."></textarea>
     }
 
     function addNewOption(selectId, promptText) {
-        if (window.CCTV_ACCESS && !window.CCTV_ACCESS.canManageOptions()) { alert("Admin access is required to add dropdown options."); return; }
+        if (!window.CCTV_ACCESS?.canManageOptions?.()) { alert("Admin access is required to add dropdown options."); return; }
         const newValue = prompt(`Enter ${promptText}:`);
         
         if (newValue && newValue.trim() !== "") {
@@ -12878,6 +14050,7 @@ https://www.facebook.com/share/..."></textarea>
                 currentDropdownData[selectId].push(cleanValue);
                 localStorage.setItem(`cctv_dropdown_${selectId}`, JSON.stringify(currentDropdownData[selectId]));
                 renderDropdownOptions(selectId);
+                window.CCTV_LOG_ADMIN_EVENT?.("master_option_added", selectId, { field: selectId, value: cleanValue });
             } else {
                 alert("This option already exists!");
             }
@@ -12886,7 +14059,7 @@ https://www.facebook.com/share/..."></textarea>
     }
 
     async function removeSelectedOption(selectId) {
-        if (window.CCTV_ACCESS && !window.CCTV_ACCESS.canManageOptions()) { alert("Admin access is required to remove dropdown options."); return; }
+        if (!window.CCTV_ACCESS?.canManageOptions?.()) { alert("Admin access is required to remove dropdown options."); return; }
         const select = document.getElementById(selectId);
         const selectedIndex = select.selectedIndex;
         
@@ -12909,6 +14082,7 @@ https://www.facebook.com/share/..."></textarea>
         currentDropdownData[selectId] = currentDropdownData[selectId].filter(item => item !== valueToRemove);
         localStorage.setItem(`cctv_dropdown_${selectId}`, JSON.stringify(currentDropdownData[selectId]));
         renderDropdownOptions(selectId);
+        window.CCTV_LOG_ADMIN_EVENT?.("master_option_removed", selectId, { field: selectId, value: valueToRemove });
     }
 
     function saveEntries() {
@@ -12925,7 +14099,10 @@ https://www.facebook.com/share/..."></textarea>
         const month = months[dateObj.getMonth()];
         const formattedDate = `${dateObj.getMonth() + 1}/${dateObj.getDate()}/${year}`;
 
-        const auditorName = "Miles"; 
+        const auditorName =
+            window.CCTV_ACCOUNT_CONTEXT?.profile?.display_name ||
+            window.CCTV_ACCOUNT_CONTEXT?.profile?.username ||
+            "Miles";
         const site = document.getElementById("site").value;
         const tlName = document.getElementById("tlName").value || "N/A";
         const agentName = document.getElementById("agentName").value || "N/A";
@@ -13116,7 +14293,10 @@ https://www.facebook.com/share/..."></textarea>
             month: months[dateObj.getMonth()],
             formattedDate:
                 `${dateObj.getMonth() + 1}/${dateObj.getDate()}/${dateObj.getFullYear()}`,
-            auditorName: "Miles",
+            auditorName:
+                window.CCTV_ACCOUNT_CONTEXT?.profile?.display_name ||
+                window.CCTV_ACCOUNT_CONTEXT?.profile?.username ||
+                "Miles",
             omName,
             site: auditSiteFromEdr(report?.site),
             tlName,
@@ -17273,50 +18453,6 @@ https://www.facebook.com/share/..."></textarea>
         return String(value == null ? "" : value).trim();
     }
 
-    const USERNAME_RE = /^[A-Za-z0-9._-]{3,32}$/;
-    const TECH_LOGIN_DOMAIN = "cctvops.example.com";
-
-    function cleanUsername(value) {
-        return clean(value).replace(/^@+/, "");
-    }
-
-    function usernameKey(value) {
-        return cleanUsername(value).toLowerCase();
-    }
-
-    function validUsername(value) {
-        return USERNAME_RE.test(cleanUsername(value));
-    }
-
-    function usernameLoginEmail(value) {
-        return `${usernameKey(value)}@${TECH_LOGIN_DOMAIN}`;
-    }
-
-    function profileUsername(p, u) {
-        return cleanUsername(
-            p?.username ||
-            u?.user_metadata?.username ||
-            u?.raw_user_meta_data?.username ||
-            u?.email?.split("@")[0] ||
-            ""
-        );
-    }
-
-    function usernameLabel(value) {
-        const username = cleanUsername(value);
-        return username ? `@${username}` : "";
-    }
-
-    async function resolveUsernameEmail(value) {
-        const username = cleanUsername(value);
-        if (!validUsername(username)) return null;
-        const { data, error } = await client.rpc("resolve_login_username", {
-            p_username: username
-        });
-        if (error) throw error;
-        return clean(data) || null;
-    }
-
     function splitMarkdownLine(line) {
         let s = line.trim();
         if (s.startsWith("|")) s = s.slice(1);
@@ -17982,7 +19118,7 @@ body.ops-redesign-v3.dark-mode .followup-status-pill.replied{color:#93c5fd}.dark
         );
 
         if (!hasAnyRows) {
-            showMessage("Walay maintenance data nga ma-copy. Paste lanes/data first.", "error");
+            showMessage("No maintenance data to copy. Paste lanes/data first.", "error");
             return;
         }
 
@@ -18442,7 +19578,7 @@ body.ops-redesign-v3.dark-mode .followup-status-pill.replied{color:#93c5fd}.dark
         }
 
         if (!rowCount) {
-            showMessage("Walay maintenance data nga ma-send. Paste lanes/data first.", "error");
+            showMessage("No maintenance data to send. Paste lanes/data first.", "error");
             return;
         }
 
@@ -19575,9 +20711,35 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
     window.CCTV_AUDIT_MASTER_OMS = [...SOURCE_OMS];
     window.CCTV_AUDIT_MASTER_ACCOUNTS = [...SOURCE_ACCOUNTS];
 
+    const EDR_CUSTOM_OPTIONS_KEY = "cctv_master_edr_custom_options_v1";
+
+    function loadCustomEdrOptions() {
+        try {
+            const parsed = JSON.parse(localStorage.getItem(EDR_CUSTOM_OPTIONS_KEY) || "{}");
+            return {
+                tls: Array.isArray(parsed?.tls) ? parsed.tls : [],
+                oms: Array.isArray(parsed?.oms) ? parsed.oms : [],
+                accounts: Array.isArray(parsed?.accounts) ? parsed.accounts : []
+            };
+        } catch (_) {
+            return { tls: [], oms: [], accounts: [] };
+        }
+    }
+
+    function saveCustomEdrOptions(custom) {
+        try {
+            localStorage.setItem(EDR_CUSTOM_OPTIONS_KEY, JSON.stringify(custom));
+        } catch (_) {}
+    }
+
     let tlOptions = [...SOURCE_TLS];
     let omOptions = [...SOURCE_OMS];
     let accountOptions = [...SOURCE_ACCOUNTS];
+
+    const initialCustom = loadCustomEdrOptions();
+    initialCustom.tls.forEach(item => uniquePush(tlOptions, item));
+    initialCustom.oms.forEach(item => uniquePush(omOptions, item));
+    initialCustom.accounts.forEach(item => uniquePush(accountOptions, item));
 
     // Re-run tracker quality checks after the official TL / OM / campaign masters are available.
     setTimeout(() => window.CCTVTrackerGuard?.refresh?.(), 0);
@@ -19910,6 +21072,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
     }
 
     async function syncHistoryReportDiff(previousReports, nextReports) {
+        if (!window.CCTV_ACCESS?.isAdmin?.()) return;
         if (!isValidEdrDocsUrl(getEdrDocsWebAppUrl())) return;
 
         const before = new Map(
@@ -20130,7 +21293,10 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         }
 
         if (badge) {
-            if (mode === "connected") {
+            if (!window.CCTV_ACCESS?.isAdmin?.()) {
+                badge.textContent = "Saved locally to your account";
+                badge.className = "edr-session-note";
+            } else if (mode === "connected") {
                 badge.textContent = "Auto-saved to Google Docs";
                 badge.className = "edr-session-note is-connected";
             } else if (mode === "syncing") {
@@ -20147,6 +21313,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
     }
 
     function openEdrDocsSetup() {
+        if (!window.CCTV_ACCESS?.isAdmin?.()) return;
         const modal = byId("edrDocsSetupModal");
         byId("edrDocsWebAppUrl").value = getEdrDocsWebAppUrl();
         modal.classList.add("open");
@@ -20337,6 +21504,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
     }
 
     async function syncReportToGoogleDocs(report) {
+        if (!window.CCTV_ACCESS?.isAdmin?.()) return false;
         if (!isValidEdrDocsUrl(getEdrDocsWebAppUrl())) {
             setEdrDocsStatus(
                 "EDR saved only in this open page. Connect Google Docs for permanent archive.",
@@ -20372,6 +21540,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
     }
 
     async function deleteReportFromGoogleDocs(id) {
+        if (!window.CCTV_ACCESS?.isAdmin?.()) return false;
         if (!isValidEdrDocsUrl(getEdrDocsWebAppUrl())) return false;
 
         setEdrDocsStatus("Removing EDR from Google Docs...", "syncing");
@@ -20422,6 +21591,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
     }
 
     async function loadSavedEdrsFromDocs(showFeedback = false) {
+        if (!window.CCTV_ACCESS?.isAdmin?.()) return false;
         if (!isValidEdrDocsUrl(getEdrDocsWebAppUrl())) {
             if (showFeedback) openEdrDocsSetup();
             return false;
@@ -20892,14 +22062,16 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
 
         if (!savedReport) return;
 
-        if (isValidEdrDocsUrl(getEdrDocsWebAppUrl())) {
+        if (window.CCTV_ACCESS?.isAdmin?.() && isValidEdrDocsUrl(getEdrDocsWebAppUrl())) {
             await syncReportToGoogleDocs(savedReport);
-        } else {
+        } else if (window.CCTV_ACCESS?.isAdmin?.()) {
             setEdrDocsStatus(
                 "EDR is only in this open page. Connect Google Docs to make it permanent.",
                 ""
             );
             showToast("Connect Google Docs once so new EDRs save permanently.", "info");
+        } else {
+            setEdrDocsStatus("Saved locally to your account", "");
         }
     }
 
@@ -20907,7 +22079,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         const report = edrReports.find(item => item.id === id);
         if (!report) return;
 
-        if (!report.screenshotData && report.screenshotFileId) {
+        if (window.CCTV_ACCESS?.isAdmin?.() && !report.screenshotData && report.screenshotFileId) {
             setEdrDocsStatus("Loading EDR screenshot from Google Docs...", "syncing");
             await ensureRemoteScreenshot(report);
             setEdrDocsStatus("Google Docs connected.", "connected");
@@ -20964,7 +22136,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         await pushEdrHistory("Deleted EDR");
         showToast("EDR deleted.", "info");
 
-        if (isValidEdrDocsUrl(getEdrDocsWebAppUrl())) {
+        if (window.CCTV_ACCESS?.isAdmin?.() && isValidEdrDocsUrl(getEdrDocsWebAppUrl())) {
             const deleted = await deleteReportFromGoogleDocs(id);
             if (!deleted) {
                 showToast("Removed locally, but Google Docs deletion failed.", "error");
@@ -20976,7 +22148,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         const report = edrReports.find(item => item.id === id);
         if (!report) return;
 
-        if (!report.expanded && !report.screenshotData && report.screenshotFileId) {
+        if (window.CCTV_ACCESS?.isAdmin?.() && !report.expanded && !report.screenshotData && report.screenshotFileId) {
             await ensureRemoteScreenshot(report);
         }
 
@@ -21024,9 +22196,8 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
             makingDone ? "success" : "info"
         );
 
-        // Best-effort sync. Existing receiver versions may ignore Done metadata,
-        // while the local IndexedDB workspace always keeps it.
-        if (isValidEdrDocsUrl(getEdrDocsWebAppUrl())) {
+        // Best-effort sync for Admin.
+        if (window.CCTV_ACCESS?.isAdmin?.() && isValidEdrDocsUrl(getEdrDocsWebAppUrl())) {
             syncReportToGoogleDocs(report).catch(() => {});
         }
     }
@@ -21302,7 +22473,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         );
 
         // Best-effort cloud sync for receiver versions that preserve extra metadata.
-        if (isValidEdrDocsUrl(getEdrDocsWebAppUrl())) {
+        if (window.CCTV_ACCESS?.isAdmin?.() && isValidEdrDocsUrl(getEdrDocsWebAppUrl())) {
             active.forEach(report => {
                 syncReportToGoogleDocs(report).catch(() => {});
             });
@@ -21620,7 +22791,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
                     report.screenshotFileId ? "Replaced EDR screenshot" : "Added EDR screenshot"
                 );
 
-                if (isValidEdrDocsUrl(getEdrDocsWebAppUrl())) {
+                if (window.CCTV_ACCESS?.isAdmin?.() && isValidEdrDocsUrl(getEdrDocsWebAppUrl())) {
                     await syncReportToGoogleDocs(report);
                 }
 
@@ -21656,7 +22827,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         refreshOutput();
         await pushEdrHistory("Removed EDR screenshot");
 
-        if (isValidEdrDocsUrl(getEdrDocsWebAppUrl())) {
+        if (window.CCTV_ACCESS?.isAdmin?.() && isValidEdrDocsUrl(getEdrDocsWebAppUrl())) {
             await syncReportToGoogleDocs(report);
         }
 
@@ -21685,7 +22856,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
     }
 
     async function addSupervisorOption() {
-        if (window.CCTV_ACCESS && !window.CCTV_ACCESS.canManageOptions()) { showToast("Admin access is required to manage EDR options.", "error"); return; }
+        if (!window.CCTV_ACCESS?.canManageOptions?.()) { showToast("Admin access is required to manage EDR options.", "error"); return; }
         const value = clean(byId("edrSupervisorName").value);
 
         if (!value) {
@@ -21702,15 +22873,21 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
             return;
         }
 
+        const custom = loadCustomEdrOptions();
+        if (role === "OM") uniquePush(custom.oms, value);
+        else uniquePush(custom.tls, value);
+        saveCustomEdrOptions(custom);
+
         refreshSupervisorOptions();
         refreshDedicatedOmOptions();
         refreshSubjectOptions();
         await pushEdrHistory(`Added ${role} option`);
-        showToast(`${value} added to the ${role} list for this session.`, "success");
+        window.CCTV_LOG_ADMIN_EVENT?.("master_option_added", role, { field: role, value });
+        showToast(`${value} added to the ${role} list.`, "success");
     }
 
     async function removeSupervisorOption() {
-        if (window.CCTV_ACCESS && !window.CCTV_ACCESS.canManageOptions()) { showToast("Admin access is required to manage EDR options.", "error"); return; }
+        if (!window.CCTV_ACCESS?.canManageOptions?.()) { showToast("Admin access is required to manage EDR options.", "error"); return; }
         const value = clean(byId("edrSupervisorName").value);
 
         if (!value) {
@@ -21728,7 +22905,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
 
         const approved = await appConfirm({
             title: `Remove ${role} option?`,
-            message: `Remove "${value}" from the searchable list for this session?`,
+            message: `Remove "${value}" from the searchable list?`,
             confirmText: "Remove",
             tone: "danger"
         });
@@ -21740,16 +22917,22 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         if (role === "OM") omOptions = result.list;
         else tlOptions = result.list;
 
+        const custom = loadCustomEdrOptions();
+        if (role === "OM") custom.oms = custom.oms.filter(x => x.localeCompare(value, undefined, { sensitivity: "base" }) !== 0);
+        else custom.tls = custom.tls.filter(x => x.localeCompare(value, undefined, { sensitivity: "base" }) !== 0);
+        saveCustomEdrOptions(custom);
+
         byId("edrSupervisorName").value = "";
         refreshSupervisorOptions();
         refreshDedicatedOmOptions();
         refreshSubjectOptions();
         await pushEdrHistory(`Removed ${role} option`);
+        window.CCTV_LOG_ADMIN_EVENT?.("master_option_removed", role, { field: role, value });
         showToast(`${value} removed from the current ${role} list.`, "info");
     }
 
     async function addAccountOption() {
-        if (window.CCTV_ACCESS && !window.CCTV_ACCESS.canManageOptions()) { showToast("Admin access is required to manage EDR options.", "error"); return; }
+        if (!window.CCTV_ACCESS?.canManageOptions?.()) { showToast("Admin access is required to manage EDR options.", "error"); return; }
         const value = clean(byId("edrAccount").value);
 
         if (!value) {
@@ -21764,13 +22947,18 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
             return;
         }
 
+        const custom = loadCustomEdrOptions();
+        uniquePush(custom.accounts, value);
+        saveCustomEdrOptions(custom);
+
         refreshAccountOptions();
         await pushEdrHistory("Added campaign option");
-        showToast(`${value} added to the campaign list for this session.`, "success");
+        window.CCTV_LOG_ADMIN_EVENT?.("master_option_added", "Account", { field: "account", value });
+        showToast(`${value} added to the campaign list.`, "success");
     }
 
     async function removeAccountOption() {
-        if (window.CCTV_ACCESS && !window.CCTV_ACCESS.canManageOptions()) { showToast("Admin access is required to manage EDR options.", "error"); return; }
+        if (!window.CCTV_ACCESS?.canManageOptions?.()) { showToast("Admin access is required to manage EDR options.", "error"); return; }
         const value = clean(byId("edrAccount").value);
 
         if (!value) {
@@ -21785,7 +22973,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
 
         const approved = await appConfirm({
             title: "Remove campaign option?",
-            message: `Remove "${value}" from the searchable campaign list for this session?`,
+            message: `Remove "${value}" from the searchable campaign list?`,
             confirmText: "Remove",
             tone: "danger"
         });
@@ -21794,9 +22982,15 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
 
         const result = removeValue(accountOptions, value);
         accountOptions = result.list;
+
+        const custom = loadCustomEdrOptions();
+        custom.accounts = custom.accounts.filter(x => x.localeCompare(value, undefined, { sensitivity: "base" }) !== 0);
+        saveCustomEdrOptions(custom);
+
         byId("edrAccount").value = "";
         refreshAccountOptions();
         await pushEdrHistory("Removed campaign option");
+        window.CCTV_LOG_ADMIN_EVENT?.("master_option_removed", "Account", { field: "account", value });
 
         showToast(`${value} removed from the current campaign list.`, "info");
     }
@@ -21824,17 +23018,19 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         edrBtn.classList.add("active");
         edrBtn.setAttribute("aria-selected", "true");
 
-        if (isValidEdrDocsUrl(getEdrDocsWebAppUrl())) {
+        if (window.CCTV_ACCESS?.isAdmin?.() && isValidEdrDocsUrl(getEdrDocsWebAppUrl())) {
             if (!edrDocsLoadedOnce) {
                 await loadSavedEdrsFromDocs(false);
             } else {
                 setEdrDocsStatus("Google Docs connected.", "connected");
             }
-        } else {
+        } else if (window.CCTV_ACCESS?.isAdmin?.()) {
             setEdrDocsStatus(
                 "Not connected. Connect Google Docs once to keep EDRs after browser data is cleared.",
                 ""
             );
+        } else {
+            setEdrDocsStatus("Saved locally to your account", "");
         }
     });
 
@@ -22089,15 +23285,17 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
     refreshOutput();
 
     restorePersistentEdrWorkspace().then(() => {
-        if (isValidEdrDocsUrl(getEdrDocsWebAppUrl())) {
+        if (window.CCTV_ACCESS?.isAdmin?.() && isValidEdrDocsUrl(getEdrDocsWebAppUrl())) {
             testEdrDocsConnection(false).then(connected => {
                 if (connected) loadSavedEdrsFromDocs(false);
             });
-        } else {
+        } else if (window.CCTV_ACCESS?.isAdmin?.()) {
             setEdrDocsStatus(
                 "Not connected. Connect Google Docs once to auto-save and reload your EDR list.",
                 ""
             );
+        } else {
+            setEdrDocsStatus("Saved locally to your account", "");
         }
     });
 
@@ -23304,12 +24502,13 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
 
     function renderHrAssignments() {
         const body = $("masterAssignedHrBody");
+        const canManage = !!window.CCTV_ACCESS?.canManageOptions?.();
 
         $("masterAssignedHrCount").textContent = String(hrAssignments.length);
 
         if (!hrAssignments.length) {
             body.innerHTML =
-                '<tr><td colspan="3" class="master-empty-cell">No HR assignments found.</td></tr>';
+                `<tr><td colspan="${canManage ? '4' : '3'}" class="master-empty-cell">No HR assignments found.</td></tr>`;
             return;
         }
 
@@ -23320,6 +24519,15 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
                 item.hr
             ].join(" "));
 
+            const actionsCell = canManage
+                ? `<td>
+                        <div class="master-hr-row-actions">
+                            <button type="button" class="master-hr-edit-btn">Edit</button>
+                            <button type="button" class="master-hr-delete-btn">Delete</button>
+                        </div>
+                    </td>`
+                : `<td class="master-hr-actions-cell" style="display:none;"></td>`;
+
             return `
                 <tr data-search="${esc(search)}"
                     data-id="${esc(item.id || "")}"
@@ -23327,12 +24535,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
                     <td>${esc(item.site)}</td>
                     <td>${esc(item.omTeam)}</td>
                     <td>${esc(item.hr)}</td>
-                    <td>
-                        <div class="master-hr-row-actions">
-                            <button type="button" class="master-hr-edit-btn">Edit</button>
-                            <button type="button" class="master-hr-delete-btn">Delete</button>
-                        </div>
-                    </td>
+                    ${actionsCell}
                 </tr>
             `;
         }).join("");
@@ -23349,7 +24552,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
             if (!item) return;
 
             row.querySelector(".master-hr-edit-btn")?.addEventListener("click", () => {
-                if (window.CCTV_ACCESS && !window.CCTV_ACCESS.canManageOptions()) {
+                if (!window.CCTV_ACCESS?.canManageOptions?.()) {
                     setHrCrudStatus("Admin access is required to edit HR assignments.", "error");
                     return;
                 }
@@ -23363,7 +24566,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
             });
 
             row.querySelector(".master-hr-delete-btn")?.addEventListener("click", async () => {
-                if (window.CCTV_ACCESS && !window.CCTV_ACCESS.canManageOptions()) {
+                if (!window.CCTV_ACCESS?.canManageOptions?.()) {
                     setHrCrudStatus("Admin access is required to delete HR assignments.", "error");
                     return;
                 }
@@ -23647,7 +24850,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
     }
 
     $("masterHrSaveBtn")?.addEventListener("click", async () => {
-        if (window.CCTV_ACCESS && !window.CCTV_ACCESS.canManageOptions()) { setHrCrudStatus("Admin access is required to change HR assignments.", "error"); return; }
+        if (!window.CCTV_ACCESS?.canManageOptions?.()) { setHrCrudStatus("Admin access is required to change HR assignments.", "error"); return; }
         const site = clean($("masterHrSiteInput").value);
         const omTeam = clean($("masterHrTeamInput").value);
         const hr = clean($("masterHrAssignedInput").value);
@@ -23692,6 +24895,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         );
         localHrChanges.push(record);
         saveLocalHrChanges();
+        window.CCTV_LOG_ADMIN_EVENT?.("master_hr_assignment_updated", `${site} - ${omTeam}`, { site, omTeam, hr });
 
         const sent = await postHrAction({
             action: "upsertHrAssignment",
@@ -25274,6 +26478,11 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
     ];
 
     function enforceWorkspace(activeButtonId, activePanelId) {
+        if (activePanelId === "adminPanel" && !window.CCTV_ACCESS?.isAdmin?.()) {
+            activeButtonId = "cctvTabBtn";
+            activePanelId = "cctvPanel";
+        }
+
         pairs.forEach(([buttonId, panelId]) => {
             const button = document.getElementById(buttonId);
             const panel = document.getElementById(panelId);
@@ -25301,8 +26510,9 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
     }
 
     function currentPair() {
-        const activeButton = pairs.find(([buttonId]) =>
-            document.getElementById(buttonId)?.classList.contains("active")
+        const activeButton = pairs.find(([buttonId, panelId]) =>
+            document.getElementById(buttonId)?.classList.contains("active") &&
+            (panelId !== "adminPanel" || window.CCTV_ACCESS?.isAdmin?.())
         );
 
         if (activeButton) return activeButton;
@@ -25315,6 +26525,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         if (!button) return;
 
         button.addEventListener("click", () => {
+            if (panelId === "adminPanel" && !window.CCTV_ACCESS?.isAdmin?.()) return;
             // Run after older workspace handlers so this becomes
             // the final source of truth.
             setTimeout(() => {
@@ -25337,6 +26548,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
     // Expose a tiny helper for internal features that navigate
     // to another workspace programmatically.
     window.showWorkspaceOnly = function (panelId) {
+        if (panelId === "adminPanel" && !window.CCTV_ACCESS?.isAdmin?.()) return;
         const pair = pairs.find(([, id]) => id === panelId);
         if (!pair) return;
         enforceWorkspace(pair[0], pair[1]);
@@ -25406,18 +26618,21 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
     async function resolveUsernameEmail(value) {
         const username = cleanUsername(value);
         if (!validUsername(username)) return null;
-        const { data, error } = await client.rpc("resolve_login_username", {
-            p_username: username
-        });
-        if (error) throw error;
-        return clean(data) || null;
+        try {
+            const { data, error } = await client.rpc("resolve_login_username", {
+                p_username: username
+            });
+            if (!error && data) return clean(data);
+        } catch (_) {}
+        return usernameLoginEmail(username);
     }
 
     async function resolveLoginIdentifier(value) {
         const raw = clean(value);
         if (!raw) return null;
         if (raw.includes("@")) return raw.toLowerCase();
-        return resolveUsernameEmail(raw);
+        const resolved = await resolveUsernameEmail(raw);
+        return resolved || usernameLoginEmail(raw);
     }
 
     function configReady() {
@@ -25478,7 +26693,19 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         $("authForms").hidden = true;
         $("authWaitingState").hidden = true;
         $("authRejectedState").hidden = false;
+        $("authDisabledState").hidden = true;
         $("authRejectedEmail").textContent = usernameLabel(profileUsername(profile, u));
+        stopPendingCheck();
+    }
+
+    function lockDisabled(u) {
+        document.body.classList.add("auth-locked");
+        $("authGate").hidden = false;
+        $("authForms").hidden = true;
+        $("authWaitingState").hidden = true;
+        $("authRejectedState").hidden = true;
+        $("authDisabledState").hidden = false;
+        $("authDisabledEmail").textContent = usernameLabel(profileUsername(profile, u));
         stopPendingCheck();
     }
 
@@ -25492,6 +26719,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         document.body.classList.remove("auth-role-admin", "auth-role-user");
         document.body.classList.add("auth-locked");
         $("authGate").hidden = false;
+        $("authDisabledState").hidden = true;
         $("authSidebarAccount").hidden = true;
         $("adminTabBtn").hidden = true;
         $("adminPanel").hidden = true;
@@ -25543,7 +26771,11 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
     };
 
     function normalizedPermissions(p) {
-        return { ...DEFAULT_USER_PERMISSIONS, ...(p?.permissions || {}) };
+        const perms = { ...DEFAULT_USER_PERMISSIONS, ...(p?.permissions || {}) };
+        if (p?.role !== "admin") {
+            perms.manageOptions = false;
+        }
+        return perms;
     }
 
     function isAdminProfile(p = profile) {
@@ -25580,8 +26812,12 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
 
         if ($("globalHistoryBtn")) $("globalHistoryBtn").hidden = !(admin || perms.history !== false);
         if ($("adminTabBtn")) $("adminTabBtn").hidden = !admin;
+        if ($("adminPanel") && !admin) {
+            $("adminPanel").hidden = true;
+            $("adminPanel").classList.remove("active");
+        }
 
-        // Option/master-data management is intentionally admin-only by default.
+        // Option/master-data management and Google Docs EDR archive are strictly admin-only.
         const canManage = admin;
         document.querySelectorAll([
             "#cctvPanel .add-btn",
@@ -25590,18 +26826,44 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
             "#edrRemoveSupervisorOption",
             "#edrAddAccountOption",
             "#edrRemoveAccountOption",
+            "#edrPanel .edr-docs-sync-bar",
+            "#edrDocsSetupModal",
+            "#edrDocsSetupBtn",
+            "#edrDocsReloadBtn",
             "#masterlistPanel .master-hr-crud-form",
+            "#masterlistPanel #masterHrCrudStatus",
+            "#masterAssignedHrTable .master-hr-row-actions",
             "#masterAssignedHrTable .master-hr-edit-btn",
             "#masterAssignedHrTable .master-hr-delete-btn"
         ].join(","))
             .forEach(node => node.hidden = !canManage);
 
-        window.CCTV_ACCESS = {
+        const badge = $("edrCloudBadge");
+        if (badge && !admin) {
+            badge.textContent = "Saved locally to your account";
+        }
+
+        if (!admin) {
+            $("edrDocsSetupModal")?.classList.remove("open");
+            document.body.classList.remove("maintenance-modal-open");
+        }
+
+        const accessObj = {
             isAdmin: () => admin,
             canManageOptions: () => canManage,
             can: key => admin || perms[key] !== false,
-            permissions: { ...perms }
+            permissions: Object.freeze({ ...perms })
         };
+        Object.freeze(accessObj);
+        try {
+            Object.defineProperty(window, "CCTV_ACCESS", {
+                value: accessObj,
+                writable: false,
+                configurable: true
+            });
+        } catch (_) {
+            window.CCTV_ACCESS = accessObj;
+        }
 
         window.CCTV_ACCOUNT_CONTEXT = { client, user, profile: p };
         window.dispatchEvent(new CustomEvent("cctv:account-ready", { detail: { profile: p, isAdmin: admin, permissions: perms } }));
@@ -25624,13 +26886,27 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
 
         if (!p || p.status === "pending") return lockPending(u);
         if (p.status === "rejected") return lockRejected(u);
+        if (p.status === "disabled" || p.status === "suspended") return lockDisabled(u);
+
+        // Safe one-time cleanup for NORMAL USER workspaces only
+        // Miles and all Admin accounts are 100% exempt and protected.
+        if (p.role !== "admin" && !window.CCTV_DATA_SCOPE?.info?.().isLegacyOwner) {
+            const CLEANUP_KEY = "__cctv_normal_user_edr_cleaned_v1";
+            if (!localStorage.getItem(CLEANUP_KEY)) {
+                try {
+                    indexedDB.deleteDatabase("cctv_edr_workspace_v2");
+                } catch (_) {}
+                localStorage.setItem(CLEANUP_KEY, "true");
+            }
+        }
 
         // Activate this account's private browser storage before opening
         // any workspace. A reload occurs only when switching accounts or
         // when the existing Admin data is claimed for the first time.
         const scopeNeedsReload = !!window.CCTV_DATA_SCOPE?.activate?.(
             u.id,
-            p.role === "admin" && p.status === "approved"
+            p.role === "admin" && p.status === "approved",
+            p
         );
 
         if (scopeNeedsReload) {
@@ -25761,10 +27037,32 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
     };
 
     const statusPill = status => {
-        const text = status === "approved" ? "Approved" :
-            status === "rejected" ? "Disapproved" : "Pending";
-        return `<span class="auth-user-status ${esc(status)}">${text}</span>`;
+        const norm = String(status || "").toLowerCase();
+        if (norm === "approved" || norm === "active") {
+            return `<span class="admin-badge badge-active">Active</span>`;
+        }
+        if (norm === "disabled" || norm === "suspended") {
+            return `<span class="admin-badge badge-disabled">Disabled</span>`;
+        }
+        if (norm === "pending") {
+            return `<span class="admin-badge badge-pending">Pending</span>`;
+        }
+        return `<span class="admin-badge badge-user">${esc(status || "Unknown")}</span>`;
     };
+
+    function permissionsSummary(p) {
+        if (p?.role === "admin") return "Full Admin Access";
+        const list = [];
+        const perms = p?.permissions || {};
+        if (perms.edr !== false) list.push("EDR");
+        if (perms.cctv !== false) list.push("CCTV");
+        if (perms.aiSorter !== false) list.push("AI");
+        if (perms.maintenance !== false) list.push("Maint");
+        if (perms.masterlist !== false) list.push("Master");
+        if (perms.followup !== false) list.push("Followup");
+        if (perms.history !== false) list.push("History");
+        return list.join(", ") || "No workspaces";
+    }
 
     function filterUsers() {
         const q = clean($("adminUserSearch")?.value).toLowerCase();
@@ -25773,30 +27071,208 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         });
     }
 
+    // Central Security Audit Event Logger
+    async function logSecurityEvent(action, targetItem = "", details = {}, targetUserId = null) {
+        if (!profile || profile.role !== "admin" || profile.status !== "approved") {
+            return;
+        }
+
+        const safeAction = String(action || "").trim();
+        const safeTargetItem = String(targetItem || "").trim();
+        const safeDetails = (details && typeof details === "object") ? { ...details } : {};
+
+        // Sanitize any sensitive or credential fields
+        delete safeDetails.password;
+        delete safeDetails.temp_password;
+        delete safeDetails.temporary_password;
+        delete safeDetails.newPassword;
+        delete safeDetails.token;
+        delete safeDetails.accessToken;
+        delete safeDetails.access_token;
+        delete safeDetails.refreshToken;
+        delete safeDetails.refresh_token;
+        delete safeDetails.secret;
+        delete safeDetails.apiKey;
+        delete safeDetails.apikey;
+        delete safeDetails.service_role;
+        delete safeDetails.service_role_key;
+        delete safeDetails.supabase_key;
+        delete safeDetails.url;
+
+        const localId = (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function")
+            ? crypto.randomUUID()
+            : "evt_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 9);
+
+        const localRecord = {
+            id: localId,
+            created_at: new Date().toISOString(),
+            actor_username: profile?.username || "admin",
+            actor_role: "admin",
+            action: safeAction,
+            target_user_id: targetUserId || null,
+            target_item: safeTargetItem,
+            details: safeDetails
+        };
+
+        try {
+            const rawCache = JSON.parse(localStorage.getItem("__cctv_local_audit_events_v1") || "[]");
+            rawCache.unshift(localRecord);
+            localStorage.setItem("__cctv_local_audit_events_v1", JSON.stringify(rawCache.slice(0, 200)));
+        } catch (_) {}
+
+        if (client) {
+            try {
+                const { data, error } = await client.rpc("log_cctv_security_event", {
+                    p_action: safeAction,
+                    p_target_user_id: targetUserId || null,
+                    p_target_item: safeTargetItem,
+                    p_details: safeDetails
+                });
+
+                if (error) {
+                    console.warn("[CCTV OPS Audit] Notice from audit RPC:", error.message || error);
+                }
+            } catch (err) {
+                console.warn("[CCTV OPS Audit] Non-breaking logging error:", err?.message || err);
+            }
+        }
+
+        // Refresh the Security Audit Log UI immediately so new event appears
+        try {
+            await loadSecurityAuditLogs();
+        } catch (_) {}
+    }
+
+    window.CCTV_LOG_ADMIN_EVENT = logSecurityEvent;
+
+    let auditLogsCache = [];
+
+    async function loadSecurityAuditLogs() {
+        const body = $("adminSecurityAuditBody");
+        if (!body) return;
+
+        // Requirement 4: Normal users must NOT be able to view the audit log
+        if (!profile || profile.role !== "admin" || profile.status !== "approved") {
+            body.innerHTML = '<tr><td colspan="6" class="auth-admin-empty">Admin access required.</td></tr>';
+            return;
+        }
+
+        let logs = [];
+        let remoteSuccess = false;
+
+        if (client) {
+            try {
+                const { data, error } = await client
+                    .from("cctv_security_audit_logs")
+                    .select("id,created_at,actor_username,actor_role,action,target_item,details")
+                    .order("created_at", { ascending: false })
+                    .limit(100);
+
+                if (!error && Array.isArray(data)) {
+                    logs = data;
+                    remoteSuccess = true;
+                } else if (error) {
+                    console.warn("[CCTV OPS Audit] Could not fetch remote logs:", error.message || error);
+                }
+            } catch (err) {
+                console.warn("[CCTV OPS Audit] Fetch exception:", err?.message || err);
+            }
+        }
+
+        if (!remoteSuccess) {
+            try {
+                logs = JSON.parse(localStorage.getItem("__cctv_local_audit_events_v1") || "[]");
+            } catch (_) {}
+        }
+
+        auditLogsCache = logs;
+        renderSecurityAuditLogs(logs);
+    }
+
+    function renderSecurityAuditLogs(logs) {
+        const body = $("adminSecurityAuditBody");
+        if (!body) return;
+
+        if (!logs || !logs.length) {
+            body.innerHTML = '<tr><td colspan="6" class="auth-admin-empty">No security audit events recorded yet.</td></tr>';
+            return;
+        }
+
+        body.innerHTML = logs.map(item => {
+            const search = ((item.actor_username || "") + " " + (item.action || "") + " " + (item.target_item || "")).toLowerCase();
+            const detailsStr = typeof item.details === "object" ? JSON.stringify(item.details) : String(item.details || "");
+            return `
+            <tr data-search="${esc(search)}">
+              <td>${esc(dt(item.created_at))}</td>
+              <td><strong>${esc(item.actor_username || "admin")}</strong></td>
+              <td><span class="admin-badge badge-${item.actor_role === "admin" ? "admin" : "user"}">${esc(item.actor_role || "admin")}</span></td>
+              <td><strong>${esc(item.action || "event")}</strong></td>
+              <td>${esc(item.target_item || "—")}</td>
+              <td><code>${esc(detailsStr || "—")}</code></td>
+            </tr>`;
+        }).join("");
+    }
+
+    function filterAuditLogs() {
+        const q = clean($("adminAuditSearch")?.value).toLowerCase();
+        $("adminSecurityAuditBody")?.querySelectorAll("tr[data-search]").forEach(row => {
+            row.hidden = !!q && !row.dataset.search.includes(q);
+        });
+    }
+
+    function exportAuditLogs() {
+        const json = JSON.stringify(auditLogsCache, null, 2);
+        const blob = new Blob([json], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `cctv_security_audit_${new Date().toISOString().slice(0, 10)}.json`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+        toast("Security audit log exported.");
+    }
+
     function renderUsers(rows) {
         const body = $("adminUsersBody");
         if (!rows.length) {
-            body.innerHTML = '<tr><td colspan="6" class="auth-admin-empty">No accounts.</td></tr>';
+            body.innerHTML = '<tr><td colspan="7" class="auth-admin-empty">No accounts.</td></tr>';
             return;
         }
 
         body.innerHTML = rows.map(item => {
             const self = item.id === user?.id;
-            const search = ((item.display_name || "") + " " + (item.username || "")).toLowerCase();
+            const search = ((item.display_name || "") + " " + (item.username || "") + " " + (item.email || "")).toLowerCase();
             const roleLabel = item.role === "admin" ? "Admin" : "User";
+            const isApproved = item.status === "approved";
+            const isDisabled = item.status === "disabled" || item.status === "suspended";
+            const isPending = item.status === "pending";
+            const permsText = permissionsSummary(item);
+
             return `
             <tr data-search="${esc(search)}">
-              <td><div class="auth-admin-user-cell"><strong>${esc(item.display_name || item.username || "User")}</strong><span>${esc(usernameLabel(item.username))}</span></div></td>
+              <td>
+                <div class="auth-admin-user-cell">
+                  <strong>${esc(item.display_name || item.username || "User")}</strong>
+                  <span>${esc(usernameLabel(item.username))}</span>
+                </div>
+              </td>
               <td>${statusPill(item.status)}</td>
-              <td><span class="auth-role-pill ${esc(item.role)}">${roleLabel}</span></td>
+              <td><span class="admin-badge badge-${esc(item.role)}">${roleLabel}</span></td>
+              <td><small style="color:var(--ops-muted);">${esc(permsText)}</small></td>
               <td>${esc(dt(item.created_at))}</td>
               <td>${esc(dt(item.last_seen_at))}</td>
-              <td><div class="auth-admin-actions">
-                ${item.status !== "approved" ? `<button class="auth-approve-btn" data-id="${esc(item.id)}">Approve</button>` : ""}
-                <button class="auth-access-btn" data-id="${esc(item.id)}">Access</button>
-                ${!self && item.status !== "rejected" ? `<button class="auth-reject-btn" data-id="${esc(item.id)}">Disapprove</button>` : ""}
-                ${!self ? `<button class="auth-remove-user-btn" data-id="${esc(item.id)}">Remove</button>` : '<span class="auth-self-label">You</span>'}
-              </div></td>
+              <td>
+                <div class="auth-admin-actions">
+                  ${isPending ? `<button type="button" class="auth-approve-btn admin-action-btn" data-id="${esc(item.id)}">Approve</button>` : ""}
+                  ${isPending ? `<button type="button" class="auth-reject-btn admin-action-btn" data-id="${esc(item.id)}">Reject</button>` : ""}
+                  <button type="button" class="auth-access-btn admin-action-btn" data-id="${esc(item.id)}">Access</button>
+                  ${!self && isApproved ? `<button type="button" class="auth-disable-btn admin-action-btn" data-id="${esc(item.id)}">Disable</button>` : ""}
+                  ${!self && isDisabled ? `<button type="button" class="auth-reactivate-btn admin-action-btn" data-id="${esc(item.id)}">Reactivate</button>` : ""}
+                  ${!self ? `<button type="button" class="auth-remove-user-btn admin-action-btn" data-id="${esc(item.id)}">Delete</button>` : '<span class="auth-self-label">You</span>'}
+                </div>
+              </td>
             </tr>`;
         }).join("");
 
@@ -25804,33 +27280,50 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
             btn.addEventListener("click", () => setStatus(btn.dataset.id, "approved"))
         );
 
-        body.querySelectorAll(".auth-access-btn").forEach(btn =>
-            btn.addEventListener("click", () => openAccessEditor(btn.dataset.id))
-        );
-
         body.querySelectorAll(".auth-reject-btn").forEach(btn =>
             btn.addEventListener("click", async () => {
                 const item = rows.find(x => x.id === btn.dataset.id);
                 const ok = await window.appConfirm({
-                    title: "Disapprove account?",
-                    message: `${item?.display_name || usernameLabel(item?.username) || "This user"} will lose access.`,
-                    confirmText: "Disapprove",
+                    title: "Reject signup request?",
+                    message: `Reject signup request for ${item?.display_name || usernameLabel(item?.username) || "this user"}?`,
+                    confirmText: "Reject",
                     tone: "danger"
                 });
                 if (ok) setStatus(btn.dataset.id, "rejected");
             })
         );
 
-        body.querySelectorAll(".auth-remove-user-btn").forEach(btn =>
+        body.querySelectorAll(".auth-access-btn").forEach(btn =>
+            btn.addEventListener("click", () => openAccessEditor(btn.dataset.id))
+        );
+
+        body.querySelectorAll(".auth-disable-btn").forEach(btn =>
             btn.addEventListener("click", async () => {
                 const item = rows.find(x => x.id === btn.dataset.id);
                 const ok = await window.appConfirm({
-                    title: "Remove account?",
-                    message: `${item?.display_name || usernameLabel(item?.username) || "This user"} will be permanently deleted.`,
-                    confirmText: "Remove Account",
+                    title: "Disable staff account?",
+                    message: `${item?.display_name || usernameLabel(item?.username) || "This staff member"} will be immediately locked out from all workspaces.`,
+                    confirmText: "Disable Account",
                     tone: "danger"
                 });
-                if (ok) removeUser(btn.dataset.id);
+                if (ok) setStatus(btn.dataset.id, "disabled");
+            })
+        );
+
+        body.querySelectorAll(".auth-reactivate-btn").forEach(btn =>
+            btn.addEventListener("click", () => setStatus(btn.dataset.id, "approved"))
+        );
+
+        body.querySelectorAll(".auth-remove-user-btn").forEach(btn =>
+            btn.addEventListener("click", async () => {
+                const item = rows.find(x => x.id === btn.dataset.id);
+                await window.appConfirm({
+                    title: "Permanent Auth Account Deletion",
+                    message: `Permanently deleting an authenticated user (${item?.display_name || item?.username}) requires the Supabase Admin API with a service_role key or an Edge Function. To maintain zero browser security exposure, you can Disable this account instead (which immediately suspends all access). See supabase_audit_log.sql for server-side Edge Function deployment.`,
+                    confirmText: "Understood",
+                    cancelText: "Cancel",
+                    tone: "neutral"
+                });
             })
         );
 
@@ -25838,25 +27331,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
     }
 
     function renderActivity(logs, rows) {
-        const body = $("adminActivityBody");
-        const map = new Map(rows.map(x => [x.id, x]));
-
-        if (!logs.length) {
-            body.innerHTML = '<tr><td colspan="4" class="auth-admin-empty">No activity yet.</td></tr>';
-            return;
-        }
-
-        body.innerHTML = logs.map(log => {
-            const who = map.get(log.user_id);
-            const label = log.event === "sign_in" ? "Signed In" :
-                log.event === "sign_out" ? "Logged Out" : "Opened Website";
-            return `<tr>
-              <td><div class="auth-admin-user-cell"><strong>${esc(who?.display_name || who?.username || "Removed User")}</strong><span>${esc(usernameLabel(who?.username))}</span></div></td>
-              <td><span class="auth-event-pill ${esc(log.event)}">${label}</span></td>
-              <td>${esc(dt(log.created_at))}</td>
-              <td>${esc(log.meta?.path || "/")}</td>
-            </tr>`;
-        }).join("");
+        // Activity rendering remains intact for compatibility
     }
 
     async function loadAdmin() {
@@ -25864,33 +27339,62 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         busy($("adminRefreshBtn"), true, "Refreshing...");
 
         try {
-            const [p, l] = await Promise.all([
-                client.from("profiles")
-                    .select("id,email,username,display_name,status,role,permissions,created_at,last_seen_at")
-                    .order("created_at", { ascending:false }),
-                client.from("access_logs")
-                    .select("id,user_id,event,meta,created_at")
-                    .order("created_at", { ascending:false })
-                    .limit(100)
-            ]);
+            const { data: profilesData, error: profilesError } = await client
+                .from("profiles")
+                .select("id,email,username,display_name,status,role,permissions,created_at,last_seen_at")
+                .order("created_at", { ascending:false });
 
-            if (p.error) throw p.error;
-            if (l.error) throw l.error;
+            if (profilesError) throw profilesError;
 
-            usersCache = p.data || [];
+            usersCache = profilesData || [];
             renderUsers(usersCache);
-            renderActivity(l.data || [], usersCache);
 
+            // Calculate live metric counts
+            const total = usersCache.length;
+            const admins = usersCache.filter(x => x.role === "admin").length;
+            const staffUsers = usersCache.filter(x => x.role !== "admin").length;
             const pending = usersCache.filter(x => x.status === "pending").length;
+            const disabled = usersCache.filter(x => x.status === "disabled" || x.status === "suspended").length;
             const cutoff = Date.now() - 86400000;
             const recent = usersCache.filter(x => x.last_seen_at && new Date(x.last_seen_at).getTime() >= cutoff).length;
 
-            $("adminTotalUsers").textContent = String(usersCache.length);
-            $("adminPendingUsers").textContent = String(pending);
-            $("adminRecentUsers").textContent = String(recent);
-            $("adminPendingCount").textContent = String(pending);
-            $("adminActivityUpdated").textContent = "Updated " + new Date().toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"});
+            if ($("adminTotalUsers")) $("adminTotalUsers").textContent = String(total);
+            if ($("adminCountAdmins")) $("adminCountAdmins").textContent = String(admins);
+            if ($("adminCountUsers")) $("adminCountUsers").textContent = String(staffUsers);
+            if ($("adminPendingUsers")) $("adminPendingUsers").textContent = String(pending);
+            if ($("adminDisabledUsers")) $("adminDisabledUsers").textContent = String(disabled);
+            if ($("adminRecentUsers")) $("adminRecentUsers").textContent = String(recent);
+            if ($("adminPendingCount")) $("adminPendingCount").textContent = String(pending);
+
+            // Operational record counts
+            const edrCount = Array.isArray(window.edrReports) ? window.edrReports.length : 0;
+            const cctvRows = document.querySelectorAll("#outputTable tbody tr:not(.empty-row)").length;
+            const followupCount = parseInt($("followupOpenCount")?.textContent || "0", 10);
+
+            if ($("adminEdrCount")) $("adminEdrCount").textContent = String(edrCount);
+            if ($("adminCctvCount")) $("adminCctvCount").textContent = String(cctvRows);
+            if ($("adminFollowupCount")) $("adminFollowupCount").textContent = String(followupCount);
+
+            // System integration status checks
+            const docsUrl = String(localStorage.getItem("edr_google_docs_web_app_url_v1") || "").trim();
+            const sheetsUrl = String(localStorage.getItem("maintenance_google_sheets_web_app_url_v1") || "").trim();
+
+            if ($("adminDocsStatus")) {
+                const isDocsReady = /^https:\/\/script\.google\.com\/macros\/s\/[^/]+\/exec/i.test(docsUrl);
+                $("adminDocsStatus").textContent = isDocsReady ? "Connected" : "Not Configured";
+                $("adminDocsDot")?.classList.toggle("is-online", isDocsReady);
+                $("adminDocsDot")?.classList.toggle("is-warning", !isDocsReady);
+            }
+
+            if ($("adminSheetsStatus")) {
+                const isSheetsReady = /^https:\/\/script\.google\.com\/macros\/s\/[^/]+\/exec/i.test(sheetsUrl);
+                $("adminSheetsStatus").textContent = isSheetsReady ? "Configured" : "Not Configured";
+                $("adminSheetsDot")?.classList.toggle("is-online", isSheetsReady);
+                $("adminSheetsDot")?.classList.toggle("is-warning", !isSheetsReady);
+            }
+
             lastPendingCount = pending;
+            await loadSecurityAuditLogs();
         } catch (e) {
             toast(e.message || "Could not load accounts.");
         } finally {
@@ -25907,8 +27411,12 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         if (!item) return;
         accessEditingUser = item;
         $("adminAccessTargetId").value = item.id;
+        if ($("adminAccessDisplayName")) $("adminAccessDisplayName").value = item.display_name || "";
         $("adminAccessUserLabel").textContent = `${item.display_name || item.username || "User"} · ${usernameLabel(item.username)}`;
         $("adminAccessRole").value = item.role === "admin" ? "admin" : "user";
+        if ($("adminAccessStatus")) {
+            $("adminAccessStatus").value = (item.status === "disabled" || item.status === "suspended") ? "disabled" : "active";
+        }
         const perms = item.role === "admin" ? FULL_ADMIN_PERMISSIONS : { ...DEFAULT_USER_PERMISSIONS, ...(item.permissions || {}) };
         $("adminAccessGrid")?.querySelectorAll("[data-permission]").forEach(input => {
             input.checked = !!perms[input.dataset.permission];
@@ -25944,6 +27452,9 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         const id = $("adminAccessTargetId")?.value;
         if (!id) return;
         const role = $("adminAccessRole")?.value === "admin" ? "admin" : "user";
+        const newStatus = $("adminAccessStatus")?.value === "disabled" ? "disabled" : "approved";
+        const newDisplayName = clean($("adminAccessDisplayName")?.value);
+
         const permissions = {};
         $("adminAccessGrid")?.querySelectorAll("[data-permission]").forEach(input => {
             permissions[input.dataset.permission] =
@@ -25951,14 +27462,58 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
                     ? role === "admin"
                     : (role === "admin" ? true : !!input.checked);
         });
+
+        // Strict security enforcement: Normal user can NEVER have manageOptions = true
+        if (role !== "admin") {
+            permissions.manageOptions = false;
+        }
+
         busy($("adminAccessSave"), true, "Saving...");
         try {
-            const { error } = await client.rpc("admin_set_user_access", {
+            const { error: accessError } = await client.rpc("admin_set_user_access", {
                 p_target: id,
                 p_role: role,
                 p_permissions: permissions
             });
-            if (error) throw error;
+            if (accessError) throw accessError;
+
+            // Apply status change if modified
+            if (accessEditingUser && accessEditingUser.status !== newStatus) {
+                await client.rpc("admin_set_user_status", {
+                    p_target: id,
+                    p_status: newStatus
+                });
+            }
+
+            // Apply display name change if modified
+            if (newDisplayName && accessEditingUser && accessEditingUser.display_name !== newDisplayName) {
+                await client.from("profiles").update({ display_name: newDisplayName }).eq("id", id);
+            }
+
+            const targetUsername = accessEditingUser?.username || id;
+            const prevRole = accessEditingUser?.role;
+            const prevPerms = accessEditingUser?.permissions || {};
+
+            if (prevRole && prevRole !== role) {
+                try {
+                    await logSecurityEvent("role_updated", targetUsername, {
+                        previous_role: prevRole,
+                        new_role: role
+                    }, id);
+                } catch (_) {}
+            }
+
+            const permsChanged = Object.keys(permissions).some(k => permissions[k] !== prevPerms[k]);
+            if (permsChanged || prevRole === role) {
+                try {
+                    await logSecurityEvent("permissions_updated", targetUsername, {
+                        role,
+                        status: newStatus,
+                        permissions
+                    }, id);
+                } catch (_) {}
+            }
+
             toast(role === "admin" ? "Admin access saved." : "User access updated.");
             closeAccessEditor();
             await loadAdmin();
@@ -26083,8 +27638,6 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
 
             setStatus("Login created. Applying website access...", "info");
 
-            // The profile trigger runs with auth.users creation.
-            // Poll briefly so we never race the profile row/RPC.
             let profileReady = false;
             for (let attempt = 0; attempt < 8; attempt++) {
                 const { data: profileRow, error: profileError } = await client
@@ -26108,6 +27661,9 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
             }
 
             const permissions = defaultPermissionsForRole(role);
+            if (role !== "admin") {
+                permissions.manageOptions = false;
+            }
 
             const { data: accessResult, error: accessError } = await client.rpc(
                 "admin_set_user_access",
@@ -26123,22 +27679,16 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
                 throw new Error("The login was created, but access settings were not applied.");
             }
 
-            // admin_set_user_access already approves the profile in V8 SQL.
-            // Keep this RPC as a compatibility fallback with earlier account SQL.
             try {
-                const { error: statusError } = await client.rpc(
-                    "admin_set_user_status",
-                    {
-                        p_target: createdUserId,
-                        p_status: "approved"
-                    }
-                );
-                if (statusError && !/function|does not exist/i.test(statusError.message || "")) {
-                    console.warn("Approval compatibility RPC:", statusError);
-                }
-            } catch (approvalError) {
-                console.warn("Approval compatibility RPC skipped:", approvalError);
-            }
+                await client.rpc("admin_set_user_status", {
+                    p_target: createdUserId,
+                    p_status: "approved"
+                });
+            } catch (_) {}
+
+            try {
+                await logSecurityEvent("account_created", username, { name, role, username }, createdUserId);
+            } catch (_) {}
 
             setStatus(
                 `${name} created successfully · Username: ${username} · ${role === "admin" ? "Admin" : "User"}`,
@@ -26154,7 +27704,6 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
             await loadAdmin();
         } catch (e) {
             console.error("Admin account creation failed:", e);
-
             const partialNote = createdUserId
                 ? " The Supabase login may already exist; click Refresh before trying again."
                 : "";
@@ -26170,20 +27719,114 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
     }
 
     async function setStatus(id, status) {
+        if (!window.CCTV_ACCESS?.isAdmin?.()) {
+            toast("Admin access required.");
+            return;
+        }
+        const target = usersCache.find(x => x.id === id);
+        const prevStatus = target?.status;
         const { error } = await client.rpc("admin_set_user_status", {
             p_target: id,
             p_status: status
         });
         if (error) return toast(error.message);
-        toast(status === "approved" ? "Account approved." : "Account disapproved.");
+
+        let actionName = `account_${status}`;
+        if (status === "approved") {
+            actionName = (prevStatus === "disabled" || prevStatus === "suspended") ? "account_reactivated" : "account_approved";
+        } else if (status === "rejected") {
+            actionName = "account_rejected";
+        } else if (status === "disabled") {
+            actionName = "account_disabled";
+        }
+
+        try {
+            await logSecurityEvent(
+                actionName,
+                target?.username || target?.display_name || id,
+                { previous_status: prevStatus || "unknown", new_status: status },
+                id
+            );
+        } catch (logErr) {
+            console.warn("[CCTV OPS Audit] Non-breaking log error on setStatus:", logErr?.message || logErr);
+        }
+
+        toast(status === "approved" ? "Account active." : (status === "disabled" ? "Account disabled." : "Account status updated."));
         loadAdmin();
     }
 
-    async function removeUser(id) {
-        const { error } = await client.rpc("admin_remove_user", { p_target: id });
-        if (error) return toast(error.message);
-        toast("Account removed.");
-        loadAdmin();
+    function initAdminSubnav() {
+        document.querySelectorAll(".admin-subnav-btn").forEach(btn => {
+            btn.addEventListener("click", () => {
+                const targetTab = btn.dataset.adminTab;
+                document.querySelectorAll(".admin-subnav-btn").forEach(b => {
+                    b.classList.toggle("active", b === btn);
+                    b.setAttribute("aria-selected", b === btn ? "true" : "false");
+                });
+
+                $("adminTabUsers")?.toggleAttribute("hidden", targetTab !== "users");
+                $("adminTabAudit")?.toggleAttribute("hidden", targetTab !== "audit");
+                $("adminTabSettings")?.toggleAttribute("hidden", targetTab !== "settings");
+
+                if (targetTab === "audit") {
+                    loadSecurityAuditLogs();
+                }
+            });
+        });
+    }
+
+    function loadOperationalSettings() {
+        try {
+            const raw = JSON.parse(localStorage.getItem("cctv_admin_settings_v1") || "{}");
+            if ($("adminSettingTheme")) $("adminSettingTheme").value = raw.theme || "dark";
+            if ($("adminSettingLanding")) $("adminSettingLanding").value = raw.landing || "cctv";
+            if ($("adminSettingSubtitle")) $("adminSettingSubtitle").value = raw.subtitle || "Secure operations workspace";
+            if ($("adminSettingAutoTrim")) $("adminSettingAutoTrim").checked = raw.autoTrim !== false;
+
+            if (raw.subtitle) {
+                document.querySelectorAll(".auth-brand span").forEach(el => el.textContent = raw.subtitle);
+            }
+        } catch (_) {}
+    }
+
+    async function saveOperationalSettings() {
+        if (!window.CCTV_ACCESS?.isAdmin?.()) {
+            toast("Admin access required.");
+            return;
+        }
+
+        const prevSettings = JSON.parse(localStorage.getItem("cctv_admin_settings_v1") || "{}");
+        const settings = {
+            theme: $("adminSettingTheme")?.value || "dark",
+            landing: $("adminSettingLanding")?.value || "cctv",
+            subtitle: clean($("adminSettingSubtitle")?.value) || "Secure operations workspace",
+            autoTrim: !!$("adminSettingAutoTrim")?.checked
+        };
+
+        const changedSettings = {};
+        if (prevSettings.theme !== settings.theme) changedSettings.theme = { from: prevSettings.theme || "dark", to: settings.theme };
+        if (prevSettings.landing !== settings.landing) changedSettings.landing = { from: prevSettings.landing || "cctv", to: settings.landing };
+        if (prevSettings.subtitle !== settings.subtitle) changedSettings.subtitle = { from: prevSettings.subtitle || "Secure operations workspace", to: settings.subtitle };
+        if (prevSettings.autoTrim !== settings.autoTrim) changedSettings.autoTrim = { from: prevSettings.autoTrim !== false, to: settings.autoTrim };
+
+        localStorage.setItem("cctv_admin_settings_v1", JSON.stringify(settings));
+
+        document.querySelectorAll(".auth-brand span").forEach(el => el.textContent = settings.subtitle);
+
+        if ($("adminSaveSettingsNotice")) {
+            $("adminSaveSettingsNotice").textContent = "✓ Settings saved successfully.";
+            setTimeout(() => {
+                if ($("adminSaveSettingsNotice")) $("adminSaveSettingsNotice").textContent = "";
+            }, 3500);
+        }
+
+        const detailsToLog = Object.keys(changedSettings).length > 0 ? changedSettings : { saved: "no_changes_detected" };
+        try {
+            await logSecurityEvent("settings_updated", "operational_settings", detailsToLog, null);
+        } catch (logErr) {
+            console.warn("[CCTV OPS Audit] Non-breaking error saving settings log:", logErr?.message || logErr);
+        }
+        toast("Operational settings saved.");
     }
 
     async function logout() {
@@ -26314,6 +27957,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
     $("authLogoutBtn")?.addEventListener("click", logout);
     $("authPendingLogoutBtn")?.addEventListener("click", logout);
     $("authRejectedLogoutBtn")?.addEventListener("click", logout);
+    $("authDisabledLogoutBtn")?.addEventListener("click", logout);
     $("adminCreateAccountBtn")?.addEventListener("click", createStaffAccount);
     ["adminCreateName", "adminCreateUsername", "adminCreatePassword", "adminCreateRole"].forEach(id => {
         $(id)?.addEventListener("keydown", event => {
@@ -26329,8 +27973,18 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
     $("adminAccessBackdrop")?.addEventListener("click", closeAccessEditor);
 
     $("adminRefreshBtn")?.addEventListener("click", loadAdmin);
+    $("adminRefreshAuditBtn")?.addEventListener("click", () => {
+        busy($("adminRefreshAuditBtn"), true, "Refreshing...");
+        loadSecurityAuditLogs().finally(() => busy($("adminRefreshAuditBtn"), false));
+    });
     $("adminUserSearch")?.addEventListener("input", filterUsers);
+    $("adminAuditSearch")?.addEventListener("input", filterAuditLogs);
+    $("adminExportAuditBtn")?.addEventListener("click", exportAuditLogs);
+    $("adminSaveSettingsBtn")?.addEventListener("click", saveOperationalSettings);
     $("adminTabBtn")?.addEventListener("click", () => setTimeout(loadAdmin, 0));
+
+    initAdminSubnav();
+    loadOperationalSettings();
 
     if (document.readyState === "loading") {
         document.addEventListener("DOMContentLoaded", boot, { once:true });

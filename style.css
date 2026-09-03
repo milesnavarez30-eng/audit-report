@@ -8205,8 +8205,16 @@ body.auth-role-user #edrAddSupervisorOption,
 body.auth-role-user #edrRemoveSupervisorOption,
 body.auth-role-user #edrAddAccountOption,
 body.auth-role-user #edrRemoveAccountOption,
+body.auth-role-user #edrPanel .edr-docs-sync-bar,
+body.auth-role-user #edrDocsSetupModal,
+body.auth-role-user #edrDocsSetupBtn,
+body.auth-role-user #edrDocsReloadBtn,
+body.auth-role-user.ops-redesign-v3 #masterlistPanel .master-hr-crud-form,
 body.auth-role-user #masterlistPanel .master-hr-crud-form,
 body.auth-role-user #masterlistPanel #masterHrCrudStatus,
+body.auth-role-user #masterAssignedHrTable th:nth-child(4),
+body.auth-role-user #masterAssignedHrTable td:nth-child(4),
+body.auth-role-user .master-hr-row-actions,
 body.auth-role-user #masterAssignedHrTable .master-hr-edit-btn,
 body.auth-role-user #masterAssignedHrTable .master-hr-delete-btn,
 body.auth-role-user .auth-access-manage {
@@ -8216,4 +8224,139 @@ body.auth-role-user .auth-access-manage {
 /* Normal users keep operational actions:
    create/edit their own EDRs, add CCTV Audit entries, create Maintenance reports,
    follow-ups, and use their own History. Only master-option administration is hidden. */
+
+
+/* ==========================================================
+   V9 — COMPACT OPERATIONS DASHBOARD POLISH PASS
+   ========================================================== */
+
+/* Universal Button Hierarchy */
+body.ops-redesign-v3 button,
+body.ops-redesign-v3 .edr-template-link {
+    font-family: inherit !important;
+    border-radius: 8px !important;
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 6px !important;
+    line-height: 1 !important;
+    white-space: nowrap !important;
+    cursor: pointer !important;
+    user-select: none !important;
+    transition: all 0.14s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    outline: none !important;
+}
+
+body.ops-redesign-v3 button:focus-visible {
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15) !important;
+}
+
+body.ops-redesign-v3.dark-mode button:focus-visible {
+    box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.20) !important;
+}
+
+/* Primary actions */
+body.ops-redesign-v3 #addUpdateBtn,
+body.ops-redesign-v3 #edrSaveBtn,
+body.ops-redesign-v3 #maintenanceSortBtn,
+body.ops-redesign-v3 #simpleEodPdfBtn,
+body.ops-redesign-v3 #followupAddBtn,
+body.ops-redesign-v3 #adminCreateAccountBtn,
+body.ops-redesign-v3 #edrCopyAllBtn,
+body.ops-redesign-v3 .copy-btn,
+body.ops-redesign-v3 .edr-primary-btn,
+body.ops-redesign-v3 .maintenance-primary,
+body.ops-redesign-v3 .btn-eod-primary,
+body.ops-redesign-v3 .btn-eod-sheet-send,
+body.ops-redesign-v3 .audit-guard-btn.primary,
+body.ops-redesign-v3 .app-confirm-accept {
+    min-height: 34px !important;
+    padding: 0 14px !important;
+    background: var(--ops-accent) !important;
+    color: #ffffff !important;
+    border: 1px solid var(--ops-accent) !important;
+    box-shadow: 0 1px 2px rgba(16, 24, 40, 0.08) !important;
+}
+
+body.ops-redesign-v3 #addUpdateBtn:hover,
+body.ops-redesign-v3 #edrSaveBtn:hover,
+body.ops-redesign-v3 #maintenanceSortBtn:hover,
+body.ops-redesign-v3 #simpleEodPdfBtn:hover,
+body.ops-redesign-v3 #followupAddBtn:hover,
+body.ops-redesign-v3 #adminCreateAccountBtn:hover,
+body.ops-redesign-v3 #edrCopyAllBtn:hover,
+body.ops-redesign-v3 .copy-btn:hover,
+body.ops-redesign-v3 .edr-primary-btn:hover,
+body.ops-redesign-v3 .maintenance-primary:hover,
+body.ops-redesign-v3 .btn-eod-primary:hover,
+body.ops-redesign-v3 .btn-eod-sheet-send:hover,
+body.ops-redesign-v3 .audit-guard-btn.primary:hover,
+body.ops-redesign-v3 .app-confirm-accept:hover {
+    background: var(--ops-accent-strong) !important;
+    border-color: var(--ops-accent-strong) !important;
+    color: #ffffff !important;
+    transform: translateY(-1px) !important;
+}
+
+/* Destructive actions with clean separation */
+body.ops-redesign-v3 .clear-btn,
+body.ops-redesign-v3 .edr-danger-btn,
+body.ops-redesign-v3 .maintenance-danger,
+body.ops-redesign-v3 .btn-eod-danger,
+body.ops-redesign-v3 .audit-guard-btn.danger,
+body.ops-redesign-v3 #trackerClearBtn,
+body.ops-redesign-v3 #edrClearAllBtn,
+body.ops-redesign-v3 #maintenanceClearBtn,
+body.ops-redesign-v3 #maintenanceResetAssignmentsBtn,
+body.ops-redesign-v3 #simpleEodClearBtn {
+    min-height: 34px !important;
+    padding: 0 12px !important;
+    background: transparent !important;
+    color: var(--ops-danger) !important;
+    border: 1px solid rgba(217, 45, 32, 0.30) !important;
+    box-shadow: none !important;
+}
+
+body.ops-redesign-v3 .clear-btn:hover,
+body.ops-redesign-v3 .edr-danger-btn:hover,
+body.ops-redesign-v3 .maintenance-danger:hover,
+body.ops-redesign-v3 .btn-eod-danger:hover,
+body.ops-redesign-v3 .audit-guard-btn.danger:hover,
+body.ops-redesign-v3 #trackerClearBtn:hover,
+body.ops-redesign-v3 #edrClearAllBtn:hover,
+body.ops-redesign-v3 #maintenanceClearBtn:hover,
+body.ops-redesign-v3 #maintenanceResetAssignmentsBtn:hover,
+body.ops-redesign-v3 #simpleEodClearBtn:hover {
+    background: var(--ops-danger-soft) !important;
+    border-color: var(--ops-danger) !important;
+    color: var(--ops-danger) !important;
+}
+
+/* Clean Sticky Table Headers */
+body.ops-redesign-v3 #outputTable th,
+body.ops-redesign-v3 #masterPendingMilesTable th,
+body.ops-redesign-v3 #masterAssignedHrTable th,
+body.ops-redesign-v3 .auth-admin-table th {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 5 !important;
+    padding: 9px 12px !important;
+    background: var(--ops-panel-2) !important;
+    color: var(--ops-muted) !important;
+    font-size: 10.5px !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.04em !important;
+    border-bottom: 1px solid var(--ops-line-strong) !important;
+}
+
+/* Sidebar Active Indicator */
+body.ops-redesign-v3 .workspace-tabs.admin-sidebar > .workspace-tab-btn.active,
+body.ops-redesign-v3 .sidebar-history-btn.active {
+    background: rgba(37, 99, 235, 0.16) !important;
+    color: #ffffff !important;
+    border-left: 3px solid var(--ops-accent) !important;
+}
 
