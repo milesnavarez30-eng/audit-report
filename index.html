@@ -9066,6 +9066,17 @@ body.dark-mode .master-data-table th {
     color: var(--admin-muted, #64748b);
 }
 
+.master-empty-cell.is-error {
+    color: #ef4444 !important;
+    background: rgba(239, 68, 68, 0.06);
+    font-weight: 500;
+}
+
+body.dark-mode .master-empty-cell.is-error {
+    color: #fca5a5 !important;
+    background: rgba(239, 68, 68, 0.12);
+}
+
 .master-notepad {
     margin-top: 10px;
     padding: 10px;
@@ -11201,48 +11212,145 @@ body.auth-locked > .site-footer { visibility:hidden!important; pointer-events:no
    ========================================================= */
 #simpleEodPrintRoot,
 #simpleEodPrintRoot .grouped-pdf,
+.simple-pdf,
+.grouped-pdf,
 body.dark-mode #simpleEodPrintRoot,
 body.dark-mode #simpleEodPrintRoot .grouped-pdf,
+body.dark-mode .simple-pdf,
+body.dark-mode .grouped-pdf,
+body.ops-redesign-v3 .simple-pdf,
+body.ops-redesign-v3 .grouped-pdf,
+body.ops-redesign-v3.dark-mode .simple-pdf,
+body.ops-redesign-v3.dark-mode .grouped-pdf,
+body.ops-redesign-v3.dark-mode #simpleEodPrintRoot,
 body.ops-redesign-v3.dark-mode #simpleEodPrintRoot .grouped-pdf {
+    background-color: #ffffff !important;
     background: #ffffff !important;
     color: #000000 !important;
+    color-scheme: light !important;
 }
 
+#simpleEodPrintRoot .simple-pdf-header,
 #simpleEodPrintRoot .grouped-pdf-header,
+.simple-pdf-header,
+.grouped-pdf-header,
+body.dark-mode .simple-pdf-header,
+body.dark-mode .grouped-pdf-header,
+body.ops-redesign-v3.dark-mode .simple-pdf-header,
+body.ops-redesign-v3.dark-mode .grouped-pdf-header,
 #simpleEodPrintRoot .grouped-report-block,
 #simpleEodPrintRoot .simple-pdf-table-wrap,
 #simpleEodPrintRoot .simple-pdf-table,
 #simpleEodPrintRoot .simple-pdf-table tr,
 #simpleEodPrintRoot .grouped-photo-row {
+    background-color: #ffffff !important;
     background: #ffffff !important;
-}
-
-#simpleEodPrintRoot .grouped-pdf-header h1,
-#simpleEodPrintRoot .grouped-pdf-date,
-#simpleEodPrintRoot .simple-pdf-table td,
-#simpleEodPrintRoot .grouped-remarks,
-#simpleEodPrintRoot .grouped-remarks > span,
-#simpleEodPrintRoot .grouped-remarks > div {
     color: #000000 !important;
 }
 
-#simpleEodPrintRoot .simple-pdf-table th {
-    background: #000000 !important;
-    color: #ffffff !important;
-    border-color: #000000 !important;
+#simpleEodPrintRoot .simple-pdf-header h1,
+#simpleEodPrintRoot .grouped-pdf-header h1,
+#simpleEodPrintRoot h1,
+.simple-pdf-header h1,
+.grouped-pdf-header h1,
+.simple-pdf h1,
+.grouped-pdf h1,
+body.dark-mode .simple-pdf-header h1,
+body.dark-mode .grouped-pdf-header h1,
+body.dark-mode .simple-pdf h1,
+body.dark-mode .grouped-pdf h1,
+body.dark-mode #simpleEodPrintRoot .simple-pdf-header h1,
+body.ops-redesign-v3 .simple-pdf-header h1,
+body.ops-redesign-v3 .grouped-pdf-header h1,
+body.ops-redesign-v3.dark-mode .simple-pdf-header h1,
+body.ops-redesign-v3.dark-mode .grouped-pdf-header h1,
+body.ops-redesign-v3.dark-mode .simple-pdf h1,
+body.ops-redesign-v3.dark-mode .grouped-pdf h1,
+body.ops-redesign-v3.dark-mode #simpleEodPrintRoot .simple-pdf-header h1,
+body.ops-redesign-v3.dark-mode #simpleEodPrintRoot h1 {
+    color: #000000 !important;
+    -webkit-text-fill-color: #000000 !important;
+    font-weight: 800 !important;
+    opacity: 1 !important;
+    filter: none !important;
+    text-shadow: none !important;
 }
 
-#simpleEodPrintRoot .simple-pdf-table td {
+#simpleEodPrintRoot .simple-pdf-header p,
+#simpleEodPrintRoot p,
+.simple-pdf-header p,
+.simple-pdf p,
+body.dark-mode .simple-pdf-header p,
+body.dark-mode #simpleEodPrintRoot .simple-pdf-header p,
+body.ops-redesign-v3 .simple-pdf-header p,
+body.ops-redesign-v3.dark-mode .simple-pdf-header p,
+body.ops-redesign-v3.dark-mode #simpleEodPrintRoot .simple-pdf-header p,
+#simpleEodPrintRoot .grouped-pdf-date,
+.grouped-pdf-date,
+.simple-pdf-date,
+body.dark-mode .grouped-pdf-date,
+body.ops-redesign-v3.dark-mode .grouped-pdf-date {
+    color: #000000 !important;
+    -webkit-text-fill-color: #000000 !important;
+    font-weight: 700 !important;
+    opacity: 1 !important;
+    filter: none !important;
+    text-shadow: none !important;
+}
+
+#simpleEodPrintRoot .simple-pdf-table th,
+.grouped-pdf .simple-pdf-table th,
+.simple-pdf .simple-pdf-table th,
+body.dark-mode .grouped-pdf .simple-pdf-table th,
+body.ops-redesign-v3.dark-mode .grouped-pdf .simple-pdf-table th {
+    background-color: #000000 !important;
+    background: #000000 !important;
+    color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important;
+    border-color: #000000 !important;
+    opacity: 1 !important;
+}
+
+#simpleEodPrintRoot .simple-pdf-table td,
+.grouped-pdf .simple-pdf-table td,
+.simple-pdf .simple-pdf-table td,
+body.dark-mode .grouped-pdf .simple-pdf-table td,
+body.ops-redesign-v3.dark-mode .grouped-pdf .simple-pdf-table td {
+    background-color: #ffffff !important;
     background: #ffffff !important;
+    color: #000000 !important;
+    -webkit-text-fill-color: #000000 !important;
+    opacity: 1 !important;
     border-bottom-color: #d1d5db !important;
 }
 
-#simpleEodPrintRoot .grouped-remarks {
+#simpleEodPrintRoot .grouped-remarks,
+.grouped-pdf .grouped-remarks,
+.simple-pdf .grouped-remarks,
+body.dark-mode .grouped-pdf .grouped-remarks,
+body.ops-redesign-v3.dark-mode .grouped-pdf .grouped-remarks {
+    background-color: #ffffff !important;
     background: #ffffff !important;
+    color: #000000 !important;
     border-left-color: #000000 !important;
+    opacity: 1 !important;
 }
 
-#simpleEodPrintRoot img {
+#simpleEodPrintRoot .grouped-remarks > span,
+#simpleEodPrintRoot .grouped-remarks > div,
+.grouped-pdf .grouped-remarks > span,
+.grouped-pdf .grouped-remarks > div,
+body.dark-mode .grouped-pdf .grouped-remarks > span,
+body.dark-mode .grouped-pdf .grouped-remarks > div,
+body.ops-redesign-v3.dark-mode .grouped-pdf .grouped-remarks > span,
+body.ops-redesign-v3.dark-mode .grouped-pdf .grouped-remarks > div {
+    color: #000000 !important;
+    -webkit-text-fill-color: #000000 !important;
+    opacity: 1 !important;
+}
+
+#simpleEodPrintRoot img,
+.grouped-pdf img {
     background: #ffffff !important;
 }
 
@@ -11759,6 +11867,10 @@ body.ops-redesign-v3 button.clear-btn:hover {
 body.ops-redesign-v3 table button,
 body.ops-redesign-v3 .admin-action-btn {
     min-height: var(--ops-btn-sm-h) !important;
+    padding: 2px 7px !important;
+    border-radius: var(--ops-radius-xs) !important;
+    font-size: var(--ops-font-size-xs) !important;
+}
 
 body.ops-redesign-v3 #edrPanel .edr-output-actions {
     display: flex !important;
@@ -12848,17 +12960,23 @@ body.ops-redesign-v3 #followupPanel .followup-add-grid {
 
         <div class="simple-eod-top">
             <div>
+                <label for="simpleEodDestination">ASSIGNED SITE / DESTINATION TRACKER</label>
+                <select id="simpleEodDestination" class="simple-eod-select">
+                    <option value="mabini_a" selected>Mabini Site A - 1st &amp; 2nd Floor</option>
+                    <option value="mabini_b">Mabini Site B - 2nd, 3rd &amp; 4th Floor</option>
+                    <option value="gensan">Gensan Site</option>
+                    <option value="maa_4_5">MAA 4th &amp; 5th Floor</option>
+                    <option value="maa_6">MAA 6th Floor</option>
+                    <option value="digos">Digos Site</option>
+                    <option value="ecoland">Ecoland Site</option>
+                    <option value="cdo">CDO Site</option>
+                </select>
+            </div>
+            <div>
                 <label for="simpleEodDate">Report Date</label>
                 <input type="date" id="simpleEodDate" autocomplete="off" data-lpignore="true" data-1p-ignore="true" data-form-type="other">
             </div>
-            <div>
-                <label for="simpleEodSite">Site / Report Title</label>
-                <div class="input-group">
-                    <input type="text" id="simpleEodSite" list="allCctvSiteOptions" value="Mabini Site A - 1st Floor" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-lpignore="true" data-1p-ignore="true" data-form-type="other">
-                    <button type="button" class="add-btn" id="simpleEodAddSiteBtn" title="Add Site / Report Title">+</button>
-                    <button type="button" class="remove-btn" id="simpleEodRemoveSiteBtn" title="Delete Selected Site / Report Title">-</button>
-                </div>
-            </div>
+            <input type="hidden" id="simpleEodSite" value="Mabini Site A - 1st & 2nd Floor">
         </div>
 
         <div class="simple-eod-actions">
@@ -12912,7 +13030,7 @@ body.ops-redesign-v3 #followupPanel .followup-add-grid {
             <span id="pendingAlertStatus" class="pending-alert-status">In-app alerts active</span>
         </div>
 
-        <section class="pending-add-card">
+        <section class="pending-add-card" id="pendingAddCard">
             <div class="pending-add-head">
                 <div>
                     <h3>Add Pending Report</h3>
@@ -12984,6 +13102,7 @@ body.ops-redesign-v3 #followupPanel .followup-add-grid {
 
                 <div class="pending-add-actions">
                     <button type="button" class="edr-primary-btn" id="pendingAddBtn">Add Pending Report</button>
+                    <button type="button" class="edr-primary-btn" id="pendingAddSubmitBtn" style="display:none;" hidden aria-hidden="true">Add Pending Report</button>
                     <button type="button" class="edr-outline-btn" id="pendingClearAddBtn">Clear</button>
                 </div>
             </div>
@@ -13300,11 +13419,33 @@ body.ops-redesign-v3 #followupPanel .followup-add-grid {
         <form id="adminCreateAccountForm" class="auth-create-account-grid" autocomplete="off" onsubmit="return false;">
           <label><span>Name</span><input type="text" id="adminCreateName" placeholder="Staff full name" autocomplete="off" data-lpignore="true" data-1p-ignore="true" data-form-type="other"></label>
           <label><span>Username</span><input type="text" id="adminCreateUsername" placeholder="e.g. Seth Dajao, seth123, Staff01" maxlength="60" autocomplete="off" data-lpignore="true" data-1p-ignore="true" data-form-type="other"></label>
-          <label><span>Temporary Password</span><input type="password" id="adminCreatePassword" minlength="6" placeholder="At least 6 characters" autocomplete="new-password"></label>
+          <label><span>Temporary Password</span>
+            <div class="auth-password-wrap">
+              <input type="password" id="adminCreatePassword" minlength="6" placeholder="At least 6 characters" autocomplete="new-password">
+              <button type="button" class="auth-password-toggle" data-target="adminCreatePassword" aria-label="Show password" title="Show password">
+                <svg class="auth-eye-open" viewBox="0 0 24 24" aria-hidden="true"><path d="M2.4 12s3.5-6 9.6-6 9.6 6 9.6 6-3.5 6-9.6 6-9.6-6Z"/><circle cx="12" cy="12" r="2.6"/></svg>
+                <svg class="auth-eye-closed" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3l18 18"/><path d="M10.6 6.1A10.8 10.8 0 0 1 12 6c6.1 0 9.6 6 9.6 6a16.7 16.7 0 0 1-3.1 3.7M14.5 14.5A3.5 3.5 0 0 1 9.5 9.5M6.2 6.2C3.7 8 2.4 12 2.4 12s3.5 6 9.6 6c1.5 0 2.8-.4 4-.9"/></svg>
+              </button>
+            </div>
+          </label>
           <label><span>Role</span><select id="adminCreateRole"><option value="user" selected>User</option><option value="admin">Admin</option></select></label>
           <button type="button" class="edr-primary-btn" id="adminCreateAccountBtn">Create Account</button>
         </form>
         <div id="adminCreateAccountStatus" class="auth-create-status"></div>
+      </section>
+
+      <section id="adminRecentCredsSection" class="auth-admin-card auth-recent-creds-card" hidden>
+        <div class="auth-admin-card-head">
+          <div>
+            <div class="recent-creds-title-wrap">
+              <span class="recent-creds-indicator">●</span>
+              <h3>Recently Created Credentials</h3>
+            </div>
+            <p>Temporary credentials generated during this Admin session. Hand over to staff or copy credentials.</p>
+          </div>
+          <button type="button" id="adminClearAllCredsBtn" class="edr-outline-btn btn-sm">Clear All</button>
+        </div>
+        <div id="adminRecentCredsList" class="recent-creds-grid"></div>
       </section>
 
       <section class="auth-admin-card">
@@ -13312,11 +13453,8 @@ body.ops-redesign-v3 #followupPanel .followup-add-grid {
           <div><h3>User Accounts</h3><p>Manage staff access, edit workspace permissions, approve signups, or disable accounts.</p></div>
           <input type="search" id="adminUserSearch" placeholder="Find name or username..." autocomplete="off" data-lpignore="true" data-1p-ignore="true" data-form-type="other">
         </div>
-        <div class="auth-admin-table-wrap">
-          <table class="auth-admin-table">
-            <thead><tr><th>User</th><th>Status</th><th>Role</th><th>Permissions</th><th>Created</th><th>Last Active</th><th>Action</th></tr></thead>
-            <tbody id="adminUsersBody"><tr><td colspan="7">Loading...</td></tr></tbody>
-          </table>
+        <div id="adminUsersBody" class="admin-users-grid">
+          <div class="auth-admin-empty" style="grid-column: 1 / -1;">Loading accounts...</div>
         </div>
       </section>
     </div>
@@ -18572,7 +18710,8 @@ https://www.facebook.com/share/..."></textarea>
 
     let state = {
         date: "",
-        title: "Mabini Site A - 1st Floor",
+        destinationKey: "mabini_a",
+        title: "Mabini Site A - 1st & 2nd Floor",
         blocks: []
     };
 
@@ -18595,13 +18734,38 @@ https://www.facebook.com/share/..."></textarea>
     }
 
 
+    function detectMaintenanceDestinationFromRows_(text) {
+        if (!text) return null;
+        const lines = String(text || "").split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+        for (const line of lines) {
+            const cols = line.split("\t").map(c => c.trim());
+            const siteVal = (cols.length >= 5 ? cols[4] : "").toLowerCase();
+            if (siteVal) {
+                if (siteVal.includes("digos")) return "digos";
+                if (siteVal.includes("gensan")) return "gensan";
+                if (siteVal.includes("ecoland")) return "ecoland";
+                if (siteVal.includes("cdo")) return "cdo";
+                if (siteVal.includes("maa 6") || siteVal.includes("maa site 6") || siteVal.includes("maa 6th")) return "maa_6";
+                if (siteVal.includes("maa 4") || siteVal.includes("maa 5") || siteVal.includes("maa 4f") || siteVal.includes("maa 5f") || siteVal.includes("maa 4th") || siteVal.includes("maa 5th")) return "maa_4_5";
+                if (siteVal.includes("mabini site b") || siteVal.includes("mabini b")) return "mabini_b";
+                if (siteVal.includes("mabini site a") || siteVal.includes("mabini a")) return "mabini_a";
+            }
+        }
+        return null;
+    }
+
     // Bridge from Maintenance AI Sorter's editable Mini Sheet.
     // Sends selected rows directly into a Maintenance Report block.
     window.addMaintenanceSorterRowsToReport = function(tsv, meta = {}) {
         const text = String(tsv || "").trim();
         if (!text) return;
 
-        syncTop();
+        const detectedKey = detectMaintenanceDestinationFromRows_(text);
+        if (detectedKey) {
+            applyMaintenanceDestination_(detectedKey);
+        } else {
+            syncTop();
+        }
 
         let targetBlock = state.blocks.find(block =>
             !String(block.lanesText || "").trim() &&
@@ -19083,7 +19247,7 @@ https://www.facebook.com/share/..."></textarea>
         syncTop();
 
         const headers = maintenanceReportSheetHeaders();
-        const cleanTitle = String(state.title || "Mabini Site A - 1st Floor")
+        const cleanTitle = String(state.title || "Mabini Site A - 1st & 2nd Floor")
             .replace(/\s*Maintenance\s+Report\s*$/i, "")
             .trim();
         const reportDate = state.date ? formatDateForTitle(state.date) : "";
@@ -19133,7 +19297,7 @@ https://www.facebook.com/share/..."></textarea>
         syncTop();
 
         const headers = maintenanceReportSheetHeaders();
-        const cleanTitle = String(state.title || "Mabini Site A - 1st Floor")
+        const cleanTitle = String(state.title || "Mabini Site A - 1st & 2nd Floor")
             .replace(/\s*Maintenance\s+Report\s*$/i, "")
             .trim();
         const reportDate = state.date ? formatDateForTitle(state.date) : "";
@@ -19477,17 +19641,63 @@ body.ops-redesign-v3.dark-mode .followup-status-pill.replied{color:#93c5fd}.dark
         return block.screenshots.filter(shot => !!maintenanceScreenshotSource(shot)).length;
     }
 
+    const MAINTENANCE_DESTINATIONS = {
+        mabini_a: {
+            label: "Mabini Site A - 1st & 2nd Floor",
+            sheetId: 484781158
+        },
+        mabini_b: {
+            label: "Mabini Site B - 2nd, 3rd & 4th Floor",
+            sheetId: 1670996421
+        },
+        gensan: {
+            label: "Gensan Site",
+            sheetId: 219168917
+        },
+        maa_4_5: {
+            label: "MAA 4th & 5th Floor",
+            sheetId: 0
+        },
+        maa_6: {
+            label: "MAA 6th Floor",
+            sheetId: 11380648
+        },
+        digos: {
+            label: "Digos Site",
+            sheetId: 1812673001
+        },
+        ecoland: {
+            label: "Ecoland Site",
+            sheetId: 429979469
+        },
+        cdo: {
+            label: "CDO Site",
+            sheetId: 1535793826
+        }
+    };
+
+    function applyMaintenanceDestination_(destKey) {
+        const key = (destKey && Object.prototype.hasOwnProperty.call(MAINTENANCE_DESTINATIONS, destKey)) ? destKey : "mabini_a";
+        const dest = MAINTENANCE_DESTINATIONS[key];
+        state.destinationKey = key;
+        state.title = dest.label;
+        if ($("simpleEodDestination")) $("simpleEodDestination").value = key;
+        if ($("simpleEodSite")) $("simpleEodSite").value = dest.label;
+        return key;
+    }
+
     function buildMaintenanceSheetsPayload() {
         syncTop();
 
-        const cleanTitle = String(state.title || "Mabini Site A - 1st Floor")
-            .replace(/\s*Maintenance\s+Report\s*$/i, "")
-            .trim();
+        const safeKey = applyMaintenanceDestination_(state.destinationKey || $("simpleEodDestination")?.value);
+        const destinationKey = safeKey;
+        const destInfo = MAINTENANCE_DESTINATIONS[destinationKey];
 
         return {
             action: "appendMaintenanceReport",
             submissionId: `maintenance_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`,
-            reportTitle: cleanTitle,
+            destinationKey: destinationKey,
+            reportTitle: destInfo.label,
             reportDate: state.date || "",
             sentAt: new Date().toISOString(),
             blocks: state.blocks.map((block, index) => ({
@@ -19580,7 +19790,8 @@ body.ops-redesign-v3.dark-mode .followup-status-pill.replied{color:#93c5fd}.dark
         setMaintenanceSheetConnectionState("is-checking", "Sheets: checking...");
 
         try {
-            const data = await maintenanceJsonp(url, { action: "health" }, 9000);
+            const destKey = state.destinationKey || $("simpleEodDestination")?.value || "mabini_a";
+            const data = await maintenanceJsonp(url, { action: "health", destinationKey: destKey }, 9000);
             if (!data || data.ok !== true) {
                 throw new Error(data?.error || "Receiver health check failed.");
             }
@@ -19591,7 +19802,7 @@ body.ops-redesign-v3.dark-mode .followup-status-pill.replied{color:#93c5fd}.dark
                 const result = $("maintenanceSheetTestResult");
                 if (result) {
                     result.className = "maintenance-sheet-test-result is-ok";
-                    result.textContent = `Connected: ${data.spreadsheetName || "Google Sheet"} → ${data.sheetName || "target tab"}.`;
+                    result.textContent = `Connected: ${data.destinationLabel || data.sheetName || "target tab"} (${data.spreadsheetName || "Google Sheet"}).`;
                 }
             }
 
@@ -19850,8 +20061,10 @@ body.ops-redesign-v3.dark-mode .followup-status-pill.replied{color:#93c5fd}.dark
                 ? `${insertedImages} CCTV image${insertedImages === 1 ? "" : "s"} placed below their own report block${insertedImages === 1 ? "" : "s"}`
                 : "no CCTV images";
 
+            const targetName = String(result.destinationLabel || result.sheetName || "Google Sheets").trim();
+            const confirmedTarget = targetName ? ` to ${targetName.toUpperCase()}` : "";
             showMessage(
-                `Sent successfully to Google Sheets: ${rowCount} row${rowCount === 1 ? "" : "s"}, ${imageText}, and ${remarksCount} remark${remarksCount === 1 ? "" : "s"} written${startRow}${endRow}.`,
+                `Maintenance report successfully sent${confirmedTarget}. ${rowCount} row${rowCount === 1 ? "" : "s"}, ${imageText}, and ${remarksCount} remark${remarksCount === 1 ? "" : "s"} written${startRow}${endRow}.`,
                 "success"
             );
         } catch (error) {
@@ -20394,8 +20607,9 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
             }));
         }
 
+        applyMaintenanceDestination_(state.destinationKey);
         $("simpleEodDate").value = state.date || todayLocal();
-        $("simpleEodSite").value = state.title || "Mabini Site A - 1st Floor";
+        state.date = $("simpleEodDate").value;
         activePasteBlockId = null;
         render();
         await saveDraft(true);
@@ -20431,8 +20645,8 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
     }
 
     function syncTop() {
-        state.date = $("simpleEodDate").value;
-        state.title = $("simpleEodSite").value.trim() || "Mabini Site A - 1st Floor";
+        applyMaintenanceDestination_($("simpleEodDestination")?.value || state.destinationKey);
+        state.date = $("simpleEodDate")?.value || "";
     }
 
     function formatDateForTitle(date) {
@@ -20450,7 +20664,8 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
     function buildPrint() {
         syncTop();
 
-        const cleanTitle = String(state.title || "Mabini Site A - 1st Floor")
+        const defaultLabel = MAINTENANCE_DESTINATIONS[state.destinationKey]?.label || "Mabini Site A - 1st & 2nd Floor";
+        const cleanTitle = String(state.title || defaultLabel)
             .replace(/\s*Maintenance\s+Report\s*$/i, "")
             .trim();
 
@@ -20463,22 +20678,22 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
                 : [];
 
             const imgs = screenshots.length
-                ? `<div class="grouped-photo-row">
-                    ${screenshots.map(shot => `<img src="${shot.dataUrl}" alt="CCTV evidence">`).join("")}
+                ? `<div class="grouped-photo-row" style="background:#ffffff !important;">
+                    ${screenshots.map(shot => `<img src="${shot.dataUrl}" alt="CCTV evidence" style="background:#ffffff !important;">`).join("")}
                    </div>`
                 : "";
 
             const remarksHtml = remarks.length
-                ? `<div class="grouped-remarks">
-                    <span>Remarks:</span>
-                    <div>
-                        ${remarks.map(item => `<div>${escapeHtml(item)}</div>`).join("")}
+                ? `<div class="grouped-remarks" style="background:#ffffff !important; border-left-color:#000000 !important; color:#000000 !important;">
+                    <span style="color:#000000 !important; font-weight:700 !important;">Remarks:</span>
+                    <div style="color:#000000 !important;">
+                        ${remarks.map(item => `<div style="color:#000000 !important;">${escapeHtml(item)}</div>`).join("")}
                     </div>
                    </div>`
                 : "";
 
             return `
-                <section class="grouped-report-block">
+                <section class="grouped-report-block" style="background:#ffffff !important; color:#000000 !important;">
                     ${tableHtml(block.lanesText, true)}
                     ${imgs}
                     ${remarksHtml}
@@ -20487,10 +20702,10 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         }).join("");
 
         $("simpleEodPrintRoot").innerHTML = `
-            <div class="simple-pdf grouped-pdf">
-                <header class="grouped-pdf-header">
-                    <h1>${escapeHtml(cleanTitle)} Maintenance Report</h1>
-                    ${reportDate ? `<div class="grouped-pdf-date">${escapeHtml(reportDate)}</div>` : ""}
+            <div class="simple-pdf grouped-pdf" style="background-color:#ffffff !important; background:#ffffff !important; color:#000000 !important;">
+                <header class="grouped-pdf-header" style="background:#ffffff !important; margin:0 0 5mm !important; padding:0 !important;">
+                    <h1 style="color:#000000 !important; -webkit-text-fill-color:#000000 !important; font-weight:800 !important; opacity:1 !important; margin:0 !important; font-size:14px !important; line-height:1.2 !important; text-shadow:none !important; filter:none !important;">${escapeHtml(cleanTitle)} Maintenance Report</h1>
+                    ${reportDate ? `<div class="grouped-pdf-date" style="color:#000000 !important; -webkit-text-fill-color:#000000 !important; font-weight:700 !important; opacity:1 !important; margin-top:1.4mm !important; font-size:7px !important; text-align:left !important;">${escapeHtml(reportDate)}</div>` : ""}
                 </header>
 
                 ${blocksHtml}
@@ -20667,7 +20882,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
 
         if (!state.blocks || !state.blocks.length) state.blocks = [makeBlock()];
 
-        $("simpleEodSite").value = state.title || "Mabini Site A - 1st Floor";
+        applyMaintenanceDestination_(state.destinationKey);
         $("simpleEodDate").value = state.date || todayLocal();
         state.date = $("simpleEodDate").value;
         render();
@@ -20703,12 +20918,13 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
 
         state = {
             date: todayLocal(),
-            title: "Mabini Site A - 1st Floor",
+            destinationKey: "mabini_a",
+            title: "Mabini Site A - 1st & 2nd Floor",
             blocks: [makeBlock()]
         };
 
+        applyMaintenanceDestination_("mabini_a");
         $("simpleEodDate").value = state.date;
-        $("simpleEodSite").value = state.title;
         render();
         showMessage("Maintenance Report cleared.", "info");
     }
@@ -20770,8 +20986,13 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
     $("simpleEodPreviewBtn").addEventListener("click", previewPrint);
     $("simpleEodPdfBtn").addEventListener("click", downloadPdf);
     $("simpleEodClearBtn").addEventListener("click", clearAll);
+    $("simpleEodDestination")?.addEventListener("change", () => {
+        applyMaintenanceDestination_($("simpleEodDestination")?.value);
+        setMaintenanceSheetConnectionState("is-unchecked", "Sheets: not checked");
+        queueSave();
+    });
     $("simpleEodDate").addEventListener("change", queueSave);
-    $("simpleEodSite").addEventListener("input", queueSave);
+    $("simpleEodSite")?.addEventListener("input", queueSave);
     $("simpleEodAddSiteBtn")?.addEventListener("click", () => window.addMaintenanceSiteOption?.());
     $("simpleEodRemoveSiteBtn")?.addEventListener("click", () => window.removeMaintenanceSiteOption?.());
 
@@ -20882,9 +21103,9 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
                 }
             });
 
-            $("simpleEodSite").value =
-                state.title || "Mabini Site A - 1st Floor";
+            applyMaintenanceDestination_(state.destinationKey);
             $("simpleEodDate").value = state.date || todayLocal();
+            state.date = $("simpleEodDate").value;
 
             activePasteBlockId = null;
             render();
@@ -24326,6 +24547,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
     });
 
     $("pendingAddBtn")?.addEventListener("click", addPendingReport);
+    $("pendingAddSubmitBtn")?.addEventListener("click", addPendingReport);
     $("pendingClearAddBtn")?.addEventListener("click", clearAddForm);
     $("pendingEnableAlertsBtn")?.addEventListener("click", enableBrowserAlerts);
 
@@ -24417,6 +24639,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
     let activePendingKey = localStorage.getItem("cctv_master_active_pending_v2") || "miles";
     let hrAssignments = [];
     let localHrChanges = loadLocalHrChanges();
+    let lastSyncError = "";
 
     const $ = id => document.getElementById(id);
 
@@ -24545,7 +24768,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         $("masterPendingTabs")?.querySelectorAll("[data-pending-key]").forEach(btn => {
             btn.classList.toggle("active", btn.dataset.pendingKey === key);
         });
-        renderPendingMiles();
+        renderPendingTracker();
         loadActiveNotepad();
     }
 
@@ -24633,20 +24856,31 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
     }
 
     function derive() {
-        const tracker = rowsFrom("tracker");
+        if (payload?.pending) {
+            pendingTrackers = {
+                miles: Array.isArray(payload.pending.miles) ? payload.pending.miles : [],
+                seth: Array.isArray(payload.pending.seth) ? payload.pending.seth : [],
+                wendie: Array.isArray(payload.pending.wendie) ? payload.pending.wendie : [],
+                kenneth: Array.isArray(payload.pending.kenneth) ? payload.pending.kenneth : [],
+                jr: Array.isArray(payload.pending.jr) ? payload.pending.jr : []
+            };
+            pendingMiles = pendingTrackers.miles;
+        } else {
+            const tracker = rowsFrom("tracker");
 
-        pendingMiles = tracker.filter(row =>
-            norm(trackerName(row)) === "miles" &&
-            norm(trackerNoc(row)) === "pending"
-        );
+            pendingMiles = tracker.filter(row =>
+                norm(trackerName(row)) === "miles" &&
+                norm(trackerNoc(row)) === "pending"
+            );
 
-        pendingTrackers = {
-            miles: pendingMiles,
-            seth: pendingOnly(rowsFrom("pendingSeth")),
-            wendie: pendingOnly(rowsFrom("pendingWendie")),
-            kenneth: pendingOnly(rowsFrom("pendingKenneth")),
-            jr: pendingOnly(rowsFrom("pendingJr"))
-        };
+            pendingTrackers = {
+                miles: pendingMiles,
+                seth: pendingOnly(rowsFrom("pendingSeth")),
+                wendie: pendingOnly(rowsFrom("pendingWendie")),
+                kenneth: pendingOnly(rowsFrom("pendingKenneth")),
+                jr: pendingOnly(rowsFrom("pendingJr"))
+            };
+        }
 
         const candidates = [
             ...BUILT_IN_HR_ASSIGNMENTS,
@@ -24690,19 +24924,41 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
     }
 
     function valueForPendingColumn(row, column) {
+        if (!row || typeof row !== "object") return "";
+
+        const colFieldMap = {
+            "Year": "year",
+            "Month": "month",
+            "Date": "date",
+            "Name": "name",
+            "OM": "om",
+            "SITE": "site",
+            "TL": "tl",
+            "Agent Name": "agentName",
+            "Account": "account",
+            "CCTV Reason Codes": "cctvReasonCodes",
+            "NOC": "noc",
+            "Remarks": "remarks"
+        };
+
+        const field = colFieldMap[column];
+        if (field && row[field] !== undefined && row[field] !== null && String(row[field]).trim() !== "") {
+            return clean(row[field]);
+        }
+
         const aliases = {
-            "Year": ["Year"],
-            "Month": ["Month"],
-            "Date": ["Date"],
-            "Name": ["Name"],
-            "OM": ["OM"],
-            "SITE": ["SITE", "Site"],
-            "TL": ["TL", "Team Leader"],
-            "Agent Name": ["Agent Name", "Agent"],
-            "Account": ["Account", "Campaign"],
-            "CCTV Reason Codes": ["CCTV Reason Codes", "CCTV Reason Code", "Reason"],
-            "NOC": ["NOC", "Status"],
-            "Remarks": ["Remarks", "Remark"]
+            "Year": ["Year", "year", "yr"],
+            "Month": ["Month", "month", "mo"],
+            "Date": ["Date", "date"],
+            "Name": ["Name", "name", "Auditor", "auditor", "Staff", "staff"],
+            "OM": ["OM", "om", "Operation Manager", "Operations Manager"],
+            "SITE": ["SITE", "Site", "site", "Location"],
+            "TL": ["TL", "tl", "Team Leader", "Team Lead"],
+            "Agent Name": ["Agent Name", "agentName", "Agent", "agent"],
+            "Account": ["Account", "account", "Campaign", "campaign"],
+            "CCTV Reason Codes": ["CCTV Reason Codes", "cctvReasonCodes", "CCTV Reason Code", "CCTV Reason Cod", "Reason Code", "Reason"],
+            "NOC": ["NOC", "noc", "Status", "status"],
+            "Remarks": ["Remarks", "remarks", "Remark", "Notes", "notes"]
         };
         for (const alias of aliases[column] || [column]) {
             const key = findRowKey(row, alias);
@@ -24711,30 +24967,53 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         return "";
     }
 
-    function renderPendingMiles() {
+    function renderPendingTracker() {
         const table = $("masterPendingMilesTable");
         const thead = table.querySelector("thead");
         const tbody = table.querySelector("tbody");
         const rows = currentPendingRows();
         const label = PENDING_LABELS[activePendingKey] || activePendingKey;
+        const sourceInfo = payload?.sources?.[activePendingKey];
 
         $("masterPendingMilesCount").textContent = String(rows.length);
         if ($("masterPendingTitle")) $("masterPendingTitle").textContent = `Pending ${label}`;
 
-        if (!rows.length) {
-            thead.innerHTML = `<tr>${PENDING_COLUMNS.map(col => `<th>${esc(col)}</th>`).join("")}</tr>`;
-            const apiHint = activePendingKey === "miles" ? "" : " If this tracker should have rows, redeploy the supplied Master List API v3 first.";
-            tbody.innerHTML = `<tr><td colspan="${PENDING_COLUMNS.length}" class="master-empty-cell">No Pending ${esc(label)} rows found.${esc(apiHint)}</td></tr>`;
+        thead.innerHTML = `<tr>${PENDING_COLUMNS.map(col => `<th>${esc(col)}</th>`).join("")}</tr>`;
+
+        // 1. Check if the active tracker source failed in Google Apps Script (Requirement 6)
+        if (sourceInfo && sourceInfo.ok === false) {
+            const errDetail = sourceInfo.error || "Sheet could not be read or was not found.";
+            const gidText = sourceInfo.gid ? ` (Sheet GID: ${sourceInfo.gid})` : "";
+            tbody.innerHTML = `<tr><td colspan="${PENDING_COLUMNS.length}" class="master-empty-cell is-error">⚠️ <strong>Source Error:</strong> Could not load ${esc(label)} tracker${esc(gidText)}: ${esc(errDetail)}</td></tr>`;
             return;
         }
 
-        thead.innerHTML = `<tr>${PENDING_COLUMNS.map(col => `<th>${esc(col)}</th>`).join("")}</tr>`;
+        // 2. Check if API fetch failed completely and no data exists
+        if (!payload && lastSyncError) {
+            tbody.innerHTML = `<tr><td colspan="${PENDING_COLUMNS.length}" class="master-empty-cell is-error">⚠️ <strong>Connection Error:</strong> ${esc(lastSyncError)}. Check your internet connection or Google Apps Script deployment.</td></tr>`;
+            return;
+        }
+
+        // 3. Check if payload is from older v2 deployment and non-Miles tracker was selected
+        if (payload && !payload.pending && activePendingKey !== "miles") {
+            tbody.innerHTML = `<tr><td colspan="${PENDING_COLUMNS.length}" class="master-empty-cell is-error">⚠️ <strong>Source Error:</strong> Live Google Sheets data for ${esc(label)} requires the updated Master List Apps Script v3. Please redeploy the Web App endpoint.</td></tr>`;
+            return;
+        }
+
+        // 4. Successful load with zero pending rows (Requirement 6)
+        if (!rows.length) {
+            tbody.innerHTML = `<tr><td colspan="${PENDING_COLUMNS.length}" class="master-empty-cell">No Pending ${esc(label)} rows found.</td></tr>`;
+            return;
+        }
+
+        // 5. Render pending rows
         tbody.innerHTML = rows.map(row => `
             <tr>
                 ${PENDING_COLUMNS.map(col => `<td>${esc(valueForPendingColumn(row, col))}</td>`).join("")}
             </tr>
         `).join("");
     }
+    const renderPendingMiles = renderPendingTracker;
 
     function renderHrAssignments() {
         const body = $("masterAssignedHrBody");
@@ -24847,7 +25126,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
     }
 
     function render() {
-        renderPendingMiles();
+        renderPendingTracker();
         renderHrAssignments();
     }
 
@@ -24950,7 +25229,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         setSyncState(
             "syncing",
             "Syncing Google Sheets...",
-            "Checking Pending Miles and Assigned HR per OM."
+            "Checking Pending Trackers (Miles, Seth, Wendie, Kenneth, JR) and Assigned HR per OM."
         );
 
         try {
@@ -24976,6 +25255,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
             }
 
             payload = data;
+            lastSyncError = "";
             derive();
             render();
             await saveCache(data);
@@ -24999,6 +25279,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
             return true;
         } catch (error) {
             console.error("Master List sync failed:", error);
+            lastSyncError = error.message || "Could not connect to Google Sheets";
 
             const cached = await loadCache();
 
@@ -25017,6 +25298,9 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
 
                 return false;
             }
+
+            derive();
+            render();
 
             setSyncState(
                 "error",
@@ -27010,6 +27294,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
     }
 
     function signedOut() {
+        clearRecentCredentials();
         setAuthGateInputsDisabled(false);
         const scopeNeedsReload = !!window.CCTV_DATA_SCOPE?.deactivate?.();
         user = null;
@@ -27179,6 +27464,12 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         if (activePair && !(admin || perms[activePair[0]] !== false)) {
             const first = Object.entries(workspaceMap).find(([key, ids]) => (admin || perms[key] !== false) && !$(ids[0])?.hidden);
             if (first) window.showWorkspaceOnly?.(first[1][1]);
+        }
+
+        if (admin) {
+            renderRecentCredentials();
+        } else if ($("adminRecentCredsSection")) {
+            $("adminRecentCredsSection").hidden = true;
         }
     }
 
@@ -27373,8 +27664,8 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
 
     function filterUsers() {
         const q = clean($("adminUserSearch")?.value).toLowerCase();
-        $("adminUsersBody")?.querySelectorAll("tr[data-search]").forEach(row => {
-            row.hidden = !!q && !row.dataset.search.includes(q);
+        $("adminUsersBody")?.querySelectorAll(".admin-user-card[data-search]").forEach(card => {
+            card.hidden = !!q && !card.dataset.search.includes(q);
         });
     }
 
@@ -27541,12 +27832,22 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         toast("Security audit log exported.");
     }
 
+    function getInitials(name) {
+        const parts = String(name || "").trim().split(/\s+/).filter(Boolean);
+        if (!parts.length) return "U";
+        if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+        return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+    }
+
     function renderUsers(rows) {
         const body = $("adminUsersBody");
+        if (!body) return;
         if (!rows.length) {
-            body.innerHTML = '<tr><td colspan="7" class="auth-admin-empty">No accounts.</td></tr>';
+            body.innerHTML = '<div class="auth-admin-empty" style="grid-column: 1 / -1;">No accounts found.</div>';
             return;
         }
+
+        const recentCreds = getRecentCredentials();
 
         body.innerHTML = rows.map(item => {
             const self = item.id === user?.id;
@@ -27557,30 +27858,86 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
             const isPending = item.status === "pending";
             const permsText = permissionsSummary(item);
 
+            const uKey = cleanUsername(item.username).toLowerCase();
+            const recentCred = recentCreds.find(c => 
+                cleanUsername(c.username).toLowerCase() === uKey ||
+                (c.id && c.id === item.id)
+            );
+
+            let pwRowHtml = "";
+            if (recentCred && recentCred.password) {
+                pwRowHtml = `
+                  <div class="admin-user-card-pw-row">
+                    <span class="admin-user-meta-label">Temporary Password</span>
+                    <div class="recent-cred-val-wrap">
+                      <span class="recent-cred-val recent-cred-pw-val is-masked" data-pw="${esc(recentCred.password)}">••••••••</span>
+                      <button type="button" class="recent-cred-btn user-card-toggle-pw-btn" aria-label="Show password" title="Show password">
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                        <span>Show</span>
+                      </button>
+                      <button type="button" class="recent-cred-btn user-card-copy-pw-btn" data-password="${esc(recentCred.password)}" title="Copy Password">
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                        <span>Copy</span>
+                      </button>
+                    </div>
+                  </div>`;
+            } else {
+                pwRowHtml = `
+                  <div class="admin-user-card-pw-row">
+                    <span class="admin-user-meta-label">Password</span>
+                    <div class="user-pw-na-wrap">
+                      <span class="user-pw-na-text">Password: Not available</span>
+                    </div>
+                  </div>`;
+            }
+
             return `
-            <tr data-search="${esc(search)}">
-              <td>
-                <div class="auth-admin-user-cell">
-                  <strong>${esc(item.display_name || item.username || "User")}</strong>
-                  <span>${esc(usernameLabel(item.username))}</span>
+            <div class="admin-user-card" data-id="${esc(item.id)}" data-search="${esc(search)}">
+              <div class="admin-user-card-top">
+                <div class="admin-user-card-identity">
+                  <div class="admin-user-avatar">${esc(getInitials(item.display_name || item.username))}</div>
+                  <div class="admin-user-info">
+                    <strong class="admin-user-name" title="${esc(item.display_name || item.username || 'User')}">${esc(item.display_name || item.username || 'User')}</strong>
+                    <span class="admin-user-username">${esc(usernameLabel(item.username))}</span>
+                  </div>
                 </div>
-              </td>
-              <td>${statusPill(item.status)}</td>
-              <td><span class="admin-badge badge-${esc(item.role)}">${roleLabel}</span></td>
-              <td><small style="color:var(--ops-muted);">${esc(permsText)}</small></td>
-              <td>${esc(dt(item.created_at))}</td>
-              <td>${esc(dt(item.last_seen_at))}</td>
-              <td>
-                <div class="auth-admin-actions">
+                <div class="admin-user-card-badges">
+                  ${statusPill(item.status)}
+                  <span class="admin-badge badge-${esc(String(item.role || 'user').toLowerCase())}">${roleLabel}</span>
+                </div>
+              </div>
+
+              <div class="admin-user-card-body">
+                ${pwRowHtml}
+
+                <div class="admin-user-meta-row">
+                  <span class="admin-user-meta-label">Permissions</span>
+                  <span class="admin-user-meta-val">${esc(permsText)}</span>
+                </div>
+
+                <div class="admin-user-card-dates">
+                  <div class="admin-user-date-col">
+                    <span class="admin-user-meta-label">Created</span>
+                    <span class="admin-user-meta-val">${esc(dt(item.created_at))}</span>
+                  </div>
+                  <div class="admin-user-date-col">
+                    <span class="admin-user-meta-label">Last Active</span>
+                    <span class="admin-user-meta-val">${esc(dt(item.last_seen_at))}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="admin-user-card-footer">
+                <div class="admin-user-card-actions">
                   ${isPending ? `<button type="button" class="auth-approve-btn admin-action-btn" data-id="${esc(item.id)}">Approve</button>` : ""}
                   ${isPending ? `<button type="button" class="auth-reject-btn admin-action-btn" data-id="${esc(item.id)}">Reject</button>` : ""}
                   <button type="button" class="auth-access-btn admin-action-btn" data-id="${esc(item.id)}">Access</button>
                   ${!self && isApproved ? `<button type="button" class="auth-disable-btn admin-action-btn" data-id="${esc(item.id)}">Disable</button>` : ""}
                   ${!self && isDisabled ? `<button type="button" class="auth-reactivate-btn admin-action-btn" data-id="${esc(item.id)}">Reactivate</button>` : ""}
-                  ${!self ? `<button type="button" class="auth-remove-user-btn admin-action-btn" data-id="${esc(item.id)}">Delete</button>` : '<span class="auth-self-label">You</span>'}
+                  ${!self ? `<button type="button" class="auth-remove-user-btn admin-action-btn auth-delete-danger" data-id="${esc(item.id)}">Delete</button>` : '<span class="auth-self-label">You</span>'}
                 </div>
-              </td>
-            </tr>`;
+              </div>
+            </div>`;
         }).join("");
 
         body.querySelectorAll(".auth-approve-btn").forEach(btn =>
@@ -27622,17 +27979,36 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         );
 
         body.querySelectorAll(".auth-remove-user-btn").forEach(btn =>
-            btn.addEventListener("click", async () => {
-                const item = rows.find(x => x.id === btn.dataset.id);
-                await window.appConfirm({
-                    title: "Permanent Auth Account Deletion",
-                    message: `Permanently deleting an authenticated user (${item?.display_name || item?.username}) requires the Supabase Admin API with a service_role key or an Edge Function. To maintain zero browser security exposure, you can Disable this account instead (which immediately suspends all access). See supabase_audit_log.sql for server-side Edge Function deployment.`,
-                    confirmText: "Understood",
-                    cancelText: "Cancel",
-                    tone: "neutral"
-                });
-            })
+            btn.addEventListener("click", () => deleteStaffAccountPermanently(btn.dataset.id))
         );
+
+        body.querySelectorAll(".user-card-toggle-pw-btn").forEach(btn => {
+            btn.addEventListener("click", () => {
+                const row = btn.closest(".admin-user-card-pw-row");
+                const pwVal = row?.querySelector(".recent-cred-pw-val");
+                if (!pwVal) return;
+                const isMasked = pwVal.classList.contains("is-masked");
+                if (isMasked) {
+                    pwVal.classList.remove("is-masked");
+                    pwVal.textContent = pwVal.dataset.pw || "";
+                    btn.innerHTML = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg><span>Hide</span>`;
+                    btn.setAttribute("aria-label", "Hide password");
+                    btn.setAttribute("title", "Hide password");
+                } else {
+                    pwVal.classList.add("is-masked");
+                    pwVal.textContent = "••••••••";
+                    btn.innerHTML = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg><span>Show</span>`;
+                    btn.setAttribute("aria-label", "Show password");
+                    btn.setAttribute("title", "Show password");
+                }
+            });
+        });
+
+        body.querySelectorAll(".user-card-copy-pw-btn").forEach(btn => {
+            btn.addEventListener("click", () => {
+                copyCredText(btn.dataset.password || "", btn, "Copied!");
+            });
+        });
 
         filterUsers();
     }
@@ -27655,6 +28031,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
 
             usersCache = profilesData || [];
             renderUsers(usersCache);
+            renderRecentCredentials();
 
             // Calculate live metric counts
             const total = usersCache.length;
@@ -27833,6 +28210,216 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         } finally {
             busy($("adminAccessSave"), false);
         }
+    }
+
+    const RECENT_CREDS_STORAGE_KEY = "cctv_admin_recent_creds_v1";
+
+    function getRecentCredentials() {
+        try {
+            const raw = sessionStorage.getItem(RECENT_CREDS_STORAGE_KEY);
+            if (!raw) return [];
+            const parsed = JSON.parse(raw);
+            return Array.isArray(parsed) ? parsed : [];
+        } catch (_) {
+            return [];
+        }
+    }
+
+    function saveRecentCredentials(list) {
+        try {
+            sessionStorage.setItem(RECENT_CREDS_STORAGE_KEY, JSON.stringify(list || []));
+        } catch (_) {}
+    }
+
+    function clearRecentCredentials() {
+        try {
+            sessionStorage.removeItem(RECENT_CREDS_STORAGE_KEY);
+        } catch (_) {}
+        renderRecentCredentials();
+    }
+
+    function addRecentCredential(cred) {
+        const list = getRecentCredentials().filter(x => x.username !== cred.username);
+        list.unshift({
+            id: "cred_" + Date.now() + "_" + Math.random().toString(36).slice(2, 7),
+            name: cred.name,
+            username: cred.username,
+            password: cred.password,
+            role: cred.role || "User",
+            createdAt: cred.createdAt || new Date().toISOString()
+        });
+        if (list.length > 50) list.length = 50;
+        saveRecentCredentials(list);
+        renderRecentCredentials();
+    }
+
+    function removeRecentCredential(id) {
+        const list = getRecentCredentials().filter(x => x.id !== id);
+        saveRecentCredentials(list);
+        renderRecentCredentials();
+        toast("Credential removed.");
+    }
+
+    async function copyCredText(text, btn, successLabel = "Copied!") {
+        try {
+            if (navigator.clipboard?.writeText) {
+                await navigator.clipboard.writeText(text);
+            } else {
+                const ta = document.createElement("textarea");
+                ta.value = text;
+                ta.style.position = "fixed";
+                ta.style.opacity = "0";
+                document.body.appendChild(ta);
+                ta.focus();
+                ta.select();
+                document.execCommand("copy");
+                ta.remove();
+            }
+            if (btn) {
+                btn.classList.add("is-copied");
+                const oldHtml = btn.innerHTML;
+                const span = btn.querySelector("span");
+                if (span) {
+                    span.textContent = successLabel;
+                } else {
+                    btn.textContent = `✓ ${successLabel}`;
+                }
+                setTimeout(() => {
+                    btn.classList.remove("is-copied");
+                    btn.innerHTML = oldHtml;
+                }, 1800);
+            }
+            toast("Copied to clipboard.");
+        } catch (_) {
+            toast("Could not copy to clipboard.");
+        }
+    }
+
+    function formatAllCredentialsText(item) {
+        return [
+            `Name: ${item.name}`,
+            `Username: ${cleanUsername(item.username)}`,
+            `Temporary Password: ${item.password}`,
+            `Role: ${item.role}`
+        ].join("\n");
+    }
+
+    function renderRecentCredentials() {
+        const section = $("adminRecentCredsSection");
+        const listEl = $("adminRecentCredsList");
+        if (!section || !listEl) return;
+
+        if (profile?.role !== "admin") {
+            section.hidden = true;
+            listEl.innerHTML = "";
+            return;
+        }
+
+        const list = getRecentCredentials();
+        if (!list.length) {
+            section.hidden = true;
+            listEl.innerHTML = "";
+            return;
+        }
+
+        section.hidden = false;
+        listEl.innerHTML = list.map(item => `
+            <div class="recent-cred-card" data-cred-id="${esc(item.id)}">
+              <div class="recent-cred-top">
+                <div class="recent-cred-identity">
+                  <span class="admin-badge badge-${esc(String(item.role || 'user').toLowerCase())}">${esc(item.role || 'User')}</span>
+                  <span class="recent-cred-name" title="${esc(item.name)}">${esc(item.name)}</span>
+                </div>
+                <button type="button" class="recent-cred-remove-btn cred-remove-btn" data-id="${esc(item.id)}" title="Remove" aria-label="Remove">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+              </div>
+              <div class="recent-cred-body">
+                <div class="recent-cred-row">
+                  <span class="recent-cred-label">Username</span>
+                  <div class="recent-cred-val-wrap">
+                    <span class="recent-cred-val">${esc(cleanUsername(item.username))}</span>
+                    <button type="button" class="recent-cred-btn cred-copy-user-btn" data-username="${esc(cleanUsername(item.username))}" title="Copy Username">
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                      <span>Copy</span>
+                    </button>
+                  </div>
+                </div>
+                <div class="recent-cred-row">
+                  <span class="recent-cred-label">Temporary Password</span>
+                  <div class="recent-cred-val-wrap">
+                    <span class="recent-cred-val recent-cred-pw-val is-masked" data-pw="${esc(item.password)}">••••••••</span>
+                    <button type="button" class="recent-cred-btn cred-toggle-pw-btn" aria-label="Show password" title="Show password">
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                      <span>Show</span>
+                    </button>
+                    <button type="button" class="recent-cred-btn cred-copy-pw-btn" data-password="${esc(item.password)}" title="Copy Password">
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                      <span>Copy</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <div class="recent-cred-footer">
+                <button type="button" class="recent-cred-copy-all-btn cred-copy-all-btn" data-id="${esc(item.id)}" title="Copy all credentials to clipboard">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                  <span>Copy All Credentials</span>
+                </button>
+                <button type="button" class="recent-cred-btn-danger cred-remove-btn" data-id="${esc(item.id)}">
+                  Remove
+                </button>
+              </div>
+            </div>
+        `).join("");
+
+        listEl.querySelectorAll(".cred-remove-btn").forEach(btn => {
+            btn.addEventListener("click", () => {
+                removeRecentCredential(btn.dataset.id);
+            });
+        });
+
+        listEl.querySelectorAll(".cred-copy-user-btn").forEach(btn => {
+            btn.addEventListener("click", () => {
+                copyCredText(btn.dataset.username || "", btn, "Copied!");
+            });
+        });
+
+        listEl.querySelectorAll(".cred-copy-pw-btn").forEach(btn => {
+            btn.addEventListener("click", () => {
+                copyCredText(btn.dataset.password || "", btn, "Copied!");
+            });
+        });
+
+        listEl.querySelectorAll(".cred-toggle-pw-btn").forEach(btn => {
+            btn.addEventListener("click", () => {
+                const card = btn.closest(".recent-cred-card");
+                const pwVal = card?.querySelector(".recent-cred-pw-val");
+                if (!pwVal) return;
+                const isMasked = pwVal.classList.contains("is-masked");
+                if (isMasked) {
+                    pwVal.classList.remove("is-masked");
+                    pwVal.textContent = pwVal.dataset.pw || "";
+                    btn.innerHTML = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg><span>Hide</span>`;
+                    btn.setAttribute("aria-label", "Hide password");
+                    btn.setAttribute("title", "Hide password");
+                } else {
+                    pwVal.classList.add("is-masked");
+                    pwVal.textContent = "••••••••";
+                    btn.innerHTML = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg><span>Show</span>`;
+                    btn.setAttribute("aria-label", "Show password");
+                    btn.setAttribute("title", "Show password");
+                }
+            });
+        });
+
+        listEl.querySelectorAll(".cred-copy-all-btn").forEach(btn => {
+            btn.addEventListener("click", () => {
+                const item = list.find(x => x.id === btn.dataset.id);
+                if (!item) return;
+                const text = formatAllCredentialsText(item);
+                copyCredText(text, btn, "Copied All!");
+            });
+        });
     }
 
     async function createStaffAccount() {
@@ -28019,9 +28606,27 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
             );
             toast(`${name} account created and approved immediately.`);
 
+            addRecentCredential({
+                name,
+                username,
+                password,
+                role: role === "admin" ? "Admin" : "User",
+                createdAt: new Date().toISOString()
+            });
+
             $("adminCreateName").value = "";
             $("adminCreateUsername").value = "";
-            $("adminCreatePassword").value = "";
+            const pwInput = $("adminCreatePassword");
+            if (pwInput) {
+                pwInput.value = "";
+                pwInput.type = "password";
+                const toggleBtn = document.querySelector('.auth-password-toggle[data-target="adminCreatePassword"]');
+                if (toggleBtn) {
+                    toggleBtn.classList.remove("is-visible");
+                    toggleBtn.setAttribute("aria-label", "Show password");
+                    toggleBtn.setAttribute("title", "Show password");
+                }
+            }
             $("adminCreateRole").value = "user";
 
             await loadAdmin();
@@ -28048,11 +28653,27 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         }
         const target = usersCache.find(x => x.id === id);
         const prevStatus = target?.status;
+        let updateSuccess = false;
+        let updateError = null;
+
         const { error } = await client.rpc("admin_set_user_status", {
             p_target: id,
             p_status: status
         });
-        if (error) return toast(error.message);
+
+        if (error) {
+            updateError = error;
+            const direct = await client.from("profiles").update({ status }).eq("id", id);
+            if (!direct.error) updateSuccess = true;
+            else updateError = direct.error;
+        } else {
+            updateSuccess = true;
+            try { await client.from("profiles").update({ status }).eq("id", id); } catch (_) {}
+        }
+
+        if (!updateSuccess) {
+            return toast(updateError?.message || "Could not update account status.");
+        }
 
         let actionName = `account_${status}`;
         if (status === "approved") {
@@ -28075,7 +28696,128 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         }
 
         toast(status === "approved" ? "Account active." : (status === "disabled" ? "Account disabled." : "Account status updated."));
-        loadAdmin();
+        await loadAdmin();
+    }
+
+    async function deleteStaffAccountPermanently(id) {
+        if (!window.CCTV_ACCESS?.isAdmin?.()) {
+            toast("Admin access required.");
+            return;
+        }
+
+        if (id === user?.id) {
+            toast("You cannot delete your own logged-in account.");
+            return;
+        }
+
+        const target = usersCache.find(x => x.id === id);
+        const targetName = target?.display_name || target?.username || "this user";
+        const targetUsername = cleanUsername(target?.username || "");
+        const targetHandle = targetUsername ? `@${targetUsername}` : "";
+
+        const ok = await window.appConfirm({
+            title: "Delete Account Permanently",
+            message: `Permanently delete ${targetName}${targetHandle ? ` (${targetHandle})` : ""}?
+
+This account will be removed from CCTV OPS and will no longer be able to sign in.`,
+            confirmText: "Delete",
+            cancelText: "Cancel",
+            tone: "danger"
+        });
+
+        if (!ok) return;
+
+        const btn = document.querySelector(`.auth-remove-user-btn[data-id="${id}"]`);
+        busy(btn, true, "Deleting...");
+
+        try {
+            const { data: sessionData } = await client.auth.getSession();
+            const token = sessionData?.session?.access_token;
+            if (!token) throw new Error("Admin session expired. Please sign in again.");
+
+            let deleted = false;
+            let lastError = null;
+
+            // 1. Invoke Supabase Edge Function: delete-cctv-user
+            try {
+                const invokeRes = await client.functions.invoke("delete-cctv-user", {
+                    body: { targetUserId: id }
+                });
+                if (invokeRes.error) {
+                    throw new Error(invokeRes.error?.message || invokeRes.error);
+                }
+                if (invokeRes.data?.success) {
+                    deleted = true;
+                }
+            } catch (fnErr) {
+                lastError = fnErr;
+                // Fallback A: Direct fetch to Edge Function endpoint
+                try {
+                    const fnUrl = `${String(cfg.SUPABASE_URL).replace(/\/+$/, "")}/functions/v1/delete-cctv-user`;
+                    const res = await fetch(fnUrl, {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            "apikey": cfg.SUPABASE_PUBLIC_KEY,
+                            "Authorization": `Bearer ${token}`
+                        },
+                        body: JSON.stringify({ targetUserId: id })
+                    });
+                    const data = await res.json();
+                    if (!res.ok) throw new Error(data?.error || `Edge Function returned ${res.status}`);
+                    if (data?.success) deleted = true;
+                } catch (fetchErr) {
+                    lastError = fetchErr;
+                    // Fallback B: Database RPC admin_delete_cctv_user
+                    try {
+                        const rpcRes = await client.rpc("admin_delete_cctv_user", { p_target: id });
+                        if (rpcRes.error) throw new Error(rpcRes.error.message);
+                        deleted = true;
+                    } catch (rpcErr) {
+                        lastError = rpcErr;
+                    }
+                }
+            }
+
+            if (!deleted) {
+                throw new Error(lastError?.message || "Could not reach Edge Function delete-cctv-user.");
+            }
+
+            // Remove from session recent credentials if present
+            const recentCred = getRecentCredentials().find(c => c.username === targetUsername || c.id === id);
+            if (recentCred) {
+                removeRecentCredential(recentCred.id);
+            }
+
+            // Remove card from DOM immediately
+            const card = document.querySelector(`.admin-user-card[data-id="${id}"]`);
+            if (card) card.remove();
+
+            // Log security event
+            try {
+                await logSecurityEvent(
+                    "account_deleted",
+                    target?.username || target?.display_name || id,
+                    {
+                        deleted_user_id: id,
+                        username: targetUsername,
+                        display_name: target?.display_name || "",
+                        role: target?.role || "user"
+                    },
+                    id
+                );
+            } catch (logErr) {
+                console.warn("[CCTV OPS Audit] Security log error on account delete:", logErr);
+            }
+
+            toast(`${targetName} account permanently deleted.`);
+            await loadAdmin();
+        } catch (err) {
+            console.error("Failed to delete account:", err);
+            toast(err.message || "Could not delete account.");
+        } finally {
+            busy(btn, false);
+        }
     }
 
     function initAdminSubnav() {
@@ -28153,6 +28895,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
     }
 
     async function logout() {
+        clearRecentCredentials();
         if (!client) return;
         if (user) await logAccess("sign_out");
         await client.auth.signOut();
@@ -28189,7 +28932,9 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
 
     function initPasswordToggles() {
         document.querySelectorAll(".auth-password-toggle").forEach(btn => {
-            btn.addEventListener("click", () => {
+            btn.addEventListener("click", event => {
+                event.preventDefault();
+                event.stopPropagation();
                 const input = document.getElementById(btn.dataset.target || "");
                 if (!input) return;
                 const showing = input.type === "text";
@@ -28300,6 +29045,21 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
     $("adminAccessClose")?.addEventListener("click", closeAccessEditor);
     $("adminAccessBackdrop")?.addEventListener("click", closeAccessEditor);
 
+    $("adminClearAllCredsBtn")?.addEventListener("click", async () => {
+        const ok = typeof window.appConfirm === "function"
+            ? await window.appConfirm({
+                title: "Clear all recent credentials?",
+                message: "This will remove all recently created temporary credentials from this browser session.",
+                confirmText: "Clear All",
+                tone: "neutral"
+            })
+            : confirm("Clear all recently created credentials from this browser session?");
+        if (ok) {
+            clearRecentCredentials();
+            toast("Recent credentials cleared.");
+        }
+    });
+
     $("adminRefreshBtn")?.addEventListener("click", loadAdmin);
     $("adminRefreshAuditBtn")?.addEventListener("click", () => {
         busy($("adminRefreshAuditBtn"), true, "Refreshing...");
@@ -28322,6 +29082,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
 })();
 </script>
 
+<style>#tlSummarySection{display:none!important;}</style>
+<script src="./script.js"></script>
 </body>
 </html>
-<style>#tlSummarySection{display:none!important;}</style>

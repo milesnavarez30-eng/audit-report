@@ -1,0 +1,1279 @@
+<style id="opsUiUxPolishV9">
+/* ==========================================================================
+   CCTV OPS — "APEX SLATE" ENTERPRISE OPERATIONS CONSOLE
+   Precision monitoring UI/UX, dark/light theme parity, crisp typography,
+   cohesive borders, elevated cards, and consistent form controls across all workspaces.
+   Strictly preserves all business logic, button names, IDs, and workflows.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. DESIGN SYSTEM TOKENS & PALETTE
+   -------------------------------------------------------------------------- */
+body.ops-redesign-v3 {
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Inter", "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+    letter-spacing: -0.012em !important;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+
+    /* Scaled Radii */
+    --ops-radius-xs: 5px;
+    --ops-radius-sm: 8px;
+    --ops-radius-md: 10px;
+    --ops-radius-lg: 12px;
+    --ops-radius-xl: 14px;
+    --ops-radius-full: 9999px;
+
+    /* Control Heights */
+    --ops-input-h: 34px;
+    --ops-btn-h: 34px;
+    --ops-btn-sm-h: 26px;
+    --ops-btn-lg-h: 40px;
+
+    /* Type Scale */
+    --ops-font-size-xs: 11px;
+    --ops-font-size-sm: 12px;
+    --ops-font-size-base: 13px;
+    --ops-font-size-md: 14px;
+    --ops-font-size-lg: 16px;
+    --ops-font-size-xl: 20px;
+    --ops-font-size-2xl: 24px;
+
+    --ops-font-mono: ui-monospace, SFMono-Regular, "Roboto Mono", Menlo, Consolas, monospace;
+
+    /* Transitions & Focus */
+    --ops-transition: all 0.16s cubic-bezier(0.16, 1, 0.3, 1);
+    --ops-focus-ring: 0 0 0 3px rgba(37, 99, 235, 0.22);
+
+    /* Light Mode (Cool Executive Daylight) */
+    --ops-bg: #f1f5f9 !important;
+    --ops-panel: #ffffff !important;
+    --ops-panel-2: #f8fafc !important;
+    --ops-panel-3: #eef2f6 !important;
+    --ops-text: #0f172a !important;
+    --ops-text-2: #334155 !important;
+    --ops-muted: #64748b !important;
+    --ops-muted-2: #94a3b8 !important;
+    --ops-line: rgba(15, 23, 42, 0.08) !important;
+    --ops-line-strong: rgba(15, 23, 42, 0.16) !important;
+    --ops-accent: #2563eb !important;
+    --ops-accent-hover: #1d4ed8 !important;
+    --ops-accent-soft: rgba(37, 99, 235, 0.08) !important;
+    --ops-accent-border: rgba(37, 99, 235, 0.25) !important;
+    --ops-success: #10b981 !important;
+    --ops-success-soft: rgba(16, 185, 129, 0.10) !important;
+    --ops-warning: #f59e0b !important;
+    --ops-warning-soft: rgba(245, 158, 11, 0.10) !important;
+    --ops-danger: #ef4444 !important;
+    --ops-danger-soft: rgba(239, 68, 68, 0.10) !important;
+    --ops-info: #0ea5e9 !important;
+    --ops-info-soft: rgba(14, 165, 233, 0.10) !important;
+    --ops-shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.04) !important;
+    --ops-shadow: 0 1px 3px rgba(15, 23, 42, 0.06), 0 4px 14px rgba(15, 23, 42, 0.03) !important;
+    --ops-shadow-lg: 0 12px 36px rgba(15, 23, 42, 0.08) !important;
+    --ops-backdrop: rgba(15, 23, 42, 0.45) !important;
+}
+
+body.ops-redesign-v3.dark-mode {
+    --ops-focus-ring: 0 0 0 3px rgba(59, 130, 246, 0.28);
+
+    /* Dark Mode (Deep Obsidian Slate) */
+    --ops-bg: #0b0f17 !important;
+    --ops-panel: #111827 !important;
+    --ops-panel-2: #161f30 !important;
+    --ops-panel-3: #1e293b !important;
+    --ops-text: #f8fafc !important;
+    --ops-text-2: #cbd5e1 !important;
+    --ops-muted: #94a3b8 !important;
+    --ops-muted-2: #64748b !important;
+    --ops-line: rgba(255, 255, 255, 0.08) !important;
+    --ops-line-strong: rgba(255, 255, 255, 0.16) !important;
+    --ops-accent: #3b82f6 !important;
+    --ops-accent-hover: #60a5fa !important;
+    --ops-accent-soft: rgba(59, 130, 246, 0.14) !important;
+    --ops-accent-border: rgba(59, 130, 246, 0.35) !important;
+    --ops-success: #34d399 !important;
+    --ops-success-soft: rgba(16, 185, 129, 0.15) !important;
+    --ops-warning: #fbbf24 !important;
+    --ops-warning-soft: rgba(245, 158, 11, 0.15) !important;
+    --ops-danger: #f87171 !important;
+    --ops-danger-soft: rgba(239, 68, 68, 0.15) !important;
+    --ops-info: #38bdf8 !important;
+    --ops-info-soft: rgba(14, 165, 233, 0.15) !important;
+    --ops-shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.3) !important;
+    --ops-shadow: 0 2px 6px rgba(0, 0, 0, 0.35), 0 8px 24px rgba(0, 0, 0, 0.28) !important;
+    --ops-shadow-lg: 0 18px 48px rgba(0, 0, 0, 0.55) !important;
+    --ops-backdrop: rgba(3, 7, 18, 0.72) !important;
+}
+
+/* --------------------------------------------------------------------------
+   2. CORE CONTAINERS & PAGE HIERARCHY
+   -------------------------------------------------------------------------- */
+body.ops-redesign-v3 {
+    background: var(--ops-bg) !important;
+    color: var(--ops-text) !important;
+    min-height: 100vh !important;
+    margin: 0 !important;
+    padding: 22px 28px 48px calc(var(--admin-sidebar, 185px) + 26px) !important;
+    transition: padding 0.2s ease !important;
+}
+
+body.ops-redesign-v3 .container,
+body.ops-redesign-v3 .maintenance-shell,
+body.ops-redesign-v3 .simple-eod-shell,
+body.ops-redesign-v3 .pending-shell,
+body.ops-redesign-v3 .master-simple-shell,
+body.ops-redesign-v3 .edr-crud-shell,
+body.ops-redesign-v3 .auth-admin-shell {
+    padding: 20px 24px !important;
+    border-radius: var(--ops-radius-xl) !important;
+    border: 1px solid var(--ops-line) !important;
+    background: var(--ops-panel) !important;
+    box-shadow: var(--ops-shadow) !important;
+    margin-bottom: 18px !important;
+}
+
+/* Titles & Lead Copy */
+body.ops-redesign-v3 h2,
+body.ops-redesign-v3 .app-tab-panel h2 {
+    font-size: var(--ops-font-size-2xl) !important;
+    font-weight: 750 !important;
+    letter-spacing: -0.025em !important;
+    color: var(--ops-text) !important;
+    margin: 0 0 4px 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+}
+
+body.ops-redesign-v3 .page-lead {
+    font-size: var(--ops-font-size-base) !important;
+    color: var(--ops-muted) !important;
+    line-height: 1.5 !important;
+    margin: 0 0 18px 0 !important;
+    max-width: 900px !important;
+}
+
+body.ops-redesign-v3 h3,
+body.ops-redesign-v3 .app-tab-panel h3 {
+    font-size: var(--ops-font-size-md) !important;
+    font-weight: 650 !important;
+    color: var(--ops-text) !important;
+    letter-spacing: -0.015em !important;
+    margin: 0 !important;
+}
+
+/* Card Containers Standard */
+body.ops-redesign-v3 .audit-guard-card,
+body.ops-redesign-v3 .edr-crud-card,
+body.ops-redesign-v3 .master-simple-card,
+body.ops-redesign-v3 .auth-admin-card,
+body.ops-redesign-v3 .card,
+body.ops-redesign-v3 .form-section {
+    border-radius: var(--ops-radius-lg) !important;
+    border: 1px solid var(--ops-line) !important;
+    background: var(--ops-panel) !important;
+    box-shadow: var(--ops-shadow) !important;
+    transition: var(--ops-transition) !important;
+}
+
+/* --------------------------------------------------------------------------
+   3. SIDEBAR COMMAND STRIP (OPERATIONS & UTILITIES)
+   -------------------------------------------------------------------------- */
+body.ops-redesign-v3 .workspace-tabs.admin-sidebar {
+    background: var(--ops-panel) !important;
+    border-right: 1px solid var(--ops-line) !important;
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.08) !important;
+    padding: 16px 12px 14px !important;
+    gap: 3px !important;
+    z-index: 1000 !important;
+}
+
+body.ops-redesign-v3 .ops-sidebar-brand {
+    padding: 2px 8px 12px 8px !important;
+    margin-bottom: 8px !important;
+    border-bottom: 1px solid var(--ops-line) !important;
+}
+
+body.ops-redesign-v3 .ops-sidebar-brand strong {
+    font-size: 15px !important;
+    font-weight: 800 !important;
+    letter-spacing: -0.02em !important;
+    color: var(--ops-text) !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+}
+
+body.ops-redesign-v3 .ops-sidebar-brand strong::before {
+    content: "" !important;
+    display: inline-block !important;
+    width: 8px !important;
+    height: 8px !important;
+    border-radius: var(--ops-radius-full) !important;
+    background: var(--ops-success) !important;
+    box-shadow: 0 0 8px var(--ops-success) !important;
+}
+
+body.ops-redesign-v3 .ops-sidebar-brand span {
+    font-size: 11px !important;
+    color: var(--ops-muted) !important;
+    display: block !important;
+    margin-top: 2px !important;
+}
+
+body.ops-redesign-v3 .ops-sidebar-label {
+    font-size: 10px !important;
+    font-weight: 750 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.06em !important;
+    color: var(--ops-muted-2) !important;
+    padding: 8px 8px 4px 8px !important;
+}
+
+body.ops-redesign-v3 .workspace-tab-btn,
+body.ops-redesign-v3 .sidebar-history-btn {
+    height: 34px !important;
+    padding: 0 10px !important;
+    border-radius: var(--ops-radius-sm) !important;
+    border: 1px solid transparent !important;
+    background: transparent !important;
+    color: var(--ops-muted) !important;
+    font-size: 12.5px !important;
+    font-weight: 550 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    transition: var(--ops-transition) !important;
+    cursor: pointer !important;
+    text-decoration: none !important;
+}
+
+body.ops-redesign-v3 .workspace-tab-btn:hover,
+body.ops-redesign-v3 .sidebar-history-btn:hover {
+    background: var(--ops-panel-2) !important;
+    color: var(--ops-text) !important;
+}
+
+body.ops-redesign-v3 .workspace-tab-btn.active,
+body.ops-redesign-v3 .sidebar-history-btn.active {
+    background: var(--ops-accent-soft) !important;
+    color: var(--ops-accent) !important;
+    border-color: var(--ops-accent-border) !important;
+    font-weight: 650 !important;
+}
+
+/* Sidebar Count Badges */
+body.ops-redesign-v3 .cctv-edr-sent-badge,
+body.ops-redesign-v3 .masterlist-sidebar-badge,
+body.ops-redesign-v3 #followupSidebarBadge,
+body.ops-redesign-v3 #globalHistoryCount,
+body.ops-redesign-v3 #adminPendingCount {
+    font-family: var(--ops-font-mono) !important;
+    font-size: 10.5px !important;
+    font-weight: 700 !important;
+    padding: 1px 6px !important;
+    border-radius: var(--ops-radius-full) !important;
+    background: var(--ops-panel-3) !important;
+    color: var(--ops-muted) !important;
+    border: 1px solid var(--ops-line) !important;
+}
+
+body.ops-redesign-v3 .workspace-tab-btn.active .cctv-edr-sent-badge,
+body.ops-redesign-v3 .workspace-tab-btn.active .masterlist-sidebar-badge,
+body.ops-redesign-v3 .workspace-tab-btn.active #followupSidebarBadge {
+    background: var(--ops-accent) !important;
+    color: #ffffff !important;
+    border-color: transparent !important;
+}
+
+/* Sidebar Live Clock */
+body.ops-redesign-v3 .sidebar-live-clock {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    padding: 6px 8px !important;
+    margin: 6px 0 !important;
+    border-radius: var(--ops-radius-sm) !important;
+    background: var(--ops-panel-2) !important;
+    border: 1px solid var(--ops-line) !important;
+    font-family: var(--ops-font-mono) !important;
+    font-size: 11px !important;
+    color: var(--ops-muted) !important;
+}
+
+body.ops-redesign-v3 .sidebar-live-clock #Manila_z42c {
+    color: var(--ops-text) !important;
+    font-weight: 600 !important;
+}
+
+/* Sidebar Account Footer */
+body.ops-redesign-v3 .auth-sidebar-account {
+    padding: 8px !important;
+    border-radius: var(--ops-radius-md) !important;
+    background: var(--ops-panel-2) !important;
+    border: 1px solid var(--ops-line) !important;
+    margin-top: 4px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 8px !important;
+}
+
+body.ops-redesign-v3 .auth-sidebar-user {
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+}
+
+body.ops-redesign-v3 .auth-sidebar-user strong {
+    display: block !important;
+    font-size: 11.5px !important;
+    font-weight: 650 !important;
+    color: var(--ops-text) !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+}
+
+body.ops-redesign-v3 .auth-sidebar-user span {
+    font-size: 10px !important;
+    color: var(--ops-muted) !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    display: block !important;
+}
+
+body.ops-redesign-v3 #authLogoutBtn {
+    height: 24px !important;
+    padding: 0 8px !important;
+    border-radius: var(--ops-radius-sm) !important;
+    font-size: 10.5px !important;
+    font-weight: 600 !important;
+    background: transparent !important;
+    border: 1px solid var(--ops-line) !important;
+    color: var(--ops-muted) !important;
+    cursor: pointer !important;
+    white-space: nowrap !important;
+    transition: var(--ops-transition) !important;
+}
+
+body.ops-redesign-v3 #authLogoutBtn:hover {
+    background: var(--ops-danger-soft) !important;
+    color: var(--ops-danger) !important;
+    border-color: var(--ops-danger) !important;
+}
+
+/* Sidebar Theme Toggle Switch */
+body.ops-redesign-v3 .sidebar-theme-btn {
+    height: 30px !important;
+    border-radius: var(--ops-radius-full) !important;
+    background: var(--ops-panel-2) !important;
+    border: 1px solid var(--ops-line) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    padding: 0 8px !important;
+    cursor: pointer !important;
+    color: var(--ops-muted) !important;
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    margin-top: 6px !important;
+    transition: var(--ops-transition) !important;
+}
+
+body.ops-redesign-v3 .theme-switch-track {
+    width: 28px !important;
+    height: 16px !important;
+    border-radius: var(--ops-radius-full) !important;
+    background: var(--ops-panel-3) !important;
+    border: 1px solid var(--ops-line) !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    padding: 1px !important;
+    transition: var(--ops-transition) !important;
+}
+
+body.ops-redesign-v3 .theme-switch-thumb {
+    width: 12px !important;
+    height: 12px !important;
+    border-radius: var(--ops-radius-full) !important;
+    background: var(--ops-muted) !important;
+    transition: var(--ops-transition) !important;
+}
+
+body.ops-redesign-v3.dark-mode .theme-switch-thumb {
+    transform: translateX(12px) !important;
+    background: var(--ops-accent) !important;
+}
+
+/* --------------------------------------------------------------------------
+   4. FORM CONTROLS & UNIFIED THEME PARITY INPUTS
+   -------------------------------------------------------------------------- */
+body.ops-redesign-v3 input[type="text"],
+body.ops-redesign-v3 input[type="search"],
+body.ops-redesign-v3 input[type="date"],
+body.ops-redesign-v3 input[type="time"],
+body.ops-redesign-v3 input[type="email"],
+body.ops-redesign-v3 input[type="password"],
+body.ops-redesign-v3 input[type="number"],
+body.ops-redesign-v3 input[type="url"],
+body.ops-redesign-v3 select,
+body.ops-redesign-v3 textarea {
+    height: var(--ops-input-h);
+    padding: 6px 10px !important;
+    border-radius: var(--ops-radius-sm) !important;
+    border: 1px solid var(--ops-line) !important;
+    background: var(--ops-panel-2) !important;
+    color: var(--ops-text) !important;
+    font-size: var(--ops-font-size-base) !important;
+    font-family: inherit !important;
+    box-sizing: border-box !important;
+    transition: border-color 0.14s ease, box-shadow 0.14s ease !important;
+}
+
+body.ops-redesign-v3 input:focus,
+body.ops-redesign-v3 select:focus,
+body.ops-redesign-v3 textarea:focus {
+    outline: none !important;
+    border-color: var(--ops-accent) !important;
+    box-shadow: var(--ops-focus-ring) !important;
+}
+
+body.ops-redesign-v3 input::placeholder,
+body.ops-redesign-v3 textarea::placeholder {
+    color: var(--ops-muted-2) !important;
+}
+
+/* Form Labels */
+body.ops-redesign-v3 label,
+body.ops-redesign-v3 .form-grid label,
+body.ops-redesign-v3 .edr-field label,
+body.ops-redesign-v3 .followup-add-grid label {
+    font-size: var(--ops-font-size-xs) !important;
+    font-weight: 600 !important;
+    color: var(--ops-muted) !important;
+    margin-bottom: 4px !important;
+    display: block !important;
+}
+
+/* Dropdown Select arrow indicator */
+body.ops-redesign-v3 select {
+    appearance: none !important;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath fill='none' stroke='%2364748b' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m1 1 4 4 4-4'/%3E%3C/svg%3E") !important;
+    background-repeat: no-repeat !important;
+    background-position: right 10px center !important;
+    padding-right: 28px !important;
+}
+
+body.ops-redesign-v3.dark-mode select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath fill='none' stroke='%2394a3b8' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m1 1 4 4 4-4'/%3E%3C/svg%3E") !important;
+}
+
+/* TEXTAREA THEME PARITY GUARANTEE */
+body.ops-redesign-v3 #remarks,
+body.ops-redesign-v3 #followupRemarks,
+body.ops-redesign-v3 #edrIncident,
+body.ops-redesign-v3 #edrActionRemarks,
+body.ops-redesign-v3 #masterPendingNotepad,
+body.ops-redesign-v3 #pendingNotepad,
+body.ops-redesign-v3 .maintenance-lanes-input,
+body.ops-redesign-v3 .maintenance-note-input,
+body.ops-redesign-v3 .audit-guard-textarea,
+body.ops-redesign-v3 textarea {
+    min-height: 64px !important;
+    line-height: 1.45 !important;
+    background: var(--ops-panel-2) !important;
+    color: var(--ops-text) !important;
+    border: 1px solid var(--ops-line) !important;
+    resize: vertical !important;
+}
+
+body.ops-redesign-v3.dark-mode #remarks,
+body.ops-redesign-v3.dark-mode #followupRemarks,
+body.ops-redesign-v3.dark-mode #edrIncident,
+body.ops-redesign-v3.dark-mode #edrActionRemarks,
+body.ops-redesign-v3.dark-mode #masterPendingNotepad,
+body.ops-redesign-v3.dark-mode #pendingNotepad,
+body.ops-redesign-v3.dark-mode .maintenance-lanes-input,
+body.ops-redesign-v3.dark-mode .maintenance-note-input,
+body.ops-redesign-v3.dark-mode textarea {
+    background: #141b27 !important;
+    color: #f3f4f6 !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* --------------------------------------------------------------------------
+   5. BUTTONS & ACTIONS HIERARCHY
+   -------------------------------------------------------------------------- */
+body.ops-redesign-v3 button,
+body.ops-redesign-v3 .btn-submit,
+body.ops-redesign-v3 .btn-reset,
+body.ops-redesign-v3 .btn-eod-primary,
+body.ops-redesign-v3 .btn-eod-outline,
+body.ops-redesign-v3 .btn-eod-danger,
+body.ops-redesign-v3 .edr-btn-primary,
+body.ops-redesign-v3 .edr-btn-outline,
+body.ops-redesign-v3 .master-btn-primary,
+body.ops-redesign-v3 .master-btn-outline,
+body.ops-redesign-v3 .auth-primary-btn,
+body.ops-redesign-v3 .auth-secondary-btn {
+    height: var(--ops-btn-h);
+    padding: 0 14px !important;
+    border-radius: var(--ops-radius-sm) !important;
+    font-size: var(--ops-font-size-base) !important;
+    font-weight: 600 !important;
+    font-family: inherit !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 6px !important;
+    cursor: pointer !important;
+    transition: var(--ops-transition) !important;
+    text-decoration: none !important;
+    box-sizing: border-box !important;
+}
+
+/* Primary Button (Electric Blue) */
+body.ops-redesign-v3 .btn-submit,
+body.ops-redesign-v3 .btn-eod-primary,
+body.ops-redesign-v3 .edr-btn-primary,
+body.ops-redesign-v3 .master-btn-primary,
+body.ops-redesign-v3 .auth-primary-btn,
+body.ops-redesign-v3 #cctvPanel .btn-submit,
+body.ops-redesign-v3 #edrSaveBtn,
+body.ops-redesign-v3 #masterHrSaveBtn,
+body.ops-redesign-v3 #adminCreateAccountBtn,
+body.ops-redesign-v3 #adminSaveSettingsBtn {
+    background: var(--ops-accent) !important;
+    color: #ffffff !important;
+    border: 1px solid transparent !important;
+    box-shadow: 0 1px 3px rgba(37, 99, 235, 0.25) !important;
+}
+
+body.ops-redesign-v3 .btn-submit:hover,
+body.ops-redesign-v3 .btn-eod-primary:hover,
+body.ops-redesign-v3 .edr-btn-primary:hover,
+body.ops-redesign-v3 .master-btn-primary:hover,
+body.ops-redesign-v3 .auth-primary-btn:hover {
+    background: var(--ops-accent-hover) !important;
+    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.35) !important;
+    transform: translateY(-1px) !important;
+}
+
+body.ops-redesign-v3 .btn-submit:active,
+body.ops-redesign-v3 .btn-eod-primary:active,
+body.ops-redesign-v3 .edr-btn-primary:active {
+    transform: translateY(0) !important;
+}
+
+/* Outline / Secondary Button */
+body.ops-redesign-v3 .btn-reset,
+body.ops-redesign-v3 .btn-eod-outline,
+body.ops-redesign-v3 .edr-btn-outline,
+body.ops-redesign-v3 .master-btn-outline,
+body.ops-redesign-v3 .auth-secondary-btn,
+body.ops-redesign-v3 #cctvPanel .btn-reset,
+body.ops-redesign-v3 #edrClearFormBtn,
+body.ops-redesign-v3 #edrCopyAllBtn,
+body.ops-redesign-v3 #adminAccessCancel {
+    background: var(--ops-panel-2) !important;
+    color: var(--ops-text) !important;
+    border: 1px solid var(--ops-line) !important;
+}
+
+body.ops-redesign-v3 .btn-reset:hover,
+body.ops-redesign-v3 .btn-eod-outline:hover,
+body.ops-redesign-v3 .edr-btn-outline:hover,
+body.ops-redesign-v3 .master-btn-outline:hover,
+body.ops-redesign-v3 .auth-secondary-btn:hover {
+    background: var(--ops-panel-3) !important;
+    border-color: var(--ops-line-strong) !important;
+}
+
+/* Danger Button */
+body.ops-redesign-v3 .btn-eod-danger,
+body.ops-redesign-v3 #edrClearAllBtn,
+body.ops-redesign-v3 .auth-danger-btn {
+    background: var(--ops-danger-soft) !important;
+    color: var(--ops-danger) !important;
+    border: 1px solid rgba(239, 68, 68, 0.25) !important;
+}
+
+body.ops-redesign-v3 .btn-eod-danger:hover,
+body.ops-redesign-v3 #edrClearAllBtn:hover {
+    background: var(--ops-danger) !important;
+    color: #ffffff !important;
+    box-shadow: 0 2px 8px rgba(239, 68, 68, 0.35) !important;
+}
+
+/* Button Group Alignment */
+body.ops-redesign-v3 .button-group,
+body.ops-redesign-v3 .edr-form-actions,
+body.ops-redesign-v3 .followup-add-actions,
+body.ops-redesign-v3 .master-hr-actions {
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+    margin-top: 14px !important;
+}
+
+/* --------------------------------------------------------------------------
+   6. TABLES, STICKY HEADERS & STATUS PILLS
+   -------------------------------------------------------------------------- */
+body.ops-redesign-v3 table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    font-size: var(--ops-font-size-base) !important;
+}
+
+body.ops-redesign-v3 th {
+    height: 36px !important;
+    padding: 6px 12px !important;
+    background: var(--ops-panel-3) !important;
+    color: var(--ops-muted) !important;
+    font-size: var(--ops-font-size-xs) !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.04em !important;
+    text-align: left !important;
+    border-bottom: 1px solid var(--ops-line) !important;
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 2 !important;
+    white-space: nowrap !important;
+}
+
+body.ops-redesign-v3 td {
+    padding: 8px 12px !important;
+    border-bottom: 1px solid var(--ops-line) !important;
+    color: var(--ops-text) !important;
+    vertical-align: middle !important;
+}
+
+body.ops-redesign-v3 tbody tr:hover td {
+    background: var(--ops-panel-2) !important;
+}
+
+/* Zebra Striping */
+body.ops-redesign-v3 tbody tr:nth-child(even) td {
+    background: rgba(125, 125, 125, 0.02) !important;
+}
+
+/* Status Badges & Pills */
+body.ops-redesign-v3 .status-pill,
+body.ops-redesign-v3 .followup-status-pill,
+body.ops-redesign-v3 .auth-badge,
+body.ops-redesign-v3 .auth-state-pill,
+body.ops-redesign-v3 .admin-badge {
+    padding: 2px 8px !important;
+    border-radius: var(--ops-radius-full) !important;
+    font-size: 11px !important;
+    font-weight: 650 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 4px !important;
+    line-height: 1.4 !important;
+    white-space: nowrap !important;
+}
+
+body.ops-redesign-v3 .status-pill.approved,
+body.ops-redesign-v3 .followup-status-pill.closed,
+body.ops-redesign-v3 .auth-badge.approved,
+body.ops-redesign-v3 .admin-badge.badge-active {
+    background: var(--ops-success-soft) !important;
+    color: var(--ops-success) !important;
+    border: 1px solid rgba(16, 185, 129, 0.25) !important;
+}
+
+body.ops-redesign-v3 .status-pill.pending,
+body.ops-redesign-v3 .followup-status-pill.pending,
+body.ops-redesign-v3 .auth-badge.pending,
+body.ops-redesign-v3 .admin-badge.badge-pending {
+    background: var(--ops-warning-soft) !important;
+    color: var(--ops-warning) !important;
+    border: 1px solid rgba(245, 158, 11, 0.25) !important;
+}
+
+body.ops-redesign-v3 .status-pill.rejected,
+body.ops-redesign-v3 .status-pill.disabled,
+body.ops-redesign-v3 .auth-badge.disabled,
+body.ops-redesign-v3 .auth-badge.rejected,
+body.ops-redesign-v3 .admin-badge.badge-disabled {
+    background: var(--ops-danger-soft) !important;
+    color: var(--ops-danger) !important;
+    border: 1px solid rgba(239, 68, 68, 0.25) !important;
+}
+
+body.ops-redesign-v3 .followup-status-pill.replied,
+body.ops-redesign-v3 .auth-badge.admin,
+body.ops-redesign-v3 .admin-badge.badge-admin {
+    background: var(--ops-accent-soft) !important;
+    color: var(--ops-accent) !important;
+    border: 1px solid var(--ops-accent-border) !important;
+}
+
+body.ops-redesign-v3 .admin-badge.badge-user {
+    background: rgba(148, 163, 184, 0.14) !important;
+    color: var(--ops-muted) !important;
+    border: 1px solid var(--ops-line) !important;
+}
+
+/* Action Pills in Tables */
+body.ops-redesign-v3 td .btn-row-action,
+body.ops-redesign-v3 td .auth-action-btn,
+body.ops-redesign-v3 td button.auth-action-btn,
+body.ops-redesign-v3 .admin-action-btn,
+body.ops-redesign-v3 .edr-action-btn {
+    height: 24px !important;
+    padding: 0 8px !important;
+    border-radius: var(--ops-radius-xs) !important;
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    background: var(--ops-panel-3) !important;
+    border: 1px solid var(--ops-line) !important;
+    color: var(--ops-text) !important;
+    cursor: pointer !important;
+    transition: var(--ops-transition) !important;
+}
+
+body.ops-redesign-v3 td .btn-row-action:hover,
+body.ops-redesign-v3 td .auth-action-btn:hover,
+body.ops-redesign-v3 .admin-action-btn:hover {
+    background: var(--ops-accent-soft) !important;
+    color: var(--ops-accent) !important;
+    border-color: var(--ops-accent-border) !important;
+}
+
+/* --------------------------------------------------------------------------
+   7. WORKSPACES: CCTV AUDIT & SMART AUDIT GUARD
+   -------------------------------------------------------------------------- */
+body.ops-redesign-v3 #cctvPanel .form-grid {
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 12px 14px !important;
+    margin-top: 10px !important;
+}
+
+body.ops-redesign-v3 #cctvPanel .form-group {
+    display: flex !important;
+    flex-direction: column !important;
+}
+
+body.ops-redesign-v3 #cctvPanel .field-remarks {
+    grid-column: 3 / 4 !important;
+    grid-row: 3 / 4 !important;
+}
+
+/* Smart Audit Guard Card */
+body.ops-redesign-v3 .audit-guard-card {
+    border-left: 3px solid var(--ops-accent) !important;
+    padding: 14px 18px !important;
+    margin-bottom: 16px !important;
+    background: var(--ops-panel) !important;
+}
+
+body.ops-redesign-v3 .audit-guard-header {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    margin-bottom: 8px !important;
+}
+
+body.ops-redesign-v3 .audit-guard-status-chip {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    padding: 3px 10px !important;
+    border-radius: var(--ops-radius-full) !important;
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    font-family: var(--ops-font-mono) !important;
+    border: 1px solid var(--ops-line) !important;
+}
+
+body.ops-redesign-v3 .audit-guard-status-chip.is-clean {
+    background: var(--ops-success-soft) !important;
+    color: var(--ops-success) !important;
+    border-color: rgba(16, 185, 129, 0.25) !important;
+}
+
+body.ops-redesign-v3 .audit-guard-status-chip.is-warning {
+    background: var(--ops-warning-soft) !important;
+    color: var(--ops-warning) !important;
+    border-color: rgba(245, 158, 11, 0.25) !important;
+}
+
+body.ops-redesign-v3 .audit-guard-status-chip.is-danger {
+    background: var(--ops-danger-soft) !important;
+    color: var(--ops-danger) !important;
+    border-color: rgba(239, 68, 68, 0.25) !important;
+}
+
+/* --------------------------------------------------------------------------
+   8. WORKSPACES: EDR & MAINTENANCE REPORTS
+   -------------------------------------------------------------------------- */
+body.ops-redesign-v3 #edrPanel .edr-form-grid {
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 12px 14px !important;
+}
+
+body.ops-redesign-v3 #edrPanel .edr-span-2 {
+    grid-column: span 2 !important;
+}
+
+body.ops-redesign-v3 .edr-quick-guide-banner {
+    background: var(--ops-panel-2) !important;
+    border: 1px solid var(--ops-line) !important;
+    border-radius: var(--ops-radius-md) !important;
+    padding: 12px 16px !important;
+    margin-bottom: 16px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 12px !important;
+}
+
+/* Maintenance Blocks & Proof Viewer */
+body.ops-redesign-v3 .eod-card {
+    border-radius: var(--ops-radius-lg) !important;
+    border: 1px solid var(--ops-line) !important;
+    background: var(--ops-panel) !important;
+    padding: 18px !important;
+    margin-bottom: 16px !important;
+}
+
+body.ops-redesign-v3 .eod-block-head {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    padding-bottom: 12px !important;
+    border-bottom: 1px solid var(--ops-line) !important;
+    margin-bottom: 14px !important;
+}
+
+/* Follow-up reports grid */
+body.ops-redesign-v3 #followupPanel .followup-crud-grid,
+body.ops-redesign-v3 #followupPanel .followup-add-grid {
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 12px !important;
+}
+
+/* --------------------------------------------------------------------------
+   9. ADMIN OPERATIONS CONSOLE (METRICS, SUBNAV & HEALTH STRIP)
+   -------------------------------------------------------------------------- */
+/* Subnav Segmented Pill Bar */
+body.ops-redesign-v3 .admin-subnav-bar {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 4px !important;
+    padding: 4px !important;
+    background: var(--ops-panel-2) !important;
+    border: 1px solid var(--ops-line) !important;
+    border-radius: var(--ops-radius-md) !important;
+    margin-bottom: 20px !important;
+    width: fit-content !important;
+}
+
+body.ops-redesign-v3 .admin-subnav-item,
+body.ops-redesign-v3 .admin-subnav-btn {
+    height: 30px !important;
+    padding: 0 14px !important;
+    border-radius: var(--ops-radius-sm) !important;
+    border: none !important;
+    background: transparent !important;
+    color: var(--ops-muted) !important;
+    font-size: var(--ops-font-size-base) !important;
+    font-weight: 600 !important;
+    cursor: pointer !important;
+    transition: var(--ops-transition) !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+}
+
+body.ops-redesign-v3 .admin-subnav-item:hover,
+body.ops-redesign-v3 .admin-subnav-btn:hover {
+    color: var(--ops-text) !important;
+}
+
+body.ops-redesign-v3 .admin-subnav-item.active,
+body.ops-redesign-v3 .admin-subnav-btn.active {
+    background: var(--ops-panel) !important;
+    color: var(--ops-text) !important;
+    box-shadow: var(--ops-shadow-xs) !important;
+}
+
+/* System Health Strip */
+body.ops-redesign-v3 .admin-health-strip {
+    display: flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+    padding: 10px 16px !important;
+    background: var(--ops-panel-2) !important;
+    border: 1px solid var(--ops-line) !important;
+    border-radius: var(--ops-radius-md) !important;
+    margin-bottom: 18px !important;
+    flex-wrap: wrap !important;
+}
+
+body.ops-redesign-v3 .admin-health-chip {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    font-size: 11.5px !important;
+    font-weight: 600 !important;
+    color: var(--ops-muted) !important;
+}
+
+body.ops-redesign-v3 .admin-health-chip strong {
+    color: var(--ops-text) !important;
+}
+
+body.ops-redesign-v3 .admin-health-dot {
+    width: 7px !important;
+    height: 7px !important;
+    border-radius: var(--ops-radius-full) !important;
+    background: var(--ops-muted) !important;
+}
+
+body.ops-redesign-v3 .admin-health-dot.is-live {
+    background: var(--ops-success) !important;
+    box-shadow: 0 0 6px var(--ops-success) !important;
+}
+
+/* Operations KPI Grid */
+body.ops-redesign-v3 .admin-kpi-grid {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)) !important;
+    gap: 12px !important;
+    margin-bottom: 18px !important;
+}
+
+body.ops-redesign-v3 .admin-kpi-card {
+    background: var(--ops-panel-2) !important;
+    border: 1px solid var(--ops-line) !important;
+    border-radius: var(--ops-radius-md) !important;
+    padding: 12px 14px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 4px !important;
+    transition: var(--ops-transition) !important;
+}
+
+body.ops-redesign-v3 .admin-kpi-card:hover {
+    border-color: var(--ops-line-strong) !important;
+    transform: translateY(-1px) !important;
+    box-shadow: var(--ops-shadow-xs) !important;
+}
+
+body.ops-redesign-v3 .admin-kpi-card .kpi-num,
+body.ops-redesign-v3 .admin-kpi-card strong {
+    font-family: var(--ops-font-mono) !important;
+    font-size: var(--ops-font-size-xl) !important;
+    font-weight: 700 !important;
+    color: var(--ops-text) !important;
+    letter-spacing: -0.02em !important;
+    line-height: 1.1 !important;
+}
+
+body.ops-redesign-v3 .admin-kpi-card .kpi-label,
+body.ops-redesign-v3 .admin-kpi-card span {
+    font-size: var(--ops-font-size-xs) !important;
+    font-weight: 500 !important;
+    color: var(--ops-muted) !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.04em !important;
+}
+
+body.ops-redesign-v3 .admin-kpi-card.is-pending strong {
+    color: #f59e0b !important;
+}
+body.ops-redesign-v3 .admin-kpi-card.is-disabled strong {
+    color: #ef4444 !important;
+}
+body.ops-redesign-v3 .admin-kpi-card.is-recent strong {
+    color: #10b981 !important;
+}
+body.ops-redesign-v3 .admin-kpi-card.is-ops strong {
+    color: var(--ops-accent) !important;
+}
+
+/* Operational Settings Form Card */
+body.ops-redesign-v3 .admin-settings-card,
+body.ops-redesign-v3 .admin-settings-body {
+    background: var(--ops-panel-2) !important;
+    border: 1px solid var(--ops-line) !important;
+    border-radius: var(--ops-radius-lg) !important;
+    padding: 18px 22px !important;
+    max-width: 680px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 16px !important;
+}
+
+body.ops-redesign-v3 .admin-setting-row,
+body.ops-redesign-v3 .admin-settings-row {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 6px !important;
+    padding-bottom: 14px !important;
+    border-bottom: 1px solid var(--ops-line) !important;
+}
+
+body.ops-redesign-v3 .admin-setting-meta strong {
+    display: block !important;
+    font-size: var(--ops-font-size-base) !important;
+    color: var(--ops-text) !important;
+}
+
+body.ops-redesign-v3 .admin-setting-meta span {
+    font-size: var(--ops-font-size-xs) !important;
+    color: var(--ops-muted) !important;
+}
+
+body.ops-redesign-v3 .admin-setting-control {
+    width: 100% !important;
+    max-width: 320px !important;
+}
+
+body.ops-redesign-v3 .admin-setting-toggle,
+body.ops-redesign-v3 .admin-settings-checkbox {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    font-size: var(--ops-font-size-base) !important;
+    color: var(--ops-text) !important;
+    cursor: pointer !important;
+}
+
+body.ops-redesign-v3 .admin-settings-actions {
+    display: flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+    margin-top: 8px !important;
+}
+
+body.ops-redesign-v3 .admin-settings-notice {
+    font-size: var(--ops-font-size-sm) !important;
+    color: #10b981 !important;
+    font-weight: 600 !important;
+}
+
+body.ops-redesign-v3 .admin-settings-info {
+    margin-top: 12px !important;
+    color: var(--ops-muted) !important;
+}
+
+body.ops-redesign-v3 .admin-audit-tools {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+}
+
+body.ops-redesign-v3 .admin-audit-banner {
+    padding: 8px 12px !important;
+    margin-bottom: 12px !important;
+    border-radius: var(--ops-radius-sm) !important;
+    background: rgba(37, 99, 235, 0.08) !important;
+    border: 1px solid rgba(37, 99, 235, 0.2) !important;
+    font-size: var(--ops-font-size-xs) !important;
+    color: var(--ops-text) !important;
+}
+
+/* --------------------------------------------------------------------------
+   10. MODALS & DIALOGS
+   -------------------------------------------------------------------------- */
+body.ops-redesign-v3 .maintenance-modal,
+body.ops-redesign-v3 .admin-modal,
+body.ops-redesign-v3 .cctv-modal,
+body.ops-redesign-v3 .app-confirm-modal,
+body.ops-redesign-v3 .app-confirm-modal:not(.open),
+body.ops-redesign-v3 .app-confirm-modal[aria-hidden="true"],
+body.ops-redesign-v3 .maintenance-modal:not(.open),
+body.ops-redesign-v3 .admin-modal:not(.open) {
+    display: none !important;
+    backdrop-filter: blur(8px) !important;
+    -webkit-backdrop-filter: blur(8px) !important;
+    background: var(--ops-backdrop) !important;
+    position: fixed !important;
+    inset: 0 !important;
+    z-index: 10000 !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 16px !important;
+}
+
+body.ops-redesign-v3 .maintenance-modal.open,
+body.ops-redesign-v3 .admin-modal.open,
+body.ops-redesign-v3 .cctv-modal.open,
+body.ops-redesign-v3 .app-confirm-modal.open {
+    display: flex !important;
+}
+
+body.ops-redesign-v3 .maintenance-drafts-dialog,
+body.ops-redesign-v3 .auth-editor-dialog,
+body.ops-redesign-v3 .cctv-dialog {
+    background: var(--ops-panel) !important;
+    border: 1px solid var(--ops-line-strong) !important;
+    border-radius: var(--ops-radius-xl) !important;
+    box-shadow: var(--ops-shadow-lg) !important;
+    width: 100% !important;
+    max-width: 520px !important;
+    padding: 22px 24px !important;
+    color: var(--ops-text) !important;
+    animation: opsModalScaleIn 0.16s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+@keyframes opsModalScaleIn {
+    from {
+        opacity: 0;
+        transform: scale(0.96) translateY(6px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+/* --------------------------------------------------------------------------
+   11. AUTH GATE SCREEN (#authGate)
+   -------------------------------------------------------------------------- */
+body.ops-redesign-v3 #authGate {
+    background: var(--ops-bg) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+body.ops-redesign-v3 .auth-card {
+    background: var(--ops-panel) !important;
+    border: 1px solid var(--ops-line) !important;
+    border-radius: 16px !important;
+    box-shadow: var(--ops-shadow-lg) !important;
+    width: 100% !important;
+    max-width: 400px !important;
+    padding: 28px !important;
+}
+
+body.ops-redesign-v3 .auth-brand {
+    text-align: center !important;
+    margin-bottom: 20px !important;
+}
+
+body.ops-redesign-v3 .auth-brand strong {
+    font-size: 18px !important;
+    font-weight: 800 !important;
+    letter-spacing: -0.02em !important;
+    color: var(--ops-text) !important;
+}
+
+body.ops-redesign-v3 .auth-brand span {
+    font-size: 11.5px !important;
+    color: var(--ops-muted) !important;
+    display: block !important;
+    margin-top: 2px !important;
+}
+
+/* --------------------------------------------------------------------------
+   12. RESPONSIVE BREAKPOINTS (DESKTOP, LAPTOP, TABLET, MOBILE)
+   -------------------------------------------------------------------------- */
+@media (max-width: 1200px) {
+    body.ops-redesign-v3 {
+        padding: 20px 20px 42px calc(var(--admin-sidebar, 185px) + 20px) !important;
+    }
+
+    body.ops-redesign-v3 .container,
+    body.ops-redesign-v3 .maintenance-shell,
+    body.ops-redesign-v3 .simple-eod-shell,
+    body.ops-redesign-v3 .pending-shell,
+    body.ops-redesign-v3 .master-simple-shell,
+    body.ops-redesign-v3 .edr-crud-shell,
+    body.ops-redesign-v3 .auth-admin-shell {
+        padding: 16px 18px !important;
+    }
+
+    body.ops-redesign-v3 #adminPanel .auth-create-account-grid {
+        grid-template-columns: 1fr 1fr !important;
+    }
+
+    body.ops-redesign-v3 #masterlistPanel .master-hr-crud-form {
+        grid-template-columns: 1fr 1fr !important;
+    }
+}
+
+@media (max-width: 991px) {
+    body.ops-redesign-v3 {
+        padding-left: 20px !important;
+        padding-right: 16px !important;
+    }
+
+    body.ops-redesign-v3 .workspace-tabs.admin-sidebar {
+        transform: translateX(-100%);
+        transition: transform 0.22s ease-in-out !important;
+    }
+
+    body.ops-redesign-v3:not(.sidebar-collapsed) .workspace-tabs.admin-sidebar {
+        transform: translateX(0);
+        box-shadow: 12px 0 32px rgba(2, 6, 23, 0.35) !important;
+    }
+
+    body.ops-redesign-v3 .sidebar-collapse-toggle {
+        left: 10px !important;
+    }
+
+    body.ops-redesign-v3 #cctvPanel .form-grid,
+    body.ops-redesign-v3 #edrPanel .edr-form-grid,
+    body.ops-redesign-v3 #followupPanel .followup-add-grid {
+        grid-template-columns: 1fr 1fr !important;
+    }
+
+    body.ops-redesign-v3 #cctvPanel .field-remarks {
+        grid-column: span 2 !important;
+        grid-row: auto !important;
+    }
+}
+
+@media (max-width: 767px) {
+    body.ops-redesign-v3 {
+        padding: 14px 10px 42px 10px !important;
+    }
+
+    body.ops-redesign-v3 .container,
+    body.ops-redesign-v3 .maintenance-shell,
+    body.ops-redesign-v3 .simple-eod-shell,
+    body.ops-redesign-v3 .pending-shell,
+    body.ops-redesign-v3 .master-simple-shell,
+    body.ops-redesign-v3 .edr-crud-shell,
+    body.ops-redesign-v3 .auth-admin-shell {
+        padding: 12px 14px !important;
+    }
+
+    body.ops-redesign-v3 #cctvPanel .form-grid,
+    body.ops-redesign-v3 #edrPanel .edr-form-grid,
+    body.ops-redesign-v3 #followupPanel .followup-add-grid,
+    body.ops-redesign-v3 #adminPanel .auth-create-account-grid,
+    body.ops-redesign-v3 #masterlistPanel .master-hr-crud-form {
+        grid-template-columns: 1fr !important;
+    }
+
+    body.ops-redesign-v3 #cctvPanel .field-remarks {
+        grid-column: span 1 !important;
+    }
+
+    body.ops-redesign-v3 .button-group,
+    body.ops-redesign-v3 .edr-form-actions,
+    body.ops-redesign-v3 .followup-add-actions {
+        flex-direction: column !important;
+        align-items: stretch !important;
+    }
+
+    body.ops-redesign-v3 .button-group button,
+    body.ops-redesign-v3 .edr-form-actions button,
+    body.ops-redesign-v3 .followup-add-actions button {
+        width: 100% !important;
+    }
+}
+</style>

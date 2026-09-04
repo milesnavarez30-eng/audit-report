@@ -4729,6 +4729,17 @@ body.dark-mode .master-data-table th {
     color: var(--admin-muted, #64748b);
 }
 
+.master-empty-cell.is-error {
+    color: #ef4444 !important;
+    background: rgba(239, 68, 68, 0.06);
+    font-weight: 500;
+}
+
+body.dark-mode .master-empty-cell.is-error {
+    color: #fca5a5 !important;
+    background: rgba(239, 68, 68, 0.12);
+}
+
 .master-notepad {
     margin-top: 10px;
     padding: 10px;
@@ -6864,7 +6875,366 @@ body.auth-locked > .site-footer { visibility:hidden!important; pointer-events:no
 .auth-account-toast{position:fixed;right:18px;bottom:18px;z-index:999999;max-width:330px;padding:10px 12px;border-radius:9px;background:#111827;color:#e5edf6;box-shadow:0 18px 45px rgba(0,0,0,.24);font:650 9px/1.45 Inter,sans-serif;opacity:0;transform:translateY(8px);transition:.16s}.auth-account-toast.show{opacity:1;transform:none}
 
 @media(max-width:920px){.auth-admin-summary{grid-template-columns:1fr}.auth-sidebar-account{display:flex;gap:8px;align-items:center;min-width:180px;margin:0!important}.auth-sidebar-user{flex:1}#authLogoutBtn{width:auto;margin:0;padding:0 8px}}
-@media(max-width:620px){.auth-gate{padding:12px}.auth-card{padding:16px}.auth-admin-head,.auth-admin-card-head{flex-direction:column;align-items:stretch}#adminUserSearch{width:100%}}
+/* RECENTLY CREATED CREDENTIALS (ADMIN-ONLY) */
+.auth-recent-creds-card {
+  border-left: 3px solid var(--admin-green, #10b981) !important;
+  background: var(--ops-panel, #ffffff);
+  margin-bottom: 12px;
+}
+.recent-creds-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.recent-creds-indicator {
+  color: var(--admin-green, #10b981);
+  font-size: 11px;
+  line-height: 1;
+  animation: credPulse 2s infinite ease-in-out;
+}
+@keyframes credPulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.35; transform: scale(0.85); }
+}
+.recent-creds-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 10px;
+  margin-top: 10px;
+}
+.recent-cred-card {
+  border: 1px solid var(--ops-line);
+  border-radius: 9px;
+  background: var(--ops-panel-2, #f8fafc);
+  padding: 11px 13px;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  transition: border-color .15s, box-shadow .15s;
+}
+.recent-cred-card:hover {
+  border-color: rgba(16, 185, 129, 0.4);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
+}
+.recent-cred-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-bottom: 7px;
+  border-bottom: 1px solid var(--ops-line);
+}
+.recent-cred-identity {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.recent-cred-name {
+  font-size: 11px;
+  font-weight: 750;
+  color: var(--ops-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.recent-cred-remove-btn {
+  border: none;
+  background: transparent;
+  color: var(--ops-muted);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  display: grid;
+  place-items: center;
+  transition: color .12s, background .12s;
+}
+.recent-cred-remove-btn:hover {
+  background: rgba(239, 68, 68, 0.12);
+  color: #ef4444;
+}
+.recent-cred-body {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.recent-cred-row {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.recent-cred-label {
+  font-size: 7.5px;
+  font-weight: 750;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ops-muted);
+}
+.recent-cred-val-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--ops-panel);
+  border: 1px solid var(--ops-line);
+  border-radius: 6px;
+  padding: 4px 8px;
+  min-width: 0;
+}
+.recent-cred-val {
+  flex: 1;
+  min-width: 0;
+  font-size: 9.5px;
+  font-weight: 600;
+  color: var(--ops-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.recent-cred-pw-val {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  letter-spacing: 0.05em;
+}
+.recent-cred-pw-val.is-masked {
+  letter-spacing: 0.18em;
+  color: var(--ops-muted);
+}
+.recent-cred-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 6px;
+  border: 1px solid var(--ops-line);
+  border-radius: 4px;
+  background: var(--ops-panel-2);
+  color: var(--ops-text-2);
+  font: 650 7.5px/1 Inter, sans-serif;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background .12s, border-color .12s, color .12s;
+  flex-shrink: 0;
+}
+.recent-cred-btn:hover {
+  background: var(--ops-panel-3, rgba(148,163,184,0.15));
+  color: var(--ops-text);
+}
+.recent-cred-btn.is-copied {
+  background: rgba(16, 185, 129, 0.15);
+  border-color: #10b981;
+  color: #10b981;
+}
+.recent-cred-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-top: 7px;
+  border-top: 1px solid var(--ops-line);
+}
+.recent-cred-copy-all-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 9px;
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  border-radius: 5px;
+  background: rgba(16, 185, 129, 0.08);
+  color: #10b981;
+  font: 700 8px/1 Inter, sans-serif;
+  cursor: pointer;
+  transition: background .14s, border-color .14s;
+}
+.recent-cred-copy-all-btn:hover {
+  background: rgba(16, 185, 129, 0.18);
+  border-color: #10b981;
+}
+.recent-cred-copy-all-btn.is-copied {
+  background: #10b981;
+  color: #ffffff;
+}
+.recent-cred-btn-danger {
+  padding: 4px 8px;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--ops-muted);
+  font: 650 7.5px/1 Inter, sans-serif;
+  cursor: pointer;
+  transition: background .12s, color .12s;
+}
+.recent-cred-btn-danger:hover {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+}
+
+/* USER ACCOUNTS (COMPACT CARD LAYOUT) */
+.admin-users-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(330px, 1fr));
+  gap: 12px;
+  margin-top: 10px;
+}
+.admin-user-card {
+  border: 1px solid var(--ops-line);
+  border-radius: 10px;
+  background: var(--ops-panel-2, #f8fafc);
+  padding: 13px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  transition: border-color .15s, box-shadow .15s;
+}
+.admin-user-card:hover {
+  border-color: rgba(37, 99, 235, 0.38);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
+}
+.admin-user-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--ops-line);
+}
+.admin-user-card-identity {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+}
+.admin-user-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  background: var(--ops-panel-3, rgba(148, 163, 184, 0.15));
+  border: 1px solid var(--ops-line);
+  color: var(--ops-text);
+  font-size: 11px;
+  font-weight: 800;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+.admin-user-info {
+  min-width: 0;
+}
+.admin-user-name {
+  display: block;
+  font-size: 11.5px;
+  font-weight: 750;
+  color: var(--ops-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.admin-user-username {
+  display: block;
+  font-size: 8.5px;
+  color: var(--ops-muted);
+  margin-top: 1px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.admin-user-card-badges {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0;
+}
+.admin-user-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.admin-user-card-pw-row {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.admin-user-meta-row {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.admin-user-meta-label {
+  font-size: 7.5px;
+  font-weight: 750;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ops-muted);
+}
+.admin-user-meta-val {
+  font-size: 9px;
+  font-weight: 600;
+  color: var(--ops-text-2, var(--ops-text));
+  line-height: 1.35;
+}
+.admin-user-card-dates {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  padding: 6px 8px;
+  background: var(--ops-panel);
+  border: 1px solid var(--ops-line);
+  border-radius: 6px;
+}
+.admin-user-date-col {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.admin-user-date-col .admin-user-meta-val {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 8px;
+}
+.user-pw-na-wrap {
+  background: var(--ops-panel);
+  border: 1px dashed var(--ops-line);
+  border-radius: 6px;
+  padding: 5px 8px;
+}
+.user-pw-na-text {
+  font-size: 8.5px;
+  font-style: italic;
+  color: var(--ops-muted);
+}
+.admin-user-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  padding-top: 8px;
+  border-top: 1px solid var(--ops-line);
+  margin-top: auto;
+}
+.admin-user-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+.admin-user-card-actions .admin-action-btn {
+  min-height: 27px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font: 750 8px/1 Inter, sans-serif;
+  cursor: pointer;
+  background: transparent;
+  transition: background .12s, border-color .12s, color .12s;
+}
+.auth-delete-danger {
+  border: 1px solid rgba(220, 38, 38, 0.35) !important;
+  color: #dc2626 !important;
+}
+.auth-delete-danger:hover {
+  background: rgba(220, 38, 38, 0.12) !important;
+  border-color: #dc2626 !important;
+}
 
 
 /* Auth password visibility control + hidden-state fix */
@@ -6874,10 +7244,29 @@ body.auth-locked > .site-footer { visibility:hidden!important; pointer-events:no
 .auth-password-toggle{
   position:absolute;right:7px;top:50%;transform:translateY(-50%);
   width:30px;height:30px;border:0;border-radius:6px;
-  background:transparent;color:#aab6c6;display:grid;place-items:center;
-  cursor:pointer;padding:0
+  background:transparent;color:var(--ops-muted, #94a3b8);display:grid;place-items:center;
+  cursor:pointer;padding:0;
+  transition:background .12s, color .12s;
 }
-.auth-password-toggle:hover{background:rgba(255,255,255,.06);color:#f8fafc}
+.auth-password-toggle:hover{
+  background:var(--ops-panel-3, rgba(148,163,184,.15));
+  color:var(--ops-text, #0f172a);
+}
+body.dark-mode .auth-password-toggle,
+.dark-mode .auth-password-toggle{
+  color:#94a3b8;
+}
+body.dark-mode .auth-password-toggle:hover,
+.dark-mode .auth-password-toggle:hover{
+  background:rgba(255,255,255,.08);
+  color:#f8fafc;
+}
+.auth-create-account-grid .auth-password-wrap{
+  width:100%;
+}
+.auth-create-account-grid .auth-password-wrap input{
+  padding-right:38px!important;
+}
 .auth-password-toggle:focus-visible{outline:2px solid rgba(96,165,250,.9);outline-offset:1px}
 .auth-password-toggle svg{
   width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8;
@@ -8216,6 +8605,7 @@ body.ops-redesign-v3.dark-mode .auth-create-status.is-error {
 
 body.auth-role-user #adminTabBtn,
 body.auth-role-user #adminPanel,
+body.auth-role-user #adminRecentCredsSection,
 body.auth-role-user #cctvPanel .add-btn,
 body.auth-role-user #cctvPanel .remove-btn,
 body.auth-role-user #simpleEodAddSiteBtn,
@@ -8380,4 +8770,209 @@ body.ops-redesign-v3 .sidebar-history-btn.active {
     color: #ffffff !important;
     border-left: 3px solid var(--ops-accent) !important;
 }
+
+/* =========================================================
+   MAINTENANCE DESTINATION SELECTOR STYLING
+   ========================================================= */
+#simpleEodDestination,
+.simple-eod-select {
+    width: 100%;
+    height: 38px;
+    padding: 6px 10px;
+    border: 1px solid var(--input-border);
+    border-radius: 8px;
+    background: var(--input-bg);
+    color: var(--text-color);
+    font-family: inherit;
+    font-size: 12px;
+    cursor: pointer;
+    box-sizing: border-box;
+}
+
+body.ops-redesign-v3 #simpleEodDestination,
+body.ops-redesign-v3 .simple-eod-select {
+    height: 34px !important;
+    border: 1px solid var(--ops-line) !important;
+    background: var(--ops-surface) !important;
+    color: var(--ops-text) !important;
+    font-size: 11px !important;
+    border-radius: 7px !important;
+}
+
+body.ops-redesign-v3 #eodPanel .simple-eod-top {
+    display: grid !important;
+    grid-template-columns: 1.4fr 1fr !important;
+    gap: 14px !important;
+    align-items: end !important;
+}
+
+@media (max-width: 900px) {
+    body.ops-redesign-v3 #eodPanel .simple-eod-top {
+        grid-template-columns: 1fr !important;
+    }
+}
+
+/* =========================================================
+   MAINTENANCE PDF EXPORT & PREVIEW CONTRAST GUARANTEE
+   Force: Page white, Body black, Title/Date #000000 font-weight 700+ opacity 1
+   Table Header #000000 with white text.
+   Cannot be overridden by Dark Mode or redesign styles.
+   ========================================================= */
+.simple-pdf,
+.grouped-pdf,
+#simpleEodPrintRoot,
+#simpleEodPrintRoot .grouped-pdf,
+body.dark-mode .simple-pdf,
+body.dark-mode .grouped-pdf,
+body.dark-mode #simpleEodPrintRoot,
+body.dark-mode #simpleEodPrintRoot .grouped-pdf,
+body.ops-redesign-v3 .simple-pdf,
+body.ops-redesign-v3 .grouped-pdf,
+body.ops-redesign-v3.dark-mode .simple-pdf,
+body.ops-redesign-v3.dark-mode .grouped-pdf,
+body.ops-redesign-v3.dark-mode #simpleEodPrintRoot,
+body.ops-redesign-v3.dark-mode #simpleEodPrintRoot .grouped-pdf {
+    background-color: #ffffff !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    color-scheme: light !important;
+}
+
+.simple-pdf-header,
+.grouped-pdf-header,
+body.dark-mode .simple-pdf-header,
+body.dark-mode .grouped-pdf-header,
+body.ops-redesign-v3.dark-mode .simple-pdf-header,
+body.ops-redesign-v3.dark-mode .grouped-pdf-header,
+#simpleEodPrintRoot .simple-pdf-header,
+#simpleEodPrintRoot .grouped-pdf-header {
+    background-color: #ffffff !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+}
+
+.simple-pdf-header h1,
+.grouped-pdf-header h1,
+.simple-pdf h1,
+.grouped-pdf h1,
+#simpleEodPrintRoot .simple-pdf-header h1,
+#simpleEodPrintRoot .grouped-pdf-header h1,
+#simpleEodPrintRoot h1,
+body.dark-mode .simple-pdf-header h1,
+body.dark-mode .grouped-pdf-header h1,
+body.dark-mode .simple-pdf h1,
+body.dark-mode .grouped-pdf h1,
+body.dark-mode #simpleEodPrintRoot .simple-pdf-header h1,
+body.ops-redesign-v3 .simple-pdf-header h1,
+body.ops-redesign-v3 .grouped-pdf-header h1,
+body.ops-redesign-v3.dark-mode .simple-pdf-header h1,
+body.ops-redesign-v3.dark-mode .grouped-pdf-header h1,
+body.ops-redesign-v3.dark-mode .simple-pdf h1,
+body.ops-redesign-v3.dark-mode .grouped-pdf h1,
+body.ops-redesign-v3.dark-mode #simpleEodPrintRoot .simple-pdf-header h1,
+body.ops-redesign-v3.dark-mode #simpleEodPrintRoot h1 {
+    color: #000000 !important;
+    -webkit-text-fill-color: #000000 !important;
+    font-weight: 800 !important;
+    opacity: 1 !important;
+    filter: none !important;
+    text-shadow: none !important;
+}
+
+.simple-pdf-header p,
+.simple-pdf p,
+#simpleEodPrintRoot .simple-pdf-header p,
+#simpleEodPrintRoot p,
+body.dark-mode .simple-pdf-header p,
+body.dark-mode #simpleEodPrintRoot .simple-pdf-header p,
+body.ops-redesign-v3 .simple-pdf-header p,
+body.ops-redesign-v3.dark-mode .simple-pdf-header p,
+body.ops-redesign-v3.dark-mode #simpleEodPrintRoot .simple-pdf-header p,
+.grouped-pdf-date,
+.simple-pdf-date,
+body.dark-mode .grouped-pdf-date,
+body.ops-redesign-v3.dark-mode .grouped-pdf-date,
+#simpleEodPrintRoot .grouped-pdf-date {
+    color: #000000 !important;
+    -webkit-text-fill-color: #000000 !important;
+    font-weight: 700 !important;
+    opacity: 1 !important;
+    filter: none !important;
+    text-shadow: none !important;
+}
+
+.grouped-pdf .simple-pdf-table th,
+.simple-pdf .simple-pdf-table th,
+#simpleEodPrintRoot .simple-pdf-table th,
+body.dark-mode .grouped-pdf .simple-pdf-table th,
+body.ops-redesign-v3.dark-mode .grouped-pdf .simple-pdf-table th {
+    background-color: #000000 !important;
+    background: #000000 !important;
+    color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important;
+    border-color: #000000 !important;
+    opacity: 1 !important;
+}
+
+.grouped-pdf .simple-pdf-table td,
+.simple-pdf .simple-pdf-table td,
+#simpleEodPrintRoot .simple-pdf-table td,
+body.dark-mode .grouped-pdf .simple-pdf-table td,
+body.ops-redesign-v3.dark-mode .grouped-pdf .simple-pdf-table td {
+    background-color: #ffffff !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    -webkit-text-fill-color: #000000 !important;
+    opacity: 1 !important;
+}
+
+.grouped-pdf .grouped-remarks,
+.simple-pdf .grouped-remarks,
+#simpleEodPrintRoot .grouped-remarks,
+body.dark-mode .grouped-pdf .grouped-remarks,
+body.ops-redesign-v3.dark-mode .grouped-pdf .grouped-remarks {
+    background-color: #ffffff !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    border-left-color: #000000 !important;
+    opacity: 1 !important;
+}
+
+.grouped-pdf .grouped-remarks > span,
+.grouped-pdf .grouped-remarks > div,
+#simpleEodPrintRoot .grouped-remarks > span,
+#simpleEodPrintRoot .grouped-remarks > div,
+body.dark-mode .grouped-pdf .grouped-remarks > span,
+body.dark-mode .grouped-pdf .grouped-remarks > div,
+body.ops-redesign-v3.dark-mode .grouped-pdf .grouped-remarks > span,
+body.ops-redesign-v3.dark-mode .grouped-pdf .grouped-remarks > div {
+    color: #000000 !important;
+    -webkit-text-fill-color: #000000 !important;
+    opacity: 1 !important;
+}
+
+@media print {
+    #simpleEodPrintRoot,
+    .simple-pdf,
+    .grouped-pdf {
+        background: #ffffff !important;
+        color: #000000 !important;
+    }
+    .simple-pdf-header h1,
+    .grouped-pdf-header h1,
+    .simple-pdf h1 {
+        color: #000000 !important;
+        -webkit-text-fill-color: #000000 !important;
+        font-weight: 800 !important;
+        opacity: 1 !important;
+    }
+    .simple-pdf-header p,
+    .grouped-pdf-date {
+        color: #000000 !important;
+        -webkit-text-fill-color: #000000 !important;
+        font-weight: 700 !important;
+        opacity: 1 !important;
+    }
+}
+
 
