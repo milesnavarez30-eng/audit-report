@@ -665,7 +665,7 @@ function appendMaintenanceReport_(payload) {
       blockResults.push({
         blockNumber: blockNumber,
         blockStartRow: blockStartRow,
-        blockEndRow: blockEndRow,
+        blockEndRow: row,
         dataRowCount: rows.length,
         expectedImages: screenshots.length,
         insertedImages: actualBlockImages,

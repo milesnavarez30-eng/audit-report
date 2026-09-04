@@ -12435,6 +12435,32 @@ body.ops-redesign-v3 #followupPanel .followup-add-grid {
         width: 100% !important;
     }
 }
+
+/* =========================================================
+   PDF GENERATION & PINNED PRINT CANVAS (ZERO SCROLL OFFSET)
+   ========================================================= */
+#simpleEodPrintRoot {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+#simpleEodPrintRoot .grouped-pdf,
+#simpleEodPrintRoot .simple-pdf {
+    margin: 0 !important;
+    padding: 6mm 8mm 8mm !important;
+}
+#simpleEodPrintRoot .grouped-pdf-header {
+    margin: 0 0 3mm 0 !important;
+    padding: 0 !important;
+}
+.grouped-photo-row,
+.simple-pdf-images {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+}
 </style>
 
 </head>
@@ -20045,13 +20071,23 @@ body.ops-redesign-v3.dark-mode .followup-status-pill.replied{color:#93c5fd}.dark
                 );
             }
 
-            const blockImageMismatch = blockResults.find(item =>
-                Number(item.expectedImages || 0) !== Number(item.insertedImages || 0)
-            );
+            const blockImageMismatch = blockResults.find(item => {
+                const inserted = Number(item.insertedImages || 0);
+                const blockScreenshots = payload.blocks?.[(item.blockNumber || 1) - 1]?.screenshots?.length;
+                const expected = item.expectedImages !== undefined
+                    ? Number(item.expectedImages)
+                    : (blockScreenshots !== undefined ? Number(blockScreenshots) : inserted);
+
+                if (inserted > 0 && (item.expectedImages === undefined || inserted === expected)) return false;
+                return inserted !== expected;
+            });
 
             if (blockImageMismatch) {
+                const exp = blockImageMismatch.expectedImages !== undefined
+                    ? blockImageMismatch.expectedImages
+                    : (payload.blocks?.[(blockImageMismatch.blockNumber || 1) - 1]?.screenshots?.length ?? blockImageMismatch.insertedImages);
                 throw new Error(
-                    `Block ${blockImageMismatch.blockNumber} screenshot failed: ${blockImageMismatch.insertedImages}/${blockImageMismatch.expectedImages} image(s) inserted.`
+                    `Block ${blockImageMismatch.blockNumber} screenshot failed: ${blockImageMismatch.insertedImages}/${exp} image(s) inserted.`
                 );
             }
 
@@ -20744,15 +20780,18 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         btn.textContent = "Generating PDF...";
 
         try {
+            window.scrollTo(0, 0);
             const worker = html2pdf()
                 .set({
-                    margin: [7, 7, 14, 7],
+                    margin: [6, 6, 6, 6],
                     filename: reportFilename(),
                     image: { type: "jpeg", quality: .985 },
                     html2canvas: {
-                        scale: 2.5,
+                        scale: 2,
                         backgroundColor: "#ffffff",
                         useCORS: true,
+                        scrollY: 0,
+                        scrollX: 0,
                         logging: false
                     },
                     jsPDF: {
@@ -20767,6 +20806,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
                             ".grouped-report-block",
                             ".grouped-photo-row",
                             ".grouped-photo-row img",
+                            ".simple-pdf-images",
                             ".grouped-remarks",
                             ".simple-pdf-table tr"
                         ]
