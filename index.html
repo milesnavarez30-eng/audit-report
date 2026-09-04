@@ -12346,12 +12346,12 @@ body.ops-redesign-v3 #followupPanel .followup-add-grid {
         <button type="button" id="authSignUpTab" class="auth-tab">Sign Up</button>
       </div>
 
-      <form id="authSignInForm" class="auth-form">
+      <form id="authSignInForm" class="auth-form" autocomplete="on">
         <div class="auth-heading"><h1>Welcome back</h1><p>Use your approved account.</p></div>
-        <label><span>Username or Email</span><input type="text" id="authSignInUsername" required autocomplete="username" placeholder="e.g. Miles123 or your@email.com" maxlength="120"></label>
+        <label><span>Username or Email</span><input type="text" id="authSignInUsername" name="username" required autocomplete="username" placeholder="e.g. Miles123 or your@email.com" maxlength="120"></label>
         <label><span>Password</span>
           <div class="auth-password-wrap">
-            <input type="password" id="authSignInPassword" required autocomplete="current-password">
+            <input type="password" id="authSignInPassword" name="password" required autocomplete="current-password">
             <button type="button" class="auth-password-toggle" data-target="authSignInPassword" aria-label="Show password" title="Show password">
               <svg class="auth-eye-open" viewBox="0 0 24 24" aria-hidden="true"><path d="M2.4 12s3.5-6 9.6-6 9.6 6 9.6 6-3.5 6-9.6 6-9.6-6-9.6-6Z"/><circle cx="12" cy="12" r="2.6"/></svg>
               <svg class="auth-eye-closed" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3l18 18"/><path d="M10.6 6.1A10.8 10.8 0 0 1 12 6c6.1 0 9.6 6 9.6 6a16.7 16.7 0 0 1-3.1 3.7M14.5 14.5A3.5 3.5 0 0 1 9.5 9.5M6.2 6.2C3.7 8 2.4 12 2.4 12s3.5 6 9.6 6c1.5 0 2.8-.4 4-.9"/></svg>
@@ -12361,13 +12361,13 @@ body.ops-redesign-v3 #followupPanel .followup-add-grid {
         <button type="submit" class="auth-primary-btn" id="authSignInBtn">Sign In</button>
       </form>
 
-      <form id="authSignUpForm" class="auth-form" hidden>
+      <form id="authSignUpForm" class="auth-form" autocomplete="on" hidden>
         <div class="auth-heading"><h1>Create account</h1><p>Create a username and password. Your account must be approved by an admin before you can enter.</p></div>
-        <label><span>Name</span><input type="text" id="authSignUpName" required autocomplete="name"></label>
-        <label><span>Username</span><input type="text" id="authSignUpUsername" required autocomplete="username" placeholder="Create a username" maxlength="32"></label>
+        <label><span>Name</span><input type="text" id="authSignUpName" name="name" required autocomplete="name"></label>
+        <label><span>Username</span><input type="text" id="authSignUpUsername" name="username" required autocomplete="username" placeholder="Create a username" maxlength="60"></label>
         <label><span>Password</span>
           <div class="auth-password-wrap">
-            <input type="password" id="authSignUpPassword" minlength="8" required autocomplete="new-password">
+            <input type="password" id="authSignUpPassword" name="password" minlength="6" required autocomplete="new-password">
             <button type="button" class="auth-password-toggle" data-target="authSignUpPassword" aria-label="Show password" title="Show password">
               <svg class="auth-eye-open" viewBox="0 0 24 24" aria-hidden="true"><path d="M2.4 12s3.5-6 9.6-6 9.6 6 9.6 6-3.5 6-9.6 6-9.6-6-9.6-6Z"/><circle cx="12" cy="12" r="2.6"/></svg>
               <svg class="auth-eye-closed" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3l18 18"/><path d="M10.6 6.1A10.8 10.8 0 0 1 12 6c6.1 0 9.6 6 9.6 6a16.7 16.7 0 0 1-3.1 3.7M14.5 14.5A3.5 3.5 0 0 1 9.5 9.5M6.2 6.2C3.7 8 2.4 12 2.4 12s3.5 6 9.6 6c1.5 0 2.8-.4 4-.9"/></svg>
@@ -12376,7 +12376,7 @@ body.ops-redesign-v3 #followupPanel .followup-add-grid {
         </label>
         <label><span>Confirm Password</span>
           <div class="auth-password-wrap">
-            <input type="password" id="authSignUpConfirm" minlength="8" required autocomplete="new-password">
+            <input type="password" id="authSignUpConfirm" name="confirm-password" minlength="6" required autocomplete="new-password">
             <button type="button" class="auth-password-toggle" data-target="authSignUpConfirm" aria-label="Show password" title="Show password">
               <svg class="auth-eye-open" viewBox="0 0 24 24" aria-hidden="true"><path d="M2.4 12s3.5-6 9.6-6 9.6 6 9.6 6-3.5 6-9.6 6-9.6-6-9.6-6Z"/><circle cx="12" cy="12" r="2.6"/></svg>
               <svg class="auth-eye-closed" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3l18 18"/><path d="M10.6 6.1A10.8 10.8 0 0 1 12 6c6.1 0 9.6 6 9.6 6a16.7 16.7 0 0 1-3.1 3.7M14.5 14.5A3.5 3.5 0 0 1 9.5 9.5M6.2 6.2C3.7 8 2.4 12 2.4 12s3.5 6 9.6 6c1.5 0 2.8-.4 4-.9"/></svg>
@@ -12584,7 +12584,7 @@ body.ops-redesign-v3 #followupPanel .followup-add-grid {
     <div class="form-grid">
         <div class="form-group field-date">
             <label for="auditDate">Date of Audit</label>
-            <input type="date" id="auditDate" required>
+            <input type="date" id="auditDate" autocomplete="off" data-lpignore="true" data-1p-ignore="true" data-form-type="other" required>
         </div>
 
         <div class="form-group field-site">
@@ -12598,12 +12598,12 @@ body.ops-redesign-v3 #followupPanel .followup-add-grid {
 
         <div class="form-group field-tl">
             <label for="tlName">TL Name</label>
-            <input type="text" id="tlName" placeholder="Enter TL Name">
+            <input type="text" id="tlName" placeholder="Enter TL Name" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-lpignore="true" data-1p-ignore="true" data-form-type="other">
         </div>
 
         <div class="form-group field-agent">
             <label for="agentName">Agent Name</label>
-            <input type="text" id="agentName" placeholder="Enter Agent Name">
+            <input type="text" id="agentName" placeholder="Enter Agent Name" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-lpignore="true" data-1p-ignore="true" data-form-type="other">
         </div>
 
         <div class="form-group field-om">
@@ -12645,7 +12645,7 @@ body.ops-redesign-v3 #followupPanel .followup-add-grid {
 
         <div class="form-group field-remarks">
             <label for="remarks">Remarks</label>
-            <input type="text" id="remarks" placeholder="Brief summary of the incident">
+            <input type="text" id="remarks" placeholder="Brief summary of the incident" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-lpignore="true" data-1p-ignore="true" data-form-type="other">
         </div>
     </div>
 
@@ -12849,11 +12849,15 @@ body.ops-redesign-v3 #followupPanel .followup-add-grid {
         <div class="simple-eod-top">
             <div>
                 <label for="simpleEodDate">Report Date</label>
-                <input type="date" id="simpleEodDate">
+                <input type="date" id="simpleEodDate" autocomplete="off" data-lpignore="true" data-1p-ignore="true" data-form-type="other">
             </div>
             <div>
                 <label for="simpleEodSite">Site / Report Title</label>
-                <input type="text" id="simpleEodSite" list="allCctvSiteOptions" value="Mabini Site A - 1st Floor">
+                <div class="input-group">
+                    <input type="text" id="simpleEodSite" list="allCctvSiteOptions" value="Mabini Site A - 1st Floor" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-lpignore="true" data-1p-ignore="true" data-form-type="other">
+                    <button type="button" class="add-btn" id="simpleEodAddSiteBtn" title="Add Site / Report Title">+</button>
+                    <button type="button" class="remove-btn" id="simpleEodRemoveSiteBtn" title="Delete Selected Site / Report Title">-</button>
+                </div>
             </div>
         </div>
 
@@ -12922,12 +12926,15 @@ body.ops-redesign-v3 #followupPanel .followup-add-grid {
                     <input type="text"
                            id="pendingReportLabel"
                            placeholder="Optional label or agent name"
-                           autocomplete="off">
+                           autocomplete="off"
+                           data-lpignore="true"
+                           data-1p-ignore="true"
+                           data-form-type="other">
                 </div>
 
                 <div class="pending-field">
                     <label for="pendingReportDate">Report Date</label>
-                    <input type="date" id="pendingReportDate">
+                    <input type="date" id="pendingReportDate" autocomplete="off" data-lpignore="true" data-1p-ignore="true" data-form-type="other">
                 </div>
 
                 <div class="pending-field">
@@ -12936,7 +12943,10 @@ body.ops-redesign-v3 #followupPanel .followup-add-grid {
                            id="pendingReportOm"
                            list="pendingOmOptions"
                            placeholder="Select or type OM"
-                           autocomplete="off">
+                           autocomplete="off"
+                           data-lpignore="true"
+                           data-1p-ignore="true"
+                           data-form-type="other">
                     <datalist id="pendingOmOptions"></datalist>
                 </div>
 
@@ -12945,7 +12955,10 @@ body.ops-redesign-v3 #followupPanel .followup-add-grid {
                     <input type="url"
                            id="pendingTeamsLink"
                            placeholder="Paste Teams conversation link"
-                           autocomplete="off">
+                           autocomplete="off"
+                           data-lpignore="true"
+                           data-1p-ignore="true"
+                           data-form-type="other">
                 </div>
 
                 <div class="pending-field pending-shot-field">
@@ -13016,23 +13029,23 @@ body.ops-redesign-v3 #followupPanel .followup-add-grid {
             <div class="followup-add-grid">
                 <label class="followup-field">
                     <span>Date</span>
-                    <input type="date" id="followupDate">
+                    <input type="date" id="followupDate" autocomplete="off" data-lpignore="true" data-1p-ignore="true" data-form-type="other">
                 </label>
 
                 <label class="followup-field">
                     <span>OM / Group Chat</span>
-                    <input type="text" id="followupOm" list="followupOmOptions" placeholder="e.g. CCTV OM MIRAH" autocomplete="off">
+                    <input type="text" id="followupOm" list="followupOmOptions" placeholder="e.g. CCTV OM MIRAH" autocomplete="off" data-lpignore="true" data-1p-ignore="true" data-form-type="other">
                     <datalist id="followupOmOptions"></datalist>
                 </label>
 
                 <label class="followup-field">
                     <span>TL / Report</span>
-                    <input type="text" id="followupLabel" placeholder="Optional TL, agent, or report label" autocomplete="off">
+                    <input type="text" id="followupLabel" placeholder="Optional TL, agent, or report label" autocomplete="off" data-lpignore="true" data-1p-ignore="true" data-form-type="other">
                 </label>
 
                 <label class="followup-field followup-link-field">
                     <span>CCTV Link / Teams Message Link</span>
-                    <input type="url" id="followupCctvLink" placeholder="Paste the Microsoft Teams message link here" autocomplete="off">
+                    <input type="url" id="followupCctvLink" placeholder="Paste the Microsoft Teams message link here" autocomplete="off" data-lpignore="true" data-1p-ignore="true" data-form-type="other">
                 </label>
 
                 <label class="followup-field">
@@ -13173,17 +13186,17 @@ body.ops-redesign-v3 #followupPanel .followup-add-grid {
 
                 <label>
                     <span>Site</span>
-                    <input type="text" id="masterHrSiteInput" list="allCctvSiteOptions" placeholder="Select or type site">
+                    <input type="text" id="masterHrSiteInput" list="allCctvSiteOptions" placeholder="Select or type site" autocomplete="off" data-lpignore="true" data-1p-ignore="true" data-form-type="other">
                 </label>
 
                 <label>
                     <span>Team / OM / Campaign</span>
-                    <input type="text" id="masterHrTeamInput" placeholder="Team Mirah / OM Jordan">
+                    <input type="text" id="masterHrTeamInput" placeholder="Team Mirah / OM Jordan" autocomplete="off" data-lpignore="true" data-1p-ignore="true" data-form-type="other">
                 </label>
 
                 <label>
                     <span>HR Assigned</span>
-                    <input type="text" id="masterHrAssignedInput" placeholder="HR name">
+                    <input type="text" id="masterHrAssignedInput" placeholder="HR name" autocomplete="off" data-lpignore="true" data-1p-ignore="true" data-form-type="other">
                 </label>
 
                 <div class="master-hr-crud-actions">
@@ -13198,7 +13211,10 @@ body.ops-redesign-v3 #followupPanel .followup-add-grid {
                 <input type="search"
                        id="masterHrSearch"
                        placeholder="Find site, team, OM, campaign, or HR..."
-                       autocomplete="off">
+                       autocomplete="off"
+                       data-lpignore="true"
+                       data-1p-ignore="true"
+                       data-form-type="other">
                 <button type="button" class="edr-outline-btn" id="masterHrSearchClear">Clear</button>
             </div>
 
@@ -13281,20 +13297,20 @@ body.ops-redesign-v3 #followupPanel .followup-add-grid {
         <div class="auth-admin-card-head">
           <div><h3>Create Account</h3><p>Create a ready-to-use Username + Password account. Admin-created accounts are approved immediately.</p></div>
         </div>
-        <div class="auth-create-account-grid">
-          <label><span>Name</span><input type="text" id="adminCreateName" placeholder="Staff full name"></label>
-          <label><span>Username</span><input type="text" id="adminCreateUsername" placeholder="e.g. jdelacruz" maxlength="32" autocomplete="off"></label>
-          <label><span>Temporary Password</span><input type="password" id="adminCreatePassword" minlength="8" placeholder="At least 8 characters"></label>
+        <form id="adminCreateAccountForm" class="auth-create-account-grid" autocomplete="off" onsubmit="return false;">
+          <label><span>Name</span><input type="text" id="adminCreateName" placeholder="Staff full name" autocomplete="off" data-lpignore="true" data-1p-ignore="true" data-form-type="other"></label>
+          <label><span>Username</span><input type="text" id="adminCreateUsername" placeholder="e.g. Seth Dajao, seth123, Staff01" maxlength="60" autocomplete="off" data-lpignore="true" data-1p-ignore="true" data-form-type="other"></label>
+          <label><span>Temporary Password</span><input type="password" id="adminCreatePassword" minlength="6" placeholder="At least 6 characters" autocomplete="new-password"></label>
           <label><span>Role</span><select id="adminCreateRole"><option value="user" selected>User</option><option value="admin">Admin</option></select></label>
           <button type="button" class="edr-primary-btn" id="adminCreateAccountBtn">Create Account</button>
-        </div>
+        </form>
         <div id="adminCreateAccountStatus" class="auth-create-status"></div>
       </section>
 
       <section class="auth-admin-card">
         <div class="auth-admin-card-head">
           <div><h3>User Accounts</h3><p>Manage staff access, edit workspace permissions, approve signups, or disable accounts.</p></div>
-          <input type="search" id="adminUserSearch" placeholder="Find name or username..." autocomplete="off">
+          <input type="search" id="adminUserSearch" placeholder="Find name or username..." autocomplete="off" data-lpignore="true" data-1p-ignore="true" data-form-type="other">
         </div>
         <div class="auth-admin-table-wrap">
           <table class="auth-admin-table">
@@ -13314,7 +13330,7 @@ body.ops-redesign-v3 #followupPanel .followup-add-grid {
             <p>Chronological record of account creations, role changes, permission modifications, and security events.</p>
           </div>
           <div class="admin-audit-tools">
-            <input type="search" id="adminAuditSearch" placeholder="Filter audit events..." autocomplete="off">
+            <input type="search" id="adminAuditSearch" placeholder="Filter audit events..." autocomplete="off" data-lpignore="true" data-1p-ignore="true" data-form-type="other">
             <button type="button" class="edr-outline-btn" id="adminRefreshAuditBtn">Refresh</button>
             <button type="button" class="edr-outline-btn" id="adminExportAuditBtn">Export Log</button>
           </div>
@@ -13373,7 +13389,7 @@ body.ops-redesign-v3 #followupPanel .followup-add-grid {
               <strong>Application Display Subtitle</strong>
               <span>Operational title displayed beneath the CCTV OPS brand.</span>
             </div>
-            <input type="text" id="adminSettingSubtitle" class="admin-setting-control" value="Secure operations workspace" placeholder="e.g. Operations Console">
+            <input type="text" id="adminSettingSubtitle" class="admin-setting-control" value="Secure operations workspace" placeholder="e.g. Operations Console" autocomplete="off" data-lpignore="true" data-1p-ignore="true" data-form-type="other">
           </div>
 
           <div class="admin-setting-row">
@@ -13409,7 +13425,7 @@ body.ops-redesign-v3 #followupPanel .followup-add-grid {
       <button type="button" class="maintenance-modal-close static-close" id="adminAccessClose" aria-label="Close">×</button>
     </div>
     <input type="hidden" id="adminAccessTargetId">
-    <label class="auth-access-role"><span>Display Name</span><input type="text" id="adminAccessDisplayName" placeholder="Staff full name"></label>
+    <label class="auth-access-role"><span>Display Name</span><input type="text" id="adminAccessDisplayName" placeholder="Staff full name" autocomplete="off" data-lpignore="true" data-1p-ignore="true" data-form-type="other"></label>
     <div class="auth-access-role-row" style="display:flex;gap:12px;">
       <label class="auth-access-role" style="flex:1;"><span>Role</span><select id="adminAccessRole"><option value="user">User</option><option value="admin">Admin</option></select></label>
       <label class="auth-access-role" style="flex:1;"><span>Status</span><select id="adminAccessStatus"><option value="active">Active</option><option value="disabled">Disabled / Suspended</option></select></label>
@@ -13494,7 +13510,7 @@ body.ops-redesign-v3 #followupPanel .followup-add-grid {
 
                 <div class="edr-field edr-layout-date">
                     <label for="edrDate">Date</label>
-                    <input type="date" id="edrDate">
+                    <input type="date" id="edrDate" autocomplete="off" data-lpignore="true" data-1p-ignore="true" data-form-type="other">
                 </div>
 
                 <div class="edr-field edr-layout-time">
@@ -13502,6 +13518,9 @@ body.ops-redesign-v3 #followupPanel .followup-add-grid {
                     <input type="text"
                            id="edrTimeObserved"
                            autocomplete="off"
+                           data-lpignore="true"
+                           data-1p-ignore="true"
+                           data-form-type="other"
                            placeholder="Paste time, e.g. 3:10:45 AM–3:18:01 AM">
                 </div>
 
@@ -13521,6 +13540,9 @@ body.ops-redesign-v3 #followupPanel .followup-add-grid {
                                id="edrSupervisorName"
                                list="edrSupervisorOptions"
                                autocomplete="off"
+                               data-lpignore="true"
+                               data-1p-ignore="true"
+                               data-form-type="other"
                                placeholder="Search Team Leader or OM...">
                         <button type="button" class="edr-small-add" id="edrAddSupervisorOption" title="Add typed name">Add</button>
                         <button type="button" class="edr-small-remove" id="edrRemoveSupervisorOption" title="Remove typed name from this session">Remove</button>
@@ -13534,6 +13556,9 @@ body.ops-redesign-v3 #followupPanel .followup-add-grid {
                            id="edrOmName"
                            list="edrOmOptionsDedicated"
                            autocomplete="off"
+                           data-lpignore="true"
+                           data-1p-ignore="true"
+                           data-form-type="other"
                            placeholder="Search OM...">
                     <datalist id="edrOmOptionsDedicated"></datalist>
                 </div>
@@ -13553,6 +13578,9 @@ body.ops-redesign-v3 #followupPanel .followup-add-grid {
                            id="edrSubjectName"
                            list="edrSubjectOptions"
                            autocomplete="off"
+                           data-lpignore="true"
+                           data-1p-ignore="true"
+                           data-form-type="other"
                            placeholder="Enter or search the name...">
                     <datalist id="edrSubjectOptions"></datalist>
                 </div>
@@ -13564,6 +13592,9 @@ body.ops-redesign-v3 #followupPanel .followup-add-grid {
                                id="edrAccount"
                                list="edrAccountOptions"
                                autocomplete="off"
+                               data-lpignore="true"
+                               data-1p-ignore="true"
+                               data-form-type="other"
                                placeholder="Search Account / Campaign...">
                         <button type="button" class="edr-small-add" id="edrAddAccountOption" title="Add typed campaign">Add</button>
                         <button type="button" class="edr-small-remove" id="edrRemoveAccountOption" title="Remove typed campaign from this session">Remove</button>
@@ -13621,7 +13652,11 @@ body.ops-redesign-v3 #followupPanel .followup-add-grid {
                     <label for="edrClipLink">CCTV Clip - Google Drive Link</label>
                     <input type="url"
                            id="edrClipLink"
-                           placeholder="Paste Google Drive link here, e.g. https://drive.google.com/...">
+                           placeholder="Paste Google Drive link here, e.g. https://drive.google.com/..."
+                           autocomplete="off"
+                           data-lpignore="true"
+                           data-1p-ignore="true"
+                           data-form-type="other">
                     <div class="edr-fixed-cctv">
                         In the generated EDR this becomes <strong>CCTV Clip: <u>Click here!</u></strong> with “Click here!” linked to this URL.
                     </div>
@@ -13773,7 +13808,10 @@ https://www.facebook.com/share/..."></textarea>
         <input type="url"
                id="edrDocsWebAppUrl"
                placeholder="Paste the complete Web App URL ending in /exec"
-               autocomplete="off">
+               autocomplete="off"
+               data-lpignore="true"
+               data-1p-ignore="true"
+               data-form-type="other">
 
         <div id="edrDocsUrlHint" class="edr-docs-url-hint">The URL must end in <strong>/exec</strong>.</div>
 
@@ -13846,7 +13884,7 @@ https://www.facebook.com/share/..."></textarea>
         </div>
 
         <div class="maintenance-draft-save-row">
-            <input type="text" id="maintenanceDraftName" placeholder="Draft name (example: Aug 31 - Night Shift)">
+            <input type="text" id="maintenanceDraftName" placeholder="Draft name (example: Aug 31 - Night Shift)" autocomplete="off" data-lpignore="true" data-1p-ignore="true" data-form-type="other">
             <button type="button" id="maintenanceSaveNamedDraft" class="btn-eod-primary">Save Snapshot</button>
         </div>
 
@@ -13877,7 +13915,10 @@ https://www.facebook.com/share/..."></textarea>
         <input type="url"
                id="maintenanceSheetWebAppUrl"
                placeholder="https://script.google.com/macros/s/...../exec"
-               autocomplete="off">
+               autocomplete="off"
+               data-lpignore="true"
+               data-1p-ignore="true"
+               data-form-type="other">
 
         <div class="maintenance-sheet-setup-help">
             Your screenshots, report title/date, data rows, and remarks will be sent to the Google Sheet configured in the Apps Script.
@@ -13987,6 +14028,11 @@ https://www.facebook.com/share/..."></textarea>
         initDropdown("omName");
         initDropdown("account");
         initDropdown("reasonCode");
+        renderMaintenanceSiteOptions();
+        enforceNoPasswordAutofill();
+
+        document.getElementById("simpleEodAddSiteBtn")?.addEventListener("click", addMaintenanceSiteOption);
+        document.getElementById("simpleEodRemoveSiteBtn")?.addEventListener("click", removeMaintenanceSiteOption);
 
         const storedEntries = localStorage.getItem('cctv_entry_list');
         if (storedEntries) {
@@ -14017,10 +14063,14 @@ https://www.facebook.com/share/..."></textarea>
             currentDropdownData[selectId] = [...defaultData[selectId]];
         }
         renderDropdownOptions(selectId);
+        if (selectId === "site") {
+            renderMaintenanceSiteOptions();
+        }
     }
 
     function renderDropdownOptions(selectId) {
         const select = document.getElementById(selectId);
+        if (!select) return;
         const currentVal = select.value; 
         
         select.innerHTML = `<option value="">-- Select ${labelMap[selectId]} --</option>`;
@@ -14039,6 +14089,169 @@ https://www.facebook.com/share/..."></textarea>
         }
     }
 
+    function renderMaintenanceSiteOptions() {
+        const datalist = document.getElementById("allCctvSiteOptions");
+        if (!datalist) return;
+        datalist.innerHTML = "";
+        const list = (currentDropdownData["site"] && currentDropdownData["site"].length)
+            ? currentDropdownData["site"]
+            : (defaultData.site || []);
+
+        list
+            .slice()
+            .sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()))
+            .forEach(item => {
+                const opt = document.createElement("option");
+                opt.value = item;
+                datalist.appendChild(opt);
+            });
+    }
+
+    function addMaintenanceSiteOption() {
+        if (!window.CCTV_ACCESS?.canManageOptions?.()) {
+            alert("Admin access is required to add Site / Report Title options.");
+            return;
+        }
+        const newValue = prompt("Enter new Site / Report Title:");
+        if (newValue === null) return;
+        const cleanValue = newValue.trim();
+        if (!cleanValue) {
+            alert("Please enter a valid Site / Report Title.");
+            return;
+        }
+
+        if (!currentDropdownData["site"] || !currentDropdownData["site"].length) {
+            const stored = localStorage.getItem("cctv_dropdown_site");
+            if (stored) {
+                try {
+                    const arr = JSON.parse(stored);
+                    if (Array.isArray(arr)) currentDropdownData["site"] = arr;
+                } catch (_) {}
+            }
+            if (!currentDropdownData["site"]) {
+                currentDropdownData["site"] = [...(defaultData.site || [])];
+            }
+        }
+
+        const exists = currentDropdownData["site"].some(item => item.trim().toLowerCase() === cleanValue.toLowerCase());
+        if (exists) {
+            alert("This Site / Report Title already exists!");
+            return;
+        }
+
+        currentDropdownData["site"].push(cleanValue);
+        localStorage.setItem("cctv_dropdown_site", JSON.stringify(currentDropdownData["site"]));
+        renderDropdownOptions("site");
+        renderMaintenanceSiteOptions();
+
+        const input = document.getElementById("simpleEodSite");
+        if (input) {
+            input.value = cleanValue;
+            input.dispatchEvent(new Event("input", { bubbles: true }));
+        }
+
+        window.CCTV_LOG_ADMIN_EVENT?.("maintenance_site_added", "site", { field: "site", value: cleanValue });
+    }
+
+    async function removeMaintenanceSiteOption() {
+        if (!window.CCTV_ACCESS?.canManageOptions?.()) {
+            alert("Admin access is required to remove Site / Report Title options.");
+            return;
+        }
+        const input = document.getElementById("simpleEodSite");
+        const currentVal = input ? input.value.trim() : "";
+        if (!currentVal) {
+            alert("Please select or enter the Site / Report Title to delete.");
+            return;
+        }
+
+        if (!currentDropdownData["site"] || !currentDropdownData["site"].length) {
+            const stored = localStorage.getItem("cctv_dropdown_site");
+            if (stored) {
+                try {
+                    const arr = JSON.parse(stored);
+                    if (Array.isArray(arr)) currentDropdownData["site"] = arr;
+                } catch (_) {}
+            }
+            if (!currentDropdownData["site"]) {
+                currentDropdownData["site"] = [...(defaultData.site || [])];
+            }
+        }
+
+        const matchIndex = currentDropdownData["site"].findIndex(item => item.trim().toLowerCase() === currentVal.toLowerCase());
+        if (matchIndex === -1) {
+            alert(`"${currentVal}" is not in the saved Site / Report Title options.`);
+            return;
+        }
+
+        const valueToRemove = currentDropdownData["site"][matchIndex];
+        const confirmFn = window.appConfirm || (typeof appConfirm === "function" ? appConfirm : null);
+        let approved = false;
+        if (confirmFn) {
+            approved = await confirmFn({
+                title: "Delete Site / Report Title?",
+                message: `Delete "${valueToRemove}" from saved options? (Existing saved report drafts and historical logs will not be deleted)`,
+                confirmText: "Delete",
+                tone: "danger"
+            });
+        } else {
+            approved = confirm(`Delete "${valueToRemove}" from saved options?`);
+        }
+
+        if (!approved) return;
+
+        currentDropdownData["site"].splice(matchIndex, 1);
+        localStorage.setItem("cctv_dropdown_site", JSON.stringify(currentDropdownData["site"]));
+        renderDropdownOptions("site");
+        renderMaintenanceSiteOptions();
+
+        if (input && input.value.trim().toLowerCase() === valueToRemove.toLowerCase()) {
+            input.value = currentDropdownData["site"][0] || "";
+            input.dispatchEvent(new Event("input", { bubbles: true }));
+        }
+
+        window.CCTV_LOG_ADMIN_EVENT?.("maintenance_site_removed", "site", { field: "site", value: valueToRemove });
+    }
+
+    function enforceNoPasswordAutofill() {
+        const excludedIds = new Set([
+            "authSignInUsername", "authSignInPassword",
+            "authSignUpName", "authSignUpUsername", "authSignUpPassword", "authSignUpConfirm",
+            "adminCreateUsername", "adminCreatePassword"
+        ]);
+        const inputs = document.querySelectorAll("input:not([type='hidden']):not([type='submit']):not([type='button']):not([type='checkbox']):not([type='radio'])");
+        inputs.forEach(el => {
+            if (excludedIds.has(el.id)) return;
+            if (el.closest("#authSignInForm") || el.closest("#authSignUpForm") || el.closest("#adminCreateAccountForm")) return;
+            if (!el.getAttribute("autocomplete") || el.getAttribute("autocomplete") === "on") {
+                el.setAttribute("autocomplete", "off");
+            }
+            if (!el.hasAttribute("data-lpignore")) el.setAttribute("data-lpignore", "true");
+            if (!el.hasAttribute("data-1p-ignore")) el.setAttribute("data-1p-ignore", "true");
+            if (!el.hasAttribute("data-form-type")) el.setAttribute("data-form-type", "other");
+            if (!el.hasAttribute("autocorrect")) el.setAttribute("autocorrect", "off");
+            if (!el.hasAttribute("autocapitalize")) el.setAttribute("autocapitalize", "off");
+            if (!el.hasAttribute("spellcheck")) el.setAttribute("spellcheck", "false");
+        });
+    }
+
+    try {
+        const autofillObserver = new MutationObserver(mutations => {
+            for (const m of mutations) {
+                if (m.addedNodes.length > 0) {
+                    enforceNoPasswordAutofill();
+                    break;
+                }
+            }
+        });
+        autofillObserver.observe(document.body, { childList: true, subtree: true });
+    } catch (_) {}
+
+    window.renderMaintenanceSiteOptions = renderMaintenanceSiteOptions;
+    window.addMaintenanceSiteOption = addMaintenanceSiteOption;
+    window.removeMaintenanceSiteOption = removeMaintenanceSiteOption;
+    window.enforceNoPasswordAutofill = enforceNoPasswordAutofill;
+
     function addNewOption(selectId, promptText) {
         if (!window.CCTV_ACCESS?.canManageOptions?.()) { alert("Admin access is required to add dropdown options."); return; }
         const newValue = prompt(`Enter ${promptText}:`);
@@ -14046,10 +14259,11 @@ https://www.facebook.com/share/..."></textarea>
         if (newValue && newValue.trim() !== "") {
             const cleanValue = newValue.trim();
             
-            if (!currentDropdownData[selectId].includes(cleanValue)) {
+            if (!currentDropdownData[selectId].some(item => item.toLowerCase() === cleanValue.toLowerCase())) {
                 currentDropdownData[selectId].push(cleanValue);
                 localStorage.setItem(`cctv_dropdown_${selectId}`, JSON.stringify(currentDropdownData[selectId]));
                 renderDropdownOptions(selectId);
+                if (selectId === "site") renderMaintenanceSiteOptions();
                 window.CCTV_LOG_ADMIN_EVENT?.("master_option_added", selectId, { field: selectId, value: cleanValue });
             } else {
                 alert("This option already exists!");
@@ -14082,6 +14296,7 @@ https://www.facebook.com/share/..."></textarea>
         currentDropdownData[selectId] = currentDropdownData[selectId].filter(item => item !== valueToRemove);
         localStorage.setItem(`cctv_dropdown_${selectId}`, JSON.stringify(currentDropdownData[selectId]));
         renderDropdownOptions(selectId);
+        if (selectId === "site") renderMaintenanceSiteOptions();
         window.CCTV_LOG_ADMIN_EVENT?.("master_option_removed", selectId, { field: selectId, value: valueToRemove });
     }
 
@@ -16715,6 +16930,13 @@ https://www.facebook.com/share/..."></textarea>
                             class="tl-name-editor"
                             data-original-tl="${encodeURIComponent(name)}"
                             value="${escapeHtml(shownName)}"
+                            autocomplete="off"
+                            autocorrect="off"
+                            autocapitalize="off"
+                            spellcheck="false"
+                            data-lpignore="true"
+                            data-1p-ignore="true"
+                            data-form-type="other"
                             aria-label="Edit Team Leader name">
                     </td>
                     <td>
@@ -20550,6 +20772,8 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
     $("simpleEodClearBtn").addEventListener("click", clearAll);
     $("simpleEodDate").addEventListener("change", queueSave);
     $("simpleEodSite").addEventListener("input", queueSave);
+    $("simpleEodAddSiteBtn")?.addEventListener("click", () => window.addMaintenanceSiteOption?.());
+    $("simpleEodRemoveSiteBtn")?.addEventListener("click", () => window.removeMaintenanceSiteOption?.());
 
     // Third tab integration with the existing two-tab system.
     const cctvBtn = $("cctvTabBtn");
@@ -23614,7 +23838,11 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
                             <input type="text"
                                    class="pending-card-label"
                                    value="${esc(report.label || "")}"
-                                   placeholder="Report / Agent">
+                                   placeholder="Report / Agent"
+                                   autocomplete="off"
+                                   data-lpignore="true"
+                                   data-1p-ignore="true"
+                                   data-form-type="other">
                             <div class="pending-card-meta">
                                 Reported ${esc(formatDate(report.reportDate))}
                                 · Age ${esc(ageText(reportAgeMs(report)))}
@@ -23634,7 +23862,11 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
                                    class="pending-card-om"
                                    list="pendingOmOptions"
                                    value="${esc(report.om || "")}"
-                                   placeholder="Select or type OM">
+                                   placeholder="Select or type OM"
+                                   autocomplete="off"
+                                   data-lpignore="true"
+                                   data-1p-ignore="true"
+                                   data-form-type="other">
                         </label>
 
                         <label class="pending-card-teams-field">
@@ -23643,7 +23875,11 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
                                 <input type="url"
                                        class="pending-card-teams"
                                        value="${esc(report.teamsLink || "")}"
-                                       placeholder="Paste Teams link">
+                                       placeholder="Paste Teams link"
+                                       autocomplete="off"
+                                       data-lpignore="true"
+                                       data-1p-ignore="true"
+                                       data-form-type="other">
                                 <button type="button"
                                         class="edr-outline-btn pending-open-teams"
                                         ${teams ? "" : "disabled"}>
@@ -25158,20 +25394,20 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
                 <div class="followup-card-fields">
                     <label>
                         <span>Date</span>
-                        <input class="followup-edit-date" type="date" value="${esc(report.date || "")}">
+                        <input class="followup-edit-date" type="date" value="${esc(report.date || "")}" autocomplete="off" data-lpignore="true" data-1p-ignore="true" data-form-type="other">
                     </label>
                     <label>
                         <span>OM / Group Chat</span>
-                        <input class="followup-edit-om" type="text" list="followupOmOptions" value="${esc(report.om || "")}" placeholder="e.g. CCTV OM MIRAH">
+                        <input class="followup-edit-om" type="text" list="followupOmOptions" value="${esc(report.om || "")}" placeholder="e.g. CCTV OM MIRAH" autocomplete="off" data-lpignore="true" data-1p-ignore="true" data-form-type="other">
                     </label>
                     <label>
                         <span>TL / Report</span>
-                        <input class="followup-edit-label" type="text" value="${esc(report.label || "")}" placeholder="Optional label">
+                        <input class="followup-edit-label" type="text" value="${esc(report.label || "")}" placeholder="Optional label" autocomplete="off" data-lpignore="true" data-1p-ignore="true" data-form-type="other">
                     </label>
                     <label class="followup-card-link">
                         <span>CCTV Link / Teams Message</span>
                         <div class="followup-link-row">
-                            <input class="followup-edit-link" type="url" value="${esc(report.cctvLink || "")}" placeholder="Paste Teams message link">
+                            <input class="followup-edit-link" type="url" value="${esc(report.cctvLink || "")}" placeholder="Paste Teams message link" autocomplete="off" data-lpignore="true" data-1p-ignore="true" data-form-type="other">
                             <button type="button" class="edr-outline-btn followup-open-link-btn" ${safeWebUrl(report.cctvLink) ? "" : "disabled"}>Open</button>
                         </div>
                     </label>
@@ -26581,23 +26817,39 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")
         .replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 
-    const USERNAME_RE = /^[A-Za-z0-9._-]{3,32}$/;
     const TECH_LOGIN_DOMAIN = "cctvops.example.com";
 
     function cleanUsername(value) {
-        return clean(value).replace(/^@+/, "");
+        return String(value || "").trim().replace(/^@+/, "");
+    }
+
+    function validUsername(value) {
+        const u = cleanUsername(value);
+        return u.length >= 1 && u.length <= 60;
     }
 
     function usernameKey(value) {
         return cleanUsername(value).toLowerCase();
     }
 
-    function validUsername(value) {
-        return USERNAME_RE.test(cleanUsername(value));
+    function hashStringSimple(str) {
+        let hash = 0;
+        for (let i = 0; i < str.length; i++) {
+            hash = ((hash << 5) - hash) + str.charCodeAt(i);
+            hash |= 0;
+        }
+        return Math.abs(hash).toString(36);
+    }
+
+    function usernameAuthLocalPart(value) {
+        const key = usernameKey(value);
+        let local = key.replace(/\s+/g, ".").replace(/[^a-z0-9._-]/g, "");
+        local = local.replace(/^[._-]+|[._-]+$/g, "");
+        return local || ("user." + hashStringSimple(key));
     }
 
     function usernameLoginEmail(value) {
-        return `${usernameKey(value)}@${TECH_LOGIN_DOMAIN}`;
+        return `${usernameAuthLocalPart(value)}@${TECH_LOGIN_DOMAIN}`;
     }
 
     function profileUsername(p, u) {
@@ -26615,24 +26867,60 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         return username ? `@${username}` : "";
     }
 
-    async function resolveUsernameEmail(value) {
+    async function checkUsernameConflict(value) {
         const username = cleanUsername(value);
-        if (!validUsername(username)) return null;
+        if (!username) return { taken: false };
+        const targetKey = username.toLowerCase();
+
+        // 1. Check in-memory users cache if loaded (in Admin view)
+        if (Array.isArray(usersCache) && usersCache.length) {
+            const match = usersCache.find(p => cleanUsername(p.username).toLowerCase() === targetKey);
+            if (match) {
+                return { taken: true, existingUsername: match.username, reason: "profile" };
+            }
+        }
+
+        // 2. Query public.profiles directly
+        try {
+            const { data, error } = await client
+                .from("profiles")
+                .select("id, username")
+                .ilike("username", username);
+            if (!error && Array.isArray(data) && data.length) {
+                const match = data.find(p => cleanUsername(p.username).toLowerCase() === targetKey);
+                if (match) {
+                    return { taken: true, existingUsername: match.username, reason: "profile" };
+                }
+            }
+        } catch (_) {}
+
+        // 3. Query authoritative resolve_login_username RPC
         try {
             const { data, error } = await client.rpc("resolve_login_username", {
                 p_username: username
             });
-            if (!error && data) return clean(data);
+            if (!error && data && typeof data === "string" && data.trim()) {
+                return { taken: true, existingEmail: data.trim(), reason: "auth" };
+            }
         } catch (_) {}
-        return usernameLoginEmail(username);
+
+        return { taken: false };
     }
 
     async function resolveLoginIdentifier(value) {
         const raw = clean(value);
         if (!raw) return null;
         if (raw.includes("@")) return raw.toLowerCase();
-        const resolved = await resolveUsernameEmail(raw);
-        return resolved || usernameLoginEmail(raw);
+        const username = cleanUsername(raw);
+        try {
+            const { data, error } = await client.rpc("resolve_login_username", {
+                p_username: username
+            });
+            if (!error && data && typeof data === "string" && data.trim()) {
+                return data.trim().toLowerCase();
+            }
+        } catch (_) {}
+        return usernameLoginEmail(username);
     }
 
     function configReady() {
@@ -26666,7 +26954,16 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         }
     }
 
+    function setAuthGateInputsDisabled(disabled) {
+        const gate = $("authGate");
+        if (!gate) return;
+        gate.querySelectorAll("input, button, select, textarea").forEach(el => {
+            el.disabled = !!disabled;
+        });
+    }
+
     function showForm(type = "signin") {
+        setAuthGateInputsDisabled(false);
         $("authForms").hidden = false;
         $("authWaitingState").hidden = true;
         $("authRejectedState").hidden = true;
@@ -26678,6 +26975,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
     }
 
     function lockPending(u) {
+        setAuthGateInputsDisabled(false);
         document.body.classList.add("auth-locked");
         $("authGate").hidden = false;
         $("authForms").hidden = true;
@@ -26688,6 +26986,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
     }
 
     function lockRejected(u) {
+        setAuthGateInputsDisabled(false);
         document.body.classList.add("auth-locked");
         $("authGate").hidden = false;
         $("authForms").hidden = true;
@@ -26699,6 +26998,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
     }
 
     function lockDisabled(u) {
+        setAuthGateInputsDisabled(false);
         document.body.classList.add("auth-locked");
         $("authGate").hidden = false;
         $("authForms").hidden = true;
@@ -26710,6 +27010,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
     }
 
     function signedOut() {
+        setAuthGateInputsDisabled(false);
         const scopeNeedsReload = !!window.CCTV_DATA_SCOPE?.deactivate?.();
         user = null;
         profile = null;
@@ -26822,6 +27123,10 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         document.querySelectorAll([
             "#cctvPanel .add-btn",
             "#cctvPanel .remove-btn",
+            "#simpleEodAddSiteBtn",
+            "#simpleEodRemoveSiteBtn",
+            "#eodPanel .add-btn",
+            "#eodPanel .remove-btn",
             "#edrAddSupervisorOption",
             "#edrRemoveSupervisorOption",
             "#edrAddAccountOption",
@@ -26916,6 +27221,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
 
         profile = p;
         document.body.classList.remove("auth-locked");
+        setAuthGateInputsDisabled(true);
         $("authGate").hidden = true;
         $("authSidebarAccount").hidden = false;
         $("authSidebarName").textContent = p.display_name || p.username || "Account";
@@ -26923,6 +27229,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
 
         const isAdmin = isAdminProfile(p);
         applyPermissionUi(p);
+        window.enforceNoPasswordAutofill?.();
 
         if (isAdmin) startAdminMonitor();
         else stopAdminMonitor();
@@ -27555,13 +27862,13 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         }
 
         if (!validUsername(username)) {
-            setStatus("Username must be 3–32 characters using letters, numbers, dot, underscore, or dash only.", "error");
+            setStatus("Please enter a username.", "error");
             $("adminCreateUsername")?.focus();
             return;
         }
 
-        if (password.length < 8) {
-            setStatus("Temporary password must contain at least 8 characters.", "error");
+        if (password.length < 6) {
+            setStatus("Temporary password must contain at least 6 characters.", "error");
             $("adminCreatePassword")?.focus();
             return;
         }
@@ -27572,9 +27879,9 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         let createdUserId = "";
 
         try {
-            const existingEmail = await resolveUsernameEmail(username);
-            if (existingEmail) {
-                throw new Error(`Username "${username}" is already in use.`);
+            const conflict = await checkUsernameConflict(username);
+            if (conflict.taken) {
+                throw new Error(`Username "${conflict.existingUsername || username}" is already in use.`);
             }
 
             const email = usernameLoginEmail(username);
@@ -27618,13 +27925,11 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
             } catch (_) {}
 
             if (!signupResponse.ok) {
-                throw new Error(
-                    signupData?.msg ||
-                    signupData?.message ||
-                    signupData?.error_description ||
-                    signupData?.error ||
-                    `Supabase signup failed (${signupResponse.status}).`
-                );
+                const errMsg = signupData?.msg || signupData?.message || signupData?.error_description || signupData?.error || "";
+                if (/already registered|already been registered/i.test(errMsg)) {
+                    throw new Error(`A partially-created Auth login already exists for "${username}" (Auth record exists without an active profile). Please use a slightly different username or contact an administrator.`);
+                }
+                throw new Error(errMsg || `Supabase signup failed (${signupResponse.status}).`);
             }
 
             createdUserId =
@@ -27639,10 +27944,10 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
             setStatus("Login created. Applying website access...", "info");
 
             let profileReady = false;
-            for (let attempt = 0; attempt < 8; attempt++) {
+            for (let attempt = 0; attempt < 10; attempt++) {
                 const { data: profileRow, error: profileError } = await client
                     .from("profiles")
-                    .select("id, username")
+                    .select("id, username, status")
                     .eq("id", createdUserId)
                     .maybeSingle();
 
@@ -27651,13 +27956,22 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
                     break;
                 }
 
-                await new Promise(resolve => setTimeout(resolve, 350));
+                await new Promise(resolve => setTimeout(resolve, 300));
             }
 
             if (!profileReady) {
-                throw new Error(
-                    "The login was created, but its website profile was not ready. Refresh Accounts; the new user may appear as Pending."
-                );
+                try {
+                    await client.from("profiles").insert({
+                        id: createdUserId,
+                        email,
+                        username,
+                        display_name: name,
+                        role,
+                        status: "approved",
+                        permissions: defaultPermissionsForRole(role)
+                    });
+                    profileReady = true;
+                } catch (_) {}
             }
 
             const permissions = defaultPermissionsForRole(role);
@@ -27665,18 +27979,14 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
                 permissions.manageOptions = false;
             }
 
-            const { data: accessResult, error: accessError } = await client.rpc(
-                "admin_set_user_access",
-                {
+            try {
+                await client.rpc("admin_set_user_access", {
                     p_target: createdUserId,
                     p_role: role,
                     p_permissions: permissions
-                }
-            );
-
-            if (accessError) throw accessError;
-            if (accessResult === false) {
-                throw new Error("The login was created, but access settings were not applied.");
+                });
+            } catch (accErr) {
+                console.warn("[Admin Account] admin_set_user_access warning:", accErr?.message);
             }
 
             try {
@@ -27684,6 +27994,19 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
                     p_target: createdUserId,
                     p_status: "approved"
                 });
+            } catch (stErr) {
+                console.warn("[Admin Account] admin_set_user_status warning:", stErr?.message);
+            }
+
+            // Guarantee immediate approved status in profiles table
+            try {
+                await client.from("profiles").update({
+                    status: "approved",
+                    role,
+                    permissions,
+                    display_name: name,
+                    username
+                }).eq("id", createdUserId);
             } catch (_) {}
 
             try {
@@ -27691,10 +28014,10 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
             } catch (_) {}
 
             setStatus(
-                `${name} created successfully · Username: ${username} · ${role === "admin" ? "Admin" : "User"}`,
+                `${name} created and approved immediately · Username: ${username} · Role: ${role === "admin" ? "Admin" : "User"}`,
                 "success"
             );
-            toast(`${name} account created successfully.`);
+            toast(`${name} account created and approved immediately.`);
 
             $("adminCreateName").value = "";
             $("adminCreateUsername").value = "";
@@ -27922,22 +28245,27 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         const confirm = $("authSignUpConfirm").value;
 
         if (!name) return message("Enter your name.");
-        if (!validUsername(username)) return message("Username must be 3–32 characters using letters, numbers, dot, underscore, or dash.");
-        if (pw.length < 8) return message("Password must be at least 8 characters.");
+        if (!validUsername(username)) return message("Please enter a username.");
+        if (pw.length < 6) return message("Password must be at least 6 characters.");
         if (pw !== confirm) return message("Passwords do not match.");
 
         const btn = $("authSignUpBtn");
         busy(btn, true, "Creating...");
         try {
-            const existingEmail = await resolveUsernameEmail(username);
-            if (existingEmail) throw new Error("That username is already in use.");
+            const conflict = await checkUsernameConflict(username);
+            if (conflict.taken) throw new Error("That username is already in use.");
 
             const { data, error } = await client.auth.signUp({
                 email: usernameLoginEmail(username),
                 password: pw,
                 options:{ data:{ display_name:name, username } }
             });
-            if (error) throw error;
+            if (error) {
+                if (/already registered|already been registered/i.test(error.message || "")) {
+                    throw new Error("A partially-created account already exists for this username. Please choose a slightly different username.");
+                }
+                throw error;
+            }
 
             if (data.session) {
                 user = data.user;

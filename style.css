@@ -5,39 +5,39 @@
 
 :root {
     --admin-sidebar: 185px;
-    --admin-bg: #f4f7fb;
-    --admin-sidebar-bg: #0c1424;
-    --admin-sidebar-border: rgba(148, 163, 184, .15);
-    --admin-sidebar-text: #e8eef8;
-    --admin-sidebar-muted: #8090a8;
+    --admin-bg: #f1f5f9;
+    --admin-sidebar-bg: #ffffff;
+    --admin-sidebar-border: rgba(15, 23, 42, 0.08);
+    --admin-sidebar-text: #0f172a;
+    --admin-sidebar-muted: #64748b;
     --admin-panel: #ffffff;
     --admin-panel-soft: #f8fafc;
-    --admin-line: #e4eaf2;
-    --admin-text: #172033;
-    --admin-muted: #667085;
+    --admin-line: rgba(15, 23, 42, 0.08);
+    --admin-text: #0f172a;
+    --admin-muted: #64748b;
     --admin-blue: #2563eb;
     --admin-blue-soft: #eef4ff;
-    --admin-green: #208817;
-    --admin-green-2: #2aa51f;
-    --admin-danger: #dc2626;
-    --admin-shadow: 0 10px 30px rgba(15, 23, 42, .06);
-    --admin-shadow-lg: 0 18px 45px rgba(15, 23, 42, .08);
+    --admin-green: #10b981;
+    --admin-green-2: #34d399;
+    --admin-danger: #ef4444;
+    --admin-shadow: 0 1px 3px rgba(15, 23, 42, 0.06), 0 4px 14px rgba(15, 23, 42, 0.03);
+    --admin-shadow-lg: 0 12px 36px rgba(15, 23, 42, 0.08);
 }
 
 body.dark-mode {
-    --admin-bg: #0b111b;
-    --admin-sidebar-bg: #080d16;
-    --admin-sidebar-border: rgba(148, 163, 184, .12);
-    --admin-sidebar-text: #eef3fb;
-    --admin-sidebar-muted: #8491a5;
-    --admin-panel: #111923;
-    --admin-panel-soft: #151f2c;
-    --admin-line: #263244;
-    --admin-text: #edf3fb;
-    --admin-muted: #96a3b6;
-    --admin-blue-soft: rgba(37, 99, 235, .12);
-    --admin-shadow: 0 12px 30px rgba(0, 0, 0, .20);
-    --admin-shadow-lg: 0 22px 50px rgba(0, 0, 0, .26);
+    --admin-bg: #0b0f17;
+    --admin-sidebar-bg: #111827;
+    --admin-sidebar-border: rgba(255, 255, 255, 0.08);
+    --admin-sidebar-text: #f8fafc;
+    --admin-sidebar-muted: #94a3b8;
+    --admin-panel: #111827;
+    --admin-panel-soft: #161f30;
+    --admin-line: rgba(255, 255, 255, 0.08);
+    --admin-text: #f8fafc;
+    --admin-muted: #94a3b8;
+    --admin-blue-soft: rgba(59, 130, 246, 0.14);
+    --admin-shadow: 0 2px 6px rgba(0, 0, 0, 0.35), 0 8px 24px rgba(0, 0, 0, 0.28);
+    --admin-shadow-lg: 0 18px 48px rgba(0, 0, 0, 0.55);
 }
 
 html {
@@ -5860,6 +5860,23 @@ body.ops-redesign-v3 #eodPanel .simple-eod-top {
     background: var(--ops-panel-2) !important;
 }
 
+body.ops-redesign-v3 #eodPanel .simple-eod-top .input-group {
+    display: flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    min-width: 0 !important;
+}
+
+body.ops-redesign-v3 #eodPanel .simple-eod-top .input-group input {
+    flex: 1 !important;
+    min-width: 0 !important;
+}
+
+body.ops-redesign-v3 #eodPanel .simple-eod-top .input-group .add-btn,
+body.ops-redesign-v3 #eodPanel .simple-eod-top .input-group .remove-btn {
+    flex-shrink: 0 !important;
+}
+
 body.ops-redesign-v3 #eodPanel .simple-eod-actions {
     position: sticky !important;
     top: 10px !important;
@@ -8201,6 +8218,10 @@ body.auth-role-user #adminTabBtn,
 body.auth-role-user #adminPanel,
 body.auth-role-user #cctvPanel .add-btn,
 body.auth-role-user #cctvPanel .remove-btn,
+body.auth-role-user #simpleEodAddSiteBtn,
+body.auth-role-user #simpleEodRemoveSiteBtn,
+body.auth-role-user #eodPanel .add-btn,
+body.auth-role-user #eodPanel .remove-btn,
 body.auth-role-user #edrAddSupervisorOption,
 body.auth-role-user #edrRemoveSupervisorOption,
 body.auth-role-user #edrAddAccountOption,
