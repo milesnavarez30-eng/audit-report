@@ -212,12 +212,230 @@
         }
     }
 
+    // 5. Cyber-Terminal SECURE_DATA Login Controller & Submission Handler
+    function initCyberTerminalLogin() {
+        const forms = [
+            document.getElementById("loginForm"),
+            document.getElementById("authSignInForm"),
+            document.querySelector(".terminal-card"),
+            document.querySelector(".auth-form")
+        ].filter(Boolean);
+
+        if (!forms.length) return;
+
+        // Guarantee no native GET submission or page reload happens even before JS binds
+        forms.forEach(form => {
+            form.setAttribute("onsubmit", "event.preventDefault(); return false;");
+            form.onsubmit = function (e) {
+                if (e && typeof e.preventDefault === "function") e.preventDefault();
+                return false;
+            };
+        });
+
+        // Support modern and legacy username IDs: username, operatorId, loginUser, email
+        const usernameIds = ["username", "operatorId", "loginUser", "email", "authSignInUsername"];
+        const usernameNames = ["username", "operatorId", "loginUser", "email"];
+
+        // Support modern and legacy password IDs: password, securityPasscode, loginPass
+        const passwordIds = ["password", "securityPasscode", "loginPass", "authSignInPassword"];
+        const passwordNames = ["password", "access_key", "securityPasscode", "loginPass"];
+
+        function getFieldElement(ids, names, formEl) {
+            // First check within the active form for elements with values
+            if (formEl && formEl.querySelector) {
+                for (const id of ids) {
+                    const el = formEl.querySelector(`#${id}`);
+                    if (el && el.value && el.value.trim()) return el;
+                }
+                for (const name of names) {
+                    const el = formEl.querySelector(`input[name="${name}"]`);
+                    if (el && el.value && el.value.trim()) return el;
+                }
+                for (const id of ids) {
+                    const el = formEl.querySelector(`#${id}`);
+                    if (el) return el;
+                }
+                for (const name of names) {
+                    const el = formEl.querySelector(`input[name="${name}"]`);
+                    if (el) return el;
+                }
+            }
+
+            // Fall back to document-wide lookup
+            for (const id of ids) {
+                const el = document.getElementById(id);
+                if (el && el.value && el.value.trim()) return el;
+            }
+            for (const name of names) {
+                const el = document.querySelector(`input[name="${name}"]`);
+                if (el && el.value && el.value.trim()) return el;
+            }
+            for (const id of ids) {
+                const el = document.getElementById(id);
+                if (el) return el;
+            }
+            for (const name of names) {
+                const el = document.querySelector(`input[name="${name}"]`);
+                if (el) return el;
+            }
+            return null;
+        }
+
+        function hideLoginModal() {
+            const loginModal = document.getElementById("loginModal");
+            if (loginModal) {
+                loginModal.hidden = true;
+                loginModal.style.display = "none";
+                loginModal.classList.add("hidden");
+                loginModal.setAttribute("aria-hidden", "true");
+            }
+            const authGate = document.getElementById("authGate");
+            if (authGate) {
+                authGate.hidden = true;
+                authGate.style.display = "none";
+                authGate.classList.add("hidden");
+                authGate.setAttribute("aria-hidden", "true");
+            }
+            const wrappers = document.querySelectorAll(".terminal-login-wrapper, .glitch-form-wrapper");
+            wrappers.forEach(w => {
+                w.hidden = true;
+                w.style.display = "none";
+                w.classList.add("hidden");
+            });
+
+            document.body.classList.remove("auth-locked");
+            document.body.classList.add("auth-unlocked");
+        }
+
+        window.hideLoginModal = hideLoginModal;
+
+        async function handleLoginSubmission(event) {
+            if (event) {
+                event.preventDefault();
+                if (typeof event.stopPropagation === "function") event.stopPropagation();
+            }
+
+            const currentForm = (event?.target?.tagName === "FORM")
+                ? event.target
+                : (event?.target?.closest?.("form") || document.getElementById("loginForm") || document.getElementById("authSignInForm"));
+
+            const usernameInput = getFieldElement(usernameIds, usernameNames, currentForm);
+            const passwordInput = getFieldElement(passwordIds, passwordNames, currentForm);
+            const loginBtn = document.getElementById("loginBtn") || document.getElementById("authSignInBtn");
+            const btnLabel = loginBtn?.querySelector(".btn-label") || loginBtn?.querySelector(".btn-text") || loginBtn;
+
+            const usernameVal = String(usernameInput?.value || "").trim();
+            const passwordVal = String(passwordInput?.value || "");
+
+            let msgEl = document.getElementById("authMessage") || document.querySelector(".terminal-body .auth-message") || document.querySelector(".auth-message");
+            if (!msgEl) {
+                const termBody = document.querySelector(".terminal-body") || document.getElementById("loginForm");
+                if (termBody) {
+                    msgEl = document.createElement("div");
+                    msgEl.id = "authMessage";
+                    msgEl.className = "auth-message";
+                    termBody.appendChild(msgEl);
+                }
+            }
+
+            if (!usernameVal || !passwordVal) {
+                if (msgEl) {
+                    msgEl.textContent = "Please enter both username and access key.";
+                    msgEl.hidden = false;
+                }
+                return false;
+            }
+
+            const oldBtnText = btnLabel ? btnLabel.textContent : "";
+            if (loginBtn) loginBtn.disabled = true;
+            if (btnLabel) btnLabel.textContent = "CONNECTING...";
+
+            try {
+                // 1. Delegate to cctvAuthenticate in index.html if present
+                if (typeof window.cctvAuthenticate === "function") {
+                    await window.cctvAuthenticate(usernameVal, passwordVal);
+                } else if (window.supabase && window.CCTV_AUTH_CONFIG) {
+                    const cfg = window.CCTV_AUTH_CONFIG;
+                    const client = window.supabase.createClient(cfg.SUPABASE_URL, cfg.SUPABASE_PUBLIC_KEY, {
+                        auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
+                    });
+
+                    let email = usernameVal.includes("@") ? usernameVal.toLowerCase() : null;
+                    if (!email) {
+                        try {
+                            const { data: rpcEmail } = await client.rpc("resolve_login_username", { p_username: usernameVal });
+                            if (rpcEmail && typeof rpcEmail === "string") email = rpcEmail.trim().toLowerCase();
+                        } catch (_) {}
+                    }
+                    if (!email) {
+                        const local = usernameVal.toLowerCase().replace(/\s+/g, ".").replace(/[^a-z0-9._-]/g, "");
+                        email = `${local || "user"}@cctvops.example.com`;
+                    }
+
+                    const { error } = await client.auth.signInWithPassword({ email, password: passwordVal });
+                    if (error) throw error;
+                }
+
+                // 2. Hide login modal cleanly upon successful authentication and reveal main workspace
+                hideLoginModal();
+                if (msgEl) {
+                    msgEl.textContent = "";
+                    msgEl.hidden = true;
+                }
+            } catch (err) {
+                const messageText = err.message === "Invalid login credentials"
+                    ? "Incorrect username or access key."
+                    : (err.message || "Authentication failed.");
+                if (msgEl) {
+                    msgEl.textContent = messageText;
+                    msgEl.hidden = false;
+                }
+            } finally {
+                if (loginBtn) loginBtn.disabled = false;
+                if (btnLabel) btnLabel.textContent = oldBtnText || "INITIATE_CONNECTION";
+            }
+
+            return false;
+        }
+
+        forms.forEach(form => {
+            form.addEventListener("submit", handleLoginSubmission, true);
+            form.querySelectorAll("input").forEach(input => {
+                input.addEventListener("keydown", function (e) {
+                    if (e.key === "Enter") {
+                        e.preventDefault();
+                        handleLoginSubmission(e);
+                    }
+                });
+            });
+        });
+
+        const loginBtn = document.getElementById("loginBtn") || document.getElementById("authSignInBtn");
+        if (loginBtn) {
+            loginBtn.addEventListener("click", function (e) {
+                const parentForm = loginBtn.closest("form");
+                if (parentForm) {
+                    e.preventDefault();
+                    handleLoginSubmission(e);
+                }
+            });
+        }
+    }
+
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", initCyberTerminalLogin, { once: true });
+    } else {
+        initCyberTerminalLogin();
+    }
+
     if (typeof module !== "undefined" && module.exports) {
         module.exports = {
             generateHardenedPdf: window.generateHardenedPdf,
             verifyMaintenanceTransmissionResults: window.verifyMaintenanceTransmissionResults,
             normalizeTrackerSite,
-            normalizeAuditorName
+            normalizeAuditorName,
+            initCyberTerminalLogin,
+            hideLoginModal: window.hideLoginModal
         };
     }
 })();
