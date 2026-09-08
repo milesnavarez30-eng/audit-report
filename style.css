@@ -1,4 +1,24 @@
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+*,
+*::before,
+*::after,
+html,
+body,
+input,
+select,
+textarea,
+button,
+table,
+th,
+td,
+code,
+pre,
+.badge,
+.kpi-value,
+.metric-card-value {
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif !important;
+}
 
 
 /* =========================================================
@@ -71,7 +91,7 @@ body,
 body.dark-mode,
 [data-theme="dark"] {
     background: linear-gradient(135deg, #152331 0%, #000000 100%) !important;
-    background-attachment: fixed !important;
+    background-attachment: scroll !important;
     min-height: 100vh;
 }
 
@@ -79,7 +99,7 @@ body.dark-mode,
 body.light-mode,
 [data-theme="light"] {
     background: linear-gradient(135deg, #9fa0a8 0%, #5c7852 100%) !important;
-    background-attachment: fixed !important;
+    background-attachment: scroll !important;
     min-height: 100vh;
 }
 
@@ -9020,68 +9040,197 @@ body.ops-redesign-v3.dark-mode .grouped-pdf .grouped-remarks > div {
 }
 
 /* ==========================================================================
-   CCTV OPS â€” ULTRA-MODERN SOC THEME OVERHAUL (LEAD ARCHITECT EDITION)
+   CCTV OPS â€” ENTERPRISE SAAS CONTAINER & LAYOUT TRANSFORMATION (PILLIO & KEYVO)
+   Floating Viewport Shell (1680px), Telemetry Sidebar Dock (260px),
+   Grouped Modular Form Cards, Data Vault Table with Sticky Header,
+   Pill Dock Actions (9999px), and 20px KPI Responsive Grid Containers.
    Preserves 100% of DOM IDs, attributes, table structures, and JS bindings.
    ========================================================================== */
 
-/* --- Design Tokens --- */
-:root {
-  --font-display: 'Outfit', 'Plus Jakarta Sans', system-ui, sans-serif;
-  --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
-  --font-mono: 'JetBrains Mono', monospace;
-
-  /* Dark Theme: Moonwalker */
-  --bg-gradient-dark: linear-gradient(135deg, #152331 0%, #0a1118 50%, #000000 100%);
-  --panel-bg: rgba(15, 23, 42, 0.7);
-  --panel-border: rgba(255, 255, 255, 0.08);
-  --panel-border-focus: rgba(56, 189, 248, 0.45);
-  --card-bg: rgba(15, 23, 42, 0.7);
-  --card-hover: rgba(30, 41, 59, 0.85);
-
-  /* Accents & States */
-  --accent-cyan: #38bdf8;
-  --accent-cyan-glow: rgba(56, 189, 248, 0.25);
-  --accent-blue: #3b82f6;
-  --accent-emerald: #10b981;
-  --accent-amber: #f59e0b;
-  --accent-rose: #f43f5e;
-  --accent-indigo: #6366f1;
-
-  /* Typography */
-  --text-primary: #f8fafc;
-  --text-secondary: #94a3b8;
-  --text-muted: #64748b;
-
-  /* Glassmorphism & Elevation */
-  --glass-blur: blur(16px);
-  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.25);
-  --shadow-md: 0 8px 28px -4px rgba(0, 0, 0, 0.55);
-  --shadow-lg: 0 16px 48px -8px rgba(0, 0, 0, 0.75);
-  --shadow-glow: 0 0 20px rgba(56, 189, 248, 0.2);
-  --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 14px;
+*,
+*::before,
+*::after,
+html,
+body,
+input,
+select,
+textarea,
+button,
+table,
+th,
+td,
+code,
+pre,
+.badge,
+.kpi-value,
+.metric-card-value {
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif !important;
 }
 
-/* Light Mode: Space Light Green */
+/* Zero GPU blur pipeline to guarantee maximum FPS & zero latency */
+*, *::before, *::after {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* Primary container render isolation */
+.workspace-container,
+.panel,
+.table-container,
+#outputTable {
+  contain: content;
+  transform: translateZ(0);
+}
+
+/* --- Design Tokens (Dark Mode Default) --- */
+:root {
+  --saas-canvas: #080c14;
+  --saas-shell-bg: #0f172a;
+  --saas-shell-border: rgba(255, 255, 255, 0.08);
+  --saas-shell-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.6);
+
+  --saas-card-bg: #111a2e;
+  --saas-card-border: rgba(255, 255, 255, 0.06);
+  --saas-card-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+
+  --saas-sidebar-bg: #0b1120;
+  --saas-sidebar-border: rgba(255, 255, 255, 0.06);
+  --saas-nav-color: #94a3b8;
+  --saas-nav-active-bg: #1e293b;
+  --saas-nav-active-color: #ffffff;
+  --saas-nav-active-border: rgba(255, 255, 255, 0.1);
+
+  --saas-input-bg: #090e1a;
+  --saas-input-border: rgba(255, 255, 255, 0.09);
+  --saas-input-color: #f8fafc;
+  --saas-input-focus-border: #38bdf8;
+  --saas-input-focus-ring: rgba(56, 189, 248, 0.2);
+
+  --saas-table-bg: #0e1628;
+  --saas-table-border: rgba(255, 255, 255, 0.07);
+  --saas-table-header-bg: #0b1120;
+  --saas-table-header-color: #94a3b8;
+  --saas-table-header-border: rgba(255, 255, 255, 0.08);
+  --saas-table-row-color: #f1f5f9;
+  --saas-table-row-border: rgba(255, 255, 255, 0.04);
+  --saas-table-row-hover: rgba(56, 189, 248, 0.05);
+
+  --saas-status-success-bg: rgba(16, 185, 129, 0.12);
+  --saas-status-success-color: #34d399;
+  --saas-status-success-border: rgba(16, 185, 129, 0.25);
+
+  --saas-status-warning-bg: rgba(245, 158, 11, 0.12);
+  --saas-status-warning-color: #fbbf24;
+  --saas-status-warning-border: rgba(245, 158, 11, 0.25);
+
+  --saas-status-danger-bg: rgba(244, 63, 94, 0.12);
+  --saas-status-danger-color: #fb7185;
+  --saas-status-danger-border: rgba(244, 63, 94, 0.25);
+
+  --saas-btn-primary-bg: #ffffff;
+  --saas-btn-primary-color: #090d16;
+  --saas-btn-primary-hover: #f1f5f9;
+  --saas-btn-primary-shadow: 0 4px 16px rgba(255, 255, 255, 0.15);
+
+  --saas-btn-success-bg: #10b981;
+  --saas-btn-success-color: #022c22;
+  --saas-btn-success-shadow: 0 4px 14px rgba(16, 185, 129, 0.3);
+
+  --saas-btn-doc-bg: #6366f1;
+  --saas-btn-doc-color: #ffffff;
+  --saas-btn-doc-shadow: 0 4px 14px rgba(99, 102, 241, 0.3);
+
+  --saas-btn-ghost-bg: rgba(255, 255, 255, 0.04);
+  --saas-btn-ghost-border: rgba(255, 255, 255, 0.09);
+  --saas-btn-ghost-color: #e2e8f0;
+
+  --saas-btn-danger-bg: rgba(244, 63, 94, 0.12);
+  --saas-btn-danger-color: #fb7185;
+  --saas-btn-danger-border: rgba(244, 63, 94, 0.25);
+
+  --saas-text-primary: #ffffff;
+  --saas-text-secondary: #94a3b8;
+  --saas-text-muted: #64748b;
+
+  --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  --font-mono: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+}
+
+/* --- Design Tokens (Light Mode) --- */
 body.light-mode,
 body.ops-redesign-v3.light-mode,
-[data-theme="light"] {
-  --bg-gradient-dark: linear-gradient(135deg, #9fa0a8 0%, #758a6d 50%, #5c7852 100%);
-  --panel-bg: rgba(255, 255, 255, 0.75);
-  --panel-border: rgba(255, 255, 255, 0.3);
-  --panel-border-focus: rgba(46, 125, 50, 0.45);
-  --card-bg: rgba(255, 255, 255, 0.85);
-  --card-hover: #ffffff;
-  --text-primary: #1e293b;
-  --text-secondary: #334155;
-  --text-muted: #64748b;
-  --accent-cyan: #0284c7;
-  --accent-cyan-glow: rgba(2, 132, 199, 0.2);
-  --shadow-md: 0 8px 24px -4px rgba(0, 0, 0, 0.15);
+[data-theme="light"],
+html[data-theme="light"] body {
+  --saas-canvas: #edf0f6;
+  --saas-shell-bg: #ffffff;
+  --saas-shell-border: rgba(226, 232, 240, 0.8);
+  --saas-shell-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.05);
+
+  --saas-card-bg: #ffffff;
+  --saas-card-border: #edf0f5;
+  --saas-card-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+
+  --saas-sidebar-bg: #fbfcfd;
+  --saas-sidebar-border: #edf0f5;
+  --saas-nav-color: #64748b;
+  --saas-nav-active-bg: #ffffff;
+  --saas-nav-active-color: #0f172a;
+  --saas-nav-active-border: #e2e8f0;
+
+  --saas-input-bg: #f8fafc;
+  --saas-input-border: #e2e8f0;
+  --saas-input-color: #0f172a;
+  --saas-input-focus-border: #0f172a;
+  --saas-input-focus-ring: rgba(15, 23, 42, 0.08);
+
+  --saas-table-bg: #ffffff;
+  --saas-table-border: #edf0f5;
+  --saas-table-header-bg: #f8fafc;
+  --saas-table-header-color: #64748b;
+  --saas-table-header-border: #e2e8f0;
+  --saas-table-row-color: #0f172a;
+  --saas-table-row-border: #f1f4f9;
+  --saas-table-row-hover: #f8fafc;
+
+  --saas-status-success-bg: #ecfdf5;
+  --saas-status-success-color: #059669;
+  --saas-status-success-border: #a7f3d0;
+
+  --saas-status-warning-bg: #fffbeb;
+  --saas-status-warning-color: #d97706;
+  --saas-status-warning-border: #fde68a;
+
+  --saas-status-danger-bg: #fff1f2;
+  --saas-status-danger-color: #e11d48;
+  --saas-status-danger-border: #fecdd3;
+
+  --saas-btn-primary-bg: #0f172a;
+  --saas-btn-primary-color: #ffffff;
+  --saas-btn-primary-hover: #1e293b;
+  --saas-btn-primary-shadow: 0 4px 14px rgba(15, 23, 42, 0.15);
+
+  --saas-btn-success-bg: #10b981;
+  --saas-btn-success-color: #ffffff;
+  --saas-btn-success-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+
+  --saas-btn-doc-bg: #6366f1;
+  --saas-btn-doc-color: #ffffff;
+  --saas-btn-doc-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
+
+  --saas-btn-ghost-bg: #ffffff;
+  --saas-btn-ghost-border: #e2e8f0;
+  --saas-btn-ghost-color: #334155;
+
+  --saas-btn-danger-bg: #fff1f2;
+  --saas-btn-danger-color: #e11d48;
+  --saas-btn-danger-border: #fecdd3;
+
+  --saas-text-primary: #0f172a;
+  --saas-text-secondary: #64748b;
+  --saas-text-muted: #94a3b8;
 }
 
-/* --- Base Setup --- */
+/* --- 1. Floating Viewport Shell (The Outer Frame) --- */
 * {
   box-sizing: border-box;
   font-family: var(--font-sans);
@@ -9091,252 +9240,747 @@ body,
 body.dark-mode,
 body.ops-redesign-v3,
 body.ops-redesign-v3.dark-mode,
-[data-theme="dark"] {
+[data-theme="dark"],
+html {
   min-height: 100vh;
-  background: var(--bg-gradient-dark) !important;
-  background-attachment: fixed !important;
-  color: var(--text-primary);
+  background: var(--saas-canvas) !important;
+  color: var(--saas-text-primary);
   font-size: 13.5px;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
+  margin: 0;
 }
 
 body.light-mode,
 body.ops-redesign-v3.light-mode,
-[data-theme="light"] {
-  background: var(--bg-gradient-dark) !important;
-  background-attachment: fixed !important;
-  color: var(--text-primary);
+[data-theme="light"],
+html[data-theme="light"] body {
+  background: var(--saas-canvas) !important;
+  color: var(--saas-text-primary);
 }
 
-/* --- Typography Hierarchy --- */
-h1, h2, h3, h4,
-.site-hero h1,
-.auth-brand strong,
-.ops-sidebar-brand strong,
-.auth-heading h1 {
-  font-family: var(--font-display) !important;
-  letter-spacing: -0.02em !important;
-  font-weight: 800 !important;
+/* Centered 1680px Desktop Canvas with 20px Viewport Padding */
+body.ops-redesign-v3 {
+  max-width: 1680px !important;
+  margin: 0 auto !important;
+  padding: 20px 20px 20px calc(260px + 36px) !important;
+  position: relative;
+  box-sizing: border-box;
 }
 
-/* --- Navigation & Sidebar Layout --- */
-.sidebar,
-aside,
-aside.workspace-tabs.admin-sidebar,
-nav[class*="sidebar"] {
-  background: var(--panel-bg) !important;
-  backdrop-filter: var(--glass-blur) !important;
-  -webkit-backdrop-filter: var(--glass-blur) !important;
-  border-right: 1px solid var(--panel-border) !important;
-  box-shadow: 4px 0 24px rgba(0, 0, 0, 0.25) !important;
+body.ops-redesign-v3.sidebar-collapsed {
+  padding-left: 36px !important;
 }
 
-.ops-sidebar-brand strong,
-.auth-brand strong {
-  color: var(--text-primary) !important;
-  text-shadow: 0 0 20px var(--accent-cyan-glow);
-}
-
-.ops-sidebar-brand span,
-.auth-brand span {
-  color: var(--text-secondary) !important;
-}
-
-.sidebar .nav-item,
-.nav-link,
-button.workspace-tab-btn,
-button[id*="TabBtn"] {
-  position: relative !important;
-  display: flex !important;
-  align-items: center !important;
-  gap: 10px !important;
-  padding: 9px 14px !important;
-  margin: 3px 8px !important;
-  border-radius: var(--radius-md) !important;
-  color: var(--text-secondary) !important;
-  font-weight: 500 !important;
-  letter-spacing: 0.2px !important;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
-  background: transparent !important;
-  border: 1px solid transparent !important;
-  box-shadow: none !important;
-}
-
-.sidebar .nav-item:hover,
-button.workspace-tab-btn:hover,
-button[id*="TabBtn"]:hover {
-  color: var(--text-primary) !important;
-  background: var(--card-bg) !important;
-  border-color: var(--panel-border) !important;
-  transform: translateX(2px) !important;
-}
-
-.sidebar .nav-item.active,
-button.workspace-tab-btn.active,
-button[id*="TabBtn"].active,
-.nav-link.active {
-  color: #ffffff !important;
-  background: linear-gradient(135deg, rgba(56, 189, 248, 0.22), rgba(59, 130, 246, 0.28)) !important;
-  border: 1px solid rgba(56, 189, 248, 0.45) !important;
-  box-shadow: 0 0 20px rgba(56, 189, 248, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
-  font-weight: 600 !important;
-}
-
-.sidebar .nav-item.active::before,
-button.workspace-tab-btn.active::before,
-button[id*="TabBtn"].active::before,
-.nav-link.active::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 18%;
-  bottom: 18%;
-  width: 3px;
-  border-radius: 0 3px 3px 0;
-  background: var(--accent-cyan);
-  box-shadow: 0 0 8px var(--accent-cyan);
-}
-
-.sidebar-live-clock,
-.sidebar-live-date,
-.sidebar-live-time {
-  font-family: var(--font-mono) !important;
-  font-variant-numeric: tabular-nums !important;
-}
-
-/* --- Card & Workspace Panels --- */
-.card,
-.panel,
-.container,
+/* Floating Workspace Shell Container */
 .workspace-container,
+.app-tab-panel,
+.container,
+.auth-card,
 .maintenance-shell,
 .simple-eod-shell,
 .followup-shell,
 .edr-crud-shell,
 .pending-shell,
 .master-simple-shell,
-.auth-card,
 [class*="panel-container"] {
-  background: var(--panel-bg) !important;
-  backdrop-filter: var(--glass-blur) !important;
-  -webkit-backdrop-filter: var(--glass-blur) !important;
-  border: 1px solid var(--panel-border) !important;
-  border-radius: var(--radius-lg) !important;
-  box-shadow: var(--shadow-md) !important;
-  padding: 20px;
-  margin-bottom: 20px;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease !important;
+  background: var(--saas-shell-bg) !important;
+  border-radius: 28px !important;
+  border: 1px solid var(--saas-shell-border) !important;
+  box-shadow: var(--saas-shell-shadow) !important;
+  padding: 26px !important;
+  margin-bottom: 24px !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
-/* --- Form Inputs, Dropdowns & Textareas --- */
+/* --- 2. Telemetry Sidebar Container (260px) --- */
+aside.workspace-tabs.admin-sidebar {
+  position: fixed !important;
+  top: 20px !important;
+  bottom: 20px !important;
+  left: max(20px, calc((100vw - 1680px) / 2 + 20px)) !important;
+  width: 260px !important;
+  height: calc(100vh - 40px) !important;
+  border-radius: 24px !important;
+  background: var(--saas-sidebar-bg) !important;
+  border: 1px solid var(--saas-sidebar-border) !important;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  z-index: 9999 !important;
+  overflow-y: auto !important;
+  padding: 16px 12px !important;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease !important;
+}
+
+body.ops-redesign-v3.sidebar-collapsed aside.workspace-tabs.admin-sidebar {
+  transform: translateX(-310px) !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+/* Sidebar Toggle Bubble */
+#sidebarToggle,
+.sidebar-collapse-toggle {
+  position: fixed !important;
+  top: 32px !important;
+  left: calc(max(20px, calc((100vw - 1680px) / 2 + 20px)) + 248px) !important;
+  z-index: 10001 !important;
+  width: 26px !important;
+  height: 26px !important;
+  border-radius: 50% !important;
+  background: #1e293b !important;
+  color: #94a3b8 !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  font-size: 13px !important;
+  transition: all 0.2s ease !important;
+}
+
+body.ops-redesign-v3.sidebar-collapsed #sidebarToggle {
+  left: max(20px, calc((100vw - 1680px) / 2 + 20px)) !important;
+}
+
+body.light-mode #sidebarToggle,
+[data-theme="light"] #sidebarToggle {
+  background: #ffffff !important;
+  color: #64748b !important;
+  border: 1px solid #cbd5e1 !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06) !important;
+}
+
+/* Recessed Brand Header */
+.ops-sidebar-brand {
+  background: rgba(255, 255, 255, 0.03) !important;
+  border: 1px solid rgba(255, 255, 255, 0.06) !important;
+  border-radius: 16px !important;
+  padding: 14px 16px !important;
+  margin-bottom: 12px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 3px !important;
+}
+
+body.light-mode .ops-sidebar-brand,
+[data-theme="light"] .ops-sidebar-brand {
+  background: #f8fafc !important;
+  border: 1px solid #e2e8f0 !important;
+}
+
+.ops-sidebar-brand strong {
+  font-size: 16px !important;
+  font-weight: 800 !important;
+  color: var(--saas-text-primary) !important;
+  letter-spacing: -0.02em !important;
+}
+
+.ops-sidebar-brand span {
+  font-size: 11px !important;
+  color: var(--saas-text-secondary) !important;
+  font-weight: 500 !important;
+}
+
+.ops-sidebar-label {
+  color: var(--saas-text-muted) !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.6px !important;
+  padding: 10px 14px 4px !important;
+}
+
+/* Nav Item Pill Stack (Vertical Gap 6px, 12px Corners) */
+.sidebar .nav-item,
+.nav-link,
+button.workspace-tab-btn,
+button.sidebar-history-btn {
+  border-radius: 12px !important;
+  color: var(--saas-nav-color) !important;
+  font-weight: 500 !important;
+  padding: 10px 14px !important;
+  margin: 3px 0 !important;
+  gap: 10px !important;
+  border: 1px solid transparent !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  transition: all 0.15s ease !important;
+  width: 100% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+}
+
+.sidebar .nav-item:hover,
+button.workspace-tab-btn:hover,
+button.sidebar-history-btn:hover {
+  color: var(--saas-text-primary) !important;
+  background: rgba(255, 255, 255, 0.05) !important;
+}
+
+body.light-mode .sidebar .nav-item:hover,
+body.light-mode button.workspace-tab-btn:hover,
+body.light-mode button.sidebar-history-btn:hover,
+[data-theme="light"] .sidebar .nav-item:hover,
+[data-theme="light"] button.workspace-tab-btn:hover,
+[data-theme="light"] button.sidebar-history-btn:hover {
+  background: rgba(0, 0, 0, 0.04) !important;
+}
+
+.sidebar .nav-item.active,
+button.workspace-tab-btn.active,
+.nav-link.active {
+  background: var(--saas-nav-active-bg) !important;
+  color: var(--saas-nav-active-color) !important;
+  font-weight: 600 !important;
+  border: 1px solid var(--saas-nav-active-border) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06) !important;
+}
+
+.sidebar .nav-item.active::before,
+button.workspace-tab-btn.active::before,
+.nav-link.active::before {
+  display: none !important;
+}
+
+/* Pill Badges in Sidebar */
+.cctv-edr-sent-badge,
+.masterlist-sidebar-badge,
+#followupSidebarBadge,
+#globalHistoryCount,
+#adminPendingCount {
+  border-radius: 9999px !important;
+  padding: 2px 8px !important;
+  font-size: 10.5px !important;
+  font-weight: 700 !important;
+  background: rgba(56, 189, 248, 0.15) !important;
+  color: #38bdf8 !important;
+  border: 1px solid rgba(56, 189, 248, 0.3) !important;
+}
+
+/* Pinned User Profile Container (Floating Mini-Card at Bottom) */
+.auth-sidebar-account {
+  background: rgba(255, 255, 255, 0.04) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 16px !important;
+  padding: 12px 14px !important;
+  margin-top: auto !important;
+  margin-bottom: 10px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 8px !important;
+}
+
+body.light-mode .auth-sidebar-account,
+[data-theme="light"] .auth-sidebar-account {
+  background: #f1f5f9 !important;
+  border: 1px solid #e2e8f0 !important;
+}
+
+.auth-sidebar-user {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 2px !important;
+  overflow: hidden !important;
+}
+
+.auth-sidebar-user strong {
+  font-size: 12.5px !important;
+  font-weight: 700 !important;
+  color: var(--saas-text-primary) !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+.auth-sidebar-user span {
+  font-size: 11px !important;
+  color: var(--saas-text-secondary) !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+#authLogoutBtn {
+  background: rgba(244, 63, 94, 0.12) !important;
+  color: #fb7185 !important;
+  border: 1px solid rgba(244, 63, 94, 0.25) !important;
+  border-radius: 9999px !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  padding: 5px 12px !important;
+  height: 28px !important;
+}
+
+/* Theme Toggle Control */
+#themeToggle.sidebar-theme-btn {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 9999px !important;
+  height: 36px !important;
+  padding: 4px 12px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  width: 100% !important;
+  color: var(--saas-text-secondary) !important;
+  font-size: 12px !important;
+}
+
+body.light-mode #themeToggle.sidebar-theme-btn,
+[data-theme="light"] #themeToggle.sidebar-theme-btn {
+  background: #f8fafc !important;
+  border: 1px solid #e2e8f0 !important;
+}
+
+/* --- 3. Workspace Header & KPI Containers --- */
+h1, h2, h3, h4,
+.site-hero h1,
+.auth-brand strong,
+.auth-heading h1 {
+  font-family: var(--font-sans) !important;
+  letter-spacing: -0.02em !important;
+  font-weight: 700 !important;
+  color: var(--saas-text-primary) !important;
+}
+
+p.page-lead {
+  color: var(--saas-text-secondary) !important;
+  font-size: 13.5px !important;
+  margin-top: 4px !important;
+  margin-bottom: 20px !important;
+}
+
+/* Strip outer enclosing box and nested framing around metric cards */
+#auditGuardCard,
+.audit-guard-card {
+  background: transparent !important;
+  background-color: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  outline: none !important;
+  padding: 0 !important;
+  margin: 0 0 24px 0 !important;
+}
+
+/* Target all potential parent wrappers of the KPI / stats row */
+.stats-wrapper,
+.metrics-wrapper,
+.kpi-wrapper,
+.kpi-container,
+.metrics-container,
+.stats-container,
+.stats-row,
+.audit-guard-metrics,
+div:has(> .metric-card),
+div:has(> .kpi-card),
+div:has(> .audit-guard-metric) {
+  background: transparent !important;
+  background-color: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  outline: none !important;
+  padding: 0 !important;
+  margin: 0 0 20px 0 !important;
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  gap: 14px !important;
+  width: 100% !important;
+}
+
+.audit-guard-metric,
+.metric-card,
+.kpi-card {
+  border-radius: 20px !important;
+  padding: 18px 22px !important;
+  background: var(--saas-card-bg) !important;
+  border: 1px solid var(--saas-card-border) !important;
+  box-shadow: var(--saas-card-shadow) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: space-between !important;
+  min-width: 0 !important;
+  overflow: visible !important;
+  transition: transform 0.15s ease !important;
+}
+
+.audit-guard-metric:hover,
+.metric-card:hover,
+.kpi-card:hover {
+  transform: translateY(-2px) !important;
+}
+
+.audit-guard-metric span,
+.metric-card-label,
+.kpi-card-label {
+  font-size: 11.5px !important;
+  color: var(--saas-text-secondary) !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.6px !important;
+}
+
+.audit-guard-metric strong,
+.metric-card-value,
+.kpi-card-value {
+  font-family: var(--font-sans) !important;
+  font-size: 32px !important;
+  font-weight: 800 !important;
+  color: var(--saas-text-primary) !important;
+  margin: 6px 0 !important;
+  font-variant-numeric: tabular-nums !important;
+}
+
+/* Card Surfaces */
+.card,
+.panel,
+.audit-guard-head,
+.audit-guard-live,
+.audit-guard-alert-feed {
+  background: var(--saas-card-bg) !important;
+  border: 1px solid var(--saas-card-border) !important;
+  border-radius: 20px !important;
+  padding: 20px !important;
+  margin-bottom: 20px !important;
+  box-shadow: var(--saas-card-shadow) !important;
+}
+
+body.light-mode .audit-guard-head,
+[data-theme="light"] .audit-guard-head {
+  background: #ffffff !important;
+  border: 1px solid #edf0f5 !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03) !important;
+}
+
+@media (max-width: 860px) {
+  .stats-wrapper,
+  .metrics-wrapper,
+  .kpi-wrapper,
+  .kpi-container,
+  .metrics-container,
+  .stats-container,
+  .stats-row,
+  .audit-guard-metrics,
+  div:has(> .metric-card),
+  div:has(> .kpi-card),
+  div:has(> .audit-guard-metric) {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .stats-wrapper,
+  .metrics-wrapper,
+  .kpi-wrapper,
+  .kpi-container,
+  .metrics-container,
+  .stats-container,
+  .stats-row,
+  .audit-guard-metrics,
+  div:has(> .metric-card),
+  div:has(> .kpi-card),
+  div:has(> .audit-guard-metric) {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* --- 4. Modular Form Section Containers (Grouped Cards inside Containers) --- */
+.form-grid {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)) !important;
+  gap: 18px !important;
+  background: var(--saas-card-bg) !important;
+  border: 1px solid var(--saas-card-border) !important;
+  border-radius: 20px !important;
+  padding: 24px !important;
+  margin-bottom: 24px !important;
+  box-shadow: var(--saas-card-shadow) !important;
+}
+
+.form-group {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 8px !important;
+}
+
+.form-group label {
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  color: var(--saas-text-secondary) !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.5px !important;
+}
+
 input[type="text"],
 input[type="date"],
 input[type="password"],
 input[type="number"],
+input[type="search"],
 select,
 textarea {
-  background: var(--card-bg) !important;
-  border: 1px solid var(--panel-border) !important;
-  color: var(--text-primary) !important;
-  border-radius: 9px !important;
-  padding: 9px 13px !important;
-  font-size: 13px !important;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  background: var(--saas-input-bg) !important;
+  border: 1px solid var(--saas-input-border) !important;
+  border-radius: 12px !important;
+  color: var(--saas-input-color) !important;
+  font-size: 13.5px !important;
+  padding: 10px 14px !important;
+  height: 42px !important;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
   outline: none !important;
-  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.15) !important;
+}
+
+textarea {
+  height: auto !important;
+  min-height: 85px !important;
+  resize: vertical !important;
+}
+
+.form-group.field-remarks {
+  grid-column: 1 / -1 !important;
 }
 
 input:focus,
 select:focus,
 textarea:focus {
-  border-color: var(--accent-cyan) !important;
-  box-shadow: 0 0 0 3px var(--accent-cyan-glow), inset 0 1px 2px rgba(0, 0, 0, 0.1) !important;
+  border-color: var(--saas-input-focus-border) !important;
+  box-shadow: 0 0 0 3px var(--saas-input-focus-ring) !important;
 }
 
-body.light-mode input:focus,
-body.light-mode select:focus,
-body.light-mode textarea:focus,
-[data-theme="light"] input:focus,
-[data-theme="light"] select:focus,
-[data-theme="light"] textarea:focus {
-  border-color: #2d4029 !important;
-  box-shadow: 0 0 0 3px rgba(46, 125, 50, 0.3) !important;
+.input-group {
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
 }
 
-select {
-  cursor: pointer !important;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2338bdf8' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") !important;
-  background-repeat: no-repeat !important;
-  background-position: right 12px center !important;
-  padding-right: 34px !important;
+.input-group select {
+  flex: 1 !important;
 }
 
-body.light-mode select,
-[data-theme="light"] select {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%232d4029' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") !important;
+.input-group .add-btn,
+.input-group .remove-btn {
+  height: 42px !important;
+  width: 42px !important;
+  border-radius: 12px !important;
+  padding: 0 !important;
+  font-size: 16px !important;
+  font-weight: 700 !important;
+  flex-shrink: 0 !important;
 }
 
-textarea {
-  resize: vertical !important;
+/* --- 5. Data Vault Grid Container (`#outputTable` Wrapper) --- */
+.container.grid-section,
+.table-container {
+  border-radius: 22px !important;
+  border: 1px solid var(--saas-table-border) !important;
+  background: #0e1628 !important;
+  overflow: hidden !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3) !important;
+  padding: 8px 16px !important;
+  margin-top: 16px !important;
 }
 
-/* --- Tactile Buttons & Interactive Controls --- */
+table,
+#outputTable,
+.maintenance-table,
+.edr-table {
+  width: 100% !important;
+  border-collapse: collapse !important;
+  border-spacing: 0 !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* Sticky Data Vault Header */
+#outputTable thead th,
+table thead th,
+.maintenance-table th,
+.edr-table th {
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 10 !important;
+  background: var(--saas-table-header-bg) !important;
+  color: var(--saas-table-header-color) !important;
+  font-family: var(--font-sans) !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.6px !important;
+  padding: 14px 16px !important;
+  border-bottom: 1px solid var(--saas-table-header-border) !important;
+  border-top: none !important;
+  border-left: none !important;
+  border-right: none !important;
+}
+
+#outputTable tbody td,
+table tbody td,
+.maintenance-table td,
+.edr-table td {
+  background: transparent !important;
+  color: var(--saas-table-row-color) !important;
+  font-family: var(--font-sans) !important;
+  font-size: 13px !important;
+  padding: 14px 16px !important;
+  border-bottom: 1px solid var(--saas-table-row-border) !important;
+  border-top: none !important;
+  border-left: none !important;
+  border-right: none !important;
+  vertical-align: middle !important;
+  transition: background 0.12s ease !important;
+}
+
+#outputTable tbody tr:hover td,
+table tbody tr:hover td,
+.maintenance-table tr:hover td,
+.edr-table tr:hover td {
+  background: var(--saas-table-row-hover) !important;
+}
+
+/* Tabular Numbers */
+table td:nth-child(3),
+table td:nth-child(4),
+table td:nth-child(5),
+#outputTable td:nth-child(3),
+#outputTable td:nth-child(4),
+#outputTable td:nth-child(5),
+.maintenance-table td:nth-child(1),
+.maintenance-table td:nth-child(2),
+.maintenance-table td:nth-child(6) {
+  font-family: var(--font-mono) !important;
+  font-variant-numeric: tabular-nums !important;
+  font-size: 12px !important;
+}
+
+/* Status Chips Inside Tables (Full Pill Radius) */
+[class*="status"],
+[id*="status"],
+.badge,
+.audit-guard-row-status,
+.cctv-edr-sent-badge {
+  font-family: var(--font-sans) !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  border-radius: 9999px !important;
+  padding: 4px 12px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 5px !important;
+  border: 1px solid transparent !important;
+}
+
+[class*="status-connected"],
+[class*="sheets-connected"],
+.badge-success,
+.audit-guard-row-status.is-sent,
+.followup-status-pill.verified,
+.followup-status-pill.resolved {
+  background: var(--saas-status-success-bg) !important;
+  color: var(--saas-status-success-color) !important;
+  border-color: var(--saas-status-success-border) !important;
+}
+
+.badge-warning,
+.audit-guard-row-status.is-ready,
+.followup-status-pill.verify {
+  background: var(--saas-status-warning-bg) !important;
+  color: var(--saas-status-warning-color) !important;
+  border-color: var(--saas-status-warning-border) !important;
+}
+
+[class*="status-failed"],
+.badge-danger,
+.audit-guard-row-status.is-duplicate,
+.followup-status-pill.disputed {
+  background: var(--saas-status-danger-bg) !important;
+  color: var(--saas-status-danger-color) !important;
+  border-color: var(--saas-status-danger-border) !important;
+}
+
+/* --- 6. Action Bar & Floating Pill Dock Containers --- */
+.button-group {
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+  flex-wrap: wrap !important;
+  margin-top: 20px !important;
+  padding: 10px 16px !important;
+  background: rgba(255, 255, 255, 0.03) !important;
+  border: 1px solid rgba(255, 255, 255, 0.06) !important;
+  border-radius: 9999px !important;
+  width: fit-content !important;
+}
+
+body.light-mode .button-group,
+[data-theme="light"] .button-group {
+  background: #f8fafc !important;
+  border: 1px solid #e2e8f0 !important;
+}
+
 button {
   font-family: var(--font-sans);
-  font-size: 12.5px;
-  font-weight: 600;
-  letter-spacing: 0.3px;
-  padding: 8px 16px;
-  border-radius: var(--radius-md);
+  border-radius: 9999px !important;
   cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  border: 1px solid transparent;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18), 0 2px 4px rgba(0, 0, 0, 0.2);
+  transition: transform 0.1s ease, background 0.15s ease, box-shadow 0.15s ease;
 }
 
 button:active {
   transform: scale(0.97) !important;
 }
 
-/* Primary / Send Actions */
+/* Submit / Primary Action Button */
+#addUpdateBtn,
 button[id*="Send"],
 button[id*="send"],
-#addUpdateBtn,
-.auth-primary-btn,
 button[id*="Add"],
-button[id*="add"] {
-  background: linear-gradient(135deg, #0284c7 0%, #2563eb 100%) !important;
-  color: #ffffff !important;
-  border: 1px solid rgba(56, 189, 248, 0.35) !important;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25), 0 4px 14px rgba(37, 99, 235, 0.35) !important;
+button[id*="add"],
+.auth-primary-btn,
+.audit-guard-btn.primary {
+  background: var(--saas-btn-primary-bg) !important;
+  color: var(--saas-btn-primary-color) !important;
+  border-radius: 9999px !important;
+  height: 42px !important;
+  padding: 0 24px !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  border: none !important;
+  box-shadow: var(--saas-btn-primary-shadow) !important;
 }
 
+#addUpdateBtn:hover,
 button[id*="Send"]:hover,
 button[id*="send"]:hover,
-#addUpdateBtn:hover,
-.auth-primary-btn:hover,
 button[id*="Add"]:hover,
-button[id*="add"]:hover {
-  background: linear-gradient(135deg, #0ea5e9 0%, #1d4ed8 100%) !important;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3), 0 6px 20px rgba(37, 99, 235, 0.5) !important;
+button[id*="add"]:hover,
+.auth-primary-btn:hover,
+.audit-guard-btn.primary:hover {
+  background: var(--saas-btn-primary-hover) !important;
   transform: translateY(-1px);
 }
 
-/* Copy / Export Actions */
+/* Copy Audit: Vivid Emerald Pill Button */
 button[id*="Copy"],
 button[id*="copy"],
 .copy-btn,
 button[id*="Export"],
 button[id*="export"] {
-  background: linear-gradient(135deg, #059669 0%, #0d9488 100%) !important;
-  color: #ffffff !important;
-  border: 1px solid rgba(16, 185, 129, 0.35) !important;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25), 0 4px 14px rgba(13, 148, 136, 0.35) !important;
+  background: var(--saas-btn-success-bg) !important;
+  color: var(--saas-btn-success-color) !important;
+  border-radius: 9999px !important;
+  height: 42px !important;
+  padding: 0 24px !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  border: none !important;
+  box-shadow: var(--saas-btn-success-shadow) !important;
 }
 
 button[id*="Copy"]:hover,
@@ -9344,59 +9988,36 @@ button[id*="copy"]:hover,
 .copy-btn:hover,
 button[id*="Export"]:hover,
 button[id*="export"]:hover {
-  background: linear-gradient(135deg, #10b981 0%, #0f766e 100%) !important;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3), 0 6px 20px rgba(16, 185, 129, 0.5) !important;
+  filter: brightness(1.08) !important;
   transform: translateY(-1px);
 }
 
-/* PDF / Document Actions */
+/* PDF / Document Action Button */
+#simpleEodPdfBtn,
 button[id*="Pdf"],
 button[id*="pdf"],
-#simpleEodPdfBtn,
 button[id*="Doc"],
 button[id*="doc"] {
-  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%) !important;
-  color: #ffffff !important;
-  border: 1px solid rgba(99, 102, 241, 0.35) !important;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25), 0 4px 14px rgba(79, 70, 229, 0.35) !important;
+  background: var(--saas-btn-doc-bg) !important;
+  color: var(--saas-btn-doc-color) !important;
+  border-radius: 9999px !important;
+  height: 40px !important;
+  padding: 0 20px !important;
+  font-weight: 700 !important;
+  border: none !important;
+  box-shadow: var(--saas-btn-doc-shadow) !important;
 }
 
+#simpleEodPdfBtn:hover,
 button[id*="Pdf"]:hover,
 button[id*="pdf"]:hover,
-#simpleEodPdfBtn:hover,
 button[id*="Doc"]:hover,
 button[id*="doc"]:hover {
-  background: linear-gradient(135deg, #818cf8 0%, #4338ca 100%) !important;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3), 0 6px 20px rgba(99, 102, 241, 0.5) !important;
+  filter: brightness(1.08) !important;
   transform: translateY(-1px);
 }
 
-/* Danger / Reset / Clear Actions */
-button[id*="Clear"],
-button[id*="clear"],
-button[id*="Delete"],
-button[id*="delete"],
-button[class*="danger"],
-.delete-btn {
-  background: rgba(244, 63, 94, 0.12) !important;
-  color: var(--accent-rose) !important;
-  border: 1px solid rgba(244, 63, 94, 0.3) !important;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 2px 8px rgba(244, 63, 94, 0.15) !important;
-}
-
-button[id*="Clear"]:hover,
-button[id*="clear"]:hover,
-button[id*="Delete"]:hover,
-button[id*="delete"]:hover,
-button[class*="danger"]:hover,
-.delete-btn:hover {
-  background: rgba(244, 63, 94, 0.22) !important;
-  border-color: var(--accent-rose) !important;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15), 0 4px 14px rgba(244, 63, 94, 0.3) !important;
-  transform: translateY(-1px);
-}
-
-/* Utility / Setup / Drafts Actions */
+/* Framed Glass / Ghost / Secondary Buttons */
 button[id*="Setup"],
 button[id*="Drafts"],
 button[id*="drafts"],
@@ -9407,11 +10028,17 @@ button[id*="import"],
 button[id*="Paste"],
 button[id*="paste"],
 .edit-btn,
-.secondary-btn {
-  background: var(--card-bg) !important;
-  border: 1px solid var(--panel-border) !important;
-  color: var(--text-primary) !important;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 2px 6px rgba(0, 0, 0, 0.2) !important;
+.secondary-btn,
+.clear-btn,
+.audit-guard-btn:not(.primary):not(.danger) {
+  background: var(--saas-btn-ghost-bg) !important;
+  border: 1px solid var(--saas-btn-ghost-border) !important;
+  color: var(--saas-btn-ghost-color) !important;
+  border-radius: 9999px !important;
+  height: 38px !important;
+  padding: 0 18px !important;
+  font-weight: 600 !important;
+  box-shadow: none !important;
 }
 
 button[id*="Setup"]:hover,
@@ -9424,189 +10051,48 @@ button[id*="import"]:hover,
 button[id*="Paste"]:hover,
 button[id*="paste"]:hover,
 .edit-btn:hover,
-.secondary-btn:hover {
-  background: var(--card-hover) !important;
-  border-color: var(--panel-border-focus) !important;
+.secondary-btn:hover,
+.clear-btn:hover,
+.audit-guard-btn:not(.primary):not(.danger):hover {
+  filter: brightness(1.08) !important;
   transform: translateY(-1px);
 }
 
-/* --- Status Pills & Connection Indicators --- */
-[class*="status"],
-[id*="status"],
-.badge,
-.audit-guard-row-status,
-.cctv-edr-sent-badge {
-  font-family: var(--font-mono) !important;
-  font-size: 11px !important;
-  font-weight: 600 !important;
-  padding: 4px 10px !important;
+/* Danger / Reset / Clear Buttons */
+button[id*="Clear"],
+button[id*="clear"],
+button[id*="Delete"],
+button[id*="delete"],
+button[class*="danger"],
+.delete-btn,
+.audit-guard-btn.danger {
+  background: var(--saas-btn-danger-bg) !important;
+  color: var(--saas-btn-danger-color) !important;
+  border: 1px solid var(--saas-btn-danger-border) !important;
   border-radius: 9999px !important;
-  border: 1px solid transparent !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  gap: 6px !important;
-  font-variant-numeric: tabular-nums !important;
+  height: 38px !important;
+  padding: 0 18px !important;
+  font-weight: 600 !important;
 }
 
-/* Glowing dot indicator */
-[class*="status"]::before,
-.badge-success::before,
-.badge-danger::before,
-.audit-guard-row-status::before {
-  content: "";
-  display: inline-block;
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  flex-shrink: 0;
+/* --- Responsive Breakpoints --- */
+@media (max-width: 1100px) {
+  body.ops-redesign-v3 {
+    padding: 20px 16px 20px 16px !important;
+  }
+  aside.workspace-tabs.admin-sidebar {
+    left: 16px !important;
+    transform: translateX(-310px);
+  }
+  body.ops-redesign-v3:not(.sidebar-collapsed) aside.workspace-tabs.admin-sidebar {
+    transform: translateX(0) !important;
+  }
+  #sidebarToggle {
+    left: 16px !important;
+  }
 }
 
-/* Connected indicator */
-[class*="status-connected"],
-[class*="sheets-connected"],
-.badge-success,
-.audit-guard-row-status.is-sent,
-.followup-status-pill.verified,
-.followup-status-pill.resolved {
-  background: rgba(16, 185, 129, 0.14) !important;
-  color: #34d399 !important;
-  border-color: rgba(16, 185, 129, 0.35) !important;
-}
-[class*="status-connected"]::before,
-[class*="sheets-connected"]::before,
-.badge-success::before,
-.audit-guard-row-status.is-sent::before,
-.followup-status-pill.verified::before,
-.followup-status-pill.resolved::before {
-  background: #10b981;
-  box-shadow: 0 0 8px #10b981;
-}
-
-/* Failed indicator */
-[class*="status-failed"],
-.badge-danger,
-.audit-guard-row-status.is-duplicate,
-.followup-status-pill.disputed {
-  background: rgba(244, 63, 94, 0.14) !important;
-  color: #fb7185 !important;
-  border-color: rgba(244, 63, 94, 0.35) !important;
-}
-[class*="status-failed"]::before,
-.badge-danger::before,
-.audit-guard-row-status.is-duplicate::before,
-.followup-status-pill.disputed::before {
-  background: #f43f5e;
-  box-shadow: 0 0 8px #f43f5e;
-}
-
-/* Pending indicator */
-.badge-warning,
-.audit-guard-row-status.is-ready,
-.followup-status-pill.verify {
-  background: rgba(245, 158, 11, 0.14) !important;
-  color: #fbbf24 !important;
-  border-color: rgba(245, 158, 11, 0.35) !important;
-}
-.badge-warning::before,
-.audit-guard-row-status.is-ready::before,
-.followup-status-pill.verify::before {
-  background: #f59e0b;
-  box-shadow: 0 0 8px #f59e0b;
-}
-
-/* Info indicator */
-.badge-info,
-.followup-status-pill.replied {
-  background: rgba(56, 189, 248, 0.14) !important;
-  color: #38bdf8 !important;
-  border-color: rgba(56, 189, 248, 0.35) !important;
-}
-.badge-info::before,
-.followup-status-pill.replied::before {
-  background: #38bdf8;
-  box-shadow: 0 0 8px #38bdf8;
-}
-
-/* --- Precision Data Output Grid (`#outputTable`) --- */
-table,
-#outputTable,
-.maintenance-table,
-.edr-table {
-  width: 100%;
-  border-collapse: separate !important;
-  border-spacing: 0 !important;
-  font-size: 12.5px;
-  background: var(--card-bg) !important;
-  border-radius: var(--radius-md) !important;
-  overflow: hidden;
-  border: 1px solid var(--panel-border) !important;
-  box-shadow: var(--shadow-sm) !important;
-}
-
-table th,
-#outputTable th,
-.maintenance-table th,
-.edr-table th {
-  background: rgba(15, 23, 42, 0.9) !important;
-  color: var(--text-secondary) !important;
-  font-family: var(--font-display) !important;
-  font-size: 11px !important;
-  font-weight: 700 !important;
-  text-transform: uppercase !important;
-  letter-spacing: 0.6px !important;
-  padding: 11px 12px !important;
-  border-bottom: 1px solid var(--panel-border) !important;
-}
-
-body.light-mode table th,
-body.light-mode #outputTable th,
-[data-theme="light"] table th,
-[data-theme="light"] #outputTable th {
-  background: rgba(226, 232, 240, 0.95) !important;
-  color: var(--text-primary) !important;
-}
-
-table td,
-#outputTable td,
-.maintenance-table td,
-.edr-table td {
-  padding: 9px 12px !important;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.04) !important;
-  color: var(--text-primary) !important;
-  font-family: var(--font-sans);
-  font-size: 12.5px;
-}
-
-body.light-mode table td,
-body.light-mode #outputTable td,
-[data-theme="light"] table td,
-[data-theme="light"] #outputTable td {
-  border-bottom: 1px solid rgba(0, 0, 0, 0.06) !important;
-}
-
-table tr:hover td,
-#outputTable tr:hover td,
-.maintenance-table tr:hover td,
-.edr-table tr:hover td {
-  background: rgba(56, 189, 248, 0.05) !important;
-}
-
-/* Enforce tabular-nums & JetBrains Mono on all data columns, timestamps, station numbers, dates */
-table td:nth-child(3),
-table td:nth-child(4),
-table td:nth-child(5),
-#outputTable td:nth-child(3),
-#outputTable td:nth-child(4),
-#outputTable td:nth-child(5),
-.maintenance-table td:nth-child(1),
-.maintenance-table td:nth-child(2),
-.maintenance-table td:nth-child(6) {
-  font-family: var(--font-mono) !important;
-  font-variant-numeric: tabular-nums !important;
-  font-size: 11.5px !important;
-}
-
-/* --- Scrollbars --- */
+/* --- Slim Minimal Scrollbars --- */
 ::-webkit-scrollbar {
   width: 6px !important;
   height: 6px !important;
@@ -9617,20 +10103,570 @@ table td:nth-child(5),
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.16) !important;
+  background: rgba(255, 255, 255, 0.15) !important;
   border-radius: 9999px !important;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(56, 189, 248, 0.4) !important;
 }
 
 body.light-mode ::-webkit-scrollbar-thumb,
 [data-theme="light"] ::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.2) !important;
+  background: rgba(0, 0, 0, 0.15) !important;
 }
 
-body.light-mode ::-webkit-scrollbar-thumb:hover,
-[data-theme="light"] ::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 0, 0, 0.35) !important;
+/* ==========================================================================
+   MAINTENANCE WORKSPACE DE-CLUTTER & BORDERLESS CANVAS LAYOUT
+   ========================================================================== */
+
+/* 1. Global Instruction & Helper Text Suppression */
+#maintenancePanel .tab-subtitle,
+#maintenancePanel .panel-subtitle,
+#maintenancePanel .instruction-box,
+#maintenancePanel .workflow-note,
+#maintenancePanel .maintenance-intro,
+#maintenancePanel .maintenance-header-optional-note,
+#maintenancePanel .mini-sheet-selection-help,
+#maintenancePanel p.page-lead,
+#maintenancePanel p:not(.preserve-text),
+#maintenancePanel .mini-sheet-toolbar > div > span:not([id]),
+#eodPanel .tab-subtitle,
+#eodPanel .panel-subtitle,
+#eodPanel .instruction-box,
+#eodPanel .workflow-note,
+#eodPanel .simple-eod-intro,
+#eodPanel .maintenance-sheets-copy-hint,
+#eodPanel p.page-lead,
+#eodPanel p:not(.preserve-text),
+#eodPanel .eod-block:not(.is-collapsed) .eod-block-sub {
+    display: none !important;
 }
+
+/* 2. Outer Shells sit directly on canvas without double borders */
+#maintenancePanel .maintenance-shell,
+#eodPanel .simple-eod-shell {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+}
+
+/* Eliminate all nested containers, sub-cards, and inner boxes */
+#maintenancePanel .card,
+#maintenancePanel .panel,
+#maintenancePanel .sub-card,
+#maintenancePanel .box,
+#maintenancePanel .container-box,
+#maintenancePanel .mini-sheet-card,
+#maintenancePanel .mini-sheet-toolbar,
+#maintenancePanel .mini-sheet-shortcuts,
+#maintenancePanel .mini-sheet-actions,
+#maintenancePanel .mini-sheet-findbar,
+#maintenancePanel .maintenance-form-grid,
+#maintenancePanel .form-group,
+#maintenancePanel .table-wrapper,
+#eodPanel .card,
+#eodPanel .panel,
+#eodPanel .sub-card,
+#eodPanel .box,
+#eodPanel .container-box,
+#eodPanel .eod-canvas-workspace,
+#eodPanel .eod-block-list,
+#eodPanel .eod-block-content,
+#eodPanel .eod-block-data,
+#eodPanel .remarks-section,
+#eodPanel .maintenance-form-grid,
+#eodPanel .form-group {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+}
+
+/* Block 2 in #eodPanel sits directly on canvas with no outer double border */
+#eodPanel .maintenance-data-block,
+#eodPanel .eod-canvas-workspace {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+/* Single unified block style for primary containers (Block 1 form & Block 2 sheet) */
+#maintenancePanel .unified-block,
+#eodPanel > .container > .unified-block.maintenance-form-block {
+    background: var(--saas-card-bg, #111a2e) !important;
+    border: 1px solid var(--saas-card-border, rgba(255, 255, 255, 0.08)) !important;
+    border-radius: 20px !important;
+    padding: 22px 24px !important;
+    margin-bottom: 20px !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2) !important;
+    position: relative !important;
+}
+
+body.light-mode #maintenancePanel .unified-block,
+body.light-mode #eodPanel > .container > .unified-block.maintenance-form-block,
+[data-theme="light"] #maintenancePanel .unified-block,
+[data-theme="light"] #eodPanel > .container > .unified-block.maintenance-form-block {
+    background: #ffffff !important;
+    border: 1px solid #edf0f5 !important;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04) !important;
+}
+
+/* Borderless Grid Alignment for Form Elements */
+#maintenancePanel .maintenance-form-grid,
+#maintenancePanel form,
+#eodPanel .maintenance-form-grid,
+#eodPanel form {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)) !important;
+    gap: 16px !important;
+    align-items: flex-end !important;
+    width: 100% !important;
+}
+
+#maintenancePanel .maintenance-field-full,
+#eodPanel .maintenance-field-full {
+    grid-column: 1 / -1 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 8px !important;
+    width: 100% !important;
+}
+
+/* Form Groups are Clean Spacers */
+#maintenancePanel .form-group,
+#maintenancePanel .input-group,
+#eodPanel .form-group,
+#eodPanel .input-group {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 6px !important;
+}
+
+/* Each EOD report block sits directly on the canvas as a single clean card */
+#eodPanel .eod-block {
+    background: var(--saas-card-bg, #111a2e) !important;
+    border: 1px solid var(--saas-card-border, rgba(255, 255, 255, 0.08)) !important;
+    border-radius: 18px !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15) !important;
+    margin-bottom: 16px !important;
+    overflow: hidden !important;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
+}
+
+body.light-mode #eodPanel .eod-block,
+[data-theme="light"] #eodPanel .eod-block {
+    background: #ffffff !important;
+    border: 1px solid #edf0f5 !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04) !important;
+}
+
+#eodPanel .eod-block.is-working {
+    border-color: #0284c7 !important;
+    box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15), 0 4px 16px rgba(0, 0, 0, 0.2) !important;
+}
+
+#eodPanel .eod-block-head {
+    background: rgba(255, 255, 255, 0.02) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+    padding: 12px 18px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 12px !important;
+    min-height: 52px !important;
+}
+
+body.light-mode #eodPanel .eod-block-head,
+[data-theme="light"] #eodPanel .eod-block-head {
+    background: #f8fafc !important;
+    border-bottom: 1px solid #edf0f5 !important;
+}
+
+#eodPanel .eod-block-content {
+    padding: 18px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 16px !important;
+}
+
+#eodPanel .eod-proof-zone {
+    background: rgba(255, 255, 255, 0.015) !important;
+    border: 1px dashed rgba(255, 255, 255, 0.12) !important;
+    border-radius: 14px !important;
+    padding: 16px !important;
+    min-height: 90px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 10px !important;
+    text-align: center !important;
+    transition: all 0.15s ease !important;
+}
+
+body.light-mode #eodPanel .eod-proof-zone,
+[data-theme="light"] #eodPanel .eod-proof-zone {
+    background: #f8fafc !important;
+    border: 1px dashed #cbd5e1 !important;
+}
+
+#eodPanel .eod-proof-zone:hover,
+#eodPanel .eod-proof-zone.active-paste-target {
+    border-color: #0284c7 !important;
+    background: rgba(2, 132, 199, 0.04) !important;
+}
+
+/* Action Controls Rows */
+#maintenancePanel .button-row,
+#maintenancePanel .action-controls,
+#maintenancePanel .maintenance-toolbar,
+#eodPanel .button-row,
+#eodPanel .action-controls,
+#eodPanel .simple-eod-actions {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 10px !important;
+    align-items: center !important;
+    margin-top: 18px !important;
+    padding-top: 14px !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.06) !important;
+    background: transparent !important;
+    border-left: none !important;
+    border-right: none !important;
+    border-bottom: none !important;
+}
+
+body.light-mode #maintenancePanel .button-row,
+body.light-mode #maintenancePanel .action-controls,
+body.light-mode #maintenancePanel .maintenance-toolbar,
+[data-theme="light"] #maintenancePanel .button-row,
+[data-theme="light"] #maintenancePanel .action-controls,
+[data-theme="light"] #maintenancePanel .maintenance-toolbar,
+body.light-mode #eodPanel .button-row,
+body.light-mode #eodPanel .action-controls,
+body.light-mode #eodPanel .simple-eod-actions,
+[data-theme="light"] #eodPanel .button-row,
+[data-theme="light"] #eodPanel .action-controls,
+[data-theme="light"] #eodPanel .simple-eod-actions {
+    border-top: 1px solid rgba(0, 0, 0, 0.06) !important;
+}
+
+#maintenancePanel .table-wrapper,
+#eodPanel .table-wrapper {
+    background: transparent !important;
+    border: none !important;
+    padding: 0 !important;
+    margin-top: 14px !important;
+    overflow-x: auto !important;
+}
+
+/* ==========================================================================
+   BUTTON STANDARDIZATION (EXACT 38PX, 9999PX PILL, 12.5PX / 600 FONT)
+   ========================================================================== */
+
+#maintenancePanel button:not(.eod-proof-remove),
+#eodPanel button:not(.eod-proof-remove),
+#eodPanel .eod-proof-label {
+    height: 38px !important;
+    min-height: 38px !important;
+    max-height: 38px !important;
+    border-radius: 9999px !important;
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif !important;
+    font-size: 12.5px !important;
+    font-weight: 600 !important;
+    line-height: 1 !important;
+    box-sizing: border-box !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 7px !important;
+    padding: 0 16px !important;
+    white-space: nowrap !important;
+    cursor: pointer !important;
+    text-decoration: none !important;
+    transition: all 0.15s ease !important;
+}
+
+#maintenancePanel button:active:not(:disabled),
+#eodPanel button:active:not(:disabled),
+#eodPanel .eod-proof-label:active {
+    transform: scale(0.97) !important;
+}
+
+#maintenancePanel button:disabled,
+#eodPanel button:disabled {
+    opacity: 0.42 !important;
+    cursor: not-allowed !important;
+    pointer-events: none !important;
+}
+
+/* Primary Action Buttons */
+#maintenancePanel .maintenance-primary,
+#maintenancePanel #maintenanceSortBtn,
+#eodPanel .btn-eod-primary,
+#eodPanel #simpleEodPdfBtn {
+    background: #0284c7 !important;
+    color: #ffffff !important;
+    border: 1px solid #0ea5e9 !important;
+    box-shadow: 0 2px 10px rgba(2, 132, 199, 0.28) !important;
+}
+
+#maintenancePanel .maintenance-primary:hover,
+#maintenancePanel #maintenanceSortBtn:hover,
+#eodPanel .btn-eod-primary:hover,
+#eodPanel #simpleEodPdfBtn:hover {
+    background: #0369a1 !important;
+    border-color: #38bdf8 !important;
+    color: #ffffff !important;
+    transform: translateY(-1px) !important;
+}
+
+/* Sheet / Send / Export Buttons */
+#eodPanel .btn-eod-sheet-copy,
+#eodPanel #simpleEodCopySheetsBtn,
+#eodPanel .btn-eod-sheet-send,
+#eodPanel #simpleEodSendSheetsBtn,
+#maintenancePanel .maintenance-secondary,
+#maintenancePanel #maintenanceCopyBtn,
+#maintenancePanel .mini-sheet-copy,
+#maintenancePanel #miniSheetCopyRowsBtn,
+#maintenancePanel .mini-sheet-to-report,
+#maintenancePanel #miniSheetToReportBtn {
+    background: #059669 !important;
+    color: #ffffff !important;
+    border: 1px solid #10b981 !important;
+    box-shadow: 0 2px 10px rgba(5, 150, 105, 0.28) !important;
+}
+
+#eodPanel .btn-eod-sheet-copy:hover,
+#eodPanel #simpleEodCopySheetsBtn:hover,
+#eodPanel .btn-eod-sheet-send:hover,
+#eodPanel #simpleEodSendSheetsBtn:hover,
+#maintenancePanel .maintenance-secondary:hover,
+#maintenancePanel #maintenanceCopyBtn:hover,
+#maintenancePanel .mini-sheet-copy:hover,
+#maintenancePanel #miniSheetCopyRowsBtn:hover,
+#maintenancePanel .mini-sheet-to-report:hover,
+#maintenancePanel #miniSheetToReportBtn:hover {
+    background: #047857 !important;
+    border-color: #34d399 !important;
+    color: #ffffff !important;
+    transform: translateY(-1px) !important;
+}
+
+/* Outline / Ghost / Secondary Buttons */
+#maintenancePanel .maintenance-outline,
+#maintenancePanel #maintenanceClearBtn,
+#eodPanel .btn-eod-outline,
+#eodPanel .btn-eod-secondary,
+#eodPanel #simpleEodSaveBtn,
+#eodPanel #simpleEodDraftsBtn,
+#eodPanel #simpleEodSheetSetupBtn,
+#eodPanel #simpleEodPreviewBtn,
+#eodPanel .toggle-block-data,
+#eodPanel .duplicate-block,
+#eodPanel .eod-proof-label,
+#maintenancePanel #miniSheetFindTlBtn,
+#maintenancePanel #miniSheetFindNextBtn,
+#maintenancePanel .mini-sheet-select-same,
+#maintenancePanel .mini-sheet-cut,
+#maintenancePanel .mini-sheet-clear-selection {
+    background: rgba(255, 255, 255, 0.05) !important;
+    color: #e2e8f0 !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    box-shadow: none !important;
+}
+
+#maintenancePanel .maintenance-outline:hover,
+#maintenancePanel #maintenanceClearBtn:hover,
+#eodPanel .btn-eod-outline:hover,
+#eodPanel .btn-eod-secondary:hover,
+#eodPanel #simpleEodSaveBtn:hover,
+#eodPanel #simpleEodDraftsBtn:hover,
+#eodPanel #simpleEodSheetSetupBtn:hover,
+#eodPanel #simpleEodPreviewBtn:hover,
+#eodPanel .toggle-block-data:hover,
+#eodPanel .duplicate-block:hover,
+#eodPanel .eod-proof-label:hover,
+#maintenancePanel #miniSheetFindTlBtn:hover,
+#maintenancePanel #miniSheetFindNextBtn:hover,
+#maintenancePanel .mini-sheet-select-same:hover,
+#maintenancePanel .mini-sheet-cut:hover,
+#maintenancePanel .mini-sheet-clear-selection:hover {
+    background: rgba(255, 255, 255, 0.1) !important;
+    border-color: rgba(255, 255, 255, 0.24) !important;
+    color: #ffffff !important;
+    transform: translateY(-1px) !important;
+}
+
+body.light-mode #maintenancePanel .maintenance-outline,
+body.light-mode #maintenancePanel #maintenanceClearBtn,
+body.light-mode #eodPanel .btn-eod-outline,
+body.light-mode #eodPanel .btn-eod-secondary,
+body.light-mode #eodPanel #simpleEodSaveBtn,
+body.light-mode #eodPanel #simpleEodDraftsBtn,
+body.light-mode #eodPanel #simpleEodSheetSetupBtn,
+body.light-mode #eodPanel #simpleEodPreviewBtn,
+body.light-mode #eodPanel .toggle-block-data,
+body.light-mode #eodPanel .duplicate-block,
+body.light-mode #eodPanel .eod-proof-label,
+body.light-mode #maintenancePanel #miniSheetFindTlBtn,
+body.light-mode #maintenancePanel #miniSheetFindNextBtn,
+body.light-mode #maintenancePanel .mini-sheet-select-same,
+body.light-mode #maintenancePanel .mini-sheet-cut,
+body.light-mode #maintenancePanel .mini-sheet-clear-selection,
+[data-theme="light"] #maintenancePanel .maintenance-outline,
+[data-theme="light"] #maintenancePanel #maintenanceClearBtn,
+[data-theme="light"] #eodPanel .btn-eod-outline,
+[data-theme="light"] #eodPanel .btn-eod-secondary,
+[data-theme="light"] #eodPanel #simpleEodSaveBtn,
+[data-theme="light"] #eodPanel #simpleEodDraftsBtn,
+[data-theme="light"] #eodPanel #simpleEodSheetSetupBtn,
+[data-theme="light"] #eodPanel #simpleEodPreviewBtn,
+[data-theme="light"] #eodPanel .toggle-block-data,
+[data-theme="light"] #eodPanel .duplicate-block,
+[data-theme="light"] #eodPanel .eod-proof-label,
+[data-theme="light"] #maintenancePanel #miniSheetFindTlBtn,
+[data-theme="light"] #maintenancePanel #miniSheetFindNextBtn,
+[data-theme="light"] #maintenancePanel .mini-sheet-select-same,
+[data-theme="light"] #maintenancePanel .mini-sheet-cut,
+[data-theme="light"] #maintenancePanel .mini-sheet-clear-selection {
+    background: #ffffff !important;
+    color: #334155 !important;
+    border: 1px solid #cbd5e1 !important;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04) !important;
+}
+
+body.light-mode #maintenancePanel .maintenance-outline:hover,
+body.light-mode #eodPanel .btn-eod-outline:hover,
+body.light-mode #eodPanel .btn-eod-secondary:hover,
+[data-theme="light"] #maintenancePanel .maintenance-outline:hover,
+[data-theme="light"] #eodPanel .btn-eod-outline:hover,
+[data-theme="light"] #eodPanel .btn-eod-secondary:hover {
+    background: #f8fafc !important;
+    border-color: #94a3b8 !important;
+    color: #0f172a !important;
+}
+
+/* Danger / Reset / Clear Buttons */
+#maintenancePanel .maintenance-danger,
+#maintenancePanel #maintenanceResetAssignmentsBtn,
+#eodPanel .btn-eod-danger,
+#eodPanel #simpleEodClearBtn,
+#eodPanel .remove-block,
+#maintenancePanel .mini-sheet-clear-all,
+#maintenancePanel #miniSheetRemoveRowBtn {
+    background: rgba(244, 63, 94, 0.12) !important;
+    color: #fb7185 !important;
+    border: 1px solid rgba(244, 63, 94, 0.28) !important;
+}
+
+#maintenancePanel .maintenance-danger:hover,
+#maintenancePanel #maintenanceResetAssignmentsBtn:hover,
+#eodPanel .btn-eod-danger:hover,
+#eodPanel #simpleEodClearBtn:hover,
+#eodPanel .remove-block:hover,
+#maintenancePanel .mini-sheet-clear-all:hover,
+#maintenancePanel #miniSheetRemoveRowBtn:hover {
+    background: rgba(244, 63, 94, 0.22) !important;
+    border-color: rgba(244, 63, 94, 0.45) !important;
+    color: #fda4af !important;
+    transform: translateY(-1px) !important;
+}
+
+body.light-mode #maintenancePanel .maintenance-danger,
+body.light-mode #eodPanel .btn-eod-danger,
+body.light-mode #eodPanel .remove-block,
+body.light-mode #maintenancePanel .mini-sheet-clear-all,
+[data-theme="light"] #maintenancePanel .maintenance-danger,
+[data-theme="light"] #eodPanel .btn-eod-danger,
+[data-theme="light"] #eodPanel .remove-block,
+[data-theme="light"] #maintenancePanel .mini-sheet-clear-all {
+    background: #fff1f2 !important;
+    color: #e11d48 !important;
+    border: 1px solid #fecdd3 !important;
+}
+
+body.light-mode #maintenancePanel .maintenance-danger:hover,
+body.light-mode #eodPanel .btn-eod-danger:hover,
+[data-theme="light"] #maintenancePanel .maintenance-danger:hover,
+[data-theme="light"] #eodPanel .btn-eod-danger:hover {
+    background: #ffe4e6 !important;
+    border-color: #fda4af !important;
+    color: #be123c !important;
+}
+
+/* Add Next Block Button */
+#eodPanel #simpleEodAddBtn,
+#eodPanel .eod-add-next {
+    width: 100% !important;
+    height: 38px !important;
+    min-height: 38px !important;
+    max-height: 38px !important;
+    border-radius: 9999px !important;
+    background: rgba(2, 132, 199, 0.08) !important;
+    color: #38bdf8 !important;
+    border: 1px dashed rgba(56, 189, 248, 0.4) !important;
+}
+
+#eodPanel #simpleEodAddBtn:hover,
+#eodPanel .eod-add-next:hover {
+    background: rgba(2, 132, 199, 0.16) !important;
+    border-color: #38bdf8 !important;
+    color: #7dd3fc !important;
+    transform: translateY(-1px) !important;
+}
+
+body.light-mode #eodPanel #simpleEodAddBtn,
+body.light-mode #eodPanel .eod-add-next,
+[data-theme="light"] #eodPanel #simpleEodAddBtn,
+[data-theme="light"] #eodPanel .eod-add-next {
+    background: rgba(2, 132, 199, 0.06) !important;
+    color: #0284c7 !important;
+    border: 1px dashed rgba(2, 132, 199, 0.4) !important;
+}
+
+body.light-mode #eodPanel #simpleEodAddBtn:hover,
+body.light-mode #eodPanel .eod-add-next:hover,
+[data-theme="light"] #eodPanel #simpleEodAddBtn:hover,
+[data-theme="light"] #eodPanel .eod-add-next:hover {
+    background: rgba(2, 132, 199, 0.12) !important;
+    border-color: #0284c7 !important;
+}
+
+/* Status Indicators in Action Rows */
+#maintenancePanel #maintenanceStats,
+#eodPanel #maintenanceSheetConnectionState,
+#eodPanel #simpleEodAutosaveStatus {
+    height: 38px !important;
+    min-height: 38px !important;
+    max-height: 38px !important;
+    border-radius: 9999px !important;
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif !important;
+    font-size: 11.5px !important;
+    font-weight: 600 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    padding: 0 14px !important;
+    line-height: 1 !important;
+    box-sizing: border-box !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+#maintenancePanel #miniSheetFindTlInput {
+    height: 38px !important;
+    min-height: 38px !important;
+    max-height: 38px !important;
+    border-radius: 9999px !important;
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif !important;
+    font-size: 12.5px !important;
+    padding: 0 14px !important;
+}
+
+
