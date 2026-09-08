@@ -442,16 +442,19 @@ body.dark-mode .maintenance-table th {
 }
 
 #eodPanel .simple-eod-actions {
-    position: sticky;
-    top: 12px;
-    z-index: 50;
-    margin: 14px 0 18px !important;
-    padding: 10px !important;
-    border: 1px solid var(--admin-line) !important;
-    border-radius: 12px !important;
-    background: color-mix(in srgb, var(--admin-panel) 94%, transparent) !important;
-    box-shadow: var(--admin-shadow) !important;
-    backdrop-filter: blur(12px);
+    position: static !important;
+    top: auto !important;
+    z-index: 10;
+    margin: 14px 0 22px 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    outline: none !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    background-color: transparent !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
 }
 
 #eodPanel .eod-block-list {
@@ -5930,24 +5933,27 @@ body.ops-redesign-v3 #eodPanel .simple-eod-top .input-group .remove-btn {
 }
 
 body.ops-redesign-v3 #eodPanel .simple-eod-actions {
-    position: sticky !important;
-    top: 10px !important;
-    z-index: 60 !important;
+    position: static !important;
+    top: auto !important;
+    z-index: 10 !important;
 
     display: flex !important;
     align-items: center !important;
-    gap: 6px !important;
-    flex-wrap: wrap !important;
+    gap: 10px !important;
+    flex-wrap: nowrap !important;
 
-    margin: 10px 0 12px !important;
-    padding: 8px !important;
+    margin: 14px 0 22px 0 !important;
+    padding: 0 !important;
 
-    border: 1px solid var(--ops-line) !important;
-    border-radius: 9px !important;
+    border: none !important;
+    outline: none !important;
+    border-radius: 0 !important;
 
-    background: color-mix(in srgb, var(--ops-panel) 92%, transparent) !important;
-    box-shadow: 0 8px 24px rgba(16,24,40,.06) !important;
-    backdrop-filter: blur(12px);
+    background: transparent !important;
+    background-color: transparent !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
 }
 
 body.ops-redesign-v3 #eodPanel .maintenance-autosave-status {
@@ -9319,56 +9325,98 @@ body.ops-redesign-v3.sidebar-collapsed aside.workspace-tabs.admin-sidebar {
   pointer-events: none !important;
 }
 
-/* Sidebar Toggle Bubble */
+/* ==========================================================================
+   1. DOCK & STYLE SIDEBAR TOGGLE BUTTON (<)
+   ========================================================================== */
 #sidebarToggle,
-.sidebar-collapse-toggle {
-  position: fixed !important;
-  top: 32px !important;
-  left: calc(max(20px, calc((100vw - 1680px) / 2 + 20px)) + 248px) !important;
-  z-index: 10001 !important;
-  width: 26px !important;
-  height: 26px !important;
-  border-radius: 50% !important;
-  background: #1e293b !important;
-  color: #94a3b8 !important;
-  border: 1px solid rgba(255, 255, 255, 0.15) !important;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  cursor: pointer !important;
-  font-size: 13px !important;
-  transition: all 0.2s ease !important;
+.sidebar-toggle,
+.sidebar-collapse-toggle,
+.collapse-btn,
+button:has(> .chevron-left),
+div:has(> #sidebarToggle) {
+    position: absolute !important;
+    top: 20px !important;
+    left: 242px !important; /* Docks precisely along the sidebar dividing border */
+    z-index: 100 !important;
+    width: 26px !important;
+    height: 26px !important;
+    min-height: 26px !important;
+    padding: 0 !important;
+    border-radius: 50% !important;
+    background: #111827 !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    color: #94a3b8 !important;
+    font-size: 11px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    cursor: pointer !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4) !important;
+    transition: all 0.2s ease !important;
 }
 
+#sidebarToggle:hover,
+.sidebar-toggle:hover,
+.sidebar-collapse-toggle:hover {
+    background: #1e293b !important;
+    border-color: #38bdf8 !important;
+    color: #ffffff !important;
+    transform: scale(1.08) !important;
+}
+
+/* Adjust when sidebar is collapsed */
+.sidebar.collapsed ~ #sidebarToggle,
+body.sidebar-collapsed #sidebarToggle,
 body.ops-redesign-v3.sidebar-collapsed #sidebarToggle {
-  left: max(20px, calc((100vw - 1680px) / 2 + 20px)) !important;
+    left: 68px !important;
+    transform: rotate(180deg) !important;
+}
+
+.sidebar.collapsed ~ #sidebarToggle:hover,
+body.sidebar-collapsed #sidebarToggle:hover,
+body.ops-redesign-v3.sidebar-collapsed #sidebarToggle:hover {
+    transform: rotate(180deg) scale(1.08) !important;
 }
 
 body.light-mode #sidebarToggle,
 [data-theme="light"] #sidebarToggle {
-  background: #ffffff !important;
-  color: #64748b !important;
-  border: 1px solid #cbd5e1 !important;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06) !important;
+    background: #ffffff !important;
+    color: #475569 !important;
+    border: 1px solid rgba(15, 23, 42, 0.14) !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08) !important;
 }
 
-/* Recessed Brand Header */
-.ops-sidebar-brand {
-  background: rgba(255, 255, 255, 0.03) !important;
-  border: 1px solid rgba(255, 255, 255, 0.06) !important;
-  border-radius: 16px !important;
-  padding: 14px 16px !important;
-  margin-bottom: 12px !important;
-  display: flex !important;
-  flex-direction: column !important;
-  gap: 3px !important;
+body.light-mode #sidebarToggle:hover,
+[data-theme="light"] #sidebarToggle:hover {
+    background: #f8fafc !important;
+    border-color: #0284c7 !important;
+    color: #0f172a !important;
+}
+
+/* ==========================================================================
+   2. REMOVE 3 SIDEBAR CONTAINERS (FLAT & CLEAN LOOK)
+   ========================================================================== */
+
+/* Top Brand Area: CCTV OPS */
+.sidebar-header,
+.brand-container,
+.brand-box,
+.ops-sidebar-brand,
+aside.workspace-tabs.admin-sidebar .ops-sidebar-brand,
+aside > div:first-child {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 16px 16px 20px 16px !important;
+    margin: 0 !important;
 }
 
 body.light-mode .ops-sidebar-brand,
-[data-theme="light"] .ops-sidebar-brand {
-  background: #f8fafc !important;
-  border: 1px solid #e2e8f0 !important;
+[data-theme="light"] .ops-sidebar-brand,
+html body.ops-redesign-v3:not(.dark-mode) aside.workspace-tabs.admin-sidebar .ops-sidebar-brand {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
 }
 
 .ops-sidebar-brand strong {
@@ -9461,24 +9509,32 @@ button.workspace-tab-btn.active::before,
   border: 1px solid rgba(56, 189, 248, 0.3) !important;
 }
 
-/* Pinned User Profile Container (Floating Mini-Card at Bottom) */
-.auth-sidebar-account {
-  background: rgba(255, 255, 255, 0.04) !important;
-  border: 1px solid rgba(255, 255, 255, 0.08) !important;
-  border-radius: 16px !important;
-  padding: 12px 14px !important;
-  margin-top: auto !important;
-  margin-bottom: 10px !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: space-between !important;
-  gap: 8px !important;
+/* User Profile & Logout Area */
+.sidebar-user,
+.user-profile-card,
+.user-card,
+.profile-box,
+.auth-sidebar-account,
+aside.workspace-tabs.admin-sidebar .auth-sidebar-account,
+div:has(> #logoutBtn),
+div:has(> #authLogoutBtn),
+div:has(> button:contains("Log Out")) {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 12px 14px !important;
+    margin-bottom: 4px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
 }
 
 body.light-mode .auth-sidebar-account,
-[data-theme="light"] .auth-sidebar-account {
-  background: #f1f5f9 !important;
-  border: 1px solid #e2e8f0 !important;
+[data-theme="light"] .auth-sidebar-account,
+html body.ops-redesign-v3:not(.dark-mode) aside.workspace-tabs.admin-sidebar .auth-sidebar-account {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
 }
 
 .auth-sidebar-user {
@@ -9505,15 +9561,142 @@ body.light-mode .auth-sidebar-account,
   text-overflow: ellipsis !important;
 }
 
-#authLogoutBtn {
-  background: rgba(244, 63, 94, 0.12) !important;
-  color: #fb7185 !important;
-  border: 1px solid rgba(244, 63, 94, 0.25) !important;
-  border-radius: 9999px !important;
-  font-size: 11px !important;
-  font-weight: 600 !important;
-  padding: 5px 12px !important;
-  height: 28px !important;
+/* Minimalist Log Out Pill */
+#logoutBtn,
+#authLogoutBtn,
+button:contains("Log Out") {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    border-radius: 9999px !important;
+    height: 30px !important;
+    min-height: 30px !important;
+    padding: 0 14px !important;
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    color: #94a3b8 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
+}
+
+#logoutBtn:hover,
+#authLogoutBtn:hover,
+button:contains("Log Out"):hover {
+    background: rgba(239, 68, 68, 0.15) !important;
+    border-color: rgba(239, 68, 68, 0.4) !important;
+    color: #fca5a5 !important;
+}
+
+body.light-mode #authLogoutBtn,
+body.light-mode #logoutBtn,
+[data-theme="light"] #authLogoutBtn,
+[data-theme="light"] #logoutBtn {
+    background: rgba(15, 23, 42, 0.04) !important;
+    border: 1px solid rgba(15, 23, 42, 0.12) !important;
+    color: #64748b !important;
+}
+
+body.light-mode #authLogoutBtn:hover,
+body.light-mode #logoutBtn:hover,
+[data-theme="light"] #authLogoutBtn:hover,
+[data-theme="light"] #logoutBtn:hover {
+    background: rgba(239, 68, 68, 0.1) !important;
+    border-color: rgba(239, 68, 68, 0.3) !important;
+    color: #ef4444 !important;
+}
+
+/* ==========================================================================
+   1. ENLARGE & ENHANCE THE SIDEBAR CLOCK (BIG & HIGH-CONTRAST)
+   ========================================================================== */
+.clock-widget,
+.time-widget,
+.sidebar-clock,
+.sidebar-live-clock,
+.timeis-clock,
+#sidebarLiveClock,
+#clockContainer,
+aside.workspace-tabs.admin-sidebar .sidebar-live-clock,
+div:has(> #currentTime),
+div:has(> #liveClock),
+div:has(> #Manila_z42c) {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 14px 16px !important;
+    margin-top: auto !important;
+}
+
+body.light-mode .sidebar-live-clock,
+[data-theme="light"] .sidebar-live-clock,
+html body.ops-redesign-v3:not(.dark-mode) aside.workspace-tabs.admin-sidebar .sidebar-live-clock {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+
+/* Date string (e.g., Tuesday, September 8, 2026) */
+.clock-widget .date,
+.time-widget .date,
+#clockContainer .date,
+#clockDate,
+.sidebar-live-date,
+#Manila_z42c .sidebar-live-date {
+    font-size: 12px !important;
+    font-weight: 600 !important;
+    color: #94a3b8 !important;
+    letter-spacing: 0.02em !important;
+    margin-bottom: 4px !important;
+    display: block !important;
+}
+
+body.light-mode .sidebar-live-date,
+body.light-mode #Manila_z42c .sidebar-live-date,
+[data-theme="light"] .sidebar-live-date,
+[data-theme="light"] #Manila_z42c .sidebar-live-date {
+    color: #64748b !important;
+}
+
+/* Live Time Digits (e.g., 01:27:17 PM) - Big & Legible */
+.clock-widget .time,
+.time-widget .time,
+#clockContainer .time,
+#currentTime,
+#liveClock,
+.sidebar-live-time,
+#Manila_z42c .sidebar-live-time {
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif !important;
+    font-size: 22px !important;
+    font-weight: 800 !important;
+    color: #ffffff !important;
+    letter-spacing: -0.01em !important;
+    line-height: 1.1 !important;
+    display: block !important;
+    font-variant-numeric: tabular-nums !important;
+}
+
+body.light-mode .sidebar-live-time,
+body.light-mode #Manila_z42c .sidebar-live-time,
+[data-theme="light"] .sidebar-live-time,
+[data-theme="light"] #Manila_z42c .sidebar-live-time {
+    color: #0f172a !important;
+}
+
+/* Muted source label */
+.clock-widget small,
+.time-widget small,
+.timeis-source-link {
+    font-size: 10px !important;
+    color: #475569 !important;
+    margin-top: 4px !important;
+    display: block !important;
+    text-decoration: none !important;
+}
+
+.timeis-source-link:hover {
+    color: #94a3b8 !important;
+    text-decoration: underline !important;
 }
 
 /* Theme Toggle Control */
@@ -10139,13 +10322,45 @@ body.light-mode ::-webkit-scrollbar-thumb,
     display: none !important;
 }
 
-/* 2. Outer Shells sit directly on canvas without double borders */
-#maintenancePanel .maintenance-shell,
-#eodPanel .simple-eod-shell {
+/* ==========================================================================
+   2. REMOVE OUTER WORKSPACE CONTAINER (RED 'X' ENCLOSING BOX)
+   ========================================================================== */
+#eodPanel,
+#eodPanel.app-tab-panel,
+#eodPanel > .container,
+#eodPanel .simple-eod-shell,
+#maintenancePanel,
+#maintenancePanel.app-tab-panel,
+#maintenancePanel > .container,
+#maintenancePanel .maintenance-shell {
     background: transparent !important;
     border: none !important;
     box-shadow: none !important;
     padding: 0 !important;
+    margin: 0 !important;
+}
+
+body.light-mode #eodPanel,
+body.light-mode #eodPanel.app-tab-panel,
+body.light-mode #eodPanel > .container,
+body.light-mode #eodPanel .simple-eod-shell,
+body.light-mode #maintenancePanel,
+body.light-mode #maintenancePanel.app-tab-panel,
+body.light-mode #maintenancePanel > .container,
+body.light-mode #maintenancePanel .maintenance-shell,
+[data-theme="light"] #eodPanel,
+[data-theme="light"] #eodPanel.app-tab-panel,
+[data-theme="light"] #eodPanel > .container,
+[data-theme="light"] #eodPanel .simple-eod-shell,
+[data-theme="light"] #maintenancePanel,
+[data-theme="light"] #maintenancePanel.app-tab-panel,
+[data-theme="light"] #maintenancePanel > .container,
+[data-theme="light"] #maintenancePanel .maintenance-shell {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
 }
 
 /* Eliminate all nested containers, sub-cards, and inner boxes */
@@ -10193,23 +10408,31 @@ body.light-mode ::-webkit-scrollbar-thumb,
 
 /* Single unified block style for primary containers (Block 1 form & Block 2 sheet) */
 #maintenancePanel .unified-block,
+#maintenancePanel .unified-block.maintenance-form-block,
+#eodPanel .unified-block,
+#eodPanel .unified-block.maintenance-form-block,
 #eodPanel > .container > .unified-block.maintenance-form-block {
-    background: var(--saas-card-bg, #111a2e) !important;
-    border: 1px solid var(--saas-card-border, rgba(255, 255, 255, 0.08)) !important;
-    border-radius: 20px !important;
-    padding: 22px 24px !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
     margin-bottom: 20px !important;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2) !important;
     position: relative !important;
 }
 
 body.light-mode #maintenancePanel .unified-block,
+body.light-mode #maintenancePanel .unified-block.maintenance-form-block,
+body.light-mode #eodPanel .unified-block,
+body.light-mode #eodPanel .unified-block.maintenance-form-block,
 body.light-mode #eodPanel > .container > .unified-block.maintenance-form-block,
 [data-theme="light"] #maintenancePanel .unified-block,
+[data-theme="light"] #maintenancePanel .unified-block.maintenance-form-block,
+[data-theme="light"] #eodPanel .unified-block,
+[data-theme="light"] #eodPanel .unified-block.maintenance-form-block,
 [data-theme="light"] #eodPanel > .container > .unified-block.maintenance-form-block {
-    background: #ffffff !important;
-    border: 1px solid #edf0f5 !important;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04) !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
 }
 
 /* Borderless Grid Alignment for Form Elements */
@@ -10295,66 +10518,447 @@ body.light-mode #eodPanel .eod-block-head,
     gap: 16px !important;
 }
 
-#eodPanel .eod-proof-zone {
-    background: rgba(255, 255, 255, 0.015) !important;
-    border: 1px dashed rgba(255, 255, 255, 0.12) !important;
-    border-radius: 14px !important;
-    padding: 16px !important;
-    min-height: 90px !important;
+/* ==========================================================================
+   COMPACT SCREENSHOT CONTAINER / DROPZONE OVERHAUL (LOW-PROFILE HORIZONTAL BAR)
+   ========================================================================== */
+
+/* 1. Compact Screenshot Container / Dropzone */
+#maintenancePanel .screenshot-zone,
+#maintenancePanel .screenshot-dropzone,
+#maintenancePanel .upload-container,
+#maintenancePanel .eod-proof-zone,
+#eodPanel .screenshot-zone,
+#eodPanel .screenshot-dropzone,
+#eodPanel .upload-container,
+#eodPanel .eod-proof-zone,
+.eod-proof-zone {
+    min-height: 52px !important;
+    height: auto !important;
+    padding: 8px 14px !important;
+    margin: 10px 0 !important;
     display: flex !important;
-    flex-direction: column !important;
+    flex-direction: row !important; /* Horizontal layout saves vertical room */
+    flex-wrap: wrap !important;
     align-items: center !important;
-    justify-content: center !important;
-    gap: 10px !important;
-    text-align: center !important;
-    transition: all 0.15s ease !important;
+    justify-content: flex-start !important;
+    gap: 14px !important;
+    border: 1px dashed rgba(255, 255, 255, 0.18) !important;
+    border-radius: 12px !important;
+    background: rgba(15, 23, 42, 0.4) !important;
+    box-sizing: border-box !important;
+    transition: border-color 0.15s ease, background 0.15s ease !important;
 }
 
+body.light-mode #maintenancePanel .eod-proof-zone,
 body.light-mode #eodPanel .eod-proof-zone,
+[data-theme="light"] #maintenancePanel .eod-proof-zone,
 [data-theme="light"] #eodPanel .eod-proof-zone {
     background: #f8fafc !important;
     border: 1px dashed #cbd5e1 !important;
 }
 
+#maintenancePanel .eod-proof-zone:hover,
+#maintenancePanel .eod-proof-zone.active-paste-target,
 #eodPanel .eod-proof-zone:hover,
-#eodPanel .eod-proof-zone.active-paste-target {
+#eodPanel .eod-proof-zone.active-paste-target,
+.eod-proof-zone:hover,
+.eod-proof-zone.active-paste-target {
     border-color: #0284c7 !important;
-    background: rgba(2, 132, 199, 0.04) !important;
+    background: rgba(2, 132, 199, 0.06) !important;
 }
 
-/* Action Controls Rows */
+#maintenancePanel .maintenance-paste-indicator,
+#eodPanel .maintenance-paste-indicator,
+.maintenance-paste-indicator {
+    font-size: 11px !important;
+    color: var(--saas-text-muted, #94a3b8) !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    white-space: nowrap !important;
+    flex-shrink: 0 !important;
+    line-height: 1 !important;
+}
+
+/* 2. Compact "ADD SCREENSHOT" Button */
+#maintenancePanel button:contains("ADD SCREENSHOT"),
+#maintenancePanel .add-screenshot-btn,
+#maintenancePanel button[id*="screenshot"],
+#maintenancePanel button[id*="Screenshot"],
+#maintenancePanel .eod-proof-label,
+#eodPanel button:contains("ADD SCREENSHOT"),
+#eodPanel .add-screenshot-btn,
+#eodPanel button[id*="screenshot"],
+#eodPanel button[id*="Screenshot"],
+#eodPanel .eod-proof-label,
+.eod-proof-label {
+    height: 34px !important;
+    min-height: 34px !important;
+    max-height: 34px !important;
+    padding: 0 14px !important;
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif !important;
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.05em !important;
+    text-transform: uppercase !important;
+    border-radius: 8px !important;
+    background: #1e293b !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    color: #e2e8f0 !important;
+    white-space: nowrap !important;
+    margin: 0 !important;
+    flex-shrink: 0 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    cursor: pointer !important;
+    box-sizing: border-box !important;
+    transition: all 0.15s ease !important;
+}
+
+#maintenancePanel .eod-proof-label:hover,
+#eodPanel .eod-proof-label:hover,
+.eod-proof-label:hover,
+#maintenancePanel .add-screenshot-btn:hover,
+#eodPanel .add-screenshot-btn:hover {
+    background: #334155 !important;
+    border-color: rgba(255, 255, 255, 0.25) !important;
+    color: #ffffff !important;
+    transform: translateY(-1px) !important;
+}
+
+body.light-mode #maintenancePanel .eod-proof-label,
+body.light-mode #eodPanel .eod-proof-label,
+[data-theme="light"] #maintenancePanel .eod-proof-label,
+[data-theme="light"] #eodPanel .eod-proof-label {
+    background: #ffffff !important;
+    border: 1px solid #cbd5e1 !important;
+    color: #334155 !important;
+}
+
+body.light-mode #maintenancePanel .eod-proof-label:hover,
+body.light-mode #eodPanel .eod-proof-label:hover,
+[data-theme="light"] #maintenancePanel .eod-proof-label:hover,
+[data-theme="light"] #eodPanel .eod-proof-label:hover {
+    background: #f1f5f9 !important;
+    border-color: #94a3b8 !important;
+    color: #0f172a !important;
+}
+
+/* 3. Compact Thumbnail Preview Wrapper */
+#maintenancePanel .screenshot-preview-wrapper,
+#maintenancePanel .screenshot-preview,
+#maintenancePanel .preview-container,
+#maintenancePanel .eod-proof-grid,
+#eodPanel .screenshot-preview-wrapper,
+#eodPanel .screenshot-preview,
+#eodPanel .preview-container,
+#eodPanel .eod-proof-grid,
+.eod-proof-grid {
+    display: inline-flex !important;
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+    align-items: center !important;
+    position: relative !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    gap: 10px !important;
+    max-height: 48px !important;
+    overflow: visible !important;
+}
+
+#maintenancePanel .eod-proof-item,
+#eodPanel .eod-proof-item,
+.eod-proof-item {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    position: relative !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    height: 44px !important;
+    max-height: 48px !important;
+    overflow: visible !important;
+    border-radius: 6px !important;
+    background: transparent !important;
+    border: none !important;
+}
+
+/* 4. Mini Thumbnail Image */
+#maintenancePanel .screenshot-preview-wrapper img,
+#maintenancePanel .screenshot-preview img,
+#maintenancePanel .preview-container img,
+#maintenancePanel img[src^="data:image"],
+#maintenancePanel .eod-proof-item img,
+#eodPanel .screenshot-preview-wrapper img,
+#eodPanel .screenshot-preview img,
+#eodPanel .preview-container img,
+#eodPanel img[src^="data:image"],
+#eodPanel .eod-proof-item img,
+.eod-proof-item img {
+    height: 44px !important;
+    max-height: 44px !important;
+    width: auto !important;
+    max-width: 130px !important;
+    object-fit: cover !important;
+    border-radius: 6px !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35) !important;
+    display: block !important;
+    cursor: pointer !important;
+    transition: transform 0.12s ease !important;
+}
+
+#maintenancePanel .eod-proof-item img:hover,
+#eodPanel .eod-proof-item img:hover,
+.eod-proof-item img:hover {
+    transform: scale(1.02) !important;
+}
+
+body.light-mode #maintenancePanel .eod-proof-item img,
+body.light-mode #eodPanel .eod-proof-item img,
+[data-theme="light"] #maintenancePanel .eod-proof-item img,
+[data-theme="light"] #eodPanel .eod-proof-item img {
+    border: 1px solid #cbd5e1 !important;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08) !important;
+}
+
+/* 5. Compact Delete ("x") Icon on Thumbnail */
+#maintenancePanel .screenshot-preview-wrapper button,
+#maintenancePanel .screenshot-preview .delete-btn,
+#maintenancePanel .screenshot-preview .remove-btn,
+#maintenancePanel .preview-container button,
+#maintenancePanel .eod-proof-remove,
+#eodPanel .screenshot-preview-wrapper button,
+#eodPanel .screenshot-preview .delete-btn,
+#eodPanel .screenshot-preview .remove-btn,
+#eodPanel .preview-container button,
+#eodPanel .eod-proof-remove,
+.eod-proof-remove {
+    position: absolute !important;
+    top: -5px !important;
+    right: -5px !important;
+    width: 18px !important;
+    height: 18px !important;
+    min-height: 18px !important;
+    max-height: 18px !important;
+    padding: 0 !important;
+    border-radius: 50% !important;
+    background: #ef4444 !important;
+    color: #ffffff !important;
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    line-height: 1 !important;
+    border: none !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    cursor: pointer !important;
+    z-index: 10 !important;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4) !important;
+    transition: background 0.15s ease, transform 0.15s ease !important;
+}
+
+#maintenancePanel .eod-proof-remove:hover,
+#eodPanel .eod-proof-remove:hover,
+.eod-proof-remove:hover {
+    background: #dc2626 !important;
+    transform: scale(1.1) !important;
+}
+
+/* ==========================================================================
+   REMOVE SCROLLBAR & FIT MAINTENANCE BUTTON TOOLBAR
+   ========================================================================== */
+
+/* 1. Eliminate horizontal scroll and enable responsive wrapping */
+#maintenancePanel .button-toolbar,
+#maintenancePanel .toolbar,
 #maintenancePanel .button-row,
+#maintenancePanel .actions-wrapper,
+#maintenancePanel .button-container,
+#maintenancePanel .action-card,
+#maintenancePanel .toolbar-container,
+#maintenancePanel .btn-group-wrapper,
+#maintenancePanel .simple-eod-actions,
 #maintenancePanel .action-controls,
 #maintenancePanel .maintenance-toolbar,
+#maintenancePanel div:has(> button[id*="Draft"]),
+#maintenancePanel div:has(> #simpleEodPdfBtn),
+#eodPanel .button-toolbar,
+#eodPanel .toolbar,
 #eodPanel .button-row,
+#eodPanel .actions-wrapper,
+#eodPanel .button-container,
+#eodPanel .action-card,
+#eodPanel .toolbar-container,
+#eodPanel .btn-group-wrapper,
+#eodPanel .simple-eod-actions,
 #eodPanel .action-controls,
-#eodPanel .simple-eod-actions {
+#eodPanel .maintenance-toolbar,
+#eodPanel div:has(> button[id*="Draft"]),
+#eodPanel div:has(> #simpleEodPdfBtn),
+body.ops-redesign-v3 #maintenancePanel .simple-eod-actions,
+body.ops-redesign-v3 #maintenancePanel .action-controls,
+body.ops-redesign-v3 #maintenancePanel .button-row,
+body.ops-redesign-v3 #eodPanel .simple-eod-actions,
+body.ops-redesign-v3 #eodPanel .action-controls,
+body.ops-redesign-v3 #eodPanel .button-row,
+body.ops-redesign-v3 #eodPanel div:has(> #simpleEodPdfBtn),
+body.ops-redesign-v3 #eodPanel div:has(> button[id*="Draft"]) {
     display: flex !important;
-    flex-wrap: wrap !important;
-    gap: 10px !important;
+    flex-direction: row !important;
+    flex-wrap: wrap !important; /* Allows buttons to fit and wrap naturally */
     align-items: center !important;
-    margin-top: 18px !important;
-    padding-top: 14px !important;
-    border-top: 1px solid rgba(255, 255, 255, 0.06) !important;
+    justify-content: flex-start !important;
+    gap: 6px 8px !important; /* Tight, proportional gap */
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow: visible !important; /* Eliminates scrollbar */
+    overflow-x: visible !important;
+    overflow-y: visible !important;
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+    padding: 0 0 10px 0 !important;
+    margin: 12px 0 18px 0 !important;
     background: transparent !important;
-    border-left: none !important;
-    border-right: none !important;
-    border-bottom: none !important;
+    background-color: transparent !important;
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    border-radius: 0 !important;
+}
+
+/* Force-suppress any leftover WebKit scrollbar track */
+#maintenancePanel .button-toolbar::-webkit-scrollbar,
+#maintenancePanel .toolbar::-webkit-scrollbar,
+#maintenancePanel .button-row::-webkit-scrollbar,
+#maintenancePanel .actions-wrapper::-webkit-scrollbar,
+#maintenancePanel .simple-eod-actions::-webkit-scrollbar,
+#maintenancePanel div:has(> #simpleEodPdfBtn)::-webkit-scrollbar,
+#maintenancePanel div:has(> button[id*="Draft"])::-webkit-scrollbar,
+#eodPanel .button-toolbar::-webkit-scrollbar,
+#eodPanel .toolbar::-webkit-scrollbar,
+#eodPanel .button-row::-webkit-scrollbar,
+#eodPanel .actions-wrapper::-webkit-scrollbar,
+#eodPanel .simple-eod-actions::-webkit-scrollbar,
+#eodPanel div:has(> #simpleEodPdfBtn)::-webkit-scrollbar,
+#eodPanel div:has(> button[id*="Draft"])::-webkit-scrollbar,
+body.ops-redesign-v3 #eodPanel .simple-eod-actions::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
 }
 
 body.light-mode #maintenancePanel .button-row,
 body.light-mode #maintenancePanel .action-controls,
 body.light-mode #maintenancePanel .maintenance-toolbar,
+body.light-mode #maintenancePanel .simple-eod-actions,
 [data-theme="light"] #maintenancePanel .button-row,
 [data-theme="light"] #maintenancePanel .action-controls,
 [data-theme="light"] #maintenancePanel .maintenance-toolbar,
+[data-theme="light"] #maintenancePanel .simple-eod-actions,
 body.light-mode #eodPanel .button-row,
 body.light-mode #eodPanel .action-controls,
 body.light-mode #eodPanel .simple-eod-actions,
+body.light-mode #eodPanel .maintenance-toolbar,
 [data-theme="light"] #eodPanel .button-row,
 [data-theme="light"] #eodPanel .action-controls,
-[data-theme="light"] #eodPanel .simple-eod-actions {
-    border-top: 1px solid rgba(0, 0, 0, 0.06) !important;
+[data-theme="light"] #eodPanel .simple-eod-actions,
+[data-theme="light"] #eodPanel .maintenance-toolbar {
+    background: transparent !important;
+    background-color: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    overflow: visible !important;
+}
+
+/* 2. Compact button padding so all buttons fit cleanly */
+#maintenancePanel button:not(.eod-proof-remove):not(.eod-proof-label):not(.add-screenshot-btn),
+#maintenancePanel .btn,
+#maintenancePanel input[type="button"],
+#eodPanel button:not(.eod-proof-remove):not(.eod-proof-label):not(.add-screenshot-btn),
+#eodPanel .btn,
+#eodPanel input[type="button"],
+#eodPanel .simple-eod-actions button,
+#maintenancePanel .maintenance-toolbar button {
+    height: 36px !important;
+    min-height: 36px !important;
+    max-height: 36px !important;
+    padding: 0 12px !important; /* Compacted from 16px to prevent overflow */
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif !important;
+    font-size: 11.5px !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.01em !important;
+    border-radius: 9999px !important;
+    white-space: nowrap !important;
+    flex-shrink: 0 !important;
+    box-shadow: none !important;
+    margin: 0 !important;
+}
+
+/* Ensure proof remove badge is excluded from button dimensions */
+#maintenancePanel .eod-proof-remove,
+#eodPanel .eod-proof-remove,
+.eod-proof-remove {
+    width: 18px !important;
+    height: 18px !important;
+    min-height: 18px !important;
+    max-height: 18px !important;
+    padding: 0 !important;
+}
+
+/* 3. Status Pill & Auto-Save Indicator Alignment */
+#maintenancePanel [id*="Status"],
+#maintenancePanel .sheet-status,
+#maintenancePanel span:contains("Sheets:"),
+#maintenancePanel .maintenance-sheet-connection-state,
+#eodPanel [id*="Status"],
+#eodPanel .sheet-status,
+#eodPanel #maintenanceSheetConnectionState,
+#eodPanel .maintenance-sheet-connection-state,
+#eodPanel span:contains("Sheets:") {
+    height: 36px !important;
+    min-height: 36px !important;
+    max-height: 36px !important;
+    padding: 0 12px !important;
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    border-radius: 9999px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    white-space: nowrap !important;
+    flex-shrink: 0 !important;
+    margin: 0 !important;
+}
+
+#maintenancePanel .auto-save-text,
+#maintenancePanel [id*="autosave"],
+#maintenancePanel span:contains("Auto-save"),
+#maintenancePanel .maintenance-autosave-status,
+#eodPanel .auto-save-text,
+#eodPanel [id*="autosave"],
+#eodPanel span:contains("Auto-save"),
+#eodPanel #simpleEodAutosaveStatus,
+#eodPanel .maintenance-autosave-status,
+body.ops-redesign-v3 #eodPanel .maintenance-autosave-status {
+    height: 36px !important;
+    min-height: 36px !important;
+    max-height: 36px !important;
+    font-size: 11px !important;
+    color: #64748b !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    padding: 0 8px !important;
+    background: transparent !important;
+    background-color: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    white-space: nowrap !important;
+    flex-shrink: 0 !important;
+    margin: 0 !important;
 }
 
 #maintenancePanel .table-wrapper,
@@ -10367,35 +10971,39 @@ body.light-mode #eodPanel .simple-eod-actions,
 }
 
 /* ==========================================================================
-   BUTTON STANDARDIZATION (EXACT 38PX, 9999PX PILL, 12.5PX / 600 FONT)
+   BUTTON STANDARDIZATION (EXACT 36PX COMPACT, 9999PX PILL, 11.5PX / 600 FONT)
    ========================================================================== */
 
-#maintenancePanel button:not(.eod-proof-remove),
-#eodPanel button:not(.eod-proof-remove),
-#eodPanel .eod-proof-label {
-    height: 38px !important;
-    min-height: 38px !important;
-    max-height: 38px !important;
+#maintenancePanel button:not(.eod-proof-remove):not(.eod-proof-label):not(.add-screenshot-btn),
+#maintenancePanel .btn,
+#maintenancePanel input[type="button"],
+#eodPanel button:not(.eod-proof-remove):not(.eod-proof-label):not(.add-screenshot-btn),
+#eodPanel .btn,
+#eodPanel input[type="button"] {
+    height: 36px !important;
+    min-height: 36px !important;
+    max-height: 36px !important;
     border-radius: 9999px !important;
     font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif !important;
-    font-size: 12.5px !important;
+    font-size: 11.5px !important;
     font-weight: 600 !important;
+    letter-spacing: 0.01em !important;
     line-height: 1 !important;
     box-sizing: border-box !important;
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
-    gap: 7px !important;
-    padding: 0 16px !important;
+    gap: 6px !important;
+    padding: 0 12px !important;
     white-space: nowrap !important;
     cursor: pointer !important;
     text-decoration: none !important;
     transition: all 0.15s ease !important;
+    flex-shrink: 0 !important;
 }
 
 #maintenancePanel button:active:not(:disabled),
-#eodPanel button:active:not(:disabled),
-#eodPanel .eod-proof-label:active {
+#eodPanel button:active:not(:disabled) {
     transform: scale(0.97) !important;
 }
 

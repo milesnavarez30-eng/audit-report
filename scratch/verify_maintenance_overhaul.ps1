@@ -103,13 +103,23 @@ if ($foundForbidden.Count -gt 0) {
 # 4. Check CSS rules in style.css and index.html
 $cssChecks = @(
     "#maintenancePanel button:not(.eod-proof-remove)",
-    "height: 38px !important",
+    "height: 36px !important",
     "border-radius: 9999px !important",
     "Plus Jakarta Sans",
-    "font-size: 12.5px !important",
+    "font-size: 11.5px !important",
     "font-weight: 600 !important",
     "#0284c7 !important",
-    "#059669 !important"
+    "#059669 !important",
+    "REMOVE SCROLLBAR & FIT MAINTENANCE BUTTON TOOLBAR",
+    "div:has(> #simpleEodPdfBtn)",
+    "div:has(> button[id*=`"Draft`"])",
+    "flex-wrap: wrap !important",
+    "overflow: visible !important",
+    "overflow-x: visible !important",
+    "gap: 6px 8px !important",
+    "padding: 0 12px !important",
+    "scrollbar-width: none !important",
+    "#64748b !important"
 )
 
 foreach ($rule in $cssChecks) {
@@ -120,9 +130,30 @@ foreach ($rule in $cssChecks) {
         Write-Error "FAIL: Missing CSS rule in style.css: $rule"
     }
 }
-Write-Host "[PASS] All button standardization and canvas layout CSS rules present in both index.html and style.css"
+Write-Host "[PASS] All button standardization, canvas layout, and container-stripping CSS rules present in both index.html and style.css"
 
-# 5. Check UTF-8 BOM
+# 5. Verify Toolbar Container has scrollbar eliminated and responsive wrap
+$toolbarChecks = @(
+    "outline: none !important",
+    "border-radius: 0 !important",
+    "margin: 12px 0 18px 0 !important",
+    "gap: 6px 8px !important",
+    "flex-wrap: wrap !important",
+    "overflow: visible !important",
+    "padding: 0 12px !important"
+)
+foreach ($check in $toolbarChecks) {
+    if (-not $styleContent.Contains($check)) {
+        Write-Error "FAIL: style.css missing toolbar reset rule: $check"
+    }
+    if (-not $indexContent.Contains($check)) {
+        Write-Error "FAIL: index.html missing toolbar reset rule: $check"
+    }
+}
+Write-Host "[PASS] Toolbar scrollbars eliminated, wrapping enabled, and buttons compacted"
+Write-Host "[PASS] Toolbar container styling completely stripped (background, border outline, and shadow removed)"
+
+# 6. Check UTF-8 BOM
 $indexBytes = [System.IO.File]::ReadAllBytes($indexPath)
 if ($indexBytes.Length -ge 3 -and $indexBytes[0] -eq 0xEF -and $indexBytes[1] -eq 0xBB -and $indexBytes[2] -eq 0xBF) {
     Write-Error "FAIL: index.html has UTF-8 BOM"
@@ -138,3 +169,4 @@ if ($styleBytes.Length -ge 3 -and $styleBytes[0] -eq 0xEF -and $styleBytes[1] -e
 }
 
 Write-Host "--- ALL VERIFICATION CHECKS PASSED SUCCESSFULLY ---"
+
