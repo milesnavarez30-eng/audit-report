@@ -198,10 +198,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
     <style>
         *, *::before, *::after {
@@ -247,6 +244,26 @@
             --table-hover: #333333;
             --table-header-bg: #0a0a0a;
             --table-header-text: var(--primary-color);
+        }
+
+        /* Dark Mode: Moonwalker gradient */
+        body,
+        body.dark-mode,
+        body.ops-redesign-v3,
+        body.ops-redesign-v3.dark-mode,
+        [data-theme="dark"] {
+            background: linear-gradient(135deg, #152331 0%, #000000 100%) !important;
+            background-attachment: fixed !important;
+            min-height: 100vh;
+        }
+
+        /* Light Mode: Space Light Green gradient */
+        body.light-mode,
+        body.ops-redesign-v3.light-mode,
+        [data-theme="light"] {
+            background: linear-gradient(135deg, #9fa0a8 0%, #5c7852 100%) !important;
+            background-attachment: fixed !important;
+            min-height: 100vh;
         }
 
         body { 
@@ -12463,6 +12480,626 @@ body.ops-redesign-v3 #followupPanel .followup-add-grid {
 }
 </style>
 
+<style id="ultraModernSocTheme">
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+/* ==========================================================================
+   CCTV OPS â€” ULTRA-MODERN SOC THEME OVERHAUL (LEAD ARCHITECT EDITION)
+   Preserves 100% of DOM IDs, attributes, table structures, and JS bindings.
+   ========================================================================== */
+
+/* --- Design Tokens --- */
+:root {
+  --font-display: 'Outfit', 'Plus Jakarta Sans', system-ui, sans-serif;
+  --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  /* Dark Theme: Moonwalker */
+  --bg-gradient-dark: linear-gradient(135deg, #152331 0%, #0a1118 50%, #000000 100%);
+  --panel-bg: rgba(15, 23, 42, 0.7);
+  --panel-border: rgba(255, 255, 255, 0.08);
+  --panel-border-focus: rgba(56, 189, 248, 0.45);
+  --card-bg: rgba(15, 23, 42, 0.7);
+  --card-hover: rgba(30, 41, 59, 0.85);
+
+  /* Accents & States */
+  --accent-cyan: #38bdf8;
+  --accent-cyan-glow: rgba(56, 189, 248, 0.25);
+  --accent-blue: #3b82f6;
+  --accent-emerald: #10b981;
+  --accent-amber: #f59e0b;
+  --accent-rose: #f43f5e;
+  --accent-indigo: #6366f1;
+
+  /* Typography */
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+
+  /* Glassmorphism & Elevation */
+  --glass-blur: blur(16px);
+  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.25);
+  --shadow-md: 0 8px 28px -4px rgba(0, 0, 0, 0.55);
+  --shadow-lg: 0 16px 48px -8px rgba(0, 0, 0, 0.75);
+  --shadow-glow: 0 0 20px rgba(56, 189, 248, 0.2);
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+}
+
+/* Light Mode: Space Light Green */
+body.light-mode,
+body.ops-redesign-v3.light-mode,
+[data-theme="light"] {
+  --bg-gradient-dark: linear-gradient(135deg, #9fa0a8 0%, #758a6d 50%, #5c7852 100%);
+  --panel-bg: rgba(255, 255, 255, 0.75);
+  --panel-border: rgba(255, 255, 255, 0.3);
+  --panel-border-focus: rgba(46, 125, 50, 0.45);
+  --card-bg: rgba(255, 255, 255, 0.85);
+  --card-hover: #ffffff;
+  --text-primary: #1e293b;
+  --text-secondary: #334155;
+  --text-muted: #64748b;
+  --accent-cyan: #0284c7;
+  --accent-cyan-glow: rgba(2, 132, 199, 0.2);
+  --shadow-md: 0 8px 24px -4px rgba(0, 0, 0, 0.15);
+}
+
+/* --- Base Setup --- */
+* {
+  box-sizing: border-box;
+  font-family: var(--font-sans);
+}
+
+body,
+body.dark-mode,
+body.ops-redesign-v3,
+body.ops-redesign-v3.dark-mode,
+[data-theme="dark"] {
+  min-height: 100vh;
+  background: var(--bg-gradient-dark) !important;
+  background-attachment: fixed !important;
+  color: var(--text-primary);
+  font-size: 13.5px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+body.light-mode,
+body.ops-redesign-v3.light-mode,
+[data-theme="light"] {
+  background: var(--bg-gradient-dark) !important;
+  background-attachment: fixed !important;
+  color: var(--text-primary);
+}
+
+/* --- Typography Hierarchy --- */
+h1, h2, h3, h4,
+.site-hero h1,
+.auth-brand strong,
+.ops-sidebar-brand strong,
+.auth-heading h1 {
+  font-family: var(--font-display) !important;
+  letter-spacing: -0.02em !important;
+  font-weight: 800 !important;
+}
+
+/* --- Navigation & Sidebar Layout --- */
+.sidebar,
+aside,
+aside.workspace-tabs.admin-sidebar,
+nav[class*="sidebar"] {
+  background: var(--panel-bg) !important;
+  backdrop-filter: var(--glass-blur) !important;
+  -webkit-backdrop-filter: var(--glass-blur) !important;
+  border-right: 1px solid var(--panel-border) !important;
+  box-shadow: 4px 0 24px rgba(0, 0, 0, 0.25) !important;
+}
+
+.ops-sidebar-brand strong,
+.auth-brand strong {
+  color: var(--text-primary) !important;
+  text-shadow: 0 0 20px var(--accent-cyan-glow);
+}
+
+.ops-sidebar-brand span,
+.auth-brand span {
+  color: var(--text-secondary) !important;
+}
+
+.sidebar .nav-item,
+.nav-link,
+button.workspace-tab-btn,
+button[id*="TabBtn"] {
+  position: relative !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  padding: 9px 14px !important;
+  margin: 3px 8px !important;
+  border-radius: var(--radius-md) !important;
+  color: var(--text-secondary) !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.2px !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  background: transparent !important;
+  border: 1px solid transparent !important;
+  box-shadow: none !important;
+}
+
+.sidebar .nav-item:hover,
+button.workspace-tab-btn:hover,
+button[id*="TabBtn"]:hover {
+  color: var(--text-primary) !important;
+  background: var(--card-bg) !important;
+  border-color: var(--panel-border) !important;
+  transform: translateX(2px) !important;
+}
+
+.sidebar .nav-item.active,
+button.workspace-tab-btn.active,
+button[id*="TabBtn"].active,
+.nav-link.active {
+  color: #ffffff !important;
+  background: linear-gradient(135deg, rgba(56, 189, 248, 0.22), rgba(59, 130, 246, 0.28)) !important;
+  border: 1px solid rgba(56, 189, 248, 0.45) !important;
+  box-shadow: 0 0 20px rgba(56, 189, 248, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
+  font-weight: 600 !important;
+}
+
+.sidebar .nav-item.active::before,
+button.workspace-tab-btn.active::before,
+button[id*="TabBtn"].active::before,
+.nav-link.active::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 18%;
+  bottom: 18%;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: var(--accent-cyan);
+  box-shadow: 0 0 8px var(--accent-cyan);
+}
+
+.sidebar-live-clock,
+.sidebar-live-date,
+.sidebar-live-time {
+  font-family: var(--font-mono) !important;
+  font-variant-numeric: tabular-nums !important;
+}
+
+/* --- Card & Workspace Panels --- */
+.card,
+.panel,
+.container,
+.workspace-container,
+.maintenance-shell,
+.simple-eod-shell,
+.followup-shell,
+.edr-crud-shell,
+.pending-shell,
+.master-simple-shell,
+.auth-card,
+[class*="panel-container"] {
+  background: var(--panel-bg) !important;
+  backdrop-filter: var(--glass-blur) !important;
+  -webkit-backdrop-filter: var(--glass-blur) !important;
+  border: 1px solid var(--panel-border) !important;
+  border-radius: var(--radius-lg) !important;
+  box-shadow: var(--shadow-md) !important;
+  padding: 20px;
+  margin-bottom: 20px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease !important;
+}
+
+/* --- Form Inputs, Dropdowns & Textareas --- */
+input[type="text"],
+input[type="date"],
+input[type="password"],
+input[type="number"],
+select,
+textarea {
+  background: var(--card-bg) !important;
+  border: 1px solid var(--panel-border) !important;
+  color: var(--text-primary) !important;
+  border-radius: 9px !important;
+  padding: 9px 13px !important;
+  font-size: 13px !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  outline: none !important;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.15) !important;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: var(--accent-cyan) !important;
+  box-shadow: 0 0 0 3px var(--accent-cyan-glow), inset 0 1px 2px rgba(0, 0, 0, 0.1) !important;
+}
+
+body.light-mode input:focus,
+body.light-mode select:focus,
+body.light-mode textarea:focus,
+[data-theme="light"] input:focus,
+[data-theme="light"] select:focus,
+[data-theme="light"] textarea:focus {
+  border-color: #2d4029 !important;
+  box-shadow: 0 0 0 3px rgba(46, 125, 50, 0.3) !important;
+}
+
+select {
+  cursor: pointer !important;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2338bdf8' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") !important;
+  background-repeat: no-repeat !important;
+  background-position: right 12px center !important;
+  padding-right: 34px !important;
+}
+
+body.light-mode select,
+[data-theme="light"] select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%232d4029' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") !important;
+}
+
+textarea {
+  resize: vertical !important;
+}
+
+/* --- Tactile Buttons & Interactive Controls --- */
+button {
+  font-family: var(--font-sans);
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  padding: 8px 16px;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid transparent;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18), 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+button:active {
+  transform: scale(0.97) !important;
+}
+
+/* Primary / Send Actions */
+button[id*="Send"],
+button[id*="send"],
+#addUpdateBtn,
+.auth-primary-btn,
+button[id*="Add"],
+button[id*="add"] {
+  background: linear-gradient(135deg, #0284c7 0%, #2563eb 100%) !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(56, 189, 248, 0.35) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25), 0 4px 14px rgba(37, 99, 235, 0.35) !important;
+}
+
+button[id*="Send"]:hover,
+button[id*="send"]:hover,
+#addUpdateBtn:hover,
+.auth-primary-btn:hover,
+button[id*="Add"]:hover,
+button[id*="add"]:hover {
+  background: linear-gradient(135deg, #0ea5e9 0%, #1d4ed8 100%) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3), 0 6px 20px rgba(37, 99, 235, 0.5) !important;
+  transform: translateY(-1px);
+}
+
+/* Copy / Export Actions */
+button[id*="Copy"],
+button[id*="copy"],
+.copy-btn,
+button[id*="Export"],
+button[id*="export"] {
+  background: linear-gradient(135deg, #059669 0%, #0d9488 100%) !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(16, 185, 129, 0.35) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25), 0 4px 14px rgba(13, 148, 136, 0.35) !important;
+}
+
+button[id*="Copy"]:hover,
+button[id*="copy"]:hover,
+.copy-btn:hover,
+button[id*="Export"]:hover,
+button[id*="export"]:hover {
+  background: linear-gradient(135deg, #10b981 0%, #0f766e 100%) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3), 0 6px 20px rgba(16, 185, 129, 0.5) !important;
+  transform: translateY(-1px);
+}
+
+/* PDF / Document Actions */
+button[id*="Pdf"],
+button[id*="pdf"],
+#simpleEodPdfBtn,
+button[id*="Doc"],
+button[id*="doc"] {
+  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%) !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(99, 102, 241, 0.35) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25), 0 4px 14px rgba(79, 70, 229, 0.35) !important;
+}
+
+button[id*="Pdf"]:hover,
+button[id*="pdf"]:hover,
+#simpleEodPdfBtn:hover,
+button[id*="Doc"]:hover,
+button[id*="doc"]:hover {
+  background: linear-gradient(135deg, #818cf8 0%, #4338ca 100%) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3), 0 6px 20px rgba(99, 102, 241, 0.5) !important;
+  transform: translateY(-1px);
+}
+
+/* Danger / Reset / Clear Actions */
+button[id*="Clear"],
+button[id*="clear"],
+button[id*="Delete"],
+button[id*="delete"],
+button[class*="danger"],
+.delete-btn {
+  background: rgba(244, 63, 94, 0.12) !important;
+  color: var(--accent-rose) !important;
+  border: 1px solid rgba(244, 63, 94, 0.3) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 2px 8px rgba(244, 63, 94, 0.15) !important;
+}
+
+button[id*="Clear"]:hover,
+button[id*="clear"]:hover,
+button[id*="Delete"]:hover,
+button[id*="delete"]:hover,
+button[class*="danger"]:hover,
+.delete-btn:hover {
+  background: rgba(244, 63, 94, 0.22) !important;
+  border-color: var(--accent-rose) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15), 0 4px 14px rgba(244, 63, 94, 0.3) !important;
+  transform: translateY(-1px);
+}
+
+/* Utility / Setup / Drafts Actions */
+button[id*="Setup"],
+button[id*="Drafts"],
+button[id*="drafts"],
+button[id*="Preview"],
+button[id*="preview"],
+button[id*="Import"],
+button[id*="import"],
+button[id*="Paste"],
+button[id*="paste"],
+.edit-btn,
+.secondary-btn {
+  background: var(--card-bg) !important;
+  border: 1px solid var(--panel-border) !important;
+  color: var(--text-primary) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 2px 6px rgba(0, 0, 0, 0.2) !important;
+}
+
+button[id*="Setup"]:hover,
+button[id*="Drafts"]:hover,
+button[id*="drafts"]:hover,
+button[id*="Preview"]:hover,
+button[id*="preview"]:hover,
+button[id*="Import"]:hover,
+button[id*="import"]:hover,
+button[id*="Paste"]:hover,
+button[id*="paste"]:hover,
+.edit-btn:hover,
+.secondary-btn:hover {
+  background: var(--card-hover) !important;
+  border-color: var(--panel-border-focus) !important;
+  transform: translateY(-1px);
+}
+
+/* --- Status Pills & Connection Indicators --- */
+[class*="status"],
+[id*="status"],
+.badge,
+.audit-guard-row-status,
+.cctv-edr-sent-badge {
+  font-family: var(--font-mono) !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  padding: 4px 10px !important;
+  border-radius: 9999px !important;
+  border: 1px solid transparent !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  font-variant-numeric: tabular-nums !important;
+}
+
+/* Glowing dot indicator */
+[class*="status"]::before,
+.badge-success::before,
+.badge-danger::before,
+.audit-guard-row-status::before {
+  content: "";
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* Connected indicator */
+[class*="status-connected"],
+[class*="sheets-connected"],
+.badge-success,
+.audit-guard-row-status.is-sent,
+.followup-status-pill.verified,
+.followup-status-pill.resolved {
+  background: rgba(16, 185, 129, 0.14) !important;
+  color: #34d399 !important;
+  border-color: rgba(16, 185, 129, 0.35) !important;
+}
+[class*="status-connected"]::before,
+[class*="sheets-connected"]::before,
+.badge-success::before,
+.audit-guard-row-status.is-sent::before,
+.followup-status-pill.verified::before,
+.followup-status-pill.resolved::before {
+  background: #10b981;
+  box-shadow: 0 0 8px #10b981;
+}
+
+/* Failed indicator */
+[class*="status-failed"],
+.badge-danger,
+.audit-guard-row-status.is-duplicate,
+.followup-status-pill.disputed {
+  background: rgba(244, 63, 94, 0.14) !important;
+  color: #fb7185 !important;
+  border-color: rgba(244, 63, 94, 0.35) !important;
+}
+[class*="status-failed"]::before,
+.badge-danger::before,
+.audit-guard-row-status.is-duplicate::before,
+.followup-status-pill.disputed::before {
+  background: #f43f5e;
+  box-shadow: 0 0 8px #f43f5e;
+}
+
+/* Pending indicator */
+.badge-warning,
+.audit-guard-row-status.is-ready,
+.followup-status-pill.verify {
+  background: rgba(245, 158, 11, 0.14) !important;
+  color: #fbbf24 !important;
+  border-color: rgba(245, 158, 11, 0.35) !important;
+}
+.badge-warning::before,
+.audit-guard-row-status.is-ready::before,
+.followup-status-pill.verify::before {
+  background: #f59e0b;
+  box-shadow: 0 0 8px #f59e0b;
+}
+
+/* Info indicator */
+.badge-info,
+.followup-status-pill.replied {
+  background: rgba(56, 189, 248, 0.14) !important;
+  color: #38bdf8 !important;
+  border-color: rgba(56, 189, 248, 0.35) !important;
+}
+.badge-info::before,
+.followup-status-pill.replied::before {
+  background: #38bdf8;
+  box-shadow: 0 0 8px #38bdf8;
+}
+
+/* --- Precision Data Output Grid (`#outputTable`) --- */
+table,
+#outputTable,
+.maintenance-table,
+.edr-table {
+  width: 100%;
+  border-collapse: separate !important;
+  border-spacing: 0 !important;
+  font-size: 12.5px;
+  background: var(--card-bg) !important;
+  border-radius: var(--radius-md) !important;
+  overflow: hidden;
+  border: 1px solid var(--panel-border) !important;
+  box-shadow: var(--shadow-sm) !important;
+}
+
+table th,
+#outputTable th,
+.maintenance-table th,
+.edr-table th {
+  background: rgba(15, 23, 42, 0.9) !important;
+  color: var(--text-secondary) !important;
+  font-family: var(--font-display) !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.6px !important;
+  padding: 11px 12px !important;
+  border-bottom: 1px solid var(--panel-border) !important;
+}
+
+body.light-mode table th,
+body.light-mode #outputTable th,
+[data-theme="light"] table th,
+[data-theme="light"] #outputTable th {
+  background: rgba(226, 232, 240, 0.95) !important;
+  color: var(--text-primary) !important;
+}
+
+table td,
+#outputTable td,
+.maintenance-table td,
+.edr-table td {
+  padding: 9px 12px !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04) !important;
+  color: var(--text-primary) !important;
+  font-family: var(--font-sans);
+  font-size: 12.5px;
+}
+
+body.light-mode table td,
+body.light-mode #outputTable td,
+[data-theme="light"] table td,
+[data-theme="light"] #outputTable td {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06) !important;
+}
+
+table tr:hover td,
+#outputTable tr:hover td,
+.maintenance-table tr:hover td,
+.edr-table tr:hover td {
+  background: rgba(56, 189, 248, 0.05) !important;
+}
+
+/* Enforce tabular-nums & JetBrains Mono on all data columns, timestamps, station numbers, dates */
+table td:nth-child(3),
+table td:nth-child(4),
+table td:nth-child(5),
+#outputTable td:nth-child(3),
+#outputTable td:nth-child(4),
+#outputTable td:nth-child(5),
+.maintenance-table td:nth-child(1),
+.maintenance-table td:nth-child(2),
+.maintenance-table td:nth-child(6) {
+  font-family: var(--font-mono) !important;
+  font-variant-numeric: tabular-nums !important;
+  font-size: 11.5px !important;
+}
+
+/* --- Scrollbars --- */
+::-webkit-scrollbar {
+  width: 6px !important;
+  height: 6px !important;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent !important;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.16) !important;
+  border-radius: 9999px !important;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(56, 189, 248, 0.4) !important;
+}
+
+body.light-mode ::-webkit-scrollbar-thumb,
+[data-theme="light"] ::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.2) !important;
+}
+
+body.light-mode ::-webkit-scrollbar-thumb:hover,
+[data-theme="light"] ::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.35) !important;
+}
+</style>
+
 </head>
 <body class="ops-redesign-v3 auth-locked">
 <div id="authGate" class="auth-gate">
@@ -14109,8 +14746,7 @@ https://www.facebook.com/share/..."></textarea>
 
 
 <datalist id="allCctvSiteOptions">
-    <option value="Mabini Site A - 1st Floor"></option>
-    <option value="Mabini Site A - 2nd Floor"></option>
+    <option value="Mabini Site A"></option>
     <option value="Mabini Site B1 - 2nd Floor"></option>
     <option value="Mabini Site B2 - 3rd Floor"></option>
     <option value="Mabini Site B2 - 4th Floor"></option>
@@ -14142,15 +14778,26 @@ https://www.facebook.com/share/..."></textarea>
     function toggleTheme() {
         document.body.classList.toggle('dark-mode');
         const isDark = document.body.classList.contains('dark-mode');
+        document.body.classList.toggle('light-mode', !isDark);
+        document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+        document.body.setAttribute('data-theme', isDark ? 'dark' : 'light');
         localStorage.setItem('cctv_theme', isDark ? 'dark' : 'light');
         setThemeToggleIcon(isDark);
     }
 
     const savedTheme = localStorage.getItem('cctv_theme');
-    if (savedTheme === 'dark') {
+    const isDarkInitial = savedTheme === 'dark';
+    if (isDarkInitial) {
         document.body.classList.add('dark-mode');
+        document.body.classList.remove('light-mode');
+        document.documentElement.setAttribute('data-theme', 'dark');
+        document.body.setAttribute('data-theme', 'dark');
         setThemeToggleIcon(true);
     } else {
+        document.body.classList.remove('dark-mode');
+        document.body.classList.add('light-mode');
+        document.documentElement.setAttribute('data-theme', 'light');
+        document.body.setAttribute('data-theme', 'light');
         setThemeToggleIcon(false);
     }
 
@@ -14164,8 +14811,62 @@ https://www.facebook.com/share/..."></textarea>
         return [...new Set(arr)].sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
     }
 
+    function normalizeTrackerSite(raw) {
+        if (typeof window.normalizeTrackerSite === "function" && window.normalizeTrackerSite !== normalizeTrackerSite) {
+            return window.normalizeTrackerSite(raw);
+        }
+        const text = String(raw || "").trim().toLowerCase();
+        
+        // Check Mabini Site B first to avoid false positives
+        if (
+            text.includes("mabini site b") || 
+            text.includes("site b") || 
+            text === "mabini_b" ||
+            (text.includes("mabini") && (text.includes("3rd") || text.includes("4th")))
+        ) {
+            return "Mabini Site B";
+        }
+
+        // Match any Mabini Site A variation (1st floor, 2nd floor, 1F, 2F, etc.)
+        if (
+            text.includes("mabini site a") || 
+            text.includes("site a") || 
+            text === "mabini_a" ||
+            text.includes("mabini a") ||
+            (text.includes("mabini") && (text.includes("1st") || text.includes("2nd") || text.includes("1f") || text.includes("2f")))
+        ) {
+            return "Mabini Site A";
+        }
+
+        if (text.includes("maa") || text.startsWith("maa_")) return "Maa";
+        if (text.includes("gensan")) return "Gensan";
+        if (text.includes("ecoland")) return "Ecoland";
+        if (text.includes("digos")) return "Digos";
+        if (text.includes("cdo")) return "CDO";
+
+        return raw ? raw.trim() : "Mabini Site A";
+    }
+    window.normalizeTrackerSite = normalizeTrackerSite;
+
+    function normalizeAuditorName(raw) {
+        if (typeof window.normalizeAuditorName === "function" && window.normalizeAuditorName !== normalizeAuditorName) {
+            return window.normalizeAuditorName(raw);
+        }
+        if (raw && typeof raw === "object") {
+            raw = raw.name || raw.display_name || raw.username || raw.full_name || "";
+        }
+        const text = String(raw || "").trim().toLowerCase();
+        if (text.includes("miles") || text.includes("mico")) return "Miles";
+        if (text.includes("wendie") || text.includes("amor")) return "Wendie";
+        if (text.includes("seth")) return "Seth";
+        if (text.includes("john ric") || text === "jr" || text.includes("john")) return "John Ric";
+        if (text.includes("kenneth")) return "Kenneth";
+        return raw ? String(raw).trim().split(/\s+/)[0] : "Miles";
+    }
+    window.normalizeAuditorName = normalizeAuditorName;
+
     const defaultData = {
-        site: ["Mabini Site A - 1st Floor", "Mabini Site A - 2nd Floor", "Mabini Site B1 - 2nd Floor", "Mabini Site B2 - 3rd Floor", "Mabini Site B2 - 4th Floor", "Ecoland Site", "MAA 4th Floor", "MAA 5th Floor", "MAA 6th Floor", "Gensan Site", "CDO Site", "Digos Site"],
+        site: ["Mabini Site A", "Mabini Site B1 - 2nd Floor", "Mabini Site B2 - 3rd Floor", "Mabini Site B2 - 4th Floor", "Ecoland Site", "MAA 4th Floor", "MAA 5th Floor", "MAA 6th Floor", "Gensan Site", "CDO Site", "Digos Site"],
         omName: processRaw(rawOmData),
         account: processRaw(rawCampaignData),
         reasonCode: ["SLEEPING", "DRESS CODE", "BROWSING", "WASTING TIME", "BRINGING NON-WOF", "EATING", "IMPROPER HOUSE KEEPING", "EQUIPMENT TAMPERING", "PDA", "DISORDERLY CONDUCT", "USING SMARTPHONE", "THEFT", "SELLING"]
@@ -14202,12 +14903,150 @@ https://www.facebook.com/share/..."></textarea>
         if (storedEntries) {
             try { 
                 entryList = JSON.parse(storedEntries); 
+                let changed = false;
+                entryList.forEach(entry => {
+                    if (entry && entry.site) {
+                        const norm = normalizeTrackerSite(entry.site);
+                        if (norm !== entry.site) {
+                            entry.site = norm;
+                            changed = true;
+                        }
+                    }
+                    if (entry) {
+                        const rawAuditor = entry.name || entry.auditorName || "Miles";
+                        const normAuditor = normalizeAuditorName(rawAuditor);
+                        if (entry.name !== normAuditor || entry.auditorName !== normAuditor) {
+                            entry.name = normAuditor;
+                            entry.auditorName = normAuditor;
+                            changed = true;
+                        }
+                    }
+                });
+                if (changed) saveEntries();
                 sortEntries();
             } catch (e) { 
                 entryList = []; 
             }
         }
         renderTable();
+
+        // Enforce strict normalization whenever site is selected, changed, or pasted
+        const siteSelect = document.getElementById("site");
+        if (siteSelect) {
+            siteSelect.addEventListener("change", function () {
+                const norm = normalizeTrackerSite(this.value);
+                if (norm && norm !== this.value) {
+                    ensureAuditDropdownValue("site", norm);
+                    this.value = norm;
+                }
+            });
+        }
+
+        const auditFormGrid = document.querySelector("#cctvPanel .form-grid") || document.querySelector(".form-grid");
+        if (auditFormGrid) {
+            auditFormGrid.addEventListener("paste", function (e) {
+                const pastedText = (e.clipboardData || window.clipboardData)?.getData("text") || "";
+                if (!pastedText.trim()) return;
+
+                const trimmed = pastedText.trim();
+                // 1. If tab-separated row pasted from Google Sheets
+                if (trimmed.includes("\t")) {
+                    const parts = trimmed.split("\t").map(s => s.trim());
+                    if (parts.length >= 6) {
+                        let dateVal = "", omVal = "", siteVal = "", tlVal = "", agentVal = "", accountVal = "", reasonVal = "", nocVal = "", remarksVal = "";
+                        if (parts.length >= 10) {
+                            dateVal = parts[2];
+                            omVal = parts[4];
+                            siteVal = parts[5];
+                            tlVal = parts[6];
+                            agentVal = parts[7];
+                            accountVal = parts[8];
+                            reasonVal = parts[9];
+                            nocVal = parts[10];
+                            remarksVal = parts[11];
+                        } else {
+                            dateVal = parts[0];
+                            siteVal = parts[1];
+                            tlVal = parts[2];
+                            agentVal = parts[3];
+                            omVal = parts[4];
+                            accountVal = parts[5];
+                        }
+
+                        if (siteVal) {
+                            const normSite = normalizeTrackerSite(siteVal);
+                            ensureAuditDropdownValue("site", normSite);
+                            const el = document.getElementById("site");
+                            if (el) el.value = normSite;
+                        }
+                        if (dateVal) {
+                            const iso = (typeof parseDateToIso === "function") ? parseDateToIso(dateVal) : dateVal;
+                            if (iso) {
+                                const el = document.getElementById("auditDate");
+                                if (el) el.value = iso;
+                            }
+                        }
+                        if (omVal) {
+                            ensureAuditDropdownValue("omName", omVal);
+                            const el = document.getElementById("omName");
+                            if (el) el.value = omVal;
+                        }
+                        if (tlVal) {
+                            const el = document.getElementById("tlName");
+                            if (el) el.value = tlVal;
+                        }
+                        if (agentVal) {
+                            const el = document.getElementById("agentName");
+                            if (el) el.value = agentVal;
+                        }
+                        if (accountVal) {
+                            ensureAuditDropdownValue("account", accountVal);
+                            const el = document.getElementById("account");
+                            if (el) el.value = accountVal;
+                        }
+                        if (reasonVal) {
+                            ensureAuditDropdownValue("reasonCode", reasonVal.toUpperCase());
+                            const el = document.getElementById("reasonCode");
+                            if (el) el.value = reasonVal.toUpperCase();
+                        }
+                        if (nocVal) {
+                            const el = document.getElementById("noc");
+                            if (el) el.value = nocVal.toUpperCase();
+                        }
+                        if (remarksVal) {
+                            const el = document.getElementById("remarks");
+                            if (el) el.value = remarksVal;
+                        }
+                        e.preventDefault();
+                        return;
+                    }
+                }
+
+                // 2. If single site string pasted directly into or near site
+                const lower = trimmed.toLowerCase();
+                if (
+                    lower.includes("mabini") ||
+                    lower.includes("site a") ||
+                    lower.includes("site b") ||
+                    lower.includes("gensan") ||
+                    lower.includes("ecoland") ||
+                    lower.includes("digos") ||
+                    lower.includes("cdo") ||
+                    lower.includes("maa")
+                ) {
+                    if (e.target.id === "site" || e.target.closest?.(".field-site")) {
+                        const norm = normalizeTrackerSite(trimmed);
+                        ensureAuditDropdownValue("site", norm);
+                        const el = document.getElementById("site");
+                        if (el) {
+                            el.value = norm;
+                            el.dispatchEvent(new Event("change", { bubbles: true }));
+                        }
+                        e.preventDefault();
+                    }
+                }
+            });
+        }
     };
 
     function initDropdown(selectId) {
@@ -14216,11 +15055,16 @@ https://www.facebook.com/share/..."></textarea>
         
         try {
             if (stored) {
-                const savedValues = Array.isArray(JSON.parse(stored)) ? JSON.parse(stored) : [];
-                currentDropdownData[selectId] = [...new Set([...(defaultData[selectId] || []), ...savedValues])];
+                let savedValues = Array.isArray(JSON.parse(stored)) ? JSON.parse(stored) : [];
+                if (selectId === "site") {
+                    savedValues = savedValues.map(normalizeTrackerSite);
+                }
+                const defaults = (defaultData[selectId] || []).map(v => selectId === "site" ? normalizeTrackerSite(v) : v);
+                currentDropdownData[selectId] = [...new Set([...defaults, ...savedValues])];
                 localStorage.setItem(storageKey, JSON.stringify(currentDropdownData[selectId]));
             } else {
-                currentDropdownData[selectId] = [...defaultData[selectId]];
+                const defaults = (defaultData[selectId] || []).map(v => selectId === "site" ? normalizeTrackerSite(v) : v);
+                currentDropdownData[selectId] = [...new Set(defaults)];
                 localStorage.setItem(storageKey, JSON.stringify(currentDropdownData[selectId]));
             }
         } catch(e) {
@@ -14421,7 +15265,10 @@ https://www.facebook.com/share/..."></textarea>
         const newValue = prompt(`Enter ${promptText}:`);
         
         if (newValue && newValue.trim() !== "") {
-            const cleanValue = newValue.trim();
+            let cleanValue = newValue.trim();
+            if (selectId === "site") {
+                cleanValue = normalizeTrackerSite(cleanValue);
+            }
             
             if (!currentDropdownData[selectId].some(item => item.toLowerCase() === cleanValue.toLowerCase())) {
                 currentDropdownData[selectId].push(cleanValue);
@@ -14478,11 +15325,16 @@ https://www.facebook.com/share/..."></textarea>
         const month = months[dateObj.getMonth()];
         const formattedDate = `${dateObj.getMonth() + 1}/${dateObj.getDate()}/${year}`;
 
-        const auditorName =
+        const rawUser = (typeof currentUser !== "undefined" && currentUser) || window.currentUser || window.CCTV_ACCOUNT_CONTEXT?.profile || null;
+        const auditorName = normalizeAuditorName(
+            rawUser?.name ||
+            rawUser?.username ||
+            rawUser?.display_name ||
             window.CCTV_ACCOUNT_CONTEXT?.profile?.display_name ||
             window.CCTV_ACCOUNT_CONTEXT?.profile?.username ||
-            "Miles";
-        const site = document.getElementById("site").value;
+            "Miles"
+        );
+        const site = normalizeTrackerSite(document.getElementById("site").value);
         const tlName = document.getElementById("tlName").value || "N/A";
         const agentName = document.getElementById("agentName").value || "N/A";
         const omSelection = document.getElementById("omName").value;
@@ -14501,7 +15353,9 @@ https://www.facebook.com/share/..."></textarea>
 
         const entry = {
             rawDate: dateInput,
-            year, month, formattedDate, auditorName,
+            year, month, formattedDate,
+            auditorName: auditorName,
+            name: auditorName,
             omName: omSelection,
             site, tlName, agentName,
             cleanAccount: accountSelection,
@@ -14537,7 +15391,9 @@ https://www.facebook.com/share/..."></textarea>
     function editEntry(index) {
         const entry = entryList[index];
         document.getElementById("auditDate").value = entry.rawDate;
-        document.getElementById("site").value = entry.site;
+        const normSite = normalizeTrackerSite(entry.site);
+        ensureAuditDropdownValue("site", normSite);
+        document.getElementById("site").value = normSite;
         document.getElementById("tlName").value = entry.tlName;
         document.getElementById("agentName").value = entry.agentName;
         document.getElementById("omName").value = entry.omName;
@@ -14577,8 +15433,11 @@ https://www.facebook.com/share/..."></textarea>
 
 
     function ensureAuditDropdownValue(selectId, value) {
-        const cleanValue = String(value || "").trim();
+        let cleanValue = String(value || "").trim();
         if (!cleanValue) return;
+        if (selectId === "site") {
+            cleanValue = normalizeTrackerSite(cleanValue);
+        }
 
         if (!Array.isArray(currentDropdownData[selectId])) {
             currentDropdownData[selectId] = [...(defaultData[selectId] || [])];
@@ -14598,7 +15457,7 @@ https://www.facebook.com/share/..."></textarea>
 
     function auditSiteFromEdr(site) {
         const value = String(site || "").trim();
-        return value || "Mabini Site A - 1st Floor";
+        return normalizeTrackerSite(value);
     }
 
     function auditReasonFromEdr(report) {
@@ -14672,10 +15531,16 @@ https://www.facebook.com/share/..."></textarea>
             month: months[dateObj.getMonth()],
             formattedDate:
                 `${dateObj.getMonth() + 1}/${dateObj.getDate()}/${dateObj.getFullYear()}`,
-            auditorName:
+            auditorName: normalizeAuditorName(
                 window.CCTV_ACCOUNT_CONTEXT?.profile?.display_name ||
                 window.CCTV_ACCOUNT_CONTEXT?.profile?.username ||
-                "Miles",
+                "Miles"
+            ),
+            name: normalizeAuditorName(
+                window.CCTV_ACCOUNT_CONTEXT?.profile?.display_name ||
+                window.CCTV_ACCOUNT_CONTEXT?.profile?.username ||
+                "Miles"
+            ),
             omName,
             site: auditSiteFromEdr(report?.site),
             tlName,
@@ -14817,7 +15682,7 @@ https://www.facebook.com/share/..."></textarea>
                 <td>${entry.year}</td>
                 <td>${entry.month}</td>
                 <td>${entry.formattedDate}</td>
-                <td>${entry.auditorName}</td>
+                <td>${normalizeAuditorName(entry.name || entry.auditorName || "Miles")}</td>
                 <td>${entry.omName}</td>
                 <td>${entry.site}</td>
                 <td>${entry.tlName}</td>
@@ -14849,12 +15714,13 @@ https://www.facebook.com/share/..."></textarea>
         let tableHTML = "<table style='border-collapse: collapse; border: none; background-color: transparent !important; color: #000000 !important; font-family: Arial, sans-serif; font-size: 10pt;'><tbody>";
         
         entryList.forEach(entry => {
+            const auditor = normalizeAuditorName(entry.name || entry.auditorName || "Miles");
             tableHTML += `
                 <tr>
                     <td style="border: none; text-align: center; background-color: transparent !important; color: #000000 !important;">${entry.year}</td>
                     <td style="border: none; text-align: center; background-color: transparent !important; color: #000000 !important;">${entry.month}</td>
                     <td style="border: none; text-align: center; background-color: transparent !important; color: #000000 !important;">${entry.formattedDate}</td>
-                    <td style="border: none; text-align: center; background-color: transparent !important; color: #000000 !important;">${entry.auditorName}</td>
+                    <td style="border: none; text-align: center; background-color: transparent !important; color: #000000 !important;">${auditor}</td>
                     <td style="border: none; text-align: center; background-color: transparent !important; color: #000000 !important;">${entry.omName}</td>
                     <td style="border: none; text-align: center; background-color: transparent !important; color: #000000 !important;">${entry.site}</td>
                     <td style="border: none; text-align: center; background-color: transparent !important; color: #000000 !important;">${entry.tlName}</td>
@@ -15122,9 +15988,9 @@ https://www.facebook.com/share/..."></textarea>
             year: get("year", 0),
             month: get("month", 1),
             date: parseDateToIso(get("date", 2)),
-            auditor: get("auditor", 3),
+            auditor: normalizeAuditorName(get("auditor", 3)),
             om: get("om", 4),
-            site: get("site", 5),
+            site: normalizeTrackerSite(get("site", 5)),
             tl: get("tl", 6),
             agent: get("agent", 7),
             account: get("account", 8),
@@ -15512,7 +16378,7 @@ https://www.facebook.com/share/..."></textarea>
         return {
             date,
             om: el("omName")?.value || "",
-            site: el("site")?.value || "",
+            site: normalizeTrackerSite(el("site")?.value || ""),
             tl: el("tlName")?.value || "",
             agent: el("agentName")?.value || "",
             account: el("account")?.value || "",
@@ -15525,8 +16391,9 @@ https://www.facebook.com/share/..."></textarea>
     function entryToGuardRow(entry) {
         return {
             date: entry?.rawDate || parseDateToIso(entry?.formattedDate),
+            auditor: normalizeAuditorName(entry?.name || entry?.auditorName || ""),
             om: entry?.omName || "",
-            site: entry?.site || "",
+            site: normalizeTrackerSite(entry?.site || ""),
             tl: entry?.tlName || "",
             agent: entry?.agentName || "",
             account: entry?.cleanAccount || "",
@@ -19518,6 +20385,25 @@ body.ops-redesign-v3.dark-mode .followup-status-pill.replied{color:#93c5fd}.dark
 
 @media(max-width:1050px){.followup-add-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.followup-add-shot-field,.followup-remarks-field{grid-column:1/-1}.followup-card-layout{grid-template-columns:1fr}.followup-large-shot{min-height:320px}}
 @media(max-width:620px){.followup-page-head,.followup-card-head{align-items:stretch;flex-direction:column}.followup-head-count{width:100%;display:flex;align-items:baseline;justify-content:center;gap:5px}.followup-add-grid{grid-template-columns:1fr}.followup-add-shot-field,.followup-remarks-field{grid-column:auto}.followup-add-actions{flex-direction:column}.followup-add-actions button{width:100%}.followup-large-shot{min-height:250px;max-height:none}.followup-shot-preview-actions{flex-wrap:wrap}.followup-shot-preview-actions strong{width:100%}}
+
+/* Hard-enforce theme gradients across all workspace containers */
+body,
+body.dark-mode,
+body.ops-redesign-v3,
+body.ops-redesign-v3.dark-mode,
+[data-theme="dark"] {
+    background: linear-gradient(135deg, #152331 0%, #000000 100%) !important;
+    background-attachment: fixed !important;
+    min-height: 100vh;
+}
+
+body.light-mode,
+body.ops-redesign-v3.light-mode,
+[data-theme="light"] {
+    background: linear-gradient(135deg, #9fa0a8 0%, #5c7852 100%) !important;
+    background-attachment: fixed !important;
+    min-height: 100vh;
+}
 </style>
 </body>
             </html>

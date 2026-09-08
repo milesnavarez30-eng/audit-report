@@ -91,4 +91,134 @@
 
         return true;
     };
+
+    // 3. CCTV Audit Tracker Site Normalization Rule
+    function normalizeTrackerSite(raw) {
+        const text = String(raw || "").trim().toLowerCase();
+        
+        // Check Mabini Site B first to avoid false positives
+        if (
+            text.includes("mabini site b") || 
+            text.includes("site b") || 
+            text === "mabini_b" ||
+            (text.includes("mabini") && (text.includes("3rd") || text.includes("4th")))
+        ) {
+            return "Mabini Site B";
+        }
+
+        // Match any Mabini Site A variation (1st floor, 2nd floor, 1F, 2F, etc.)
+        if (
+            text.includes("mabini site a") || 
+            text.includes("site a") || 
+            text === "mabini_a" ||
+            text.includes("mabini a") ||
+            (text.includes("mabini") && (text.includes("1st") || text.includes("2nd") || text.includes("1f") || text.includes("2f")))
+        ) {
+            return "Mabini Site A";
+        }
+
+        if (text.includes("maa") || text.startsWith("maa_")) return "Maa";
+        if (text.includes("gensan")) return "Gensan";
+        if (text.includes("ecoland")) return "Ecoland";
+        if (text.includes("digos")) return "Digos";
+        if (text.includes("cdo")) return "CDO";
+
+        return raw ? raw.trim() : "Mabini Site A";
+    }
+
+    window.normalizeTrackerSite = normalizeTrackerSite;
+
+    // 4. CCTV Audit Auditor First Name ("Miles") Normalization & Clipboard Guard
+    function normalizeAuditorName(raw) {
+        if (raw && typeof raw === "object") {
+            raw = raw.name || raw.display_name || raw.username || raw.full_name || "";
+        }
+        const text = String(raw || "").trim().toLowerCase();
+        if (text.includes("miles") || text.includes("mico")) return "Miles";
+        if (text.includes("wendie") || text.includes("amor")) return "Wendie";
+        if (text.includes("seth")) return "Seth";
+        if (text.includes("john ric") || text === "jr" || text.includes("john")) return "John Ric";
+        if (text.includes("kenneth")) return "Kenneth";
+        return raw ? String(raw).trim().split(/\s+/)[0] : "Miles";
+    }
+
+    window.normalizeAuditorName = normalizeAuditorName;
+
+    // Harden submitEntry, renderTable, and copyToClipboard
+    if (typeof window !== "undefined") {
+        if (typeof window.submitEntry === "function") {
+            const originalSubmit = window.submitEntry;
+            window.submitEntry = function () {
+                const res = originalSubmit.apply(this, arguments);
+                if (typeof entryList !== "undefined" && Array.isArray(entryList)) {
+                    entryList.forEach(entry => {
+                        const auditor = normalizeAuditorName(
+                            entry.name ||
+                            entry.auditorName ||
+                            (typeof currentUser !== "undefined" ? (currentUser?.name || currentUser?.username) : null) ||
+                            window.CCTV_ACCOUNT_CONTEXT?.profile?.display_name ||
+                            "Miles"
+                        );
+                        entry.name = auditor;
+                        entry.auditorName = auditor;
+                    });
+                }
+                return res;
+            };
+        }
+
+        if (typeof window.renderTable === "function") {
+            const originalRender = window.renderTable;
+            window.renderTable = function () {
+                const res = originalRender.apply(this, arguments);
+                const rows = document.querySelectorAll("#outputTable tbody tr");
+                rows.forEach((tr, index) => {
+                    const entry = typeof entryList !== "undefined" && Array.isArray(entryList) ? entryList[index] : null;
+                    const cells = tr.children;
+                    if (!cells || !cells.length) return;
+                    const hasTrackerCell = tr.querySelector(".audit-guard-table-cell") !== null;
+                    const nameCellIdx = hasTrackerCell ? 5 : 4;
+                    if (cells[nameCellIdx]) {
+                        const rawVal = entry?.name || entry?.auditorName || cells[nameCellIdx].textContent;
+                        cells[nameCellIdx].textContent = normalizeAuditorName(rawVal);
+                    }
+                });
+                return res;
+            };
+        }
+
+        if (typeof window.copyToClipboard === "function") {
+            const originalCopy = window.copyToClipboard;
+            window.copyToClipboard = function () {
+                if (typeof entryList !== "undefined" && Array.isArray(entryList)) {
+                    entryList.forEach(entry => {
+                        const auditor = normalizeAuditorName(entry.name || entry.auditorName || "Miles");
+                        entry.name = auditor;
+                        entry.auditorName = auditor;
+                    });
+                }
+                const rows = document.querySelectorAll("#outputTable tbody tr");
+                rows.forEach(tr => {
+                    const cells = tr.children;
+                    if (!cells || !cells.length) return;
+                    const hasTrackerCell = tr.querySelector(".audit-guard-table-cell") !== null;
+                    const nameCellIdx = hasTrackerCell ? 5 : 4;
+                    if (cells[nameCellIdx]) {
+                        cells[nameCellIdx].textContent = normalizeAuditorName(cells[nameCellIdx].textContent);
+                    }
+                });
+                return originalCopy.apply(this, arguments);
+            };
+        }
+    }
+
+    if (typeof module !== "undefined" && module.exports) {
+        module.exports = {
+            generateHardenedPdf: window.generateHardenedPdf,
+            verifyMaintenanceTransmissionResults: window.verifyMaintenanceTransmissionResults,
+            normalizeTrackerSite,
+            normalizeAuditorName
+        };
+    }
 })();
+
