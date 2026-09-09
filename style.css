@@ -14055,7 +14055,7 @@ body.dark-mode-verification { background-color: #090d16 !important; }
 body.light-mode-verification { background-color: #f1f3f7 !important; }
 
 /* ==========================================================================
-   CANONICAL DESIGN SYSTEM TOKENS & FOUNDATIONS
+   TWENTY-INSPIRED CANONICAL DESIGN SYSTEM TOKENS & FOUNDATIONS
    ========================================================================== */
 
 :root {
@@ -14067,10 +14067,10 @@ body.light-mode-verification { background-color: #f1f3f7 !important; }
     --brand-danger: #d84a4a;
     --brand-danger-hover: #c43838;
 
-    --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font-sans: 'Inter', 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     --font-mono: 'Fira Code', Consolas, Monaco, monospace;
 
-    /* Transition tokens */
+    /* Micro-interaction transition */
     --ui-transition: background-color .15s ease, color .15s ease, border-color .15s ease, transform .12s ease;
 }
 
@@ -14080,24 +14080,25 @@ body.dark-mode,
 html[data-theme="dark"] body {
     --app-bg: #212121;
     --sidebar-bg: #1b1b1b;
-    --surface-1: #262626;
+    --surface-1: #252525;
     --surface-2: #292929;
     --surface-3: #2e2e2e;
-    --surface-hover: #323232;
+    --surface-hover: #333333;
+    --input-bg: #292929;
 
-    --text-primary: #f5f5f5;
-    --text-secondary: #c3c3c3;
-    --text-muted: #8f8f8f;
+    --text-primary: #f4f4f5;
+    --text-secondary: #c2c2c5;
+    --text-muted: #8c8d91;
 
-    --border-subtle: rgba(255, 255, 255, 0.07);
-    --border-default: rgba(255, 255, 255, 0.10);
-    --border-strong: rgba(255, 255, 255, 0.15);
+    --border-subtle: rgba(255, 255, 255, 0.06);
+    --border-default: rgba(255, 255, 255, 0.09);
+    --border-strong: rgba(255, 255, 255, 0.14);
 
-    --btn-neutral-bg: #303030;
+    --btn-neutral-bg: #2d2d2d;
     --btn-neutral-text: #f2f2f2;
-    --btn-neutral-text: #eeeeee;
+    --btn-neutral-text: #eeeeef;
     --btn-neutral-border: rgba(255, 255, 255, 0.09);
-    --btn-neutral-hover: #383838;
+    --btn-neutral-hover: #353535;
 
     background-color: var(--app-bg) !important;
     color: var(--text-primary) !important;
@@ -14108,32 +14109,33 @@ body.light-mode,
 [data-theme="light"],
 html[data-theme="light"] body {
     --app-bg: #b6b8cd;
-    --sidebar-bg: #acaec3;
+    --sidebar-bg: #adafc3;
     --surface-1: #c4c6d4;
     --surface-2: #d0d2dc;
     --surface-3: #dcdee6;
     --surface-hover: #d5d7e1;
+    --input-bg: rgba(255, 255, 255, 0.30);
 
     --text-primary: #191a1f;
     --text-secondary: #484a55;
-    --text-muted: #696b78;
+    --text-muted: #6b6d78;
 
-    --border-subtle: rgba(20, 22, 30, 0.08);
-    --border-default: rgba(20, 22, 30, 0.11);
-    --border-strong: rgba(20, 22, 30, 0.17);
+    --border-subtle: rgba(20, 22, 30, 0.07);
+    --border-default: rgba(20, 22, 30, 0.10);
+    --border-strong: rgba(20, 22, 30, 0.16);
 
-    --btn-neutral-bg: rgba(255, 255, 255, 0.32);
+    --btn-neutral-bg: rgba(255, 255, 255, 0.28);
     --btn-neutral-text: #18191d;
-    --btn-neutral-text: #1c1d22;
+    --btn-neutral-text: #1b1c21;
     --btn-neutral-border: rgba(20, 22, 30, 0.10);
-    --btn-neutral-hover: rgba(255, 255, 255, 0.45);
+    --btn-neutral-hover: rgba(255, 255, 255, 0.40);
 
     background-color: var(--app-bg) !important;
     color: var(--text-primary) !important;
 }
 
 /* ==========================================================================
-   UNIVERSAL BUTTON SYSTEM (8px radius, 38px height, centered, semantic variants)
+   TWENTY-INSPIRED BUTTON SYSTEM (8px radius, 36px-38px height, centered)
    ========================================================================== */
 
 button:not(#themeToggle):not(#sidebarToggle):not(.sidebar-collapse-toggle):not(.eod-proof-remove):not(.add-btn):not(.remove-btn):not(.switch):not(.slider):not(.slider-thumb):not(.sheet-cell):not([type="checkbox"]):not([type="radio"]),
@@ -14141,16 +14143,17 @@ input[type="button"],
 input[type="submit"],
 .btn:not(#themeToggle):not(#sidebarToggle):not(.sidebar-collapse-toggle):not(.eod-proof-remove):not(.add-btn):not(.remove-btn) {
     height: 38px !important;
-    min-height: 38px !important;
-    padding: 0 14px !important;
+    min-height: 36px !important;
+    padding: 0 12px !important;
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
     gap: 6px !important;
     border-radius: 10px !important;
     border-radius: 8px !important;
-    font-family: 'Plus Jakarta Sans', system-ui, sans-serif !important;
+    font-family: var(--font-sans) !important;
     font-size: 12px !important;
+    font-weight: 600 !important;
     font-weight: 700 !important;
     line-height: 1 !important;
     white-space: nowrap !important;
@@ -14175,7 +14178,6 @@ input[type="submit"]:active,
     transform: translateY(0) !important;
 }
 
-/* Ensure icons and labels inside buttons align perfectly */
 button span,
 button i,
 button svg {
@@ -14186,14 +14188,14 @@ button svg {
     vertical-align: middle !important;
 }
 
-/* Neutral Buttons (Default for most actions) */
-button:not(.btn-primary):not(.btn-success):not(.btn-danger):not(.primary-btn):not(.success-btn):not(.danger-btn):not(#themeToggle):not(#sidebarToggle):not(.sidebar-collapse-toggle):not(.eod-proof-remove):not(.add-btn):not(.remove-btn):not(.switch):not(.slider):not(.slider-thumb):not([data-action="primary"]):not([data-action="success"]):not([data-action="danger"]) {
+/* Neutral Buttons */
+button:not(.btn-primary):not(.btn-success):not(.btn-danger):not(.primary-btn):not(.success-btn):not(.danger-btn):not(#themeToggle):not(#sidebarToggle):not(.sidebar-collapse-toggle):not(.eod-proof-remove):not(.add-btn):not(.remove-btn):not(.switch):not(.slider):not(.slider-thumb):not([data-action="primary"]):not([data-action="success"]):not([data-action="danger"]):not(.edr-generate-smart-btn) {
     background: var(--btn-neutral-bg) !important;
     color: var(--btn-neutral-text) !important;
     border: 1px solid var(--btn-neutral-border) !important;
 }
 
-button:not(.btn-primary):not(.btn-success):not(.btn-danger):not(.primary-btn):not(.success-btn):not(.danger-btn):not(#themeToggle):not(#sidebarToggle):not(.sidebar-collapse-toggle):not(.eod-proof-remove):not(.add-btn):not(.remove-btn):not(.switch):not(.slider):not(.slider-thumb):not([data-action="primary"]):not([data-action="success"]):not([data-action="danger"]):hover {
+button:not(.btn-primary):not(.btn-success):not(.btn-danger):not(.primary-btn):not(.success-btn):not(.danger-btn):not(#themeToggle):not(#sidebarToggle):not(.sidebar-collapse-toggle):not(.eod-proof-remove):not(.add-btn):not(.remove-btn):not(.switch):not(.slider):not(.slider-thumb):not([data-action="primary"]):not([data-action="success"]):not([data-action="danger"]):not(.edr-generate-smart-btn):hover {
     background: var(--btn-neutral-hover) !important;
 }
 
@@ -14202,13 +14204,13 @@ button[disabled],
 button:disabled,
 input[type="button"]:disabled,
 input[type="submit"]:disabled {
-    opacity: 0.45 !important;
+    opacity: 0.50 !important;
     cursor: not-allowed !important;
     transform: none !important;
     box-shadow: none !important;
 }
 
-/* Semantic Primary Buttons (#2584ff) */
+/* Primary Action Buttons (#2584ff) */
 .btn-primary,
 .primary-btn,
 button.primary,
@@ -14217,6 +14219,7 @@ button.primary,
 #downloadPdfBtn,
 #exportPdfBtn,
 #miniSheetToReportBtn,
+#edrGenerateSmartBtn,
 [data-action="primary"] {
     background-color: var(--brand-primary) !important;
     color: #ffffff !important;
@@ -14231,12 +14234,13 @@ button.primary:hover,
 #downloadPdfBtn:hover,
 #exportPdfBtn:hover,
 #miniSheetToReportBtn:hover,
+#edrGenerateSmartBtn:hover,
 [data-action="primary"]:hover {
     background-color: var(--brand-primary-hover) !important;
     border-color: var(--brand-primary-hover) !important;
 }
 
-/* Semantic Success Buttons (#22a06b) */
+/* Success Action Buttons (#22a06b) */
 .btn-success,
 .success-btn,
 button.success,
@@ -14244,6 +14248,7 @@ button.success,
 #copySortedBtn,
 #sendToSheetsBtn,
 #miniSheetCopyRowsBtn,
+#edrSaveBtn,
 [data-action="copy"],
 [data-action="success"] {
     background-color: var(--brand-success) !important;
@@ -14258,13 +14263,14 @@ button.success:hover,
 #copySortedBtn:hover,
 #sendToSheetsBtn:hover,
 #miniSheetCopyRowsBtn:hover,
+#edrSaveBtn:hover,
 [data-action="copy"]:hover,
 [data-action="success"]:hover {
     background-color: var(--brand-success-hover) !important;
     border-color: var(--brand-success-hover) !important;
 }
 
-/* Semantic Danger Buttons (#d84a4a) */
+/* Danger Action Buttons (#d84a4a) */
 .btn-danger,
 .danger-btn,
 button.danger,
@@ -14272,6 +14278,7 @@ button.danger,
 #resetTlFloorsBtn,
 #miniSheetRemoveRowBtn,
 #miniSheetClearAllBtn,
+#edrClearAllBtn,
 [data-action="delete"],
 [data-action="remove"],
 [data-action="danger"] {
@@ -14287,6 +14294,7 @@ button.danger:hover,
 #resetTlFloorsBtn:hover,
 #miniSheetRemoveRowBtn:hover,
 #miniSheetClearAllBtn:hover,
+#edrClearAllBtn:hover,
 [data-action="delete"]:hover,
 [data-action="remove"]:hover,
 [data-action="danger"]:hover {
@@ -14303,6 +14311,9 @@ button.danger:hover,
 #sheetSetupBtn,
 #previewBtn,
 #clearReportBtn,
+#edrDocsReloadBtn,
+#edrClearFormBtn,
+#edrCancelEditBtn,
 button[data-action="clear-selection"],
 button[data-action="draft"],
 button[data-action="preview"] {
@@ -14318,15 +14329,154 @@ button[data-action="preview"] {
 #draftsBtn:hover,
 #sheetSetupBtn:hover,
 #previewBtn:hover,
-#clearReportBtn:hover {
+#clearReportBtn:hover,
+#edrDocsReloadBtn:hover,
+#edrClearFormBtn:hover,
+#edrCancelEditBtn:hover {
     background: var(--btn-neutral-hover) !important;
+}
+
+/* ==========================================================================
+   TWENTY-STYLE INTEGRATED SIDEBAR NAVIGATION
+   ========================================================================== */
+
+#sidebar {
+    background-color: var(--sidebar-bg) !important;
+    border-right: 1px solid var(--border-default) !important;
+    transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.15s ease !important;
+}
+
+#sidebar.sidebar-collapsed {
+    width: 68px !important;
+}
+
+.ops-sidebar-brand {
+    padding: 16px 16px 12px 16px !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+
+.ops-sidebar-brand strong {
+    font-size: 14px !important;
+    font-weight: 700 !important;
+    letter-spacing: -0.01em !important;
+    color: var(--text-primary) !important;
+    display: block !important;
+}
+
+.ops-sidebar-brand span {
+    font-size: 11px !important;
+    color: var(--text-muted) !important;
+    display: block !important;
+}
+
+.ops-sidebar-label,
+.sidebar-section-label {
+    font-size: 10px !important;
+    letter-spacing: 0.08em !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    color: var(--text-muted) !important;
+    padding: 10px 16px 4px 16px !important;
+    margin: 0 !important;
+}
+
+/* Twenty-like integrated navigation row buttons */
+.workspace-tabs button,
+.workspace-tab-btn,
+.sidebar-history-btn {
+    height: 34px !important;
+    min-height: 34px !important;
+    border-radius: 6px !important;
+    padding: 0 10px !important;
+    margin: 1px 8px !important;
+    width: calc(100% - 16px) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    gap: 9px !important;
+    font-size: 12px !important;
+    font-weight: 500 !important;
+    background: transparent !important;
+    border: none !important;
+    color: var(--text-secondary) !important;
+    transition: var(--ui-transition) !important;
+    box-shadow: none !important;
+    transform: none !important;
+    text-align: left !important;
+}
+
+.workspace-tabs button:hover,
+.workspace-tab-btn:hover,
+.sidebar-history-btn:hover {
+    background: var(--surface-hover) !important;
+    color: var(--text-primary) !important;
+    transform: none !important;
+}
+
+.workspace-tabs button.active,
+.workspace-tab-btn.active,
+.sidebar-history-btn.active {
+    background: rgba(37, 132, 255, 0.08) !important;
+    color: var(--text-primary) !important;
+    border-left: 3px solid #2584ff !important;
+    font-weight: 600 !important;
+    border-radius: 0 6px 6px 0 !important;
+    transform: none !important;
+}
+
+.sidebar-nav-icon {
+    width: 16px !important;
+    height: 16px !important;
+    min-width: 16px !important;
+    stroke-width: 2 !important;
+    color: inherit !important;
+    vertical-align: middle !important;
+}
+
+/* Sidebar Badges */
+.cctv-edr-sent-badge,
+.masterlist-sidebar-badge,
+#followupSidebarBadge,
+#globalHistoryCount,
+#adminPendingCount {
+    margin-left: auto !important;
+    font-size: 10px !important;
+    font-weight: 600 !important;
+    padding: 1px 6px !important;
+    border-radius: 999px !important;
+    background: var(--surface-3) !important;
+    color: var(--text-muted) !important;
+}
+
+.masterlist-sidebar-badge.is-live {
+    background: rgba(34, 160, 107, 0.15) !important;
+    color: #22a06b !important;
+}
+
+/* User area and live clock */
+.auth-sidebar-account {
+    background: transparent !important;
+    border-top: 1px solid var(--border-subtle) !important;
+    padding: 12px 16px !important;
+    margin-top: auto !important;
+}
+
+.sidebar-live-clock {
+    font-size: 22px !important;
+    font-weight: 700 !important;
+    font-variant-numeric: tabular-nums !important;
+    color: var(--text-primary) !important;
+    letter-spacing: -0.02em !important;
+    line-height: 1.1 !important;
+    padding: 8px 16px !important;
 }
 
 /* ==========================================================================
    BUTTON & COMPONENT EXCEPTIONS (Preserve specialized geometry)
    ========================================================================== */
 
-/* 1. Docked Sidebar Toggle Button */
 #sidebarToggle,
 button#sidebarToggle {
     position: absolute !important;
@@ -14355,7 +14505,6 @@ button#sidebarToggle {
     left: 68px !important;
 }
 
-/* 2. Compact Screenshot Remove 'X' Badge */
 .eod-proof-remove,
 button.eod-proof-remove {
     position: absolute !important;
@@ -14379,7 +14528,6 @@ button.eod-proof-remove {
     transform: none !important;
 }
 
-/* 3. Small + and - Option Control Buttons in EDR & CCTV Audit */
 .add-btn,
 .remove-btn,
 button.add-btn,
@@ -14394,6 +14542,113 @@ button.remove-btn {
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
+}
+
+/* ==========================================================================
+   EDR RECORD EDITOR & SEGMENTED CONTROLS
+   ========================================================================== */
+
+/* Flat segmented controls for Respondent and Violation Subject */
+.edr-choice-group {
+    display: inline-flex !important;
+    padding: 2px !important;
+    border: 1px solid var(--border-default) !important;
+    border-radius: 8px !important;
+    background: var(--surface-1) !important;
+    gap: 2px !important;
+    box-sizing: border-box !important;
+    width: 100% !important;
+}
+
+.edr-choice-btn {
+    flex: 1 1 0 !important;
+    height: 32px !important;
+    min-height: 32px !important;
+    padding: 0 10px !important;
+    border-radius: 6px !important;
+    background: transparent !important;
+    border: none !important;
+    font-size: 12px !important;
+    font-weight: 600 !important;
+    color: var(--text-secondary) !important;
+    cursor: pointer !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    transition: var(--ui-transition) !important;
+}
+
+.edr-choice-btn.active {
+    background: var(--surface-3) !important;
+    color: var(--text-primary) !important;
+    font-weight: 700 !important;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06) !important;
+}
+
+/* EDR Quick Templates & Rough Notes */
+.edr-layout-quick-templates,
+.edr-layout-rough-notes {
+    margin-bottom: 12px !important;
+}
+
+.edr-optional-tag {
+    font-size: 11px !important;
+    font-weight: 400 !important;
+    color: var(--text-muted) !important;
+    margin-left: 4px !important;
+}
+
+.edr-rough-notes-head {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    margin-bottom: 6px !important;
+}
+
+.edr-generate-smart-btn {
+    height: 32px !important;
+    min-height: 32px !important;
+    padding: 0 12px !important;
+    font-size: 11.5px !important;
+    font-weight: 700 !important;
+    background: #2584ff !important;
+    color: #ffffff !important;
+    border: 1px solid #2584ff !important;
+    border-radius: 6px !important;
+    cursor: pointer !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 4px !important;
+}
+
+.edr-generate-smart-btn:hover {
+    background: #1b73e8 !important;
+    border-color: #1b73e8 !important;
+}
+
+/* Google Docs Sync Bar */
+.edr-docs-sync-bar {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    padding: 10px 16px !important;
+    border-radius: 8px !important;
+    border: 1px solid var(--border-subtle) !important;
+    background: var(--surface-1) !important;
+    margin-bottom: 16px !important;
+    gap: 12px !important;
+    flex-wrap: wrap !important;
+}
+
+.edr-docs-sync-copy strong {
+    font-size: 12px !important;
+    color: var(--text-primary) !important;
+    margin-right: 8px !important;
+}
+
+.edr-docs-sync-copy span {
+    font-size: 12px !important;
+    color: var(--text-muted) !important;
 }
 
 /* ==========================================================================
@@ -14538,7 +14793,6 @@ td.selected {
     z-index: 2 !important;
 }
 
-/* Multi-Column Search Match Highlight */
 .sheet-cell-match {
     background-color: rgba(37, 132, 255, 0.25) !important;
     color: inherit !important;
@@ -14546,7 +14800,6 @@ td.selected {
     border-radius: 2px !important;
 }
 
-/* Row Numbers & Headers */
 .mini-sheet-row-number,
 .sheet-row-header {
     width: 44px !important;
@@ -14567,57 +14820,6 @@ body.light-mode .mini-sheet-row-number,
 [data-theme="light"] .mini-sheet-row-number {
     background-color: #c4c6d4 !important;
     border-right: 1px solid rgba(20, 22, 30, 0.12) !important;
-}
-
-/* ==========================================================================
-   SIDEBAR & CONTROLS READABILITY
-   ========================================================================== */
-
-#sidebar {
-    background-color: var(--sidebar-bg) !important;
-    border-right: 1px solid var(--border-default) !important;
-    transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.15s ease !important;
-}
-
-#sidebar.sidebar-collapsed {
-    width: 68px !important;
-}
-
-.sidebar-section-label {
-    font-size: 10px !important;
-    letter-spacing: 0.08em !important;
-    font-weight: 700 !important;
-    text-transform: uppercase !important;
-    color: var(--text-muted) !important;
-    padding: 12px 16px 4px 16px !important;
-}
-
-/* Elegant Active Sidebar Item */
-.sidebar-nav-item.active,
-.sidebar-btn.active,
-.nav-item.active {
-    background: rgba(37, 132, 255, 0.10) !important;
-    color: var(--text-primary) !important;
-    border-left: 3px solid #2584ff !important;
-    border-radius: 0 6px 6px 0 !important;
-    font-weight: 600 !important;
-}
-
-.sidebar-nav-item:not(.active):hover,
-.sidebar-btn:not(.active):hover,
-.nav-item:not(.active):hover {
-    background: var(--surface-hover) !important;
-    color: var(--text-primary) !important;
-}
-
-/* Flat Live Clock in Sidebar */
-.sidebar-live-clock {
-    font-size: 22px !important;
-    font-weight: 700 !important;
-    font-variant-numeric: tabular-nums !important;
-    color: var(--text-primary) !important;
-    letter-spacing: -0.02em !important;
-    line-height: 1.1 !important;
 }
 
 /* ==========================================================================
@@ -14673,17 +14875,17 @@ body.light-mode textarea,
 [data-theme="light"] input:not([type="checkbox"]):not([type="radio"]):not([type="button"]):not([type="submit"]):not(#themeToggle):not(.glitch-card input),
 [data-theme="light"] select:not(.glitch-card select),
 [data-theme="light"] textarea {
-    background-color: rgba(255, 255, 255, 0.32) !important;
+    background-color: rgba(255, 255, 255, 0.30) !important;
     color: #191a1f !important;
     border: 1px solid rgba(20, 22, 30, 0.10) !important;
 }
 
-/* Input Focus Ring (#2584ff) */
+/* Focus Ring */
 input:not([type="checkbox"]):not([type="radio"]):not([type="button"]):not([type="submit"]):not(#themeToggle):not(.glitch-card input):focus,
 select:not(.glitch-card select):focus,
 textarea:focus {
     border-color: #2584ff !important;
-    box-shadow: 0 0 0 3px rgba(37, 132, 255, 0.10) !important;
+    box-shadow: 0 0 0 3px rgba(37, 132, 255, 0.08) !important;
     outline: none !important;
 }
 
@@ -14694,11 +14896,11 @@ textarea:focus {
 .connection-status-pill,
 .status-pill,
 .badge-status {
-    height: 24px !important;
-    min-height: 24px !important;
-    padding: 0 9px !important;
+    height: 22px !important;
+    min-height: 22px !important;
+    padding: 0 8px !important;
     border-radius: 999px !important;
-    font-size: 11px !important;
+    font-size: 10.5px !important;
     font-weight: 600 !important;
     display: inline-flex !important;
     align-items: center !important;
@@ -14719,10 +14921,9 @@ textarea:focus {
     border: 1px solid rgba(216, 74, 74, 0.3) !important;
 }
 
-/* Maintenance Report Sections */
 .maintenance-section-card,
 .report-entry-card {
-    border-radius: 10px !important;
+    border-radius: 8px !important;
     border: 1px solid var(--border-subtle) !important;
     background: var(--surface-1) !important;
     padding: 16px !important;
