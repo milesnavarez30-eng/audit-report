@@ -19930,59 +19930,132 @@ https://www.facebook.com/share/..."></textarea>
         refreshCctvEdrSentIndicator();
     }
 
-    function copyToClipboard() {
-        if (entryList.length === 0) {
-            alert("No entries to copy!");
-            return;
+    async function copyAuditForTracker(text) {
+        const escapeHtml = value =>
+            String(value ?? "")
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+
+        const sanitize = value =>
+            String(value ?? "")
+                .replace(/data:image\/[a-zA-Z0-9.+-]+;base64,[A-Za-z0-9+/=]+/g, "")
+                .trim();
+
+        let safeText = "";
+        let safeHtml = "";
+
+        if (typeof text === "string" && text.trim().length > 0) {
+            safeText = sanitize(text);
+            if (!safeText) {
+                if (typeof showToast === "function") {
+                    showToast("There is no Audit content to copy.", "error");
+                } else {
+                    alert("There is no Audit content to copy.");
+                }
+                return;
+            }
+            safeHtml = `<div style="font-size:10pt;line-height:normal;white-space:pre-wrap;font-family:Arial,sans-serif;">${escapeHtml(safeText).replace(/\n/g, "<br>")}</div>`;
+        } else {
+            if (!entryList || entryList.length === 0) {
+                if (typeof showToast === "function") {
+                    showToast("No entries to copy!", "error");
+                } else {
+                    alert("No entries to copy!");
+                }
+                return;
+            }
+
+            const textRows = entryList.map(entry => {
+                const auditor = normalizeAuditorName(entry.name || entry.auditorName || "Miles");
+                return [
+                    entry.year,
+                    entry.month,
+                    entry.formattedDate,
+                    auditor,
+                    entry.omName,
+                    entry.site,
+                    entry.tlName,
+                    entry.agentName,
+                    entry.cleanAccount,
+                    entry.reasonCode,
+                    entry.noc,
+                    entry.remarks
+                ].map(sanitize).join("\t");
+            });
+            safeText = textRows.join("\n").trim();
+
+            if (!safeText) {
+                if (typeof showToast === "function") {
+                    showToast("There is no Audit content to copy.", "error");
+                } else {
+                    alert("There is no Audit content to copy.");
+                }
+                return;
+            }
+
+            let tableRowsHTML = "";
+            entryList.forEach(entry => {
+                const auditor = normalizeAuditorName(entry.name || entry.auditorName || "Miles");
+                tableRowsHTML += `<tr>` +
+                    `<td style="border: none; text-align: center; background-color: transparent !important; color: #000000 !important; font-family: Arial, sans-serif; font-size: 10pt; line-height: normal;">${escapeHtml(sanitize(entry.year))}</td>` +
+                    `<td style="border: none; text-align: center; background-color: transparent !important; color: #000000 !important; font-family: Arial, sans-serif; font-size: 10pt; line-height: normal;">${escapeHtml(sanitize(entry.month))}</td>` +
+                    `<td style="border: none; text-align: center; background-color: transparent !important; color: #000000 !important; font-family: Arial, sans-serif; font-size: 10pt; line-height: normal;">${escapeHtml(sanitize(entry.formattedDate))}</td>` +
+                    `<td style="border: none; text-align: center; background-color: transparent !important; color: #000000 !important; font-family: Arial, sans-serif; font-size: 10pt; line-height: normal;">${escapeHtml(sanitize(auditor))}</td>` +
+                    `<td style="border: none; text-align: center; background-color: transparent !important; color: #000000 !important; font-family: Arial, sans-serif; font-size: 10pt; line-height: normal;">${escapeHtml(sanitize(entry.omName))}</td>` +
+                    `<td style="border: none; text-align: center; background-color: transparent !important; color: #000000 !important; font-family: Arial, sans-serif; font-size: 10pt; line-height: normal;">${escapeHtml(sanitize(entry.site))}</td>` +
+                    `<td style="border: none; text-align: center; background-color: transparent !important; color: #000000 !important; font-family: Arial, sans-serif; font-size: 10pt; line-height: normal;">${escapeHtml(sanitize(entry.tlName))}</td>` +
+                    `<td style="border: none; text-align: center; background-color: transparent !important; color: #000000 !important; font-family: Arial, sans-serif; font-size: 10pt; line-height: normal;">${escapeHtml(sanitize(entry.agentName))}</td>` +
+                    `<td style="border: none; text-align: center; background-color: transparent !important; color: #000000 !important; font-family: Arial, sans-serif; font-size: 10pt; line-height: normal;">${escapeHtml(sanitize(entry.cleanAccount))}</td>` +
+                    `<td style="border: none; text-align: center; background-color: transparent !important; color: #000000 !important; font-family: Arial, sans-serif; font-size: 10pt; line-height: normal;">${escapeHtml(sanitize(entry.reasonCode))}</td>` +
+                    `<td style="border: none; text-align: center; background-color: transparent !important; color: #000000 !important; font-family: Arial, sans-serif; font-size: 10pt; line-height: normal;">${escapeHtml(sanitize(entry.noc))}</td>` +
+                    `<td style="border: none; text-align: left; background-color: transparent !important; color: #000000 !important; font-family: Arial, sans-serif; font-size: 10pt; line-height: normal; white-space: pre-wrap;">${escapeHtml(sanitize(entry.remarks)).replace(/\n/g, "<br>")}</td>` +
+                `</tr>`;
+            });
+
+            safeHtml = `<div style="font-size:10pt;line-height:normal;white-space:pre-wrap;font-family:Arial,sans-serif;"><table style="border-collapse: collapse; border: none; background-color: transparent !important; color: #000000 !important; font-family: Arial, sans-serif; font-size: 10pt; line-height: normal;"><tbody>${tableRowsHTML}</tbody></table></div>`;
         }
-
-        const tempDiv = document.createElement("div");
-        tempDiv.style.all = "initial"; 
-        tempDiv.style.position = "absolute";
-        tempDiv.style.left = "-9999px";
-        
-        let tableHTML = "<table style='border-collapse: collapse; border: none; background-color: transparent !important; color: #000000 !important; font-family: Arial, sans-serif; font-size: 10pt;'><tbody>";
-        
-        entryList.forEach(entry => {
-            const auditor = normalizeAuditorName(entry.name || entry.auditorName || "Miles");
-            tableHTML += `
-                <tr>
-                    <td style="border: none; text-align: center; background-color: transparent !important; color: #000000 !important;">${entry.year}</td>
-                    <td style="border: none; text-align: center; background-color: transparent !important; color: #000000 !important;">${entry.month}</td>
-                    <td style="border: none; text-align: center; background-color: transparent !important; color: #000000 !important;">${entry.formattedDate}</td>
-                    <td style="border: none; text-align: center; background-color: transparent !important; color: #000000 !important;">${auditor}</td>
-                    <td style="border: none; text-align: center; background-color: transparent !important; color: #000000 !important;">${entry.omName}</td>
-                    <td style="border: none; text-align: center; background-color: transparent !important; color: #000000 !important;">${entry.site}</td>
-                    <td style="border: none; text-align: center; background-color: transparent !important; color: #000000 !important;">${entry.tlName}</td>
-                    <td style="border: none; text-align: center; background-color: transparent !important; color: #000000 !important;">${entry.agentName}</td>
-                    <td style="border: none; text-align: center; background-color: transparent !important; color: #000000 !important;">${entry.cleanAccount}</td>
-                    <td style="border: none; text-align: center; background-color: transparent !important; color: #000000 !important;">${entry.reasonCode}</td>
-                    <td style="border: none; text-align: center; background-color: transparent !important; color: #000000 !important;">${entry.noc}</td>
-                    <td style="border: none; text-align: left; background-color: transparent !important; color: #000000 !important;">${entry.remarks}</td>
-                </tr>
-            `;
-        });
-        
-        tableHTML += "</tbody></table>";
-        tempDiv.innerHTML = tableHTML;
-        document.body.appendChild(tempDiv);
-
-        const range = document.createRange();
-        range.selectNodeContents(tempDiv);
-        const selection = window.getSelection();
-        selection.removeAllRanges();
-        selection.addRange(range);
 
         try {
-            document.execCommand('copy');
-            alert("Copied successfully! Ready to paste to Google Sheets.");
-        } catch (err) {
-            alert("Failed to copy data.");
-        }
+            if (navigator.clipboard && window.ClipboardItem && navigator.clipboard.write) {
+                const clipboardItem = new ClipboardItem({
+                    "text/plain": new Blob([safeText], { type: "text/plain" }),
+                    "text/html": new Blob([safeHtml], { type: "text/html" })
+                });
+                await navigator.clipboard.write([clipboardItem]);
+            } else {
+                const textarea = document.createElement("textarea");
+                textarea.value = safeText;
+                textarea.style.position = "fixed";
+                textarea.style.left = "-9999px";
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand("copy");
+                textarea.remove();
+            }
 
-        selection.removeAllRanges();
-        document.body.removeChild(tempDiv);
+            if (typeof showToast === "function") {
+                showToast("Audit copied for Tracker (10 pt).", "success");
+            } else {
+                alert("Audit copied for Tracker (10 pt).");
+            }
+        } catch (error) {
+            console.error("Audit tracker copy failed:", error);
+            if (typeof showToast === "function") {
+                showToast("Unable to copy Audit.", "error");
+            } else {
+                alert("Failed to copy data.");
+            }
+        }
     }
+
+    async function copyToClipboard() {
+        return copyAuditForTracker();
+    }
+
+    window.copyAuditForTracker = copyAuditForTracker;
 
     async function clearOutput() {
         const approved = await appConfirm({
