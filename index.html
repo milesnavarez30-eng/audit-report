@@ -16020,6 +16020,464 @@ td {
 }
 </style>
 
+<style id="aiSorterToolbarAndWorkspaceFix">
+/* ==========================================================================
+   UNIFY WORKSPACE LAYOUT IN BOTH LIGHT & DARK MODES
+   (Eliminates outer container boxes and shifting layouts)
+   ========================================================================== */
+
+/* 1. Reset root workspace wrapper across ALL themes */
+.app-layout,
+.app-container,
+#app,
+body > div:first-child {
+    display: flex !important;
+    gap: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+#authGate,
+.auth-gate {
+    display: grid !important;
+    place-items: center !important;
+}
+
+#authGate[hidden],
+.auth-gate[hidden],
+[hidden] {
+    display: none !important;
+}
+
+/* 2. Strip outer container framing in BOTH Dark and Light modes */
+:root .main-content,
+:root .workspace-wrapper,
+:root .content-area,
+:root main,
+:root #mainContent,
+:root .tab-content,
+:root #maintenancePanel,
+:root #eodPanel,
+:root .app-tab-panel,
+body.light-mode .main-content,
+body.light-mode .workspace-wrapper,
+body.light-mode .content-area,
+body.light-mode main,
+body.light-mode #mainContent,
+body.light-mode .tab-content,
+body.light-mode #maintenancePanel,
+body.light-mode #eodPanel,
+body.light-mode .app-tab-panel,
+[data-theme="light"] .main-content,
+[data-theme="light"] .workspace-wrapper,
+[data-theme="light"] .content-area,
+[data-theme="light"] main,
+[data-theme="light"] #mainContent,
+[data-theme="light"] .tab-content,
+[data-theme="light"] #maintenancePanel,
+[data-theme="light"] #eodPanel,
+[data-theme="light"] .app-tab-panel,
+[data-theme="dark"] .main-content,
+[data-theme="dark"] .workspace-wrapper,
+[data-theme="dark"] .content-area,
+[data-theme="dark"] main,
+[data-theme="dark"] #mainContent,
+[data-theme="dark"] .tab-content,
+[data-theme="dark"] #maintenancePanel,
+[data-theme="dark"] #eodPanel,
+[data-theme="dark"] .app-tab-panel,
+body.ops-redesign-v3 #maintenancePanel,
+body.ops-redesign-v3 #eodPanel,
+body.ops-redesign-v3 .app-tab-panel,
+body.ops-redesign-v3.light-mode #maintenancePanel,
+body.ops-redesign-v3.light-mode #eodPanel,
+body.ops-redesign-v3.light-mode .app-tab-panel {
+    background: transparent !important;
+    background-color: transparent !important;
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    padding: 24px 32px !important; /* Identical padding across both modes */
+    margin: 0 !important; /* Identical zero margin across both modes */
+    width: 100% !important;
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+}
+
+#maintenancePanel > .card,
+#maintenancePanel > .panel,
+#maintenancePanel > .container,
+#maintenancePanel .maintenance-shell,
+#eodPanel > .card,
+#eodPanel > .panel,
+#eodPanel > .container,
+#eodPanel .simple-eod-shell,
+body.light-mode #maintenancePanel > .card,
+body.light-mode #maintenancePanel > .panel,
+body.light-mode #maintenancePanel > .container,
+body.light-mode #maintenancePanel .maintenance-shell,
+body.light-mode #eodPanel > .card,
+body.light-mode #eodPanel > .panel,
+body.light-mode #eodPanel > .container,
+body.light-mode #eodPanel .simple-eod-shell,
+[data-theme="light"] #maintenancePanel > .card,
+[data-theme="light"] #maintenancePanel > .panel,
+[data-theme="light"] #maintenancePanel > .container,
+[data-theme="light"] #maintenancePanel .maintenance-shell,
+[data-theme="light"] #eodPanel > .card,
+[data-theme="light"] #eodPanel > .panel,
+[data-theme="light"] #eodPanel > .container {
+    background: transparent !important;
+    background-color: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+/* Canvas background color management */
+body,
+body.dark-mode,
+[data-theme="dark"],
+body.ops-redesign-v3,
+body.ops-redesign-v3.dark-mode {
+    background-color: #090d16 !important;
+}
+
+body.light-mode,
+[data-theme="light"],
+body.ops-redesign-v3.light-mode,
+html[data-theme="light"] body {
+    background-color: #f1f3f7 !important;
+}
+
+/* ==========================================================================
+   1. UNIVERSAL BUTTON SYSTEM (IDENTICAL ACROSS ALL THEMES)
+   ========================================================================== */
+
+/* Apply universal sizing, typography, and pill shape to ALL buttons */
+button,
+.btn,
+input[type="button"],
+input[type="submit"],
+.sheet-toolbar button,
+#aiSorterPanel button,
+#maintenancePanel button,
+#edrPanel button,
+#cctvPanel button {
+    height: 38px !important;
+    min-height: 38px !important;
+    max-height: 38px !important;
+    padding: 0 16px !important;
+    border-radius: 9999px !important;
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif !important;
+    font-size: 12px !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.03em !important;
+    white-space: nowrap !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    cursor: pointer !important;
+    box-sizing: border-box !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45) !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.22) !important;
+    transition: transform 0.12s ease, filter 0.15s ease, box-shadow 0.15s ease !important;
+}
+
+/* Enforce 100% crisp white readable text on ALL colored action buttons in BOTH modes */
+:root button,
+body.dark-mode button,
+body.light-mode button,
+[data-theme="dark"] button,
+[data-theme="light"] button,
+body.ops-redesign-v3 button,
+#aiSorterPanel button,
+#maintenancePanel button,
+#edrPanel button,
+#cctvPanel button,
+button span,
+.btn span,
+#aiSorterPanel button span,
+#maintenancePanel button span {
+    color: #ffffff !important;
+}
+
+/* Universal Button Color Palette (Consistent in Dark and Light Modes) */
+button:contains("Select Same TL")       { background: #1e293b !important; border: 1px solid rgba(255, 255, 255, 0.2) !important; }
+button:contains("Copy Selected"),
+button:contains("Copy Sorted Report")   { background: #15803d !important; border: 1px solid #16a34a !important; }
+button:contains("Cut Selected")          { background: #c2410c !important; border: 1px solid #ea580c !important; }
+button:contains("Maintenance Report")   { background: #0f766e !important; border: 1px solid #14b8a6 !important; }
+button:contains("Clear Selection")      { background: #334155 !important; border: 1px solid #475569 !important; }
+button:contains("Remove Selected")      { background: #be123c !important; border: 1px solid #e11d48 !important; }
+button:contains("Clear All"),
+button:contains("Clear Report")         { background: #991b1b !important; border: 1px solid #dc2626 !important; }
+button:contains("Auto Sort by Floor")   { background: #0284c7 !important; border: 1px solid #0ea5e9 !important; }
+
+/* Concrete element IDs and classes (guarantees cross-browser rendering in standard CSS) */
+#miniSheetSelectSameTlBtn,
+.mini-sheet-select-same,
+button[data-action="select-same-tl"] {
+    background: #1e293b !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+}
+
+#miniSheetCopyRowsBtn,
+.mini-sheet-copy,
+button[data-action="copy-selected"],
+#maintenanceCopyBtn,
+.maintenance-secondary {
+    background: #15803d !important;
+    border: 1px solid #16a34a !important;
+}
+
+#miniSheetCutRowsBtn,
+.mini-sheet-cut,
+button[data-action="cut-selected"] {
+    background: #c2410c !important;
+    border: 1px solid #ea580c !important;
+}
+
+#miniSheetToReportBtn,
+.mini-sheet-to-report,
+button[data-action="maintenance-report"] {
+    background: #0f766e !important;
+    border: 1px solid #14b8a6 !important;
+}
+
+#miniSheetClearSelectionBtn,
+.mini-sheet-clear-selection,
+button[data-action="clear-selection"] {
+    background: #334155 !important;
+    border: 1px solid #475569 !important;
+}
+
+#miniSheetRemoveRowBtn,
+.mini-sheet-remove,
+button[data-action="remove-selected"] {
+    background: #be123c !important;
+    border: 1px solid #e11d48 !important;
+}
+
+#miniSheetClearAllBtn,
+.mini-sheet-clear-all,
+button[data-action="clear-all"],
+#maintenanceClearBtn,
+.maintenance-outline {
+    background: #991b1b !important;
+    border: 1px solid #dc2626 !important;
+}
+
+#maintenanceSortBtn,
+.maintenance-primary {
+    background: #0284c7 !important;
+    border: 1px solid #0ea5e9 !important;
+}
+
+#maintenanceResetAssignmentsBtn,
+.maintenance-danger {
+    background: #7f1d1d !important;
+    border: 1px solid #b91c1c !important;
+}
+
+button:hover {
+    filter: brightness(1.15) !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3) !important;
+}
+
+button:active {
+    transform: translateY(0) !important;
+    filter: brightness(0.95) !important;
+}
+
+/* Disabled Button Appearance */
+button:disabled,
+#aiSorterPanel button:disabled,
+#maintenancePanel button:disabled,
+#miniSheetSelectSameTlBtn:disabled,
+#miniSheetCopyRowsBtn:disabled,
+#miniSheetCutRowsBtn:disabled,
+#miniSheetToReportBtn:disabled,
+#miniSheetClearSelectionBtn:disabled,
+#miniSheetRemoveRowBtn:disabled {
+    opacity: 0.45 !important;
+    cursor: not-allowed !important;
+    transform: none !important;
+    box-shadow: none !important;
+    filter: grayscale(0.4) !important;
+}
+
+/* Preserve docked circular sidebar toggle button */
+#sidebarToggle,
+.sidebar-collapse-toggle {
+    width: 26px !important;
+    min-width: 26px !important;
+    max-width: 26px !important;
+    height: 26px !important;
+    min-height: 26px !important;
+    max-height: 26px !important;
+    padding: 0 !important;
+    border-radius: 50% !important;
+}
+
+/* Sidebar navigation item alignment */
+aside.workspace-tabs .workspace-tab-btn,
+aside.workspace-tabs .sidebar-history-btn {
+    width: 100% !important;
+    border-radius: 12px !important;
+    justify-content: space-between !important;
+    display: flex !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+}
+
+
+/* ==========================================================================
+   2. FIX CONTAINER SIZING (ELIMINATE SHIFTS BETWEEN DARK & LIGHT MODE)
+   ========================================================================== */
+
+/* Force identical full-width viewport and zero layout shifting across themes */
+:root .app-layout,
+:root .main-content,
+:root .workspace-wrapper,
+:root .workspace-container,
+:root #mainContent,
+:root .tab-content,
+body.dark-mode .main-content,
+body.light-mode .main-content,
+body.dark-mode .workspace-wrapper,
+body.light-mode .workspace-wrapper,
+[data-theme="dark"] .main-content,
+[data-theme="light"] .main-content,
+body.dark-mode #aiSorterPanel,
+body.light-mode #aiSorterPanel,
+body.dark-mode #maintenancePanel,
+body.light-mode #maintenancePanel,
+[data-theme="dark"] #aiSorterPanel,
+[data-theme="light"] #aiSorterPanel,
+[data-theme="dark"] #maintenancePanel,
+[data-theme="light"] #maintenancePanel,
+#aiSorterPanel,
+#maintenancePanel,
+.app-tab-panel {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    flex: 1 1 auto !important;
+    padding: 24px 32px !important; /* Identical padding */
+    margin: 0 !important; /* Identical margin */
+    border: none !important;
+    box-shadow: none !important;
+    background: transparent !important;
+    box-sizing: border-box !important;
+}
+
+.app-tab-panel:not(.active) {
+    display: none !important;
+}
+
+/* Standardize table wrappers so they remain enlarged in both modes */
+#aiSorterPanel .sheet-container,
+#aiSorterPanel .table-wrapper,
+#maintenancePanel .table-wrapper,
+.grid-container {
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 0 !important;
+    margin: 0 0 20px 0 !important;
+    box-sizing: border-box !important;
+    background: transparent !important;
+}
+
+/* Expand Workspace Table (Eliminate Unnecessary Vertical Scrolling) */
+#aiSorterPanel .sheet-container,
+#aiSorterPanel .table-wrapper,
+#aiSorterPanel .grid-container,
+#aiSorterTableWrapper,
+#maintenancePanel .table-wrapper,
+#maintenancePanel .mini-sheet-scroll,
+#maintenancePanel .sheet-container,
+#maintenancePanel .grid-container,
+.mini-sheet-card,
+.mini-sheet-scroll {
+    height: auto !important;
+    max-height: none !important; /* Removes restrictive vertical scroll cutoff */
+    min-height: 450px !important;
+    overflow-y: visible !important;
+    border-radius: 12px !important;
+}
+
+
+/* ==========================================================================
+   3. PURGE YELLOW BORDER / HIGHLIGHT CELL ARTIFACTS
+   ========================================================================== */
+
+/* Completely remove yellow outlines, match borders, and colored fills from cells */
+.sheet-cell-match,
+td.sheet-cell-match,
+th.sheet-cell-match,
+td[style*="yellow"],
+td[style*="#eab308"],
+td[style*="rgb(250, 204, 21)"] {
+    outline: none !important;
+    border-color: rgba(255, 255, 255, 0.08) !important;
+    background-color: transparent !important;
+    box-shadow: none !important;
+}
+
+/* Light mode border normalization */
+body.light-mode td.sheet-cell-match,
+[data-theme="light"] td.sheet-cell-match {
+    border-color: #e2e8f0 !important;
+    background-color: transparent !important;
+}
+
+/* Row index numbers (Column 1 / line counter) - Remove yellow fill and border */
+table tr th:first-child,
+table tr td:first-child,
+.row-number,
+.row-header,
+.mini-sheet-row-number,
+th[scope="row"] {
+    background: transparent !important;
+    outline: none !important;
+    border-color: rgba(255, 255, 255, 0.08) !important;
+    color: #94a3b8 !important;
+}
+
+body.light-mode table tr th:first-child,
+body.light-mode table tr td:first-child,
+body.light-mode .mini-sheet-row-number,
+[data-theme="light"] table tr th:first-child,
+[data-theme="light"] table tr td:first-child,
+[data-theme="light"] .mini-sheet-row-number {
+    border-color: #e2e8f0 !important;
+    color: #64748b !important;
+}
+
+/* Keep clean, modern blue focus indicator ONLY for actively selected row/cell */
+.sheet-row-selected,
+#maintenanceMiniSheet tr.selected-row,
+#maintenanceMiniSheet tr.sheet-row-selected {
+    background-color: rgba(56, 189, 248, 0.12) !important;
+    outline: 1px solid #38bdf8 !important;
+}
+
+.sheet-cell-active,
+#maintenanceMiniSheet td.sheet-cell-active,
+#maintenanceMiniSheet td.cell-range-active {
+    outline: 2px solid #0284c7 !important;
+    outline-offset: -2px !important;
+}
+</style>
+
 </head>
 <body class="ops-redesign-v3 auth-locked">
 <div class="terminal-login-wrapper" id="loginModal">
@@ -16409,7 +16867,7 @@ td {
 </section>
 
 <section id="maintenancePanel" class="app-tab-panel" role="tabpanel" aria-labelledby="maintenanceTabBtn">
-    <div class="container maintenance-shell">
+    <div id="aiSorterPanel" class="container maintenance-shell">
         <h2>Maintenance AI Sorter</h2>
 
         <!-- Block 1 (Controls & Form Block) -->
@@ -16461,7 +16919,7 @@ td {
                 </div>
 
                 <div class="mini-sheet-card">
-                    <div class="mini-sheet-toolbar">
+                    <div class="mini-sheet-toolbar toolbar sheet-toolbar">
                         <div>
                             <strong>Google Sheets Workspace</strong>
                         </div>
@@ -16482,27 +16940,27 @@ td {
                             <input
                                 type="text"
                                 id="miniSheetFindTlInput"
-                                placeholder="Find Team Leader..."
+                                placeholder="Find (TL, Account, Site, Station...)"
                                 autocomplete="off"
-                                aria-label="Find Team Leader">
+                                aria-label="Find in sheet">
                             <button type="button" id="miniSheetFindTlBtn">Find</button>
                             <button type="button" id="miniSheetFindNextBtn" disabled>Next</button>
                         </div>
 
-                        <div class="mini-sheet-actions">
+                        <div class="mini-sheet-actions btn-group">
                             <span id="miniSheetRowCount">0 rows</span>
                             <span id="miniSheetSelectedCount">0 selected</span>
-                            <button type="button" id="miniSheetSelectSameTlBtn" class="mini-sheet-select-same" disabled><span>Select Same TL</span></button>
-                            <button type="button" id="miniSheetCopyRowsBtn" class="mini-sheet-copy" disabled><span>Copy Selected</span></button>
-                            <button type="button" id="miniSheetCutRowsBtn" class="mini-sheet-cut" disabled><span>Cut Selected</span></button>
-                            <button type="button" id="miniSheetToReportBtn" class="mini-sheet-to-report" disabled><span>Maintenance Report</span></button>
-                            <button type="button" id="miniSheetClearSelectionBtn" class="mini-sheet-clear-selection" disabled><span>Clear Selection</span></button>
-                            <button type="button" id="miniSheetRemoveRowBtn" disabled><span>Remove Selected</span></button>
-                            <button type="button" id="miniSheetClearAllBtn" class="mini-sheet-clear-all"><span>Clear All</span></button>
+                            <button type="button" id="miniSheetSelectSameTlBtn" class="mini-sheet-select-same" data-action="select-same-tl" disabled><span>Select Same TL</span></button>
+                            <button type="button" id="miniSheetCopyRowsBtn" class="mini-sheet-copy" data-action="copy-selected" disabled><span>Copy Selected</span></button>
+                            <button type="button" id="miniSheetCutRowsBtn" class="mini-sheet-cut" data-action="cut-selected" disabled><span>Cut Selected</span></button>
+                            <button type="button" id="miniSheetToReportBtn" class="mini-sheet-to-report" data-action="maintenance-report" disabled><span>Maintenance Report</span></button>
+                            <button type="button" id="miniSheetClearSelectionBtn" class="mini-sheet-clear-selection" data-action="clear-selection" disabled><span>Clear Selection</span></button>
+                            <button type="button" id="miniSheetRemoveRowBtn" class="mini-sheet-remove" data-action="remove-selected" disabled><span>Remove Selected</span></button>
+                            <button type="button" id="miniSheetClearAllBtn" class="mini-sheet-clear-all" data-action="clear-all"><span>Clear All</span></button>
                         </div>
                     </div>
 
-                    <div class="table-wrapper mini-sheet-scroll">
+                    <div class="table-wrapper mini-sheet-scroll" id="aiSorterTableWrapper">
                         <table class="mini-sheet" id="maintenanceMiniSheet" aria-label="Editable sorted maintenance mini sheet">
                             <thead>
                                 <tr class="mini-sheet-column-letters">
@@ -20101,6 +20559,7 @@ https://www.facebook.com/share/..."></textarea>
     ];
     let miniSheetCellSelection = null;
     let miniSheetCellAnchor = null;
+    let miniSheetCellFocus = null;
     let miniSheetCellDragging = false;
 
     let miniSheetFindMatches = [];
@@ -21004,16 +21463,18 @@ https://www.facebook.com/share/..."></textarea>
     function clearMiniSheetCellSelection(updateUi = true) {
         miniSheetCellSelection = null;
         miniSheetCellAnchor = null;
+        miniSheetCellFocus = null;
         miniSheetCellDragging = false;
 
         const sheet = byId("maintenanceMiniSheet");
         if (sheet) {
             sheet.classList.remove("cell-range-dragging");
-            sheet.querySelectorAll("td.cell-range-selected, td.cell-range-active")
+            sheet.querySelectorAll("td.cell-range-selected, td.cell-range-active, td.sheet-cell-active")
                 .forEach(cell => {
                     cell.classList.remove(
                         "cell-range-selected",
-                        "cell-range-active"
+                        "cell-range-active",
+                        "sheet-cell-active"
                     );
                 });
         }
@@ -21025,11 +21486,12 @@ https://www.facebook.com/share/..."></textarea>
         const sheet = byId("maintenanceMiniSheet");
         if (!sheet) return;
 
-        sheet.querySelectorAll("td.cell-range-selected, td.cell-range-active")
+        sheet.querySelectorAll("td.cell-range-selected, td.cell-range-active, td.sheet-cell-active")
             .forEach(cell => {
                 cell.classList.remove(
                     "cell-range-selected",
-                    "cell-range-active"
+                    "cell-range-active",
+                    "sheet-cell-active"
                 );
             });
 
@@ -21059,10 +21521,21 @@ https://www.facebook.com/share/..."></textarea>
             }
         });
 
+        const activeRow = (miniSheetCellFocus && Number.isInteger(miniSheetCellFocus.row))
+            ? miniSheetCellFocus.row
+            : startRow;
+        const activeCol = (miniSheetCellFocus && Number.isInteger(miniSheetCellFocus.col))
+            ? miniSheetCellFocus.col
+            : startCol;
+
         const activeCell = sheet.querySelector(
+            `tbody td[data-row-index="${activeRow}"][data-col-index="${activeCol}"]`
+        ) || sheet.querySelector(
             `tbody td[data-row-index="${startRow}"][data-col-index="${startCol}"]`
         );
-        if (activeCell) activeCell.classList.add("cell-range-active");
+        if (activeCell) {
+            activeCell.classList.add("cell-range-active", "sheet-cell-active");
+        }
     }
 
     function setMiniSheetCellSelection(anchor, current = anchor) {
@@ -21364,12 +21837,11 @@ https://www.facebook.com/share/..."></textarea>
 
         const tbody = byId("maintenanceMiniSheet")?.querySelector("tbody");
         if (tbody) {
-            tbody.querySelectorAll("tr").forEach(tr => {
-                const rowIndex = Number(tr.dataset.rowIndex);
-                tr.classList.toggle(
-                    "selected-row",
-                    miniSheetSelectedRows.has(rowIndex)
-                );
+            tbody.querySelectorAll("tr").forEach((tr, rowIndex) => {
+                const targetRowIndex = tr.dataset.rowIndex != null ? Number(tr.dataset.rowIndex) : rowIndex;
+                const isSelected = miniSheetSelectedRows.has(targetRowIndex);
+                tr.classList.toggle("selected-row", isSelected);
+                tr.classList.toggle("sheet-row-selected", isSelected);
             });
         }
 
@@ -21617,20 +22089,94 @@ https://www.facebook.com/share/..."></textarea>
             .trim();
     }
 
-    function highlightMiniSheetFindMatches() {
+    function highlightMiniSheetFindMatchesRealtime(query) {
+        const sheet = byId("maintenanceMiniSheet");
+        if (!sheet) return;
+
+        const tbody = sheet.querySelector("tbody");
+        if (!tbody) return;
+
+        // Clear existing cell match highlights
+        tbody.querySelectorAll(".sheet-cell-match").forEach(cell => {
+            cell.classList.remove("sheet-cell-match");
+        });
+
+        const normalized = normalizeMiniSheetFindText(query);
+        miniSheetFindMatches = [];
+
+        if (!normalized) {
+            tbody.querySelectorAll("tr[data-row-index]").forEach(tr => {
+                tr.classList.remove("find-match", "find-current", "sheet-row-match");
+            });
+            const nextBtn = byId("miniSheetFindNextBtn");
+            if (nextBtn) nextBtn.disabled = true;
+            miniSheetFindCursor = -1;
+            return;
+        }
+
+        lastAssignedRows.forEach((row, rowIndex) => {
+            const tr = tbody.querySelector(`tr[data-row-index="${rowIndex}"]`);
+            if (!tr) return;
+
+            let rowHasMatch = false;
+
+            MINI_SHEET_FIELDS.forEach((field, colIndex) => {
+                let val = "";
+                if (field === "tl") {
+                    val = displayTLValue(row.tl);
+                } else {
+                    val = row[field] != null ? String(row[field]) : "";
+                }
+
+                const cellText = normalizeMiniSheetFindText(val);
+                if (cellText.includes(normalized)) {
+                    rowHasMatch = true;
+                    const cell = tr.querySelector(`td[data-col-index="${colIndex}"]`);
+                    if (cell) {
+                        cell.classList.add("sheet-cell-match");
+                    }
+                }
+            });
+
+            if (rowHasMatch) {
+                miniSheetFindMatches.push(rowIndex);
+                tr.classList.add("find-match", "sheet-row-match");
+            } else {
+                tr.classList.remove("find-match", "find-current", "sheet-row-match");
+            }
+        });
+
+        const nextBtn = byId("miniSheetFindNextBtn");
+        if (nextBtn) {
+            nextBtn.disabled = miniSheetFindMatches.length <= 1;
+        }
+
+        if (miniSheetFindMatches.length > 0) {
+            if (miniSheetFindCursor < 0 || miniSheetFindCursor >= miniSheetFindMatches.length) {
+                miniSheetFindCursor = 0;
+            }
+            updateCurrentFindMatchHighlight();
+        } else {
+            miniSheetFindCursor = -1;
+        }
+    }
+
+    function updateCurrentFindMatchHighlight() {
         const tbody = byId("maintenanceMiniSheet")?.querySelector("tbody");
         if (!tbody) return;
 
-        tbody.querySelectorAll("tr[data-row-index]").forEach(tr => {
-            const index = Number(tr.dataset.rowIndex);
-            const matchIndex = miniSheetFindMatches.indexOf(index);
+        tbody.querySelectorAll("tr.find-current").forEach(tr => tr.classList.remove("find-current"));
 
-            tr.classList.toggle("find-match", matchIndex !== -1);
-            tr.classList.toggle(
-                "find-current",
-                matchIndex !== -1 && matchIndex === miniSheetFindCursor
-            );
-        });
+        if (miniSheetFindCursor >= 0 && miniSheetFindCursor < miniSheetFindMatches.length) {
+            const rowIndex = miniSheetFindMatches[miniSheetFindCursor];
+            const tr = tbody.querySelector(`tr[data-row-index="${rowIndex}"]`);
+            if (tr) tr.classList.add("find-current");
+        }
+    }
+
+    function highlightMiniSheetFindMatches() {
+        const input = byId("miniSheetFindTlInput");
+        highlightMiniSheetFindMatchesRealtime(input?.value || "");
     }
 
     function scrollToCurrentMiniSheetFindMatch() {
@@ -21652,47 +22198,34 @@ https://www.facebook.com/share/..."></textarea>
 
     function findTeamLeaderInMiniSheet() {
         const input = byId("miniSheetFindTlInput");
-        const query = normalizeMiniSheetFindText(input?.value);
+        const query = input?.value || "";
 
-        miniSheetFindMatches = [];
-        miniSheetFindCursor = -1;
-
-        if (!query) {
-            highlightMiniSheetFindMatches();
-            byId("miniSheetFindNextBtn").disabled = true;
-            showMessage("Type a Team Leader name first.", "info");
-            input?.focus();
-            return;
-        }
-
-        lastAssignedRows.forEach((row, index) => {
-            const tl = normalizeMiniSheetFindText(displayTLValue(row.tl));
-            if (tl.includes(query)) {
-                miniSheetFindMatches.push(index);
-            }
-        });
+        highlightMiniSheetFindMatchesRealtime(query);
 
         if (!miniSheetFindMatches.length) {
-            highlightMiniSheetFindMatches();
-            byId("miniSheetFindNextBtn").disabled = true;
-            showMessage(`No Team Leader found for "${input.value.trim()}".`, "error");
+            const trimmed = query.trim();
+            if (!trimmed) {
+                showMessage("Type a search term first (TL, Account, Site, Station, etc.).", "info");
+                input?.focus();
+            } else {
+                showMessage(`No matches found for "${trimmed}".`, "error");
+            }
             return;
         }
 
-        // Automatically select all matching Team Leader rows.
+        // Automatically select all matching rows across columns so user can immediately copy, cut, or send to report.
         miniSheetSelectedRows.clear();
         miniSheetFindMatches.forEach(index => miniSheetSelectedRows.add(index));
         miniSheetSelectionAnchor = miniSheetFindMatches[0];
         miniSheetFindCursor = 0;
 
         updateMiniSheetSelectionUi();
-        highlightMiniSheetFindMatches();
+        updateCurrentFindMatchHighlight();
         scrollToCurrentMiniSheetFindMatch();
 
-        byId("miniSheetFindNextBtn").disabled = miniSheetFindMatches.length <= 1;
-
+        const count = miniSheetFindMatches.length;
         showMessage(
-            `${miniSheetFindMatches.length} row${miniSheetFindMatches.length === 1 ? "" : "s"} found and selected for "${input.value.trim()}". You can now Cut Selected or send them to Maintenance Report.`,
+            `${count} row${count === 1 ? "" : "s"} found with matches across columns and selected. You can now Copy Selected, Cut Selected, or send to Maintenance Report.`,
             "success"
         );
     }
@@ -21706,7 +22239,7 @@ https://www.facebook.com/share/..."></textarea>
         miniSheetFindCursor =
             (miniSheetFindCursor + 1) % miniSheetFindMatches.length;
 
-        highlightMiniSheetFindMatches();
+        updateCurrentFindMatchHighlight();
         scrollToCurrentMiniSheetFindMatch();
 
         showMessage(
@@ -22061,12 +22594,12 @@ https://www.facebook.com/share/..."></textarea>
         const tbody = byId("maintenanceOutputTable").querySelector("tbody");
         let previousFloor = null;
 
-        tbody.innerHTML = rows.map(row => {
+        tbody.innerHTML = rows.map((row, rowIndex) => {
             const isFloorBreak = previousFloor !== null && previousFloor !== row.floor;
             previousFloor = row.floor;
 
             return `
-                <tr class="${isFloorBreak ? "floor-break" : ""}" data-floor="${escapeHtml(row.floor)}">
+                <tr class="${isFloorBreak ? "floor-break" : ""}" data-floor="${escapeHtml(row.floor)}" data-row-index="${rowIndex}">
                     <td>${escapeHtml(row.timestamp || "")}</td>
                     <td>${escapeHtml(row.date || "")}</td>
                     <td>${escapeHtml(displayTLValue(row.tl))}</td>
@@ -22108,6 +22641,7 @@ https://www.facebook.com/share/..."></textarea>
         }
 
         try {
+            hideMessage();
             const rows = parseReport(raw);
             const assignments = buildAssignments(rows);
             const assignedRows = assignRows(rows, assignments);
@@ -22206,6 +22740,9 @@ https://www.facebook.com/share/..."></textarea>
         byId("miniSheetRemoveRowBtn").disabled = true;
         miniSheetSelectedRows.clear();
         miniSheetSelectionAnchor = null;
+        miniSheetCellSelection = null;
+        miniSheetCellAnchor = null;
+        miniSheetCellFocus = null;
         miniSheetFindMatches = [];
         miniSheetFindCursor = -1;
         setMiniSheetKeyboardActive(false);
@@ -22214,6 +22751,7 @@ https://www.facebook.com/share/..."></textarea>
         if (findInput) findInput.value = "";
         const nextButton = byId("miniSheetFindNextBtn");
         if (nextButton) nextButton.disabled = true;
+        highlightMiniSheetFindMatchesRealtime("");
 
         hideMessage();
     }
@@ -22230,25 +22768,59 @@ https://www.facebook.com/share/..."></textarea>
     byId("miniSheetFindNextBtn").addEventListener("click", findNextTeamLeaderMatch);
     byId("miniSheetClearAllBtn").addEventListener("click", clearAllMiniSheetWorkspace);
 
-    byId("miniSheetFindTlInput").addEventListener("keydown", event => {
-        if (event.key === "Enter") {
-            event.preventDefault();
-            findTeamLeaderInMiniSheet();
-        }
+    const miniSheetFindInput = byId("miniSheetFindTlInput");
+    if (miniSheetFindInput) {
+        miniSheetFindInput.addEventListener("keydown", event => {
+            if (event.key === "Enter") {
+                event.preventDefault();
+                findTeamLeaderInMiniSheet();
+            }
 
-        if (event.key === "Escape") {
-            event.preventDefault();
-            event.currentTarget.value = "";
-            miniSheetFindMatches = [];
-            miniSheetFindCursor = -1;
-            highlightMiniSheetFindMatches();
-            byId("miniSheetFindNextBtn").disabled = true;
-        }
-    });
+            if (event.key === "Escape") {
+                event.preventDefault();
+                event.currentTarget.value = "";
+                miniSheetFindMatches = [];
+                miniSheetFindCursor = -1;
+                highlightMiniSheetFindMatchesRealtime("");
+                byId("miniSheetFindNextBtn").disabled = true;
+            }
+        });
+
+        miniSheetFindInput.addEventListener("input", event => {
+            highlightMiniSheetFindMatchesRealtime(event.target.value);
+        });
+
+        miniSheetFindInput.addEventListener("focus", () => {
+            // Isolate keyboard shortcuts so typing in search inputs never triggers table row cuts/copies
+            setMiniSheetKeyboardActive(false);
+            clearMiniSheetCellSelection(true);
+            const activeEditing = byId("maintenanceMiniSheet")?.querySelector("td.cell-editing, td[data-editing='true']");
+            if (activeEditing) activeEditing.blur();
+        });
+    }
+
+    const maintenanceInputEl = byId("maintenanceInput");
+    if (maintenanceInputEl) {
+        maintenanceInputEl.addEventListener("input", () => {
+            const msgEl = byId("maintenanceMessage");
+            if (msgEl && msgEl.classList.contains("show") && msgEl.classList.contains("error")) {
+                hideMessage();
+            }
+        });
+        maintenanceInputEl.addEventListener("paste", () => {
+            const msgEl = byId("maintenanceMessage");
+            if (msgEl && msgEl.classList.contains("show") && msgEl.classList.contains("error")) {
+                hideMessage();
+            }
+        });
+    }
 
     byId("maintenanceSortBtn").addEventListener("click", () => {
         miniSheetSelectedRows.clear();
         miniSheetSelectionAnchor = null;
+        miniSheetCellSelection = null;
+        miniSheetCellAnchor = null;
+        miniSheetCellFocus = null;
         miniSheetFindMatches = [];
         miniSheetFindCursor = -1;
 
@@ -22305,54 +22877,208 @@ https://www.facebook.com/share/..."></textarea>
         byId("maintenanceMiniSheet")?.classList.remove("cell-range-dragging");
     });
 
-    // Activate shortcuts after the user clicks anywhere in the Google Sheets Workspace.
+    // Click-outside selection isolation & search bar focus
     document.addEventListener("mousedown", event => {
-        if (!byId("maintenancePanel").classList.contains("active")) return;
+        if (!byId("maintenancePanel")?.classList.contains("active")) return;
 
-        const card = event.target.closest?.(".mini-sheet-card");
-        setMiniSheetKeyboardActive(!!card);
+        const isInsideFindBar = !!event.target.closest?.(".mini-sheet-findbar");
+        if (isInsideFindBar) {
+            setMiniSheetKeyboardActive(false);
+            clearMiniSheetCellSelection(true);
+            return;
+        }
+
+        const isInsideTable = !!event.target.closest?.("#maintenanceMiniSheet");
+        if (isInsideTable) {
+            setMiniSheetKeyboardActive(true);
+            return;
+        }
+
+        const isInsideActions = !!event.target.closest?.(".mini-sheet-actions");
+        if (isInsideActions) {
+            // Keep current selection active so action buttons operate properly
+            return;
+        }
+
+        // Clicked anywhere outside the table and actions -> isolate shortcuts and clear cell selection
+        setMiniSheetKeyboardActive(false);
+        clearMiniSheetCellSelection(true);
+
+        // If clicked outside the entire sheet card, clear row selection as well
+        if (!event.target.closest?.(".mini-sheet-card")) {
+            miniSheetSelectedRows.clear();
+            miniSheetSelectionAnchor = null;
+            updateMiniSheetSelectionUi();
+        }
     });
 
+    function isTypingField(el) {
+        if (!el) return false;
+        const tag = el.tagName;
+        if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return true;
+        if (el.isContentEditable && !el.closest("#maintenanceMiniSheet")) return true;
+        return false;
+    }
+
+    function handleMiniSheetArrowNavigation(event) {
+        const key = event.key;
+        if (!["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(key)) return;
+        if (!lastAssignedRows.length) return;
+
+        const sheet = byId("maintenanceMiniSheet");
+        if (!sheet) return;
+
+        // Do not intercept if a cell is actively in text editing mode
+        const activeEditingCell = sheet.querySelector("td.cell-editing, td[data-editing='true']");
+        if (activeEditingCell) return;
+
+        event.preventDefault();
+
+        const maxRow = lastAssignedRows.length - 1;
+        const maxCol = MINI_SHEET_FIELDS.length - 1; // 6
+
+        // 1. Cell selection mode active
+        if (miniSheetCellAnchor || miniSheetCellSelection) {
+            const anchor = miniSheetCellAnchor || {
+                row: miniSheetCellSelection.startRow,
+                col: miniSheetCellSelection.startCol
+            };
+
+            let currRow = (miniSheetCellFocus && Number.isInteger(miniSheetCellFocus.row))
+                ? miniSheetCellFocus.row
+                : anchor.row;
+            let currCol = (miniSheetCellFocus && Number.isInteger(miniSheetCellFocus.col))
+                ? miniSheetCellFocus.col
+                : anchor.col;
+
+            let nextRow = currRow;
+            let nextCol = currCol;
+
+            if (key === "ArrowUp") nextRow = Math.max(0, currRow - 1);
+            else if (key === "ArrowDown") nextRow = Math.min(maxRow, currRow + 1);
+            else if (key === "ArrowLeft") nextCol = Math.max(0, currCol - 1);
+            else if (key === "ArrowRight") nextCol = Math.min(maxCol, currCol + 1);
+
+            miniSheetCellFocus = { row: nextRow, col: nextCol };
+
+            if (event.shiftKey) {
+                setMiniSheetCellSelection(anchor, { row: nextRow, col: nextCol });
+            } else {
+                miniSheetCellAnchor = { row: nextRow, col: nextCol };
+                setMiniSheetCellSelection(miniSheetCellAnchor, miniSheetCellAnchor);
+            }
+
+            const targetCell = sheet.querySelector(
+                `tbody td[data-row-index="${nextRow}"][data-col-index="${nextCol}"]`
+            );
+            targetCell?.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "nearest" });
+            return;
+        }
+
+        // 2. Row selection mode active
+        if (miniSheetSelectedRows.size > 0) {
+            let anchor = miniSheetSelectionAnchor != null ? miniSheetSelectionAnchor : 0;
+            let currRow = anchor;
+
+            let nextRow = currRow;
+            if (key === "ArrowUp") nextRow = Math.max(0, currRow - 1);
+            else if (key === "ArrowDown") nextRow = Math.min(maxRow, currRow + 1);
+            else if (key === "ArrowLeft" || key === "ArrowRight") {
+                const col = key === "ArrowLeft" ? 0 : Math.min(maxCol, 1);
+                miniSheetSelectedRows.clear();
+                miniSheetCellAnchor = { row: currRow, col };
+                miniSheetCellFocus = { row: currRow, col };
+                setMiniSheetCellSelection(miniSheetCellAnchor, miniSheetCellAnchor);
+                const targetCell = sheet.querySelector(
+                    `tbody td[data-row-index="${currRow}"][data-col-index="${col}"]`
+                );
+                targetCell?.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "nearest" });
+                return;
+            }
+
+            if (event.shiftKey) {
+                const start = Math.min(anchor, nextRow);
+                const end = Math.max(anchor, nextRow);
+                miniSheetSelectedRows.clear();
+                for (let i = start; i <= end; i++) miniSheetSelectedRows.add(i);
+                updateMiniSheetSelectionUi();
+            } else {
+                selectMiniSheetRow(nextRow);
+            }
+
+            const targetRow = sheet.querySelector(`tbody tr[data-row-index="${nextRow}"]`);
+            targetRow?.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "nearest" });
+            return;
+        }
+
+        // 3. Neither selected -> initialize at cell (0, 0)
+        miniSheetCellAnchor = { row: 0, col: 0 };
+        miniSheetCellFocus = { row: 0, col: 0 };
+        setMiniSheetCellSelection(miniSheetCellAnchor, miniSheetCellAnchor);
+        const firstCell = sheet.querySelector(`tbody td[data-row-index="0"][data-col-index="0"]`);
+        firstCell?.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "nearest" });
+    }
+
+    // Excel / Google Sheets keyboard shortcuts
     document.addEventListener("keydown", event => {
-        if (!byId("maintenancePanel").classList.contains("active")) return;
+        if (!byId("maintenancePanel")?.classList.contains("active")) return;
 
         const active = document.activeElement;
+
+        // CRITICAL GUARD: Never hijack shortcuts when user is typing in ANY search box, filter, or input field!
+        if (isTypingField(active)) {
+            return;
+        }
+
         const editingCell = active && active.matches &&
             active.matches('#maintenanceMiniSheet td[contenteditable="true"]');
-        const typingField = active &&
-            /^(INPUT|TEXTAREA|SELECT)$/.test(active.tagName);
 
-        // Ctrl+F works anywhere inside the AI Sorter and focuses Find Team Leader.
+        // Ctrl+F works anywhere inside AI Sorter when not typing in an input
         if (
             (event.ctrlKey || event.metaKey) &&
             !event.shiftKey &&
             event.key.toLowerCase() === "f"
         ) {
-            if (editingCell) return;
+            if (editingCell) active.blur();
 
             event.preventDefault();
-            setMiniSheetKeyboardActive(true);
-            byId("miniSheetFindTlInput")?.focus();
-            byId("miniSheetFindTlInput")?.select();
+            setMiniSheetKeyboardActive(false);
+            clearMiniSheetCellSelection(true);
+            const findInput = byId("miniSheetFindTlInput");
+            if (findInput) {
+                findInput.focus();
+                findInput.select();
+            }
             return;
         }
 
-        // Find next match.
-        if (event.key === "F3" && !typingField && !editingCell) {
+        // F3: Find next match
+        if (event.key === "F3" && !editingCell) {
             event.preventDefault();
             setMiniSheetKeyboardActive(true);
             findNextTeamLeaderMatch();
             return;
         }
 
-        // Other shortcuts are scoped to the Google Sheets Workspace.
-        if (!miniSheetKeyboardActive) return;
-
-        if (typingField || editingCell) {
-            // Keep normal Ctrl+C/X/V/A behavior while typing/editing a single cell.
+        // Arrow Keys when interacting with table
+        if (
+            miniSheetKeyboardActive &&
+            ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(event.key) &&
+            !editingCell
+        ) {
+            handleMiniSheetArrowNavigation(event);
             return;
         }
 
+        // Shortcuts scoped to the Google Sheets Workspace
+        if (!miniSheetKeyboardActive) return;
+
+        if (editingCell) {
+            // Keep normal Ctrl+C/X/V/A behavior while editing a single cell's text
+            return;
+        }
+
+        // Ctrl+A: Select all rows
         if (
             (event.ctrlKey || event.metaKey) &&
             !event.shiftKey &&
@@ -22363,6 +23089,7 @@ https://www.facebook.com/share/..."></textarea>
             return;
         }
 
+        // Ctrl+C: Copy selected
         if (
             (event.ctrlKey || event.metaKey) &&
             !event.shiftKey &&
@@ -22374,6 +23101,7 @@ https://www.facebook.com/share/..."></textarea>
             return;
         }
 
+        // Ctrl+X: Cut selected
         if (
             (event.ctrlKey || event.metaKey) &&
             !event.shiftKey &&
@@ -22385,6 +23113,7 @@ https://www.facebook.com/share/..."></textarea>
             return;
         }
 
+        // Ctrl+Shift+M: Send to maintenance report
         if (
             (event.ctrlKey || event.metaKey) &&
             event.shiftKey &&
@@ -22396,7 +23125,8 @@ https://www.facebook.com/share/..."></textarea>
             return;
         }
 
-        if (event.key === "Delete") {
+        // Delete / Backspace: Clear cells or remove rows
+        if (event.key === "Delete" || event.key === "Backspace") {
             if (hasMiniSheetCellSelection()) {
                 event.preventDefault();
                 clearSelectedMiniSheetCells().catch(console.error);
@@ -22410,6 +23140,7 @@ https://www.facebook.com/share/..."></textarea>
             }
         }
 
+        // Escape: Clear selection
         if (event.key === "Escape") {
             if (!hasMiniSheetCellSelection() && !miniSheetSelectedRows.size) return;
             event.preventDefault();
@@ -22421,16 +23152,15 @@ https://www.facebook.com/share/..."></textarea>
     // Ctrl+V / paste: append copied spreadsheet rows to the Mini Sheet
     // when the workspace is active and the user is not editing one cell.
     document.addEventListener("paste", event => {
-        if (!byId("maintenancePanel").classList.contains("active")) return;
+        if (!byId("maintenancePanel")?.classList.contains("active")) return;
         if (!miniSheetKeyboardActive) return;
 
         const active = document.activeElement;
+        if (isTypingField(active)) return;
+
         const editingCell = active && active.matches &&
             active.matches('#maintenanceMiniSheet td[contenteditable="true"]');
-        const typingField = active &&
-            /^(INPUT|TEXTAREA|SELECT)$/.test(active.tagName);
-
-        if (editingCell || typingField) return;
+        if (editingCell) return;
 
         const text = event.clipboardData?.getData("text/plain") || "";
         if (!text.trim()) return;

@@ -13910,3 +13910,324 @@ td {
   text-align: center !important;
   letter-spacing: 0.05em !important;
 }
+
+/* ==========================================================================
+   1. UNIVERSAL BUTTON SYSTEM (IDENTICAL ACROSS ALL THEMES)
+   ========================================================================== */
+
+/* Apply universal sizing, typography, and pill shape to ALL buttons */
+button,
+.btn,
+input[type="button"],
+input[type="submit"],
+.sheet-toolbar button,
+#aiSorterPanel button,
+#maintenancePanel button,
+#edrPanel button,
+#cctvPanel button {
+    height: 38px !important;
+    min-height: 38px !important;
+    max-height: 38px !important;
+    padding: 0 16px !important;
+    border-radius: 9999px !important;
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif !important;
+    font-size: 12px !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.03em !important;
+    white-space: nowrap !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    cursor: pointer !important;
+    box-sizing: border-box !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45) !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.22) !important;
+    transition: transform 0.12s ease, filter 0.15s ease, box-shadow 0.15s ease !important;
+}
+
+/* Enforce 100% crisp white readable text on ALL colored action buttons in BOTH modes */
+:root button,
+body.dark-mode button,
+body.light-mode button,
+[data-theme="dark"] button,
+[data-theme="light"] button,
+body.ops-redesign-v3 button,
+#aiSorterPanel button,
+#maintenancePanel button,
+#edrPanel button,
+#cctvPanel button,
+button span,
+.btn span,
+#aiSorterPanel button span,
+#maintenancePanel button span {
+    color: #ffffff !important;
+}
+
+/* Universal Button Color Palette (Consistent in Dark and Light Modes) */
+button:contains("Select Same TL")       { background: #1e293b !important; border: 1px solid rgba(255, 255, 255, 0.2) !important; }
+button:contains("Copy Selected"),
+button:contains("Copy Sorted Report")   { background: #15803d !important; border: 1px solid #16a34a !important; }
+button:contains("Cut Selected")          { background: #c2410c !important; border: 1px solid #ea580c !important; }
+button:contains("Maintenance Report")   { background: #0f766e !important; border: 1px solid #14b8a6 !important; }
+button:contains("Clear Selection")      { background: #334155 !important; border: 1px solid #475569 !important; }
+button:contains("Remove Selected")      { background: #be123c !important; border: 1px solid #e11d48 !important; }
+button:contains("Clear All"),
+button:contains("Clear Report")         { background: #991b1b !important; border: 1px solid #dc2626 !important; }
+button:contains("Auto Sort by Floor")   { background: #0284c7 !important; border: 1px solid #0ea5e9 !important; }
+
+/* Concrete element IDs and classes (guarantees cross-browser rendering in standard CSS) */
+#miniSheetSelectSameTlBtn,
+.mini-sheet-select-same,
+button[data-action="select-same-tl"] {
+    background: #1e293b !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+}
+
+#miniSheetCopyRowsBtn,
+.mini-sheet-copy,
+button[data-action="copy-selected"],
+#maintenanceCopyBtn,
+.maintenance-secondary {
+    background: #15803d !important;
+    border: 1px solid #16a34a !important;
+}
+
+#miniSheetCutRowsBtn,
+.mini-sheet-cut,
+button[data-action="cut-selected"] {
+    background: #c2410c !important;
+    border: 1px solid #ea580c !important;
+}
+
+#miniSheetToReportBtn,
+.mini-sheet-to-report,
+button[data-action="maintenance-report"] {
+    background: #0f766e !important;
+    border: 1px solid #14b8a6 !important;
+}
+
+#miniSheetClearSelectionBtn,
+.mini-sheet-clear-selection,
+button[data-action="clear-selection"] {
+    background: #334155 !important;
+    border: 1px solid #475569 !important;
+}
+
+#miniSheetRemoveRowBtn,
+.mini-sheet-remove,
+button[data-action="remove-selected"] {
+    background: #be123c !important;
+    border: 1px solid #e11d48 !important;
+}
+
+#miniSheetClearAllBtn,
+.mini-sheet-clear-all,
+button[data-action="clear-all"],
+#maintenanceClearBtn,
+.maintenance-outline {
+    background: #991b1b !important;
+    border: 1px solid #dc2626 !important;
+}
+
+#maintenanceSortBtn,
+.maintenance-primary {
+    background: #0284c7 !important;
+    border: 1px solid #0ea5e9 !important;
+}
+
+#maintenanceResetAssignmentsBtn,
+.maintenance-danger {
+    background: #7f1d1d !important;
+    border: 1px solid #b91c1c !important;
+}
+
+button:hover {
+    filter: brightness(1.15) !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3) !important;
+}
+
+button:active {
+    transform: translateY(0) !important;
+    filter: brightness(0.95) !important;
+}
+
+/* Disabled Button Appearance */
+button:disabled,
+#aiSorterPanel button:disabled,
+#maintenancePanel button:disabled,
+#miniSheetSelectSameTlBtn:disabled,
+#miniSheetCopyRowsBtn:disabled,
+#miniSheetCutRowsBtn:disabled,
+#miniSheetToReportBtn:disabled,
+#miniSheetClearSelectionBtn:disabled,
+#miniSheetRemoveRowBtn:disabled {
+    opacity: 0.45 !important;
+    cursor: not-allowed !important;
+    transform: none !important;
+    box-shadow: none !important;
+    filter: grayscale(0.4) !important;
+}
+
+/* Preserve docked circular sidebar toggle button */
+#sidebarToggle,
+.sidebar-collapse-toggle {
+    width: 26px !important;
+    min-width: 26px !important;
+    max-width: 26px !important;
+    height: 26px !important;
+    min-height: 26px !important;
+    max-height: 26px !important;
+    padding: 0 !important;
+    border-radius: 50% !important;
+}
+
+/* Sidebar navigation item alignment */
+aside.workspace-tabs .workspace-tab-btn,
+aside.workspace-tabs .sidebar-history-btn {
+    width: 100% !important;
+    border-radius: 12px !important;
+    justify-content: space-between !important;
+    display: flex !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+}
+
+
+/* ==========================================================================
+   2. FIX CONTAINER SIZING (ELIMINATE SHIFTS BETWEEN DARK & LIGHT MODE)
+   ========================================================================== */
+
+/* Force identical full-width viewport and zero layout shifting across themes */
+:root .app-layout,
+:root .main-content,
+:root .workspace-wrapper,
+:root .workspace-container,
+:root #mainContent,
+:root .tab-content,
+body.dark-mode .main-content,
+body.light-mode .main-content,
+body.dark-mode .workspace-wrapper,
+body.light-mode .workspace-wrapper,
+[data-theme="dark"] .main-content,
+[data-theme="light"] .main-content,
+body.dark-mode #aiSorterPanel,
+body.light-mode #aiSorterPanel,
+body.dark-mode #maintenancePanel,
+body.light-mode #maintenancePanel,
+[data-theme="dark"] #aiSorterPanel,
+[data-theme="light"] #aiSorterPanel,
+[data-theme="dark"] #maintenancePanel,
+[data-theme="light"] #maintenancePanel,
+#aiSorterPanel,
+#maintenancePanel,
+.app-tab-panel {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    flex: 1 1 auto !important;
+    padding: 24px 32px !important; /* Identical padding */
+    margin: 0 !important; /* Identical margin */
+    border: none !important;
+    box-shadow: none !important;
+    background: transparent !important;
+    box-sizing: border-box !important;
+}
+
+.app-tab-panel:not(.active) {
+    display: none !important;
+}
+
+/* Standardize table wrappers so they remain enlarged in both modes */
+#aiSorterPanel .sheet-container,
+#aiSorterPanel .table-wrapper,
+#maintenancePanel .table-wrapper,
+.grid-container {
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 0 !important;
+    margin: 0 0 20px 0 !important;
+    box-sizing: border-box !important;
+    background: transparent !important;
+}
+
+/* Expand Workspace Table (Eliminate Unnecessary Vertical Scrolling) */
+#aiSorterPanel .sheet-container,
+#aiSorterPanel .table-wrapper,
+#aiSorterPanel .grid-container,
+#aiSorterTableWrapper,
+#maintenancePanel .table-wrapper,
+#maintenancePanel .mini-sheet-scroll,
+#maintenancePanel .sheet-container,
+#maintenancePanel .grid-container,
+.mini-sheet-card,
+.mini-sheet-scroll {
+    height: auto !important;
+    max-height: none !important; /* Removes restrictive vertical scroll cutoff */
+    min-height: 450px !important;
+    overflow-y: visible !important;
+    border-radius: 12px !important;
+}
+
+
+/* ==========================================================================
+   3. PURGE YELLOW BORDER / HIGHLIGHT CELL ARTIFACTS
+   ========================================================================== */
+
+/* Completely remove yellow outlines, match borders, and colored fills from cells */
+.sheet-cell-match,
+td.sheet-cell-match,
+th.sheet-cell-match,
+td[style*="yellow"],
+td[style*="#eab308"],
+td[style*="rgb(250, 204, 21)"] {
+    outline: none !important;
+    border-color: rgba(255, 255, 255, 0.08) !important;
+    background-color: transparent !important;
+    box-shadow: none !important;
+}
+
+/* Light mode border normalization */
+body.light-mode td.sheet-cell-match,
+[data-theme="light"] td.sheet-cell-match {
+    border-color: #e2e8f0 !important;
+    background-color: transparent !important;
+}
+
+/* Row index numbers (Column 1 / line counter) - Remove yellow fill and border */
+table tr th:first-child,
+table tr td:first-child,
+.row-number,
+.row-header,
+.mini-sheet-row-number,
+th[scope="row"] {
+    background: transparent !important;
+    outline: none !important;
+    border-color: rgba(255, 255, 255, 0.08) !important;
+    color: #94a3b8 !important;
+}
+
+body.light-mode table tr th:first-child,
+body.light-mode table tr td:first-child,
+body.light-mode .mini-sheet-row-number,
+[data-theme="light"] table tr th:first-child,
+[data-theme="light"] table tr td:first-child,
+[data-theme="light"] .mini-sheet-row-number {
+    border-color: #e2e8f0 !important;
+    color: #64748b !important;
+}
+
+/* Keep clean, modern blue focus indicator ONLY for actively selected row/cell */
+.sheet-row-selected,
+#maintenanceMiniSheet tr.selected-row,
+#maintenanceMiniSheet tr.sheet-row-selected {
+    background-color: rgba(56, 189, 248, 0.12) !important;
+    outline: 1px solid #38bdf8 !important;
+}
+
+.sheet-cell-active,
+#maintenanceMiniSheet td.sheet-cell-active,
+#maintenanceMiniSheet td.cell-range-active {
+    outline: 2px solid #0284c7 !important;
+    outline-offset: -2px !important;
+}
