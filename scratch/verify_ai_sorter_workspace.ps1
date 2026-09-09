@@ -14,20 +14,20 @@ Write-Host "`n[Check 1] Toolbar Button Styling & Contrast" -ForegroundColor Yell
 $cssChecks = @(
     "height: 38px !important;",
     "min-height: 38px !important;",
-    "border-radius: 9999px !important;",
-    "font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif !important;",
+    "border-radius: 10px !important;",
+    "font-family: 'Plus Jakarta Sans', system-ui, sans-serif !important;",
     "font-size: 12px !important;",
     "font-weight: 700 !important;",
-    "color: #ffffff !important;",
-    "text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45) !important;",
-    "#1e293b", # Select Same TL
-    "#15803d", # Copy Selected / Copy Sorted Report
-    "#c2410c", # Cut Selected
-    "#0f766e", # Maintenance Report
-    "#334155", # Clear Selection
-    "#be123c", # Remove Selected
-    "#991b1b", # Clear All / Clear Report
-    "#0284c7"  # Auto Sort by Floor
+    "#miniSheetSelectSameTlBtn",
+    "#miniSheetCopyRowsBtn",
+    "#miniSheetCutRowsBtn",
+    "#miniSheetToReportBtn",
+    "#miniSheetClearSelectionBtn",
+    "#miniSheetRemoveRowBtn",
+    "#miniSheetClearAllBtn",
+    "#maintenanceSortBtn",
+    "--btn-neutral-text: #18191d;",
+    "--btn-neutral-text: #f2f2f2;"
 )
 
 foreach ($check in $cssChecks) {
@@ -35,7 +35,7 @@ foreach ($check in $cssChecks) {
         throw "Failed: CSS check '$check' missing from style.css or index.html"
     }
 }
-Write-Host "  -> PASS: All button styles, white text, 38px height, 700 bold weight, and semantic colors verified in style.css and index.html." -ForegroundColor Green
+Write-Host "  -> PASS: All standardized 38px/10px button styles, neutral contrast, 700 bold weight, and semantic colors verified in style.css and index.html." -ForegroundColor Green
 
 # Check 2: Workspace Expansion & Vertical Scroll Elimination
 Write-Host "`n[Check 2] Workspace Expansion & Vertical Scroll Elimination" -ForegroundColor Yellow

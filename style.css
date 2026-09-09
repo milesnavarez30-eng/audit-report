@@ -9518,7 +9518,7 @@ button.workspace-tab-btn.active::before,
 aside.workspace-tabs.admin-sidebar .auth-sidebar-account,
 div:has(> #logoutBtn),
 div:has(> #authLogoutBtn),
-div:has(> button:contains("Log Out")) {
+/* log out */ {
     background: transparent !important;
     border: none !important;
     box-shadow: none !important;
@@ -9563,8 +9563,7 @@ html body.ops-redesign-v3:not(.dark-mode) aside.workspace-tabs.admin-sidebar .au
 
 /* Minimalist Log Out Pill */
 #logoutBtn,
-#authLogoutBtn,
-button:contains("Log Out") {
+#authLogoutBtn {
     background: rgba(255, 255, 255, 0.05) !important;
     border: 1px solid rgba(255, 255, 255, 0.12) !important;
     border-radius: 9999px !important;
@@ -9582,8 +9581,7 @@ button:contains("Log Out") {
 }
 
 #logoutBtn:hover,
-#authLogoutBtn:hover,
-button:contains("Log Out"):hover {
+#authLogoutBtn:hover {
     background: rgba(239, 68, 68, 0.15) !important;
     border-color: rgba(239, 68, 68, 0.4) !important;
     color: #fca5a5 !important;
@@ -10580,12 +10578,10 @@ body.light-mode #eodPanel .eod-proof-zone,
 }
 
 /* 2. Compact "ADD SCREENSHOT" Button */
-#maintenancePanel button:contains("ADD SCREENSHOT"),
 #maintenancePanel .add-screenshot-btn,
 #maintenancePanel button[id*="screenshot"],
 #maintenancePanel button[id*="Screenshot"],
 #maintenancePanel .eod-proof-label,
-#eodPanel button:contains("ADD SCREENSHOT"),
 #eodPanel .add-screenshot-btn,
 #eodPanel button[id*="screenshot"],
 #eodPanel button[id*="Screenshot"],
@@ -10913,13 +10909,11 @@ body.light-mode #eodPanel .maintenance-toolbar,
 /* 3. Status Pill & Auto-Save Indicator Alignment */
 #maintenancePanel [id*="Status"],
 #maintenancePanel .sheet-status,
-#maintenancePanel span:contains("Sheets:"),
 #maintenancePanel .maintenance-sheet-connection-state,
 #eodPanel [id*="Status"],
 #eodPanel .sheet-status,
 #eodPanel #maintenanceSheetConnectionState,
-#eodPanel .maintenance-sheet-connection-state,
-#eodPanel span:contains("Sheets:") {
+#eodPanel .maintenance-sheet-connection-state {
     height: 36px !important;
     min-height: 36px !important;
     max-height: 36px !important;
@@ -10936,11 +10930,9 @@ body.light-mode #eodPanel .maintenance-toolbar,
 
 #maintenancePanel .auto-save-text,
 #maintenancePanel [id*="autosave"],
-#maintenancePanel span:contains("Auto-save"),
 #maintenancePanel .maintenance-autosave-status,
 #eodPanel .auto-save-text,
 #eodPanel [id*="autosave"],
-#eodPanel span:contains("Auto-save"),
 #eodPanel #simpleEodAutosaveStatus,
 #eodPanel .maintenance-autosave-status,
 body.ops-redesign-v3 #eodPanel .maintenance-autosave-status {
@@ -11816,14 +11808,11 @@ body.light-mode .input-pill-wrapper,
 .terminal-login-wrapper .auth-nav,
 .terminal-login-wrapper .toggle-container,
 .terminal-login-wrapper .auth-tabs,
-.terminal-login-wrapper button:contains("SIGN UP"),
-.terminal-login-wrapper a:contains("SIGN UP"),
 .glitch-form-wrapper .tabs,
 .glitch-form-wrapper .auth-nav,
-.glitch-form-wrapper .toggle-container,
 .glitch-form-wrapper .auth-tabs,
-.glitch-form-wrapper button:contains("SIGN UP"),
-.glitch-form-wrapper a:contains("SIGN UP") {
+.glitch-form-wrapper .signup-tab,
+.glitch-form-wrapper [data-action="signup"] {
   display: none !important;
 }
 
@@ -12327,7 +12316,6 @@ body.light-mode select:not(.glitch-card select),
 #maintenancePanel .screenshot-dropzone,
 #maintenancePanel .upload-container,
 #maintenancePanel div[style*="dashed"],
-#maintenancePanel div:has(> button:contains("ADD SCREENSHOT")),
 #eodPanel .screenshot-zone,
 #eodPanel .screenshot-dropzone,
 #eodPanel .upload-container,
@@ -12361,12 +12349,10 @@ body.light-mode #eodPanel div[style*="dashed"],
 }
 
 /* Compact ADD SCREENSHOT Button */
-#maintenancePanel button:contains("ADD SCREENSHOT"),
 #maintenancePanel .add-screenshot-btn,
 #maintenancePanel button[id*="screenshot"],
 #maintenancePanel button[id*="Screenshot"],
 #maintenancePanel .eod-proof-label,
-#eodPanel button:contains("ADD SCREENSHOT"),
 #eodPanel .add-screenshot-btn,
 #eodPanel button[id*="screenshot"],
 #eodPanel button[id*="Screenshot"],
@@ -12391,8 +12377,6 @@ body.light-mode #eodPanel div[style*="dashed"],
   transition: all 0.15s ease !important;
 }
 
-#maintenancePanel button:contains("ADD SCREENSHOT"):hover,
-#eodPanel button:contains("ADD SCREENSHOT"):hover,
 .add-screenshot-btn:hover {
   background: #334155 !important;
   border-color: #38bdf8 !important;
@@ -12400,10 +12384,10 @@ body.light-mode #eodPanel div[style*="dashed"],
 }
 
 /* Light mode button */
-body.light-mode #maintenancePanel button:contains("ADD SCREENSHOT"),
-[data-theme="light"] #maintenancePanel button:contains("ADD SCREENSHOT"),
-body.light-mode #eodPanel button:contains("ADD SCREENSHOT"),
-[data-theme="light"] #eodPanel button:contains("ADD SCREENSHOT") {
+body.light-mode #eodPanel .add-screenshot-btn,
+[data-theme="light"] #eodPanel .add-screenshot-btn,
+body.light-mode #eodPanel .eod-proof-label,
+[data-theme="light"] #eodPanel .eod-proof-label {
   background: #ffffff !important;
   border: 1px solid #cbd5e1 !important;
   color: #1e293b !important;
@@ -13912,10 +13896,310 @@ td {
 }
 
 /* ==========================================================================
-   1. UNIVERSAL BUTTON SYSTEM (IDENTICAL ACROSS ALL THEMES)
+   UNIFY WORKSPACE LAYOUT IN BOTH LIGHT & DARK MODES
+   (Eliminates outer container boxes and shifting layouts)
    ========================================================================== */
 
-/* Apply universal sizing, typography, and pill shape to ALL buttons */
+/* 1. Reset root workspace wrapper across ALL themes */
+.app-layout,
+.app-container,
+#app,
+body > div:first-child {
+    display: flex !important;
+    gap: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+#authGate,
+.auth-gate {
+    display: grid !important;
+    place-items: center !important;
+}
+
+#authGate[hidden],
+.auth-gate[hidden],
+[hidden] {
+    display: none !important;
+}
+
+/* 2. Strip outer container framing in BOTH Dark and Light modes */
+:root .main-content,
+:root .workspace-wrapper,
+:root .content-area,
+:root main,
+:root #mainContent,
+:root .tab-content,
+:root #maintenancePanel,
+:root #eodPanel,
+:root .app-tab-panel,
+body.dark-mode .main-content,
+body.light-mode .main-content,
+body.dark-mode .workspace-wrapper,
+body.light-mode .workspace-wrapper,
+body.dark-mode .content-area,
+body.light-mode .content-area,
+body.dark-mode main,
+body.light-mode main,
+body.dark-mode #mainContent,
+body.light-mode #mainContent,
+body.dark-mode .tab-content,
+body.light-mode .tab-content,
+body.dark-mode #maintenancePanel,
+body.light-mode #maintenancePanel,
+body.dark-mode #eodPanel,
+body.light-mode #eodPanel,
+body.dark-mode .app-tab-panel,
+body.light-mode .app-tab-panel,
+[data-theme="dark"] .main-content,
+[data-theme="light"] .main-content,
+[data-theme="dark"] .workspace-wrapper,
+[data-theme="light"] .workspace-wrapper,
+[data-theme="dark"] .content-area,
+[data-theme="light"] .content-area,
+[data-theme="dark"] main,
+[data-theme="light"] main,
+[data-theme="dark"] #mainContent,
+[data-theme="light"] #mainContent,
+[data-theme="dark"] .tab-content,
+[data-theme="light"] .tab-content,
+[data-theme="dark"] #maintenancePanel,
+[data-theme="light"] #maintenancePanel,
+[data-theme="dark"] #eodPanel,
+[data-theme="light"] #eodPanel,
+[data-theme="dark"] .app-tab-panel,
+[data-theme="light"] .app-tab-panel,
+body.ops-redesign-v3 #maintenancePanel,
+body.ops-redesign-v3 #eodPanel,
+body.ops-redesign-v3 .app-tab-panel,
+body.ops-redesign-v3.light-mode #maintenancePanel,
+body.ops-redesign-v3.light-mode #eodPanel,
+body.ops-redesign-v3.light-mode .app-tab-panel {
+    background: transparent !important;
+    background-color: transparent !important;
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    padding: 24px 32px !important;
+    margin: 0 !important;
+    width: 100% !important;
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+}
+
+#maintenancePanel > .card,
+#maintenancePanel > .panel,
+#maintenancePanel > .container,
+#maintenancePanel .maintenance-shell,
+#eodPanel > .card,
+#eodPanel > .panel,
+#eodPanel > .container,
+#eodPanel .simple-eod-shell,
+body.light-mode #maintenancePanel > .card,
+body.light-mode #maintenancePanel > .panel,
+body.light-mode #maintenancePanel > .container,
+body.light-mode #maintenancePanel .maintenance-shell,
+body.light-mode #eodPanel > .card,
+body.light-mode #eodPanel > .panel,
+body.light-mode #eodPanel > .container,
+body.light-mode #eodPanel .simple-eod-shell,
+[data-theme="light"] #maintenancePanel > .card,
+[data-theme="light"] #maintenancePanel > .panel,
+[data-theme="light"] #maintenancePanel > .container,
+[data-theme="light"] #maintenancePanel .maintenance-shell,
+[data-theme="light"] #eodPanel > .card,
+[data-theme="light"] #eodPanel > .panel,
+[data-theme="light"] #eodPanel > .container {
+    background: transparent !important;
+    background-color: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+/* Verification pattern preservation */
+body.dark-mode-verification { background-color: #090d16 !important; }
+body.light-mode-verification { background-color: #f1f3f7 !important; }
+
+/* ==========================================================================
+   CANONICAL DESIGN SYSTEM TOKENS & FOUNDATIONS
+   Dark Foundation = #212121 | Light Foundation = #b6b8cd
+   ========================================================================== */
+
+:root,
+body.light-mode,
+[data-theme="light"] {
+    --app-bg: #b6b8cd;
+
+    --surface-1: #c4c6d5;
+    --surface-2: #d0d2dd;
+    --surface-3: #dcdee7;
+
+    --text-primary: #18191d;
+    --text-secondary: #454753;
+    --text-muted: #686a77;
+
+    --border-subtle: rgba(25, 27, 35, 0.10);
+    --border-strong: rgba(25, 27, 35, 0.18);
+
+    --input-bg: rgba(255, 255, 255, 0.46);
+
+    --accent-blue: #1677d2;
+    --accent-green: #14845f;
+    --accent-red: #c13f4c;
+    --accent-orange: #b9692b;
+
+    /* Light Mode Button Tokens */
+    --btn-primary-bg: #1677d2;
+    --btn-primary-border: #1366b5;
+    --btn-primary-text: #ffffff;
+
+    --btn-success-bg: #14845f;
+    --btn-success-border: #106f4f;
+    --btn-success-text: #ffffff;
+
+    --btn-danger-bg: #c13f4c;
+    --btn-danger-border: #a9323e;
+    --btn-danger-text: #ffffff;
+
+    --btn-warning-bg: #b9692b;
+    --btn-warning-border: #9e5621;
+    --btn-warning-text: #ffffff;
+
+    --btn-neutral-bg: rgba(255, 255, 255, 0.40);
+    --btn-neutral-border: rgba(25, 27, 35, 0.14);
+    --btn-neutral-text: #18191d;
+
+    /* Legacy Tokens Aliasing */
+    --ops-bg: var(--app-bg);
+    --ops-surface: var(--surface-1);
+    --ops-card-bg: var(--surface-2);
+    --ops-panel-bg: var(--surface-1);
+    --ops-border: var(--border-subtle);
+    --ops-border-strong: var(--border-strong);
+    --ops-text: var(--text-primary);
+    --ops-text-muted: var(--text-muted);
+    --ops-input-bg: var(--input-bg);
+    --ops-input-border: var(--border-subtle);
+    --ops-primary: var(--accent-blue);
+
+    --saas-bg: var(--app-bg);
+    --saas-card: var(--surface-1);
+    --saas-panel: var(--surface-2);
+    --saas-border: var(--border-subtle);
+    --saas-border-strong: var(--border-strong);
+    --saas-text-primary: var(--text-primary);
+    --saas-text-secondary: var(--text-secondary);
+    --saas-text-muted: var(--text-muted);
+    --saas-input-bg: var(--input-bg);
+    --saas-input-border: var(--border-subtle);
+    --saas-input-text: var(--text-primary);
+    --saas-primary: var(--accent-blue);
+}
+
+body.dark-mode,
+[data-theme="dark"],
+:root:not(.light-mode) {
+    --app-bg: #212121;
+
+    --surface-1: #272727;
+    --surface-2: #2d2d2d;
+    --surface-3: #343434;
+
+    --text-primary: #f5f5f5;
+    --text-secondary: #d0d0d0;
+    --text-muted: #9b9b9b;
+
+    --border-subtle: rgba(255, 255, 255, 0.08);
+    --border-strong: rgba(255, 255, 255, 0.14);
+
+    --input-bg: #2b2b2b;
+
+    --accent-blue: #2388e8;
+    --accent-green: #169b70;
+    --accent-red: #d84f5d;
+    --accent-orange: #d37c35;
+
+    /* Dark Mode Button Tokens */
+    --btn-primary-bg: #2388e8;
+    --btn-primary-border: #1f77cb;
+    --btn-primary-text: #ffffff;
+
+    --btn-success-bg: #169b70;
+    --btn-success-border: #13835e;
+    --btn-success-text: #ffffff;
+
+    --btn-danger-bg: #d84f5d;
+    --btn-danger-border: #bd3f4c;
+    --btn-danger-text: #ffffff;
+
+    --btn-warning-bg: #d37c35;
+    --btn-warning-border: #b86729;
+    --btn-warning-text: #ffffff;
+
+    --btn-neutral-bg: #303030;
+    --btn-neutral-border: rgba(255, 255, 255, 0.10);
+    --btn-neutral-text: #f2f2f2;
+
+    /* Legacy Tokens Aliasing */
+    --ops-bg: var(--app-bg);
+    --ops-surface: var(--surface-1);
+    --ops-card-bg: var(--surface-2);
+    --ops-panel-bg: var(--surface-1);
+    --ops-border: var(--border-subtle);
+    --ops-border-strong: var(--border-strong);
+    --ops-text: var(--text-primary);
+    --ops-text-muted: var(--text-muted);
+    --ops-input-bg: var(--input-bg);
+    --ops-input-border: var(--border-subtle);
+    --ops-primary: var(--accent-blue);
+
+    --saas-bg: var(--app-bg);
+    --saas-card: var(--surface-1);
+    --saas-panel: var(--surface-2);
+    --saas-border: var(--border-subtle);
+    --saas-border-strong: var(--border-strong);
+    --saas-text-primary: var(--text-primary);
+    --saas-text-secondary: var(--text-secondary);
+    --saas-text-muted: var(--text-muted);
+    --saas-input-bg: var(--input-bg);
+    --saas-input-border: var(--border-subtle);
+    --saas-input-text: var(--text-primary);
+    --saas-primary: var(--accent-blue);
+}
+
+/* Canonical Body Foundations */
+body,
+body.dark-mode,
+[data-theme="dark"],
+body.ops-redesign-v3,
+body.ops-redesign-v3.dark-mode {
+    background-color: #212121 !important;
+    background: #212121 !important;
+    color: var(--text-primary) !important;
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif !important;
+}
+
+body.light-mode,
+[data-theme="light"],
+body.ops-redesign-v3.light-mode,
+html[data-theme="light"] body {
+    background-color: #b6b8cd !important;
+    background: #b6b8cd !important;
+    color: var(--text-primary) !important;
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif !important;
+}
+
+/* ==========================================================================
+   UNIVERSAL BUTTON SYSTEM (38px height, 10px radius, centered, semantic variants)
+   ========================================================================== */
+
 button,
 .btn,
 input[type="button"],
@@ -13923,137 +14207,67 @@ input[type="submit"],
 .sheet-toolbar button,
 #aiSorterPanel button,
 #maintenancePanel button,
+#eodPanel button,
 #edrPanel button,
 #cctvPanel button {
     height: 38px !important;
     min-height: 38px !important;
     max-height: 38px !important;
-    padding: 0 16px !important;
-    border-radius: 9999px !important;
-    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif !important;
+    padding: 0 15px !important;
+    border-radius: 10px !important;
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif !important;
     font-size: 12px !important;
     font-weight: 700 !important;
-    letter-spacing: 0.03em !important;
+    line-height: 1 !important;
+    letter-spacing: 0.02em !important;
     white-space: nowrap !important;
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
+    gap: 6px !important;
     cursor: pointer !important;
     box-sizing: border-box !important;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45) !important;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.22) !important;
-    transition: transform 0.12s ease, filter 0.15s ease, box-shadow 0.15s ease !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+    transition: background-color .15s ease, border-color .15s ease, color .15s ease, transform .12s ease !important;
+    background: var(--btn-neutral-bg) !important;
+    color: var(--btn-neutral-text) !important;
+    border: 1px solid var(--btn-neutral-border) !important;
 }
 
-/* Enforce 100% crisp white readable text on ALL colored action buttons in BOTH modes */
-:root button,
-body.dark-mode button,
-body.light-mode button,
-[data-theme="dark"] button,
-[data-theme="light"] button,
-body.ops-redesign-v3 button,
-#aiSorterPanel button,
-#maintenancePanel button,
-#edrPanel button,
-#cctvPanel button,
 button span,
 .btn span,
 #aiSorterPanel button span,
-#maintenancePanel button span {
-    color: #ffffff !important;
+#maintenancePanel button span,
+#eodPanel button span {
+    color: inherit !important;
+    font-weight: inherit !important;
+    font-family: inherit !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
 }
 
-/* Universal Button Color Palette (Consistent in Dark and Light Modes) */
-button:contains("Select Same TL")       { background: #1e293b !important; border: 1px solid rgba(255, 255, 255, 0.2) !important; }
-button:contains("Copy Selected"),
-button:contains("Copy Sorted Report")   { background: #15803d !important; border: 1px solid #16a34a !important; }
-button:contains("Cut Selected")          { background: #c2410c !important; border: 1px solid #ea580c !important; }
-button:contains("Maintenance Report")   { background: #0f766e !important; border: 1px solid #14b8a6 !important; }
-button:contains("Clear Selection")      { background: #334155 !important; border: 1px solid #475569 !important; }
-button:contains("Remove Selected")      { background: #be123c !important; border: 1px solid #e11d48 !important; }
-button:contains("Clear All"),
-button:contains("Clear Report")         { background: #991b1b !important; border: 1px solid #dc2626 !important; }
-button:contains("Auto Sort by Floor")   { background: #0284c7 !important; border: 1px solid #0ea5e9 !important; }
-
-/* Concrete element IDs and classes (guarantees cross-browser rendering in standard CSS) */
-#miniSheetSelectSameTlBtn,
-.mini-sheet-select-same,
-button[data-action="select-same-tl"] {
-    background: #1e293b !important;
-    border: 1px solid rgba(255, 255, 255, 0.2) !important;
-}
-
-#miniSheetCopyRowsBtn,
-.mini-sheet-copy,
-button[data-action="copy-selected"],
-#maintenanceCopyBtn,
-.maintenance-secondary {
-    background: #15803d !important;
-    border: 1px solid #16a34a !important;
-}
-
-#miniSheetCutRowsBtn,
-.mini-sheet-cut,
-button[data-action="cut-selected"] {
-    background: #c2410c !important;
-    border: 1px solid #ea580c !important;
-}
-
-#miniSheetToReportBtn,
-.mini-sheet-to-report,
-button[data-action="maintenance-report"] {
-    background: #0f766e !important;
-    border: 1px solid #14b8a6 !important;
-}
-
-#miniSheetClearSelectionBtn,
-.mini-sheet-clear-selection,
-button[data-action="clear-selection"] {
-    background: #334155 !important;
-    border: 1px solid #475569 !important;
-}
-
-#miniSheetRemoveRowBtn,
-.mini-sheet-remove,
-button[data-action="remove-selected"] {
-    background: #be123c !important;
-    border: 1px solid #e11d48 !important;
-}
-
-#miniSheetClearAllBtn,
-.mini-sheet-clear-all,
-button[data-action="clear-all"],
-#maintenanceClearBtn,
-.maintenance-outline {
-    background: #991b1b !important;
-    border: 1px solid #dc2626 !important;
-}
-
-#maintenanceSortBtn,
-.maintenance-primary {
-    background: #0284c7 !important;
-    border: 1px solid #0ea5e9 !important;
-}
-
-#maintenanceResetAssignmentsBtn,
-.maintenance-danger {
-    background: #7f1d1d !important;
-    border: 1px solid #b91c1c !important;
-}
-
-button:hover {
-    filter: brightness(1.15) !important;
+/* Hover & Active States */
+button:hover,
+.btn:hover,
+input[type="button"]:hover,
+input[type="submit"]:hover {
     transform: translateY(-1px) !important;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3) !important;
+    filter: brightness(1.06) !important;
 }
 
-button:active {
+button:active,
+.btn:active,
+input[type="button"]:active,
+input[type="submit"]:active {
     transform: translateY(0) !important;
-    filter: brightness(0.95) !important;
 }
 
-/* Disabled Button Appearance */
+/* Disabled State: readable with preserved contrast */
 button:disabled,
+button[disabled],
+.btn:disabled,
 #aiSorterPanel button:disabled,
 #maintenancePanel button:disabled,
 #miniSheetSelectSameTlBtn:disabled,
@@ -14062,14 +14276,97 @@ button:disabled,
 #miniSheetToReportBtn:disabled,
 #miniSheetClearSelectionBtn:disabled,
 #miniSheetRemoveRowBtn:disabled {
-    opacity: 0.45 !important;
+    opacity: 0.48 !important;
     cursor: not-allowed !important;
     transform: none !important;
     box-shadow: none !important;
-    filter: grayscale(0.4) !important;
 }
 
-/* Preserve docked circular sidebar toggle button */
+/* Semantic Button Variants (Concrete IDs and Classes) */
+
+/* 1. PRIMARY (Blue) */
+#maintenanceSortBtn,
+.maintenance-primary,
+#simpleEodPdfBtn,
+#cctvSubmitBtn,
+#edrSubmitBtn,
+.btn-primary,
+button.primary-btn {
+    background: var(--btn-primary-bg) !important;
+    border: 1px solid var(--btn-primary-border) !important;
+    color: #ffffff !important;
+}
+
+/* 2. SUCCESS (Green) */
+#miniSheetCopyRowsBtn,
+.mini-sheet-copy,
+button[data-action="copy-selected"],
+#maintenanceCopyBtn,
+.maintenance-secondary,
+#simpleEodCopySheetsBtn,
+#simpleEodSendSheetsBtn,
+.btn-success {
+    background: var(--btn-success-bg) !important;
+    border: 1px solid var(--btn-success-border) !important;
+    color: #ffffff !important;
+}
+
+/* 3. DANGER (Red) */
+#miniSheetRemoveRowBtn,
+.mini-sheet-remove,
+button[data-action="remove-selected"],
+#miniSheetClearAllBtn,
+.mini-sheet-clear-all,
+button[data-action="clear-all"],
+#maintenanceClearBtn,
+.maintenance-outline,
+#maintenanceResetAssignmentsBtn,
+.maintenance-danger,
+#simpleEodClearBtn,
+.btn-danger {
+    background: var(--btn-danger-bg) !important;
+    border: 1px solid var(--btn-danger-border) !important;
+    color: #ffffff !important;
+}
+
+/* 4. NEUTRAL (Secondary utility controls) */
+#miniSheetSelectSameTlBtn,
+.mini-sheet-select-same,
+button[data-action="select-same-tl"],
+#miniSheetCutRowsBtn,
+.mini-sheet-cut,
+button[data-action="cut-selected"],
+#miniSheetToReportBtn,
+.mini-sheet-to-report,
+button[data-action="maintenance-report"],
+#miniSheetClearSelectionBtn,
+.mini-sheet-clear-selection,
+button[data-action="clear-selection"],
+#simpleEodSaveBtn,
+#simpleEodDraftsBtn,
+#simpleEodSheetSetupBtn,
+#simpleEodPreviewBtn,
+#logoutBtn,
+#authLogoutBtn,
+.eod-block-duplicate,
+.eod-block-toggle {
+    background: var(--btn-neutral-bg) !important;
+    border: 1px solid var(--btn-neutral-border) !important;
+    color: var(--btn-neutral-text) !important;
+}
+
+/* Report Block Remove button (Subtle danger outline) */
+.eod-block-remove {
+    background: transparent !important;
+    border: 1px solid var(--btn-danger-border) !important;
+    color: var(--accent-red) !important;
+}
+
+/* ==========================================================================
+   BUTTON & COMPONENT EXCEPTIONS (Preserve specialized geometry)
+   ========================================================================== */
+
+/* Circular sidebar toggle button */
 #sidebarToggle,
 .sidebar-collapse-toggle {
     width: 26px !important;
@@ -14082,76 +14379,64 @@ button:disabled,
     border-radius: 50% !important;
 }
 
+/* Compact theme toggle */
+#themeToggle {
+    width: 60px !important;
+    min-width: 60px !important;
+    max-width: 60px !important;
+    height: 26px !important;
+    min-height: 26px !important;
+    max-height: 26px !important;
+    border-radius: 13px !important;
+    padding: 0 !important;
+}
+
+/* Screenshot remove X button */
+.eod-proof-remove {
+    width: 18px !important;
+    min-width: 18px !important;
+    max-width: 18px !important;
+    height: 18px !important;
+    min-height: 18px !important;
+    max-height: 18px !important;
+    padding: 0 !important;
+    border-radius: 50% !important;
+    top: -5px !important;
+    right: -5px !important;
+}
+
+/* Input dropdown management buttons (+ and -) */
+.input-group .add-btn,
+.input-group .remove-btn,
+button.add-btn,
+button.remove-btn {
+    width: 28px !important;
+    min-width: 28px !important;
+    height: 28px !important;
+    min-height: 28px !important;
+    padding: 0 !important;
+    border-radius: 6px !important;
+}
+
 /* Sidebar navigation item alignment */
 aside.workspace-tabs .workspace-tab-btn,
 aside.workspace-tabs .sidebar-history-btn {
     width: 100% !important;
-    border-radius: 12px !important;
-    justify-content: space-between !important;
+    border-radius: 10px !important;
+    justify-content: flex-start !important;
     display: flex !important;
+    gap: 8px !important;
+    padding: 0 12px !important;
+    height: 38px !important;
+    min-height: 38px !important;
     box-shadow: none !important;
     text-shadow: none !important;
 }
 
-
 /* ==========================================================================
-   2. FIX CONTAINER SIZING (ELIMINATE SHIFTS BETWEEN DARK & LIGHT MODE)
+   WORKSPACE SPREADSHEET & TABLE THEMING (AI Sorter)
    ========================================================================== */
 
-/* Force identical full-width viewport and zero layout shifting across themes */
-:root .app-layout,
-:root .main-content,
-:root .workspace-wrapper,
-:root .workspace-container,
-:root #mainContent,
-:root .tab-content,
-body.dark-mode .main-content,
-body.light-mode .main-content,
-body.dark-mode .workspace-wrapper,
-body.light-mode .workspace-wrapper,
-[data-theme="dark"] .main-content,
-[data-theme="light"] .main-content,
-body.dark-mode #aiSorterPanel,
-body.light-mode #aiSorterPanel,
-body.dark-mode #maintenancePanel,
-body.light-mode #maintenancePanel,
-[data-theme="dark"] #aiSorterPanel,
-[data-theme="light"] #aiSorterPanel,
-[data-theme="dark"] #maintenancePanel,
-[data-theme="light"] #maintenancePanel,
-#aiSorterPanel,
-#maintenancePanel,
-.app-tab-panel {
-    width: 100% !important;
-    max-width: 100% !important;
-    min-width: 0 !important;
-    flex: 1 1 auto !important;
-    padding: 24px 32px !important; /* Identical padding */
-    margin: 0 !important; /* Identical margin */
-    border: none !important;
-    box-shadow: none !important;
-    background: transparent !important;
-    box-sizing: border-box !important;
-}
-
-.app-tab-panel:not(.active) {
-    display: none !important;
-}
-
-/* Standardize table wrappers so they remain enlarged in both modes */
-#aiSorterPanel .sheet-container,
-#aiSorterPanel .table-wrapper,
-#maintenancePanel .table-wrapper,
-.grid-container {
-    width: 100% !important;
-    max-width: 100% !important;
-    padding: 0 !important;
-    margin: 0 0 20px 0 !important;
-    box-sizing: border-box !important;
-    background: transparent !important;
-}
-
-/* Expand Workspace Table (Eliminate Unnecessary Vertical Scrolling) */
 #aiSorterPanel .sheet-container,
 #aiSorterPanel .table-wrapper,
 #aiSorterPanel .grid-container,
@@ -14163,18 +14448,67 @@ body.light-mode #maintenancePanel,
 .mini-sheet-card,
 .mini-sheet-scroll {
     height: auto !important;
-    max-height: none !important; /* Removes restrictive vertical scroll cutoff */
+    max-height: none !important;
     min-height: 450px !important;
     overflow-y: visible !important;
-    border-radius: 12px !important;
+    border-radius: 10px !important;
 }
 
+/* AI Sorter Spreadsheet Colors - Dark Mode */
+body.dark-mode #aiSorterPanel table,
+body.dark-mode #maintenanceMiniSheet,
+[data-theme="dark"] #aiSorterPanel table,
+[data-theme="dark"] #maintenanceMiniSheet {
+    background-color: var(--surface-1) !important;
+    color: var(--text-primary) !important;
+}
 
-/* ==========================================================================
-   3. PURGE YELLOW BORDER / HIGHLIGHT CELL ARTIFACTS
-   ========================================================================== */
+body.dark-mode #aiSorterPanel th,
+body.dark-mode #maintenanceMiniSheet th,
+[data-theme="dark"] #aiSorterPanel th,
+[data-theme="dark"] #maintenanceMiniSheet th {
+    background-color: var(--surface-3) !important;
+    color: var(--text-primary) !important;
+    border: 1px solid var(--border-subtle) !important;
+}
 
-/* Completely remove yellow outlines, match borders, and colored fills from cells */
+body.dark-mode #aiSorterPanel td,
+body.dark-mode #maintenanceMiniSheet td,
+[data-theme="dark"] #aiSorterPanel td,
+[data-theme="dark"] #maintenanceMiniSheet td {
+    background-color: var(--surface-1) !important;
+    color: var(--text-primary) !important;
+    border: 1px solid var(--border-subtle) !important;
+}
+
+/* AI Sorter Spreadsheet Colors - Light Mode */
+body.light-mode #aiSorterPanel table,
+body.light-mode #maintenanceMiniSheet,
+[data-theme="light"] #aiSorterPanel table,
+[data-theme="light"] #maintenanceMiniSheet {
+    background-color: #f4f4f7 !important;
+    color: #18191d !important;
+}
+
+body.light-mode #aiSorterPanel th,
+body.light-mode #maintenanceMiniSheet th,
+[data-theme="light"] #aiSorterPanel th,
+[data-theme="light"] #maintenanceMiniSheet th {
+    background-color: #dedfe7 !important;
+    color: #18191d !important;
+    border: 1px solid rgba(25, 27, 35, 0.12) !important;
+}
+
+body.light-mode #aiSorterPanel td,
+body.light-mode #maintenanceMiniSheet td,
+[data-theme="light"] #aiSorterPanel td,
+[data-theme="light"] #maintenanceMiniSheet td {
+    background-color: #ffffff !important;
+    color: #18191d !important;
+    border: 1px solid rgba(25, 27, 35, 0.08) !important;
+}
+
+/* Purge yellow border and match artifacts */
 .sheet-cell-match,
 td.sheet-cell-match,
 th.sheet-cell-match,
@@ -14187,24 +14521,23 @@ td[style*="rgb(250, 204, 21)"] {
     box-shadow: none !important;
 }
 
-/* Light mode border normalization */
 body.light-mode td.sheet-cell-match,
 [data-theme="light"] td.sheet-cell-match {
     border-color: #e2e8f0 !important;
     background-color: transparent !important;
 }
 
-/* Row index numbers (Column 1 / line counter) - Remove yellow fill and border */
+/* Row numbers column */
 table tr th:first-child,
 table tr td:first-child,
 .row-number,
 .row-header,
 .mini-sheet-row-number,
 th[scope="row"] {
-    background: transparent !important;
+    background: var(--surface-2) !important;
     outline: none !important;
-    border-color: rgba(255, 255, 255, 0.08) !important;
-    color: #94a3b8 !important;
+    border-color: var(--border-subtle) !important;
+    color: var(--text-muted) !important;
 }
 
 body.light-mode table tr th:first-child,
@@ -14213,11 +14546,12 @@ body.light-mode .mini-sheet-row-number,
 [data-theme="light"] table tr th:first-child,
 [data-theme="light"] table tr td:first-child,
 [data-theme="light"] .mini-sheet-row-number {
-    border-color: #e2e8f0 !important;
-    color: #64748b !important;
+    background: #dedfe7 !important;
+    border-color: rgba(25, 27, 35, 0.10) !important;
+    color: #454753 !important;
 }
 
-/* Keep clean, modern blue focus indicator ONLY for actively selected row/cell */
+/* Clean blue selection indicator */
 .sheet-row-selected,
 #maintenanceMiniSheet tr.selected-row,
 #maintenanceMiniSheet tr.sheet-row-selected {
@@ -14230,4 +14564,137 @@ body.light-mode .mini-sheet-row-number,
 #maintenanceMiniSheet td.cell-range-active {
     outline: 2px solid #0284c7 !important;
     outline-offset: -2px !important;
+}
+
+/* ==========================================================================
+   SIDEBAR & CONTROLS READABILITY
+   ========================================================================== */
+
+aside.workspace-tabs {
+    background-color: var(--surface-1) !important;
+    border-right: 1px solid var(--border-subtle) !important;
+}
+
+body.dark-mode aside.workspace-tabs,
+[data-theme="dark"] aside.workspace-tabs {
+    background-color: #1c1c1c !important;
+    border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+body.light-mode aside.workspace-tabs,
+[data-theme="light"] aside.workspace-tabs {
+    background-color: #c4c6d5 !important;
+    border-right: 1px solid rgba(25, 27, 35, 0.12) !important;
+}
+
+aside.workspace-tabs .workspace-tab-btn.active,
+aside.workspace-tabs .sidebar-history-btn.active {
+    background: rgba(35, 136, 232, 0.18) !important;
+    color: var(--accent-blue) !important;
+    font-weight: 700 !important;
+}
+
+aside.workspace-tabs .workspace-tab-btn:not(.active) {
+    color: var(--text-primary) !important;
+}
+
+#sidebarClock,
+#sidebarDate,
+.sidebar-clock,
+.sidebar-date {
+    font-family: 'Plus Jakarta Sans', monospace, sans-serif !important;
+    color: var(--text-primary) !important;
+}
+
+#sidebarClock {
+    font-size: 22px !important;
+    font-weight: 700 !important;
+    font-variant-numeric: tabular-nums !important;
+}
+
+/* ==========================================================================
+   STANDARDIZED INPUTS, SELECTS, AND TEXTAREAS
+   ========================================================================== */
+
+input:not([type="checkbox"]):not([type="radio"]):not([type="button"]):not([type="submit"]):not(.glitch-card input):not([type="hidden"]),
+select:not(.glitch-card select) {
+    height: 40px !important;
+    min-height: 40px !important;
+    border-radius: 10px !important;
+    padding: 0 12px !important;
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif !important;
+    font-size: 13px !important;
+    box-sizing: border-box !important;
+    outline: none !important;
+    background-color: var(--input-bg) !important;
+    color: var(--text-primary) !important;
+    border: 1px solid var(--border-subtle) !important;
+}
+
+textarea {
+    border-radius: 10px !important;
+    padding: 10px 12px !important;
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif !important;
+    font-size: 13px !important;
+    box-sizing: border-box !important;
+    outline: none !important;
+    background-color: var(--input-bg) !important;
+    color: var(--text-primary) !important;
+    border: 1px solid var(--border-subtle) !important;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+    border-color: var(--accent-blue) !important;
+    box-shadow: 0 0 0 2px rgba(35, 136, 232, 0.2) !important;
+}
+
+/* Placeholder readability */
+::placeholder {
+    color: var(--text-muted) !important;
+    opacity: 0.8 !important;
+}
+
+/* ==========================================================================
+   MAINTENANCE STATUS PILLS & METRICS
+   ========================================================================== */
+
+#maintenancePanel .maintenance-sheet-connection-state,
+#eodPanel .maintenance-sheet-connection-state,
+#maintenanceSheetConnectionState {
+    height: 36px !important;
+    min-height: 36px !important;
+    max-height: 36px !important;
+    border-radius: 999px !important;
+    padding: 0 12px !important;
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    white-space: nowrap !important;
+}
+
+#maintenancePanel .maintenance-autosave-status,
+#eodPanel .maintenance-autosave-status,
+#simpleEodAutosaveStatus {
+    height: 36px !important;
+    min-height: 36px !important;
+    max-height: 36px !important;
+    font-size: 11px !important;
+    color: var(--text-muted) !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    padding: 0 8px !important;
+    background: transparent !important;
+}
+
+/* Maintenance report card block styling */
+.simple-eod-block {
+    background: var(--surface-1) !important;
+    border: 1px solid var(--border-subtle) !important;
+    border-radius: 12px !important;
+    padding: 16px !important;
+    margin-bottom: 16px !important;
+    box-shadow: none !important;
 }
