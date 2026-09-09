@@ -18434,8 +18434,57 @@ textarea:focus {
                     </div>
                 </div>
 
+                <!-- 1. RAW OBSERVATION / PROMPT -->
+                <div class="field-block edr-field" id="edrRawImportBanner" style="margin-bottom: 14px;">
+                    <label for="edrRawImport"><strong>RAW OBSERVATION / PROMPT</strong></label>
+                    <textarea id="edrRawImport"
+                              class="edr-textarea"
+                              rows="5"
+                              style="width: 100%; box-sizing: border-box; resize: vertical; min-height: 85px;"
+                              placeholder="Paste observation details here (Site, Date, TL response, Agent Name, Incident description)..."></textarea>
+                </div>
+
+                <!-- 2. CCTV SCREENSHOT (ALWAYS VISIBLE DROPZONE) -->
+                <div class="field-block edr-field edr-ai-screenshot-field" id="edrAiScreenshotField" style="margin-bottom: 14px;">
+                    <label><strong>CCTV SCREENSHOT</strong></label>
+                    <div id="edrAiScreenshotZone"
+                         class="edr-screenshot-zone edr-screenshot-minimal"
+                         tabindex="0"
+                         aria-label="CCTV Screenshot drop zone"
+                         style="min-height: 110px; display: flex; flex-direction: column; justify-content: center; align-items: center; border: 2px dashed rgba(255,255,255,0.22); border-radius: 8px; padding: 14px; cursor: pointer; text-align: center; box-sizing: border-box; width: 100%;">
+                        <input type="file" id="edrAiScreenshotInput" accept="image/*" hidden>
+
+                        <div class="edr-shot-idle" id="edrAiScreenshotEmpty" style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
+                            <button type="button" class="edr-outline-btn edr-shot-add-btn" id="edrAiChooseScreenshotBtn">
+                                + Add Screenshot
+                            </button>
+                            <span class="edr-shot-hint" style="font-size: 13px; opacity: 0.85;">Paste screenshot here (Ctrl+V), click Add Screenshot, or drag &amp; drop an image.</span>
+                        </div>
+
+                        <div id="edrAiScreenshotPreviewWrap" class="edr-shot-preview" hidden style="display: none; flex-direction: column; align-items: center; gap: 10px; width: 100%;">
+                            <button type="button"
+                                    class="edr-shot-thumb-btn"
+                                    id="edrAiViewCurrentScreenshotBtn"
+                                    title="View screenshot"
+                                    style="border: none; background: transparent; padding: 0; cursor: pointer;">
+                                <img id="edrAiScreenshotPreview" alt="CCTV screenshot preview" style="max-height: 180px; max-width: 100%; border-radius: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.3); object-fit: contain;">
+                            </button>
+
+                            <div class="edr-shot-meta" style="display: flex; align-items: center; justify-content: center; gap: 12px; width: 100%;">
+                                <span style="font-size: 12px; font-weight: 600; opacity: 0.9;">Screenshot ready</span>
+                                <div class="edr-shot-actions" style="display: flex; gap: 8px;">
+                                    <button type="button" class="edr-outline-btn" id="edrAiViewBtn">View</button>
+                                    <button type="button" class="edr-outline-btn" id="edrAiReplaceScreenshotBtn">Replace</button>
+                                    <button type="button" class="edr-danger-btn" id="edrAiRemoveScreenshotBtn">Remove</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. QUICK EDR TEMPLATE -->
                 <div class="field-block edr-field" style="margin-bottom: 14px;">
-                    <label for="edrQuickTemplates"><strong>QUICK PRESET TEMPLATES</strong> <span class="edr-optional-tag">(Auto-fill common violations)</span></label>
+                    <label for="edrQuickTemplates"><strong>QUICK EDR TEMPLATE</strong> <span class="edr-optional-tag">(Auto-fill common violations)</span></label>
                     <div class="edr-quick-templates-wrap">
                         <select id="edrQuickTemplates" class="edr-select" style="width: 100%; box-sizing: border-box;">
                             <option value="">-- Select template or paste raw text below --</option>
@@ -18447,15 +18496,6 @@ textarea:focus {
                             <option value="unattended">Unattended active workstation / screen unlocked</option>
                         </select>
                     </div>
-                </div>
-
-                <div class="field-block edr-field" id="edrRawImportBanner" style="margin-bottom: 14px;">
-                    <label for="edrRawImport"><strong>PASTE CCTV OBSERVATION &amp; LOGS</strong></label>
-                    <textarea id="edrRawImport"
-                              class="edr-textarea"
-                              rows="5"
-                              style="width: 100%; box-sizing: border-box; resize: vertical; min-height: 85px;"
-                              placeholder="Paste observation details here (Site, Date, TL response, Agent Name, Incident description)..."></textarea>
                 </div>
 
                 <!-- CCTV Clip Input in AI Generator Mode -->
@@ -28591,26 +28631,53 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
             screenshotDirty = true;
         }
 
+        // 1. Manual Entry UI
         const empty = byId("edrScreenshotEmpty");
         const wrap = byId("edrScreenshotPreviewWrap");
         const img = byId("edrScreenshotPreview");
 
-        if (!empty || !wrap || !img) return;
+        if (empty && wrap && img) {
+            if (currentScreenshot) {
+                img.src = currentScreenshot;
+                empty.hidden = true;
+                wrap.hidden = false;
+                byId("edrScreenshotZone")?.classList.add("has-image");
+            } else {
+                img.removeAttribute("src");
+                empty.hidden = false;
+                wrap.hidden = true;
+                byId("edrScreenshotZone")?.classList.remove("has-image");
+            }
+        }
 
-        if (currentScreenshot) {
-            img.src = currentScreenshot;
-            empty.hidden = true;
-            wrap.hidden = false;
-            byId("edrScreenshotZone")?.classList.add("has-image");
-        } else {
-            img.removeAttribute("src");
-            empty.hidden = false;
-            wrap.hidden = true;
-            byId("edrScreenshotZone")?.classList.remove("has-image");
+        // 2. AI Generator UI (Synchronized Shared State)
+        const aiEmpty = byId("edrAiScreenshotEmpty");
+        const aiWrap = byId("edrAiScreenshotPreviewWrap");
+        const aiImg = byId("edrAiScreenshotPreview");
+
+        if (aiEmpty && aiWrap && aiImg) {
+            if (currentScreenshot) {
+                aiImg.src = currentScreenshot;
+                aiEmpty.hidden = true;
+                aiEmpty.style.display = "none";
+                aiWrap.hidden = false;
+                aiWrap.style.display = "flex";
+                byId("edrAiScreenshotZone")?.classList.add("has-image");
+            } else {
+                aiImg.removeAttribute("src");
+                aiEmpty.hidden = false;
+                aiEmpty.style.display = "flex";
+                aiWrap.hidden = true;
+                aiWrap.style.display = "none";
+                byId("edrAiScreenshotZone")?.classList.remove("has-image");
+            }
         }
 
         if (typeof renderLiveEdrPreview === "function") {
             renderLiveEdrPreview();
+        }
+        if (typeof refreshEdrPreview === "function") {
+            refreshEdrPreview();
         }
     }
 
@@ -29130,6 +29197,87 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
 
         if (file) loadScreenshotFile(file);
     });
+
+    // =========================================================================
+    // AI GENERATOR: CCTV SCREENSHOT ZONE WIRING
+    // =========================================================================
+    const aiScreenshotZone = byId("edrAiScreenshotZone");
+    const aiScreenshotInput = byId("edrAiScreenshotInput");
+
+    if (aiScreenshotZone && aiScreenshotInput) {
+        byId("edrAiChooseScreenshotBtn")?.addEventListener("click", event => {
+            event.stopPropagation();
+            aiScreenshotInput.click();
+        });
+
+        byId("edrAiViewCurrentScreenshotBtn")?.addEventListener("click", event => {
+            event.stopPropagation();
+            if (!currentScreenshot) {
+                showToast("No screenshot added yet.", "info");
+                return;
+            }
+            openSavedScreenshotModal(currentScreenshot);
+        });
+
+        byId("edrAiViewBtn")?.addEventListener("click", event => {
+            event.stopPropagation();
+            if (!currentScreenshot) {
+                showToast("No screenshot added yet.", "info");
+                return;
+            }
+            openSavedScreenshotModal(currentScreenshot);
+        });
+
+        byId("edrAiReplaceScreenshotBtn")?.addEventListener("click", event => {
+            event.stopPropagation();
+            aiScreenshotInput.click();
+        });
+
+        byId("edrAiRemoveScreenshotBtn")?.addEventListener("click", event => {
+            event.stopPropagation();
+            setCurrentScreenshot("", true);
+            showToast("CCTV screenshot removed.", "info");
+        });
+
+        aiScreenshotInput.addEventListener("change", () => {
+            const file = aiScreenshotInput.files && aiScreenshotInput.files[0];
+            if (file) loadScreenshotFile(file);
+            aiScreenshotInput.value = "";
+        });
+
+        aiScreenshotZone.addEventListener("click", event => {
+            if (event.target.closest("button")) return;
+            aiScreenshotZone.focus();
+            if (!currentScreenshot) {
+                aiScreenshotInput.click();
+            }
+        });
+
+        aiScreenshotZone.addEventListener("paste", screenshotFromClipboard);
+
+        aiScreenshotZone.addEventListener("dragover", event => {
+            event.preventDefault();
+            aiScreenshotZone.classList.add("is-dragging");
+        });
+
+        aiScreenshotZone.addEventListener("dragleave", event => {
+            if (
+                event.relatedTarget &&
+                aiScreenshotZone.contains(event.relatedTarget)
+            ) return;
+            aiScreenshotZone.classList.remove("is-dragging");
+        });
+
+        aiScreenshotZone.addEventListener("drop", event => {
+            event.preventDefault();
+            aiScreenshotZone.classList.remove("is-dragging");
+
+            const file = Array.from(event.dataTransfer?.files || [])
+                .find(item => item.type && item.type.startsWith("image/"));
+
+            if (file) loadScreenshotFile(file);
+        });
+    }
 
         // =========================================================================
     // SMART EDR RAW IMPORT, PARSER & DETERMINISTIC GENERATOR
