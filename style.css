@@ -8262,6 +8262,10 @@ main {
    ========================================================== */
 
 .ops-top-header {
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+
     width: 100% !important;
     min-height: 44px;
 
