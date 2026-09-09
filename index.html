@@ -17104,56 +17104,6 @@ textarea:focus {
     box-shadow: 0 0 0 2px rgba(37, 132, 255, 0.25) !important;
     transition: border-color 0.4s ease, box-shadow 0.4s ease !important;
 }
-
-/* ============================================================
-   TOP HEADER FULL VIEWPORT & ZERO SIDEBAR OVERRIDES
-   ============================================================ */
-:root {
-    --admin-sidebar: 0px !important;
-    --ops-sidebar-w: 0px !important;
-}
-
-body.ops-redesign-v3 {
-    max-width: 100% !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    position: relative !important;
-}
-
-body.ops-redesign-v3.sidebar-collapsed {
-    padding: 0 !important;
-    padding-left: 0 !important;
-}
-
-aside.workspace-tabs.admin-sidebar,
-#sidebarToggle,
-.sidebar-collapse-toggle {
-    display: none !important;
-    width: 0 !important;
-    height: 0 !important;
-    opacity: 0 !important;
-    pointer-events: none !important;
-}
-
-.workspace-container,
-.app-tab-panel {
-    width: 100% !important;
-    max-width: 100% !important;
-    box-sizing: border-box !important;
-    margin: 0 !important;
-}
-
-.app-tab-panel > .container,
-.app-tab-panel > .form-section,
-.app-tab-panel > .grid-section,
-.app-tab-panel > .edr-crud-shell,
-.app-tab-panel > .followup-shell,
-.app-tab-panel > .master-simple-shell,
-.app-tab-panel > .auth-admin-shell {
-    max-width: 1560px !important;
-    margin-left: auto !important;
-    margin-right: auto !important;
-}
 </style>
 
 </head>
@@ -17276,142 +17226,305 @@ aside.workspace-tabs.admin-sidebar,
 </div>
 
 
-<!-- Hidden legacy controls kept strictly for backward compatibility with existing tests/scripts -->
-<div id="legacySidebarControls" style="display:none!important;" aria-hidden="true" hidden>
-    <button type="button" id="sidebarToggle" class="sidebar-collapse-toggle"></button>
-    <button type="button" class="workspace-tab-btn" id="edrTabBtn" role="tab" aria-selected="false" aria-controls="edrPanel">EDR</button>
-    <button type="button" class="workspace-tab-btn active" id="cctvTabBtn" role="tab" aria-selected="true" aria-controls="cctvPanel">CCTV Audit</button>
-    <button type="button" class="workspace-tab-btn" id="maintenanceTabBtn" role="tab" aria-selected="false" aria-controls="maintenancePanel">AI Sorter</button>
-    <button type="button" class="workspace-tab-btn" id="eodTabBtn" role="tab" aria-selected="false" aria-controls="eodPanel">Maintenance</button>
-    <button type="button" class="workspace-tab-btn" id="masterlistTabBtn" role="tab" aria-selected="false" aria-controls="masterlistPanel">Masterlist</button>
-    <button type="button" class="workspace-tab-btn" id="followupTabBtn" role="tab" aria-selected="false" aria-controls="followupPanel">Follow Up Reports</button>
-</div>
+<button
+    type="button"
+    id="sidebarToggle"
+    class="sidebar-collapse-toggle"
+    aria-label="Hide sidebar"
+    aria-expanded="true"
+    title="Hide sidebar">
+    ‹
+</button>
 
-<!-- ============================================================ -->
-<!-- TOP HEADER NAVIGATION                                         -->
-<!-- ============================================================ -->
-<header id="cctvTopHeader" class="cctv-top-header">
-    <!-- Left: Theme Toggle -->
-    <div class="cctv-header-left">
+
+<aside class="workspace-tabs admin-sidebar" role="tablist" aria-label="Audit workspace navigation">
+    <div class="ops-sidebar-brand" aria-hidden="true">
+        <strong>CCTV OPS</strong>
+        <span>Operations workspace</span>
+    </div>
+
+    <div class="ops-sidebar-label">Workspaces</div>
+
+    <button type="button" class="workspace-tab-btn" id="edrTabBtn" role="tab" aria-selected="false" aria-controls="edrPanel">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="sidebar-nav-icon"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        <span>EDR</span>
+    </button>
+    <button type="button" class="workspace-tab-btn active" id="cctvTabBtn" role="tab" aria-selected="true" aria-controls="cctvPanel">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="sidebar-nav-icon"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+        <span>CCTV Audit</span>
+        <small class="cctv-edr-sent-badge" id="cctvEdrSentCount" title="EDRs sent to CCTV Audit">0</small>
+    </button>
+    <button type="button" class="workspace-tab-btn" id="maintenanceTabBtn" role="tab" aria-selected="false" aria-controls="maintenancePanel">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="sidebar-nav-icon"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        <span>AI Sorter</span>
+    </button>
+    <button type="button" class="workspace-tab-btn" id="eodTabBtn" role="tab" aria-selected="false" aria-controls="eodPanel">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="sidebar-nav-icon"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+        <span>Maintenance</span>
+    </button>
+    <button type="button" class="workspace-tab-btn" id="masterlistTabBtn" role="tab" aria-selected="false" aria-controls="masterlistPanel">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="sidebar-nav-icon"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+        <span>Masterlist</span>
+        <small class="masterlist-sidebar-badge" id="masterlistSidebarBadge" title="Google Sheets sync status">Live</small>
+    </button>
+    <button type="button" class="workspace-tab-btn" id="followupTabBtn" role="tab" aria-selected="false" aria-controls="followupPanel">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="sidebar-nav-icon"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><polyline points="9 14 12 17 17 12"/></svg>
+        <span>Follow Up Reports</span>
+        <small id="followupSidebarBadge" title="Open follow-up reports">0</small>
+    </button>
+
+    <div class="ops-sidebar-separator"></div>
+    <div class="ops-sidebar-label ops-sidebar-tools-label">Tools</div>
+
+    <button type="button" class="sidebar-history-btn" id="globalHistoryBtn" title="History and Undo/Redo">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="sidebar-nav-icon"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 14 14"/><path d="M3.05 11a9 9 0 0 1 .5-2m-.5 2h4m-4 0V7"/></svg>
+        <span>History</span>
+        <small id="globalHistoryCount">0</small>
+    </button>
+
+    <button type="button" class="sidebar-history-btn" id="adminTabBtn"
+            role="tab" aria-selected="false" aria-controls="adminPanel" hidden>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="sidebar-nav-icon"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <span>Accounts</span>
+        <small id="adminPendingCount">0</small>
+    </button>
+
+    <div class="sidebar-spacer"></div>
+
+    <div class="auth-sidebar-account" id="authSidebarAccount" hidden>
+        <div class="auth-sidebar-user">
+            <strong id="authSidebarName">Account</strong>
+            <span id="authSidebarEmail"></span>
+        </div>
+        <button type="button" id="authLogoutBtn">Log Out</button>
+    </div>
+
+    <div class="sidebar-live-clock timeis-clock" id="sidebarLiveClock" title="Exact Manila time">
+        <span id="Manila_z42c"></span>
+        <a href="https://time.is/Manila"
+           id="time_is_link"
+           class="timeis-source-link"
+           rel="nofollow noopener"
+           target="_blank">Time.is</a>
+    </div>
+
+    <div class="sidebar-divider"></div>
         <div class="theme-toggle-container">
-            <label class="main-toggle" for="themeToggle" title="Toggle Light / Dark Mode">
-                <input type="checkbox" id="themeToggle" class="main-checkbox" onchange="toggleTheme()" aria-label="Toggle Light and Dark Mode" />
-                <div class="main-track"></div>
-                <div class="main-knob"></div>
-            </label>
-        </div>
+      <label class="main-toggle" for="themeToggle" title="Toggle Light / Dark Mode">
+        <input type="checkbox" id="themeToggle" class="main-checkbox" onchange="toggleTheme()" aria-label="Toggle Light and Dark Mode" />
+        <div class="main-track"></div>
+        <div class="main-knob"></div>
+      </label>
     </div>
+</aside>
 
-    <!-- Center: Viewport-Centered Navigation -->
-    <div class="cctv-header-center">
-        <button type="button" class="cctv-header-brand" id="cctvBrandBtn" title="Return to default workspace">CCTV OPS</button>
+<header id="opsTopHeader" class="ops-top-header">
+    <div class="ops-header-theme" id="opsThemeSlot"></div>
 
-        <div class="cctv-nav-dropdown-wrap">
-            <button type="button" class="cctv-header-nav-btn" id="headerWorkspaceBtn" aria-haspopup="true" aria-expanded="false">Workspace ▾</button>
-            <div id="cctvWorkspaceMenu" class="cctv-menu-container cctv-workspace-menu" hidden>
-                <div class="cctv-menu-header">Workspace</div>
-                
-                <button type="button" class="cctv-menu-item active" id="menuItemMaintenance" data-dest="maintenance">
-                    <div class="cctv-menu-item-text">
-                        <strong class="cctv-menu-item-title">Maintenance</strong>
-                        <span class="cctv-menu-item-sub">AI Sorter + Maintenance Report</span>
-                    </div>
+    <div class="ops-header-center">
+
+        <span class="ops-header-brand" aria-label="CCTV OPS">
+            CCTV OPS
+        </span>
+
+        <div class="ops-header-nav-item">
+            <button
+                type="button"
+                id="opsWorkspaceBtn"
+                class="ops-header-text-btn"
+                aria-expanded="false"
+                aria-controls="opsWorkspaceMenu">
+                Workspace
+            </button>
+
+            <div
+                id="opsWorkspaceMenu"
+                class="ops-dropdown ops-workspace-dropdown"
+                hidden>
+
+                <div class="ops-dropdown-label">WORKSPACE</div>
+
+                <button
+                    type="button"
+                    class="ops-menu-row"
+                    id="opsOpenMaintenance">
+                    <span class="ops-menu-copy">
+                        <strong>Maintenance</strong>
+                        <small>AI Sorter + Maintenance Report</small>
+                    </span>
                 </button>
 
-                <button type="button" class="cctv-menu-item" id="menuItemCctvReport" data-dest="cctvReport">
-                    <div class="cctv-menu-item-text">
-                        <strong class="cctv-menu-item-title">CCTV Report</strong>
-                        <span class="cctv-menu-item-sub">CCTV Audit, EDR and Follow Up Reports</span>
-                    </div>
+                <button
+                    type="button"
+                    class="ops-menu-row"
+                    id="opsOpenCctvReport">
+                    <span class="ops-menu-copy">
+                        <strong>CCTV Report</strong>
+                        <small>CCTV Audit, EDR + Follow Up Reports</small>
+                    </span>
                 </button>
 
-                <button type="button" class="cctv-menu-item" id="menuItemMasterlist" data-dest="masterlist">
-                    <div class="cctv-menu-item-text">
-                        <strong class="cctv-menu-item-title">Masterlist</strong>
-                        <span class="cctv-menu-item-sub">Master operational records</span>
-                    </div>
-                    <small class="masterlist-sidebar-badge" id="masterlistSidebarBadge" title="Google Sheets sync status">Live</small>
+                <button
+                    type="button"
+                    class="ops-menu-row"
+                    id="opsOpenMasterlist">
+                    <span class="ops-menu-copy">
+                        <strong>Masterlist</strong>
+                        <small>Master operational records</small>
+                    </span>
+
+                    <span
+                        class="ops-menu-meta"
+                        id="opsMasterlistStatus"
+                        aria-hidden="true"></span>
                 </button>
             </div>
         </div>
 
-        <div class="cctv-nav-dropdown-wrap">
-            <button type="button" class="cctv-header-nav-btn" id="headerToolsBtn" aria-haspopup="true" aria-expanded="false">Tools ▾</button>
-            <div id="cctvToolsMenu" class="cctv-menu-container cctv-tools-menu" hidden>
-                <div class="cctv-menu-header">Tools</div>
+        <div class="ops-header-nav-item">
+            <button
+                type="button"
+                id="opsToolsBtn"
+                class="ops-header-text-btn"
+                aria-expanded="false"
+                aria-controls="opsToolsMenu">
+                Tools
+            </button>
 
-                <button type="button" class="cctv-menu-item" id="globalHistoryBtn" title="History and Undo/Redo">
-                    <div class="cctv-menu-item-text">
-                        <strong class="cctv-menu-item-title">History</strong>
-                        <span class="cctv-menu-item-sub">Review application activity</span>
-                    </div>
-                    <small id="globalHistoryCount" class="cctv-badge-count">0</small>
+            <div
+                id="opsToolsMenu"
+                class="ops-dropdown ops-tools-dropdown"
+                hidden>
+
+                <div class="ops-dropdown-label">TOOLS</div>
+
+                <button
+                    type="button"
+                    class="ops-menu-row"
+                    id="opsOpenHistory">
+                    <span class="ops-menu-copy">
+                        <strong>History</strong>
+                        <small>Application activity and changes</small>
+                    </span>
+
+                    <span
+                        class="ops-menu-meta"
+                        id="opsHistoryCount"
+                        aria-hidden="true"></span>
                 </button>
 
-                <button type="button" class="cctv-menu-item" id="adminTabBtn" role="tab" aria-selected="false" aria-controls="adminPanel" hidden>
-                    <div class="cctv-menu-item-text">
-                        <strong class="cctv-menu-item-title">Accounts</strong>
-                        <span class="cctv-menu-item-sub">User and access management</span>
-                    </div>
-                    <small id="adminPendingCount" class="cctv-badge-count">0</small>
+                <button
+                    type="button"
+                    class="ops-menu-row"
+                    id="opsOpenAccounts">
+                    <span class="ops-menu-copy">
+                        <strong>Accounts</strong>
+                        <small>User and access management</small>
+                    </span>
+
+                    <span
+                        class="ops-menu-meta"
+                        id="opsAccountsCount"
+                        aria-hidden="true"></span>
                 </button>
 
-                <div class="cctv-menu-divider"></div>
+                <div class="ops-tools-separator"></div>
 
-                <div class="auth-sidebar-account" id="authSidebarAccount" hidden>
-                    <div class="auth-sidebar-user">
-                        <strong id="authSidebarName">Account</strong>
-                        <span id="authSidebarEmail"></span>
-                    </div>
-                    <button type="button" id="authLogoutBtn" class="cctv-logout-btn">Log Out</button>
+                <div class="ops-account-summary">
+                    <strong id="opsHeaderUserName">Account</strong>
+                    <small id="opsHeaderUserEmail"></small>
                 </div>
+
+                <button
+                    type="button"
+                    class="ops-menu-row ops-logout-row"
+                    id="opsHeaderLogout">
+                    <span class="ops-menu-copy">
+                        <strong>Log Out</strong>
+                    </span>
+                </button>
             </div>
         </div>
 
-        <span class="cctv-header-divider" aria-hidden="true">|</span>
+        <span class="ops-header-divider" aria-hidden="true"></span>
 
-        <!-- Live Clock -->
-        <div class="cctv-header-clock" id="sidebarLiveClock" title="Exact Manila time">
-            <span id="Manila_z42c"></span>
-            <a href="https://time.is/Manila" id="time_is_link" class="timeis-source-link" rel="nofollow noopener" target="_blank" style="display:none;">Time.is</a>
+        <div class="ops-header-clock" aria-label="Current Manila date and time">
+            <span id="opsHeaderDate"></span>
+            <span id="opsHeaderTime"></span>
         </div>
-    </div>
 
-    <!-- Right spacer to balance layout -->
-    <div class="cctv-header-right"></div>
+    </div>
 </header>
 
-<!-- ============================================================ -->
-<!-- UNIFIED WORKSPACE SUBHEADER & INTERNAL TABS                   -->
-<!-- ============================================================ -->
-<div id="cctvWorkspaceSubheader" class="cctv-workspace-subheader">
-    <div class="cctv-subheader-inner">
-        <h1 id="cctvCurrentWorkspaceTitle" class="cctv-workspace-title">CCTV Report</h1>
-        
-        <!-- Maintenance Internal Tabs -->
-        <div id="tabsMaintenance" class="cctv-internal-tabs" role="tablist" hidden>
-            <button type="button" class="cctv-tab-btn active" id="tabBtnAiSorter" role="tab" aria-selected="true" data-panel="maintenancePanel">
+
+<div
+    id="opsContextNav"
+    class="ops-context-nav"
+    hidden>
+
+    <div class="ops-context-inner">
+
+        <span
+            id="opsContextTitle"
+            class="ops-context-title"></span>
+
+        <div
+            id="opsMaintenanceTabs"
+            class="ops-context-tabs"
+            hidden>
+
+            <button
+                type="button"
+                class="ops-context-tab"
+                id="opsAiSorterTab">
                 AI Sorter
             </button>
-            <button type="button" class="cctv-tab-btn" id="tabBtnMaintenanceReport" role="tab" aria-selected="false" data-panel="eodPanel">
+
+            <button
+                type="button"
+                class="ops-context-tab"
+                id="opsMaintenanceReportTab">
                 Maintenance Report
             </button>
+
         </div>
 
-        <!-- CCTV Report Internal Tabs -->
-        <div id="tabsCctvReport" class="cctv-internal-tabs" role="tablist">
-            <button type="button" class="cctv-tab-btn active" id="tabBtnCctvAudit" role="tab" aria-selected="true" data-panel="cctvPanel">
+        <div
+            id="opsCctvReportTabs"
+            class="ops-context-tabs"
+            hidden>
+
+            <button
+                type="button"
+                class="ops-context-tab"
+                id="opsCctvAuditTab">
                 CCTV Audit
-                <small class="cctv-edr-sent-badge" id="cctvEdrSentCount" title="EDRs sent to CCTV Audit">0</small>
+                <span
+                    id="opsCctvCount"
+                    class="ops-context-count"
+                    hidden></span>
             </button>
-            <button type="button" class="cctv-tab-btn" id="tabBtnEdr" role="tab" aria-selected="false" data-panel="edrPanel">
+
+            <button
+                type="button"
+                class="ops-context-tab"
+                id="opsEdrTab">
                 EDR
             </button>
-            <button type="button" class="cctv-tab-btn" id="tabBtnFollowup" role="tab" aria-selected="false" data-panel="followupPanel">
+
+            <button
+                type="button"
+                class="ops-context-tab"
+                id="opsFollowupTab">
                 Follow Up Reports
-                <small id="followupSidebarBadge" class="cctv-badge-count" title="Open follow-up reports">0</small>
+                <span
+                    id="opsFollowupCount"
+                    class="ops-context-count"
+                    hidden></span>
             </button>
+
         </div>
+
     </div>
 </div>
 
@@ -32898,74 +33011,6 @@ byId("edrSaveBtn").addEventListener("click", saveReport);
         ["edrTabBtn", "edrPanel"]
     ];
 
-    function syncHeaderNavigation(activePanelId) {
-        const subheader = document.getElementById("cctvWorkspaceSubheader");
-        const titleEl = document.getElementById("cctvCurrentWorkspaceTitle");
-        const tabsMaint = document.getElementById("tabsMaintenance");
-        const tabsCctv = document.getElementById("tabsCctvReport");
-        const itemMaint = document.getElementById("menuItemMaintenance");
-        const itemCctv = document.getElementById("menuItemCctvReport");
-        const itemMaster = document.getElementById("menuItemMasterlist");
-        const itemAccounts = document.getElementById("adminTabBtn");
-
-        if (!subheader || !titleEl) return;
-
-        // Reset menu item active states
-        [itemMaint, itemCctv, itemMaster, itemAccounts].forEach(el => el?.classList.remove("active"));
-
-        // Reset internal tab active states
-        document.querySelectorAll(".cctv-tab-btn").forEach(btn => {
-            btn.classList.remove("active");
-            btn.setAttribute("aria-selected", "false");
-        });
-
-        if (activePanelId === "maintenancePanel" || activePanelId === "eodPanel") {
-            titleEl.textContent = "Maintenance";
-            subheader.hidden = false;
-            if (tabsMaint) tabsMaint.hidden = false;
-            if (tabsCctv) tabsCctv.hidden = true;
-            itemMaint?.classList.add("active");
-
-            const activeTabBtn = activePanelId === "maintenancePanel"
-                ? document.getElementById("tabBtnAiSorter")
-                : document.getElementById("tabBtnMaintenanceReport");
-            if (activeTabBtn) {
-                activeTabBtn.classList.add("active");
-                activeTabBtn.setAttribute("aria-selected", "true");
-            }
-            try { sessionStorage.setItem("cctv_active_maintenance_tab", activePanelId); } catch (_) {}
-        } else if (activePanelId === "cctvPanel" || activePanelId === "edrPanel" || activePanelId === "followupPanel") {
-            titleEl.textContent = "CCTV Report";
-            subheader.hidden = false;
-            if (tabsMaint) tabsMaint.hidden = true;
-            if (tabsCctv) tabsCctv.hidden = false;
-            itemCctv?.classList.add("active");
-
-            let activeTabBtn = null;
-            if (activePanelId === "cctvPanel") activeTabBtn = document.getElementById("tabBtnCctvAudit");
-            else if (activePanelId === "edrPanel") activeTabBtn = document.getElementById("tabBtnEdr");
-            else if (activePanelId === "followupPanel") activeTabBtn = document.getElementById("tabBtnFollowup");
-            
-            if (activeTabBtn) {
-                activeTabBtn.classList.add("active");
-                activeTabBtn.setAttribute("aria-selected", "true");
-            }
-            try { sessionStorage.setItem("cctv_active_cctv_tab", activePanelId); } catch (_) {}
-        } else if (activePanelId === "masterlistPanel") {
-            titleEl.textContent = "Masterlist";
-            subheader.hidden = false;
-            if (tabsMaint) tabsMaint.hidden = true;
-            if (tabsCctv) tabsCctv.hidden = true;
-            itemMaster?.classList.add("active");
-        } else if (activePanelId === "adminPanel") {
-            titleEl.textContent = "Accounts";
-            subheader.hidden = false;
-            if (tabsMaint) tabsMaint.hidden = true;
-            if (tabsCctv) tabsCctv.hidden = true;
-            itemAccounts?.classList.add("active");
-        }
-    }
-
     function enforceWorkspace(activeButtonId, activePanelId) {
         if (activePanelId === "adminPanel" && !window.CCTV_ACCESS?.isAdmin?.()) {
             activeButtonId = "cctvTabBtn";
@@ -32996,8 +33041,6 @@ byId("edrSaveBtn").addEventListener("click", saveReport);
                 );
             }
         });
-
-        syncHeaderNavigation(activePanelId);
     }
 
     function currentPair() {
@@ -33017,132 +33060,15 @@ byId("edrSaveBtn").addEventListener("click", saveReport);
 
         button.addEventListener("click", () => {
             if (panelId === "adminPanel" && !window.CCTV_ACCESS?.isAdmin?.()) return;
+            // Run after older workspace handlers so this becomes
+            // the final source of truth.
             setTimeout(() => {
                 enforceWorkspace(buttonId, panelId);
             }, 0);
         });
     });
 
-    // Wire new Top Header Dropdowns and Navigation
-    function initTopHeaderNavigation() {
-        const wsBtn = document.getElementById("headerWorkspaceBtn");
-        const wsMenu = document.getElementById("cctvWorkspaceMenu");
-        const toolsBtn = document.getElementById("headerToolsBtn");
-        const toolsMenu = document.getElementById("cctvToolsMenu");
-        const brandBtn = document.getElementById("cctvBrandBtn");
-
-        function closeAllMenus() {
-            if (wsMenu) wsMenu.hidden = true;
-            if (toolsMenu) toolsMenu.hidden = true;
-            wsBtn?.setAttribute("aria-expanded", "false");
-            toolsBtn?.setAttribute("aria-expanded", "false");
-            wsBtn?.classList.remove("active");
-            toolsBtn?.classList.remove("active");
-        }
-
-        wsBtn?.addEventListener("click", (e) => {
-            e.stopPropagation();
-            const wasClosed = wsMenu.hidden;
-            closeAllMenus();
-            if (wasClosed) {
-                wsMenu.hidden = false;
-                wsBtn.setAttribute("aria-expanded", "true");
-                wsBtn.classList.add("active");
-            }
-        });
-
-        toolsBtn?.addEventListener("click", (e) => {
-            e.stopPropagation();
-            const wasClosed = toolsMenu.hidden;
-            closeAllMenus();
-            if (wasClosed) {
-                toolsMenu.hidden = false;
-                toolsBtn.setAttribute("aria-expanded", "true");
-                toolsBtn.classList.add("active");
-            }
-        });
-
-        document.addEventListener("click", (e) => {
-            if (!e.target.closest("#cctvTopHeader")) {
-                closeAllMenus();
-            }
-        });
-
-        document.addEventListener("keydown", (e) => {
-            if (e.key === "Escape") {
-                closeAllMenus();
-            }
-        });
-
-        // Brand click -> CCTV Report default
-        brandBtn?.addEventListener("click", () => {
-            closeAllMenus();
-            const last = sessionStorage.getItem("cctv_active_cctv_tab") || "cctvPanel";
-            const pair = pairs.find(([, id]) => id === last) || pairs[0];
-            enforceWorkspace(pair[0], pair[1]);
-        });
-
-        // Workspace Menu Destinations
-        document.getElementById("menuItemMaintenance")?.addEventListener("click", () => {
-            closeAllMenus();
-            const last = sessionStorage.getItem("cctv_active_maintenance_tab") || "maintenancePanel";
-            const pair = pairs.find(([, id]) => id === last) || ["maintenanceTabBtn", "maintenancePanel"];
-            enforceWorkspace(pair[0], pair[1]);
-        });
-
-        document.getElementById("menuItemCctvReport")?.addEventListener("click", () => {
-            closeAllMenus();
-            const last = sessionStorage.getItem("cctv_active_cctv_tab") || "cctvPanel";
-            const pair = pairs.find(([, id]) => id === last) || ["cctvTabBtn", "cctvPanel"];
-            enforceWorkspace(pair[0], pair[1]);
-        });
-
-        document.getElementById("menuItemMasterlist")?.addEventListener("click", () => {
-            closeAllMenus();
-            enforceWorkspace("masterlistTabBtn", "masterlistPanel");
-        });
-
-        // Tools Menu Items
-        document.getElementById("adminTabBtn")?.addEventListener("click", () => {
-            closeAllMenus();
-            if (window.CCTV_ACCESS?.isAdmin?.()) {
-                enforceWorkspace("adminTabBtn", "adminPanel");
-            }
-        });
-
-        document.getElementById("globalHistoryBtn")?.addEventListener("click", () => {
-            closeAllMenus();
-        });
-
-        document.getElementById("authLogoutBtn")?.addEventListener("click", () => {
-            closeAllMenus();
-        });
-
-        // Internal Tabs for Maintenance
-        document.getElementById("tabBtnAiSorter")?.addEventListener("click", () => {
-            enforceWorkspace("maintenanceTabBtn", "maintenancePanel");
-        });
-
-        document.getElementById("tabBtnMaintenanceReport")?.addEventListener("click", () => {
-            enforceWorkspace("eodTabBtn", "eodPanel");
-        });
-
-        // Internal Tabs for CCTV Report
-        document.getElementById("tabBtnCctvAudit")?.addEventListener("click", () => {
-            enforceWorkspace("cctvTabBtn", "cctvPanel");
-        });
-
-        document.getElementById("tabBtnEdr")?.addEventListener("click", () => {
-            enforceWorkspace("edrTabBtn", "edrPanel");
-        });
-
-        document.getElementById("tabBtnFollowup")?.addEventListener("click", () => {
-            enforceWorkspace("followupTabBtn", "followupPanel");
-        });
-    }
-
     function boot() {
-        initTopHeaderNavigation();
         const [buttonId, panelId] = currentPair();
         enforceWorkspace(buttonId, panelId);
     }
@@ -35285,5 +35211,855 @@ This account will be removed from CCTV OPS and will no longer be able to sign in
 
 <style>#tlSummarySection{display:none!important;}</style>
 <script src="./script.js"></script>
+
+<script id="opsHeaderShellController">
+(() => {
+    "use strict";
+
+    const $ = (id) => document.getElementById(id);
+
+    const elements = {
+        header: $("opsTopHeader"),
+
+        themeSlot: $("opsThemeSlot"),
+
+        workspaceBtn: $("opsWorkspaceBtn"),
+        workspaceMenu: $("opsWorkspaceMenu"),
+
+        toolsBtn: $("opsToolsBtn"),
+        toolsMenu: $("opsToolsMenu"),
+
+        openMaintenance: $("opsOpenMaintenance"),
+        openCctvReport: $("opsOpenCctvReport"),
+        openMasterlist: $("opsOpenMasterlist"),
+
+        openHistory: $("opsOpenHistory"),
+        openAccounts: $("opsOpenAccounts"),
+        logout: $("opsHeaderLogout"),
+
+        headerUserName: $("opsHeaderUserName"),
+        headerUserEmail: $("opsHeaderUserEmail"),
+
+        headerDate: $("opsHeaderDate"),
+        headerTime: $("opsHeaderTime"),
+
+        contextNav: $("opsContextNav"),
+        contextTitle: $("opsContextTitle"),
+
+        maintenanceTabs: $("opsMaintenanceTabs"),
+        cctvTabs: $("opsCctvReportTabs"),
+
+        aiSorterTab: $("opsAiSorterTab"),
+        maintenanceReportTab: $("opsMaintenanceReportTab"),
+
+        cctvAuditTab: $("opsCctvAuditTab"),
+        edrTab: $("opsEdrTab"),
+        followupTab: $("opsFollowupTab"),
+
+        cctvCount: $("opsCctvCount"),
+        followupCount: $("opsFollowupCount"),
+
+        masterlistStatus: $("opsMasterlistStatus"),
+        historyCount: $("opsHistoryCount"),
+        accountsCount: $("opsAccountsCount")
+    };
+
+
+    /* ------------------------------------------------------
+       EXISTING APP CONTROLS.
+       KEEP THESE ORIGINAL ELEMENTS IN DOM.
+       ------------------------------------------------------ */
+
+    const legacy = {
+        edrBtn: $("edrTabBtn"),
+        cctvBtn: $("cctvTabBtn"),
+
+        aiSorterBtn: $("maintenanceTabBtn"),
+        maintenanceReportBtn: $("eodTabBtn"),
+
+        masterlistBtn: $("masterlistTabBtn"),
+        followupBtn: $("followupTabBtn"),
+
+        historyBtn: $("globalHistoryBtn"),
+        accountsBtn: $("adminTabBtn"),
+
+        logoutBtn: $("authLogoutBtn"),
+
+        userName: $("authSidebarName"),
+        userEmail: $("authSidebarEmail"),
+
+        themeContainer:
+            $("themeToggle")?.closest(".theme-toggle-container") || null,
+
+        cctvBadge: $("cctvEdrSentCount"),
+        followupBadge: $("followupSidebarBadge"),
+        masterlistBadge: $("masterlistSidebarBadge"),
+
+        historyBadge: $("globalHistoryCount"),
+        accountsBadge: $("adminPendingCount")
+    };
+
+
+    if (!elements.header) {
+        console.warn("[CCTV OPS] Header shell markup not found.");
+        return;
+    }
+
+
+    /* ------------------------------------------------------
+       HEADER STATE
+       ------------------------------------------------------ */
+
+    let selectedParent = null;
+
+    const STORAGE = {
+        maintenanceTab: "cctvops.header.lastMaintenanceTab",
+        cctvTab: "cctvops.header.lastCctvReportTab"
+    };
+
+
+    /* ------------------------------------------------------
+       MOVE EXISTING THEME SWITCH
+       Keeps #themeToggle and its original onchange intact.
+       ------------------------------------------------------ */
+
+    function moveThemeToggle() {
+        if (!elements.themeSlot || !legacy.themeContainer) return;
+
+        if (legacy.themeContainer.parentElement !== elements.themeSlot) {
+            elements.themeSlot.appendChild(legacy.themeContainer);
+        }
+    }
+
+
+    /* ------------------------------------------------------
+       LIVE DATE / TIME — MANILA
+       Header only. Does not change application business logic.
+       ------------------------------------------------------ */
+
+    const dateFormatter = new Intl.DateTimeFormat("en-US", {
+        timeZone: "Asia/Manila",
+        month: "short",
+        day: "numeric",
+        year: "numeric"
+    });
+
+    const timeFormatter = new Intl.DateTimeFormat("en-US", {
+        timeZone: "Asia/Manila",
+        hour: "numeric",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: true
+    });
+
+
+    function updateHeaderClock() {
+        const now = new Date();
+
+        if (elements.headerDate) {
+            elements.headerDate.textContent = dateFormatter.format(now);
+        }
+
+        if (elements.headerTime) {
+            elements.headerTime.textContent = timeFormatter.format(now);
+        }
+    }
+
+
+    updateHeaderClock();
+
+    const clockTimer = window.setInterval(updateHeaderClock, 1000);
+
+    window.addEventListener(
+        "beforeunload",
+        () => window.clearInterval(clockTimer),
+        { once: true }
+    );
+
+
+    /* ------------------------------------------------------
+       MENU HELPERS
+       ------------------------------------------------------ */
+
+    function setMenuState(button, menu, open) {
+        if (!button || !menu) return;
+
+        menu.hidden = !open;
+
+        button.setAttribute(
+            "aria-expanded",
+            open ? "true" : "false"
+        );
+    }
+
+
+    function closeWorkspaceMenu() {
+        setMenuState(
+            elements.workspaceBtn,
+            elements.workspaceMenu,
+            false
+        );
+    }
+
+
+    function closeToolsMenu() {
+        setMenuState(
+            elements.toolsBtn,
+            elements.toolsMenu,
+            false
+        );
+    }
+
+
+    function closeMenus() {
+        closeWorkspaceMenu();
+        closeToolsMenu();
+    }
+
+
+    elements.workspaceBtn?.addEventListener("click", (event) => {
+        event.stopPropagation();
+
+        const willOpen = elements.workspaceMenu?.hidden !== false;
+
+        closeToolsMenu();
+
+        setMenuState(
+            elements.workspaceBtn,
+            elements.workspaceMenu,
+            willOpen
+        );
+    });
+
+
+    elements.toolsBtn?.addEventListener("click", (event) => {
+        event.stopPropagation();
+
+        const willOpen = elements.toolsMenu?.hidden !== false;
+
+        closeWorkspaceMenu();
+
+        syncUser();
+        syncPermissionsAndBadges();
+
+        setMenuState(
+            elements.toolsBtn,
+            elements.toolsMenu,
+            willOpen
+        );
+    });
+
+
+    elements.workspaceMenu?.addEventListener(
+        "click",
+        (event) => event.stopPropagation()
+    );
+
+
+    elements.toolsMenu?.addEventListener(
+        "click",
+        (event) => event.stopPropagation()
+    );
+
+
+    document.addEventListener("click", closeMenus);
+
+
+    document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") {
+            closeMenus();
+        }
+    });
+
+
+    /* ------------------------------------------------------
+       SAFE LEGACY NAVIGATION
+       Clicking existing hidden buttons preserves ALL handlers.
+       ------------------------------------------------------ */
+
+    function triggerLegacy(button) {
+        if (!button) return false;
+
+        if (button.hidden) return false;
+
+        button.click();
+
+        return true;
+    }
+
+
+    /* ------------------------------------------------------
+       CONTEXT NAV
+       ------------------------------------------------------ */
+
+    function clearContextActive() {
+        [
+            elements.aiSorterTab,
+            elements.maintenanceReportTab,
+            elements.cctvAuditTab,
+            elements.edrTab,
+            elements.followupTab
+        ].forEach((button) => {
+            button?.classList.remove("active");
+        });
+    }
+
+
+    function hideContextNav() {
+        selectedParent = null;
+
+        if (elements.contextNav) {
+            elements.contextNav.hidden = true;
+        }
+
+        if (elements.maintenanceTabs) {
+            elements.maintenanceTabs.hidden = true;
+        }
+
+        if (elements.cctvTabs) {
+            elements.cctvTabs.hidden = true;
+        }
+
+        clearContextActive();
+    }
+
+
+    function showMaintenanceContext(activeChild) {
+        selectedParent = "maintenance";
+
+        if (elements.contextNav) {
+            elements.contextNav.hidden = false;
+        }
+
+        if (elements.contextTitle) {
+            elements.contextTitle.textContent = "Maintenance";
+        }
+
+        if (elements.maintenanceTabs) {
+            elements.maintenanceTabs.hidden = false;
+        }
+
+        if (elements.cctvTabs) {
+            elements.cctvTabs.hidden = true;
+        }
+
+        clearContextActive();
+
+        if (activeChild === "report") {
+            elements.maintenanceReportTab?.classList.add("active");
+        } else {
+            elements.aiSorterTab?.classList.add("active");
+        }
+    }
+
+
+    function showCctvContext(activeChild) {
+        selectedParent = "cctv";
+
+        if (elements.contextNav) {
+            elements.contextNav.hidden = false;
+        }
+
+        if (elements.contextTitle) {
+            elements.contextTitle.textContent = "CCTV Report";
+        }
+
+        if (elements.maintenanceTabs) {
+            elements.maintenanceTabs.hidden = true;
+        }
+
+        if (elements.cctvTabs) {
+            elements.cctvTabs.hidden = false;
+        }
+
+        clearContextActive();
+
+        if (activeChild === "edr") {
+            elements.edrTab?.classList.add("active");
+        } else if (activeChild === "followup") {
+            elements.followupTab?.classList.add("active");
+        } else {
+            elements.cctvAuditTab?.classList.add("active");
+        }
+    }
+
+
+    /* ------------------------------------------------------
+       WORKSPACE PARENT MENU
+       ------------------------------------------------------ */
+
+    elements.openMaintenance?.addEventListener("click", () => {
+        closeMenus();
+
+        const saved =
+            localStorage.getItem(STORAGE.maintenanceTab) ||
+            "ai";
+
+        if (
+            saved === "report" &&
+            !legacy.maintenanceReportBtn?.hidden
+        ) {
+            showMaintenanceContext("report");
+            triggerLegacy(legacy.maintenanceReportBtn);
+        } else {
+            showMaintenanceContext("ai");
+            triggerLegacy(
+                !legacy.aiSorterBtn?.hidden
+                    ? legacy.aiSorterBtn
+                    : legacy.maintenanceReportBtn
+            );
+        }
+    });
+
+
+    elements.openCctvReport?.addEventListener("click", () => {
+        closeMenus();
+
+        const saved =
+            localStorage.getItem(STORAGE.cctvTab) ||
+            "audit";
+
+        if (
+            saved === "edr" &&
+            !legacy.edrBtn?.hidden
+        ) {
+            showCctvContext("edr");
+            triggerLegacy(legacy.edrBtn);
+
+        } else if (
+            saved === "followup" &&
+            !legacy.followupBtn?.hidden
+        ) {
+            showCctvContext("followup");
+            triggerLegacy(legacy.followupBtn);
+
+        } else {
+            showCctvContext("audit");
+
+            triggerLegacy(
+                !legacy.cctvBtn?.hidden
+                    ? legacy.cctvBtn
+                    : (!legacy.edrBtn?.hidden
+                        ? legacy.edrBtn
+                        : legacy.followupBtn)
+            );
+        }
+    });
+
+
+    elements.openMasterlist?.addEventListener("click", () => {
+        closeMenus();
+        hideContextNav();
+
+        triggerLegacy(legacy.masterlistBtn);
+    });
+
+
+    /* ------------------------------------------------------
+       MAINTENANCE CHILD TABS
+       ------------------------------------------------------ */
+
+    elements.aiSorterTab?.addEventListener("click", () => {
+        localStorage.setItem(
+            STORAGE.maintenanceTab,
+            "ai"
+        );
+
+        showMaintenanceContext("ai");
+
+        triggerLegacy(legacy.aiSorterBtn);
+    });
+
+
+    elements.maintenanceReportTab?.addEventListener("click", () => {
+        localStorage.setItem(
+            STORAGE.maintenanceTab,
+            "report"
+        );
+
+        showMaintenanceContext("report");
+
+        triggerLegacy(legacy.maintenanceReportBtn);
+    });
+
+
+    /* ------------------------------------------------------
+       CCTV REPORT CHILD TABS
+       ------------------------------------------------------ */
+
+    elements.cctvAuditTab?.addEventListener("click", () => {
+        localStorage.setItem(
+            STORAGE.cctvTab,
+            "audit"
+        );
+
+        showCctvContext("audit");
+
+        triggerLegacy(legacy.cctvBtn);
+    });
+
+
+    elements.edrTab?.addEventListener("click", () => {
+        localStorage.setItem(
+            STORAGE.cctvTab,
+            "edr"
+        );
+
+        showCctvContext("edr");
+
+        triggerLegacy(legacy.edrBtn);
+    });
+
+
+    elements.followupTab?.addEventListener("click", () => {
+        localStorage.setItem(
+            STORAGE.cctvTab,
+            "followup"
+        );
+
+        showCctvContext("followup");
+
+        triggerLegacy(legacy.followupBtn);
+    });
+
+
+    /* ------------------------------------------------------
+       TOOLS
+       ------------------------------------------------------ */
+
+    elements.openHistory?.addEventListener("click", () => {
+        closeMenus();
+
+        triggerLegacy(legacy.historyBtn);
+    });
+
+
+    elements.openAccounts?.addEventListener("click", () => {
+        closeMenus();
+        hideContextNav();
+
+        triggerLegacy(legacy.accountsBtn);
+    });
+
+
+    elements.logout?.addEventListener("click", () => {
+        closeMenus();
+
+        legacy.logoutBtn?.click();
+    });
+
+
+    /* ------------------------------------------------------
+       USER INFO
+       ------------------------------------------------------ */
+
+    function syncUser() {
+        if (elements.headerUserName) {
+            elements.headerUserName.textContent =
+                legacy.userName?.textContent?.trim() ||
+                "Account";
+        }
+
+        if (elements.headerUserEmail) {
+            elements.headerUserEmail.textContent =
+                legacy.userEmail?.textContent?.trim() ||
+                "";
+        }
+    }
+
+
+    /* ------------------------------------------------------
+       PERMISSIONS
+       New menu follows visibility of existing controls.
+       ------------------------------------------------------ */
+
+    function syncPermissionsAndBadges() {
+        const canAi =
+            Boolean(legacy.aiSorterBtn) &&
+            !legacy.aiSorterBtn.hidden;
+
+        const canMaintenance =
+            Boolean(legacy.maintenanceReportBtn) &&
+            !legacy.maintenanceReportBtn.hidden;
+
+        const canCctv =
+            Boolean(legacy.cctvBtn) &&
+            !legacy.cctvBtn.hidden;
+
+        const canEdr =
+            Boolean(legacy.edrBtn) &&
+            !legacy.edrBtn.hidden;
+
+        const canFollowup =
+            Boolean(legacy.followupBtn) &&
+            !legacy.followupBtn.hidden;
+
+        const canMasterlist =
+            Boolean(legacy.masterlistBtn) &&
+            !legacy.masterlistBtn.hidden;
+
+
+        if (elements.openMaintenance) {
+            elements.openMaintenance.hidden =
+                !(canAi || canMaintenance);
+        }
+
+        if (elements.openCctvReport) {
+            elements.openCctvReport.hidden =
+                !(canCctv || canEdr || canFollowup);
+        }
+
+        if (elements.openMasterlist) {
+            elements.openMasterlist.hidden =
+                !canMasterlist;
+        }
+
+
+        if (elements.aiSorterTab) {
+            elements.aiSorterTab.hidden = !canAi;
+        }
+
+        if (elements.maintenanceReportTab) {
+            elements.maintenanceReportTab.hidden =
+                !canMaintenance;
+        }
+
+        if (elements.cctvAuditTab) {
+            elements.cctvAuditTab.hidden = !canCctv;
+        }
+
+        if (elements.edrTab) {
+            elements.edrTab.hidden = !canEdr;
+        }
+
+        if (elements.followupTab) {
+            elements.followupTab.hidden = !canFollowup;
+        }
+
+
+        if (elements.openHistory) {
+            elements.openHistory.hidden =
+                !legacy.historyBtn ||
+                legacy.historyBtn.hidden;
+        }
+
+        if (elements.openAccounts) {
+            elements.openAccounts.hidden =
+                !legacy.accountsBtn ||
+                legacy.accountsBtn.hidden;
+        }
+
+
+        syncText(
+            elements.masterlistStatus,
+            legacy.masterlistBadge
+        );
+
+        syncText(
+            elements.historyCount,
+            legacy.historyBadge
+        );
+
+        syncText(
+            elements.accountsCount,
+            legacy.accountsBadge
+        );
+
+
+        syncContextCount(
+            elements.cctvCount,
+            legacy.cctvBadge
+        );
+
+        syncContextCount(
+            elements.followupCount,
+            legacy.followupBadge
+        );
+    }
+
+
+    function syncText(target, source) {
+        if (!target) return;
+
+        const value =
+            source?.textContent?.trim() || "";
+
+        target.textContent = value;
+
+        target.hidden = !value;
+    }
+
+
+    function syncContextCount(target, source) {
+        if (!target) return;
+
+        const value =
+            source?.textContent?.trim() || "";
+
+        target.textContent = value;
+
+        const numeric =
+            Number.parseInt(value, 10);
+
+        target.hidden =
+            !value ||
+            (!Number.isNaN(numeric) && numeric <= 0);
+    }
+
+
+    /* ------------------------------------------------------
+       KEEP CONTEXT STATE IN SYNC WHEN EXISTING APP CODE
+       PROGRAMMATICALLY CLICKS OLD CONTROLS.
+       ------------------------------------------------------ */
+
+    legacy.aiSorterBtn?.addEventListener("click", () => {
+        if (selectedParent === "maintenance") {
+            localStorage.setItem(
+                STORAGE.maintenanceTab,
+                "ai"
+            );
+
+            showMaintenanceContext("ai");
+        }
+    });
+
+
+    legacy.maintenanceReportBtn?.addEventListener("click", () => {
+        if (selectedParent === "maintenance") {
+            localStorage.setItem(
+                STORAGE.maintenanceTab,
+                "report"
+            );
+
+            showMaintenanceContext("report");
+        }
+    });
+
+
+    legacy.cctvBtn?.addEventListener("click", () => {
+        if (selectedParent === "cctv") {
+            localStorage.setItem(
+                STORAGE.cctvTab,
+                "audit"
+            );
+
+            showCctvContext("audit");
+        }
+    });
+
+
+    legacy.edrBtn?.addEventListener("click", () => {
+        if (selectedParent === "cctv") {
+            localStorage.setItem(
+                STORAGE.cctvTab,
+                "edr"
+            );
+
+            showCctvContext("edr");
+        }
+    });
+
+
+    legacy.followupBtn?.addEventListener("click", () => {
+        if (selectedParent === "cctv") {
+            localStorage.setItem(
+                STORAGE.cctvTab,
+                "followup"
+            );
+
+            showCctvContext("followup");
+        }
+    });
+
+
+    /* Direct destinations don't need child tabs. */
+
+    legacy.masterlistBtn?.addEventListener("click", () => {
+        if (selectedParent !== "maintenance" &&
+            selectedParent !== "cctv") {
+            hideContextNav();
+        }
+    });
+
+
+    legacy.accountsBtn?.addEventListener("click", () => {
+        hideContextNav();
+    });
+
+
+    /* ------------------------------------------------------
+       OBSERVE ORIGINAL ACCOUNT/BADGE/PERMISSION CHANGES
+       ------------------------------------------------------ */
+
+    const observed = [
+        legacy.userName,
+        legacy.userEmail,
+
+        legacy.aiSorterBtn,
+        legacy.maintenanceReportBtn,
+        legacy.cctvBtn,
+        legacy.edrBtn,
+        legacy.followupBtn,
+        legacy.masterlistBtn,
+        legacy.historyBtn,
+        legacy.accountsBtn,
+
+        legacy.cctvBadge,
+        legacy.followupBadge,
+        legacy.masterlistBadge,
+        legacy.historyBadge,
+        legacy.accountsBadge
+    ].filter(Boolean);
+
+
+    const observer = new MutationObserver(() => {
+        syncUser();
+        syncPermissionsAndBadges();
+    });
+
+
+    observed.forEach((node) => {
+        observer.observe(node, {
+            attributes: true,
+            childList: true,
+            subtree: true,
+            characterData: true
+        });
+    });
+
+
+    /* ------------------------------------------------------
+       STARTUP
+       IMPORTANT:
+       Context child tabs start HIDDEN.
+       They appear only when user chooses Maintenance or
+       CCTV Report from Workspace.
+       ------------------------------------------------------ */
+
+    moveThemeToggle();
+
+    syncUser();
+    syncPermissionsAndBadges();
+
+    hideContextNav();
+
+
+    /* Allow authentication/permission initialization to finish,
+       then sync once more. */
+
+    window.setTimeout(() => {
+        moveThemeToggle();
+        syncUser();
+        syncPermissionsAndBadges();
+    }, 300);
+
+
+    window.setTimeout(() => {
+        syncUser();
+        syncPermissionsAndBadges();
+    }, 1200);
+
+})();
+</script>
 </body>
 </html>

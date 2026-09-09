@@ -14990,395 +14990,792 @@ textarea:focus {
     transition: border-color 0.4s ease, box-shadow 0.4s ease !important;
 }
 
-/* ============================================================
-   TOP HEADER NAVIGATION & WORKSPACE RESTRUCTURING
-   ============================================================ */
+/* ==========================================================
+   CCTV OPS — CLEAN BLACK HEADER SHELL
+   ========================================================== */
 
-/* Zero-out sidebar and reclaim full viewport */
 :root {
-    --admin-sidebar: 0px !important;
-    --ops-sidebar-w: 0px !important;
+    --ops-shell-black: #000000;
+    --ops-shell-black-soft: #101010;
+    --ops-shell-menu: #151515;
+    --ops-shell-menu-hover: #202020;
+
+    --ops-shell-white: #ffffff;
+    --ops-shell-muted: rgba(255, 255, 255, 0.58);
+    --ops-shell-soft: rgba(255, 255, 255, 0.76);
+
+    --ops-shell-line: rgba(255, 255, 255, 0.10);
+    --ops-shell-line-soft: rgba(255, 255, 255, 0.065);
+
+    --ops-header-height: 50px;
+    --ops-context-height: 38px;
 }
 
-body,
-body.ops-redesign-v3,
-body.ops-redesign-v3.sidebar-collapsed {
+
+/* ----------------------------------------------------------
+   OLD SIDEBAR
+   Keep it in the DOM for JS compatibility.
+   Hide it visually only.
+   ---------------------------------------------------------- */
+
+aside.workspace-tabs.admin-sidebar {
+    position: fixed !important;
+    width: 0 !important;
+    min-width: 0 !important;
+    max-width: 0 !important;
+    height: 0 !important;
+    min-height: 0 !important;
+
     padding: 0 !important;
-    padding-left: 0 !important;
     margin: 0 !important;
-    max-width: 100% !important;
-    overflow-x: hidden !important;
+
+    overflow: hidden !important;
+
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+
+    border: 0 !important;
+    box-shadow: none !important;
 }
 
-.workspace-tabs.admin-sidebar,
-.sidebar-collapse-toggle,
-aside.admin-sidebar,
-#sidebarToggle {
+
+/* Old collapse control no longer belongs to the visible shell. */
+
+#sidebarToggle,
+.sidebar-collapse-toggle {
     display: none !important;
 }
 
-/* Top Sticky Header */
-.cctv-top-header {
-    position: sticky !important;
-    top: 0 !important;
-    left: 0 !important;
-    width: 100% !important;
-    height: 56px !important;
-    z-index: 1000 !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: space-between !important;
-    padding: 0 24px !important;
-    box-sizing: border-box !important;
-    border-bottom: 1px solid var(--border-default) !important;
-    background: var(--cctv-header-bg, #191919) !important;
-    color: var(--text-primary) !important;
-    font-family: var(--font-sans) !important;
+
+/* ----------------------------------------------------------
+   HEADER
+   Always black in BOTH themes.
+   ---------------------------------------------------------- */
+
+.ops-top-header {
+    position: sticky;
+    top: 0;
+    z-index: 10000;
+
+    width: 100%;
+    height: var(--ops-header-height);
+
+    background: var(--ops-shell-black) !important;
+    border: 0;
+    border-bottom: 1px solid var(--ops-shell-line-soft);
+
+    box-shadow: none !important;
+
+    font-family:
+        Inter,
+        "Plus Jakarta Sans",
+        system-ui,
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        sans-serif;
+
+    color: var(--ops-shell-white);
 }
 
-/* Dark mode header tokens */
-body, body.dark-mode, [data-theme="dark"] {
-    --cctv-header-bg: #191919;
-    --cctv-header-border: rgba(255, 255, 255, 0.07);
-    --cctv-menu-bg: #252525;
-    --cctv-menu-hover: #2e2e2e;
-    --cctv-menu-border: rgba(255, 255, 255, 0.09);
+
+/* Header stays black even when application theme changes. */
+
+body.light-mode .ops-top-header,
+body.dark-mode .ops-top-header,
+[data-theme="light"] .ops-top-header,
+[data-theme="dark"] .ops-top-header {
+    background: #000000 !important;
+    color: #ffffff !important;
 }
 
-/* Light mode header tokens */
-body.light-mode, [data-theme="light"], body.ops-redesign-v3:not(.dark-mode) {
-    --cctv-header-bg: #c6c8d4;
-    --cctv-header-border: rgba(20, 22, 30, 0.09);
-    --cctv-menu-bg: #d1d3dd;
-    --cctv-menu-hover: rgba(255, 255, 255, 0.35);
-    --cctv-menu-border: rgba(20, 22, 30, 0.12);
+
+/* ----------------------------------------------------------
+   THEME SWITCH — TOP LEFT
+   Existing #themeToggle is moved here by JS.
+   ---------------------------------------------------------- */
+
+.ops-header-theme {
+    position: absolute;
+
+    left: 14px;
+    top: 50%;
+
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+
+    min-width: 62px;
+
+    transform: translateY(-50%);
+    z-index: 2;
 }
 
-.cctv-header-left {
-    display: flex !important;
-    align-items: center !important;
-    z-index: 2 !important;
-}
 
-.cctv-header-right {
-    display: flex !important;
-    align-items: center !important;
-    z-index: 2 !important;
-    width: 40px !important;
-}
+/* Keep existing special theme control, only make it compact. */
 
-/* Viewport-Centered Navigation */
-.cctv-header-center {
-    position: absolute !important;
-    left: 50% !important;
-    transform: translateX(-50%) !important;
-    display: flex !important;
-    align-items: center !important;
-    gap: 16px !important;
-    white-space: nowrap !important;
-    z-index: 1 !important;
-}
-
-/* Brand Button */
-.cctv-header-brand {
-    background: transparent !important;
-    border: none !important;
-    padding: 0 4px !important;
+.ops-header-theme .theme-toggle-container {
     margin: 0 !important;
-    font-family: var(--font-sans) !important;
-    font-size: 13px !important;
-    font-weight: 700 !important;
-    letter-spacing: 0.03em !important;
-    color: var(--text-primary) !important;
-    cursor: pointer !important;
-}
-.cctv-header-brand:hover {
-    color: var(--brand-primary, #2584ff) !important;
+    padding: 0 !important;
 }
 
-/* Nav Buttons (Workspace ▾, Tools ▾) */
-.cctv-nav-dropdown-wrap {
-    position: relative !important;
+.ops-header-theme .main-toggle {
+    margin: 0 !important;
+
+    transform: scale(0.78);
+    transform-origin: left center;
 }
 
-.cctv-header-nav-btn {
-    height: 32px !important;
-    padding: 0 10px !important;
-    background: transparent !important;
-    border: 1px solid transparent !important;
-    border-radius: 6px !important;
-    font-family: var(--font-sans) !important;
-    font-size: 12px !important;
-    font-weight: 600 !important;
-    color: var(--text-primary) !important;
-    cursor: pointer !important;
-    display: inline-flex !important;
-    align-items: center !important;
-    transition: background 0.15s, border-color 0.15s !important;
+
+/* ----------------------------------------------------------
+   TRUE CENTER NAV
+   Center against viewport, not remaining layout.
+   ---------------------------------------------------------- */
+
+.ops-header-center {
+    position: absolute;
+
+    left: 50%;
+    top: 0;
+
+    height: 100%;
+
+    display: flex;
+    align-items: center;
+
+    gap: 25px;
+
+    transform: translateX(-50%);
+
+    white-space: nowrap;
 }
 
-.cctv-header-nav-btn:hover,
-.cctv-header-nav-btn.active {
-    background: var(--cctv-menu-hover) !important;
-    border-color: var(--border-subtle) !important;
+
+/* ----------------------------------------------------------
+   CCTV OPS BRAND
+   Plain text.
+   NOT clickable.
+   ---------------------------------------------------------- */
+
+.ops-header-brand {
+    display: inline-flex;
+    align-items: center;
+
+    padding: 0;
+    margin: 0;
+
+    color: #ffffff;
+
+    font-size: 12px;
+    line-height: 1;
+    font-weight: 700;
+
+    letter-spacing: -0.01em;
+
+    cursor: default;
+    user-select: none;
 }
 
-.cctv-header-divider {
-    color: var(--text-muted) !important;
-    opacity: 0.35 !important;
-    font-size: 13px !important;
-    user-select: none !important;
+
+/* ----------------------------------------------------------
+   WORKSPACE / TOOLS
+   These are technically buttons for accessibility,
+   but they MUST LOOK LIKE TEXT.
+   ---------------------------------------------------------- */
+
+.ops-header-nav-item {
+    position: relative;
+
+    display: flex;
+    align-items: center;
+
+    height: 100%;
 }
 
-/* Dropdown Menus */
-.cctv-menu-container {
-    position: absolute !important;
-    top: calc(100% + 8px) !important;
-    left: 50% !important;
-    transform: translateX(-50%) !important;
-    background: var(--cctv-menu-bg) !important;
-    border: 1px solid var(--cctv-menu-border) !important;
-    border-radius: 10px !important;
-    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.28) !important;
-    padding: 12px !important;
-    box-sizing: border-box !important;
-    z-index: 1001 !important;
-}
 
-.cctv-workspace-menu {
-    width: 620px !important;
-    max-width: 90vw !important;
-    display: flex !important;
-    flex-direction: column !important;
-    gap: 4px !important;
-}
+.ops-header-text-btn {
+    appearance: none !important;
 
-.cctv-tools-menu {
-    width: 300px !important;
-    max-width: 90vw !important;
-    display: flex !important;
-    flex-direction: column !important;
-    gap: 4px !important;
-}
-
-.cctv-menu-header {
-    font-size: 10.5px !important;
-    font-weight: 700 !important;
-    text-transform: uppercase !important;
-    letter-spacing: 0.05em !important;
-    color: var(--text-muted) !important;
-    padding: 4px 8px 6px 8px !important;
-}
-
-.cctv-menu-item {
-    display: flex !important;
-    align-items: center !important;
-    justify-content: space-between !important;
-    width: 100% !important;
-    padding: 10px 12px !important;
-    background: transparent !important;
-    border: 1px solid transparent !important;
-    border-radius: 7px !important;
-    cursor: pointer !important;
-    text-align: left !important;
-    box-sizing: border-box !important;
-    transition: background 0.15s !important;
-}
-
-.cctv-menu-item:hover {
-    background: var(--cctv-menu-hover) !important;
-}
-
-.cctv-menu-item.active {
-    background: var(--cctv-menu-hover) !important;
-    border-color: rgba(37, 132, 255, 0.3) !important;
-}
-
-.cctv-menu-item-text {
-    display: flex !important;
-    flex-direction: column !important;
-    gap: 2px !important;
-}
-
-.cctv-menu-item-title {
-    font-size: 13px !important;
-    font-weight: 650 !important;
-    color: var(--text-primary) !important;
-}
-
-.cctv-menu-item-sub {
-    font-size: 11px !important;
-    font-weight: 400 !important;
-    color: var(--text-muted) !important;
-}
-
-.cctv-badge-count {
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
-    min-width: 20px !important;
-    height: 18px !important;
-    padding: 0 5px !important;
-    border-radius: 999px !important;
-    font-size: 10.5px !important;
-    font-weight: 700 !important;
-    background: var(--cctv-menu-hover) !important;
-    color: var(--text-secondary) !important;
-}
 
-.cctv-menu-divider {
-    height: 1px !important;
-    background: var(--border-default) !important;
-    margin: 6px 4px !important;
-}
+    width: auto !important;
+    min-width: 0 !important;
+    height: auto !important;
+    min-height: 0 !important;
 
-.auth-sidebar-account {
-    padding: 8px 10px !important;
-    border-radius: 6px !important;
-    display: flex !important;
-    flex-direction: column !important;
-    gap: 6px !important;
-}
+    padding: 0 !important;
+    margin: 0 !important;
 
-.auth-sidebar-user {
-    display: flex !important;
-    flex-direction: column !important;
-    gap: 1px !important;
-}
+    border: 0 !important;
+    border-radius: 0 !important;
 
-.auth-sidebar-user strong {
-    font-size: 12px !important;
-    font-weight: 700 !important;
-    color: var(--text-primary) !important;
-}
+    outline: 0;
 
-.auth-sidebar-user span {
-    font-size: 11px !important;
-    color: var(--text-muted) !important;
-}
-
-.cctv-logout-btn {
-    align-self: flex-start !important;
-    height: 28px !important;
-    padding: 0 10px !important;
-    font-size: 11px !important;
-    font-weight: 600 !important;
-    border-radius: 6px !important;
     background: transparent !important;
-    border: 1px solid var(--border-default) !important;
-    color: var(--text-secondary) !important;
-    cursor: pointer !important;
-}
-.cctv-logout-btn:hover {
-    background: rgba(220, 38, 38, 0.12) !important;
-    color: #dc2626 !important;
-    border-color: rgba(220, 38, 38, 0.25) !important;
+
+    box-shadow: none !important;
+    text-shadow: none !important;
+
+    color: rgba(255, 255, 255, 0.86) !important;
+
+    font-family: inherit !important;
+    font-size: 11px !important;
+    line-height: 1 !important;
+    font-weight: 500 !important;
+
+    letter-spacing: 0 !important;
+
+    cursor: pointer;
+
+    transition: color 120ms ease !important;
 }
 
-/* Header Live Clock */
-.cctv-header-clock {
-    display: flex !important;
-    align-items: center !important;
+
+.ops-header-text-btn:hover,
+.ops-header-text-btn:focus-visible,
+.ops-header-text-btn[aria-expanded="true"] {
+    color: #ffffff !important;
+
+    background: transparent !important;
+
+    border: 0 !important;
+    box-shadow: none !important;
+
+    transform: none !important;
 }
-#Manila_z42c {
-    display: flex !important;
-    align-items: baseline !important;
-    gap: 8px !important;
+
+
+.ops-header-text-btn:focus-visible {
+    outline: 1px solid rgba(255, 255, 255, 0.42);
+    outline-offset: 5px;
 }
-#Manila_z42c br {
+
+
+/* ----------------------------------------------------------
+   DIVIDER
+   ---------------------------------------------------------- */
+
+.ops-header-divider {
+    width: 1px;
+    height: 15px;
+
+    margin-left: -3px;
+    margin-right: -4px;
+
+    background: rgba(255, 255, 255, 0.16);
+
+    flex: none;
+}
+
+
+/* ----------------------------------------------------------
+   DATE / TIME
+   Deliberately smaller than nav.
+   ---------------------------------------------------------- */
+
+.ops-header-clock {
+    display: inline-flex;
+    align-items: center;
+
+    gap: 10px;
+
+    line-height: 1;
+
+    user-select: none;
+}
+
+
+#opsHeaderDate {
+    color: rgba(255, 255, 255, 0.48);
+
+    font-size: 9px;
+    line-height: 1;
+    font-weight: 400;
+
+    letter-spacing: 0;
+}
+
+
+#opsHeaderTime {
+    color: rgba(255, 255, 255, 0.80);
+
+    font-size: 10px;
+    line-height: 1;
+    font-weight: 600;
+
+    font-variant-numeric: tabular-nums;
+}
+
+
+/* ----------------------------------------------------------
+   DROPDOWN CONTAINERS
+   ---------------------------------------------------------- */
+
+.ops-dropdown {
+    position: absolute;
+
+    top: calc(100% + 8px);
+    left: 50%;
+
+    z-index: 10010;
+
+    transform: translateX(-50%);
+
+    padding: 9px;
+
+    background: var(--ops-shell-menu);
+
+    border: 1px solid var(--ops-shell-line);
+    border-radius: 8px;
+
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.34);
+
+    color: white;
+}
+
+
+.ops-dropdown[hidden] {
     display: none !important;
 }
-#Manila_z42c .sidebar-live-date {
-    font-size: 11.5px !important;
-    font-weight: 500 !important;
-    color: var(--text-muted) !important;
-    white-space: nowrap !important;
-}
-#Manila_z42c .sidebar-live-time {
-    font-size: 12.5px !important;
-    font-weight: 700 !important;
-    color: var(--text-primary) !important;
-    font-variant-numeric: tabular-nums !important;
-    white-space: nowrap !important;
+
+
+.ops-workspace-dropdown {
+    width: min(440px, calc(100vw - 32px));
 }
 
-/* Workspace Subheader & Internal Tabs */
-.cctv-workspace-subheader {
+
+.ops-tools-dropdown {
+    width: min(300px, calc(100vw - 32px));
+}
+
+
+.ops-dropdown-label {
+    padding: 6px 9px 8px;
+
+    color: rgba(255, 255, 255, 0.38);
+
+    font-size: 9px;
+    line-height: 1;
+    font-weight: 600;
+
+    letter-spacing: 0.09em;
+}
+
+
+/* ----------------------------------------------------------
+   DROPDOWN ROWS
+   Buttons behave like buttons but look like clean rows.
+   NO CELL BORDER.
+   ---------------------------------------------------------- */
+
+.ops-menu-row {
+    appearance: none !important;
+
     width: 100% !important;
-    border-bottom: 1px solid var(--border-default) !important;
-    background: var(--surface-1) !important;
-    box-sizing: border-box !important;
-}
+    min-height: 0 !important;
+    height: auto !important;
 
-.cctv-subheader-inner {
-    max-width: 1560px !important;
-    margin: 0 auto !important;
-    padding: 0 32px !important;
-    height: 48px !important;
     display: flex !important;
     align-items: center !important;
     justify-content: space-between !important;
-    box-sizing: border-box !important;
-}
 
-.cctv-workspace-title {
-    font-size: 15px !important;
-    font-weight: 700 !important;
-    color: var(--text-primary) !important;
+    gap: 18px;
+
+    padding: 9px !important;
     margin: 0 !important;
+
+    border: 0 !important;
+    border-radius: 5px !important;
+
+    background: transparent !important;
+
+    box-shadow: none !important;
+
+    color: #ffffff !important;
+
+    font-family: inherit !important;
+    text-align: left !important;
+
+    cursor: pointer;
+
+    transition:
+        background-color 120ms ease,
+        color 120ms ease !important;
 }
 
-.cctv-internal-tabs {
-    display: flex !important;
-    align-items: center !important;
-    gap: 12px !important;
-    height: 100% !important;
+
+.ops-menu-row:hover,
+.ops-menu-row:focus-visible {
+    background: var(--ops-shell-menu-hover) !important;
+
+    border: 0 !important;
+    box-shadow: none !important;
+
+    transform: none !important;
 }
 
-.cctv-tab-btn {
-    height: 100% !important;
-    padding: 0 14px !important;
+
+.ops-menu-row:focus-visible {
+    outline: 1px solid rgba(255, 255, 255, 0.25);
+    outline-offset: -1px;
+}
+
+
+.ops-menu-copy {
+    min-width: 0;
+
+    display: flex;
+    flex-direction: column;
+
+    gap: 3px;
+}
+
+
+.ops-menu-copy strong {
+    color: rgba(255, 255, 255, 0.92);
+
+    font-size: 11px;
+    line-height: 1.15;
+    font-weight: 600;
+}
+
+
+.ops-menu-copy small {
+    color: rgba(255, 255, 255, 0.38);
+
+    font-size: 9px;
+    line-height: 1.25;
+    font-weight: 400;
+}
+
+
+.ops-menu-meta {
+    color: rgba(255, 255, 255, 0.46);
+
+    font-size: 9px;
+    font-weight: 500;
+
+    white-space: nowrap;
+}
+
+
+/* Tools account area */
+
+.ops-tools-separator {
+    height: 1px;
+
+    margin: 8px 9px;
+
+    background: rgba(255, 255, 255, 0.08);
+}
+
+
+.ops-account-summary {
+    display: flex;
+    flex-direction: column;
+
+    gap: 3px;
+
+    padding: 7px 9px 9px;
+}
+
+
+.ops-account-summary strong {
+    overflow: hidden;
+
+    color: rgba(255, 255, 255, 0.78);
+
+    font-size: 10px;
+    line-height: 1.2;
+    font-weight: 600;
+
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+
+.ops-account-summary small {
+    overflow: hidden;
+
+    color: rgba(255, 255, 255, 0.36);
+
+    font-size: 9px;
+    line-height: 1.2;
+
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+
+.ops-logout-row .ops-menu-copy strong {
+    color: rgba(255, 255, 255, 0.68);
+}
+
+
+/* ----------------------------------------------------------
+   CONTEXTUAL CHILD NAV
+   Hidden unless Maintenance or CCTV Report was selected.
+   ---------------------------------------------------------- */
+
+.ops-context-nav {
+    position: sticky;
+
+    top: var(--ops-header-height);
+
+    z-index: 9990;
+
+    width: 100%;
+
+    background: #080808;
+
+    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+
+    color: white;
+}
+
+
+.ops-context-nav[hidden] {
+    display: none !important;
+}
+
+
+.ops-context-inner {
+    min-height: var(--ops-context-height);
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    gap: 30px;
+
+    padding: 0 24px;
+}
+
+
+.ops-context-title {
+    color: rgba(255, 255, 255, 0.48);
+
+    font-size: 9px;
+    line-height: 1;
+    font-weight: 600;
+
+    letter-spacing: 0.035em;
+
+    white-space: nowrap;
+}
+
+
+.ops-context-tabs {
+    display: flex;
+    align-items: stretch;
+
+    gap: 24px;
+
+    height: var(--ops-context-height);
+}
+
+
+.ops-context-tabs[hidden] {
+    display: none !important;
+}
+
+
+/* Child tabs are text, NOT cells/buttons */
+
+.ops-context-tab {
+    appearance: none !important;
+
+    position: relative;
+
     display: inline-flex !important;
     align-items: center !important;
-    gap: 6px !important;
-    background: transparent !important;
-    border: none !important;
-    border-bottom: 2px solid transparent !important;
-    font-family: var(--font-sans) !important;
-    font-size: 12px !important;
-    font-weight: 600 !important;
-    color: var(--text-muted) !important;
-    cursor: pointer !important;
-    transition: color 0.15s, border-color 0.15s !important;
-    box-sizing: border-box !important;
-}
 
-.cctv-tab-btn:hover {
-    color: var(--text-primary) !important;
-}
+    gap: 5px;
 
-.cctv-tab-btn.active {
-    color: var(--text-primary) !important;
-    font-weight: 700 !important;
-    border-bottom-color: var(--brand-primary, #2584ff) !important;
-}
+    width: auto !important;
+    min-width: 0 !important;
+    height: var(--ops-context-height) !important;
+    min-height: var(--ops-context-height) !important;
 
-/* Content layout */
-.app-tab-panel {
-    width: 100% !important;
-    margin: 0 !important;
     padding: 0 !important;
+    margin: 0 !important;
+
+    border: 0 !important;
+    border-radius: 0 !important;
+
+    background: transparent !important;
+
+    box-shadow: none !important;
+
+    color: rgba(255, 255, 255, 0.48) !important;
+
+    font-family: inherit !important;
+    font-size: 10px !important;
+    line-height: 1 !important;
+    font-weight: 500 !important;
+
+    cursor: pointer;
+
+    transition:
+        color 120ms ease !important;
 }
 
-.app-tab-panel .container {
-    max-width: 1560px !important;
-    margin: 0 auto !important;
-    padding: 24px 32px !important;
-    box-sizing: border-box !important;
+
+.ops-context-tab:hover {
+    color: rgba(255, 255, 255, 0.80) !important;
+
+    background: transparent !important;
+    box-shadow: none !important;
+
+    transform: none !important;
 }
 
-#maintenancePanel .container,
+
+.ops-context-tab.active {
+    color: #ffffff !important;
+
+    background: transparent !important;
+}
+
+
+.ops-context-tab.active::after {
+    content: "";
+
+    position: absolute;
+
+    left: 0;
+    right: 0;
+    bottom: 0;
+
+    height: 1px;
+
+    background: #ffffff;
+}
+
+
+.ops-context-count {
+    color: rgba(255, 255, 255, 0.36);
+
+    font-size: 8px;
+    line-height: 1;
+    font-weight: 500;
+}
+
+
+.ops-context-count[hidden] {
+    display: none !important;
+}
+
+
+/* ----------------------------------------------------------
+   REMOVE OLD SIDEBAR-BASED LAYOUT OFFSET
+   ---------------------------------------------------------- */
+
+body {
+    --ops-sidebar-w: 0px !important;
+    --admin-sidebar: 0px !important;
+}
+
+
+body.ops-redesign-v3,
+body.ops-redesign-v3.sidebar-collapsed {
+    padding-left: 0 !important;
+    margin-left: 0 !important;
+}
+
+
+body > .app-tab-panel {
+    margin-left: auto !important;
+    margin-right: auto !important;
+
+    width: min(100%, 1600px) !important;
+    max-width: 1600px !important;
+
+    box-sizing: border-box;
+}
+
+
+/* Preserve data-heavy width while preventing giant blank margins. */
+
 #maintenancePanel.app-tab-panel {
-    max-width: none !important;
     width: 100% !important;
+    max-width: none !important;
 }
+
+
+/* ----------------------------------------------------------
+   AUTH
+   Header must not show over login/auth gate.
+   ---------------------------------------------------------- */
+
+body.auth-locked .ops-top-header,
+body.auth-locked .ops-context-nav {
+    display: none !important;
+}
+
+
+/* ----------------------------------------------------------
+   RESPONSIVE
+   ---------------------------------------------------------- */
+
+@media (max-width: 1000px) {
+
+    .ops-header-center {
+        gap: 17px;
+    }
+
+    #opsHeaderDate {
+        max-width: 110px;
+
+        overflow: hidden;
+
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+}
+
+
+@media (max-width: 760px) {
+
+    .ops-header-center {
+        gap: 12px;
+    }
+
+    .ops-header-brand {
+        font-size: 11px;
+    }
+
+    .ops-header-text-btn {
+        font-size: 10px !important;
+    }
+
+    #opsHeaderDate {
+        display: none;
+    }
+
+    .ops-header-divider {
+        margin-left: 0;
+        margin-right: 0;
+    }
+
+    .ops-context-title {
+        display: none;
+    }
+
+    .ops-context-inner {
+        gap: 0;
+        justify-content: center;
+
+        padding: 0 12px;
+    }
+
+    .ops-context-tabs {
+        gap: 18px;
+    }
+
+}
+
