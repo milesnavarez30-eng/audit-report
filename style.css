@@ -8249,6 +8249,7 @@ main {
 :root {
     --ops-fixed-header-height: 44px;
     --ops-header-height: 44px;
+    --ops-workspace-top-gap: 16px;
     --ops-workspace-gap: 16px;
     --ops-page-gutter: 24px;
     --ops-workspace-radius: 12px;
@@ -8261,7 +8262,9 @@ main {
     right: 0 !important;
 
     width: 100% !important;
-    min-height: var(--ops-fixed-header-height);
+    height: var(--ops-fixed-header-height) !important;
+    min-height: var(--ops-fixed-header-height) !important;
+    max-height: var(--ops-fixed-header-height) !important;
 
     z-index: 99999 !important;
 
@@ -8283,7 +8286,7 @@ main {
 
 /* Global Content Clearance Below Fixed Header (Auth-locked excluded) */
 body:not(.auth-locked) {
-    padding-top: calc(var(--ops-fixed-header-height) + var(--ops-workspace-gap)) !important;
+    padding-top: calc(var(--ops-fixed-header-height) + var(--ops-workspace-top-gap)) !important;
 }
 
 body.auth-locked {
@@ -8316,6 +8319,30 @@ body.auth-locked .ops-top-header {
     overflow: visible !important;
 }
 
+/* Guard against any theme or ID override on workspace geometry */
+#cctvPanel.app-tab-panel,
+#maintenancePanel.app-tab-panel,
+#eodPanel.app-tab-panel,
+#pendingPanel.app-tab-panel,
+#followupPanel.app-tab-panel,
+#masterlistPanel.app-tab-panel,
+#adminPanel.app-tab-panel,
+#edrPanel.app-tab-panel,
+body.light-mode .app-tab-panel,
+body.dark-mode .app-tab-panel,
+[data-theme="light"] .app-tab-panel,
+[data-theme="dark"] .app-tab-panel {
+    width: calc(100% - 48px) !important;
+    max-width: none !important;
+    margin-left: 24px !important;
+    margin-right: 24px !important;
+    margin-bottom: 24px !important;
+    margin-top: 0 !important;
+    padding: 20px !important;
+    box-sizing: border-box !important;
+    border-radius: 12px !important;
+}
+
 /* Inactive panels must remain hidden */
 .app-tab-panel:not(.active),
 .app-tab-panel[hidden] {
@@ -8329,7 +8356,11 @@ body.auth-locked .ops-top-header {
 /* Dark Mode Universal Workspace Container (CCTV Audit reference surface) */
 body.dark-mode .app-tab-panel,
 [data-theme="dark"] .app-tab-panel,
-body:not(.light-mode):not([data-theme="light"]) .app-tab-panel {
+body:not(.light-mode):not([data-theme="light"]) .app-tab-panel,
+body.dark-mode #eodPanel.app-tab-panel,
+body.dark-mode #maintenancePanel.app-tab-panel,
+[data-theme="dark"] #eodPanel.app-tab-panel,
+[data-theme="dark"] #maintenancePanel.app-tab-panel {
     background: #182231 !important;
     border: 1px solid rgba(255, 255, 255, 0.07) !important;
     border-radius: 12px !important;
@@ -8338,7 +8369,11 @@ body:not(.light-mode):not([data-theme="light"]) .app-tab-panel {
 
 /* Light Mode Universal Workspace Container */
 body.light-mode .app-tab-panel,
-[data-theme="light"] .app-tab-panel {
+[data-theme="light"] .app-tab-panel,
+body.light-mode #eodPanel.app-tab-panel,
+body.light-mode #maintenancePanel.app-tab-panel,
+[data-theme="light"] #eodPanel.app-tab-panel,
+[data-theme="light"] #maintenancePanel.app-tab-panel {
     background: #c7c9d5 !important;
     border: 1px solid rgba(20, 22, 30, 0.08) !important;
     border-radius: 12px !important;

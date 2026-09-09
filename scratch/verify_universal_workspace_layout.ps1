@@ -56,7 +56,7 @@ Assert-Condition ($css -match '--ops-page-gutter:\s*24px') "style.css defines --
 Assert-Condition ($css -match '--ops-workspace-radius:\s*12px') "style.css defines --ops-workspace-radius: 12px" "Missing --ops-workspace-radius: 12px"
 
 # 5. Check Global Clearance Offset Below Fixed Header
-Assert-Condition ($css -match 'body:not\(\.auth-locked\)\s*\{[^}]*padding-top:\s*calc\(var\(--ops-fixed-header-height\)\s*\+\s*var\(--ops-workspace-gap\)\)\s*!important') "body:not(.auth-locked) reserves 60px (44px + 16px) clearance" "body padding-top clearance missing"
+Assert-Condition ($css -match 'body:not\(\.auth-locked\)\s*\{[^}]*padding-top:\s*calc\(var\(--ops-fixed-header-height\)\s*\+\s*var\(--ops-workspace-(top-)?gap\)\)\s*!important') "body:not(.auth-locked) reserves 60px (44px + 16px) clearance" "body padding-top clearance missing"
 Assert-Condition ($css -match 'body\.auth-locked\s*\{[^}]*padding-top:\s*0\s*!important') "body.auth-locked removes top padding on login screen" "auth-locked padding-top not 0"
 Assert-Condition ($css -match 'body\.auth-locked\s+\.ops-top-header\s*\{[^}]*display:\s*none\s*!important') "body.auth-locked hides ops-top-header" "auth-locked header display not none"
 
@@ -108,7 +108,7 @@ Assert-Condition ($css -match '#eodPanel\s*\.eod-add-next[^}]*width:\s*100%\s*!i
 
 # 13. Check HTML synchronized rules
 Assert-Condition ($html -match '\.app-tab-panel\s*\{[^}]*width:\s*calc\(100%\s*-\s*48px\)\s*!important') "index.html has synchronized .app-tab-panel width rule" "index.html app-tab-panel rule missing"
-Assert-Condition ($html -match 'body:not\(\.auth-locked\)\s*\{[^}]*padding-top:\s*calc\(var\(--ops-fixed-header-height\)\s*\+\s*var\(--ops-workspace-gap\)\)\s*!important') "index.html has synchronized clearance offset rule" "index.html clearance offset rule missing"
+Assert-Condition ($html -match 'body:not\(\.auth-locked\)\s*\{[^}]*padding-top:\s*calc\(var\(--ops-fixed-header-height\)\s*\+\s*var\(--ops-workspace-(top-)?gap\)\)\s*!important') "index.html has synchronized clearance offset rule" "index.html clearance offset rule missing"
 
 Write-Host "=================================================" -ForegroundColor Cyan
 if ($failures -eq 0) {
