@@ -18687,14 +18687,17 @@ textarea:focus {
             </div>
 
             <div id="edrLivePreviewContent" class="edr-live-preview-content">
-                <!-- Dynamically populated -->
+                <div id="edrPreviewTopLine" class="edr-preview-topline" style="font-weight:700;margin-bottom:8px;font-size:14px;color:var(--ops-accent,#38bdf8);"></div>
+                <div id="edrPreviewBody" class="edr-preview-body"></div>
             </div>
 
             <div class="edr-action-row edr-result-action-bar">
                 <button type="button" class="edr-outline-btn" id="edrEditResultBtn">Edit Result</button>
                 <button type="button" class="edr-primary-btn" id="edrSaveBtn">Save Draft</button>
+                <button type="button" class="edr-outline-btn" id="edrCopyTeamsBtn">Copy for MS Teams</button>
                 <button type="button" class="edr-outline-btn" id="edrPreviewBtn">Preview</button>
                 <button type="button" class="edr-success-btn" id="edrSendDocsBtn">Send to Google Docs</button>
+                <span id="edrCopyNotice" class="edr-copy-notice" style="font-size:12px;color:#22c55e;font-weight:600;margin-left:8px;"></span>
             </div>
         </section>
 
@@ -29904,6 +29907,312 @@ byId("edrSaveBtn").addEventListener("click", saveReport);
         }
     };
 
+})();
+</script>
+
+<script id="edrBulletproofEventDelegationScript">
+// ==========================================================================
+// EDR WORKSPACE: BULLETPROOF EVENT DELEGATION & STATE SYNC
+// ==========================================================================
+(() => {
+    // Helper function para sa pag-ilis sa tab
+    function setEdrMode(mode) {
+        const aiTab = document.getElementById("edrModeAiTab");
+        const manualTab = document.getElementById("edrModeManualTab");
+        const aiSection = document.getElementById("edrAiModeSection");
+        const manualSection = document.getElementById("edrManualModeSection");
+
+        if (mode === "ai") {
+            if (aiTab) {
+                aiTab.classList.add("active");
+                aiTab.setAttribute("aria-selected", "true");
+            }
+            if (manualTab) {
+                manualTab.classList.remove("active");
+                manualTab.setAttribute("aria-selected", "false");
+            }
+            if (aiSection) {
+                aiSection.style.setProperty("display", "block", "important");
+                aiSection.classList.add("active");
+                aiSection.hidden = false;
+            }
+            if (manualSection) {
+                manualSection.style.setProperty("display", "none", "important");
+                manualSection.classList.remove("active");
+                manualSection.hidden = true;
+            }
+        } else if (mode === "manual") {
+            if (manualTab) {
+                manualTab.classList.add("active");
+                manualTab.setAttribute("aria-selected", "true");
+            }
+            if (aiTab) {
+                aiTab.classList.remove("active");
+                aiTab.setAttribute("aria-selected", "false");
+            }
+            if (manualSection) {
+                manualSection.style.setProperty("display", "block", "important");
+                manualSection.classList.add("active");
+                manualSection.hidden = false;
+            }
+            if (aiSection) {
+                aiSection.style.setProperty("display", "none", "important");
+                aiSection.classList.remove("active");
+                aiSection.hidden = true;
+            }
+        }
+    }
+
+    // Helper: Update Preview Content
+    function refreshEdrPreview() {
+        const getVal = (id) => {
+            const el = document.getElementById(id);
+            return el ? el.value.trim() : "";
+        };
+
+        const site = getVal("edrSite") || "[Site]";
+        const account = getVal("edrAccount") || "[Account]";
+        const date = getVal("edrDate") || "[Date]";
+        const time = getVal("edrTimeObserved") || "[Time]";
+        const tl = getVal("edrSupervisorName") || "[Team Leader]";
+        const om = getVal("edrOmName") || "[OM]";
+        const agent = getVal("edrSubjectName") || "[Agent]";
+        const incident = getVal("edrIncident") || "No incident details entered.";
+        const remarks = getVal("edrActionRemarks") || "No remarks entered.";
+        const clip = getVal("edrClipLink");
+
+        const topLine = `${site} | CCTV | ${account}`;
+        const topEl = document.getElementById("edrPreviewTopLine");
+        if (topEl) topEl.textContent = topLine;
+
+        const bodyEl = document.getElementById("edrPreviewBody");
+        if (bodyEl) {
+            bodyEl.innerHTML = `
+                <div><strong>TOP LINE:</strong> ${topLine}</div>
+                <div><strong>DATE & TIME:</strong> ${date} ${time ? 'at ' + time : ''}</div>
+                <div><strong>TEAM LEADER:</strong> ${tl}</div>
+                <div><strong>OM:</strong> ${om}</div>
+                <div><strong>AGENT:</strong> ${agent}</div>
+                <div><strong>ACCOUNT:</strong> ${account}</div>
+                <div style="margin-top: 8px;"><strong>INCIDENT:</strong><br>${incident.replace(/\n/g, '<br>')}</div>
+                <div style="margin-top: 8px;"><strong>ACTION TAKEN / REMARKS:</strong><br>${remarks.replace(/\n/g, '<br>')}</div>
+                ${clip ? `<div style="margin-top: 8px;"><strong>CCTV CLIP:</strong> <a href="${clip}" target="_blank" style="color: #38bdf8; word-break: break-all;">${clip}</a></div>` : ''}
+            `;
+        }
+    }
+
+    // 1. GLOBAL CLICK DELEGATION (Madakpan ang tanang clicks bisan kanus-a na-load ang HTML)
+    document.addEventListener("click", async (e) => {
+        const target = e.target;
+        if (!target) return;
+
+        // Tab: AI Mode
+        if (target.closest("#edrModeAiTab")) {
+            e.preventDefault();
+            setEdrMode("ai");
+            return;
+        }
+
+        // Tab: Manual Mode
+        if (target.closest("#edrModeManualTab")) {
+            e.preventDefault();
+            setEdrMode("manual");
+            return;
+        }
+
+        // Button: Edit Result (Switch to manual)
+        if (target.closest("#edrEditResultBtn")) {
+            e.preventDefault();
+            setEdrMode("manual");
+            const manualSec = document.getElementById("edrManualModeSection");
+            if (manualSec) manualSec.scrollIntoView({ behavior: "smooth" });
+            return;
+        }
+
+        // Button: Generate EDR
+        if (target.closest("#edrGenerateBtn") || target.closest("#edrAnalyzeBtn")) {
+            e.preventDefault();
+            const rawEl = document.getElementById("edrRawImport");
+            const aiClipEl = document.getElementById("edrAiClipLink");
+
+            const text = rawEl ? rawEl.value.trim() : "";
+            const aiClip = aiClipEl ? aiClipEl.value.trim() : "";
+
+            if (!text && !aiClip) {
+                alert("Palihog og butang og observation text o clip link.");
+                return;
+            }
+
+            // Sync Clip Link ngadto sa form model
+            if (aiClip) {
+                const manualClip = document.getElementById("edrClipLink");
+                if (manualClip) manualClip.value = aiClip;
+            }
+
+            // Simple resilient extractor
+            const extract = (regex) => {
+                const m = text.match(regex);
+                return m ? m[1].trim() : "";
+            };
+
+            const site = extract(/(?:Site|Location)\s*[:=-]\s*([^\n\r]+)/i) || "Davao Mabini Site A";
+            const date = extract(/(?:Date)\s*[:=-]\s*(\d{4}-\d{2}-\d{2}|\d{1,2}\/\d{1,2}\/\d{2,4})/i) || new Date().toISOString().split('T')[0];
+            const time = extract(/(?:Time)\s*[:=-]\s*([^\n\r]+)/i) || "";
+            const tl = extract(/(?:TL|Team Leader|Supervisor)\s*[:=-]\s*([^\n\r]+)/i);
+            const om = extract(/(?:OM|Operations Manager|Manager)\s*[:=-]\s*([^\n\r]+)/i);
+            const agent = extract(/(?:Subject|Agent|Employee|Name)\s*[:=-]\s*([^\n\r]+)/i);
+            const account = extract(/(?:Account|Campaign)\s*[:=-]\s*([^\n\r]+)/i);
+            const incident = extract(/(?:Incident|Issue|Observation)\s*[:=-]\s*([\s\S]*?)(?:Remarks|Action Taken|$)/i) || text;
+            const remarks = extract(/(?:Remarks|Action Taken)\s*[:=-]\s*([\s\S]*)$/i);
+
+            const setVal = (id, val) => {
+                const el = document.getElementById(id);
+                if (el && val) el.value = val;
+            };
+
+            setVal("edrSite", site);
+            setVal("edrDate", date);
+            setVal("edrTimeObserved", time);
+            setVal("edrSupervisorName", tl);
+            setVal("edrOmName", om);
+            setVal("edrSubjectName", agent);
+            setVal("edrAccount", account);
+            setVal("edrIncident", incident);
+            setVal("edrActionRemarks", remarks);
+
+            const status = document.getElementById("edrRawStatus");
+            if (status) {
+                status.hidden = false;
+                status.textContent = "✓ EDR generated and synced!";
+                setTimeout(() => { status.textContent = ""; }, 3000);
+            }
+
+            refreshEdrPreview();
+            return;
+        }
+
+        // Button: Clear AI Input
+        if (target.closest("#edrClearAiBtn") || target.closest("#edrClearRawBtn")) {
+            e.preventDefault();
+            const rawEl = document.getElementById("edrRawImport");
+            const clipEl = document.getElementById("edrAiClipLink");
+            if (rawEl) rawEl.value = "";
+            if (clipEl) clipEl.value = "";
+            return;
+        }
+
+        // Button: Update Preview Manually
+        if (target.closest("#edrUpdatePreviewBtn")) {
+            e.preventDefault();
+            refreshEdrPreview();
+            return;
+        }
+
+        // Button: Clear Manual Form
+        if (target.closest("#edrClearFormBtn")) {
+            e.preventDefault();
+            ["edrSite", "edrDate", "edrTimeObserved", "edrSupervisorName", "edrOmName", "edrSubjectName", "edrAccount", "edrIncident", "edrActionRemarks", "edrClipLink"].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.value = "";
+            });
+            refreshEdrPreview();
+            return;
+        }
+
+        // Button: Copy for MS Teams (Sanitized plain-text to prevent message length limits)
+        if (target.closest("#edrCopyTeamsBtn")) {
+            e.preventDefault();
+            const getVal = (id) => {
+                const el = document.getElementById(id);
+                return el ? el.value.trim() : "";
+            };
+
+            const site = getVal("edrSite");
+            const account = getVal("edrAccount");
+            const date = getVal("edrDate");
+            const time = getVal("edrTimeObserved");
+            const tl = getVal("edrSupervisorName");
+            const om = getVal("edrOmName");
+            const agent = getVal("edrSubjectName");
+            const incident = getVal("edrIncident");
+            const remarks = getVal("edrActionRemarks");
+            const clip = getVal("edrClipLink");
+
+            // Format as clean, unbloated plain-text Markdown
+            const teamsLines = [
+                `**${site || 'CCTV'} | CCTV OBSERVATION | ${account || 'GENERAL'}**`,
+                `**Date:** ${date} ${time ? `| **Time:** ${time}` : ''}`,
+                `**Team Leader:** ${tl || 'N/A'}`,
+                `**Operations Manager:** ${om || 'N/A'}`,
+                `**Agent / Subject:** ${agent || 'N/A'}`,
+                `**Account:** ${account || 'N/A'}`,
+                ``,
+                `**Incident Details:**`,
+                `${incident || 'N/A'}`,
+                ``,
+                `**Action Taken / Remarks:**`,
+                `${remarks || 'N/A'}`
+            ];
+
+            if (clip) {
+                teamsLines.push(``);
+                teamsLines.push(`**CCTV Clip Link:** ${clip}`);
+            }
+
+            const teamsPayload = teamsLines.join("\n");
+
+            try {
+                await navigator.clipboard.writeText(teamsPayload);
+                const notice = document.getElementById("edrCopyNotice");
+                if (notice) {
+                    notice.textContent = "✓ Copied clean format for Teams!";
+                    setTimeout(() => { notice.textContent = ""; }, 3500);
+                }
+            } catch (err) {
+                console.error("Clipboard error:", err);
+                alert("Failed to auto-copy. Please manually copy from preview.");
+            }
+            return;
+        }
+    });
+
+    // 2. LIVE INPUT TYPING SYNC (Mo-update ang preview samtang nag-type)
+    document.addEventListener("input", (e) => {
+        const id = e.target ? e.target.id : "";
+        if ([
+            "edrSite", "edrDate", "edrTimeObserved", "edrSupervisorName", 
+            "edrOmName", "edrSubjectName", "edrAccount", "edrIncident", 
+            "edrActionRemarks", "edrClipLink"
+        ].includes(id)) {
+            refreshEdrPreview();
+        }
+    });
+
+    // 3. QUICK TEMPLATE PRESET SELECTION
+    document.addEventListener("change", (e) => {
+        if (e.target && e.target.id === "edrQuickTemplates") {
+            const raw = document.getElementById("edrRawImport");
+            if (!raw) return;
+            const val = e.target.value;
+            const today = new Date().toISOString().split('T')[0];
+
+            if (val === "sleeping") {
+                raw.value = `Date: ${today}\nSite: Davao Mabini Site A\nSubject: Agent John Doe\nTL: Dianne Sombilon\nOM: Mirah Paris Macaorao\nAccount: Spypoint\nIncident: CCTV observed agent sleeping on post during shift at station Bay D-44.\nRemarks: TL notified via Teams; agent was verbally warned.`;
+            } else if (val === "cellphone") {
+                raw.value = `Date: ${today}\nSite: Davao Mabini Site A\nSubject: Agent Jane Smith\nTL: Cris Arandilla\nOM: Mirah Paris Macaorao\nAccount: Nationgraph\nIncident: Active use of personal cellular phone observed on production floor.\nRemarks: Phone confiscated by security; escalated to HR.`;
+            } else if (val === "abandonment") {
+                raw.value = `Date: ${today}\nSite: CDO Site\nSubject: Agent Alex Cruz\nTL: Jovert Monticayan\nOM: Mirah Paris Macaorao\nAccount: HBW Insurance\nIncident: Unauthorized early departure from production station.\nRemarks: Logged in attendance tracker; TL following up.`;
+            }
+            refreshEdrPreview();
+        }
+    });
+
+    // Initial preview render on DOM ready
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", refreshEdrPreview);
+    } else {
+        refreshEdrPreview();
+    }
 })();
 </script>
 
