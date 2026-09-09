@@ -15958,108 +15958,227 @@ body > div:first-child {
     display: none !important;
 }
 
-/* 2. Strip outer container framing in BOTH Dark and Light modes */
-:root .main-content,
-:root .workspace-wrapper,
-:root .content-area,
-:root main,
-:root #mainContent,
-:root .tab-content,
-:root #maintenancePanel,
-:root #eodPanel,
-:root .app-tab-panel,
-body.light-mode .main-content,
-body.light-mode .workspace-wrapper,
-body.light-mode .content-area,
-body.light-mode main,
-body.light-mode #mainContent,
-body.light-mode .tab-content,
-body.light-mode #maintenancePanel,
-body.light-mode #eodPanel,
-body.light-mode .app-tab-panel,
-[data-theme="light"] .main-content,
-[data-theme="light"] .workspace-wrapper,
-[data-theme="light"] .content-area,
-[data-theme="light"] main,
-[data-theme="light"] #mainContent,
-[data-theme="light"] .tab-content,
-[data-theme="light"] #maintenancePanel,
-[data-theme="light"] #eodPanel,
-[data-theme="light"] .app-tab-panel,
-[data-theme="dark"] .main-content,
-[data-theme="dark"] .workspace-wrapper,
-[data-theme="dark"] .content-area,
-[data-theme="dark"] main,
-[data-theme="dark"] #mainContent,
-[data-theme="dark"] .tab-content,
-[data-theme="dark"] #maintenancePanel,
-[data-theme="dark"] #eodPanel,
-[data-theme="dark"] .app-tab-panel,
-body.ops-redesign-v3 #maintenancePanel,
-body.ops-redesign-v3 #eodPanel,
-body.ops-redesign-v3 .ops-card,
-body.ops-redesign-v3 .ops-form-card,
-body.ops-redesign-v3 .ops-table-card,
-body.ops-redesign-v3 .ops-preview-card,
-body.ops-redesign-v3 .ops-summary-card {
-    background: transparent !important;
-    border: none !important;
-    border-radius: 0 !important;
-    box-shadow: none !important;
-    backdrop-filter: none !important;
-    -webkit-backdrop-filter: none !important;
+/* 2. Universal Fixed Header Clearance & Workspace Geometry Tokens */
+:root {
+    --ops-fixed-header-height: 44px;
+    --ops-header-height: 44px;
+    --ops-workspace-gap: 16px;
+    --ops-page-gutter: 24px;
+    --ops-workspace-radius: 12px;
 }
 
-/* 3. Strip any outer panel/card styles applied specifically to the Maintenance view */
-#maintenancePanel > .card,
-#maintenancePanel > .panel,
-#maintenancePanel > .container,
-#maintenancePanel .maintenance-shell,
-#eodPanel > .panel,
-#eodPanel > .container,
-#eodPanel .simple-eod-shell,
-body.light-mode #maintenancePanel > .card,
-body.light-mode #maintenancePanel > .panel,
-body.light-mode #maintenancePanel > .container,
-body.light-mode #maintenancePanel .maintenance-shell,
-body.light-mode #eodPanel > .panel,
-body.light-mode #eodPanel > .container,
-body.light-mode #eodPanel .simple-eod-shell,
-[data-theme="light"] #maintenancePanel > .card,
-[data-theme="light"] #maintenancePanel > .panel,
-[data-theme="light"] #maintenancePanel > .container,
-[data-theme="light"] #maintenancePanel .maintenance-shell,
-[data-theme="dark"] #maintenancePanel > .card,
-[data-theme="dark"] #maintenancePanel > .panel,
-[data-theme="dark"] #maintenancePanel > .container,
-[data-theme="dark"] #maintenancePanel .maintenance-shell {
+/* Global Content Clearance Below Fixed Header (Auth-locked excluded) */
+body:not(.auth-locked) {
+    padding-top: calc(var(--ops-fixed-header-height) + var(--ops-workspace-gap)) !important;
+}
+
+body.auth-locked {
+    padding-top: 0 !important;
+}
+
+body.auth-locked .ops-top-header {
+    display: none !important;
+}
+
+/* 3. Universal Outer Workspace Shell across ALL primary panels */
+.app-tab-panel {
+    width: calc(100% - 48px) !important;
+    max-width: none !important;
+
+    margin-left: 24px !important;
+    margin-right: 24px !important;
+    margin-bottom: 24px !important;
+    margin-top: 0 !important;
+
+    padding: 20px !important;
+
+    box-sizing: border-box !important;
+
+    border-radius: 12px !important;
+
+    overflow: visible !important;
+}
+
+/* Inactive panels must remain hidden */
+.app-tab-panel:not(.active),
+.app-tab-panel[hidden] {
+    display: none !important;
+}
+
+.app-tab-panel.active {
+    display: block !important;
+}
+
+/* Dark Mode Universal Workspace Container (CCTV Audit reference surface) */
+body.dark-mode .app-tab-panel,
+[data-theme="dark"] .app-tab-panel,
+body:not(.light-mode):not([data-theme="light"]) .app-tab-panel {
+    background: #182231 !important;
+    border: 1px solid rgba(255, 255, 255, 0.07) !important;
+    border-radius: 12px !important;
+    box-shadow: none !important;
+}
+
+/* Light Mode Universal Workspace Container */
+body.light-mode .app-tab-panel,
+[data-theme="light"] .app-tab-panel {
+    background: #c7c9d5 !important;
+    border: 1px solid rgba(20, 22, 30, 0.08) !important;
+    border-radius: 12px !important;
+    box-shadow: none !important;
+}
+
+/* 4. Neutralize redundant nested outer wrappers (Avoid double shells) */
+.app-tab-panel > .container,
+.app-tab-panel > .form-section,
+.app-tab-panel > .grid-section,
+.app-tab-panel > .maintenance-shell,
+.app-tab-panel > .simple-eod-shell,
+.app-tab-panel > .pending-shell,
+.app-tab-panel > .followup-shell,
+.app-tab-panel > .master-simple-shell,
+.app-tab-panel > .auth-admin-shell,
+.app-tab-panel > .edr-crud-shell,
+.app-tab-panel > #aiSorterPanel {
     background: transparent !important;
     border: none !important;
-    border-radius: 0 !important;
     box-shadow: none !important;
+    border-radius: 0 !important;
     padding: 0 !important;
     margin: 0 !important;
-    max-width: 100% !important;
     width: 100% !important;
+    max-width: none !important;
+    min-width: 0 !important;
 }
 
-/* 4. Identical layout sizing in Dark & Light modes - ZERO layout shifts */
-body.dark-mode .main-content,
-body.light-mode .main-content,
-[data-theme="dark"] .main-content,
-[data-theme="light"] .main-content,
-body.dark-mode #mainContent,
-body.light-mode #mainContent,
-[data-theme="dark"] #mainContent,
-[data-theme="light"] #mainContent,
-.main-content,
-#mainContent {
-    width: 100% !important;
-    max-width: 100% !important;
+/* Standardized Workspace Titles & Lead Text */
+.app-tab-panel h2:first-of-type,
+.app-tab-panel > .container > h2:first-of-type,
+.app-tab-panel > .container > div > div > h2:first-of-type,
+.app-tab-panel .pending-page-head h2,
+.app-tab-panel .followup-page-head h2,
+.app-tab-panel .master-simple-head h2,
+.app-tab-panel .auth-admin-head h2,
+.app-tab-panel .edr-crud-header h2 {
+    font-size: 20px !important;
+    font-weight: 700 !important;
+    margin: 0 0 4px !important;
+    padding: 0 !important;
+    line-height: 1.2 !important;
+}
+
+.app-tab-panel .page-lead,
+.app-tab-panel > .container > p.page-lead,
+.app-tab-panel .pending-page-head p.page-lead,
+.app-tab-panel .followup-page-head p.page-lead,
+.app-tab-panel .master-simple-head p.page-lead,
+.app-tab-panel .auth-admin-head p.page-lead,
+.app-tab-panel .edr-crud-header p.page-lead {
+    margin: 0 0 18px !important;
+}
+
+/* Maintenance Report & AI Sorter Full-Width Symmetrical Alignment */
+#eodPanel,
+#maintenancePanel {
+    width: calc(100% - 48px) !important;
+    max-width: none !important;
+    margin-left: 24px !important;
+    margin-right: 24px !important;
     box-sizing: border-box !important;
-    padding: 24px 32px !important;
-    margin: 0 !important;
-    flex: 1 1 auto !important;
+}
+
+#eodPanel .simple-eod-top,
+body.ops-redesign-v3 #eodPanel .simple-eod-top {
+    width: 100% !important;
+    max-width: none !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    margin-bottom: 16px !important;
+    box-sizing: border-box !important;
+    display: grid !important;
+    grid-template-columns: 1fr 220px !important;
+    gap: 16px !important;
+    align-items: flex-end !important;
+}
+
+@media (max-width: 640px) {
+    #eodPanel .simple-eod-top,
+    body.ops-redesign-v3 #eodPanel .simple-eod-top {
+        grid-template-columns: 1fr !important;
+    }
+}
+
+#eodPanel .simple-eod-actions,
+body.ops-redesign-v3 #eodPanel .simple-eod-actions {
+    width: 100% !important;
+    max-width: none !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    margin-bottom: 16px !important;
+    box-sizing: border-box !important;
+    display: flex !important;
+    flex-wrap: wrap !important;
+    align-items: center !important;
+    gap: 8px !important;
+}
+
+#eodPanel .eod-canvas-workspace,
+#eodPanel .eod-block-list,
+body.ops-redesign-v3 #eodPanel .eod-block-list {
+    width: 100% !important;
+    max-width: none !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    box-sizing: border-box !important;
+}
+
+#eodPanel .eod-block,
+body.ops-redesign-v3 #eodPanel .eod-block {
+    width: 100% !important;
+    max-width: none !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    box-sizing: border-box !important;
+}
+
+#eodPanel .eod-block-head,
+body.ops-redesign-v3 #eodPanel .eod-block-head {
+    width: 100% !important;
+    box-sizing: border-box !important;
+}
+
+#eodPanel .eod-block-content,
+body.ops-redesign-v3 #eodPanel .eod-block-content {
+    width: 100% !important;
+    box-sizing: border-box !important;
+    padding: 16px !important;
+}
+
+#eodPanel .eod-block-data,
+#eodPanel .eod-proof-zone,
+#eodPanel .remarks-section,
+body.ops-redesign-v3 #eodPanel .eod-block-data,
+body.ops-redesign-v3 #eodPanel .eod-proof-zone,
+body.ops-redesign-v3 #eodPanel .remarks-section {
+    width: 100% !important;
+    max-width: none !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    box-sizing: border-box !important;
+}
+
+#eodPanel .eod-paste-area,
+#eodPanel .remark-text,
+#eodPanel .single-remark-text {
+    width: 100% !important;
+    box-sizing: border-box !important;
+}
+
+#eodPanel .eod-add-next {
+    width: 100% !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    box-sizing: border-box !important;
 }
 
 /* 5. Strip toolbar outer container framing and enable wrapping */

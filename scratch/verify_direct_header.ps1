@@ -79,7 +79,7 @@ Assert-Condition ($css -match '\.ops-top-header \.ops-direct-nav-btn\.active::af
 Assert-Condition ($css -match 'body\.auth-locked \.ops-top-header\s*\{[^}]*display:\s*none\s*!important') "Auth-locked hides ops-top-header" "Auth-locked rule missing"
 Assert-Condition ($css -match '\.ops-top-header\s*\{[^}]*position:\s*fixed\s*!important') ".ops-top-header is position: fixed !important" "Header not fixed"
 Assert-Condition ($css -match '\.ops-top-header\s*\{[^}]*z-index:\s*99999\s*!important') ".ops-top-header has z-index: 99999 !important" "Header z-index not 99999"
-Assert-Condition ($css -match 'body:not\(\.auth-locked\)\s*\{[^}]*padding-top:\s*var\(--ops-header-height\)\s*!important') "body:not(.auth-locked) reserves top space for fixed header" "body padding-top missing"
+Assert-Condition ($css -match 'body:not\(\.auth-locked\)\s*\{[^}]*padding-top:\s*(calc\(var\(--ops-fixed-header-height\)\s*\+\s*var\(--ops-workspace-gap\)\)|var\(--ops-header-height\))\s*!important') "body:not(.auth-locked) reserves top space for fixed header" "body padding-top missing"
 Assert-Condition ($css -match 'body\.auth-locked\s*\{[^}]*padding-top:\s*0\s*!important') "body.auth-locked removes top padding on login screen" "auth-locked padding-top not 0"
 
 

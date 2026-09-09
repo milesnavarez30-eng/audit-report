@@ -8243,26 +8243,15 @@ main {
 
 
 /* ==========================================================
-   MAIN WORKSPACE USES AVAILABLE WIDTH
-   ========================================================== */
-
-.app-tab-panel {
-    width: calc(100% - 48px) !important;
-    max-width: none !important;
-
-    margin-left: 24px !important;
-    margin-right: 24px !important;
-
-    box-sizing: border-box;
-}
-
-
-/* ==========================================================
-   CCTV OPS — NEBULA-STYLE TEXT HEADER
+   UNIVERSAL WORKSPACE SHELL & FIXED HEADER LAYOUT
    ========================================================== */
 
 :root {
+    --ops-fixed-header-height: 44px;
     --ops-header-height: 44px;
+    --ops-workspace-gap: 16px;
+    --ops-page-gutter: 24px;
+    --ops-workspace-radius: 12px;
 }
 
 .ops-top-header {
@@ -8272,7 +8261,7 @@ main {
     right: 0 !important;
 
     width: 100% !important;
-    min-height: var(--ops-header-height);
+    min-height: var(--ops-fixed-header-height);
 
     z-index: 99999 !important;
 
@@ -8292,8 +8281,9 @@ main {
         sans-serif;
 }
 
+/* Global Content Clearance Below Fixed Header (Auth-locked excluded) */
 body:not(.auth-locked) {
-    padding-top: var(--ops-header-height) !important;
+    padding-top: calc(var(--ops-fixed-header-height) + var(--ops-workspace-gap)) !important;
 }
 
 body.auth-locked {
@@ -8302,6 +8292,217 @@ body.auth-locked {
 
 body.auth-locked .ops-top-header {
     display: none !important;
+}
+
+/* ==========================================================
+   UNIVERSAL WORKSPACE SHELL (.app-tab-panel)
+   ========================================================== */
+
+.app-tab-panel {
+    width: calc(100% - 48px) !important;
+    max-width: none !important;
+
+    margin-left: 24px !important;
+    margin-right: 24px !important;
+    margin-bottom: 24px !important;
+    margin-top: 0 !important;
+
+    padding: 20px !important;
+
+    box-sizing: border-box !important;
+
+    border-radius: 12px !important;
+
+    overflow: visible !important;
+}
+
+/* Inactive panels must remain hidden */
+.app-tab-panel:not(.active),
+.app-tab-panel[hidden] {
+    display: none !important;
+}
+
+.app-tab-panel.active {
+    display: block !important;
+}
+
+/* Dark Mode Universal Workspace Container (CCTV Audit reference surface) */
+body.dark-mode .app-tab-panel,
+[data-theme="dark"] .app-tab-panel,
+body:not(.light-mode):not([data-theme="light"]) .app-tab-panel {
+    background: #182231 !important;
+    border: 1px solid rgba(255, 255, 255, 0.07) !important;
+    border-radius: 12px !important;
+    box-shadow: none !important;
+}
+
+/* Light Mode Universal Workspace Container */
+body.light-mode .app-tab-panel,
+[data-theme="light"] .app-tab-panel {
+    background: #c7c9d5 !important;
+    border: 1px solid rgba(20, 22, 30, 0.08) !important;
+    border-radius: 12px !important;
+    box-shadow: none !important;
+}
+
+/* Neutralize redundant nested outer card wrappers (Avoid double shells) */
+.app-tab-panel > .container,
+.app-tab-panel > .form-section,
+.app-tab-panel > .grid-section,
+.app-tab-panel > .maintenance-shell,
+.app-tab-panel > .simple-eod-shell,
+.app-tab-panel > .pending-shell,
+.app-tab-panel > .followup-shell,
+.app-tab-panel > .master-simple-shell,
+.app-tab-panel > .auth-admin-shell,
+.app-tab-panel > .edr-crud-shell,
+.app-tab-panel > #aiSorterPanel {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
+    max-width: none !important;
+    min-width: 0 !important;
+}
+
+/* Standardized Workspace Titles & Lead Text */
+.app-tab-panel h2:first-of-type,
+.app-tab-panel > .container > h2:first-of-type,
+.app-tab-panel > .container > div > div > h2:first-of-type,
+.app-tab-panel .pending-page-head h2,
+.app-tab-panel .followup-page-head h2,
+.app-tab-panel .master-simple-head h2,
+.app-tab-panel .auth-admin-head h2,
+.app-tab-panel .edr-crud-header h2 {
+    font-size: 20px !important;
+    font-weight: 700 !important;
+    margin: 0 0 4px !important;
+    padding: 0 !important;
+    line-height: 1.2 !important;
+}
+
+.app-tab-panel .page-lead,
+.app-tab-panel > .container > p.page-lead,
+.app-tab-panel .pending-page-head p.page-lead,
+.app-tab-panel .followup-page-head p.page-lead,
+.app-tab-panel .master-simple-head p.page-lead,
+.app-tab-panel .auth-admin-head p.page-lead,
+.app-tab-panel .edr-crud-header p.page-lead {
+    margin: 0 0 18px !important;
+}
+
+/* ==========================================================
+   MAINTENANCE REPORT & AI SORTER — FULL USABLE WIDTH ALIGNMENT
+   ========================================================== */
+
+#eodPanel,
+#maintenancePanel {
+    width: calc(100% - 48px) !important;
+    max-width: none !important;
+    margin-left: 24px !important;
+    margin-right: 24px !important;
+    box-sizing: border-box !important;
+}
+
+/* Top Tracker & Report Date Section (2-column layout filling 100%) */
+#eodPanel .simple-eod-top,
+body.ops-redesign-v3 #eodPanel .simple-eod-top {
+    width: 100% !important;
+    max-width: none !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    margin-bottom: 16px !important;
+    box-sizing: border-box !important;
+    display: grid !important;
+    grid-template-columns: 1fr 220px !important;
+    gap: 16px !important;
+    align-items: flex-end !important;
+}
+
+@media (max-width: 640px) {
+    #eodPanel .simple-eod-top,
+    body.ops-redesign-v3 #eodPanel .simple-eod-top {
+        grid-template-columns: 1fr !important;
+    }
+}
+
+/* Maintenance Action Toolbar (Symmetrical left edge, wrapping allowed) */
+#eodPanel .simple-eod-actions,
+body.ops-redesign-v3 #eodPanel .simple-eod-actions {
+    width: 100% !important;
+    max-width: none !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    margin-bottom: 16px !important;
+    box-sizing: border-box !important;
+    display: flex !important;
+    flex-wrap: wrap !important;
+    align-items: center !important;
+    gap: 8px !important;
+}
+
+/* Report Blocks Workspace & List */
+#eodPanel .eod-canvas-workspace,
+#eodPanel .eod-block-list,
+body.ops-redesign-v3 #eodPanel .eod-block-list {
+    width: 100% !important;
+    max-width: none !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    box-sizing: border-box !important;
+}
+
+/* Each Top-level Report Block (Fills 100% usable width) */
+#eodPanel .eod-block,
+body.ops-redesign-v3 #eodPanel .eod-block {
+    width: 100% !important;
+    max-width: none !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    box-sizing: border-box !important;
+}
+
+#eodPanel .eod-block-head,
+body.ops-redesign-v3 #eodPanel .eod-block-head {
+    width: 100% !important;
+    box-sizing: border-box !important;
+}
+
+#eodPanel .eod-block-content,
+body.ops-redesign-v3 #eodPanel .eod-block-content {
+    width: 100% !important;
+    box-sizing: border-box !important;
+    padding: 16px !important;
+}
+
+#eodPanel .eod-block-data,
+#eodPanel .eod-proof-zone,
+#eodPanel .remarks-section,
+body.ops-redesign-v3 #eodPanel .eod-block-data,
+body.ops-redesign-v3 #eodPanel .eod-proof-zone,
+body.ops-redesign-v3 #eodPanel .remarks-section {
+    width: 100% !important;
+    max-width: none !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    box-sizing: border-box !important;
+}
+
+#eodPanel .eod-paste-area,
+#eodPanel .remark-text,
+#eodPanel .single-remark-text {
+    width: 100% !important;
+    box-sizing: border-box !important;
+}
+
+#eodPanel .eod-add-next {
+    width: 100% !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    box-sizing: border-box !important;
 }
 
 
