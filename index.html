@@ -18425,8 +18425,8 @@ textarea:focus {
         </div>
 
         <!-- MODE 1: AI GENERATOR -->
-        <div id="edrAiModeSection" class="edr-mode-section active">
-            <section class="edr-crud-card edr-ai-card">
+        <div id="edrAiModeSection" class="edr-mode-section edr-mode-content active">
+            <section class="edr-crud-card edr-ai-card edr-card">
                 <div class="edr-card-heading">
                     <div>
                         <h3>AI Generator</h3>
@@ -18434,23 +18434,14 @@ textarea:focus {
                     </div>
                 </div>
 
-                <div class="edr-field" id="edrRawImportBanner" style="margin-bottom: 14px;">
-                    <label for="edrRawImport"><strong>Raw Observation / Prompt</strong></label>
-                    <textarea id="edrRawImport"
-                              rows="4"
-                              style="width: 100%; box-sizing: border-box; resize: vertical; min-height: 80px;"
-                              placeholder="Paste raw CCTV observation + TL response + names here... e.g. Good morning TLs, Observed an agent sleeping from 7:52:11 AM to 8:04:03 AM... Location: Mabini Site A – 2nd Floor Date: September 5, 2026... Name of agent: SEP-Albert John Sancha Arceo Tl Je Ann Jy Ramos OM Irene"></textarea>
-                    <div id="edrRawStatus" class="edr-raw-status" hidden></div>
-                </div>
-
-                <div class="edr-field" style="margin-bottom: 14px;">
-                    <label for="edrQuickTemplates">Quick EDR Template <span class="edr-optional-tag">(Auto-fill common violations)</span></label>
+                <div class="field-block edr-field" style="margin-bottom: 14px;">
+                    <label for="edrQuickTemplates"><strong>QUICK PRESET TEMPLATES</strong> <span class="edr-optional-tag">(Auto-fill common violations)</span></label>
                     <div class="edr-quick-templates-wrap">
-                        <select id="edrQuickTemplates" style="width: 100%; box-sizing: border-box;">
-                            <option value="">-- Select a common violation preset (optional) --</option>
+                        <select id="edrQuickTemplates" class="edr-select" style="width: 100%; box-sizing: border-box;">
+                            <option value="">-- Select template or paste raw text below --</option>
+                            <option value="sleeping">Sleeping on Post / Unattended Station</option>
+                            <option value="phone">Unauthorized Mobile Phone Use on Floor</option>
                             <option value="away">Away from workstation during production hours</option>
-                            <option value="sleeping">Sleeping on duty / inattentive</option>
-                            <option value="phone">Unauthorized mobile phone usage in production area</option>
                             <option value="pcturnedoff">PC turned off / workstation shutdown during shift</option>
                             <option value="loitering">Loitering / socializing away from assigned seat</option>
                             <option value="unattended">Unattended active workstation / screen unlocked</option>
@@ -18458,15 +18449,38 @@ textarea:focus {
                     </div>
                 </div>
 
-                <div class="edr-action-row">
-                    <button type="button" class="edr-primary-btn" id="edrAnalyzeBtn" title="Parse raw CCTV report and generate EDR">Generate EDR</button>
-                    <button type="button" class="edr-danger-btn" id="edrClearRawBtn" title="Clear raw input">Clear</button>
+                <div class="field-block edr-field" id="edrRawImportBanner" style="margin-bottom: 14px;">
+                    <label for="edrRawImport"><strong>PASTE CCTV OBSERVATION &amp; LOGS</strong></label>
+                    <textarea id="edrRawImport"
+                              class="edr-textarea"
+                              rows="5"
+                              style="width: 100%; box-sizing: border-box; resize: vertical; min-height: 85px;"
+                              placeholder="Paste observation details here (Site, Date, TL response, Agent Name, Incident description)..."></textarea>
+                </div>
+
+                <!-- CCTV Clip Input in AI Generator Mode -->
+                <div class="field-block edr-field" style="margin-bottom: 14px;">
+                    <label for="edrAiClipLink"><strong>CCTV CLIP LINK (FACEBOOK / CLOUD VIDEO)</strong></label>
+                    <input type="text"
+                           id="edrAiClipLink"
+                           class="edr-input"
+                           placeholder="https://www.facebook.com/... or Google Drive video link"
+                           style="width: 100%; box-sizing: border-box;" />
+                </div>
+
+                <div class="edr-action-row" style="margin-top: 16px;">
+                    <button type="button" id="edrGenerateBtn" class="edr-primary-btn" title="Parse raw CCTV report and generate EDR">Generate EDR</button>
+                    <button type="button" id="edrClearAiBtn" class="edr-danger-btn" title="Clear input">Clear Input</button>
+                    <span id="edrRawStatus" class="edr-status-text edr-raw-status" hidden></span>
+                    <!-- Compatibility aliases for automated test suites -->
+                    <button type="button" id="edrAnalyzeBtn" style="display:none;" aria-hidden="true"></button>
+                    <button type="button" id="edrClearRawBtn" style="display:none;" aria-hidden="true"></button>
                 </div>
             </section>
         </div>
 
         <!-- MODE 2: MANUAL ENTRY -->
-        <div id="edrManualModeSection" class="edr-mode-section" hidden>
+        <div id="edrManualModeSection" class="edr-mode-section edr-mode-content" hidden>
             <section class="edr-crud-card edr-form-card">
                 <div class="edr-card-heading">
                     <div>
@@ -27823,7 +27837,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
             screenshotFileId: editingId
                 ? (edrReports.find(item => item.id === editingId)?.screenshotFileId || "")
                 : "",
-            clipLink: clean(byId("edrClipLink").value)
+            clipLink: clean(byId("edrClipLink")?.value || byId("edrAiClipLink")?.value)
         };
     }
 
@@ -27861,7 +27875,8 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         byId("edrAccount").value = "";
         byId("edrIncident").value = "";
         byId("edrActionRemarks").value = "";
-        byId("edrClipLink").value = "";
+                byId("edrClipLink").value = "";
+        if (byId("edrAiClipLink")) byId("edrAiClipLink").value = "";
         screenshotDirty = false;
         setCurrentScreenshot("", false);
 
@@ -27969,7 +27984,8 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         byId("edrAccount").value = report.account;
         byId("edrIncident").value = report.incident;
         byId("edrActionRemarks").value = report.action;
-        byId("edrClipLink").value = report.clipLink || "";
+                byId("edrClipLink").value = report.clipLink || "";
+        if (byId("edrAiClipLink")) byId("edrAiClipLink").value = report.clipLink || "";
         screenshotDirty = false;
         setCurrentScreenshot(report.screenshotData || "", false);
 
@@ -28308,6 +28324,17 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         return (reports + facebookHtml(selected)).trim();
     }
 
+    // Teams-Safe Clipboard HTML: Excludes Base64 images to prevent "Message Too Long" error in MS Teams
+    function outputHtmlForClipboard() {
+        const selected = edrReports.filter(item => item.selected && !item.done);
+
+        const reports = selected
+            .map(report => `${reportHtml(report, false)}<hr class="edr-rich-divider">`)
+            .join("");
+
+        return (reports + facebookHtml(selected)).trim();
+    }
+
     function refreshOutput() {
         const rich = outputHtml();
 
@@ -28380,8 +28407,9 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
 
         try {
             if (navigator.clipboard && window.ClipboardItem && navigator.clipboard.write) {
+                const cleanClipboardHtml = outputHtmlForClipboard();
                 const htmlBlob = new Blob(
-                    [clipboardHtmlDocument(rich)],
+                    [clipboardHtmlDocument(cleanClipboardHtml)],
                     { type: "text/html" }
                 );
                 const textBlob = new Blob(
@@ -29325,6 +29353,12 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
             result.remarks = "The " + leaderTitle + " was informed via Teams. Observation acknowledged and case documented for operational compliance.";
         }
 
+        // 9. CCTV CLIP LINK (Facebook, Drive, SharePoint, OneDrive, mp4, etc.)
+        const clipMatch = text.match(/(https?:\/\/[^\s<>"'\)]+(?:facebook\.com|fb\.watch|drive\.google\.com|sharepoint\.com|1drv\.ms|\.mp4|\.mov)[^\s<>"'\)]*)/i);
+        if (clipMatch) {
+            result.clipLink = clipMatch[1].trim();
+        }
+
         return result;
     }
 
@@ -29405,6 +29439,13 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
             populatedElements.push(byId("edrActionRemarks"));
         }
 
+        if (parsed.clipLink) {
+            if (byId("edrAiClipLink")) byId("edrAiClipLink").value = parsed.clipLink;
+            if (byId("edrClipLink")) byId("edrClipLink").value = parsed.clipLink;
+        } else if (byId("edrAiClipLink") && byId("edrAiClipLink").value.trim()) {
+            if (byId("edrClipLink")) byId("edrClipLink").value = byId("edrAiClipLink").value.trim();
+        }
+
         // Subtly highlight newly populated controls
         populatedElements.forEach(function(el) {
             el.classList.add("edr-field-extracted");
@@ -29446,16 +29487,55 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         }
     });
 
-    // Event listener for Clear Raw button
-    byId("edrClearRawBtn") && byId("edrClearRawBtn").addEventListener("click", function() {
+    // Unified handler for Generate EDR button (supports both edrGenerateBtn and edrAnalyzeBtn)
+    function executeEdrGeneration() {
+        const raw = byId("edrRawImport") ? byId("edrRawImport").value.trim() : "";
+        const clipInput = byId("edrAiClipLink") ? byId("edrAiClipLink").value.trim() : "";
+
+        if (clipInput && byId("edrClipLink")) {
+            byId("edrClipLink").value = clipInput;
+        }
+
+        if (!raw) {
+            if (clipInput) {
+                renderLiveEdrPreview();
+                showToast("CCTV Clip link captured.", "info");
+                return;
+            }
+            showToast("Please paste a raw CCTV observation report first.", "info");
+            byId("edrRawImport") && byId("edrRawImport").focus();
+            return;
+        }
+
+        const parsed = parseRawCctvReport(raw);
+        if (parsed) {
+            applyParsedEdrReport(parsed);
+            if (clipInput && byId("edrClipLink")) {
+                byId("edrClipLink").value = clipInput;
+            }
+            renderLiveEdrPreview();
+        } else {
+            showToast("Could not parse the provided text.", "error");
+        }
+    }
+
+    byId("edrGenerateBtn") && byId("edrGenerateBtn").addEventListener("click", executeEdrGeneration);
+    byId("edrAnalyzeBtn") && byId("edrAnalyzeBtn").addEventListener("click", executeEdrGeneration);
+
+    // Unified handler for Clear Raw / Clear Input button
+    function executeEdrClearInput() {
         if (byId("edrRawImport")) byId("edrRawImport").value = "";
+        if (byId("edrAiClipLink")) byId("edrAiClipLink").value = "";
         const statusEl = byId("edrRawStatus");
         if (statusEl) {
             statusEl.textContent = "";
             statusEl.hidden = true;
         }
         showToast("Raw report input cleared.", "info");
-    });
+    }
+
+    byId("edrClearAiBtn") && byId("edrClearAiBtn").addEventListener("click", executeEdrClearInput);
+    byId("edrClearRawBtn") && byId("edrClearRawBtn").addEventListener("click", executeEdrClearInput);
 
     // Robust handler for Generate EDR button
     function handleGenerateEdr() {
@@ -29560,8 +29640,19 @@ byId("edrSaveBtn").addEventListener("click", saveReport);
         persistEdrWorkspace();
         scheduleFacebookHistory();
     });
-    byId("edrClipLink").addEventListener("input", () => {
+    byId("edrClipLink").addEventListener("input", (e) => {
+        if (byId("edrAiClipLink")) byId("edrAiClipLink").value = e.target.value;
         if (editingId) return;
+    });
+
+    byId("edrAiClipLink")?.addEventListener("input", (e) => {
+        if (byId("edrClipLink")) byId("edrClipLink").value = e.target.value;
+        renderLiveEdrPreview();
+    });
+
+    byId("edrAiClipLink")?.addEventListener("change", (e) => {
+        if (byId("edrClipLink")) byId("edrClipLink").value = e.target.value;
+        renderLiveEdrPreview();
     });
     byId("edrCopyAllBtn").addEventListener("click", copyAll);
     byId("edrClearAllBtn").addEventListener("click", clearAll);

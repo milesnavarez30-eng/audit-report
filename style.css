@@ -8990,12 +8990,13 @@ body.light-mode .edr-mode-tab.active,
     margin-bottom: 4px !important;
 }
 
-/* Rigid Action Button Geometry System (36px, 6px radius) */
+/* Rigid Action Button Geometry System (36px height, 6px radius, 0 14px padding, 12px font-size with 600 weight) */
 #edrPanel .edr-primary-btn,
 #edrPanel .edr-outline-btn,
 #edrPanel .edr-secondary-btn,
 #edrPanel .edr-success-btn,
 #edrPanel .edr-danger-btn,
+#edrPanel .edr-danger-soft-btn,
 #edrPanel .edr-action-row button,
 #edrPanel .edr-action-row a.button,
 #edrPanel .edr-header-tools .edr-template-link,
@@ -9003,11 +9004,38 @@ body.light-mode .edr-mode-tab.active,
 #edrPanel .edr-shot-add-btn,
 #edrPanel .edr-shot-actions button,
 #edrPanel .edr-list-actions button,
-#edrPanel .edr-output-actions button {
+#edrPanel .edr-output-actions button,
+#edrPanel #edrGenerateBtn,
+#edrPanel #edrClearAiBtn,
+#edrPanel #edrAnalyzeBtn,
+#edrPanel #edrClearRawBtn,
+#edrPanel #edrUpdatePreviewBtn,
+#edrPanel #edrClearFormBtn,
+#edrPanel #edrCancelEditBtn,
+#edrPanel #edrEditResultBtn,
+#edrPanel #edrSaveBtn,
+#edrPanel #edrPreviewBtn,
+#edrPanel #edrSendDocsBtn,
+#edrPanel #edrCopyAllBtn,
+#edrPanel #edrClearAllBtn,
+#edrPanel #edrSelectAllBtn,
+#edrPanel #edrUnselectAllBtn,
+body.dark-mode #edrPanel .edr-primary-btn,
+body.dark-mode #edrPanel .edr-outline-btn,
+body.dark-mode #edrPanel .edr-danger-btn,
+body.light-mode #edrPanel .edr-primary-btn,
+body.light-mode #edrPanel .edr-outline-btn,
+body.light-mode #edrPanel .edr-danger-btn,
+[data-theme="dark"] #edrPanel .edr-primary-btn,
+[data-theme="dark"] #edrPanel .edr-outline-btn,
+[data-theme="dark"] #edrPanel .edr-danger-btn,
+[data-theme="light"] #edrPanel .edr-primary-btn,
+[data-theme="light"] #edrPanel .edr-outline-btn,
+[data-theme="light"] #edrPanel .edr-danger-btn {
     height: 36px !important;
     min-height: 36px !important;
     max-height: 36px !important;
-    padding: 0 12px !important;
+    padding: 0 14px !important;
     border-radius: 6px !important;
     display: inline-flex !important;
     align-items: center !important;
