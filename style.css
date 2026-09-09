@@ -8258,106 +8258,44 @@ main {
 
 
 /* ==========================================================
-   FLOATING HEADER
-   No black header rectangle/card.
+   CCTV OPS — NEBULA-STYLE TEXT HEADER
    ========================================================== */
 
 .ops-top-header {
-    position: relative !important;
-
-    z-index: 10000;
-
     width: 100% !important;
-    max-width: none !important;
-
-    min-height: 48px;
+    min-height: 44px;
 
     margin: 0 !important;
     padding: 0 !important;
 
-    background: transparent !important;
-
+    background: #000 !important;
     border: 0 !important;
-
     box-shadow: none !important;
 
     font-family:
         Inter,
         "Plus Jakarta Sans",
         system-ui,
-        -apple-system,
-        BlinkMacSystemFont,
-        "Segoe UI",
         sans-serif;
 }
 
-
-/* Header wrapper stays transparent in both themes */
-
-body.dark-mode .ops-top-header,
-body.light-mode .ops-top-header,
-[data-theme="dark"] .ops-top-header,
-[data-theme="light"] .ops-top-header {
-    background: transparent !important;
-
-    border: 0 !important;
-
-    box-shadow: none !important;
+body.auth-locked .ops-top-header {
+    display: none !important;
 }
 
 
-/* ==========================================================
-   THEME TOGGLE — FLOATING LEFT
-   Existing #themeToggle is moved here by JS.
-   ========================================================== */
-
-.ops-header-theme {
-    position: absolute;
-
-    left: 10px;
-    top: 50%;
-
-    z-index: 2;
-
-    display: flex;
-    align-items: center;
-
-    transform: translateY(-50%);
-}
-
-
-.ops-header-theme .theme-toggle-container {
-    margin: 0 !important;
-    padding: 0 !important;
-}
-
-
-.ops-header-theme .main-toggle {
-    margin: 0 !important;
-
-    transform: scale(.78);
-    transform-origin: left center;
-}
-
-
-/* ==========================================================
-   CENTER ALL ORIGINAL SIDEBAR FUNCTIONS IN HEADER
-   ========================================================== */
+/* Main centered navigation */
 
 .ops-direct-header-nav {
-    width: 100%;
-
-    min-height: 48px;
+    min-height: 44px;
 
     display: flex;
     align-items: center;
     justify-content: center;
 
-    flex-wrap: nowrap;
+    gap: 24px;
 
-    gap: 13px;
-
-    padding: 0 72px;
+    padding: 0 18px;
 
     box-sizing: border-box;
 
@@ -8365,33 +8303,26 @@ body.light-mode .ops-top-header,
 }
 
 
-/* ==========================================================
-   CCTV OPS BRAND
-   Plain text only. NOT CLICKABLE.
-   ========================================================== */
+/* CCTV OPS brand */
 
 .ops-direct-brand {
-    display: inline-flex;
-    align-items: center;
-
     padding: 0;
-    margin: 0 2px 0 0;
+    margin: 0;
 
-    color: var(--ops-direct-text);
+    color: #fff;
 
     font-size: 11px;
     line-height: 1;
     font-weight: 700;
 
     cursor: default;
-
     user-select: none;
 }
 
 
 /* ==========================================================
-   DIRECT HEADER NAVIGATION
-   These are buttons functionally but plain text visually.
+   ALL HEADER NAV ITEMS:
+   BUTTON FUNCTIONALITY, TEXT APPEARANCE
    ========================================================== */
 
 .ops-top-header .ops-direct-nav-btn {
@@ -8403,7 +8334,7 @@ body.light-mode .ops-top-header,
     align-items: center !important;
     justify-content: center !important;
 
-    gap: 3px;
+    gap: 4px;
 
     width: auto !important;
     min-width: 0 !important;
@@ -8412,7 +8343,7 @@ body.light-mode .ops-top-header,
     min-height: 0 !important;
 
     margin: 0 !important;
-    padding: 4px 1px !important;
+    padding: 2px 0 !important;
 
     background: transparent !important;
 
@@ -8420,15 +8351,13 @@ body.light-mode .ops-top-header,
     border-radius: 0 !important;
 
     box-shadow: none !important;
-    text-shadow: none !important;
 
-    color: var(--ops-direct-soft) !important;
+    color: rgba(255,255,255,.78) !important;
 
     font-family: inherit !important;
-
     font-size: 10px !important;
     line-height: 1 !important;
-    font-weight: 550 !important;
+    font-weight: 500 !important;
 
     cursor: pointer;
 
@@ -8437,41 +8366,64 @@ body.light-mode .ops-top-header,
     transform: scale(1);
 
     transition:
-        transform 120ms ease,
-        color 120ms ease !important;
+        color 140ms ease,
+        transform 140ms ease,
+        text-shadow 140ms ease !important;
 }
 
 
-.ops-top-header .ops-direct-nav-btn:hover,
-.ops-top-header .ops-direct-nav-btn:focus-visible {
+/* ==========================================================
+   HOVER — TEXT ONLY GLOWS / BRIGHTENS
+   ========================================================== */
+
+.ops-top-header .ops-direct-nav-btn:hover {
+    color: #fff !important;
+
     background: transparent !important;
 
     border: 0 !important;
-
     box-shadow: none !important;
 
-    color: #ffffff !important;
+    transform: scale(1.05) !important;
 
-    transform: scale(1.045) !important;
+    text-shadow:
+        0 0 6px rgba(255,255,255,.65),
+        0 0 12px rgba(255,255,255,.25);
 }
 
 
-.ops-top-header .ops-direct-nav-btn:focus-visible {
-    outline: 1px solid rgba(255,255,255,.28);
+/* Keyboard focus */
 
-    outline-offset: 4px;
+.ops-top-header .ops-direct-nav-btn:focus-visible {
+    color: #fff !important;
+
+    background: transparent !important;
+
+    border: 0 !important;
+    box-shadow: none !important;
+
+    outline: none !important;
+
+    text-shadow:
+        0 0 6px rgba(255,255,255,.55);
 }
 
 
 /* ==========================================================
    ACTIVE MODULE
-   Text + tiny underline only
+   Bright text + thin underline only
    ========================================================== */
 
 .ops-top-header .ops-direct-nav-btn.active {
-    color: #ffffff !important;
+    color: #fff !important;
 
     background: transparent !important;
+
+    border: 0 !important;
+    box-shadow: none !important;
+
+    text-shadow:
+        0 0 5px rgba(255,255,255,.32);
 }
 
 
@@ -8483,28 +8435,36 @@ body.light-mode .ops-top-header,
     left: 0;
     right: 0;
 
-    bottom: -5px;
+    bottom: -6px;
 
     height: 1px;
 
-    background: rgba(255,255,255,.9);
+    background: #fff;
 }
 
 
 /* ==========================================================
-   COUNTS / STATUS
+   COUNTS / LIVE STATUS
+   Plain small text — NO BADGE CELL
    ========================================================== */
 
 .ops-direct-count {
-    color: rgba(255,255,255,.43);
+    margin-left: 2px;
+
+    padding: 0 !important;
+
+    background: transparent !important;
+
+    border: 0 !important;
+    border-radius: 0 !important;
+
+    color: rgba(255,255,255,.42);
 
     font-size: 8px;
     line-height: 1;
     font-weight: 500;
 
-    margin-left: 1px;
-
-    white-space: nowrap;
+    box-shadow: none !important;
 }
 
 
@@ -8514,57 +8474,59 @@ body.light-mode .ops-top-header,
 
 
 /* ==========================================================
-   HEADER DIVIDER
+   DIVIDER
    ========================================================== */
 
 .ops-direct-divider {
     width: 1px;
-    height: 14px;
+    height: 13px;
+
+    margin: 0 -4px;
+
+    background: rgba(255,255,255,.17);
 
     flex: none;
-
-    margin: 0 1px;
-
-    background: var(--ops-direct-line);
 }
 
 
 /* ==========================================================
-   DATE AND TIME
+   DATE / TIME
    ========================================================== */
 
 .ops-direct-clock {
     display: inline-flex;
     align-items: center;
 
-    gap: 9px;
+    gap: 8px;
 
     white-space: nowrap;
 }
 
 
 #opsDirectDate {
-    color: rgba(255,255,255,.68);
+    color: rgba(255,255,255,.52);
 
-    font-size: 11px;
-    line-height: 1;
-    font-weight: 500;
+    font-size: 10px;
+    font-weight: 400;
+
+    white-space: nowrap;
 }
 
 
 #opsDirectTime {
-    color: rgba(255,255,255,.92);
+    color: rgba(255,255,255,.82);
 
-    font-size: 12px;
-    line-height: 1;
-    font-weight: 700;
+    font-size: 11px;
+    font-weight: 600;
 
     font-variant-numeric: tabular-nums;
+
+    white-space: nowrap;
 }
 
 
 /* ==========================================================
-   USER INFO
+   USER INFORMATION
    ========================================================== */
 
 .ops-direct-user {
@@ -8573,198 +8535,113 @@ body.light-mode .ops-top-header,
 
     gap: 5px;
 
-    max-width: 190px;
-
     white-space: nowrap;
 }
 
 
 #opsDirectUserName {
-    max-width: 95px;
-
-    overflow: hidden;
-
     color: rgba(255,255,255,.70);
 
     font-size: 9px;
-    line-height: 1;
-    font-weight: 600;
-
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    font-weight: 500;
 }
 
 
 #opsDirectUserEmail {
-    max-width: 85px;
-
-    overflow: hidden;
-
     color: rgba(255,255,255,.40);
 
     font-size: 8px;
-    line-height: 1;
     font-weight: 400;
-
-    text-overflow: ellipsis;
-    white-space: nowrap;
 }
 
 
-.ops-direct-logout {
-    color: rgba(255,255,255,.65) !important;
+/* Log Out must also look like text */
+
+.ops-top-header .ops-direct-logout {
+    color: rgba(255,255,255,.72) !important;
 }
 
 
-/* ==========================================================
-   LIGHT MODE HEADER TEXT
-   Header is transparent, therefore use readable dark text.
-   ========================================================== */
+.ops-top-header .ops-direct-logout:hover {
+    color: #fff !important;
 
-body.light-mode .ops-direct-brand,
-[data-theme="light"] .ops-direct-brand {
-    color: #17181d;
-}
-
-
-body.light-mode .ops-top-header .ops-direct-nav-btn,
-[data-theme="light"] .ops-top-header .ops-direct-nav-btn {
-    color: rgba(20,21,26,.72) !important;
-}
-
-
-body.light-mode .ops-top-header .ops-direct-nav-btn:hover,
-body.light-mode .ops-top-header .ops-direct-nav-btn.active,
-[data-theme="light"] .ops-top-header .ops-direct-nav-btn:hover,
-[data-theme="light"] .ops-top-header .ops-direct-nav-btn.active {
-    color: #111217 !important;
-}
-
-
-body.light-mode .ops-top-header .ops-direct-nav-btn.active::after,
-[data-theme="light"] .ops-top-header .ops-direct-nav-btn.active::after {
-    background: #111217;
-}
-
-
-body.light-mode .ops-direct-count,
-[data-theme="light"] .ops-direct-count {
-    color: rgba(20,21,26,.46);
-}
-
-
-body.light-mode #opsDirectDate,
-[data-theme="light"] #opsDirectDate {
-    color: rgba(20,21,26,.62);
-}
-
-
-body.light-mode #opsDirectTime,
-[data-theme="light"] #opsDirectTime {
-    color: rgba(20,21,26,.90);
-}
-
-
-body.light-mode #opsDirectUserName,
-[data-theme="light"] #opsDirectUserName {
-    color: rgba(20,21,26,.72);
-}
-
-
-body.light-mode #opsDirectUserEmail,
-[data-theme="light"] #opsDirectUserEmail {
-    color: rgba(20,21,26,.48);
-}
-
-
-body.light-mode .ops-direct-divider,
-[data-theme="light"] .ops-direct-divider {
-    background: rgba(20,21,26,.14);
+    text-shadow:
+        0 0 6px rgba(255,255,255,.65),
+        0 0 12px rgba(255,255,255,.25);
 }
 
 
 /* ==========================================================
-   AUTH LOGIN
-   Do not show app header before authenticated workspace.
+   THEME TOGGLE
+   Keep its existing functionality.
    ========================================================== */
 
-body.auth-locked .ops-top-header {
-    display: none !important;
+.ops-header-theme {
+    position: absolute;
+
+    left: 10px;
+    top: 50%;
+
+    transform: translateY(-50%);
+
+    display: flex;
+    align-items: center;
+}
+
+
+.ops-header-theme .theme-toggle-container {
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+
+.ops-header-theme .main-toggle {
+    transform: scale(.72);
+    transform-origin: left center;
+}
+
+
+/* ==========================================================
+   PREVENT GLOBAL BUTTON CSS FROM RESTORING BOXES
+   ========================================================== */
+
+button.ops-direct-nav-btn,
+.ops-top-header button.ops-direct-nav-btn {
+    background-image: none !important;
+    background-color: transparent !important;
+
+    border: 0 !important;
+    outline: 0;
+
+    border-radius: 0 !important;
+
+    box-shadow: none !important;
 }
 
 
 /* ==========================================================
    RESPONSIVE
-   Never hide actual modules.
-   Wrap cleanly instead.
    ========================================================== */
 
 @media (max-width: 1450px) {
-
     .ops-direct-header-nav {
-        gap: 10px;
-
-        padding-left: 62px;
-        padding-right: 18px;
+        gap: 17px;
     }
-
 
     .ops-top-header .ops-direct-nav-btn {
         font-size: 9.5px !important;
     }
-
-
-    .ops-direct-user {
-        max-width: 130px;
-    }
-
-
-    #opsDirectUserEmail {
-        display: none;
-    }
-
 }
 
 
 @media (max-width: 1180px) {
-
-    .ops-top-header {
-        min-height: 64px;
-    }
-
-
     .ops-direct-header-nav {
-        min-height: 64px;
-
         flex-wrap: wrap;
 
-        align-content: center;
+        row-gap: 9px;
 
-        row-gap: 8px;
-        column-gap: 12px;
-
-        padding-top: 7px;
-        padding-bottom: 7px;
+        padding-top: 9px;
+        padding-bottom: 9px;
     }
-
-}
-
-
-@media (max-width: 760px) {
-
-    .ops-direct-clock {
-        display: none;
-    }
-
-
-    .ops-direct-divider {
-        display: none;
-    }
-
-
-    .ops-direct-user {
-        display: none;
-    }
-
 }
 
