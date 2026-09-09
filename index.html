@@ -9365,7 +9365,7 @@ body.dark-mode #masterAssignedHrTable tbody tr:hover td {
    ============================================================ */
 
 body.ops-redesign-v3 {
-    --ops-sidebar-w: 204px;
+    --ops-sidebar-w: 0px !important;
 
     --ops-bg: #f4f6f9;
     --ops-panel: #ffffff;
@@ -9400,7 +9400,7 @@ body.ops-redesign-v3 {
     --ops-shadow-lg:
         0 18px 48px rgba(16, 24, 40, .14);
 
-    --admin-sidebar: var(--ops-sidebar-w) !important;
+    --admin-sidebar: 0px !important;
     --admin-bg: var(--ops-bg) !important;
     --admin-panel: var(--ops-panel) !important;
     --admin-panel-soft: var(--ops-panel-2) !important;
@@ -9408,12 +9408,13 @@ body.ops-redesign-v3 {
     --admin-muted: var(--ops-muted) !important;
     --admin-line: var(--ops-line) !important;
 
+    width: 100% !important;
+    min-width: 100% !important;
+    max-width: none !important;
     margin: 0 !important;
-    padding:
-        20px
-        22px
-        42px
-        calc(var(--ops-sidebar-w) + 24px) !important;
+    padding: 0 !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
 
     min-height: 100vh;
     overflow-x: hidden;
@@ -9567,26 +9568,15 @@ body.ops-redesign-v3 .page-lead {
 /* ---------- Sidebar ---------- */
 
 body.ops-redesign-v3 .workspace-tabs.admin-sidebar {
+    display: none !important;
     position: fixed !important;
-    inset: 0 auto 0 0 !important;
-    z-index: 1100 !important;
-
-    width: var(--ops-sidebar-w) !important;
-    height: 100vh !important;
-
-    display: flex !important;
-    flex-direction: column !important;
-    align-items: stretch !important;
-
-    padding: 14px 10px 12px !important;
-    overflow: hidden auto !important;
-
-    border: 0 !important;
-    border-right: 1px solid rgba(148,163,184,.11) !important;
-    border-radius: 0 !important;
-
-    background: #0b1320 !important;
-    box-shadow: 8px 0 28px rgba(2,6,23,.10) !important;
+    top: -9999px !important;
+    left: -9999px !important;
+    width: 0 !important;
+    height: 0 !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
 }
 
 body.ops-redesign-v3:not(.dark-mode) .workspace-tabs.admin-sidebar {
@@ -9811,11 +9801,12 @@ body.ops-redesign-v3 .sidebar-collapse-toggle {
 }
 
 body.ops-redesign-v3.sidebar-collapsed {
-    padding-left: 28px !important;
+    padding-left: 0 !important;
+    margin-left: 0 !important;
 }
 
 body.ops-redesign-v3.sidebar-collapsed .sidebar-collapse-toggle {
-    left: 0 !important;
+    display: none !important;
 }
 
 /* ---------- Inputs / fields ---------- */
@@ -12706,17 +12697,16 @@ html[data-theme="light"] body {
   color: var(--saas-text-primary);
 }
 
-/* Centered 1680px Desktop Canvas with 20px Viewport Padding */
-body.ops-redesign-v3 {
-  max-width: 1680px !important;
-  margin: 0 auto !important;
-  padding: 20px 20px 20px calc(260px + 36px) !important;
+/* Centered Desktop Canvas - Zero Sidebar Padding */
+body.ops-redesign-v3,
+body.ops-redesign-v3.sidebar-collapsed {
+  max-width: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
   position: relative;
   box-sizing: border-box;
-}
-
-body.ops-redesign-v3.sidebar-collapsed {
-  padding-left: 36px !important;
 }
 
 /* Floating Workspace Shell Container */
@@ -12740,98 +12730,35 @@ body.ops-redesign-v3.sidebar-collapsed {
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
-/* --- 2. Telemetry Sidebar Container (260px) --- */
+/* --- 2. Telemetry Sidebar Container (REMOVED) --- */
 aside.workspace-tabs.admin-sidebar {
+  display: none !important;
   position: fixed !important;
-  top: 20px !important;
-  bottom: 20px !important;
-  left: max(20px, calc((100vw - 1680px) / 2 + 20px)) !important;
-  width: 260px !important;
-  height: calc(100vh - 40px) !important;
-  border-radius: 24px !important;
-  background: var(--saas-sidebar-bg) !important;
-  border: 1px solid var(--saas-sidebar-border) !important;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45) !important;
-  display: flex !important;
-  flex-direction: column !important;
-  z-index: 9999 !important;
-  overflow-y: auto !important;
-  padding: 16px 12px !important;
-  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease !important;
-}
-
-body.ops-redesign-v3.sidebar-collapsed aside.workspace-tabs.admin-sidebar {
-  transform: translateX(-310px) !important;
+  top: -9999px !important;
+  left: -9999px !important;
+  width: 0 !important;
+  height: 0 !important;
   opacity: 0 !important;
+  visibility: hidden !important;
   pointer-events: none !important;
 }
 
-/* ==========================================================================
-   1. DOCK & STYLE SIDEBAR TOGGLE BUTTON (<)
-   ========================================================================== */
+/* 1. DOCK & STYLE SIDEBAR TOGGLE BUTTON (<) - REMOVED */
 #sidebarToggle,
 .sidebar-toggle,
 .sidebar-collapse-toggle,
 .collapse-btn,
 button:has(> .chevron-left),
 div:has(> #sidebarToggle) {
-    position: absolute !important;
-    top: 20px !important;
-    left: 242px !important; /* Docks precisely along the sidebar dividing border */
-    z-index: 100 !important;
-    width: 26px !important;
-    height: 26px !important;
-    min-height: 26px !important;
-    padding: 0 !important;
-    border-radius: 50% !important;
-    background: #111827 !important;
-    border: 1px solid rgba(255, 255, 255, 0.15) !important;
-    color: #94a3b8 !important;
-    font-size: 11px !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    cursor: pointer !important;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4) !important;
-    transition: all 0.2s ease !important;
-}
-
-#sidebarToggle:hover,
-.sidebar-toggle:hover,
-.sidebar-collapse-toggle:hover {
-    background: #1e293b !important;
-    border-color: #38bdf8 !important;
-    color: #ffffff !important;
-    transform: scale(1.08) !important;
-}
-
-/* Adjust when sidebar is collapsed */
-.sidebar.collapsed ~ #sidebarToggle,
-body.sidebar-collapsed #sidebarToggle,
-body.ops-redesign-v3.sidebar-collapsed #sidebarToggle {
-    left: 68px !important;
-    transform: rotate(180deg) !important;
-}
-
-.sidebar.collapsed ~ #sidebarToggle:hover,
-body.sidebar-collapsed #sidebarToggle:hover,
-body.ops-redesign-v3.sidebar-collapsed #sidebarToggle:hover {
-    transform: rotate(180deg) scale(1.08) !important;
-}
-
-body.light-mode #sidebarToggle,
-[data-theme="light"] #sidebarToggle {
-    background: #ffffff !important;
-    color: #475569 !important;
-    border: 1px solid rgba(15, 23, 42, 0.14) !important;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08) !important;
-}
-
-body.light-mode #sidebarToggle:hover,
-[data-theme="light"] #sidebarToggle:hover {
-    background: #f8fafc !important;
-    border-color: #0284c7 !important;
-    color: #0f172a !important;
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+    position: fixed !important;
+    top: -9999px !important;
+    left: -9999px !important;
 }
 
 /* ==========================================================================
@@ -13704,10 +13631,10 @@ button[class*="danger"],
     transform: translateX(-310px);
   }
   body.ops-redesign-v3:not(.sidebar-collapsed) aside.workspace-tabs.admin-sidebar {
-    transform: translateX(0) !important;
+    display: none !important;
   }
   #sidebarToggle {
-    left: 16px !important;
+    display: none !important;
   }
 }
 
@@ -15447,31 +15374,20 @@ body.light-mode select:not(.glitch-card select),
   font-variant-numeric: tabular-nums !important;
 }
 
-/* Docked Sidebar Toggle Button (<) */
+/* Docked Sidebar Toggle Button (<) - REMOVED */
 #sidebarToggle,
 .sidebar-toggle,
 .collapse-btn,
 .sidebar-collapse-toggle {
-  position: absolute !important;
-  top: 22px !important;
-  left: 242px !important;
-  z-index: 1000 !important;
-  width: 26px !important;
-  height: 26px !important;
-  border-radius: 50% !important;
-  background: #111827 !important;
-  border: 1px solid rgba(255, 255, 255, 0.15) !important;
-  color: #94a3b8 !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  cursor: pointer !important;
-}
-
-.sidebar.collapsed ~ #sidebarToggle,
-body.sidebar-collapsed #sidebarToggle {
-  left: 68px !important;
-  transform: rotate(180deg) !important;
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+  position: fixed !important;
+  top: -9999px !important;
+  left: -9999px !important;
 }
 
 /* --------------------------------------------------------------------------
@@ -16596,30 +16512,15 @@ button[data-action="preview"] {
 
 #sidebarToggle,
 button#sidebarToggle {
-    position: absolute !important;
-    top: 20px !important;
-    left: 242px !important;
-    width: 26px !important;
-    height: 26px !important;
-    min-height: 26px !important;
-    padding: 0 !important;
-    border-radius: 50% !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    background: #18191d !important;
-    color: #ffffff !important;
-    border: 1px solid rgba(255, 255, 255, 0.15) !important;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4) !important;
-    cursor: pointer !important;
-    z-index: 1000 !important;
-    transform: none !important;
-    transition: left 0.25s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.15s ease !important;
-}
-
-#sidebar.sidebar-collapsed ~ #sidebarToggle,
-.sidebar-collapsed #sidebarToggle {
-    left: 68px !important;
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+    position: fixed !important;
+    top: -9999px !important;
+    left: -9999px !important;
 }
 
 .eod-proof-remove,
@@ -17232,7 +17133,9 @@ textarea:focus {
     class="sidebar-collapse-toggle"
     aria-label="Hide sidebar"
     aria-expanded="true"
-    title="Hide sidebar">
+    title="Hide sidebar"
+    hidden
+    style="display: none !important; width: 0 !important; height: 0 !important; padding: 0 !important; margin: 0 !important; border: 0 !important; opacity: 0 !important; visibility: hidden !important; pointer-events: none !important; position: fixed !important; top: -9999px !important; left: -9999px !important;">
     ‹
 </button>
 
