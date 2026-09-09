@@ -98,14 +98,32 @@ Assert-Condition ($html -match 'id="opsFollowupCount"') "#opsFollowupCount exist
 # 11. CSS always black header
 Assert-Condition ($css -match 'body\.light-mode\s+\.ops-top-header,[^}]*background:\s*#000000\s*!important') "Header forced black in light mode and dark mode" "Header not forced black"
 
-# 12. Javascript controller
+# 12. Requirements 31-41: Context nav floating & plain text tabs
+Assert-Condition ($css -match '\.ops-context-nav\s*\{[^}]*background:\s*transparent\s*!important') "Context nav background is transparent !important" "Context nav background is not transparent"
+Assert-Condition ($css -match '\.ops-context-nav\s*\{[^}]*border:\s*none\s*!important') "Context nav border is none !important" "Context nav has border"
+Assert-Condition ($css -match '\.ops-context-nav\s*\{[^}]*box-shadow:\s*none\s*!important') "Context nav box-shadow is none !important" "Context nav has box-shadow"
+Assert-Condition ($css -match '#opsContextTitle[^{]*\{[^}]*display:\s*none\s*!important') "#opsContextTitle is visually hidden via display: none !important" "#opsContextTitle not hidden"
+Assert-Condition ($css -match '\.ops-context-tab\s*\{[^}]*background:\s*transparent\s*!important') "Context tabs background is transparent !important" "Context tabs background not transparent"
+Assert-Condition ($css -match '\.ops-context-tab\s*\{[^}]*border:\s*none\s*!important') "Context tabs border is none !important" "Context tabs have border"
+Assert-Condition ($css -match '\.ops-context-tab\s*\{[^}]*border-radius:\s*0\s*!important') "Context tabs border-radius is 0 !important" "Context tabs have border-radius"
+Assert-Condition ($css -match '\.ops-context-tab\s*\{[^}]*padding:\s*8px\s*2px\s*!important') "Context tabs padding is 8px 2px !important" "Context tabs wrong padding"
+Assert-Condition ($css -match '\.ops-context-tab\s*\{[^}]*font-size:\s*11px\s*!important') "Context tabs font-size is 11px !important" "Context tabs wrong font size"
+Assert-Condition ($css -match '\.ops-context-tab\.active::after\s*\{[^}]*height:\s*1px\s*!important') "Active tab has 1px bottom underline indicator" "Active tab missing 1px underline"
+Assert-Condition ($css -match '\.ops-context-tab:hover[^{]*\{[^}]*transform:\s*scale\(1\.04\)\s*!important') "Hover tab scales slightly by 1.04 without background cell" "Hover tab scale missing"
+Assert-Condition ($css -match '--ops-context-height:\s*32px') "Context row height is compact 32px" "Context row height is not 32px"
+
+# 13. Requirement 40: Global button exclusions
+Assert-Condition ($css -match ':not\(\.ops-header-text-btn\):not\(\.ops-context-tab\):not\(\.ops-menu-row\)') "style.css excludes ops navigation controls from global button styles" "style.css global button rule missing exclusions"
+Assert-Condition ($html -match ':not\(\.ops-header-text-btn\):not\(\.ops-context-tab\):not\(\.ops-menu-row\)') "index.html excludes ops navigation controls from global button styles" "index.html global button rule missing exclusions"
+
+# 14. Javascript controller
 Assert-Condition ($html -match 'id="opsHeaderShellController"') "opsHeaderShellController script added to index.html" "Missing opsHeaderShellController"
 Assert-Condition ($html -match 'triggerLegacy\(legacy\.maintenanceReportBtn\)') "triggerLegacy properly wires to existing buttons" "triggerLegacy wiring missing"
 Assert-Condition ($html -match 'new MutationObserver') "MutationObserver monitors legacy badge and user updates" "MutationObserver missing"
 
 Write-Host "=================================================" -ForegroundColor Cyan
 if ($failures -eq 0) {
-    Write-Host "ALL 30 VERIFICATION CHECKS PASSED!" -ForegroundColor Green
+    Write-Host "ALL VERIFICATION CHECKS PASSED!" -ForegroundColor Green
     exit 0
 } else {
     Write-Host "$failures CHECKS FAILED!" -ForegroundColor Red
