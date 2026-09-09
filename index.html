@@ -17047,6 +17047,63 @@ textarea:focus {
     margin-bottom: 16px !important;
     box-shadow: none !important;
 }
+/* Smart EDR Raw Import Banner */
+.edr-raw-import-banner {
+    background: var(--surface-1) !important;
+    border: 1px solid var(--border-default) !important;
+    border-radius: 8px !important;
+    padding: 12px 14px !important;
+    margin-bottom: 16px !important;
+    box-sizing: border-box !important;
+}
+
+.edr-raw-import-head {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    margin-bottom: 8px !important;
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+}
+
+.edr-raw-import-head label {
+    font-size: 12px !important;
+    color: var(--text-primary) !important;
+}
+
+.edr-raw-import-actions {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+}
+
+#edrRawImport {
+    width: 100% !important;
+    min-height: 52px !important;
+    border-radius: 6px !important;
+    padding: 8px 12px !important;
+    font-family: var(--font-sans) !important;
+    font-size: 12px !important;
+    line-height: 1.4 !important;
+    resize: vertical !important;
+    box-sizing: border-box !important;
+    border: 1px solid var(--border-default) !important;
+    background: var(--input-bg) !important;
+    color: var(--text-primary) !important;
+}
+
+.edr-raw-status {
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    margin-top: 6px !important;
+    padding: 2px 4px !important;
+}
+
+.edr-field-extracted {
+    border-color: #2584ff !important;
+    box-shadow: 0 0 0 2px rgba(37, 132, 255, 0.25) !important;
+    transition: border-color 0.4s ease, box-shadow 0.4s ease !important;
+}
 </style>
 
 </head>
@@ -18243,6 +18300,25 @@ textarea:focus {
                     <p>Compact encoding layout: time, respondent, names, and campaign stay aligned in two clean rows.</p>
                 </div>
                 <span class="edr-session-note" id="edrCloudBadge">Local until Google Docs is connected</span>
+            </div>
+
+            <!-- SMART EDR RAW IMPORT / RAW REPORT -->
+            <div class="edr-raw-import-banner" id="edrRawImportBanner">
+                <div class="edr-raw-import-head">
+                    <label for="edrRawImport"><strong>Smart EDR Import / Raw Report</strong> <span class="edr-optional-tag">(Paste raw CCTV message & auto-fill EDR)</span></label>
+                    <div class="edr-raw-import-actions">
+                        <button type="button" class="btn-primary edr-analyze-btn" id="edrAnalyzeBtn" title="Parse raw CCTV report and auto-fill all EDR fields">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:4px;"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>Analyze & Fill EDR
+                        </button>
+                        <button type="button" class="btn-secondary edr-clear-raw-btn" id="edrClearRawBtn" title="Clear raw input">
+                            Clear
+                        </button>
+                    </div>
+                </div>
+                <textarea id="edrRawImport"
+                          rows="2"
+                          placeholder="Paste raw CCTV observation + TL response + names here... e.g. Good morning TLs, Observed an agent sleeping from 7:52:11 AM to 8:04:03 AM... Location: Mabini Site A â€“ 2nd Floor Date: September 5, 2026... Name of agent: SEP-Albert John Sancha Arceo Tl Je Ann Jy Ramos OM Irene"></textarea>
+                <div id="edrRawStatus" class="edr-raw-status" hidden></div>
             </div>
 
             <div class="edr-form-grid">
@@ -28785,7 +28861,10 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         if (file) loadScreenshotFile(file);
     });
 
-    // EDR Smart Workflow & Deterministic Quick Templates
+        // =========================================================================
+    // SMART EDR RAW IMPORT, PARSER & DETERMINISTIC GENERATOR
+    // =========================================================================
+
     const EDR_QUICK_TEMPLATES = {
         away: {
             incident: "was observed away from assigned workstation during work hours without prior endorsement or authorized aux.",
@@ -28816,58 +28895,444 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
     function applyEdrQuickTemplate(key) {
         const tpl = EDR_QUICK_TEMPLATES[key];
         if (!tpl) return;
-        const subjType = byId("edrSubjectType")?.value || "Agent/s";
-        const subjName = byId("edrSubjectName")?.value.trim();
-        const respRole = byId("edrSupervisorRole")?.value || "Team Leader";
-        const respName = byId("edrSupervisorName")?.value.trim();
+        const subjType = byId("edrSubjectType") ? byId("edrSubjectType").value : "Agent/s";
+        const subjName = byId("edrSubjectName") ? byId("edrSubjectName").value.trim() : "";
+        const respRole = byId("edrSupervisorRole") ? byId("edrSupervisorRole").value : "Team Leader";
+        const respName = byId("edrSupervisorName") ? byId("edrSupervisorName").value.trim() : "";
 
-        const subjPrefix = subjName ? ${subjType}  : subjType;
-        const respPrefix = respName ? ${respRole}  : respRole;
+        const subjPrefix = subjName ? (subjType + " " + subjName) : subjType;
+        const respPrefix = respName ? (respRole + " " + respName) : respRole;
 
-        byId("edrIncident").value = ${subjPrefix} ;
-        byId("edrActionRemarks").value = ${respPrefix} ;
+        byId("edrIncident").value = subjPrefix + " " + tpl.incident;
+        byId("edrActionRemarks").value = respPrefix + " " + tpl.remarks;
         byId("edrIncident").dispatchEvent(new Event("input"));
         byId("edrActionRemarks").dispatchEvent(new Event("input"));
     }
 
-    byId("edrQuickTemplates")?.addEventListener("change", e => {
+    byId("edrQuickTemplates") && byId("edrQuickTemplates").addEventListener("change", function(e) {
         if (e.target.value) applyEdrQuickTemplate(e.target.value);
     });
 
-    async function handleGenerateEdr() {
-        const rough = byId("edrRoughNotes")?.value.trim();
-        const tplKey = byId("edrQuickTemplates")?.value;
-        const subjType = byId("edrSubjectType")?.value || "Agent/s";
-        const subjName = byId("edrSubjectName")?.value.trim();
-        const respRole = byId("edrSupervisorRole")?.value || "Team Leader";
-        const respName = byId("edrSupervisorName")?.value.trim();
+    // Helper function to match select options using normalized comparison
+    function matchSelectOption(selectEl, rawValue) {
+        if (!selectEl || !rawValue) return null;
+        function norm(s) {
+            return (s || "").toString().trim().toLowerCase()
+                .replace(/[\u2013\u2014–—]/g, "-")
+                .replace(/\s+/g, " ");
+        }
+        const target = norm(rawValue);
+        for (let i = 0; i < selectEl.options.length; i++) {
+            const opt = selectEl.options[i];
+            const vNorm = norm(opt.value);
+            const tNorm = norm(opt.text);
+            if (vNorm === target || tNorm === target) return opt.value;
+            if (target.indexOf(vNorm) !== -1 || target.indexOf(tNorm) !== -1) return opt.value;
+            if (vNorm.indexOf(target) !== -1 || tNorm.indexOf(target) !== -1) return opt.value;
+        }
+        return null;
+    }
 
-        const subjPrefix = subjName ? ${subjType}  : subjType;
-        const respPrefix = respName ? ${respRole}  : respRole;
+    // Helper function to match datalist options using normalized comparison
+    function matchDatalistOption(inputEl, rawValue) {
+        if (!inputEl || !rawValue) return rawValue;
+        const listId = inputEl.getAttribute("list");
+        if (!listId) return rawValue;
+        const dl = byId(listId);
+        if (!dl || !dl.options) return rawValue;
+        function norm(s) {
+            return (s || "").toString().trim().toLowerCase()
+                .replace(/[\u2013\u2014–—]/g, "-")
+                .replace(/\s+/g, " ");
+        }
+        const target = norm(rawValue);
+        for (let i = 0; i < dl.options.length; i++) {
+            const optVal = dl.options[i].value;
+            const optNorm = norm(optVal);
+            if (optNorm === target) return optVal;
+            if (optNorm.indexOf(target) !== -1 || target.indexOf(optNorm) !== -1) return optVal;
+        }
+        return rawValue;
+    }
 
-        if (!rough && !tplKey) {
-            showToast("Enter rough notes or choose a quick template first.", "info");
-            byId("edrRoughNotes")?.focus();
+    // Clean, robust deterministic parser for raw pasted CCTV reports
+    function parseRawCctvReport(rawText) {
+        if (!rawText || typeof rawText !== "string") return null;
+
+        const result = {
+            site: "",
+            date: "",
+            dateIso: "",
+            timeObserved: "",
+            timeStart: "",
+            timeEnd: "",
+            duration: "",
+            violation: "",
+            agent: "",
+            teamLeader: "",
+            om: "",
+            account: "",
+            incident: "",
+            remarks: "",
+            unresolved: []
+        };
+
+        const text = rawText.replace(/\r\n/g, "\n").replace(/\r/g, "\n").trim();
+
+        // 1. SITE / LOCATION
+        const siteMatch = text.match(/(?:Location|Site)\s*[:\-\u2013\u2014]\s*([^\n\r@]+?)(?=\s+(?:Date|Time|Name|\bTL\b|\bOM\b|Account|@|\.mp4|\n|$))/i);
+        if (siteMatch) {
+            let rawSite = siteMatch[1].trim().replace(/[\u2013\u2014–—]/g, "-").replace(/\s+/g, " ");
+            const knownSites = [
+                "Mabini Site A - 1st Floor",
+                "Mabini Site A - 2nd Floor",
+                "Mabini Site B1 - 2nd Floor",
+                "Mabini Site B2 - 3rd Floor",
+                "Mabini Site B2 - 4th Floor",
+                "Ecoland Site",
+                "MAA 4th Floor",
+                "MAA 5th Floor",
+                "MAA 6th Floor",
+                "Gensan Site",
+                "CDO Site",
+                "Digos Site"
+            ];
+            const matched = knownSites.find(function(s) {
+                return s.toLowerCase() === rawSite.toLowerCase() || rawSite.toLowerCase().indexOf(s.toLowerCase()) !== -1;
+            });
+            result.site = matched || rawSite;
+        } else {
+            result.unresolved.push("Site");
+        }
+
+        // 2. DATE
+        const dateMatch = text.match(/(?:Date)\s*[:\-\u2013\u2014]\s*([A-Za-z]+ \d{1,2},? \d{4}|\d{4}-\d{2}-\d{2}|\d{1,2}\/\d{1,2}\/\d{4})/i);
+        if (dateMatch) {
+            const rawDateStr = dateMatch[1].trim();
+            result.date = rawDateStr;
+            try {
+                const d = new Date(rawDateStr);
+                if (!isNaN(d.getTime())) {
+                    const yyyy = d.getFullYear();
+                    const mm = String(d.getMonth() + 1).padStart(2, "0");
+                    const dd = String(d.getDate()).padStart(2, "0");
+                    result.dateIso = yyyy + "-" + mm + "-" + dd;
+                }
+            } catch (_) {}
+        } else {
+            result.unresolved.push("Date");
+        }
+
+        // 3. TIME OBSERVED & DURATION
+        const timeRangeMatch = text.match(/(?:(?:from|observed(?:\s+an?\s+\w+)?\s+from|Time Observed\s*[:\-\u2013\u2014]?|Time\s*[:\-\u2013\u2014]?)\s*)?(\d{1,2}:\d{2}(?::\d{2})?\s*(?:AM|PM|am|pm)?)\s*(?:to|-|\u2013|\u2014|–|—|until)\s*(\d{1,2}:\d{2}(?::\d{2})?\s*(?:AM|PM|am|pm))/i);
+        if (timeRangeMatch) {
+            let t1 = timeRangeMatch[1].trim();
+            let t2 = timeRangeMatch[2].trim();
+            if (!/(?:AM|PM)/i.test(t1) && /(?:AM|PM)/i.test(t2)) {
+                const period = t2.match(/(?:AM|PM)/i)[0];
+                t1 = t1 + " " + period;
+            }
+            result.timeStart = t1;
+            result.timeEnd = t2;
+            result.timeObserved = t1 + " \u2013 " + t2;
+        } else {
+            result.unresolved.push("Time Observed");
+        }
+
+        const durationMatch = text.match(/(?:with a (?:total )?duration of\s+|duration\s*[:\-\u2013\u2014]\s*)(approximately \d+\s*(?:minutes?|mins?|hours?|hrs?|seconds?|secs?)|\d+\s*(?:minutes?|mins?|hours?|hrs?|seconds?|secs?))/i);
+        if (durationMatch) {
+            result.duration = durationMatch[1].trim();
+        }
+
+        // 4. VIOLATION DETECTION
+        if (/sleep(?:ing|s)?\b/i.test(text)) {
+            result.violation = "Sleeping";
+        } else if (/loiter(?:ing)?\b/i.test(text)) {
+            result.violation = "Loitering";
+        } else if (/away from (?:workstation|desk)\b/i.test(text)) {
+            result.violation = "Away from workstation";
+        } else if (/(?:phone|cellphone|mobile)/i.test(text)) {
+            result.violation = "Unauthorized phone use";
+        } else if (/pc turned off|computer turned off|shutdown\b/i.test(text)) {
+            result.violation = "PC turned off";
+        } else if (/unattended|unlocked\b/i.test(text)) {
+            result.violation = "Unattended workstation";
+        } else {
+            result.unresolved.push("Violation");
+        }
+
+        // 5. AGENT / SUBJECT NAME
+        const agentMatch = text.match(/(?:Name of agent|Agent Name)\s*[:\-\u2013\u2014]?\s*([^\n\r]+?)(?=\s+(?:\bTl\b|Team Leader|\bOM\b|Operations Manager|Account|Campaign|Violation|Site|Date)|\s*$)/i)
+            || text.match(/\bAgent\s*[:\-\u2013\u2014]\s*([^\n\r]+?)(?=\s+(?:\bTl\b|Team Leader|\bOM\b|Operations Manager|Account|Campaign|Violation|Site|Date)|\s*$)/i);
+        if (agentMatch) {
+            result.agent = agentMatch[1].trim();
+        } else {
+            result.unresolved.push("Agent Name");
+        }
+
+        // 6. TEAM LEADER
+        const tlMatch = text.match(/\b(?:Tl|Team Leader)\b(?!\s*s\b)\s*[:\-\u2013\u2014]?\s*([^\n\r]+?)(?=\s+(?:\bOM\b|Operations Manager|Account|Campaign|\bAgent\b|Name of agent|Violation|Site|Date)|\s*$)/i);
+        if (tlMatch) {
+            let rawTl = tlMatch[1].trim();
+            const matchedTl = (typeof SOURCE_TLS !== "undefined" ? SOURCE_TLS : []).find(function(t) {
+                return t.toLowerCase() === rawTl.toLowerCase();
+            });
+            result.teamLeader = matchedTl || rawTl;
+        } else {
+            result.unresolved.push("Team Leader");
+        }
+
+        // 7. OM
+        const omMatch = text.match(/\b(?:OM|Operations Manager)\b\s*[:\-\u2013\u2014]?\s*([^\n\r@]+?)(?=\s+(?:Account|Campaign|\bAgent\b|Name of agent|\bTl\b|Team Leader|Violation|Site|Date)|\s*$)/i);
+        if (omMatch) {
+            let rawOm = omMatch[1].trim();
+            const matchedOm = (typeof SOURCE_OMS !== "undefined" ? SOURCE_OMS : []).find(function(o) {
+                return o.toLowerCase() === rawOm.toLowerCase();
+            });
+            result.om = matchedOm || rawOm;
+        } else {
+            result.unresolved.push("OM");
+        }
+
+        // 8. ACCOUNT / CAMPAIGN
+        const accountMatch = text.match(/(?:Account|Campaign)\s*[:\-\u2013\u2014]?\s*([^\n\r]+?)(?=\s+(?:Agent|Name of agent|Tl\b|Team Leader|OM\b|Violation|Site|Date)|\s*$)/i);
+        if (accountMatch) {
+            result.account = accountMatch[1].trim();
+        } else {
+            const tagMatch = text.match(/@([A-Za-z0-9_\-]+)/);
+            if (tagMatch) {
+                const tag = tagMatch[1];
+                const matchedAcct = (typeof SOURCE_ACCOUNTS !== "undefined" ? SOURCE_ACCOUNTS : []).find(function(a) {
+                    return a.toLowerCase() === tag.toLowerCase() || a.toLowerCase().indexOf(tag.toLowerCase() + " -") === 0 || a.toLowerCase().indexOf(tag.toLowerCase() + " |") === 0;
+                });
+                if (matchedAcct) result.account = matchedAcct;
+            }
+        }
+
+        // 9. INCIDENT & ACTION TAKEN / REMARKS
+        const violationWord = result.violation ? result.violation.toLowerCase() : "in violation of policy";
+        let incTimeStr = "";
+        if (result.timeStart && result.timeEnd) {
+            incTimeStr = "from " + result.timeStart + " to " + result.timeEnd;
+        } else if (result.timeObserved) {
+            incTimeStr = "from " + result.timeObserved.replace(/[\u2013\u2014–—]/g, "to");
+        }
+        let incParts = [];
+        if (incTimeStr) incParts.push(incTimeStr);
+        if (result.duration) incParts.push("for " + result.duration);
+        const timingStr = incParts.length > 0 ? (" " + incParts.join(", ")) : "";
+        result.incident = "The agent was observed " + violationWord + timingStr + ".";
+
+        let responseText = "";
+        const respStartMatch = text.match(/(?:good morning\s*,\s*(?:sir|cctv)|good afternoon\s*,\s*(?:sir|cctv)|response\s*[:\-\u2013\u2014]|explanation\s*[:\-\u2013\u2014]|tl response\s*[:\-\u2013\u2014]|the agent was not feeling well|we understand the concern)/i);
+        if (respStartMatch) {
+            const respIdx = respStartMatch.index;
+            const afterResp = text.substring(respIdx);
+            const cutMatch = afterResp.match(/(?:Name of agent|Agent\s*:|\bTl\b\s+[A-Z]|\bOM\b\s+[A-Z])/i);
+            responseText = cutMatch ? afterResp.substring(0, cutMatch.index).trim() : afterResp.trim();
+        }
+
+        responseText = responseText
+            .replace(/@?[A-Za-z0-9_\-\s]+\.(?:mp4|mov|avi|mkv|jpg|jpeg|png)/gi, "")
+            .replace(/good morning\s*,?\s*(?:sir|cctv)?\.?/gi, "")
+            .replace(/good afternoon\s*,?\s*(?:sir|cctv)?\.?/gi, "")
+            .replace(/thank you\s*,?\.?/gi, "")
+            .replace(/thanks\s*,?\.?/gi, "")
+            .replace(/\s+/g, " ")
+            .trim();
+
+        if (responseText) {
+            if (/not feeling well/i.test(responseText) && /file (?:the )?NOC/i.test(responseText)) {
+                result.remarks = "The Team Leader explained that the agent was not feeling well and was sick during the time of the incident. The concern was acknowledged, and the Team Leader confirmed that an NOC would be filed in accordance with the company COD.";
+            } else {
+                const leaderTitle = result.teamLeader ? "Team Leader" : "Leadership";
+                let cleanResp = responseText;
+                if (/^the agent/i.test(cleanResp)) {
+                    result.remarks = "The " + leaderTitle + " explained that " + cleanResp.charAt(0).toLowerCase() + cleanResp.slice(1);
+                } else {
+                    result.remarks = "The " + leaderTitle + " acknowledged the report: " + cleanResp;
+                }
+                if (!result.remarks.endsWith(".")) result.remarks += ".";
+            }
+        } else {
+            const leaderTitle = result.teamLeader ? ("Team Leader (" + result.teamLeader + ")") : "Team Leader";
+            result.remarks = "The " + leaderTitle + " was informed via Teams. Observation acknowledged and case documented for operational compliance.";
+        }
+
+        return result;
+    }
+
+    // Function to apply parsed results to existing EDR fields
+    function applyParsedEdrReport(parsed) {
+        if (!parsed) return;
+        const populatedElements = [];
+
+        if (parsed.site && byId("edrSite")) {
+            const matchedSite = matchSelectOption(byId("edrSite"), parsed.site);
+            byId("edrSite").value = matchedSite || parsed.site;
+            byId("edrSite").dispatchEvent(new Event("change"));
+            populatedElements.push(byId("edrSite"));
+        }
+
+        if (parsed.dateIso && byId("edrDate")) {
+            byId("edrDate").value = parsed.dateIso;
+            byId("edrDate").dispatchEvent(new Event("change"));
+            populatedElements.push(byId("edrDate"));
+        }
+
+        if (parsed.timeObserved && byId("edrTimeObserved")) {
+            byId("edrTimeObserved").value = parsed.timeObserved;
+            byId("edrTimeObserved").dispatchEvent(new Event("input"));
+            populatedElements.push(byId("edrTimeObserved"));
+        }
+
+        if (parsed.teamLeader && byId("edrSupervisorName")) {
+            setEdrChoice("edrSupervisorRole", "edrSupervisorRoleButtons", "Team Leader");
+            refreshSupervisorOptions();
+            const matchedTl = matchDatalistOption(byId("edrSupervisorName"), parsed.teamLeader);
+            byId("edrSupervisorName").value = matchedTl || parsed.teamLeader;
+            byId("edrSupervisorName").dispatchEvent(new Event("input"));
+            populatedElements.push(byId("edrSupervisorName"));
+        }
+
+        if (parsed.om && byId("edrOmName")) {
+            const matchedOm = matchDatalistOption(byId("edrOmName"), parsed.om);
+            byId("edrOmName").value = matchedOm || parsed.om;
+            byId("edrOmName").dispatchEvent(new Event("input"));
+            populatedElements.push(byId("edrOmName"));
+        }
+
+        if (parsed.agent && byId("edrSubjectName")) {
+            setEdrChoice("edrSubjectType", "edrSubjectTypeButtons", "Agent/s");
+            refreshSubjectOptions();
+            byId("edrSubjectName").value = parsed.agent;
+            byId("edrSubjectName").dispatchEvent(new Event("input"));
+            populatedElements.push(byId("edrSubjectName"));
+        }
+
+        if (parsed.account && byId("edrAccount")) {
+            const matchedAcct = matchDatalistOption(byId("edrAccount"), parsed.account);
+            byId("edrAccount").value = matchedAcct || parsed.account;
+            byId("edrAccount").dispatchEvent(new Event("input"));
+            populatedElements.push(byId("edrAccount"));
+        }
+
+        if (parsed.violation && byId("edrQuickTemplates")) {
+            const v = parsed.violation.toLowerCase();
+            if (v.indexOf("sleep") !== -1) byId("edrQuickTemplates").value = "sleeping";
+            else if (v.indexOf("loiter") !== -1) byId("edrQuickTemplates").value = "loitering";
+            else if (v.indexOf("away") !== -1) byId("edrQuickTemplates").value = "away";
+            else if (v.indexOf("phone") !== -1) byId("edrQuickTemplates").value = "phone";
+            else if (v.indexOf("pc") !== -1) byId("edrQuickTemplates").value = "pcturnedoff";
+            else if (v.indexOf("unattend") !== -1) byId("edrQuickTemplates").value = "unattended";
+        }
+
+        if (parsed.incident && byId("edrIncident")) {
+            byId("edrIncident").value = parsed.incident;
+            byId("edrIncident").dispatchEvent(new Event("input"));
+            populatedElements.push(byId("edrIncident"));
+        }
+
+        if (parsed.remarks && byId("edrActionRemarks")) {
+            byId("edrActionRemarks").value = parsed.remarks;
+            byId("edrActionRemarks").dispatchEvent(new Event("input"));
+            populatedElements.push(byId("edrActionRemarks"));
+        }
+
+        // Subtly highlight newly populated controls
+        populatedElements.forEach(function(el) {
+            el.classList.add("edr-field-extracted");
+            setTimeout(function() {
+                el.classList.remove("edr-field-extracted");
+            }, 2500);
+        });
+
+        // Update status message
+        const statusEl = byId("edrRawStatus");
+        if (statusEl) {
+            if (parsed.unresolved && parsed.unresolved.length > 0) {
+                statusEl.textContent = "EDR fields extracted (Could not determine: " + parsed.unresolved.join(", ") + ") \u2014 review before saving.";
+                statusEl.style.color = "#d37c35";
+            } else {
+                statusEl.textContent = "All EDR fields extracted successfully \u2014 review before saving.";
+                statusEl.style.color = "var(--brand-success, #22a06b)";
+            }
+            statusEl.hidden = false;
+        }
+
+        showToast("EDR fields extracted \u2014 review before saving.", "success");
+    }
+
+    // Event listener for Analyze & Fill EDR button
+    byId("edrAnalyzeBtn") && byId("edrAnalyzeBtn").addEventListener("click", function() {
+        const raw = byId("edrRawImport") ? byId("edrRawImport").value.trim() : "";
+        if (!raw) {
+            showToast("Please paste a raw CCTV observation report first.", "info");
+            byId("edrRawImport") && byId("edrRawImport").focus();
+            return;
+        }
+
+        const parsed = parseRawCctvReport(raw);
+        if (parsed) {
+            applyParsedEdrReport(parsed);
+        } else {
+            showToast("Could not parse the provided text.", "error");
+        }
+    });
+
+    // Event listener for Clear Raw button
+    byId("edrClearRawBtn") && byId("edrClearRawBtn").addEventListener("click", function() {
+        if (byId("edrRawImport")) byId("edrRawImport").value = "";
+        const statusEl = byId("edrRawStatus");
+        if (statusEl) {
+            statusEl.textContent = "";
+            statusEl.hidden = true;
+        }
+        showToast("Raw report input cleared.", "info");
+    });
+
+    // Robust handler for Generate EDR button
+    function handleGenerateEdr() {
+        const rough = byId("edrRoughNotes") ? byId("edrRoughNotes").value.trim() : "";
+        const rawImport = byId("edrRawImport") ? byId("edrRawImport").value.trim() : "";
+        const tplKey = byId("edrQuickTemplates") ? byId("edrQuickTemplates").value : "";
+        const subjType = byId("edrSubjectType") ? byId("edrSubjectType").value : "Agent/s";
+        const subjName = byId("edrSubjectName") ? byId("edrSubjectName").value.trim() : "";
+        const respRole = byId("edrSupervisorRole") ? byId("edrSupervisorRole").value : "Team Leader";
+        const respName = byId("edrSupervisorName") ? byId("edrSupervisorName").value.trim() : "";
+
+        const subjPrefix = subjName ? (subjType + " " + subjName) : subjType;
+        const respPrefix = respName ? (respRole + " " + respName) : respRole;
+
+        if (!rough && !tplKey && !rawImport) {
+            showToast("Enter rough notes, paste a raw report, or choose a quick template first.", "info");
+            if (byId("edrRoughNotes")) byId("edrRoughNotes").focus();
             return;
         }
 
         if (rough) {
-            let inc = rough.endsWith(".") ? rough : rough + ".";
-            if (subjName && !inc.toLowerCase().includes(subjName.toLowerCase())) {
-                inc = ${subjPrefix}: ;
+            let inc = rough.endsWith(".") ? rough : (rough + ".");
+            if (subjName && inc.toLowerCase().indexOf(subjName.toLowerCase()) === -1) {
+                inc = subjPrefix + ": " + inc;
             }
             byId("edrIncident").value = inc;
-            byId("edrActionRemarks").value = ${respPrefix} was informed via Teams. Observation acknowledged and case documented for operational compliance.;
+            byId("edrActionRemarks").value = respPrefix + " was informed via Teams. Observation acknowledged and case documented for operational compliance.";
+        } else if (rawImport) {
+            const parsed = parseRawCctvReport(rawImport);
+            if (parsed) {
+                applyParsedEdrReport(parsed);
+                return;
+            }
         } else if (tplKey) {
             applyEdrQuickTemplate(tplKey);
         }
 
-        byId("edrIncident").dispatchEvent(new Event("input"));
-        byId("edrActionRemarks").dispatchEvent(new Event("input"));
+        byId("edrIncident") && byId("edrIncident").dispatchEvent(new Event("input"));
+        byId("edrActionRemarks") && byId("edrActionRemarks").dispatchEvent(new Event("input"));
         showToast("EDR content drafted! Review and edit before creating.", "success");
     }
 
-    byId("edrGenerateSmartBtn")?.addEventListener("click", handleGenerateEdr);
+    byId("edrGenerateSmartBtn") && byId("edrGenerateSmartBtn").addEventListener("click", handleGenerateEdr);
 
     // AI-ready abstraction for future Supabase Edge Function integration
     window.generateEdrSmartContent = async function(context) {
@@ -28887,20 +29352,21 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
     };
 
     // Smart Masterlist Auto-Suggest
-    byId("edrSupervisorName")?.addEventListener("change", () => {
-        const val = byId("edrSupervisorName")?.value.trim();
+    byId("edrSupervisorName") && byId("edrSupervisorName").addEventListener("change", function() {
+        const val = byId("edrSupervisorName") ? byId("edrSupervisorName").value.trim() : "";
         if (!val) return;
         try {
             const hrList = Array.isArray(window.__cctvHrAssignments) ? window.__cctvHrAssignments : [];
-            const match = hrList.find(h => h.omTeam && h.omTeam.toLowerCase().includes(val.toLowerCase()));
-            if (match && !byId("edrOmName")?.value) {
+            const match = hrList.find(function(h) {
+                return h.omTeam && h.omTeam.toLowerCase().indexOf(val.toLowerCase()) !== -1;
+            });
+            if (match && !byId("edrOmName").value) {
                 byId("edrOmName").value = match.omTeam.replace(/^Team\s+/i, "");
                 byId("edrOmName").dispatchEvent(new Event("input"));
             }
         } catch (_) {}
     });
-
-    byId("edrSaveBtn").addEventListener("click", saveReport);
+byId("edrSaveBtn").addEventListener("click", saveReport);
     byId("edrClearFormBtn").addEventListener("click", async () => {
         clearForm();
         await pushEdrHistory("Cleared EDR form");

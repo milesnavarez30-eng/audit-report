@@ -14930,3 +14930,62 @@ textarea:focus {
     margin-bottom: 16px !important;
     box-shadow: none !important;
 }
+
+
+/* Smart EDR Raw Import Banner */
+.edr-raw-import-banner {
+    background: var(--surface-1) !important;
+    border: 1px solid var(--border-default) !important;
+    border-radius: 8px !important;
+    padding: 12px 14px !important;
+    margin-bottom: 16px !important;
+    box-sizing: border-box !important;
+}
+
+.edr-raw-import-head {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    margin-bottom: 8px !important;
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+}
+
+.edr-raw-import-head label {
+    font-size: 12px !important;
+    color: var(--text-primary) !important;
+}
+
+.edr-raw-import-actions {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+}
+
+#edrRawImport {
+    width: 100% !important;
+    min-height: 52px !important;
+    border-radius: 6px !important;
+    padding: 8px 12px !important;
+    font-family: var(--font-sans) !important;
+    font-size: 12px !important;
+    line-height: 1.4 !important;
+    resize: vertical !important;
+    box-sizing: border-box !important;
+    border: 1px solid var(--border-default) !important;
+    background: var(--input-bg) !important;
+    color: var(--text-primary) !important;
+}
+
+.edr-raw-status {
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    margin-top: 6px !important;
+    padding: 2px 4px !important;
+}
+
+.edr-field-extracted {
+    border-color: #2584ff !important;
+    box-shadow: 0 0 0 2px rgba(37, 132, 255, 0.25) !important;
+    transition: border-color 0.4s ease, box-shadow 0.4s ease !important;
+}
