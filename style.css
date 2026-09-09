@@ -8261,13 +8261,20 @@ main {
    CCTV OPS — NEBULA-STYLE TEXT HEADER
    ========================================================== */
 
+:root {
+    --ops-header-height: 44px;
+}
+
 .ops-top-header {
-    position: sticky;
-    top: 0;
-    z-index: 1000;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
 
     width: 100% !important;
-    min-height: 44px;
+    min-height: var(--ops-header-height);
+
+    z-index: 99999 !important;
 
     margin: 0 !important;
     padding: 0 !important;
@@ -8276,11 +8283,21 @@ main {
     border: 0 !important;
     box-shadow: none !important;
 
+    box-sizing: border-box;
+
     font-family:
         Inter,
         "Plus Jakarta Sans",
         system-ui,
         sans-serif;
+}
+
+body:not(.auth-locked) {
+    padding-top: var(--ops-header-height) !important;
+}
+
+body.auth-locked {
+    padding-top: 0 !important;
 }
 
 body.auth-locked .ops-top-header {
@@ -8639,6 +8656,10 @@ button.ops-direct-nav-btn,
 
 
 @media (max-width: 1180px) {
+    :root {
+        --ops-header-height: 64px;
+    }
+
     .ops-direct-header-nav {
         flex-wrap: wrap;
 

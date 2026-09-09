@@ -77,6 +77,11 @@ Assert-Condition ($html -notmatch 'id="opsContextNav"') "opsContextNav completel
 Assert-Condition ($css -match '\.ops-direct-header-nav\s*\{[^}]*justify-content:\s*center') "Direct header navigation is centered across full viewport" "Header nav not centered"
 Assert-Condition ($css -match '\.ops-top-header \.ops-direct-nav-btn\.active::after\s*\{[^}]*height:\s*1px') "Active tab has 1px bottom underline indicator" "Active tab missing 1px underline"
 Assert-Condition ($css -match 'body\.auth-locked \.ops-top-header\s*\{[^}]*display:\s*none\s*!important') "Auth-locked hides ops-top-header" "Auth-locked rule missing"
+Assert-Condition ($css -match '\.ops-top-header\s*\{[^}]*position:\s*fixed\s*!important') ".ops-top-header is position: fixed !important" "Header not fixed"
+Assert-Condition ($css -match '\.ops-top-header\s*\{[^}]*z-index:\s*99999\s*!important') ".ops-top-header has z-index: 99999 !important" "Header z-index not 99999"
+Assert-Condition ($css -match 'body:not\(\.auth-locked\)\s*\{[^}]*padding-top:\s*var\(--ops-header-height\)\s*!important') "body:not(.auth-locked) reserves top space for fixed header" "body padding-top missing"
+Assert-Condition ($css -match 'body\.auth-locked\s*\{[^}]*padding-top:\s*0\s*!important') "body.auth-locked removes top padding on login screen" "auth-locked padding-top not 0"
+
 
 # 8. Check JS controller
 Assert-Condition ($html -match 'id="opsHeaderShellController"') "opsHeaderShellController script present" "opsHeaderShellController missing"
