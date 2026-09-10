@@ -1572,6 +1572,239 @@
 
           </div>
         </section>
+
+        <!-- Accounts / Admin Operations Console Workspace Pane -->
+        <section id="paneAccounts" class="workspace-pane" role="tabpanel" aria-labelledby="tabAccounts" hidden>
+          <div class="accounts-workspace-layout">
+
+            <!-- Admin Head Card -->
+            <div class="accounts-head-card">
+              <div class="accounts-head-info">
+                <h2 class="accounts-head-title">Admin Operations Console</h2>
+                <p class="accounts-head-desc">System status monitoring, staff account management, centralized security audit log, and operational workspace preferences.</p>
+              </div>
+              <div class="accounts-head-actions">
+                <button type="button" class="btn btn-outline btn-sm" id="adminRefreshBtn" style="gap:5px;">
+                  <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M23 4v6h-6"></path><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
+                  <span>Refresh</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- System Status Health Strip -->
+            <div class="admin-system-strip">
+              <div class="admin-system-item" id="adminSupabaseStatusCard">
+                <span class="admin-dot is-online" id="adminSupabaseDot"></span>
+                <span class="admin-sys-label">Supabase Auth:</span>
+                <strong id="adminSupabaseStatus">Connected</strong>
+              </div>
+              <div class="admin-system-item" id="adminDocsStatusCard">
+                <span class="admin-dot" id="adminDocsDot"></span>
+                <span class="admin-sys-label">Google Docs EDR:</span>
+                <strong id="adminDocsStatus">Checking...</strong>
+              </div>
+              <div class="admin-system-item" id="adminSheetsStatusCard">
+                <span class="admin-dot" id="adminSheetsDot"></span>
+                <span class="admin-sys-label">Google Sheets Maint:</span>
+                <strong id="adminSheetsStatus">Configured</strong>
+              </div>
+            </div>
+
+            <!-- Operations KPI Metrics Grid (9 Cards) -->
+            <div class="admin-kpi-grid">
+              <div class="admin-kpi-card"><span>Total Accounts</span><strong id="adminTotalUsers">0</strong></div>
+              <div class="admin-kpi-card"><span>Admins</span><strong id="adminCountAdmins">0</strong></div>
+              <div class="admin-kpi-card"><span>Staff Users</span><strong id="adminCountUsers">0</strong></div>
+              <div class="admin-kpi-card is-pending"><span>Pending</span><strong id="adminPendingUsers">0</strong></div>
+              <div class="admin-kpi-card is-disabled"><span>Disabled</span><strong id="adminDisabledUsers">0</strong></div>
+              <div class="admin-kpi-card is-recent"><span>Active 24h</span><strong id="adminRecentUsers">0</strong></div>
+              <div class="admin-kpi-card is-ops"><span>Local EDRs</span><strong id="adminEdrCount">0</strong></div>
+              <div class="admin-kpi-card is-ops"><span>CCTV Audits</span><strong id="adminCctvCount">0</strong></div>
+              <div class="admin-kpi-card is-ops"><span>Open Follow-ups</span><strong id="adminFollowupCount">0</strong></div>
+            </div>
+
+            <!-- macOS Segmented Subnav Switcher -->
+            <div class="admin-subnav-bar" role="tablist" aria-label="Admin Sub-Sections">
+              <button type="button" class="admin-subnav-btn active" data-admin-tab="users" role="tab" aria-selected="true">Staff Accounts</button>
+              <button type="button" class="admin-subnav-btn" data-admin-tab="audit" role="tab" aria-selected="false">Security Audit Log</button>
+              <button type="button" class="admin-subnav-btn" data-admin-tab="settings" role="tab" aria-selected="false">Operational Settings</button>
+            </div>
+
+            <!-- SECTION 1: STAFF ACCOUNTS -->
+            <div id="adminTabUsers" class="admin-tab-content active">
+              
+              <!-- Create Account Card -->
+              <section class="auth-admin-card auth-create-account-card">
+                <div class="auth-admin-card-head">
+                  <div>
+                    <h3>Create Account</h3>
+                    <p>Create a ready-to-use Username + Password account. Admin-created accounts are approved immediately.</p>
+                  </div>
+                </div>
+                <form id="adminCreateAccountForm" class="auth-create-account-grid" autocomplete="off" onsubmit="return false;">
+                  <label>
+                    <span>Name</span>
+                    <input type="text" id="adminCreateName" class="form-control form-control-sm" placeholder="Staff full name" autocomplete="off" data-lpignore="true">
+                  </label>
+                  <label>
+                    <span>Username</span>
+                    <input type="text" id="adminCreateUsername" class="form-control form-control-sm" placeholder="e.g. Seth Dajao, seth123, Staff01" maxlength="60" autocomplete="off" data-lpignore="true">
+                  </label>
+                  <label>
+                    <span>Temporary Password</span>
+                    <div class="auth-password-wrap">
+                      <input type="password" id="adminCreatePassword" class="form-control form-control-sm" minlength="6" placeholder="At least 6 characters" autocomplete="new-password">
+                      <button type="button" class="auth-password-toggle" data-target="adminCreatePassword" aria-label="Show password" title="Show password">
+                        <svg class="auth-eye-open" viewBox="0 0 24 24"><path d="M2.4 12s3.5-6 9.6-6 9.6 6 9.6 6-3.5 6-9.6 6-9.6-6Z"/><circle cx="12" cy="12" r="2.6"/></svg>
+                        <svg class="auth-eye-closed" viewBox="0 0 24 24"><path d="M3 3l18 18"/><path d="M10.6 6.1A10.8 10.8 0 0 1 12 6c6.1 0 9.6 6 9.6 6a16.7 16.7 0 0 1-3.1 3.7M14.5 14.5A3.5 3.5 0 0 1 9.5 9.5M6.2 6.2C3.7 8 2.4 12 2.4 12s3.5 6 9.6 6c1.5 0 2.8-.4 4-.9"/></svg>
+                      </button>
+                    </div>
+                  </label>
+                  <label>
+                    <span>Role</span>
+                    <select id="adminCreateRole" class="form-control form-control-sm">
+                      <option value="user" selected>User</option>
+                      <option value="admin">Admin</option>
+                    </select>
+                  </label>
+                  <div style="display:flex; align-items:flex-end;">
+                    <button type="button" class="btn btn-primary btn-sm" id="adminCreateAccountBtn" style="width:100%; height:32px;">Create Account</button>
+                  </div>
+                </form>
+                <div id="adminCreateAccountStatus" class="auth-create-status"></div>
+              </section>
+
+              <!-- Recently Created Credentials Section -->
+              <section id="adminRecentCredsSection" class="auth-admin-card auth-recent-creds-card" hidden>
+                <div class="auth-admin-card-head">
+                  <div>
+                    <div class="recent-creds-title-wrap">
+                      <span class="recent-creds-indicator">●</span>
+                      <h3>Recently Created Credentials</h3>
+                    </div>
+                    <p>Temporary credentials generated during this Admin session. Hand over to staff or copy credentials.</p>
+                  </div>
+                  <button type="button" id="adminClearAllCredsBtn" class="btn btn-outline btn-sm">Clear All</button>
+                </div>
+                <div id="adminRecentCredsList" class="recent-creds-grid"></div>
+              </section>
+
+              <!-- User Accounts List Section -->
+              <section class="auth-admin-card">
+                <div class="auth-admin-card-head">
+                  <div>
+                    <h3>User Accounts</h3>
+                    <p>Manage staff access, edit workspace permissions, approve signups, or disable accounts.</p>
+                  </div>
+                  <input type="search" id="adminUserSearch" class="form-control form-control-sm" placeholder="Find name or username..." style="max-width:240px;" autocomplete="off" data-lpignore="true">
+                </div>
+                <div id="adminUsersBody" class="admin-users-grid">
+                  <div class="auth-admin-empty" style="grid-column: 1 / -1;">Loading accounts...</div>
+                </div>
+              </section>
+            </div>
+
+            <!-- SECTION 2: SECURITY AUDIT LOG -->
+            <div id="adminTabAudit" class="admin-tab-content" hidden>
+              <section class="auth-admin-card">
+                <div class="auth-admin-card-head">
+                  <div>
+                    <h3>Security &amp; Administrative Audit Log</h3>
+                    <p>Chronological record of account creations, role changes, permission modifications, and security events.</p>
+                  </div>
+                  <div class="admin-audit-tools">
+                    <input type="search" id="adminAuditSearch" class="form-control form-control-sm" placeholder="Filter audit events..." style="max-width:220px;" autocomplete="off" data-lpignore="true">
+                    <button type="button" class="btn btn-outline btn-sm" id="adminRefreshAuditBtn">Refresh</button>
+                    <button type="button" class="btn btn-outline btn-sm" id="adminExportAuditBtn">Export Log</button>
+                  </div>
+                </div>
+                <div class="admin-audit-banner">
+                  <span>Persistent across PCs when <code>supabase_audit_log.sql</code> is applied to Supabase. Fully protected by Row Level Security (RLS).</span>
+                </div>
+                <div class="auth-admin-table-wrap">
+                  <table class="auth-admin-table" id="adminAuditTable">
+                    <thead>
+                      <tr><th>Timestamp</th><th>Actor</th><th>Role</th><th>Action</th><th>Target</th><th>Details</th></tr>
+                    </thead>
+                    <tbody id="adminSecurityAuditBody">
+                      <tr><td colspan="6">Loading audit events...</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </section>
+            </div>
+
+            <!-- SECTION 3: OPERATIONAL SETTINGS -->
+            <div id="adminTabSettings" class="admin-tab-content" hidden>
+              <section class="auth-admin-card">
+                <div class="auth-admin-card-head">
+                  <div>
+                    <h3>Operational Settings</h3>
+                    <p>Configure defaults and operational preferences for the CCTV OPS console. Stored securely.</p>
+                  </div>
+                </div>
+                <div class="admin-settings-body">
+                  <div class="admin-setting-row">
+                    <div class="admin-setting-meta">
+                      <strong>Default Interface Theme</strong>
+                      <span>Choose default color mode for newly opened sessions on this browser.</span>
+                    </div>
+                    <select id="adminSettingTheme" class="form-control form-control-sm admin-setting-control">
+                      <option value="dark" selected>Dark Mode (Operations Default)</option>
+                      <option value="light">Light Mode</option>
+                      <option value="system">System Preference</option>
+                    </select>
+                  </div>
+
+                  <div class="admin-setting-row">
+                    <div class="admin-setting-meta">
+                      <strong>Default Landing Workspace</strong>
+                      <span>The first workspace presented to authenticated staff upon login.</span>
+                    </div>
+                    <select id="adminSettingLanding" class="form-control form-control-sm admin-setting-control">
+                      <option value="edr">EDR</option>
+                      <option value="cctv" selected>CCTV Audit</option>
+                      <option value="sorter">AI Sorter</option>
+                      <option value="maintenance">Maintenance</option>
+                      <option value="masterlist">Masterlist</option>
+                      <option value="followup">Follow Up Reports</option>
+                      <option value="history">Activity History</option>
+                    </select>
+                  </div>
+
+                  <div class="admin-setting-row">
+                    <div class="admin-setting-meta">
+                      <strong>Application Display Subtitle</strong>
+                      <span>Operational title displayed beneath the CCTV OPS brand.</span>
+                    </div>
+                    <input type="text" id="adminSettingSubtitle" class="form-control form-control-sm admin-setting-control" value="Secure operations workspace" placeholder="e.g. Operations Console" autocomplete="off" data-lpignore="true">
+                  </div>
+
+                  <div class="admin-setting-row">
+                    <div class="admin-setting-meta">
+                      <strong>CCTV Audit Auto-Trim Formatting</strong>
+                      <span>Automatically remove extraneous trailing and leading whitespace from pasted TL, Agent, and OM names.</span>
+                    </div>
+                    <label class="admin-setting-toggle">
+                      <input type="checkbox" id="adminSettingAutoTrim" checked>
+                      <span>Enable automatic name cleanup</span>
+                    </label>
+                  </div>
+
+                  <div class="admin-settings-actions">
+                    <button type="button" class="btn btn-primary btn-sm" id="adminSaveSettingsBtn">Save Settings</button>
+                    <span id="adminSaveSettingsNotice" class="admin-settings-notice"></span>
+                  </div>
+
+                  <div class="admin-settings-info">
+                    <small>Note: Integration endpoints (Supabase credentials, Google Apps Script URLs, and document IDs) are governed by protected configuration and cannot be modified from public forms.</small>
+                  </div>
+                </div>
+              </section>
+            </div>
+
+          </div>
+        </section>
       </div>
     </main>
   </div>
@@ -1766,6 +1999,62 @@
     </div>
   </div>
 
+  <!-- User Account Access Editor Modal -->
+  <div class="modal-backdrop" id="adminAccessModal" hidden>
+    <div class="modal-dialog" style="max-width:560px;">
+      <div class="modal-header">
+        <div>
+          <h3 class="modal-title" id="adminAccessTitle">Account Access</h3>
+          <p id="adminAccessUserLabel" style="font-size:11px; color:var(--text-muted); margin:2px 0 0 0;">Choose the role and workspaces this account can open.</p>
+        </div>
+        <button type="button" class="btn btn-ghost btn-sm" id="adminAccessClose" aria-label="Close">✕</button>
+      </div>
+      <div class="modal-body" style="display:flex; flex-direction:column; gap:12px;">
+        <input type="hidden" id="adminAccessTargetId">
+        <label style="display:flex; flex-direction:column; gap:4px; font-size:12px;">
+          <span style="font-weight:600; color:var(--text-secondary);">Display Name</span>
+          <input type="text" id="adminAccessDisplayName" class="form-control form-control-sm" placeholder="Staff full name" autocomplete="off" data-lpignore="true">
+        </label>
+        <div style="display:flex; gap:12px;">
+          <label style="flex:1; display:flex; flex-direction:column; gap:4px; font-size:12px;">
+            <span style="font-weight:600; color:var(--text-secondary);">Role</span>
+            <select id="adminAccessRole" class="form-control form-control-sm">
+              <option value="user">User</option>
+              <option value="admin">Admin</option>
+            </select>
+          </label>
+          <label style="flex:1; display:flex; flex-direction:column; gap:4px; font-size:12px;">
+            <span style="font-weight:600; color:var(--text-secondary);">Status</span>
+            <select id="adminAccessStatus" class="form-control form-control-sm">
+              <option value="active">Active</option>
+              <option value="disabled">Disabled / Suspended</option>
+            </select>
+          </label>
+        </div>
+        <div>
+          <span style="font-size:12px; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:6px;">Workspace Access Permissions</span>
+          <div class="auth-access-grid" id="adminAccessGrid">
+            <label><input type="checkbox" data-permission="edr"> EDR</label>
+            <label><input type="checkbox" data-permission="cctv"> CCTV Audit</label>
+            <label><input type="checkbox" data-permission="sorter"> AI Sorter</label>
+            <label><input type="checkbox" data-permission="maintenance"> Maintenance</label>
+            <label><input type="checkbox" data-permission="masterlist"> Master List</label>
+            <label><input type="checkbox" data-permission="followup"> Follow Up Reports</label>
+            <label><input type="checkbox" data-permission="history"> History</label>
+            <label class="auth-access-manage" hidden><input type="checkbox" data-permission="manageOptions" disabled> Manage site / OM / campaign options</label>
+          </div>
+        </div>
+        <div class="auth-access-note" style="font-size:11px; color:var(--text-muted); background:var(--bg-input); padding:8px 10px; border-radius:var(--radius-xs); border:1px solid var(--border-default);">
+          Admin = full access. Normal user cannot manage options. User access can be changed anytime.
+        </div>
+      </div>
+      <div class="modal-footer" style="justify-content:flex-end; gap:8px;">
+        <button type="button" class="btn btn-outline btn-sm" id="adminAccessCancel">Cancel</button>
+        <button type="button" class="btn btn-primary btn-sm" id="adminAccessSave">Save Access</button>
+      </div>
+    </div>
+  </div>
+
   <input type="file" id="followupReplaceInput" accept="image/*" hidden>
 
   <!-- Toast Notification Container -->
@@ -1790,6 +2079,7 @@
   <script src="./js/services/followup-service.js"></script>
   <script src="./js/services/masterlist-service.js"></script>
   <script src="./js/services/history-service.js"></script>
+  <script src="./js/services/accounts-service.js"></script>
   <script src="./js/app.js"></script>
 </body>
 </html>
