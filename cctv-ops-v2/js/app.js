@@ -1246,6 +1246,8 @@
       renderPendingWorkspace();
     } else if (targetKey === "followup") {
       renderFollowupWorkspace();
+    } else if (targetKey === "masterlist") {
+      renderMasterlistWorkspace();
     }
   }
 
@@ -4610,6 +4612,351 @@
     });
   }
 
+  // =========================================================================
+  // MASTERLIST WORKSPACE CONTROLLER
+  // =========================================================================
+  window.appConfirm = window.appConfirm || function({ title, message, confirmText, tone }) {
+    return new Promise(resolve => {
+      const modal = el("modalAppConfirm");
+      if (!modal) {
+        resolve(window.confirm(`${title || 'Confirm'}\n\n${message || ''}`));
+        return;
+      }
+      const titleEl = el("confirmDialogTitle");
+      const msgEl = el("confirmDialogMessage");
+      const acceptBtn = el("btnConfirmDialogAccept");
+      if (titleEl) titleEl.textContent = title || "Confirm Action";
+      if (msgEl) msgEl.textContent = message || "Are you sure you want to proceed?";
+      if (acceptBtn) {
+        acceptBtn.textContent = confirmText || "Confirm";
+        acceptBtn.className = tone === "danger" ? "btn btn-danger btn-sm" : "btn btn-primary btn-sm";
+      }
+      modal.hidden = false;
+      window.handleConfirmDialog = function(accepted) {
+        modal.hidden = true;
+        resolve(!!accepted);
+      };
+    });
+  };
+
+  function renderMasterlistWorkspace() {
+    if (window._renderMasterlistWorkspaceFn) {
+      window._renderMasterlistWorkspaceFn();
+    }
+  }
+
+  function initMasterlistController() {
+    const masterlist = window.masterlistService;
+    if (!masterlist) return;
+
+    const syncDot = el("masterlistSyncDot");
+    const syncTitle = el("masterlistSyncTitle");
+    const syncDetail = el("masterlistSyncDetail");
+    const lastUpdated = el("masterlistLastUpdated");
+    const refreshBtn = el("masterlistRefreshBtn");
+
+    const pendingTitle = el("masterPendingTitle");
+    const pendingMilesCount = el("masterPendingMilesCount");
+    const pendingTabs = el("masterPendingTabs");
+    const pendingTable = el("masterPendingMilesTable");
+
+    const notepadTitle = el("masterPendingNotesTitle");
+    const notepadStatus = el("masterNotepadStatus");
+    const notepadText = el("masterPendingNotepad");
+    const notepadClearBtn = el("masterNotepadClearBtn");
+
+    const hrCount = el("masterAssignedHrCount");
+    const hrEditId = el("masterHrEditId");
+    const hrSiteInput = el("masterHrSiteInput");
+    const hrTeamInput = el("masterHrTeamInput");
+    const hrAssignedInput = el("masterHrAssignedInput");
+    const hrSaveBtn = el("masterHrSaveBtn");
+    const hrCancelBtn = el("masterHrCancelBtn");
+    const hrStatus = el("masterHrCrudStatus");
+    const hrSearch = el("masterHrSearch");
+    const hrSearchClear = el("masterHrSearchClear");
+    const hrTableBody = el("masterAssignedHrBody");
+
+    function renderSyncStatus() {
+      const state = masterlist.getSyncState();
+      if (syncDot) {
+        syncDot.className = "masterlist-sync-dot " + (state.kind === "live" ? "is-live" : (state.kind === "syncing" ? "is-syncing" : "is-error"));
+      }
+      if (syncTitle) syncTitle.textContent = state.title;
+      if (syncDetail) syncDetail.textContent = state.detail;
+      if (lastUpdated) lastUpdated.textContent = state.formattedTime;
+    }
+
+    function renderPendingTrackers() {
+      const trackers = masterlist.getTrackers();
+      const activeKey = masterlist.getActiveTrackerKey();
+      const activeTracker = trackers.find(t => t.key === activeKey) || trackers[0];
+
+      // Update tab badges
+      trackers.forEach(t => {
+        const badgeEl = el("badge" + t.label.replace(/[^a-zA-Z]/g, ""));
+        if (badgeEl) badgeEl.textContent = String(t.count);
+      });
+
+      // Update active tab buttons
+      pendingTabs?.querySelectorAll("[data-pending-key]").forEach(btn => {
+        btn.classList.toggle("active", btn.dataset.pendingKey === activeKey);
+      });
+
+      if (pendingTitle) pendingTitle.textContent = `Pending ${activeTracker ? activeTracker.label : 'Miles'}`;
+      if (pendingMilesCount) pendingMilesCount.textContent = String(activeTracker ? activeTracker.count : 0);
+
+      // Render table
+      if (pendingTable) {
+        const thead = pendingTable.querySelector("thead");
+        const tbody = pendingTable.querySelector("tbody");
+        const columns = masterlist.getColumns();
+
+        if (thead) {
+          thead.innerHTML = `<tr>${columns.map(col => `<th>${escapeHtml(col)}</th>`).join("")}</tr>`;
+        }
+
+        if (tbody) {
+          const rows = masterlist.getPendingRows(activeKey);
+          const sourceInfo = activeTracker?.sourceInfo;
+
+          if (sourceInfo && sourceInfo.ok === false) {
+            const errDetail = sourceInfo.error || "Sheet could not be read or was not found.";
+            tbody.innerHTML = `<tr><td colspan="${columns.length}" class="masterlist-empty-cell is-error">⚠️ <strong>Source Error:</strong> Could not load ${escapeHtml(activeTracker.label)} tracker: ${escapeHtml(errDetail)}</td></tr>`;
+          } else if (!rows.length) {
+            tbody.innerHTML = `<tr><td colspan="${columns.length}" class="masterlist-empty-cell">No Pending ${escapeHtml(activeTracker ? activeTracker.label : 'Miles')} rows found.</td></tr>`;
+          } else {
+            tbody.innerHTML = rows.map(row => `
+              <tr>
+                ${columns.map(col => `<td>${escapeHtml(masterlist.valueForPendingColumn(row, col))}</td>`).join("")}
+              </tr>
+            `).join("");
+          }
+        }
+      }
+
+      // Update Notepad
+      if (notepadTitle) notepadTitle.textContent = `Pending ${activeTracker ? activeTracker.label : 'Miles'} Notes`;
+      if (notepadText) notepadText.value = masterlist.getNotepad(activeKey);
+      if (notepadStatus) notepadStatus.textContent = "Saved locally";
+    }
+
+    function setHrStatus(msg, tone = "") {
+      if (!hrStatus) return;
+      if (!msg) {
+        hrStatus.style.display = "none";
+        hrStatus.textContent = "";
+        return;
+      }
+      hrStatus.style.display = "block";
+      hrStatus.textContent = msg;
+      hrStatus.className = "masterlist-hr-status" + (tone ? ` is-${tone}` : "");
+    }
+
+    function clearHrForm() {
+      if (hrEditId) hrEditId.value = "";
+      if (hrSiteInput) hrSiteInput.value = "";
+      if (hrTeamInput) hrTeamInput.value = "";
+      if (hrAssignedInput) hrAssignedInput.value = "";
+      if (hrSaveBtn) hrSaveBtn.textContent = "Add";
+      setHrStatus("");
+    }
+
+    function renderHrAssignments() {
+      const query = hrSearch?.value || "";
+      const assignments = masterlist.getHrAssignments(query);
+
+      if (hrCount) hrCount.textContent = String(assignments.length);
+
+      if (!hrTableBody) return;
+
+      if (!assignments.length) {
+        hrTableBody.innerHTML = `<tr><td colspan="4" class="masterlist-empty-cell">No HR assignments found.</td></tr>`;
+        return;
+      }
+
+      hrTableBody.innerHTML = assignments.map(item => `
+        <tr data-id="${escapeHtml(item.id || "")}">
+          <td>${escapeHtml(item.site)}</td>
+          <td>${escapeHtml(item.omTeam)}</td>
+          <td>${escapeHtml(item.hr)}</td>
+          <td>
+            <div class="masterlist-hr-actions-cell">
+              <button type="button" class="btn btn-ghost btn-sm btn-hr-edit" data-id="${escapeHtml(item.id || "")}" style="padding:2px 6px; font-size:10px;">Edit</button>
+              <button type="button" class="btn btn-danger-ghost btn-sm btn-hr-delete" data-id="${escapeHtml(item.id || "")}" style="padding:2px 6px; font-size:10px;">Delete</button>
+            </div>
+          </td>
+        </tr>
+      `).join("");
+
+      // Wire edit buttons
+      hrTableBody.querySelectorAll(".btn-hr-edit").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const id = btn.dataset.id;
+          const item = assignments.find(a => a.id === id);
+          if (!item) return;
+          if (hrEditId) hrEditId.value = item.id || "";
+          if (hrSiteInput) hrSiteInput.value = item.site || "";
+          if (hrTeamInput) hrTeamInput.value = item.omTeam || "";
+          if (hrAssignedInput) hrAssignedInput.value = item.hr || "";
+          if (hrSaveBtn) hrSaveBtn.textContent = "Update";
+          hrSiteInput?.focus();
+          setHrStatus(`Editing assignment for ${item.site} · ${item.omTeam}`, "local");
+        });
+      });
+
+      // Wire delete buttons
+      hrTableBody.querySelectorAll(".btn-hr-delete").forEach(btn => {
+        btn.addEventListener("click", async () => {
+          const id = btn.dataset.id;
+          const item = assignments.find(a => a.id === id);
+          if (!item) return;
+
+          const approved = await (window.appConfirm ? window.appConfirm({
+            title: "Delete HR Assignment?",
+            message: `Remove assignment for ${item.site} · ${item.omTeam} · ${item.hr}?`,
+            confirmText: "Delete Assignment",
+            tone: "danger"
+          }) : window.confirm(`Delete assignment for ${item.site} · ${item.omTeam}?`));
+
+          if (!approved) return;
+
+          try {
+            await masterlist.deleteHrAssignment(id);
+            showToast("HR assignment removed.", "success");
+            setHrStatus("Assignment removed.", "success");
+          } catch (err) {
+            showToast(err.message || "Could not delete assignment.", "error");
+            setHrStatus(err.message || "Could not delete assignment.", "error");
+          }
+        });
+      });
+    }
+
+    // Tracker sub-tab events
+    pendingTabs?.querySelectorAll("[data-pending-key]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        masterlist.setActiveTrackerKey(btn.dataset.pendingKey);
+        renderPendingTrackers();
+      });
+    });
+
+    // Refresh button event
+    refreshBtn?.addEventListener("click", async () => {
+      refreshBtn.disabled = true;
+      const origText = refreshBtn.innerHTML;
+      refreshBtn.innerHTML = `<span>Updating...</span>`;
+      try {
+        await masterlist.loadMasterList(true);
+        showToast("Master List refreshed from Google Sheets.", "success");
+      } catch (err) {
+        showToast("Refresh failed: " + (err.message || "Network error"), "error");
+      } finally {
+        refreshBtn.disabled = false;
+        refreshBtn.innerHTML = origText;
+      }
+    });
+
+    // Debounced Notepad saving
+    let noteTimer = null;
+    notepadText?.addEventListener("input", () => {
+      if (notepadStatus) notepadStatus.textContent = "Saving...";
+      clearTimeout(noteTimer);
+      noteTimer = setTimeout(() => {
+        const text = notepadText.value;
+        const activeKey = masterlist.getActiveTrackerKey();
+        masterlist.saveNotepad(activeKey, text);
+        if (notepadStatus) {
+          notepadStatus.textContent = "Saved " + new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+        }
+      }, 350);
+    });
+
+    // Clear Notepad button
+    notepadClearBtn?.addEventListener("click", async () => {
+      const activeKey = masterlist.getActiveTrackerKey();
+      const approved = await (window.appConfirm ? window.appConfirm({
+        title: `Clear Pending Notepad?`,
+        message: "This will remove the saved notes for this pending tracker from this browser.",
+        confirmText: "Clear Notepad",
+        tone: "danger"
+      }) : window.confirm("Clear notepad for this tracker?"));
+
+      if (!approved) return;
+
+      masterlist.clearNotepad(activeKey);
+      if (notepadText) notepadText.value = "";
+      if (notepadStatus) notepadStatus.textContent = "Notepad cleared";
+      showToast("Notepad cleared.", "info");
+    });
+
+    // HR Form Add/Save
+    hrSaveBtn?.addEventListener("click", async () => {
+      const site = hrSiteInput?.value?.trim();
+      const omTeam = hrTeamInput?.value?.trim();
+      const hr = hrAssignedInput?.value?.trim();
+      const id = hrEditId?.value?.trim();
+
+      if (!site || !omTeam || !hr) {
+        setHrStatus("Site, Team / OM / Campaign, and HR are required.", "error");
+        showToast("Please fill in all required HR assignment fields.", "error");
+        return;
+      }
+
+      try {
+        const result = await masterlist.saveHrAssignment({ id, site, omTeam, hr });
+        clearHrForm();
+        setHrStatus(
+          result.sent
+            ? "Saved. Google Sheets sync will confirm it on refresh."
+            : "Saved on this browser; Google Sheets write could not be confirmed.",
+          result.sent ? "success" : "local"
+        );
+        showToast("HR assignment saved.", "success");
+      } catch (err) {
+        setHrStatus(err.message || "Failed to save assignment.", "error");
+        showToast(err.message || "Failed to save assignment.", "error");
+      }
+    });
+
+    // HR Form Cancel
+    hrCancelBtn?.addEventListener("click", () => {
+      clearHrForm();
+    });
+
+    // Search input & clear
+    hrSearch?.addEventListener("input", () => {
+      renderHrAssignments();
+    });
+
+    hrSearchClear?.addEventListener("click", () => {
+      if (hrSearch) {
+        hrSearch.value = "";
+        hrSearch.focus();
+        renderHrAssignments();
+      }
+    });
+
+    // Masterlist service subscription
+    masterlist.subscribe(() => {
+      renderSyncStatus();
+      renderPendingTrackers();
+      renderHrAssignments();
+    });
+
+    window._renderMasterlistWorkspaceFn = function() {
+      renderSyncStatus();
+      renderPendingTrackers();
+      renderHrAssignments();
+    };
+
+    // Initial render & boot
+    renderSyncStatus();
+    renderPendingTrackers();
+    renderHrAssignments();
+    masterlist.init();
+  }
+
   // App Initialization
   window.addEventListener("DOMContentLoaded", async () => {
     initWorkspaceNavigation();
@@ -4641,6 +4988,9 @@
 
     // Follow Up Reports Initialization
     initFollowupController();
+
+    // Masterlist Workspace Initialization
+    initMasterlistController();
 
     // Manila clock ticker
     updateManilaClock();

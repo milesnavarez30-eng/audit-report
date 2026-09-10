@@ -1366,6 +1366,151 @@
 
           </div>
         </section>
+
+        <!-- Masterlist Workspace Pane -->
+        <section id="paneMasterlist" class="workspace-pane" role="tabpanel" aria-labelledby="tabMasterlist" hidden>
+          <div class="masterlist-workspace-layout">
+
+            <!-- Sync Banner Strip -->
+            <div class="masterlist-sync-strip">
+              <div class="masterlist-sync-info">
+                <span class="masterlist-sync-dot is-syncing" id="masterlistSyncDot"></span>
+                <div class="masterlist-sync-texts">
+                  <span class="masterlist-sync-title" id="masterlistSyncTitle">Connecting to Google Sheets...</span>
+                  <span class="masterlist-sync-detail" id="masterlistSyncDetail">Checking Pending Trackers and Assigned HR per OM.</span>
+                </div>
+              </div>
+              <div class="masterlist-sync-actions">
+                <span class="masterlist-last-updated" id="masterlistLastUpdated">Not synced yet</span>
+                <button type="button" class="btn btn-outline btn-sm" id="masterlistRefreshBtn" style="gap:4px;">
+                  <svg class="icon icon-sm" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+                  <span>Refresh</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="masterlist-sections">
+              <!-- Pending Trackers Card -->
+              <section class="masterlist-card">
+                <div class="masterlist-card-head">
+                  <div>
+                    <span class="masterlist-kicker">Pending Trackers</span>
+                    <h3 class="masterlist-card-title" id="masterPendingTitle">Pending Miles</h3>
+                  </div>
+                  <span class="badge badge-info" id="masterPendingMilesCount">0</span>
+                </div>
+
+                <!-- Tracker Sub-Tabs -->
+                <div class="masterlist-tabs" id="masterPendingTabs">
+                  <button type="button" class="masterlist-tab-btn active" data-pending-key="miles">
+                    <span>Miles</span>
+                    <span class="masterlist-tab-badge" id="badgeMiles">0</span>
+                  </button>
+                  <button type="button" class="masterlist-tab-btn" data-pending-key="seth">
+                    <span>Seth</span>
+                    <span class="masterlist-tab-badge" id="badgeSeth">0</span>
+                  </button>
+                  <button type="button" class="masterlist-tab-btn" data-pending-key="wendie">
+                    <span>Wendie</span>
+                    <span class="masterlist-tab-badge" id="badgeWendie">0</span>
+                  </button>
+                  <button type="button" class="masterlist-tab-btn" data-pending-key="kenneth">
+                    <span>Kenneth</span>
+                    <span class="masterlist-tab-badge" id="badgeKenneth">0</span>
+                  </button>
+                  <button type="button" class="masterlist-tab-btn" data-pending-key="jr">
+                    <span>JR</span>
+                    <span class="masterlist-tab-badge" id="badgeJr">0</span>
+                  </button>
+                </div>
+
+                <!-- Scrollable Pending Rows Table -->
+                <div class="masterlist-table-wrap">
+                  <table class="masterlist-data-table" id="masterPendingMilesTable">
+                    <thead></thead>
+                    <tbody></tbody>
+                  </table>
+                </div>
+
+                <!-- Active Tracker Notepad -->
+                <div class="masterlist-notepad">
+                  <div class="masterlist-notepad-head">
+                    <div>
+                      <span class="masterlist-kicker">Notepad</span>
+                      <strong class="masterlist-notepad-title" id="masterPendingNotesTitle">Pending Miles Notes</strong>
+                    </div>
+                    <span class="masterlist-notepad-status" id="masterNotepadStatus">Saved locally</span>
+                  </div>
+                  <textarea id="masterPendingNotepad" class="masterlist-notepad-textarea" rows="4" placeholder="Type follow-up notes, reminders, HR responses, NOC status, or anything you need to remember..."></textarea>
+                  <div class="masterlist-notepad-actions">
+                    <button type="button" class="btn btn-danger-ghost btn-sm" id="masterNotepadClearBtn">Clear Notepad</button>
+                  </div>
+                </div>
+              </section>
+
+              <!-- Assigned HR per OM Card -->
+              <section class="masterlist-card">
+                <div class="masterlist-card-head">
+                  <div>
+                    <span class="masterlist-kicker">Google Sheets &amp; Ops</span>
+                    <h3 class="masterlist-card-title">Assigned HR per OM</h3>
+                  </div>
+                  <span class="badge badge-info" id="masterAssignedHrCount">0</span>
+                </div>
+
+                <!-- HR CRUD Form (Admin / Operational) -->
+                <div class="masterlist-hr-form" id="masterHrCrudForm">
+                  <input type="hidden" id="masterHrEditId">
+
+                  <div class="form-group" style="margin:0;">
+                    <label class="form-label" for="masterHrSiteInput">Site</label>
+                    <input type="text" id="masterHrSiteInput" list="allCctvSiteOptions" class="form-control form-control-sm" placeholder="Select or type site">
+                  </div>
+
+                  <div class="form-group" style="margin:0;">
+                    <label class="form-label" for="masterHrTeamInput">Team / OM / Campaign</label>
+                    <input type="text" id="masterHrTeamInput" class="form-control form-control-sm" placeholder="Team Mirah / OM Jordan">
+                  </div>
+
+                  <div class="form-group" style="margin:0;">
+                    <label class="form-label" for="masterHrAssignedInput">HR Assigned</label>
+                    <input type="text" id="masterHrAssignedInput" class="form-control form-control-sm" placeholder="HR name">
+                  </div>
+
+                  <div style="display:flex; align-items:center; gap:6px;">
+                    <button type="button" class="btn btn-ghost btn-sm" id="masterHrCancelBtn">Clear</button>
+                    <button type="button" class="btn btn-primary btn-sm" id="masterHrSaveBtn">Add</button>
+                  </div>
+                </div>
+
+                <div id="masterHrCrudStatus" class="masterlist-hr-status" style="display:none;"></div>
+
+                <!-- Realtime Search Row -->
+                <div class="masterlist-search-row">
+                  <svg class="icon icon-sm" style="color:var(--text-muted);" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                  <input type="search" id="masterHrSearch" class="form-control form-control-sm masterlist-search-input" placeholder="Find site, team, OM, campaign, or HR...">
+                  <button type="button" class="btn btn-ghost btn-sm" id="masterHrSearchClear">Clear</button>
+                </div>
+
+                <!-- HR Assignments Table -->
+                <div class="masterlist-table-wrap">
+                  <table class="masterlist-data-table" id="masterAssignedHrTable">
+                    <thead>
+                      <tr>
+                        <th>Site</th>
+                        <th>Team / OM / Campaign</th>
+                        <th>HR Assigned</th>
+                        <th style="width:100px;">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody id="masterAssignedHrBody"></tbody>
+                  </table>
+                </div>
+              </section>
+            </div>
+
+          </div>
+        </section>
       </div>
     </main>
   </div>
@@ -1582,6 +1727,7 @@
   <script src="./js/services/maintenance-service.js"></script>
   <script src="./js/services/pending-service.js"></script>
   <script src="./js/services/followup-service.js"></script>
+  <script src="./js/services/masterlist-service.js"></script>
   <script src="./js/app.js"></script>
 </body>
 </html>
