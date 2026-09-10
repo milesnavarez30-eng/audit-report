@@ -12,6 +12,7 @@
   const auth = window.CCTV_AUTH;
   const sorter = window.sorterService;
   const maintenance = window.maintenanceService;
+  const pending = window.pendingService;
 
   let currentScreenshot = "";
   let supervisorRole = "Team Leader";
@@ -1240,6 +1241,8 @@
       renderSorterWorkspace();
     } else if (targetKey === "maintenance") {
       renderMaintenanceWorkspace();
+    } else if (targetKey === "pending") {
+      renderPendingWorkspace();
     }
   }
 
@@ -3697,6 +3700,493 @@
     };
   }
 
+  // =========================================================================
+  // WORKSPACE 5: PENDING REPORTS & FOLLOW-UP CONTROLLER
+  // =========================================================================
+  let pendingReportsList = [];
+  let pendingAddScreenshotData = "";
+
+  function updatePendingSummary() {
+    const total = pendingReportsList.length;
+    const followup = pendingReportsList.filter(pending.isFollowupDue).length;
+    const email = pendingReportsList.filter(pending.isEmailDue).length;
+    const attention = pendingReportsList.filter(r => pending.isFollowupDue(r) || pending.isEmailDue(r)).length;
+
+    if (el("pendingTotalCount")) el("pendingTotalCount").textContent = String(total);
+    if (el("pendingFollowupCount")) el("pendingFollowupCount").textContent = String(followup);
+    if (el("pendingEmailCount")) el("pendingEmailCount").textContent = String(email);
+    if (el("pendingQueueCountBadge")) el("pendingQueueCountBadge").textContent = `${total} items`;
+
+    const railBadge = el("railPendingBadge");
+    if (railBadge) {
+      railBadge.textContent = String(attention || total);
+      railBadge.style.display = total ? "inline-flex" : "none";
+    }
+
+    const banner = el("pendingDueBanner");
+    if (banner) {
+      if (!attention) {
+        banner.hidden = true;
+        banner.innerHTML = "";
+      } else {
+        banner.hidden = false;
+        const pieces = [];
+        if (followup) {
+          pieces.push(`<strong>${followup}</strong> report${followup === 1 ? "" : "s"} need follow-up (1+ day)`);
+        }
+        if (email) {
+          pieces.push(`<strong>${email}</strong> report${email === 1 ? "" : "s"} reached 4 days — send email`);
+        }
+        banner.innerHTML = `<svg class="icon icon-sm" viewBox="0 0 24 24" style="stroke:currentColor; flex-shrink:0;"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg> <span>${pieces.join(" · ")}</span>`;
+      }
+    }
+
+    const alertStatus = el("pendingAlertStatus");
+    if (alertStatus) {
+      if (!("Notification" in window)) {
+        alertStatus.textContent = "Browser alerts unavailable";
+      } else if (Notification.permission === "granted") {
+        alertStatus.textContent = "Browser alerts enabled";
+      } else {
+        alertStatus.textContent = "In-app alerts active";
+      }
+    }
+  }
+
+  function refreshPendingOmOptions() {
+    const list = el("pendingOmOptions");
+    if (!list) return;
+
+    const masterOms = (cfg.OM_OPTIONS || []).slice();
+    const reportOms = pendingReportsList.map(r => String(r.om || "").trim()).filter(Boolean);
+    const unique = [...new Set([...masterOms, ...reportOms])].sort((a, b) => a.localeCompare(b));
+
+    list.innerHTML = unique.map(val => `<option value="${val}"></option>`).join("");
+  }
+
+  function renderPendingList() {
+    refreshPendingOmOptions();
+    const listEl = el("pendingReportList");
+    if (!listEl) return;
+
+    if (!pendingReportsList.length) {
+      listEl.innerHTML = `<div style="text-align:center; padding:48px 12px; font-size:12px; color:var(--text-muted);">No pending reports in queue. Use the form on the left to add one.</div>`;
+      return;
+    }
+
+    listEl.innerHTML = "";
+
+    const sorted = pendingReportsList.slice().sort((a, b) => {
+      const aEmail = pending.isEmailDue(a) ? 1 : 0;
+      const bEmail = pending.isEmailDue(b) ? 1 : 0;
+      if (aEmail !== bEmail) return bEmail - aEmail;
+
+      const aFollow = pending.isFollowupDue(a) ? 1 : 0;
+      const bFollow = pending.isFollowupDue(b) ? 1 : 0;
+      if (aFollow !== bFollow) return bFollow - aFollow;
+
+      return pending.reportDateStart(a) - pending.reportDateStart(b);
+    });
+
+    sorted.forEach(report => {
+      const card = document.createElement("div");
+      card.className = "pending-card";
+      card.dataset.id = report.id;
+
+      const thumbBtn = document.createElement("button");
+      thumbBtn.type = "button";
+      thumbBtn.className = `pending-card-thumb-btn ${report.screenshotData ? "" : "no-image"}`;
+      thumbBtn.title = report.screenshotData ? "Click to view full screenshot" : "No screenshot attached";
+      if (report.screenshotData) {
+        const img = document.createElement("img");
+        img.src = report.screenshotData;
+        img.alt = "Pending proof";
+        thumbBtn.appendChild(img);
+        thumbBtn.addEventListener("click", () => {
+          openScreenshotViewer(report.screenshotData, "Pending Incident Evidence", `${report.label || "Report"} · OM: ${report.om || "N/A"}`);
+        });
+      } else {
+        thumbBtn.disabled = true;
+        thumbBtn.textContent = "No SS";
+      }
+      card.appendChild(thumbBtn);
+
+      const body = document.createElement("div");
+      body.className = "pending-card-body";
+
+      const titleRow = document.createElement("div");
+      titleRow.className = "pending-card-title-row";
+
+      const labelInput = document.createElement("input");
+      labelInput.type = "text";
+      labelInput.className = "pending-card-label-input";
+      labelInput.value = report.label || "";
+      labelInput.placeholder = "Report / Agent Name";
+      labelInput.title = "Click to edit report/agent label";
+      labelInput.addEventListener("change", async (e) => {
+        report.label = e.target.value.trim();
+        report.updatedAt = new Date().toISOString();
+        await pending.saveReports(pendingReportsList);
+        updatePendingSummary();
+      });
+      titleRow.appendChild(labelInput);
+
+      const statusWrap = document.createElement("div");
+      statusWrap.style.display = "flex";
+      statusWrap.style.alignItems = "center";
+      statusWrap.style.gap = "6px";
+
+      if (pending.isEmailDue(report)) {
+        const chip = document.createElement("span");
+        chip.className = "pending-status-chip pending-status-email";
+        chip.textContent = "Send Email";
+        statusWrap.appendChild(chip);
+      } else if (pending.isFollowupDue(report)) {
+        const chip = document.createElement("span");
+        chip.className = "pending-status-chip pending-status-followup";
+        chip.textContent = "Need Follow-up";
+        statusWrap.appendChild(chip);
+      } else {
+        const chip = document.createElement("span");
+        chip.className = "pending-status-chip pending-status-waiting";
+        chip.textContent = "Waiting";
+        statusWrap.appendChild(chip);
+      }
+      titleRow.appendChild(statusWrap);
+      body.appendChild(titleRow);
+
+      const metaRow = document.createElement("div");
+      metaRow.className = "pending-card-meta";
+      const ageStr = pending.ageText(pending.reportAgeMs(report));
+      metaRow.textContent = `Reported ${report.reportDate || "N/A"} · Age ${ageStr} · Pending ${ageStr}`;
+      body.appendChild(metaRow);
+
+      const grid = document.createElement("div");
+      grid.className = "pending-card-inputs-grid";
+
+      const omWrap = document.createElement("div");
+      omWrap.className = "form-group";
+      omWrap.style.marginBottom = "0";
+      const omLabel = document.createElement("label");
+      omLabel.className = "form-label";
+      omLabel.textContent = "OM";
+      const omInput = document.createElement("input");
+      omInput.type = "text";
+      omInput.className = "form-control form-control-sm";
+      omInput.setAttribute("list", "pendingOmOptions");
+      omInput.value = report.om || "";
+      omInput.placeholder = "OM Name";
+      omInput.addEventListener("change", async (e) => {
+        report.om = e.target.value.trim();
+        report.updatedAt = new Date().toISOString();
+        await pending.saveReports(pendingReportsList);
+        refreshPendingOmOptions();
+      });
+      omWrap.appendChild(omLabel);
+      omWrap.appendChild(omInput);
+      grid.appendChild(omWrap);
+
+      const teamsWrap = document.createElement("div");
+      teamsWrap.className = "form-group";
+      teamsWrap.style.marginBottom = "0";
+      const teamsLabel = document.createElement("label");
+      teamsLabel.className = "form-label";
+      teamsLabel.textContent = "Teams Conversation";
+      const teamsRow = document.createElement("div");
+      teamsRow.style.display = "flex";
+      teamsRow.style.gap = "4px";
+
+      const teamsInput = document.createElement("input");
+      teamsInput.type = "url";
+      teamsInput.className = "form-control form-control-sm";
+      teamsInput.value = report.teamsLink || "";
+      teamsInput.placeholder = "Teams Link...";
+      teamsInput.addEventListener("change", async (e) => {
+        report.teamsLink = e.target.value.trim();
+        report.updatedAt = new Date().toISOString();
+        await pending.saveReports(pendingReportsList);
+        renderPendingList();
+      });
+
+      const openBtn = document.createElement("button");
+      openBtn.type = "button";
+      openBtn.className = "btn btn-outline btn-sm";
+      openBtn.textContent = "Open";
+      const validTeamsUrl = pending.safeUrl(report.teamsLink);
+      openBtn.disabled = !validTeamsUrl;
+      openBtn.addEventListener("click", () => {
+        if (validTeamsUrl) {
+          window.open(validTeamsUrl, "_blank", "noopener,noreferrer");
+        }
+      });
+
+      teamsRow.appendChild(teamsInput);
+      teamsRow.appendChild(openBtn);
+      teamsWrap.appendChild(teamsLabel);
+      teamsWrap.appendChild(teamsRow);
+      grid.appendChild(teamsWrap);
+
+      const remarksWrap = document.createElement("div");
+      remarksWrap.className = "form-group";
+      remarksWrap.style.marginBottom = "0";
+      const remarksLabel = document.createElement("label");
+      remarksLabel.className = "form-label";
+      remarksLabel.textContent = "Remarks";
+      const remarksArea = document.createElement("textarea");
+      remarksArea.className = "form-control form-control-sm";
+      remarksArea.rows = 2;
+      remarksArea.placeholder = "Enter status or remarks...";
+      remarksArea.value = report.remarks || "";
+      remarksArea.addEventListener("change", async (e) => {
+        report.remarks = e.target.value.trim();
+        report.updatedAt = new Date().toISOString();
+        await pending.saveReports(pendingReportsList);
+      });
+      remarksWrap.appendChild(remarksLabel);
+      remarksWrap.appendChild(remarksArea);
+      grid.appendChild(remarksWrap);
+
+      body.appendChild(grid);
+
+      const actions = document.createElement("div");
+      actions.className = "pending-card-actions";
+
+      const replaceBtn = document.createElement("button");
+      replaceBtn.type = "button";
+      replaceBtn.className = "btn btn-outline btn-sm";
+      replaceBtn.textContent = "Replace SS";
+      replaceBtn.addEventListener("click", () => {
+        const fileInput = document.createElement("input");
+        fileInput.type = "file";
+        fileInput.accept = "image/*";
+        fileInput.addEventListener("change", async () => {
+          if (!fileInput.files || !fileInput.files.length) return;
+          try {
+            report.screenshotData = await pending.compressImage(fileInput.files[0]);
+            report.updatedAt = new Date().toISOString();
+            await pending.saveReports(pendingReportsList);
+            renderPendingList();
+            showToast("Screenshot replaced successfully.", "success");
+          } catch (err) {
+            console.error("Replace screenshot failed:", err);
+            showToast(`Replace failed: ${err.message}`, "error");
+          }
+        });
+        fileInput.click();
+      });
+      actions.appendChild(replaceBtn);
+
+      const delBtn = document.createElement("button");
+      delBtn.type = "button";
+      delBtn.className = "btn btn-danger-ghost btn-sm";
+      delBtn.textContent = "Delete";
+      delBtn.addEventListener("click", async () => {
+        const ok = await window.appConfirm({
+          title: "Delete pending report?",
+          message: `Remove "${report.label || "this report"}"? Use this when the NOC is already resolved or submitted.`,
+          confirmText: "Delete",
+          tone: "danger"
+        });
+        if (!ok) return;
+        pendingReportsList = pendingReportsList.filter(item => item.id !== report.id);
+        await pending.saveReports(pendingReportsList);
+        renderPendingList();
+        updatePendingSummary();
+        showToast("Pending report deleted.", "info");
+      });
+      actions.appendChild(delBtn);
+
+      body.appendChild(actions);
+      card.appendChild(body);
+      listEl.appendChild(card);
+    });
+  }
+
+  async function loadPendingReportsInitial() {
+    try {
+      const saved = await pending.loadReports();
+      pendingReportsList = Array.isArray(saved) ? saved : [];
+    } catch (e) {
+      console.warn("Could not load initial pending reports:", e);
+      pendingReportsList = [];
+    }
+
+    const dateInput = el("pendingReportDate");
+    if (dateInput && !dateInput.value) {
+      dateInput.value = pending.todayLocal();
+    }
+
+    renderPendingList();
+    updatePendingSummary();
+    pending.checkDueNotifications(pendingReportsList, true);
+  }
+
+  function renderPendingWorkspace() {
+    if (!pendingReportsList.length) {
+      loadPendingReportsInitial();
+    } else {
+      renderPendingList();
+      updatePendingSummary();
+    }
+  }
+
+  function setPendingAddScreenshot(dataUrl) {
+    pendingAddScreenshotData = dataUrl || "";
+    const empty = el("pendingAddShotEmpty");
+    const wrap = el("pendingAddShotPreviewWrap");
+    const preview = el("pendingAddShotPreview");
+
+    if (pendingAddScreenshotData) {
+      if (preview) preview.src = pendingAddScreenshotData;
+      if (empty) empty.hidden = true;
+      if (wrap) wrap.hidden = false;
+    } else {
+      if (preview) preview.removeAttribute("src");
+      if (empty) empty.hidden = false;
+      if (wrap) wrap.hidden = true;
+    }
+  }
+
+  function clearPendingAddForm() {
+    if (el("pendingReportLabel")) el("pendingReportLabel").value = "";
+    if (el("pendingReportDate")) el("pendingReportDate").value = pending.todayLocal();
+    if (el("pendingReportOm")) el("pendingReportOm").value = "";
+    if (el("pendingTeamsLink")) el("pendingTeamsLink").value = "";
+    if (el("pendingAddShotInput")) el("pendingAddShotInput").value = "";
+    setPendingAddScreenshot("");
+  }
+
+  function initPendingController() {
+    el("btnAddPendingReport")?.addEventListener("click", async () => {
+      const label = (el("pendingReportLabel")?.value || "").trim();
+      const reportDate = el("pendingReportDate")?.value || pending.todayLocal();
+      const om = (el("pendingReportOm")?.value || "").trim();
+      const teamsLink = (el("pendingTeamsLink")?.value || "").trim();
+
+      if (!om) {
+        showToast("Please select or enter an OM.", "error");
+        el("pendingReportOm")?.focus();
+        return;
+      }
+
+      const now = new Date().toISOString();
+      const newReport = {
+        id: pending.uid(),
+        label,
+        reportDate,
+        om,
+        teamsLink,
+        remarks: "",
+        screenshotData: pendingAddScreenshotData || "",
+        createdAt: now,
+        updatedAt: now,
+        followupNotifiedAt: null,
+        emailNotifiedAt: null
+      };
+
+      pendingReportsList.push(newReport);
+      await pending.saveReports(pendingReportsList);
+      clearPendingAddForm();
+      renderPendingList();
+      updatePendingSummary();
+      showToast("Pending report added to queue.", "success");
+    });
+
+    el("btnClearPendingForm")?.addEventListener("click", clearPendingAddForm);
+
+    const dropzone = el("pendingAddShotDropzone");
+    const fileInput = el("pendingAddShotInput");
+
+    dropzone?.addEventListener("click", (e) => {
+      if (e.target !== el("btnRemovePendingShot")) {
+        fileInput?.click();
+      }
+    });
+
+    fileInput?.addEventListener("change", async () => {
+      if (!fileInput.files || !fileInput.files.length) return;
+      try {
+        const compressed = await pending.compressImage(fileInput.files[0]);
+        setPendingAddScreenshot(compressed);
+        showToast("Proof screenshot loaded.", "info");
+      } catch (err) {
+        console.error("Pending screenshot load failed:", err);
+        showToast(`Screenshot error: ${err.message}`, "error");
+      }
+    });
+
+    el("btnRemovePendingShot")?.addEventListener("click", (e) => {
+      e.stopPropagation();
+      setPendingAddScreenshot("");
+      if (fileInput) fileInput.value = "";
+    });
+
+    dropzone?.addEventListener("dragover", (e) => {
+      e.preventDefault();
+      dropzone.classList.add("drag-over");
+    });
+    dropzone?.addEventListener("dragleave", () => {
+      dropzone.classList.remove("drag-over");
+    });
+    dropzone?.addEventListener("drop", async (e) => {
+      e.preventDefault();
+      dropzone.classList.remove("drag-over");
+      if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length) {
+        const file = e.dataTransfer.files[0];
+        if (file.type.startsWith("image/")) {
+          try {
+            const compressed = await pending.compressImage(file);
+            setPendingAddScreenshot(compressed);
+            showToast("Proof screenshot loaded.", "info");
+          } catch (err) {
+            console.error("Drop image error:", err);
+          }
+        }
+      }
+    });
+
+    document.addEventListener("paste", async (e) => {
+      if (currentWorkspace !== "pending") return;
+      const items = (e.clipboardData || window.clipboardData)?.items;
+      if (!items) return;
+      for (let i = 0; i < items.length; i++) {
+        if (items[i].type.indexOf("image") !== -1) {
+          e.preventDefault();
+          const file = items[i].getAsFile();
+          if (file) {
+            try {
+              const compressed = await pending.compressImage(file);
+              setPendingAddScreenshot(compressed);
+              showToast("Screenshot pasted into form.", "info");
+            } catch (err) {
+              console.error("Paste image error:", err);
+            }
+          }
+          break;
+        }
+      }
+    });
+
+    el("btnEnablePendingAlerts")?.addEventListener("click", async () => {
+      if (!("Notification" in window)) {
+        showToast("Browser notifications are not supported in this browser.", "info");
+        return;
+      }
+      try {
+        const permission = await Notification.requestPermission();
+        updatePendingSummary();
+        if (permission === "granted") {
+          showToast("Browser alerts enabled for Pending Reports!", "success");
+          pending.checkDueNotifications(pendingReportsList, false);
+        } else {
+          showToast("Notification permission was not granted.", "info");
+        }
+      } catch (err) {
+        console.error("Request permission error:", err);
+      }
+    });
+  }
+
   // App Initialization
   window.addEventListener("DOMContentLoaded", async () => {
     initWorkspaceNavigation();
@@ -3722,6 +4212,9 @@
 
     // Maintenance Report Initialization
     initMaintenanceController();
+
+    // Pending Reports Initialization
+    initPendingController();
 
     // Manila clock ticker
     updateManilaClock();

@@ -1136,6 +1136,117 @@
 
           </div>
         </section>
+
+        <!-- WORKSPACE 5: Pending Reports -->
+        <section id="panePending" class="workspace-pane" role="tabpanel" aria-labelledby="tabPending" hidden>
+          <div class="pending-workspace-layout">
+
+            <!-- TOP: Summary KPI & Attention Alert Banner -->
+            <div class="pending-top-card">
+              <div class="pending-stats-row">
+                <div class="pending-stats-cluster">
+                  <span style="font-weight:700; font-size:12px; color:var(--text-primary);">Pending Operations</span>
+                  <div class="pending-stat-pill">
+                    <span>Total:</span>
+                    <strong id="pendingTotalCount">0</strong>
+                  </div>
+                  <div class="pending-stat-pill stat-followup">
+                    <span>1d Follow-up:</span>
+                    <strong id="pendingFollowupCount">0</strong>
+                  </div>
+                  <div class="pending-stat-pill stat-email">
+                    <span>4d Send Email:</span>
+                    <strong id="pendingEmailCount">0</strong>
+                  </div>
+                </div>
+
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <span id="pendingAlertStatus" style="font-size:11px; color:var(--text-muted);">In-app alerts active</span>
+                  <button type="button" class="btn btn-outline btn-sm" id="btnEnablePendingAlerts" title="Enable browser push notifications for 1-day follow-up and 4-day email reminders">
+                    <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+                    <span>Enable Alerts</span>
+                  </button>
+                </div>
+              </div>
+
+              <div id="pendingDueBanner" class="pending-due-banner" hidden>
+                <!-- Injected attention items -->
+              </div>
+            </div>
+
+            <!-- MAIN SPLIT: Add Pending Form & Pending Queue -->
+            <div class="pending-split-container">
+              
+              <!-- LEFT: Add Pending Report Card -->
+              <div class="pending-form-card">
+                <div class="pending-form-title">
+                  <svg class="icon icon-sm" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                  <span>New Pending Report</span>
+                </div>
+
+                <div class="form-group" style="margin-bottom:0;">
+                  <label class="form-label" for="pendingReportLabel">Report / Agent Name</label>
+                  <input type="text" id="pendingReportLabel" class="form-control form-control-sm" placeholder="e.g. Agent John Doe or Case Label" autocomplete="off">
+                </div>
+
+                <div class="form-group" style="margin-bottom:0;">
+                  <label class="form-label" for="pendingReportDate">Report Date</label>
+                  <input type="date" id="pendingReportDate" class="form-control form-control-sm" autocomplete="off">
+                </div>
+
+                <div class="form-group" style="margin-bottom:0;">
+                  <label class="form-label" for="pendingReportOm">Operations Manager (OM) <span class="required-dot">*</span></label>
+                  <input type="text" id="pendingReportOm" list="pendingOmOptions" class="form-control form-control-sm" placeholder="Select or type OM name" autocomplete="off">
+                  <datalist id="pendingOmOptions"></datalist>
+                </div>
+
+                <div class="form-group" style="margin-bottom:0;">
+                  <label class="form-label" for="pendingTeamsLink">Microsoft Teams Link</label>
+                  <input type="url" id="pendingTeamsLink" class="form-control form-control-sm" placeholder="https://teams.microsoft.com/l/message/..." autocomplete="off">
+                </div>
+
+                <div class="form-group" style="margin-bottom:0;">
+                  <label class="form-label">Proof Screenshot (Optional)</label>
+                  <div class="pending-dropzone" id="pendingAddShotDropzone">
+                    <input type="file" id="pendingAddShotInput" accept="image/*" style="display:none;">
+                    <div id="pendingAddShotEmpty">
+                      <div style="font-size:11px; color:var(--text-secondary); margin-bottom:4px;">Click to browse, drag & drop image, or Ctrl+V to paste</div>
+                      <span class="btn btn-outline btn-sm" style="pointer-events:none;">Choose File</span>
+                    </div>
+                    <div id="pendingAddShotPreviewWrap" hidden>
+                      <img id="pendingAddShotPreview" class="pending-drop-preview" alt="Screenshot preview">
+                      <div style="margin-top:6px;">
+                        <button type="button" class="btn btn-danger-ghost btn-sm" id="btnRemovePendingShot">Remove</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-top:auto; padding-top:10px;">
+                  <button type="button" class="btn btn-ghost btn-sm" id="btnClearPendingForm">Clear</button>
+                  <button type="button" class="btn btn-primary btn-sm" id="btnAddPendingReport">Add Report</button>
+                </div>
+              </div>
+
+              <!-- RIGHT: Pending Reports Queue -->
+              <div class="pending-queue-card">
+                <div class="pending-queue-header">
+                  <div style="display:flex; align-items:center; gap:8px;">
+                    <span style="font-weight:700; font-size:12px; color:var(--text-primary);">Active Queue</span>
+                    <span class="badge badge-neutral" id="pendingQueueCountBadge">0 items</span>
+                  </div>
+                  <span style="font-size:11px; color:var(--text-dim);">Sorted by priority &amp; age</span>
+                </div>
+
+                <div class="pending-queue-list" id="pendingReportList">
+                  <!-- Dynamically populated cards -->
+                </div>
+              </div>
+
+            </div>
+
+          </div>
+        </section>
       </div>
     </main>
   </div>
@@ -1348,6 +1459,7 @@
   <script src="./js/services/audit-service.js"></script>
   <script src="./js/services/sorter-service.js"></script>
   <script src="./js/services/maintenance-service.js"></script>
+  <script src="./js/services/pending-service.js"></script>
   <script src="./js/app.js"></script>
 </body>
 </html>
