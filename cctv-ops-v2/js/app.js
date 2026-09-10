@@ -13,6 +13,7 @@
   const sorter = window.sorterService;
   const maintenance = window.maintenanceService;
   const pending = window.pendingService;
+  const followup = window.followupService;
 
   let currentScreenshot = "";
   let supervisorRole = "Team Leader";
@@ -1243,6 +1244,8 @@
       renderMaintenanceWorkspace();
     } else if (targetKey === "pending") {
       renderPendingWorkspace();
+    } else if (targetKey === "followup") {
+      renderFollowupWorkspace();
     }
   }
 
@@ -4187,6 +4190,426 @@
     });
   }
 
+  // =========================================================================
+  // FOLLOW UP REPORTS CONTROLLER
+  // =========================================================================
+  let followupReportsList = [];
+  let followupAddScreenshotData = "";
+  let followupReplaceTargetId = "";
+  let followupSaveTimer = null;
+
+  function refreshFollowupOmOptions() {
+    const list = el("followupOmOptions");
+    if (!list) return;
+    const master = edr.getOmNames ? edr.getOmNames() : [];
+    const formatted = master.map(name => `CCTV OM ${String(name).toUpperCase()}`);
+    const used = followupReportsList.map(r => String(r.om || "").trim()).filter(Boolean);
+    const values = [...new Set([...formatted, ...used])].sort((a, b) => a.localeCompare(b));
+    list.innerHTML = values.map(value => `<option value="${window.escapeHtml(value)}"></option>`).join("");
+  }
+
+  function updateFollowupSummary() {
+    const openCount = followup.getOpenCount(followupReportsList);
+    const resolvedCount = followupReportsList.filter(r => r.status === "Resolved").length;
+    const totalCount = followupReportsList.length;
+
+    if (el("followupOpenCount")) el("followupOpenCount").textContent = String(openCount);
+    if (el("followupResolvedCount")) el("followupResolvedCount").textContent = String(resolvedCount);
+    if (el("followupTotalCount")) el("followupTotalCount").textContent = String(totalCount);
+    if (el("followupQueueBadge")) el("followupQueueBadge").textContent = `${totalCount} item${totalCount === 1 ? "" : "s"}`;
+    if (el("railFollowupBadge")) el("railFollowupBadge").textContent = String(openCount);
+
+    const legacySidebarBadge = el("followupSidebarBadge");
+    if (legacySidebarBadge) {
+      legacySidebarBadge.textContent = String(openCount);
+      legacySidebarBadge.title = `${openCount} open follow-up report${openCount === 1 ? "" : "s"}`;
+    }
+  }
+
+  function setFollowupAddScreenshot(dataUrl) {
+    followupAddScreenshotData = dataUrl || "";
+    const empty = el("followupAddShotEmpty");
+    const wrap = el("followupAddShotPreviewWrap");
+    const preview = el("followupAddShotPreview");
+
+    if (followupAddScreenshotData) {
+      if (preview) preview.src = followupAddScreenshotData;
+      if (empty) empty.hidden = true;
+      if (wrap) wrap.hidden = false;
+    } else {
+      if (preview) preview.removeAttribute("src");
+      if (empty) empty.hidden = false;
+      if (wrap) wrap.hidden = true;
+    }
+  }
+
+  function clearFollowupAddForm() {
+    if (el("followupDate")) el("followupDate").value = followup.todayLocal();
+    if (el("followupOm")) el("followupOm").value = "";
+    if (el("followupLabel")) el("followupLabel").value = "";
+    if (el("followupCctvLink")) el("followupCctvLink").value = "";
+    if (el("followupStatus")) el("followupStatus").value = "Waiting for TL";
+    if (el("followupRemarks")) el("followupRemarks").value = "";
+    setFollowupAddScreenshot("");
+    const msg = el("followupMessage");
+    if (msg) {
+      msg.textContent = "";
+      msg.className = "followup-form-message";
+    }
+  }
+
+  function showFollowupMessage(text, kind = "") {
+    const msg = el("followupMessage");
+    if (!msg) return;
+    msg.textContent = text || "";
+    msg.style.color = kind === "error" ? "var(--accent-danger, #f87171)" : kind === "success" ? "var(--accent-success, #34d399)" : "var(--text-secondary)";
+  }
+
+  function scheduleFollowupSave() {
+    clearTimeout(followupSaveTimer);
+    followupSaveTimer = setTimeout(async () => {
+      try {
+        await followup.saveReports(followupReportsList);
+        updateFollowupSummary();
+      } catch (err) {
+        console.error("Save follow-up reports error:", err);
+      }
+    }, 350);
+  }
+
+  function renderFollowupList() {
+    refreshFollowupOmOptions();
+    updateFollowupSummary();
+    const listEl = el("followupReportList");
+    if (!listEl) return;
+
+    if (!followupReportsList.length) {
+      listEl.innerHTML = '<div class="empty-state" style="padding:40px; text-align:center; color:var(--text-muted); font-size:12px;">No follow-up reports yet.</div>';
+      return;
+    }
+
+    const sorted = followup.sortReports(followupReportsList);
+
+    listEl.innerHTML = sorted.map(report => {
+      const hasImage = Boolean(report.screenshotData);
+      const safeLink = followup.safeWebUrl(report.cctvLink);
+      const statusClass = followup.statusClass(report.status);
+
+      return `
+        <article class="followup-report-card" data-id="${window.escapeHtml(report.id)}">
+          <div class="followup-card-head">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span class="followup-card-title">${window.escapeHtml(report.label || report.om || "Follow Up Report")}</span>
+              <span class="followup-card-meta">${window.escapeHtml(followup.formatDate(report.date))} · ${window.escapeHtml(report.om || "OM not set")}</span>
+            </div>
+            <span class="followup-status-pill ${statusClass}">${window.escapeHtml(report.status || "Waiting for TL")}</span>
+          </div>
+
+          <div class="followup-card-layout">
+            <button type="button" class="followup-large-shot ${hasImage ? "has-image" : "no-image"}" ${hasImage ? "" : "disabled"} title="${hasImage ? "Click to view full screenshot evidence" : "No screenshot attached"}">
+              ${hasImage ? `<img src="${window.escapeHtml(report.screenshotData)}" alt="Evidence">` : `<span>No conversation proof</span>`}
+            </button>
+
+            <div class="followup-card-fields">
+              <div class="followup-card-fields-row">
+                <div class="form-group" style="margin:0;">
+                  <label class="form-label" style="font-size:10px;">Date</label>
+                  <input type="date" class="form-control form-control-sm followup-edit-date" value="${window.escapeHtml(report.date || "")}">
+                </div>
+                <div class="form-group" style="margin:0;">
+                  <label class="form-label" style="font-size:10px;">OM / Group Chat</label>
+                  <input type="text" list="followupOmOptions" class="form-control form-control-sm followup-edit-om" value="${window.escapeHtml(report.om || "")}">
+                </div>
+                <div class="form-group" style="margin:0;">
+                  <label class="form-label" style="font-size:10px;">TL / Report Label</label>
+                  <input type="text" class="form-control form-control-sm followup-edit-label" value="${window.escapeHtml(report.label || "")}" placeholder="Optional label">
+                </div>
+                <div class="form-group" style="margin:0;">
+                  <label class="form-label" style="font-size:10px;">Teams Link</label>
+                  <div class="followup-link-row">
+                    <input type="url" class="form-control form-control-sm followup-edit-link" value="${window.escapeHtml(report.cctvLink || "")}" placeholder="Paste URL">
+                    <button type="button" class="btn btn-outline btn-sm followup-open-link-btn" ${safeLink ? "" : "disabled"} style="padding:2px 8px; font-size:10px;">Open</button>
+                  </div>
+                </div>
+                <div class="form-group" style="margin:0;">
+                  <label class="form-label" style="font-size:10px;">Status</label>
+                  <select class="form-control form-control-sm followup-edit-status">
+                    ${followup.STATUSES.map(st => `<option value="${st}" ${st === report.status ? "selected" : ""}>${st}</option>`).join("")}
+                  </select>
+                </div>
+              </div>
+
+              <div class="form-group" style="margin:4px 0 0 0;">
+                <label class="form-label" style="font-size:10px;">Remarks / TL Reply</label>
+                <textarea class="form-control form-control-sm followup-edit-remarks" rows="2" placeholder="Record TL reply and OM verification notes...">${window.escapeHtml(report.remarks || "")}</textarea>
+              </div>
+
+              <div style="display:flex; align-items:center; justify-content:flex-end; gap:6px; margin-top:4px;">
+                <button type="button" class="btn btn-outline btn-sm followup-replace-btn" style="padding:2px 8px; font-size:10px;">Replace Screenshot</button>
+                <button type="button" class="btn btn-danger-ghost btn-sm followup-delete-btn" style="padding:2px 8px; font-size:10px;">Delete</button>
+              </div>
+            </div>
+          </div>
+        </article>
+      `;
+    }).join("");
+
+    // Bind event handlers for cards
+    listEl.querySelectorAll(".followup-report-card").forEach(card => {
+      const cardId = card.dataset.id;
+      const report = followupReportsList.find(r => r.id === cardId);
+      if (!report) return;
+
+      // Screenshot preview click
+      card.querySelector(".followup-large-shot")?.addEventListener("click", () => {
+        if (report.screenshotData) {
+          openFullScreenshotViewer(report.screenshotData, `Evidence - ${report.label || report.om || "Follow Up"}`);
+        }
+      });
+
+      // Field binds
+      const bindField = (sel, key, evtName = "change") => {
+        const inputEl = card.querySelector(sel);
+        if (!inputEl) return;
+        inputEl.addEventListener(evtName, () => {
+          report[key] = inputEl.value;
+          if (key === "status" || key === "om" || key === "label" || key === "date") {
+            renderFollowupList();
+          }
+          scheduleFollowupSave();
+        });
+      };
+
+      bindField(".followup-edit-date", "date");
+      bindField(".followup-edit-om", "om");
+      bindField(".followup-edit-label", "label");
+      bindField(".followup-edit-status", "status");
+      bindField(".followup-edit-remarks", "remarks", "input");
+
+      const linkInput = card.querySelector(".followup-edit-link");
+      const openBtn = card.querySelector(".followup-open-link-btn");
+      if (linkInput && openBtn) {
+        linkInput.addEventListener("input", () => {
+          report.cctvLink = linkInput.value;
+          openBtn.disabled = !followup.safeWebUrl(linkInput.value);
+          scheduleFollowupSave();
+        });
+        openBtn.addEventListener("click", () => {
+          const url = followup.safeWebUrl(report.cctvLink);
+          if (url) window.open(url, "_blank", "noopener,noreferrer");
+        });
+      }
+
+      // Replace screenshot
+      card.querySelector(".followup-replace-btn")?.addEventListener("click", () => {
+        followupReplaceTargetId = report.id;
+        el("followupReplaceInput")?.click();
+      });
+
+      // Delete
+      card.querySelector(".followup-delete-btn")?.addEventListener("click", async () => {
+        const ok = window.appConfirm
+          ? await window.appConfirm({
+              title: "Delete follow-up report?",
+              message: "This removes the screenshot, OM, date, status, and remarks from Follow Up Reports.",
+              confirmText: "Delete",
+              tone: "danger"
+            })
+          : window.confirm("Delete this follow-up report?");
+        if (!ok) return;
+
+        followupReportsList = followupReportsList.filter(r => r.id !== report.id);
+        await followup.saveReports(followupReportsList);
+        renderFollowupList();
+        showToast("Follow-up report deleted.", "info");
+      });
+    });
+  }
+
+  async function loadFollowupReportsInitial() {
+    try {
+      followupReportsList = await followup.loadReports();
+      const params = new URLSearchParams(window.location.search);
+      if (params.has("demo") && !followupReportsList.length) {
+        const samplePng = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAA7SURBVHhe7c4BDQAACAMw9E/tUwwmFvw+yZptWc3MzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMxfmA0G6kFf2u/6fAAAAABJRU5ErkJggg==";
+        followupReportsList = [
+          followup.createReport({
+            date: "2026-09-10",
+            om: "CCTV OM MIRAH",
+            label: "TL Sarah Connor (Shopee Team)",
+            cctvLink: "https://teams.microsoft.com/l/message/19%3Ashopee%40thread.v2/0",
+            status: "Waiting for TL",
+            remarks: "Observed sleeping at workstation. Awaiting supervisor coaching form.",
+            screenshotData: samplePng
+          }),
+          followup.createReport({
+            date: "2026-09-10",
+            om: "CCTV OM RENATO",
+            label: "TL Christian Arcilla (AFP)",
+            cctvLink: "https://teams.microsoft.com/l/message/19%3Aafp%40thread.v2/1",
+            status: "TL Disputed",
+            remarks: "TL claims device was 2FA token. Escalated for CCTV footage verification.",
+            screenshotData: samplePng
+          }),
+          followup.createReport({
+            date: "2026-09-09",
+            om: "CCTV OM CRYSTAL",
+            label: "TL Dante Tahuran (TEMU)",
+            cctvLink: "https://teams.microsoft.com/l/message/19%3Atemu%40thread.v2/2",
+            status: "Resolved",
+            remarks: "Coaching session completed and notice of coaching signed.",
+            screenshotData: samplePng
+          })
+        ];
+        await followup.saveReports(followupReportsList);
+      }
+      renderFollowupList();
+    } catch (err) {
+      console.error("Initial load follow-up reports error:", err);
+      followupReportsList = [];
+      renderFollowupList();
+    }
+  }
+
+  function renderFollowupWorkspace() {
+    if (!followupReportsList.length) {
+      loadFollowupReportsInitial();
+    } else {
+      renderFollowupList();
+      updateFollowupSummary();
+    }
+  }
+
+  function initFollowupController() {
+    if (el("followupDate")) el("followupDate").value = followup.todayLocal();
+    clearFollowupAddForm();
+    loadFollowupReportsInitial();
+
+    el("tabFollowup")?.addEventListener("click", refreshFollowupOmOptions);
+
+    el("followupChooseShotBtn")?.addEventListener("click", () => el("followupAddShotInput")?.click());
+    el("followupReplaceAddShotBtn")?.addEventListener("click", () => el("followupAddShotInput")?.click());
+    el("followupRemoveAddShotBtn")?.addEventListener("click", () => {
+      setFollowupAddScreenshot("");
+      showFollowupMessage("Screenshot removed from new follow-up form.");
+    });
+    el("followupClearBtn")?.addEventListener("click", clearFollowupAddForm);
+
+    el("followupAddShotInput")?.addEventListener("change", async e => {
+      const file = e.target.files?.[0];
+      e.target.value = "";
+      if (!file) return;
+      try {
+        showFollowupMessage("Processing screenshot...");
+        const compressed = await followup.compressImage(file);
+        setFollowupAddScreenshot(compressed);
+        showFollowupMessage("Screenshot ready.", "success");
+      } catch (err) {
+        showFollowupMessage(err.message || "Could not read image.", "error");
+      }
+    });
+
+    // Drag & drop
+    const dropZone = el("followupAddShotZone");
+    ["dragenter", "dragover"].forEach(evType => dropZone?.addEventListener(evType, ev => {
+      ev.preventDefault();
+      dropZone.classList.add("dragover");
+    }));
+    ["dragleave", "drop"].forEach(evType => dropZone?.addEventListener(evType, ev => {
+      ev.preventDefault();
+      dropZone.classList.remove("dragover");
+    }));
+    dropZone?.addEventListener("drop", async ev => {
+      const file = [...(ev.dataTransfer?.files || [])].find(f => String(f.type || "").startsWith("image/"));
+      if (!file) return;
+      try {
+        showFollowupMessage("Processing screenshot...");
+        const compressed = await followup.compressImage(file);
+        setFollowupAddScreenshot(compressed);
+        showFollowupMessage("Screenshot ready.", "success");
+      } catch (err) {
+        showFollowupMessage(err.message || "Could not read image.", "error");
+      }
+    });
+
+    // Paste handler for screenshot
+    document.addEventListener("paste", async ev => {
+      const pane = el("paneFollowup");
+      if (!pane || pane.hidden || !pane.classList.contains("active")) return;
+      const target = ev.target;
+      if (target && /^(INPUT|TEXTAREA|SELECT)$/i.test(target.tagName)) return;
+      const file = [...(ev.clipboardData?.files || [])].find(f => String(f.type || "").startsWith("image/"));
+      if (!file) return;
+      ev.preventDefault();
+      try {
+        showFollowupMessage("Processing pasted screenshot...");
+        const compressed = await followup.compressImage(file);
+        setFollowupAddScreenshot(compressed);
+        showFollowupMessage("Screenshot ready.", "success");
+        showToast("Screenshot pasted into Follow Up form.", "info");
+      } catch (err) {
+        showFollowupMessage(err.message || "Could not read image.", "error");
+      }
+    });
+
+    // Add button
+    el("followupAddBtn")?.addEventListener("click", async () => {
+      const om = String(el("followupOm")?.value || "").trim();
+      const date = el("followupDate")?.value || followup.todayLocal();
+      if (!followupAddScreenshotData) {
+        showFollowupMessage("Add the TL conversation screenshot first.", "error");
+        showToast("Add the TL conversation screenshot first.", "error");
+        return;
+      }
+      if (!om) {
+        showFollowupMessage("Select or type the OM / group chat.", "error");
+        showToast("Select or type the OM / group chat.", "error");
+        el("followupOm")?.focus();
+        return;
+      }
+
+      const newReport = followup.createReport({
+        date,
+        om,
+        label: el("followupLabel")?.value,
+        cctvLink: el("followupCctvLink")?.value,
+        status: el("followupStatus")?.value || "Waiting for TL",
+        remarks: el("followupRemarks")?.value,
+        screenshotData: followupAddScreenshotData
+      });
+
+      followupReportsList.unshift(newReport);
+      try {
+        await followup.saveReports(followupReportsList);
+        clearFollowupAddForm();
+        renderFollowupList();
+        showFollowupMessage("Follow-up report saved.", "success");
+        showToast("Follow-up report saved.", "success");
+      } catch (err) {
+        showFollowupMessage("Could not save report.", "error");
+        showToast("Could not save follow-up report.", "error");
+      }
+    });
+
+    // Replace input
+    el("followupReplaceInput")?.addEventListener("change", async ev => {
+      const file = ev.target.files?.[0];
+      const report = followupReportsList.find(r => r.id === followupReplaceTargetId);
+      ev.target.value = "";
+      if (!file || !report) return;
+      try {
+        report.screenshotData = await followup.compressImage(file);
+        await followup.saveReports(followupReportsList);
+        renderFollowupList();
+        showToast("Screenshot replaced.", "success");
+      } catch (err) {
+        showToast(err.message || "Could not replace screenshot.", "error");
+      } finally {
+        followupReplaceTargetId = "";
+      }
+    });
+  }
+
   // App Initialization
   window.addEventListener("DOMContentLoaded", async () => {
     initWorkspaceNavigation();
@@ -4215,6 +4638,9 @@
 
     // Pending Reports Initialization
     initPendingController();
+
+    // Follow Up Reports Initialization
+    initFollowupController();
 
     // Manila clock ticker
     updateManilaClock();
@@ -4319,6 +4745,42 @@
         selected: false,
         done: false
       });
+    }
+
+    if (params.has("demo") && !followupReportsList.length) {
+      const samplePng = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAA7SURBVHhe7c4BDQAACAMw9E/tUwwmFvw+yZptWc3MzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMxfmA0G6kFf2u/6fAAAAABJRU5ErkJggg==";
+      const demoFollowups = [
+        followup.createReport({
+          date: "2026-09-10",
+          om: "CCTV OM MIRAH",
+          label: "TL Sarah Connor (Shopee)",
+          cctvLink: "https://teams.microsoft.com/l/message/19%3Ashopee%40thread.v2/0",
+          status: "Waiting for TL",
+          remarks: "Observed sleeping at workstation. Awaiting supervisor coaching form.",
+          screenshotData: samplePng
+        }),
+        followup.createReport({
+          date: "2026-09-10",
+          om: "CCTV OM RENATO",
+          label: "TL Christian Arcilla (AFP)",
+          cctvLink: "https://teams.microsoft.com/l/message/19%3Aafp%40thread.v2/1",
+          status: "TL Disputed",
+          remarks: "TL claims device was 2FA token. Escalated for CCTV footage verification.",
+          screenshotData: samplePng
+        }),
+        followup.createReport({
+          date: "2026-09-09",
+          om: "CCTV OM CRYSTAL",
+          label: "TL Dante Tahuran (TEMU)",
+          cctvLink: "https://teams.microsoft.com/l/message/19%3Atemu%40thread.v2/2",
+          status: "Resolved",
+          remarks: "Coaching session completed and notice of coaching signed.",
+          screenshotData: samplePng
+        })
+      ];
+      followupReportsList = demoFollowups;
+      await followup.saveReports(demoFollowups);
+      renderFollowupList();
     }
 
     // Restore draft form and Facebook text if present
