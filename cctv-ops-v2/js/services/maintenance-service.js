@@ -254,7 +254,8 @@
     }
   }
 
-  async function loadNamedDraft(id) {
+  async function loadNamedDraft(idOrRecord) {
+    const id = typeof idOrRecord === "object" && idOrRecord !== null ? idOrRecord.id : idOrRecord;
     const db = await openDb();
     try {
       const record = await new Promise((resolve, reject) => {
@@ -274,7 +275,8 @@
     }
   }
 
-  async function deleteNamedDraft(id) {
+  async function deleteNamedDraft(idOrRecord) {
+    const id = typeof idOrRecord === "object" && idOrRecord !== null ? idOrRecord.id : idOrRecord;
     const db = await openDb();
     try {
       await new Promise((resolve, reject) => {

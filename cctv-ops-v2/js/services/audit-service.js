@@ -412,6 +412,7 @@ window.CCTV_AUDIT = (function () {
       const site = window.normalizeTrackerSite ? window.normalizeTrackerSite(entryData.site) : (entryData.site || "Mabini Site A");
 
       const entry = {
+        id: entryData.id || ("audit_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 7)),
         rawDate: entryData.rawDate || entryData.date,
         year,
         month,
@@ -434,6 +435,7 @@ window.CCTV_AUDIT = (function () {
       if (editingIndex >= 0 && editingIndex < entryList.length) {
         // Preserve source EDR metadata if updating
         const prev = entryList[editingIndex];
+        if (prev.id) entry.id = prev.id;
         if (prev.sourceEdrId) {
           entry.sourceEdrId = prev.sourceEdrId;
           entry.sourceEdrUpdatedAt = prev.sourceEdrUpdatedAt || "";
@@ -450,7 +452,13 @@ window.CCTV_AUDIT = (function () {
       return entry;
     },
 
-    deleteEntry(index) {
+    deleteEntry(indexOrId) {
+      let index = -1;
+      if (typeof indexOrId === "number") {
+        index = indexOrId;
+      } else if (typeof indexOrId === "string") {
+        index = entryList.findIndex(e => e.id === indexOrId || e.sourceEdrId === indexOrId);
+      }
       if (index >= 0 && index < entryList.length) {
         entryList.splice(index, 1);
         if (editingIndex === index) editingIndex = -1;
@@ -574,6 +582,36 @@ window.CCTV_AUDIT = (function () {
 
     findByEdrId(edrId) {
       return entryList.find(e => e.sourceEdrId === edrId) || null;
+    },
+
+    buildTrackerHtml(entries = null) {
+      const list = Array.isArray(entries) ? entries : entryList;
+      let tableRowsHTML = "";
+      list.forEach(entry => {
+        const auditor = window.normalizeAuditorName ? window.normalizeAuditorName(entry.name || entry.auditorName || "Miles") : (entry.name || "Miles");
+        const esc = window.escapeHtml || (s => s);
+        const san = window.sanitize || (s => s);
+
+        tableRowsHTML += `<tr>` +
+          `<td style="border: none; text-align: center; background-color: transparent !important; color: #000000 !important; font-family: Arial, sans-serif; font-size: 10pt; line-height: normal;">${esc(san(entry.year))}</td>` +
+          `<td style="border: none; text-align: center; background-color: transparent !important; color: #000000 !important; font-family: Arial, sans-serif; font-size: 10pt; line-height: normal;">${esc(san(entry.month))}</td>` +
+          `<td style="border: none; text-align: center; background-color: transparent !important; color: #000000 !important; font-family: Arial, sans-serif; font-size: 10pt; line-height: normal;">${esc(san(entry.formattedDate))}</td>` +
+          `<td style="border: none; text-align: center; background-color: transparent !important; color: #000000 !important; font-family: Arial, sans-serif; font-size: 10pt; line-height: normal;">${esc(san(auditor))}</td>` +
+          `<td style="border: none; text-align: center; background-color: transparent !important; color: #000000 !important; font-family: Arial, sans-serif; font-size: 10pt; line-height: normal;">${esc(san(entry.omName))}</td>` +
+          `<td style="border: none; text-align: center; background-color: transparent !important; color: #000000 !important; font-family: Arial, sans-serif; font-size: 10pt; line-height: normal;">${esc(san(entry.site))}</td>` +
+          `<td style="border: none; text-align: center; background-color: transparent !important; color: #000000 !important; font-family: Arial, sans-serif; font-size: 10pt; line-height: normal;">${esc(san(entry.tlName))}</td>` +
+          `<td style="border: none; text-align: center; background-color: transparent !important; color: #000000 !important; font-family: Arial, sans-serif; font-size: 10pt; line-height: normal;">${esc(san(entry.agentName))}</td>` +
+          `<td style="border: none; text-align: center; background-color: transparent !important; color: #000000 !important; font-family: Arial, sans-serif; font-size: 10pt; line-height: normal;">${esc(san(entry.cleanAccount))}</td>` +
+          `<td style="border: none; text-align: center; background-color: transparent !important; color: #000000 !important; font-family: Arial, sans-serif; font-size: 10pt; line-height: normal;">${esc(san(entry.reasonCode))}</td>` +
+          `<td style="border: none; text-align: center; background-color: transparent !important; color: #000000 !important; font-family: Arial, sans-serif; font-size: 10pt; line-height: normal;">${esc(san(entry.noc))}</td>` +
+          `<td style="border: none; text-align: left; background-color: transparent !important; color: #000000 !important; font-family: Arial, sans-serif; font-size: 10pt; line-height: normal; white-space: pre-wrap;">${esc(san(entry.remarks)).replace(/\n/g, "<br>")}</td>` +
+          `</tr>`;
+      });
+      return `<div style="font-family: Arial, sans-serif; font-size: 10pt; line-height: normal; white-space: pre-wrap;"><table style="border-collapse: collapse; border: none; background-color: transparent !important; color: #000000 !important; font-family: Arial, sans-serif; font-size: 10pt; line-height: normal;"><tbody>${tableRowsHTML}</tbody></table></div>`;
+    },
+
+    formatForTracker(entries = null) {
+      return this.buildTrackerHtml(entries);
     },
 
     // Copy for External Google Sheets Tracker (Arial 10pt formatted HTML table + TSV fallback)

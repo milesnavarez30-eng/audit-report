@@ -173,6 +173,13 @@ window.CCTV_AUTH = (function () {
       return this.isAdmin();
     },
 
+    canAccessWorkspace(wsKey) {
+      if (this.isAdmin()) return true;
+      const perms = this.getPermissions();
+      if (wsKey === "accounts") return false;
+      return perms[wsKey] !== false;
+    },
+
     async signIn(usernameOrEmail, password) {
       initClient();
       if (!client) throw new Error("Supabase client not initialized.");

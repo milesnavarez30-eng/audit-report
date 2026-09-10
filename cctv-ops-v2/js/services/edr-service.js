@@ -611,6 +611,10 @@ window.CCTV_EDR = (function () {
       await this.saveReports();
     },
 
+    async saveReport(data) {
+      return this.createOrUpdate(data);
+    },
+
     async createOrUpdate(data) {
       let saved = null;
       if (editingId) {
@@ -695,7 +699,9 @@ window.CCTV_EDR = (function () {
         if (this.isValidDocsUrl(this.getDocsUrl())) {
           this.syncReportToGoogleDocs(rep).catch(() => {});
         }
+        return rep;
       }
+      return null;
     },
 
     // Saved Report Screenshot Modifiers
@@ -745,6 +751,65 @@ window.CCTV_EDR = (function () {
 
     buildTeamsHtml(facebookText = "") {
       return buildTeamsHtml(facebookText || currentFacebookText);
+    },
+
+    generateTeamsHtml(reports, facebookText = "") {
+      const active = Array.isArray(reports) ? reports : edrReports.filter(r => r.selected && !r.done);
+      if (!active.length) return "";
+      const dividerHtml = '<div><br>────────────────────────────────────────<br><br></div>';
+      const edrBodyHtml = active.map(r => reportTeamsHtml(r)).join(dividerHtml);
+      let fbHtml = "";
+      const fb = String(facebookText || "").trim();
+      if (fb) {
+        const fbDate = formatFacebookDate(todayLocal());
+        const fbLines = fb.split(/\n+/).map(l => clean(l)).filter(Boolean).map(line => {
+          const u = safeUrl(line);
+          return u
+            ? `<div><a href="${escapeHtml(u)}">${escapeHtml(line)}</a></div>`
+            : `<div>${escapeHtml(line)}</div>`;
+        }).join("");
+        fbHtml = `<div><br><strong>Facebook shared post ${escapeHtml(fbDate)}</strong></div>${fbLines}`;
+      }
+      return `<div style="font-family:Arial,sans-serif;font-size:10pt;color:#111;line-height:1.4;">${edrBodyHtml}${fbHtml}</div>`.trim();
+    },
+
+    generateTeamsPlainText(reports, facebookText = "") {
+      const active = Array.isArray(reports) ? reports : edrReports.filter(r => r.selected && !r.done);
+      const divider = "\n\n────────────────────────────────────────\n\n";
+      const body = active.map(r => reportPlainText(r)).join(divider);
+      let result = body;
+      const fb = String(facebookText || "").trim();
+      if (fb) {
+        if (result) result += "\n\n";
+        const fbDate = formatFacebookDate(todayLocal());
+        result += `Facebook shared post ${fbDate}\n${fb}`;
+      }
+      return result.trim();
+    },
+
+    buildAuditRowFromEdr(report, auditor = "Miles") {
+      const parts = String(report.date || "").split("-");
+      const year = parts[0] || new Date().getFullYear().toString();
+      const month = parts[1] ? String(parseInt(parts[1], 10)) : String(new Date().getMonth() + 1);
+      const formattedDate = parts.length === 3 ? `${month}/${parts[2]}/${year}` : report.date;
+      return {
+        rawDate: report.date || "",
+        year,
+        month,
+        formattedDate,
+        auditorName: auditor,
+        name: auditor,
+        omName: report.dedicatedOm || (report.supervisorRole === "OM" ? report.supervisorName : "") || "",
+        site: report.site || "",
+        tlName: report.supervisorRole === "Team Leader" ? report.supervisorName : "",
+        agentName: report.subjectName || "",
+        account: report.account || "",
+        cleanAccount: report.account || "General",
+        reasonCode: "SLEEPING",
+        noc: "Pending",
+        remarks: report.action || report.incident || "",
+        sourceEdrId: report.id
+      };
     },
 
     buildPreviewHtml(facebookText = "") {
