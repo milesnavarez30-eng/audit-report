@@ -1511,6 +1511,67 @@
 
           </div>
         </section>
+
+        <!-- Activity History Workspace Pane -->
+        <section id="paneHistory" class="workspace-pane" role="tabpanel" aria-labelledby="tabHistory" hidden>
+          <div class="history-workspace-layout">
+
+            <!-- History Action Toolbar -->
+            <div class="history-toolbar-card">
+              <div class="history-toolbar-left">
+                <button type="button" class="btn btn-outline btn-sm" id="historyUndoBtn" title="Undo change (Ctrl+Z)" disabled style="gap:4px;">
+                  <svg class="icon icon-sm" viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>
+                  <span>Undo</span>
+                </button>
+                <button type="button" class="btn btn-outline btn-sm" id="historyRedoBtn" title="Redo change (Ctrl+Y)" disabled style="gap:4px;">
+                  <svg class="icon icon-sm" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
+                  <span>Redo</span>
+                </button>
+                <button type="button" class="btn btn-primary btn-sm" id="historyRestoreSelectedBtn" disabled style="gap:4px;">
+                  <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path></svg>
+                  <span>Restore Selected</span>
+                </button>
+                <button type="button" class="btn btn-danger-ghost btn-sm" id="historyClearBtn" title="Clear all history snapshots">
+                  <span>Clear History</span>
+                </button>
+              </div>
+
+              <div class="history-toolbar-right">
+                <span class="history-summary-text" id="historySummaryText">No changes recorded yet.</span>
+                <span class="badge badge-neutral">Max 20 snapshots</span>
+              </div>
+            </div>
+
+            <!-- Main Split: Timeline List & Preview Panel -->
+            <div class="history-split-container">
+              <!-- Timeline List Card -->
+              <div class="history-list-card">
+                <div class="history-card-head">
+                  <span class="history-card-title">Timeline Changes</span>
+                  <span class="badge badge-info" id="historyCountBadge">0</span>
+                </div>
+                <div class="history-list-scroll" id="historyListContainer">
+                  <div class="history-preview-empty">No workspace changes recorded yet. Actions across all workspaces are automatically tracked here.</div>
+                </div>
+              </div>
+
+              <!-- Preview Card -->
+              <div class="history-preview-card">
+                <div class="history-card-head">
+                  <span class="history-card-title">Snapshot Inspection</span>
+                  <span class="badge badge-neutral" id="historySelectedWsBadge">—</span>
+                </div>
+                <div class="history-preview-scroll" id="historyPreviewContainer">
+                  <div class="history-preview-empty">Select a history item to inspect affected reports or data.</div>
+                </div>
+                <div class="history-instruction-note">
+                  Select an item and click <strong>Restore Selected</strong>. Deleted rows, blocks, or screenshots are merged back without rolling back newer unrelated work when possible.
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </section>
       </div>
     </main>
   </div>
@@ -1728,6 +1789,7 @@
   <script src="./js/services/pending-service.js"></script>
   <script src="./js/services/followup-service.js"></script>
   <script src="./js/services/masterlist-service.js"></script>
+  <script src="./js/services/history-service.js"></script>
   <script src="./js/app.js"></script>
 </body>
 </html>

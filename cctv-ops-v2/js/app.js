@@ -1248,6 +1248,8 @@
       renderFollowupWorkspace();
     } else if (targetKey === "masterlist") {
       renderMasterlistWorkspace();
+    } else if (targetKey === "history") {
+      renderHistoryWorkspace();
     }
   }
 
@@ -4957,6 +4959,181 @@
     masterlist.init();
   }
 
+  // =========================================================================
+  // ACTIVITY HISTORY WORKSPACE CONTROLLER
+  // =========================================================================
+  function renderHistoryWorkspace() {
+    if (window._renderHistoryWorkspaceFn) {
+      window._renderHistoryWorkspaceFn();
+    }
+  }
+
+  function initHistoryController() {
+    const history = window.historyService;
+    if (!history) return;
+
+    const undoBtn = el("historyUndoBtn");
+    const redoBtn = el("historyRedoBtn");
+    const restoreBtn = el("historyRestoreSelectedBtn");
+    const clearBtn = el("historyClearBtn");
+    const summaryText = el("historySummaryText");
+    const countBadge = el("historyCountBadge");
+    const listContainer = el("historyListContainer");
+    const previewContainer = el("historyPreviewContainer");
+    const selectedWsBadge = el("historySelectedWsBadge");
+
+    function formatTime(iso) {
+      const date = new Date(iso);
+      if (Number.isNaN(date.getTime())) return "";
+      return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+    }
+
+    function renderHistoryPreview(entry) {
+      if (!previewContainer) return;
+      if (!entry) {
+        if (selectedWsBadge) selectedWsBadge.textContent = "—";
+        previewContainer.innerHTML = '<div class="history-preview-empty">Select a history item to inspect affected reports or data.</div>';
+        return;
+      }
+
+      if (selectedWsBadge) {
+        selectedWsBadge.textContent = (entry.workspace || "Workspace").toUpperCase();
+      }
+
+      const summary = history.historyEntrySummary(entry);
+      let previewHtml = `
+        <div class="history-preview-box">
+          <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
+            <strong style="color:var(--text-primary); font-size:12px;">${escapeHtml(entry.action)}</strong>
+            <span style="color:var(--text-dim); font-size:10.5px;">${escapeHtml(formatTime(entry.at))}</span>
+          </div>
+          <div style="font-size:11.5px; color:var(--text-secondary); margin-bottom:8px;">
+            ${escapeHtml(summary || "State snapshot captured.")}
+          </div>
+        </div>
+      `;
+
+      if (entry.before || entry.after) {
+        previewHtml += `
+          <div style="display:flex; flex-direction:column; gap:6px; margin-top:6px;">
+            <div style="font-size:11px; font-weight:700; color:var(--text-secondary); text-transform:uppercase;">Snapshot Diff Detail</div>
+            <div class="history-preview-box" style="font-family:var(--font-mono); font-size:10.5px; max-height:220px; overflow-y:auto; white-space:pre-wrap;">
+${escapeHtml(JSON.stringify(entry.after || entry.before, null, 2))}
+            </div>
+          </div>
+        `;
+      }
+
+      previewContainer.innerHTML = previewHtml;
+    }
+
+    function renderTimeline() {
+      const timeline = history.getTimeline();
+
+      if (undoBtn) undoBtn.disabled = !timeline.canUndo;
+      if (redoBtn) redoBtn.disabled = !timeline.canRedo;
+      if (restoreBtn) restoreBtn.disabled = !timeline.selectedId;
+
+      if (countBadge) countBadge.textContent = String(timeline.total);
+      if (summaryText) {
+        summaryText.textContent = timeline.total
+          ? `${timeline.total} saved change${timeline.total === 1 ? "" : "s"} recorded`
+          : "No changes recorded yet.";
+      }
+
+      if (!listContainer) return;
+
+      if (!timeline.entries.length) {
+        listContainer.innerHTML = '<div class="history-preview-empty">No workspace changes recorded yet. Actions across all workspaces are automatically tracked here.</div>';
+        renderHistoryPreview(null);
+        return;
+      }
+
+      listContainer.innerHTML = timeline.entries
+        .map((entry, index) => ({ entry, index }))
+        .reverse()
+        .map(({ entry, index }) => {
+          const isSelected = entry.id === timeline.selectedId;
+          const isCurrent = index === timeline.cursor;
+          const wsLabel = (entry.workspace || "").toUpperCase();
+
+          return `
+            <div class="history-item ${isSelected ? 'selected' : ''} ${isCurrent ? 'current' : ''}" data-id="${escapeHtml(entry.id)}">
+              <input type="radio" class="history-radio" name="historyTimelineRadio" value="${escapeHtml(entry.id)}" ${isSelected ? 'checked' : ''}>
+              <div class="history-item-body">
+                <div class="history-item-top">
+                  <span class="history-item-action">${escapeHtml(entry.action)}</span>
+                  <span class="history-item-time">${escapeHtml(formatTime(entry.at))}</span>
+                </div>
+                <div class="history-item-meta">
+                  <span class="history-ws-badge">${escapeHtml(wsLabel)}</span>
+                  <span class="history-item-summary">${escapeHtml(history.historyEntrySummary(entry))}</span>
+                </div>
+              </div>
+            </div>
+          `;
+        })
+        .join("");
+
+      listContainer.querySelectorAll(".history-item").forEach(itemEl => {
+        itemEl.addEventListener("click", () => {
+          const id = itemEl.dataset.id;
+          history.setSelectedId(id);
+        });
+      });
+
+      const selectedEntry = timeline.entries.find(e => e.id === timeline.selectedId);
+      renderHistoryPreview(selectedEntry || null);
+    }
+
+    undoBtn?.addEventListener("click", async () => {
+      const ok = await history.undo();
+      if (ok) showToast("Undone last workspace change.", "info");
+    });
+
+    redoBtn?.addEventListener("click", async () => {
+      const ok = await history.redo();
+      if (ok) showToast("Redone workspace change.", "info");
+    });
+
+    restoreBtn?.addEventListener("click", async () => {
+      const timeline = history.getTimeline();
+      if (!timeline.selectedId) return;
+
+      const ok = await history.restoreSelectedEntry(timeline.selectedId);
+      if (ok) {
+        showToast("Selected workspace change restored.", "success");
+      } else {
+        showToast("Could not restore selected change.", "error");
+      }
+    });
+
+    clearBtn?.addEventListener("click", async () => {
+      const approved = await (window.appConfirm ? window.appConfirm({
+        title: "Clear workspace history?",
+        message: "Undo/redo snapshots from all workspaces will be removed. Current data will stay.",
+        confirmText: "Clear History",
+        tone: "danger"
+      }) : window.confirm("Clear all workspace history snapshots?"));
+
+      if (!approved) return;
+
+      await history.clearHistory();
+      showToast("Workspace history cleared.", "info");
+    });
+
+    history.subscribe(() => {
+      renderTimeline();
+    });
+
+    window._renderHistoryWorkspaceFn = function() {
+      renderTimeline();
+    };
+
+    renderTimeline();
+    history.init();
+  }
+
   // App Initialization
   window.addEventListener("DOMContentLoaded", async () => {
     initWorkspaceNavigation();
@@ -4991,6 +5168,9 @@
 
     // Masterlist Workspace Initialization
     initMasterlistController();
+
+    // Activity History Initialization
+    initHistoryController();
 
     // Manila clock ticker
     updateManilaClock();
