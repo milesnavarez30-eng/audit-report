@@ -1,0 +1,104 @@
+/**
+ * CCTV OPS V2 - Base Styles & Reset
+ */
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 14px;
+  color-scheme: dark;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  font-family: var(--font-family);
+  background-color: var(--bg-app);
+  color: var(--text-primary);
+  line-height: 1.45;
+  overflow: hidden;
+  height: 100vh;
+  width: 100vw;
+  user-select: none;
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-app);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-default);
+  border-radius: var(--radius-pill);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--border-hover);
+}
+
+/* Base Headings & Text */
+h1, h2, h3, h4, h5, h6 {
+  color: var(--text-primary);
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+p {
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+}
+
+a {
+  color: var(--accent-primary);
+  text-decoration: none;
+  transition: color var(--trans-fast);
+}
+
+a:hover {
+  color: var(--accent-primary-hover);
+  text-decoration: underline;
+}
+
+/* Icons styling */
+.icon {
+  width: 15px;
+  height: 15px;
+  display: inline-block;
+  vertical-align: middle;
+  stroke-width: 2;
+  stroke: currentColor;
+  fill: none;
+  flex-shrink: 0;
+}
+
+.icon-sm {
+  width: 13px;
+  height: 13px;
+}
+
+.icon-lg {
+  width: 18px;
+  height: 18px;
+}
+
+/* Focus Rings */
+:focus-visible {
+  outline: 2px solid var(--accent-primary);
+  outline-offset: 1px;
+}
+
+/* Selection */
+::selection {
+  background: rgba(56, 189, 248, 0.3);
+  color: #fff;
+}
