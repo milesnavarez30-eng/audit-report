@@ -1051,6 +1051,91 @@
 
           </div>
         </section>
+
+        <!-- WORKSPACE 4: Maintenance Report & Multi-Block Canvas -->
+        <section id="paneMaintenance" class="workspace-pane" role="tabpanel" aria-labelledby="tabMaintenance" hidden>
+          <div class="maintenance-workspace-layout">
+            
+            <!-- TOP: Destination, Date, and Actions Control Card -->
+            <div class="maintenance-control-card">
+              <div class="maintenance-top-grid">
+                <div class="form-group" style="margin-bottom:0;">
+                  <label class="form-label" for="simpleEodDestination">Destination Tracker / Assigned Site</label>
+                  <select id="simpleEodDestination" class="form-control form-control-sm">
+                    <option value="mabini_a" selected>Mabini Site A - 1st &amp; 2nd Floor</option>
+                    <option value="mabini_b">Mabini Site B - 2nd, 3rd &amp; 4th Floor</option>
+                    <option value="gensan">Gensan Site</option>
+                    <option value="maa_4_5">MAA 4th &amp; 5th Floor</option>
+                    <option value="maa_6">MAA 6th Floor</option>
+                    <option value="digos">Digos Site</option>
+                    <option value="ecoland">Ecoland Site</option>
+                    <option value="cdo">CDO Site</option>
+                  </select>
+                </div>
+
+                <div class="form-group" style="margin-bottom:0;">
+                  <label class="form-label" for="simpleEodDate">Report Date</label>
+                  <input type="date" id="simpleEodDate" class="form-control form-control-sm" autocomplete="off">
+                </div>
+
+                <div class="maintenance-status-cluster">
+                  <span class="maintenance-sheet-connection-state is-unchecked" id="maintenanceSheetConnectionState">Sheets: not checked</span>
+                </div>
+
+                <div class="maintenance-status-cluster">
+                  <span id="simpleEodAutosaveStatus" class="maintenance-autosave-status saved">● Auto-save active</span>
+                </div>
+              </div>
+
+              <input type="hidden" id="simpleEodSite" value="Mabini Site A - 1st & 2nd Floor">
+
+              <div class="maintenance-actions-row">
+                <div class="maintenance-btn-cluster">
+                  <button type="button" class="btn btn-outline btn-sm" id="simpleEodSaveBtn" title="Save current state to named working draft">
+                    <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+                    <span>Save to Drafts</span>
+                  </button>
+                  <button type="button" class="btn btn-outline btn-sm" id="simpleEodDraftsBtn" title="View, load, or delete saved drafts">
+                    <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+                    <span>Drafts</span>
+                  </button>
+                  <button type="button" class="btn btn-secondary btn-sm" id="simpleEodCopySheetsBtn" title="Copy full report with Arial 10pt and screenshots for Google Sheets">
+                    <svg class="icon icon-sm" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                    <span>Copy Full Report to Sheets</span>
+                  </button>
+                  <button type="button" class="btn btn-primary btn-sm" id="simpleEodSendSheetsBtn" title="Upload directly to Google Sheets via Apps Script Web App">
+                    <svg class="icon icon-sm" viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                    <span>Send to Google Sheets</span>
+                  </button>
+                  <button type="button" class="btn btn-outline btn-sm" id="simpleEodSheetSetupBtn" title="Configure Google Sheets Apps Script Web App URL">
+                    <svg class="icon icon-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                    <span>Sheet Setup</span>
+                  </button>
+                </div>
+
+                <div class="maintenance-btn-cluster">
+                  <button type="button" class="btn btn-ghost btn-sm" id="simpleEodPreviewBtn">Preview / Print</button>
+                  <button type="button" class="btn btn-outline btn-sm" id="simpleEodPdfBtn">Download PDF</button>
+                  <button type="button" class="btn btn-danger-ghost btn-sm" id="simpleEodClearBtn">Clear All</button>
+                </div>
+              </div>
+
+              <div id="simpleEodMessage" class="maintenance-message" aria-live="polite" style="display:none;"></div>
+            </div>
+
+            <!-- CANVAS: List of Editable Blocks -->
+            <div class="maintenance-canvas-workspace">
+              <div id="simpleEodBlocks" class="eod-block-list">
+                <!-- Dynamically populated report blocks -->
+              </div>
+              <button type="button" id="simpleEodAddBtn" class="btn btn-outline" style="align-self:flex-start; margin: 4px 0 16px 0;">
+                <svg class="icon icon-sm" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                <span>Add another editable lanes + screenshot block</span>
+              </button>
+            </div>
+
+          </div>
+        </section>
       </div>
     </main>
   </div>
@@ -1196,6 +1281,55 @@
     </div>
   </div>
 
+  <!-- Maintenance Google Sheets Apps Script Setup Modal -->
+  <div class="modal-backdrop" id="modalMaintenanceSheetSetup" hidden>
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 class="modal-title">Google Sheets Maintenance Setup</h3>
+        <button type="button" class="btn btn-ghost btn-sm" id="btnCloseMaintenanceSheetSetup">✕</button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size:12px; color:var(--text-secondary); margin:0 0 10px 0;">
+          Enter the Apps Script Web App URL ending in <strong>/exec</strong> to enable true in-cell images and automatic report logging.
+        </p>
+        <div class="form-group">
+          <label class="form-label" for="maintenanceSheetWebAppUrl">Web App URL</label>
+          <input type="url" id="maintenanceSheetWebAppUrl" class="form-control form-control-sm" placeholder="https://script.google.com/macros/s/.../exec">
+        </div>
+        <div id="maintenanceSheetTestResult" class="maintenance-sheet-test-result" style="font-size:11px; margin-top:8px;"></div>
+      </div>
+      <div class="modal-footer" style="justify-content:space-between;">
+        <button type="button" class="btn btn-danger-ghost btn-sm" id="btnClearMaintenanceSheet">Disconnect</button>
+        <div style="display:flex; align-items:center; gap:6px;">
+          <button type="button" class="btn btn-outline btn-sm" id="btnTestMaintenanceSheet">Test Connection</button>
+          <button type="button" class="btn btn-primary btn-sm" id="btnSaveMaintenanceSheet">Save &amp; Connect</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Maintenance Drafts Manager Modal -->
+  <div class="modal-backdrop" id="modalMaintenanceDrafts" hidden>
+    <div class="modal-dialog" style="max-width:600px;">
+      <div class="modal-header">
+        <h3 class="modal-title">Saved Maintenance Drafts</h3>
+        <button type="button" class="btn btn-ghost btn-sm" id="btnCloseMaintenanceDrafts">✕</button>
+      </div>
+      <div class="modal-body" style="max-height:420px; overflow-y:auto;">
+        <div style="display:flex; gap:8px; margin-bottom:12px;">
+          <input type="text" id="maintenanceDraftName" class="form-control form-control-sm" placeholder="Enter draft snapshot name...">
+          <button type="button" class="btn btn-primary btn-sm" id="btnSaveNamedDraft" style="white-space:nowrap;">Save Snapshot</button>
+        </div>
+        <div id="maintenanceDraftList" class="maintenance-draft-list" style="display:flex; flex-direction:column; gap:8px;">
+          <!-- Dynamically populated drafts -->
+        </div>
+      </div>
+      <div class="modal-footer" style="justify-content:flex-end;">
+        <button type="button" class="btn btn-outline btn-sm" id="btnDoneMaintenanceDrafts">Close</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Toast Notification Container -->
   <div class="toast-container" id="toastContainer"></div>
 
@@ -1213,6 +1347,7 @@
   <script src="./js/services/edr-service.js"></script>
   <script src="./js/services/audit-service.js"></script>
   <script src="./js/services/sorter-service.js"></script>
+  <script src="./js/services/maintenance-service.js"></script>
   <script src="./js/app.js"></script>
 </body>
 </html>

@@ -11,6 +11,7 @@
   const audit = window.CCTV_AUDIT;
   const auth = window.CCTV_AUTH;
   const sorter = window.sorterService;
+  const maintenance = window.maintenanceService;
 
   let currentScreenshot = "";
   let supervisorRole = "Team Leader";
@@ -1237,6 +1238,8 @@
       renderGuardStatus();
     } else if (targetKey === "sorter") {
       renderSorterWorkspace();
+    } else if (targetKey === "maintenance") {
+      renderMaintenanceWorkspace();
     }
   }
 
@@ -2843,6 +2846,857 @@
     });
   }
 
+  // =========================================================================
+  // WORKSPACE 4: MAINTENANCE REPORT & MULTI-BLOCK CANVAS CONTROLLER
+  // =========================================================================
+  let maintenanceState = {
+    date: "",
+    destinationKey: "mabini_a",
+    title: "Mabini Site A - 1st & 2nd Floor",
+    blocks: []
+  };
+  let maintenanceAutosaveTimer = null;
+  let activePasteBlockId = null;
+
+  function setMaintenanceStatusMessage(text, type = "info") {
+    const msgEl = el("simpleEodMessage");
+    if (!msgEl) return;
+    if (!text) {
+      msgEl.style.display = "none";
+      msgEl.textContent = "";
+      return;
+    }
+    msgEl.textContent = text;
+    msgEl.className = `maintenance-message ${type}`;
+    msgEl.style.display = "flex";
+  }
+
+  function updateMaintenanceAutosaveIndicator(statusText, className = "saved") {
+    const statusEl = el("simpleEodAutosaveStatus");
+    if (!statusEl) return;
+    statusEl.className = `maintenance-autosave-status ${className}`;
+    statusEl.textContent = statusText;
+  }
+
+  function queueMaintenanceAutosave() {
+    updateMaintenanceAutosaveIndicator("● Saving...", "saving");
+    if (maintenanceAutosaveTimer) clearTimeout(maintenanceAutosaveTimer);
+    maintenanceAutosaveTimer = setTimeout(async () => {
+      try {
+        await maintenance.saveDraft(maintenanceState);
+        const now = new Date();
+        const timeStr = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+        updateMaintenanceAutosaveIndicator(`● Auto-saved (${timeStr})`, "saved");
+      } catch (err) {
+        console.error("Autosave draft error:", err);
+        updateMaintenanceAutosaveIndicator("● Autosave error", "error");
+      }
+    }, 600);
+  }
+
+  function renderMaintenanceWorkspace() {
+    if (!maintenanceState.blocks.length) {
+      loadMaintenanceDraftInitial();
+    } else {
+      syncMaintenanceHeaderUi();
+      renderMaintenanceBlocks();
+    }
+    checkMaintenanceSheetsConnectionState();
+  }
+
+  function syncMaintenanceHeaderUi() {
+    const destSelect = el("simpleEodDestination");
+    if (destSelect && maintenanceState.destinationKey) {
+      destSelect.value = maintenanceState.destinationKey;
+    }
+    const dateInput = el("simpleEodDate");
+    if (dateInput) {
+      if (!maintenanceState.date) {
+        maintenanceState.date = maintenance.todayLocal();
+      }
+      dateInput.value = maintenanceState.date;
+    }
+    const siteInput = el("simpleEodSite");
+    if (siteInput && maintenanceState.title) {
+      siteInput.value = maintenanceState.title;
+    }
+  }
+
+  async function loadMaintenanceDraftInitial() {
+    try {
+      const saved = await maintenance.loadDraft();
+      if (saved && Array.isArray(saved.blocks) && saved.blocks.length > 0) {
+        maintenanceState = {
+          date: saved.date || maintenance.todayLocal(),
+          destinationKey: saved.destinationKey || "mabini_a",
+          title: saved.title || maintenance.MAINTENANCE_DESTINATIONS[saved.destinationKey]?.label || "Mabini Site A - 1st & 2nd Floor",
+          blocks: saved.blocks
+        };
+      } else {
+        maintenanceState = {
+          date: maintenance.todayLocal(),
+          destinationKey: "mabini_a",
+          title: maintenance.MAINTENANCE_DESTINATIONS["mabini_a"].label,
+          blocks: [maintenance.makeBlock()]
+        };
+      }
+    } catch (err) {
+      console.warn("Failed to load initial maintenance draft:", err);
+      maintenanceState = {
+        date: maintenance.todayLocal(),
+        destinationKey: "mabini_a",
+        title: maintenance.MAINTENANCE_DESTINATIONS["mabini_a"].label,
+        blocks: [maintenance.makeBlock()]
+      };
+    }
+    syncMaintenanceHeaderUi();
+    renderMaintenanceBlocks();
+
+    if (window.__pendingMaintenanceRows) {
+      const pending = window.__pendingMaintenanceRows;
+      window.__pendingMaintenanceRows = null;
+      if (typeof window.addMaintenanceSorterRowsToReport === "function") {
+        window.addMaintenanceSorterRowsToReport(pending.tsv, pending);
+      }
+    }
+  }
+
+  function renderMaintenanceBlocks() {
+    const container = el("simpleEodBlocks");
+    if (!container) return;
+
+    container.innerHTML = "";
+
+    maintenanceState.blocks.forEach((block, index) => {
+      const blockEl = document.createElement("div");
+      blockEl.className = "eod-block-card";
+      blockEl.id = `block_${block.id}`;
+      blockEl.dataset.blockId = block.id;
+
+      // Header row
+      const headerRow = document.createElement("div");
+      headerRow.className = "eod-block-header";
+
+      const titleWrap = document.createElement("div");
+      titleWrap.style.display = "flex";
+      titleWrap.style.alignItems = "center";
+      titleWrap.style.gap = "8px";
+
+      const badge = document.createElement("span");
+      badge.className = "badge badge-neutral";
+      badge.textContent = `Block #${index + 1}`;
+
+      const titleSpan = document.createElement("span");
+      titleSpan.style.fontWeight = "600";
+      titleSpan.style.fontSize = "12px";
+      titleSpan.style.color = "var(--text-primary)";
+      titleSpan.textContent = `Report Section ${index + 1}`;
+
+      titleWrap.appendChild(badge);
+      titleWrap.appendChild(titleSpan);
+
+      const actionsWrap = document.createElement("div");
+      actionsWrap.style.display = "flex";
+      actionsWrap.style.alignItems = "center";
+      actionsWrap.style.gap = "8px";
+
+      // Hide Data Checkbox
+      const hideLabel = document.createElement("label");
+      hideLabel.style.display = "inline-flex";
+      hideLabel.style.alignItems = "center";
+      hideLabel.style.gap = "4px";
+      hideLabel.style.fontSize = "11px";
+      hideLabel.style.color = "var(--text-secondary)";
+      hideLabel.style.cursor = "pointer";
+
+      const hideCheck = document.createElement("input");
+      hideCheck.type = "checkbox";
+      hideCheck.checked = !!block.dataHidden;
+      hideCheck.addEventListener("change", () => {
+        block.dataHidden = hideCheck.checked;
+        queueMaintenanceAutosave();
+      });
+      hideLabel.appendChild(hideCheck);
+      hideLabel.appendChild(document.createTextNode("Exclude rows from send"));
+      actionsWrap.appendChild(hideLabel);
+
+      // Remove block button
+      if (maintenanceState.blocks.length > 1) {
+        const removeBtn = document.createElement("button");
+        removeBtn.type = "button";
+        removeBtn.className = "btn btn-danger-ghost btn-sm";
+        removeBtn.textContent = "Remove Block";
+        removeBtn.addEventListener("click", async () => {
+          const ok = await window.appConfirm({
+            title: `Remove Block #${index + 1}?`,
+            message: "Remove this block and its incident issues, remarks, and screenshots?",
+            confirmText: "Remove",
+            tone: "danger"
+          });
+          if (!ok) return;
+          maintenanceState.blocks.splice(index, 1);
+          renderMaintenanceBlocks();
+          queueMaintenanceAutosave();
+          showToast(`Block #${index + 1} removed.`, "info");
+        });
+        actionsWrap.appendChild(removeBtn);
+      }
+
+      headerRow.appendChild(titleWrap);
+      headerRow.appendChild(actionsWrap);
+      blockEl.appendChild(headerRow);
+
+      // Desktop side-by-side grid
+      const grid = document.createElement("div");
+      grid.className = "maintenance-incident-action-grid";
+
+      // Left column: Lanes / Incidents
+      const leftCol = document.createElement("div");
+      leftCol.className = "form-group";
+      leftCol.style.marginBottom = "0";
+
+      const leftLabel = document.createElement("label");
+      leftLabel.className = "form-label";
+      leftLabel.textContent = "Station Issues / Incident (Lanes)";
+      leftCol.appendChild(leftLabel);
+
+      const lanesArea = document.createElement("textarea");
+      lanesArea.className = "form-control eod-lanes-textarea";
+      lanesArea.rows = 6;
+      lanesArea.placeholder = "Paste station rows or enter incident issues (TSV format from Sorter or manual)...";
+      lanesArea.value = block.lanesText || "";
+      lanesArea.addEventListener("focus", () => {
+        activePasteBlockId = block.id;
+      });
+      lanesArea.addEventListener("input", () => {
+        block.lanesText = lanesArea.value;
+        const detected = maintenance.detectMaintenanceDestinationFromRows(block.lanesText);
+        if (detected && detected !== maintenanceState.destinationKey && maintenance.MAINTENANCE_DESTINATIONS[detected]) {
+          maintenanceState.destinationKey = detected;
+          maintenanceState.title = maintenance.MAINTENANCE_DESTINATIONS[detected].label;
+          syncMaintenanceHeaderUi();
+          showToast(`Destination auto-detected: ${maintenanceState.title}`, "info");
+        }
+        queueMaintenanceAutosave();
+      });
+      leftCol.appendChild(lanesArea);
+      grid.appendChild(leftCol);
+
+      // Right column: Action Taken / Remarks
+      const rightCol = document.createElement("div");
+      rightCol.className = "form-group";
+      rightCol.style.marginBottom = "0";
+
+      const rightLabel = document.createElement("label");
+      rightLabel.className = "form-label";
+      rightLabel.textContent = "Action Taken / Remarks";
+      rightCol.appendChild(rightLabel);
+
+      const remarksArea = document.createElement("textarea");
+      remarksArea.className = "form-control eod-remarks-textarea";
+      remarksArea.rows = 6;
+      remarksArea.placeholder = "Enter action taken or remarks (one per line)...";
+      remarksArea.value = Array.isArray(block.remarks) ? block.remarks.join("\n") : (block.remarks || "");
+      remarksArea.addEventListener("focus", () => {
+        activePasteBlockId = block.id;
+      });
+      remarksArea.addEventListener("input", () => {
+        block.remarks = remarksArea.value.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+        if (!block.remarks.length) block.remarks = [""];
+        queueMaintenanceAutosave();
+      });
+      rightCol.appendChild(remarksArea);
+      grid.appendChild(rightCol);
+
+      blockEl.appendChild(grid);
+
+      // Screenshot Proof Zone (REQUIRED)
+      const proofZone = document.createElement("div");
+      proofZone.className = "eod-proof-zone";
+      proofZone.id = `proof_zone_${block.id}`;
+
+      const proofHeader = document.createElement("div");
+      proofHeader.className = "eod-proof-header";
+
+      const proofTitleWrap = document.createElement("div");
+      proofTitleWrap.style.display = "flex";
+      proofTitleWrap.style.alignItems = "center";
+      proofTitleWrap.style.gap = "6px";
+
+      const proofTitle = document.createElement("span");
+      proofTitle.style.fontWeight = "600";
+      proofTitle.style.fontSize = "11px";
+      proofTitle.style.color = "var(--text-secondary)";
+      proofTitle.textContent = "Proof Screenshots";
+
+      const proofBadge = document.createElement("span");
+      proofBadge.className = "badge badge-neutral";
+      proofBadge.textContent = `${(block.screenshots || []).length} image(s)`;
+
+      proofTitleWrap.appendChild(proofTitle);
+      proofTitleWrap.appendChild(proofBadge);
+
+      const proofActions = document.createElement("div");
+      proofActions.style.display = "flex";
+      proofActions.style.alignItems = "center";
+      proofActions.style.gap = "6px";
+
+      const fileInput = document.createElement("input");
+      fileInput.type = "file";
+      fileInput.accept = "image/*";
+      fileInput.multiple = true;
+      fileInput.style.display = "none";
+      fileInput.addEventListener("change", async () => {
+        if (!fileInput.files || !fileInput.files.length) return;
+        updateMaintenanceAutosaveIndicator("● Processing images...", "saving");
+        for (let i = 0; i < fileInput.files.length; i++) {
+          try {
+            const compressed = await maintenance.compressImage(fileInput.files[i]);
+            if (!Array.isArray(block.screenshots)) block.screenshots = [];
+            block.screenshots.push(compressed);
+          } catch (err) {
+            console.error("Screenshot compression error:", err);
+          }
+        }
+        fileInput.value = "";
+        renderMaintenanceBlocks();
+        queueMaintenanceAutosave();
+        showToast("Screenshot proof added.", "success");
+      });
+      proofActions.appendChild(fileInput);
+
+      const addProofBtn = document.createElement("button");
+      addProofBtn.type = "button";
+      addProofBtn.className = "btn btn-outline btn-sm";
+      addProofBtn.innerHTML = `<svg class="icon icon-sm" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg> <span>Add Screenshot</span>`;
+      addProofBtn.addEventListener("click", () => fileInput.click());
+      proofActions.appendChild(addProofBtn);
+
+      proofHeader.appendChild(proofTitleWrap);
+      proofHeader.appendChild(proofActions);
+      proofZone.appendChild(proofHeader);
+
+      const dropNotice = document.createElement("div");
+      dropNotice.className = "eod-proof-drop-hint";
+      dropNotice.style.fontSize = "10.5px";
+      dropNotice.style.color = "var(--text-dim)";
+      dropNotice.style.padding = "4px 0";
+      dropNotice.textContent = "Browse, drag & drop image files, or press Ctrl+V to paste screenshot here.";
+      proofZone.appendChild(dropNotice);
+
+      const gridEl = document.createElement("div");
+      gridEl.className = "eod-proof-grid";
+
+      (block.screenshots || []).forEach((shot, shotIdx) => {
+        const item = document.createElement("div");
+        item.className = "eod-proof-item";
+
+        const src = maintenance.maintenanceScreenshotSource(shot);
+
+        const img = document.createElement("img");
+        img.src = src;
+        img.alt = `Proof Screenshot ${shotIdx + 1}`;
+        img.title = "Click to view full resolution";
+        img.addEventListener("click", () => {
+          openScreenshotViewer(src, `Proof Screenshot - Block #${index + 1}`, `Image ${shotIdx + 1} of ${block.screenshots.length}`);
+        });
+        item.appendChild(img);
+
+        const removeBtn = document.createElement("button");
+        removeBtn.type = "button";
+        removeBtn.className = "eod-proof-remove";
+        removeBtn.title = "Remove screenshot";
+        removeBtn.innerHTML = "✕";
+        removeBtn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          block.screenshots.splice(shotIdx, 1);
+          renderMaintenanceBlocks();
+          queueMaintenanceAutosave();
+          showToast("Screenshot removed.", "info");
+        });
+        item.appendChild(removeBtn);
+
+        gridEl.appendChild(item);
+      });
+
+      proofZone.appendChild(gridEl);
+
+      // Drag and drop handlers
+      proofZone.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        proofZone.classList.add("drag-over");
+      });
+      proofZone.addEventListener("dragleave", () => {
+        proofZone.classList.remove("drag-over");
+      });
+      proofZone.addEventListener("drop", async (e) => {
+        e.preventDefault();
+        proofZone.classList.remove("drag-over");
+        if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length) {
+          updateMaintenanceAutosaveIndicator("● Processing images...", "saving");
+          for (let i = 0; i < e.dataTransfer.files.length; i++) {
+            const file = e.dataTransfer.files[i];
+            if (file.type.startsWith("image/")) {
+              try {
+                const compressed = await maintenance.compressImage(file);
+                if (!Array.isArray(block.screenshots)) block.screenshots = [];
+                block.screenshots.push(compressed);
+              } catch (err) {
+                console.error("Drop compression error:", err);
+              }
+            }
+          }
+          renderMaintenanceBlocks();
+          queueMaintenanceAutosave();
+          showToast("Screenshot proof added.", "success");
+        }
+      });
+
+      // Ctrl+V Paste handler on the block
+      blockEl.addEventListener("paste", async (e) => {
+        const items = (e.clipboardData || window.clipboardData)?.items;
+        if (!items) return;
+        for (let i = 0; i < items.length; i++) {
+          if (items[i].type.indexOf("image") !== -1) {
+            e.preventDefault();
+            const file = items[i].getAsFile();
+            if (file) {
+              updateMaintenanceAutosaveIndicator("● Processing pasted image...", "saving");
+              try {
+                const compressed = await maintenance.compressImage(file);
+                if (!Array.isArray(block.screenshots)) block.screenshots = [];
+                block.screenshots.push(compressed);
+                renderMaintenanceBlocks();
+                queueMaintenanceAutosave();
+                showToast("Screenshot pasted into block proof.", "success");
+              } catch (err) {
+                console.error("Paste image compression error:", err);
+              }
+            }
+            break;
+          }
+        }
+      });
+
+      blockEl.appendChild(proofZone);
+      container.appendChild(blockEl);
+    });
+  }
+
+  async function checkMaintenanceSheetsConnectionState() {
+    const pill = el("maintenanceSheetConnectionState");
+    if (!pill) return;
+    const url = maintenance.getMaintenanceSheetsWebAppUrl();
+    if (!url || !maintenance.isValidAppsScriptWebAppUrl(url)) {
+      pill.className = "maintenance-sheet-connection-state is-unchecked";
+      pill.textContent = "Sheets: Not Connected";
+      return;
+    }
+    pill.className = "maintenance-sheet-connection-state is-healthy";
+    pill.textContent = "Sheets: Ready";
+  }
+
+  async function copyFullMaintenanceReportToSheets() {
+    try {
+      const html = maintenance.maintenanceReportHtmlForSheets(maintenanceState);
+      const text = maintenance.maintenanceReportPlainTextForSheets(maintenanceState);
+
+      if (navigator.clipboard && window.ClipboardItem) {
+        const item = new ClipboardItem({
+          "text/html": new Blob([html], { type: "text/html" }),
+          "text/plain": new Blob([text], { type: "text/plain" })
+        });
+        await navigator.clipboard.write([item]);
+      } else {
+        await navigator.clipboard.writeText(text);
+      }
+      showToast("Full Maintenance Report copied (Arial 10pt formatted for Google Sheets).", "success");
+    } catch (err) {
+      console.error("Failed to copy report:", err);
+      showToast(`Copy failed: ${err.message}`, "error");
+    }
+  }
+
+  async function sendMaintenanceReportToSheets() {
+    const url = maintenance.getMaintenanceSheetsWebAppUrl();
+    if (!url || !maintenance.isValidAppsScriptWebAppUrl(url)) {
+      setMaintenanceStatusMessage("Please configure a valid Google Sheets Web App URL in Sheet Setup first.", "error");
+      el("modalMaintenanceSheetSetup").hidden = false;
+      return;
+    }
+
+    const sendBtn = el("simpleEodSendSheetsBtn");
+    if (sendBtn) sendBtn.disabled = true;
+
+    setMaintenanceStatusMessage("Preparing chunked upload for Google Sheets...", "info");
+
+    try {
+      const result = await maintenance.sendMaintenanceReportToGoogleSheets(url, maintenanceState, (p) => {
+        if (p.stage === "chunks") {
+          setMaintenanceStatusMessage(`Uploading image data chunk ${p.index} of ${p.total}...`, "info");
+        } else if (p.stage === "committing") {
+          setMaintenanceStatusMessage("Committing report to Google Sheets...", "info");
+        }
+      });
+
+      if (result && result.success) {
+        setMaintenanceStatusMessage(`Report successfully logged to Google Sheets! (${result.rowsLogged || "OK"})`, "success");
+        showToast("Maintenance Report uploaded to Google Sheets!", "success");
+      } else {
+        throw new Error(result?.error || "Apps Script returned failure");
+      }
+    } catch (err) {
+      console.error("Send to Sheets failed:", err);
+      setMaintenanceStatusMessage(`Google Sheets upload failed: ${err.message}`, "error");
+      showToast(`Upload failed: ${err.message}`, "error");
+    } finally {
+      if (sendBtn) sendBtn.disabled = false;
+    }
+  }
+
+  async function downloadMaintenancePdf() {
+    try {
+      if (typeof window.html2pdf !== "function") {
+        window.print();
+        return;
+      }
+      const element = document.createElement("div");
+      element.innerHTML = maintenance.maintenanceReportHtmlForSheets(maintenanceState);
+      element.style.padding = "20px";
+      element.style.background = "#ffffff";
+      element.style.color = "#111827";
+
+      const opt = {
+        margin: [10, 10, 10, 10],
+        filename: `Maintenance_Report_${maintenanceState.destinationKey}_${maintenanceState.date}.pdf`,
+        image: { type: "jpeg", quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true },
+        jsPDF: { unit: "mm", format: "a4", orientation: "landscape" }
+      };
+
+      showToast("Generating PDF export...", "info");
+      await window.html2pdf().from(element).set(opt).save();
+      showToast("PDF downloaded successfully.", "success");
+    } catch (err) {
+      console.error("PDF generation failed:", err);
+      window.print();
+    }
+  }
+
+  async function renderMaintenanceDraftsList() {
+    const listEl = el("maintenanceDraftList");
+    if (!listEl) return;
+    listEl.innerHTML = "";
+    try {
+      const drafts = await maintenance.getNamedDrafts();
+      if (!drafts || !drafts.length) {
+        listEl.innerHTML = `<div style="font-size:11.5px; color:var(--text-muted); text-align:center; padding:18px 0;">No saved named drafts yet. Enter a name above to save one.</div>`;
+        return;
+      }
+      drafts.forEach(d => {
+        const item = document.createElement("div");
+        item.style.display = "flex";
+        item.style.alignItems = "center";
+        item.style.justifyContent = "space-between";
+        item.style.padding = "7px 10px";
+        item.style.background = "var(--bg-surface)";
+        item.style.border = "1px solid var(--border-default)";
+        item.style.borderRadius = "var(--radius-sm)";
+        item.style.gap = "8px";
+
+        const info = document.createElement("div");
+        info.style.display = "flex";
+        info.style.flexDirection = "column";
+        info.style.gap = "2px";
+
+        const name = document.createElement("span");
+        name.style.fontSize = "12px";
+        name.style.fontWeight = "600";
+        name.style.color = "var(--text-primary)";
+        name.textContent = d.name || "Untitled Draft";
+
+        const meta = document.createElement("span");
+        meta.style.fontSize = "10.5px";
+        meta.style.color = "var(--text-muted)";
+        const dDate = d.data?.date || "No date";
+        const blocksCount = d.data?.blocks?.length || 0;
+        meta.textContent = `${d.savedAt || ""} · ${dDate} · ${blocksCount} block(s)`;
+
+        info.appendChild(name);
+        info.appendChild(meta);
+
+        const btns = document.createElement("div");
+        btns.style.display = "flex";
+        btns.style.alignItems = "center";
+        btns.style.gap = "6px";
+
+        const loadBtn = document.createElement("button");
+        loadBtn.type = "button";
+        loadBtn.className = "btn btn-primary btn-sm";
+        loadBtn.textContent = "Load";
+        loadBtn.addEventListener("click", async () => {
+          const ok = await window.appConfirm({
+            title: `Load draft "${d.name}"?`,
+            message: "Replace current working report with this saved snapshot?",
+            confirmText: "Load Draft"
+          });
+          if (!ok) return;
+          const loaded = await maintenance.loadNamedDraft(d.id);
+          if (loaded && loaded.data) {
+            maintenanceState = {
+              date: loaded.data.date || maintenance.todayLocal(),
+              destinationKey: loaded.data.destinationKey || "mabini_a",
+              title: loaded.data.title || maintenance.MAINTENANCE_DESTINATIONS[loaded.data.destinationKey]?.label || "Mabini Site A - 1st & 2nd Floor",
+              blocks: loaded.data.blocks || [maintenance.makeBlock()]
+            };
+            syncMaintenanceHeaderUi();
+            renderMaintenanceBlocks();
+            queueMaintenanceAutosave();
+            el("modalMaintenanceDrafts").hidden = true;
+            showToast(`Draft "${d.name}" loaded.`, "success");
+          }
+        });
+
+        const delBtn = document.createElement("button");
+        delBtn.type = "button";
+        delBtn.className = "btn btn-danger-ghost btn-sm";
+        delBtn.textContent = "Delete";
+        delBtn.addEventListener("click", async () => {
+          const ok = await window.appConfirm({
+            title: `Delete draft "${d.name}"?`,
+            message: "This snapshot will be permanently deleted from this device.",
+            confirmText: "Delete",
+            tone: "danger"
+          });
+          if (!ok) return;
+          await maintenance.deleteNamedDraft(d.id);
+          renderMaintenanceDraftsList();
+          showToast("Draft deleted.", "info");
+        });
+
+        btns.appendChild(loadBtn);
+        btns.appendChild(delBtn);
+
+        item.appendChild(info);
+        item.appendChild(btns);
+        listEl.appendChild(item);
+      });
+    } catch (err) {
+      console.error("Error loading named drafts:", err);
+      listEl.innerHTML = `<div style="font-size:11.5px; color:#f87171;">Error loading drafts: ${err.message}</div>`;
+    }
+  }
+
+  function initMaintenanceController() {
+    // Destination selector
+    el("simpleEodDestination")?.addEventListener("change", (e) => {
+      const destKey = e.target.value;
+      if (maintenance.MAINTENANCE_DESTINATIONS[destKey]) {
+        maintenanceState.destinationKey = destKey;
+        maintenanceState.title = maintenance.MAINTENANCE_DESTINATIONS[destKey].label;
+        const siteInput = el("simpleEodSite");
+        if (siteInput) siteInput.value = maintenanceState.title;
+        queueMaintenanceAutosave();
+      }
+    });
+
+    // Date selector
+    el("simpleEodDate")?.addEventListener("change", (e) => {
+      maintenanceState.date = e.target.value;
+      queueMaintenanceAutosave();
+    });
+
+    // Add Block
+    el("simpleEodAddBtn")?.addEventListener("click", () => {
+      maintenanceState.blocks.push(maintenance.makeBlock());
+      renderMaintenanceBlocks();
+      queueMaintenanceAutosave();
+      showToast(`Added Block #${maintenanceState.blocks.length}.`, "info");
+    });
+
+    // Save to Drafts (opens modal with name prompt)
+    el("simpleEodSaveBtn")?.addEventListener("click", () => {
+      const modal = el("modalMaintenanceDrafts");
+      if (modal) {
+        modal.hidden = false;
+        const nameInput = el("maintenanceDraftName");
+        if (nameInput) {
+          const dest = maintenance.MAINTENANCE_DESTINATIONS[maintenanceState.destinationKey]?.label || "Report";
+          nameInput.value = `${dest} - ${maintenanceState.date || maintenance.todayLocal()}`;
+          nameInput.focus();
+        }
+        renderMaintenanceDraftsList();
+      }
+    });
+
+    // View Drafts
+    el("simpleEodDraftsBtn")?.addEventListener("click", () => {
+      const modal = el("modalMaintenanceDrafts");
+      if (modal) {
+        modal.hidden = false;
+        renderMaintenanceDraftsList();
+      }
+    });
+
+    // Save Named Draft button in modal
+    el("btnSaveNamedDraft")?.addEventListener("click", async () => {
+      const nameInput = el("maintenanceDraftName");
+      const name = (nameInput?.value || "").trim();
+      if (!name) {
+        showToast("Please enter a name for the draft.", "error");
+        return;
+      }
+      try {
+        await maintenance.saveNamedDraft(name, maintenanceState);
+        showToast(`Draft "${name}" saved!`, "success");
+        if (nameInput) nameInput.value = "";
+        renderMaintenanceDraftsList();
+      } catch (err) {
+        console.error("Save named draft failed:", err);
+        showToast(`Save failed: ${err.message}`, "error");
+      }
+    });
+
+    el("btnCloseMaintenanceDrafts")?.addEventListener("click", () => {
+      el("modalMaintenanceDrafts").hidden = true;
+    });
+
+    el("btnDoneMaintenanceDrafts")?.addEventListener("click", () => {
+      el("modalMaintenanceDrafts").hidden = true;
+    });
+
+    // Copy to Sheets
+    el("simpleEodCopySheetsBtn")?.addEventListener("click", copyFullMaintenanceReportToSheets);
+
+    // Send to Sheets
+    el("simpleEodSendSheetsBtn")?.addEventListener("click", sendMaintenanceReportToSheets);
+
+    // Sheet Setup
+    el("simpleEodSheetSetupBtn")?.addEventListener("click", () => {
+      const modal = el("modalMaintenanceSheetSetup");
+      if (modal) {
+        modal.hidden = false;
+        const urlInput = el("maintenanceSheetWebAppUrl");
+        if (urlInput) urlInput.value = maintenance.getMaintenanceSheetsWebAppUrl();
+        const testRes = el("maintenanceSheetTestResult");
+        if (testRes) {
+          testRes.textContent = "";
+          testRes.className = "maintenance-sheet-test-result";
+        }
+      }
+    });
+
+    el("btnCloseMaintenanceSheetSetup")?.addEventListener("click", () => {
+      el("modalMaintenanceSheetSetup").hidden = true;
+    });
+
+    el("btnTestMaintenanceSheet")?.addEventListener("click", async () => {
+      const urlInput = el("maintenanceSheetWebAppUrl");
+      const url = (urlInput?.value || "").trim();
+      const testRes = el("maintenanceSheetTestResult");
+      if (!maintenance.isValidAppsScriptWebAppUrl(url)) {
+        if (testRes) {
+          testRes.textContent = "Invalid Apps Script Web App URL. Must end with /exec";
+          testRes.style.color = "#f87171";
+        }
+        return;
+      }
+      if (testRes) {
+        testRes.textContent = "Testing connection...";
+        testRes.style.color = "var(--text-muted)";
+      }
+      try {
+        const res = await maintenance.testMaintenanceSheetsConnection(url, maintenanceState.destinationKey);
+        if (res && res.success) {
+          if (testRes) {
+            testRes.textContent = `Connection successful! Destination: ${res.destination || "OK"}`;
+            testRes.style.color = "#4ade80";
+          }
+        } else {
+          throw new Error(res?.error || "Invalid response from Apps Script");
+        }
+      } catch (err) {
+        if (testRes) {
+          testRes.textContent = `Connection failed: ${err.message}`;
+          testRes.style.color = "#f87171";
+        }
+      }
+    });
+
+    el("btnSaveMaintenanceSheet")?.addEventListener("click", () => {
+      const urlInput = el("maintenanceSheetWebAppUrl");
+      const url = (urlInput?.value || "").trim();
+      if (!maintenance.isValidAppsScriptWebAppUrl(url)) {
+        showToast("Enter a valid Apps Script URL ending in /exec", "error");
+        return;
+      }
+      maintenance.saveMaintenanceSheetSetup(url);
+      checkMaintenanceSheetsConnectionState();
+      el("modalMaintenanceSheetSetup").hidden = true;
+      showToast("Google Sheets Web App connected!", "success");
+    });
+
+    el("btnClearMaintenanceSheet")?.addEventListener("click", () => {
+      maintenance.clearMaintenanceSheetSetup();
+      checkMaintenanceSheetsConnectionState();
+      el("modalMaintenanceSheetSetup").hidden = true;
+      showToast("Google Sheets Web App disconnected.", "info");
+    });
+
+    // Preview / Print
+    el("simpleEodPreviewBtn")?.addEventListener("click", () => window.print());
+
+    // Download PDF
+    el("simpleEodPdfBtn")?.addEventListener("click", downloadMaintenancePdf);
+
+    // Clear All
+    el("simpleEodClearBtn")?.addEventListener("click", async () => {
+      const ok = await window.appConfirm({
+        title: "Clear entire Maintenance Report?",
+        message: "Reset all blocks, station issues, remarks, and screenshots in the working report?",
+        confirmText: "Clear All",
+        tone: "danger"
+      });
+      if (!ok) return;
+
+      maintenanceState = {
+        date: maintenance.todayLocal(),
+        destinationKey: "mabini_a",
+        title: maintenance.MAINTENANCE_DESTINATIONS["mabini_a"].label,
+        blocks: [maintenance.makeBlock()]
+      };
+      await maintenance.clearAllDraft();
+      syncMaintenanceHeaderUi();
+      renderMaintenanceBlocks();
+      showToast("Maintenance Report cleared.", "info");
+    });
+
+    // Expose Global Bridge for AI Sorter
+    window.addMaintenanceSorterRowsToReport = function (tsv, meta = {}) {
+      if (!maintenanceState.blocks || !maintenanceState.blocks.length) {
+        maintenanceState.blocks = [maintenance.makeBlock()];
+      }
+
+      let target = maintenanceState.blocks.find(b => !b.lanesText.trim());
+      if (!target) {
+        target = maintenance.makeBlock();
+        maintenanceState.blocks.push(target);
+      }
+
+      target.lanesText = (target.lanesText ? target.lanesText + "\n" : "") + String(tsv || "").trim();
+
+      const detected = maintenance.detectMaintenanceDestinationFromRows(target.lanesText);
+      if (detected && maintenance.MAINTENANCE_DESTINATIONS[detected]) {
+        maintenanceState.destinationKey = detected;
+        maintenanceState.title = maintenance.MAINTENANCE_DESTINATIONS[detected].label;
+        syncMaintenanceHeaderUi();
+      }
+
+      renderMaintenanceBlocks();
+      queueMaintenanceAutosave();
+    };
+  }
+
   // App Initialization
   window.addEventListener("DOMContentLoaded", async () => {
     initWorkspaceNavigation();
@@ -2865,6 +3719,9 @@
 
     // AI Sorter Initialization
     initSorterController();
+
+    // Maintenance Report Initialization
+    initMaintenanceController();
 
     // Manila clock ticker
     updateManilaClock();
