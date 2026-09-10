@@ -7962,7 +7962,15 @@ body.ops-redesign-v3 #edrPanel .edr-layout-action {
    Desktop:
    Row 1: Site 8 | Date 4
    Row 2: Time 4 | Respondent 2 | Respondent Name 6
-   Row 3: Violation Subject 3 | Subject Name 4 | Account 5
+/* ==========================================================
+   EDR 7-ROW RESPONSIVE GRID (COMPACT & BALANCED)
+   Row 1: Site (8 / 2fr) | Date (4 / 1fr)
+   Row 2: Time Observed (4 / 1.1fr) | Respondent (3 / compact) | Team Leader Search (5 / 1.6fr)
+   Row 3: OM (4) | Violation Subject (4) | Agent Name (4)
+   Row 4: Account / Campaign (5 / 0.9fr) | Incident (7 / 1.5fr)
+   Row 5: Action Taken / Remarks (12 / full width)
+   Row 6: CCTV Screenshot (12 / full width)
+   Row 7: CCTV Clip / Google Drive Link (12 / full width)
    ========================================================== */
 
 body.ops-redesign-v3 #edrPanel .edr-form-grid {
@@ -7970,10 +7978,11 @@ body.ops-redesign-v3 #edrPanel .edr-form-grid {
     grid-template-columns: repeat(12, minmax(0, 1fr)) !important;
     grid-auto-flow: row !important;
     column-gap: 10px !important;
-    row-gap: 12px !important;
+    row-gap: 9px !important;
     align-items: end !important;
 }
 
+/* Row 1: Site & Date */
 body.ops-redesign-v3 #edrPanel .edr-form-grid > .edr-layout-site {
     grid-column: span 8 !important;
 }
@@ -7982,152 +7991,220 @@ body.ops-redesign-v3 #edrPanel .edr-form-grid > .edr-layout-date {
     grid-column: span 4 !important;
 }
 
+/* Row 2: Time Observed, Respondent Role, Respondent Name */
 body.ops-redesign-v3 #edrPanel .edr-form-grid > .edr-layout-time {
     grid-column: span 4 !important;
 }
 
 body.ops-redesign-v3 #edrPanel .edr-form-grid > .edr-layout-respondent-role {
-    grid-column: span 2 !important;
+    grid-column: span 3 !important;
 }
 
 body.ops-redesign-v3 #edrPanel .edr-form-grid > .edr-layout-respondent-name {
-    grid-column: span 6 !important;
+    grid-column: span 5 !important;
+}
+
+/* Row 3: OM, Violation Subject Role, Agent/Subject Name */
+body.ops-redesign-v3 #edrPanel .edr-form-grid > .edr-layout-om {
+    grid-column: span 4 !important;
 }
 
 body.ops-redesign-v3 #edrPanel .edr-form-grid > .edr-layout-subject-role {
-    grid-column: span 3 !important;
+    grid-column: span 4 !important;
 }
 
 body.ops-redesign-v3 #edrPanel .edr-form-grid > .edr-layout-subject-name {
     grid-column: span 4 !important;
 }
 
+/* Row 4: Account / Campaign & Incident */
 body.ops-redesign-v3 #edrPanel .edr-form-grid > .edr-layout-account {
     grid-column: span 5 !important;
+    align-self: start !important;
 }
 
-body.ops-redesign-v3 #edrPanel .edr-form-grid > .edr-layout-incident,
-body.ops-redesign-v3 #edrPanel .edr-form-grid > .edr-layout-action,
-body.ops-redesign-v3 #edrPanel .edr-form-grid > .edr-layout-screenshot,
+body.ops-redesign-v3 #edrPanel .edr-form-grid > .edr-layout-incident {
+    grid-column: span 7 !important;
+}
+
+/* Row 5: Action Taken / Remarks */
+body.ops-redesign-v3 #edrPanel .edr-form-grid > .edr-layout-action {
+    grid-column: span 12 !important;
+}
+
+/* Row 6: CCTV Screenshot */
+body.ops-redesign-v3 #edrPanel .edr-form-grid > .edr-layout-screenshot {
+    grid-column: span 12 !important;
+}
+
+/* Row 7: CCTV Clip */
 body.ops-redesign-v3 #edrPanel .edr-form-grid > .edr-layout-clip {
-    grid-column: span 6 !important;
+    grid-column: span 12 !important;
 }
 
-/* Every compact control in the two detail rows shares the same visual height. */
+/* Field alignment and compact heights */
+body.ops-redesign-v3 #edrPanel .edr-field {
+    min-width: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+}
+
+body.ops-redesign-v3 #edrPanel .edr-field label {
+    font-size: 10.5px !important;
+    font-weight: 700 !important;
+    color: var(--ops-muted, #94a3b8) !important;
+    margin-bottom: 4px !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.04em !important;
+}
+
+/* Standardized 35px control height in detail rows */
+body.ops-redesign-v3 #edrPanel .edr-layout-site select,
+body.ops-redesign-v3 #edrPanel .edr-layout-date input,
 body.ops-redesign-v3 #edrPanel .edr-layout-time input,
 body.ops-redesign-v3 #edrPanel .edr-layout-respondent-name input,
+body.ops-redesign-v3 #edrPanel .edr-layout-om input,
 body.ops-redesign-v3 #edrPanel .edr-layout-subject-name input,
-body.ops-redesign-v3 #edrPanel .edr-layout-account input {
-    min-height: 41px !important;
-    height: 41px !important;
+body.ops-redesign-v3 #edrPanel .edr-layout-account input,
+body.ops-redesign-v3 #edrPanel .edr-layout-clip input {
+    min-height: 35px !important;
+    height: 35px !important;
+    max-height: 35px !important;
+    padding: 0 11px !important;
+    font-size: 12.5px !important;
+    border-radius: 7px !important;
 }
 
+/* Choice groups (Respondent & Violation Subject) */
 body.ops-redesign-v3 #edrPanel .edr-layout-respondent-role .edr-choice-group,
 body.ops-redesign-v3 #edrPanel .edr-layout-subject-role .edr-choice-group {
-    min-height: 41px !important;
+    min-height: 35px !important;
+    height: 35px !important;
+    max-height: 35px !important;
     display: inline-flex !important;
     align-items: stretch !important;
     width: 100% !important;
+    border-radius: 7px !important;
+    background: rgba(255, 255, 255, 0.04) !important;
+    border: 1px solid var(--ops-line, rgba(255, 255, 255, 0.1)) !important;
+    padding: 2px !important;
+    box-sizing: border-box !important;
 }
 
 body.ops-redesign-v3 #edrPanel .edr-layout-respondent-role .edr-choice-btn,
 body.ops-redesign-v3 #edrPanel .edr-layout-subject-role .edr-choice-btn {
-    min-height: 41px !important;
+    min-height: 100% !important;
+    height: 100% !important;
     flex: 1 1 auto !important;
     justify-content: center !important;
+    font-size: 11.5px !important;
+    font-weight: 600 !important;
+    padding: 0 8px !important;
+    border-radius: 5px !important;
     white-space: nowrap !important;
 }
 
-/* Name + Add / Remove buttons stay on one line. */
+/* Name + Add / Remove buttons in search row */
 body.ops-redesign-v3 #edrPanel .edr-layout-respondent-name .edr-search-row,
 body.ops-redesign-v3 #edrPanel .edr-layout-account .edr-search-row {
     display: grid !important;
     grid-template-columns: minmax(0, 1fr) auto auto !important;
-    gap: 7px !important;
-    align-items: stretch !important;
+    gap: 6px !important;
+    align-items: center !important;
 }
 
 body.ops-redesign-v3 #edrPanel .edr-layout-respondent-name .edr-small-add,
 body.ops-redesign-v3 #edrPanel .edr-layout-respondent-name .edr-small-remove,
 body.ops-redesign-v3 #edrPanel .edr-layout-account .edr-small-add,
 body.ops-redesign-v3 #edrPanel .edr-layout-account .edr-small-remove {
-    min-height: 41px !important;
-    height: 41px !important;
+    min-height: 35px !important;
+    height: 35px !important;
+    max-height: 35px !important;
+    padding: 0 10px !important;
+    font-size: 11.5px !important;
+    border-radius: 6px !important;
 }
 
-/* Prevent old paired-layout rules from affecting the new flat grid. */
-body.ops-redesign-v3 #edrPanel .edr-layout-respondent-role,
-body.ops-redesign-v3 #edrPanel .edr-layout-respondent-name,
-body.ops-redesign-v3 #edrPanel .edr-layout-subject-role,
-body.ops-redesign-v3 #edrPanel .edr-layout-subject-name {
-    display: block !important;
-    min-width: 0 !important;
-    align-self: end !important;
+/* Incident and Remarks Textareas */
+body.ops-redesign-v3 #edrPanel #edrIncident {
+    min-height: 85px !important;
+    max-height: 200px !important;
+    padding: 8px 11px !important;
+    font-size: 12.5px !important;
+    line-height: 1.45 !important;
+    resize: vertical !important;
+    border-radius: 7px !important;
+    box-sizing: border-box !important;
 }
 
-body.ops-redesign-v3 #edrPanel .edr-layout-site {
-    align-self: end !important;
+body.ops-redesign-v3 #edrPanel #edrActionRemarks {
+    min-height: 85px !important;
+    max-height: 200px !important;
+    padding: 8px 11px !important;
+    font-size: 12.5px !important;
+    line-height: 1.45 !important;
+    resize: vertical !important;
+    border-radius: 7px !important;
+    box-sizing: border-box !important;
 }
 
-/* Keep helper text beneath Site from stretching the rest of the first row. */
+/* Compact CCTV Screenshot Dropzone */
+body.ops-redesign-v3 #edrPanel .edr-screenshot-zone {
+    min-height: 95px !important;
+    padding: 10px 14px !important;
+    border-radius: 8px !important;
+}
+
+/* EDR Action Buttons Row */
+body.ops-redesign-v3 #edrPanel .edr-form-actions {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    flex-wrap: wrap !important;
+    margin-top: 10px !important;
+    padding-top: 10px !important;
+    border-top: 1px solid var(--ops-line, rgba(255, 255, 255, 0.08)) !important;
+}
+
+body.ops-redesign-v3 #edrPanel .edr-form-actions button {
+    height: 34px !important;
+    min-height: 34px !important;
+    padding: 0 14px !important;
+    font-size: 12px !important;
+    font-weight: 600 !important;
+    border-radius: 7px !important;
+}
+
+/* Keep helper text beneath Site from stretching the first row */
 body.ops-redesign-v3 #edrPanel .edr-fixed-cctv {
-    margin-top: 5px !important;
+    margin-top: 4px !important;
+    font-size: 10px !important;
     min-height: 0 !important;
+    opacity: 0.75 !important;
 }
 
-/* Tablet: turn the compact section into balanced pairs. */
-@media (max-width: 1050px) {
-    body.ops-redesign-v3 #edrPanel .edr-form-grid > .edr-layout-time {
-        grid-column: span 4 !important;
-    }
-
-    body.ops-redesign-v3 #edrPanel .edr-form-grid > .edr-layout-respondent-role {
-        grid-column: span 3 !important;
-    }
-
-    body.ops-redesign-v3 #edrPanel .edr-form-grid > .edr-layout-respondent-name {
-        grid-column: span 5 !important;
-    }
-
-    body.ops-redesign-v3 #edrPanel .edr-form-grid > .edr-layout-subject-role {
-        grid-column: span 4 !important;
-    }
-
-    body.ops-redesign-v3 #edrPanel .edr-form-grid > .edr-layout-subject-name {
-        grid-column: span 4 !important;
-    }
-
-    body.ops-redesign-v3 #edrPanel .edr-form-grid > .edr-layout-account {
-        grid-column: span 4 !important;
-    }
+/* Responsive: Tablet Breakpoint */
+@media (max-width: 960px) {
+    body.ops-redesign-v3 #edrPanel .edr-form-grid > .edr-layout-site { grid-column: span 12 !important; }
+    body.ops-redesign-v3 #edrPanel .edr-form-grid > .edr-layout-date { grid-column: span 12 !important; }
+    body.ops-redesign-v3 #edrPanel .edr-form-grid > .edr-layout-time { grid-column: span 6 !important; }
+    body.ops-redesign-v3 #edrPanel .edr-form-grid > .edr-layout-respondent-role { grid-column: span 6 !important; }
+    body.ops-redesign-v3 #edrPanel .edr-form-grid > .edr-layout-respondent-name { grid-column: span 12 !important; }
+    body.ops-redesign-v3 #edrPanel .edr-form-grid > .edr-layout-om { grid-column: span 6 !important; }
+    body.ops-redesign-v3 #edrPanel .edr-form-grid > .edr-layout-subject-role { grid-column: span 6 !important; }
+    body.ops-redesign-v3 #edrPanel .edr-form-grid > .edr-layout-subject-name { grid-column: span 12 !important; }
+    body.ops-redesign-v3 #edrPanel .edr-form-grid > .edr-layout-account { grid-column: span 12 !important; }
+    body.ops-redesign-v3 #edrPanel .edr-form-grid > .edr-layout-incident { grid-column: span 12 !important; }
 }
 
-/* Small screens: straightforward single column, no cramped choices. */
-@media (max-width: 760px) {
+/* Responsive: Mobile Breakpoint */
+@media (max-width: 640px) {
     body.ops-redesign-v3 #edrPanel .edr-form-grid {
         grid-template-columns: 1fr !important;
-        align-items: stretch !important;
+        gap: 8px !important;
     }
-
-    body.ops-redesign-v3 #edrPanel .edr-form-grid > .edr-layout-site,
-    body.ops-redesign-v3 #edrPanel .edr-form-grid > .edr-layout-date,
-    body.ops-redesign-v3 #edrPanel .edr-form-grid > .edr-layout-time,
-    body.ops-redesign-v3 #edrPanel .edr-form-grid > .edr-layout-respondent-role,
-    body.ops-redesign-v3 #edrPanel .edr-form-grid > .edr-layout-respondent-name,
-    body.ops-redesign-v3 #edrPanel .edr-form-grid > .edr-layout-subject-role,
-    body.ops-redesign-v3 #edrPanel .edr-form-grid > .edr-layout-subject-name,
-    body.ops-redesign-v3 #edrPanel .edr-form-grid > .edr-layout-account,
-    body.ops-redesign-v3 #edrPanel .edr-form-grid > .edr-layout-incident,
-    body.ops-redesign-v3 #edrPanel .edr-form-grid > .edr-layout-action,
-    body.ops-redesign-v3 #edrPanel .edr-form-grid > .edr-layout-screenshot,
-    body.ops-redesign-v3 #edrPanel .edr-form-grid > .edr-layout-clip {
+    body.ops-redesign-v3 #edrPanel .edr-form-grid > * {
         grid-column: 1 / -1 !important;
-    }
-
-    body.ops-redesign-v3 #edrPanel .edr-layout-respondent-role .edr-choice-group,
-    body.ops-redesign-v3 #edrPanel .edr-layout-subject-role .edr-choice-group {
-        width: fit-content !important;
-        min-width: 220px !important;
     }
 }
 
@@ -9178,93 +9255,394 @@ body.light-mode #edrPanel .edr-small-remove:hover,
     color: #991b1b !important;
 }
 
-/* Shared EDR Result / Preview Card Styling */
-.edr-result-card {
-    margin-top: 20px !important;
-    border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
-    padding-top: 18px !important;
+/* =========================================================
+   CCTV OPS — UNIVERSAL SYSTEM-WIDE COMPACT DESIGN SYSTEM (100% ZOOM)
+   ========================================================= */
+
+/* 1. Universal Header & Navigation Clearance */
+:root {
+    --ops-fixed-header-height: 36px !important;
+    --ops-header-height: 36px !important;
+    --ops-workspace-top-gap: 8px !important;
 }
 
-body.light-mode .edr-result-card,
-[data-theme="light"] .edr-result-card {
-    border-top: 1px solid rgba(20, 22, 30, 0.08) !important;
+body:not(.auth-locked) {
+    padding-top: calc(36px + 8px) !important;
 }
 
-.edr-result-summary-card {
-    background: rgba(255, 255, 255, 0.02) !important;
-    border: 1px solid rgba(255, 255, 255, 0.07) !important;
+.ops-top-header {
+    height: 36px !important;
+    min-height: 36px !important;
+    max-height: 36px !important;
+}
+
+/* Remove Theme Toggle slot entirely */
+.ops-header-theme {
+    display: none !important;
+}
+
+/* Compact direct navigation buttons */
+.ops-top-header .ops-direct-nav-btn {
+    height: 26px !important;
+    padding: 2px 6px !important;
+    font-size: 11px !important;
+}
+
+.ops-top-header .ops-direct-brand {
+    font-size: 11px !important;
+    padding: 2px 5px !important;
+}
+
+.ops-top-header .ops-direct-clock {
+    font-size: 10px !important;
+    padding: 1px 4px !important;
+}
+
+.ops-top-header .ops-direct-user {
+    font-size: 10px !important;
+    padding: 1px 4px !important;
+}
+
+/* 2. Universal Workspace Panels */
+.app-tab-panel,
+#cctvPanel.app-tab-panel,
+#maintenancePanel.app-tab-panel,
+#eodPanel.app-tab-panel,
+#pendingPanel.app-tab-panel,
+#followupPanel.app-tab-panel,
+#masterlistPanel.app-tab-panel,
+#adminPanel.app-tab-panel,
+#edrPanel.app-tab-panel {
+    padding: 10px 12px !important;
+    margin-bottom: 10px !important;
+}
+
+/* 3. Universal Cards & Content Blocks */
+.edr-crud-card,
+.edr-card,
+.maintenance-card,
+.audit-card,
+.masterlist-card,
+.followup-card,
+.history-card,
+.glitch-card,
+.terminal-card,
+.eod-card,
+.eod-block,
+.unified-block,
+.maintenance-block,
+.mini-sheet-card,
+.followup-add-card,
+.pending-add-card,
+.admin-card {
+    padding: 8px 10px !important;
+    margin-bottom: 8px !important;
     border-radius: 8px !important;
-    padding: 16px !important;
-    margin-bottom: 14px !important;
 }
 
-body.light-mode .edr-result-summary-card,
-[data-theme="light"] .edr-result-summary-card {
-    background: #ffffff !important;
-    border: 1px solid #e2e8f0 !important;
-}
-
-.edr-result-grid {
-    display: grid !important;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)) !important;
-    gap: 10px 16px !important;
-    margin-bottom: 12px !important;
-}
-
-.edr-result-field {
+/* 4. Universal Control Heights (30px - 32px) across ALL workspaces */
+body.ops-redesign-v3 input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]),
+body.ops-redesign-v3 select,
+#cctvPanel input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]),
+#cctvPanel select,
+#maintenancePanel input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]),
+#maintenancePanel select,
+#eodPanel input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]),
+#eodPanel select,
+#pendingPanel input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]),
+#pendingPanel select,
+#masterlistPanel input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]),
+#masterlistPanel select,
+#followupPanel input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]),
+#followupPanel select,
+#adminPanel input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]),
+#adminPanel select,
+.auth-access-dialog input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]),
+.auth-access-dialog select,
+.maintenance-modal input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]),
+.maintenance-modal select {
+    height: 31px !important;
+    min-height: 31px !important;
+    max-height: 31px !important;
+    padding: 0 8px !important;
     font-size: 12px !important;
-    line-height: 1.5 !important;
+    border-radius: 6px !important;
+    box-sizing: border-box !important;
 }
 
-.edr-result-label {
+/* 5. Universal Button Heights (28px - 30px) across ALL workspaces */
+body.ops-redesign-v3 button:not(.ops-direct-nav-btn):not(.eod-proof-remove):not(#themeToggle):not(.main-checkbox):not([data-action="icon"]):not(.edr-choice-btn),
+#cctvPanel button:not(.ops-direct-nav-btn),
+#maintenancePanel button:not(.ops-direct-nav-btn),
+#eodPanel button:not(.ops-direct-nav-btn):not(.eod-proof-remove),
+#pendingPanel button:not(.ops-direct-nav-btn),
+#masterlistPanel button:not(.ops-direct-nav-btn),
+#followupPanel button:not(.ops-direct-nav-btn),
+#adminPanel button:not(.ops-direct-nav-btn),
+.maintenance-modal button:not(.maintenance-modal-close) {
+    min-height: 29px !important;
+    height: 29px !important;
+    padding: 0 9px !important;
+    font-size: 11.5px !important;
+    font-weight: 600 !important;
+    border-radius: 6px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 6px !important;
+    line-height: 1 !important;
+    box-sizing: border-box !important;
+    cursor: pointer !important;
+}
+
+/* Small / Utility buttons (26px - 28px) */
+body.ops-redesign-v3 .btn-sm,
+body.ops-redesign-v3 .edr-small-add,
+body.ops-redesign-v3 .edr-small-remove,
+body.ops-redesign-v3 .edr-row-actions button,
+body.ops-redesign-v3 .mini-btn,
+.maintenance-drafts-item button,
+.history-undo-btn,
+.history-redo-btn {
+    min-height: 27px !important;
+    height: 27px !important;
+    max-height: 27px !important;
+    padding: 0 7px !important;
+    font-size: 10.5px !important;
+    border-radius: 5px !important;
+}
+
+/* 6. Consistent Button Row Alignment */
+.edr-form-actions,
+.edr-list-actions,
+.audit-actions,
+.maintenance-actions,
+.simple-eod-actions,
+.block-actions,
+.card-actions,
+.button-row,
+.followup-add-actions,
+.pending-add-actions,
+.maintenance-modal-actions {
+    display: flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    flex-wrap: wrap !important;
+}
+
+/* 7. Universal Labels (10px - 11px) */
+body.ops-redesign-v3 label:not(.main-toggle):not(.edr-select-box),
+#cctvPanel label,
+#maintenancePanel label,
+#eodPanel label,
+#pendingPanel label,
+#masterlistPanel label,
+#followupPanel label,
+#adminPanel label,
+.maintenance-modal label {
+    font-size: 10px !important;
     font-weight: 700 !important;
     color: var(--ops-muted, #94a3b8) !important;
-    margin-right: 4px !important;
+    margin-bottom: 3px !important;
+    letter-spacing: 0.03em !important;
+    text-transform: uppercase !important;
 }
 
-body.light-mode .edr-result-label,
-[data-theme="light"] .edr-result-label {
-    color: #64748b !important;
-}
-
-.edr-result-val {
-    color: var(--ops-text, #ffffff) !important;
-}
-
-body.light-mode .edr-result-val,
-[data-theme="light"] .edr-result-val {
-    color: #0f172a !important;
-}
-
-.edr-result-block {
-    margin-top: 8px !important;
-}
-
-.edr-result-text {
-    margin: 4px 0 8px 0 !important;
-    color: var(--ops-text, #ffffff) !important;
-    white-space: pre-wrap !important;
-}
-
-body.light-mode .edr-result-text,
-[data-theme="light"] .edr-result-text {
-    color: #0f172a !important;
-}
-
-.edr-preview-placeholder {
-    padding: 24px !important;
-    text-align: center !important;
-    color: var(--ops-muted, #94a3b8) !important;
+/* 8. Textarea Heights (Default: 60px - 75px, Incident/Remarks: 75px - 90px) */
+textarea,
+.maintenance-textarea {
+    min-height: 68px !important;
+    max-height: 160px !important;
+    padding: 6px 8px !important;
     font-size: 12px !important;
-    border: 1px dashed rgba(255, 255, 255, 0.1) !important;
-    border-radius: 8px !important;
-    margin-bottom: 14px !important;
+    line-height: 1.4 !important;
+    resize: vertical !important;
+    border-radius: 6px !important;
+    box-sizing: border-box !important;
 }
 
-body.light-mode .edr-preview-placeholder,
-[data-theme="light"] .edr-preview-placeholder {
-    border-color: #cbd5e1 !important;
-    color: #64748b !important;
+#edrIncident,
+#edrActionRemarks {
+    height: 80px !important;
+    min-height: 80px !important;
+    max-height: 180px !important;
+    padding: 6px 8px !important;
+    font-size: 12px !important;
+    line-height: 1.4 !important;
+    resize: vertical !important;
+    border-radius: 6px !important;
+    box-sizing: border-box !important;
 }
+
+#edrFacebookText {
+    height: 80px !important;
+    min-height: 80px !important;
+    max-height: 180px !important;
+    padding: 6px 8px !important;
+    font-size: 12px !important;
+    line-height: 1.4 !important;
+    resize: vertical !important;
+    border-radius: 6px !important;
+    box-sizing: border-box !important;
+}
+
+/* 9. Maintenance Workspace: Incident & Action Taken Side-by-Side */
+.maintenance-incident-action-grid,
+#eodPanel .maintenance-incident-action-grid {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px 10px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    align-items: start !important;
+    margin-bottom: 8px !important;
+}
+
+@media (max-width: 768px) {
+    .maintenance-incident-action-grid,
+    #eodPanel .maintenance-incident-action-grid {
+        grid-template-columns: 1fr !important;
+    }
+}
+
+#eodPanel .eod-paste-area,
+#eodPanel .single-remark-text,
+#eodPanel .remark-text {
+    height: 80px !important;
+    min-height: 80px !important;
+    max-height: 180px !important;
+    padding: 6px 8px !important;
+    font-size: 12px !important;
+    line-height: 1.4 !important;
+    resize: vertical !important;
+    border-radius: 6px !important;
+    box-sizing: border-box !important;
+}
+
+#eodPanel .eod-block-content,
+body.ops-redesign-v3 #eodPanel .eod-block-content {
+    padding: 8px 10px !important;
+    box-sizing: border-box !important;
+}
+
+#eodPanel .eod-block-head,
+body.ops-redesign-v3 #eodPanel .eod-block-head {
+    padding: 6px 10px !important;
+    box-sizing: border-box !important;
+}
+
+#eodPanel .simple-eod-top,
+body.ops-redesign-v3 #eodPanel .simple-eod-top {
+    display: grid !important;
+    grid-template-columns: 1fr 220px !important;
+    gap: 8px 10px !important;
+    margin-bottom: 8px !important;
+    align-items: flex-end !important;
+}
+
+#eodPanel .simple-eod-actions,
+body.ops-redesign-v3 #eodPanel .simple-eod-actions {
+    margin-bottom: 8px !important;
+    gap: 6px !important;
+}
+
+#eodPanel .eod-proof-zone,
+body.ops-redesign-v3 #eodPanel .eod-proof-zone {
+    padding: 6px 8px !important;
+    border-radius: 6px !important;
+    box-sizing: border-box !important;
+}
+
+/* 10. Compact Table Row Heights across ALL workspaces */
+body.ops-redesign-v3 #outputTable th,
+body.ops-redesign-v3 #outputTable td,
+body.ops-redesign-v3 .maintenance-table th,
+body.ops-redesign-v3 .maintenance-table td,
+body.ops-redesign-v3 .master-data-table th,
+body.ops-redesign-v3 .master-data-table td,
+body.ops-redesign-v3 .mini-sheet th,
+body.ops-redesign-v3 .mini-sheet td {
+    padding: 4px 7px !important;
+    font-size: 11px !important;
+    line-height: 1.3 !important;
+}
+
+/* 11. Compact Lists, Cards & Rows across ALL workspaces */
+.edr-saved-item,
+.edr-report-card,
+.edr-list-item,
+.history-item,
+.history-card-item,
+.followup-card-head {
+    padding: 6px 8px !important;
+    margin-bottom: 6px !important;
+    border-radius: 6px !important;
+}
+
+/* 12. Follow Up Reports Compact Grids & Fields */
+#followupPanel .followup-add-grid {
+    gap: 6px 8px !important;
+}
+
+#followupPanel #followupRemarks {
+    min-height: 68px !important;
+    height: 72px !important;
+    max-height: 160px !important;
+}
+
+/* 13. AI Sorter Compactness */
+#maintenancePanel .maintenance-form-grid {
+    gap: 6px 8px !important;
+    margin-bottom: 8px !important;
+}
+
+#maintenancePanel .mini-sheet-toolbar {
+    padding: 4px 6px !important;
+    gap: 6px !important;
+}
+
+/* 14. Masterlist & Accounts Compactness */
+#masterlistPanel .master-filter-row {
+    gap: 6px !important;
+    margin-bottom: 8px !important;
+}
+
+/* 15. Shared Modals & Dialogs Compactness */
+.maintenance-modal-content,
+.edr-ss-dialog,
+.auth-access-dialog,
+.followup-ss-dialog {
+    padding: 10px 12px !important;
+    border-radius: 8px !important;
+}
+
+/* 16. Shared Status Badges & Pills */
+.status-pill,
+.badge,
+.cctv-edr-sent-badge,
+.masterlist-sidebar-badge,
+.followup-head-count,
+.eod-collapse-state-badge,
+.working-badge {
+    padding: 2px 5px !important;
+    font-size: 10px !important;
+    font-weight: 700 !important;
+    border-radius: 4px !important;
+}
+
+/* 17. Permanent Dark Mode Colors Guarantee */
+body,
+body.ops-redesign-v3,
+[data-theme="dark"] {
+    background-color: #0b0f17 !important;
+    color: #f8fafc !important;
+}
+
+/* Ensure no horizontal overflow */
+body, html {
+    overflow-x: hidden !important;
+}
+
+
 
 

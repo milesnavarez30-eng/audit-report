@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -17135,7 +17135,7 @@ textarea:focus {
 </style>
 
 </head>
-<body class="ops-redesign-v3 auth-locked">
+<body class="ops-redesign-v3 dark-mode auth-locked" data-theme="dark">
 <div class="terminal-login-wrapper" id="loginModal">
   <div class="terminal-frame">
     <!-- onsubmit attribute guarantees no page reload happens even before JS binds -->
@@ -17338,19 +17338,12 @@ textarea:focus {
            target="_blank">Time.is</a>
     </div>
 
-    <div class="sidebar-divider"></div>
-        <div class="theme-toggle-container">
-      <label class="main-toggle" for="themeToggle" title="Toggle Light / Dark Mode">
-        <input type="checkbox" id="themeToggle" class="main-checkbox" onchange="toggleTheme()" aria-label="Toggle Light and Dark Mode" />
-        <div class="main-track"></div>
-        <div class="main-knob"></div>
-      </label>
-    </div>
+    <input type="checkbox" id="themeToggle" class="main-checkbox" style="display:none;" aria-hidden="true">
 </aside>
 
 <header id="opsTopHeader" class="ops-top-header">
 
-    <div id="opsThemeSlot" class="ops-header-theme"></div>
+    <div id="opsThemeSlot" class="ops-header-theme" style="display:none;" aria-hidden="true"></div>
 
     <nav id="opsDirectHeaderNav"
          class="ops-direct-header-nav"
@@ -18418,326 +18411,194 @@ textarea:focus {
             </div>
         </div>
 
-        <!-- EDR MODE TABS: AI GENERATOR & MANUAL ENTRY -->
-        <div class="edr-mode-nav" role="tablist" aria-label="EDR Modes">
-            <button type="button" class="edr-mode-tab active" id="edrModeAiTab" role="tab" aria-selected="true" aria-controls="edrAiModeSection">AI Generator</button>
-            <button type="button" class="edr-mode-tab" id="edrModeManualTab" role="tab" aria-selected="false" aria-controls="edrManualModeSection">Manual Entry</button>
-        </div>
-
-        <!-- MODE 1: AI GENERATOR -->
-        <div id="edrAiModeSection" class="edr-mode-section edr-mode-content active">
-            <section class="edr-crud-card edr-ai-card edr-card">
-                <div class="edr-card-heading">
-                    <div>
-                        <h3>AI Generator</h3>
-                        <p>Paste a raw CCTV observation report. Available details will be parsed, professional Incident & Remarks wording drafted, and the structured result shown in the preview below.</p>
-                    </div>
-                </div>
-
-                <!-- 1. RAW OBSERVATION / PROMPT -->
-                <div class="field-block edr-field" id="edrRawImportBanner" style="margin-bottom: 14px;">
-                    <label for="edrRawImport"><strong>RAW OBSERVATION / PROMPT</strong></label>
-                    <textarea id="edrRawImport"
-                              class="edr-textarea"
-                              rows="5"
-                              style="width: 100%; box-sizing: border-box; resize: vertical; min-height: 85px;"
-                              placeholder="Paste observation details here (Site, Date, TL response, Agent Name, Incident description)..."></textarea>
-                </div>
-
-                <!-- 2. CCTV SCREENSHOT (ALWAYS VISIBLE DROPZONE) -->
-                <div class="field-block edr-field edr-ai-screenshot-field" id="edrAiScreenshotField" style="margin-bottom: 14px;">
-                    <label><strong>CCTV SCREENSHOT</strong></label>
-                    <div id="edrAiScreenshotZone"
-                         class="edr-screenshot-zone edr-screenshot-minimal"
-                         tabindex="0"
-                         aria-label="CCTV Screenshot drop zone"
-                         style="min-height: 110px; display: flex; flex-direction: column; justify-content: center; align-items: center; border: 2px dashed rgba(255,255,255,0.22); border-radius: 8px; padding: 14px; cursor: pointer; text-align: center; box-sizing: border-box; width: 100%;">
-                        <input type="file" id="edrAiScreenshotInput" accept="image/*" hidden>
-
-                        <div class="edr-shot-idle" id="edrAiScreenshotEmpty" style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
-                            <button type="button" class="edr-outline-btn edr-shot-add-btn" id="edrAiChooseScreenshotBtn">
-                                + Add Screenshot
-                            </button>
-                            <span class="edr-shot-hint" style="font-size: 13px; opacity: 0.85;">Paste screenshot here (Ctrl+V), click Add Screenshot, or drag &amp; drop an image.</span>
-                        </div>
-
-                        <div id="edrAiScreenshotPreviewWrap" class="edr-shot-preview" hidden style="display: none; flex-direction: column; align-items: center; gap: 10px; width: 100%;">
-                            <button type="button"
-                                    class="edr-shot-thumb-btn"
-                                    id="edrAiViewCurrentScreenshotBtn"
-                                    title="View screenshot"
-                                    style="border: none; background: transparent; padding: 0; cursor: pointer;">
-                                <img id="edrAiScreenshotPreview" alt="CCTV screenshot preview" style="max-height: 180px; max-width: 100%; border-radius: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.3); object-fit: contain;">
-                            </button>
-
-                            <div class="edr-shot-meta" style="display: flex; align-items: center; justify-content: center; gap: 12px; width: 100%;">
-                                <span style="font-size: 12px; font-weight: 600; opacity: 0.9;">Screenshot ready</span>
-                                <div class="edr-shot-actions" style="display: flex; gap: 8px;">
-                                    <button type="button" class="edr-outline-btn" id="edrAiViewBtn">View</button>
-                                    <button type="button" class="edr-outline-btn" id="edrAiReplaceScreenshotBtn">Replace</button>
-                                    <button type="button" class="edr-danger-btn" id="edrAiRemoveScreenshotBtn">Remove</button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 3. QUICK EDR TEMPLATE -->
-                <div class="field-block edr-field" style="margin-bottom: 14px;">
-                    <label for="edrQuickTemplates"><strong>QUICK EDR TEMPLATE</strong> <span class="edr-optional-tag">(Auto-fill common violations)</span></label>
-                    <div class="edr-quick-templates-wrap">
-                        <select id="edrQuickTemplates" class="edr-select" style="width: 100%; box-sizing: border-box;">
-                            <option value="">-- Select template or paste raw text below --</option>
-                            <option value="sleeping">Sleeping on Post / Unattended Station</option>
-                            <option value="phone">Unauthorized Mobile Phone Use on Floor</option>
-                            <option value="away">Away from workstation during production hours</option>
-                            <option value="pcturnedoff">PC turned off / workstation shutdown during shift</option>
-                            <option value="loitering">Loitering / socializing away from assigned seat</option>
-                            <option value="unattended">Unattended active workstation / screen unlocked</option>
-                        </select>
-                    </div>
-                </div>
-
-                <!-- CCTV Clip Input in AI Generator Mode -->
-                <div class="field-block edr-field" style="margin-bottom: 14px;">
-                    <label for="edrAiClipLink"><strong>CCTV CLIP LINK (FACEBOOK / CLOUD VIDEO)</strong></label>
-                    <input type="text"
-                           id="edrAiClipLink"
-                           class="edr-input"
-                           placeholder="https://www.facebook.com/... or Google Drive video link"
-                           style="width: 100%; box-sizing: border-box;" />
-                </div>
-
-                <div class="edr-action-row" style="margin-top: 16px;">
-                    <button type="button" id="edrGenerateBtn" class="edr-primary-btn" title="Parse raw CCTV report and generate EDR">Generate EDR</button>
-                    <button type="button" id="edrClearAiBtn" class="edr-danger-btn" title="Clear input">Clear Input</button>
-                    <span id="edrRawStatus" class="edr-status-text edr-raw-status" hidden></span>
-                    <!-- Compatibility aliases for automated test suites -->
-                    <button type="button" id="edrAnalyzeBtn" style="display:none;" aria-hidden="true"></button>
-                    <button type="button" id="edrClearRawBtn" style="display:none;" aria-hidden="true"></button>
-                </div>
-            </section>
-        </div>
-
-        <!-- MODE 2: MANUAL ENTRY -->
-        <div id="edrManualModeSection" class="edr-mode-section edr-mode-content" hidden>
-            <section class="edr-crud-card edr-form-card">
-                <div class="edr-card-heading">
-                    <div>
-                        <h3 id="edrFormHeading">Manual Entry</h3>
-                        <p>Compact encoding layout: time, respondent, names, and campaign stay aligned in two clean rows.</p>
-                    </div>
-                    <span class="edr-session-note" id="edrCloudBadge">Local until Google Docs is connected</span>
-                </div>
-
-                <!-- Hidden legacy elements to preserve API compatibility -->
-                <input type="hidden" id="edrRoughNotes" value="">
-                <button type="button" id="edrGenerateSmartBtn" style="display:none;" aria-hidden="true"></button>
-
-                <div class="edr-form-grid">
-                    <div class="edr-field edr-span-2 edr-layout-site">
-                        <label for="edrSite">Site</label>
-                        <select id="edrSite">
-                            <option value="Mabini Site A - 1st Floor">Mabini Site A - 1st Floor</option>
-                            <option value="Mabini Site A - 2nd Floor">Mabini Site A - 2nd Floor</option>
-                            <option value="Mabini Site B1 - 2nd Floor">Mabini Site B1 - 2nd Floor</option>
-                            <option value="Mabini Site B2 - 3rd Floor">Mabini Site B2 - 3rd Floor</option>
-                            <option value="Mabini Site B2 - 4th Floor">Mabini Site B2 - 4th Floor</option>
-                            <option value="Ecoland Site">Ecoland Site</option>
-                            <option value="MAA 4th Floor">MAA 4th Floor</option>
-                            <option value="MAA 5th Floor">MAA 5th Floor</option>
-                            <option value="MAA 6th Floor">MAA 6th Floor</option>
-                            <option value="Gensan Site">Gensan Site</option>
-                            <option value="CDO Site">CDO Site</option>
-                            <option value="Digos Site">Digos Site</option>
-                        </select>
-                        <div class="edr-fixed-cctv">CCTV is added automatically to the generated template.</div>
-                    </div>
-
-                    <div class="edr-field edr-layout-date">
-                        <label for="edrDate">Date</label>
-                        <input type="date" id="edrDate" autocomplete="off" data-lpignore="true" data-1p-ignore="true" data-form-type="other">
-                    </div>
-
-                    <div class="edr-field edr-layout-time">
-                        <label for="edrTimeObserved">Time Observed</label>
-                        <input type="text"
-                               id="edrTimeObserved"
-                               autocomplete="off"
-                               data-lpignore="true"
-                               data-1p-ignore="true"
-                               data-form-type="other"
-                               placeholder="Paste time, e.g. 3:10:45 AM–3:18:01 AM">
-                    </div>
-
-                    <div class="edr-field edr-layout-respondent-role">
-                        <label>Respondent</label>
-                        <input type="hidden" id="edrSupervisorRole" value="Team Leader">
-                        <div class="edr-choice-group" id="edrSupervisorRoleButtons" role="group" aria-label="Choose Team Leader or OM">
-                            <button type="button" class="edr-choice-btn active" data-value="Team Leader">Team Leader</button>
-                            <button type="button" class="edr-choice-btn" data-value="OM">OM</button>
-                        </div>
-                    </div>
-
-                    <div class="edr-field edr-layout-respondent-name">
-                        <label for="edrSupervisorName" id="edrSupervisorNameLabel">Team Leader</label>
-                        <div class="edr-search-row">
-                            <input type="text"
-                                   id="edrSupervisorName"
-                                   list="edrSupervisorOptions"
-                                   autocomplete="off"
-                                   data-lpignore="true"
-                                   data-1p-ignore="true"
-                                   data-form-type="other"
-                                   placeholder="Search Team Leader or OM...">
-                            <button type="button" class="edr-small-add" id="edrAddSupervisorOption" title="Add typed name">Add</button>
-                            <button type="button" class="edr-small-remove" id="edrRemoveSupervisorOption" title="Remove typed name from this session">Remove</button>
-                        </div>
-                        <datalist id="edrSupervisorOptions"></datalist>
-                    </div>
-
-                    <div class="edr-field edr-layout-om">
-                        <label for="edrOmName">OM</label>
-                        <input type="text"
-                               id="edrOmName"
-                               list="edrOmOptionsDedicated"
-                               autocomplete="off"
-                               data-lpignore="true"
-                               data-1p-ignore="true"
-                               data-form-type="other"
-                               placeholder="Search OM...">
-                        <datalist id="edrOmOptionsDedicated"></datalist>
-                    </div>
-
-                    <div class="edr-field edr-layout-subject-role">
-                        <label>Violation Subject</label>
-                        <input type="hidden" id="edrSubjectType" value="Agent/s">
-                        <div class="edr-choice-group" id="edrSubjectTypeButtons" role="group" aria-label="Choose Agent or Team Leader">
-                            <button type="button" class="edr-choice-btn active" data-value="Agent/s">Agent/s</button>
-                            <button type="button" class="edr-choice-btn" data-value="Team Leader">Team Leader</button>
-                        </div>
-                    </div>
-
-                    <div class="edr-field edr-layout-subject-name">
-                        <label for="edrSubjectName" id="edrSubjectNameLabel">Agent/s</label>
-                        <input type="text"
-                               id="edrSubjectName"
-                               list="edrSubjectOptions"
-                               autocomplete="off"
-                               data-lpignore="true"
-                               data-1p-ignore="true"
-                               data-form-type="other"
-                               placeholder="Enter or search the name...">
-                        <datalist id="edrSubjectOptions"></datalist>
-                    </div>
-
-                    <div class="edr-field edr-span-2 edr-layout-account">
-                        <label for="edrAccount">Account / Campaign</label>
-                        <div class="edr-search-row">
-                            <input type="text"
-                                   id="edrAccount"
-                                   list="edrAccountOptions"
-                                   autocomplete="off"
-                                   data-lpignore="true"
-                                   data-1p-ignore="true"
-                                   data-form-type="other"
-                                   placeholder="Search Account / Campaign...">
-                            <button type="button" class="edr-small-add" id="edrAddAccountOption" title="Add typed campaign">Add</button>
-                            <button type="button" class="edr-small-remove" id="edrRemoveAccountOption" title="Remove typed campaign from this session">Remove</button>
-                        </div>
-                        <datalist id="edrAccountOptions"></datalist>
-                    </div>
-
-                    <div class="edr-field edr-span-2 edr-layout-incident">
-                        <label for="edrIncident">Incident</label>
-                        <textarea id="edrIncident"
-                                  placeholder="Example: Agent was observed loitering away from her workstation while the PC was turned off during work hours."></textarea>
-                    </div>
-
-                    <div class="edr-field edr-span-2 edr-layout-action">
-                        <label for="edrActionRemarks">Action Taken / Remarks</label>
-                        <textarea id="edrActionRemarks"
-                                  placeholder="Example: TL confirmed the agent had completed her audits and was assisting another agent while waiting for the next audit."></textarea>
-                    </div>
-
-                    <div class="edr-field edr-span-2 edr-layout-screenshot">
-                        <label>CCTV Screenshot</label>
-                        <div id="edrScreenshotZone"
-                             class="edr-screenshot-zone edr-screenshot-minimal"
-                             tabindex="0"
-                             aria-label="CCTV Screenshot drop zone">
-                            <input type="file" id="edrScreenshotInput" accept="image/*" hidden>
-
-                            <div class="edr-shot-idle" id="edrScreenshotEmpty">
-                                <button type="button" class="edr-outline-btn edr-shot-add-btn" id="edrChooseScreenshotBtn">
-                                    Add Screenshot
-                                </button>
-                                <span class="edr-shot-hint">Drop image here or Ctrl+V</span>
-                            </div>
-
-                            <div id="edrScreenshotPreviewWrap" class="edr-shot-preview" hidden>
-                                <button type="button"
-                                        class="edr-shot-thumb-btn"
-                                        id="edrViewCurrentScreenshotBtn"
-                                        title="View screenshot">
-                                    <img id="edrScreenshotPreview" alt="CCTV screenshot preview">
-                                </button>
-
-                                <div class="edr-shot-meta">
-                                    <span>Screenshot ready</span>
-                                    <div class="edr-shot-actions">
-                                        <button type="button" class="edr-outline-btn" id="edrReplaceScreenshotBtn">Replace</button>
-                                        <button type="button" class="edr-danger-btn" id="edrRemoveScreenshotBtn">Remove</button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="edr-field edr-span-2 edr-layout-clip">
-                        <label for="edrClipLink">CCTV Clip - Google Drive Link</label>
-                        <input type="url"
-                               id="edrClipLink"
-                               placeholder="Paste Google Drive link here, e.g. https://drive.google.com/..."
-                               autocomplete="off"
-                               data-lpignore="true"
-                               data-1p-ignore="true"
-                               data-form-type="other">
-                        <div class="edr-fixed-cctv">
-                            In the generated EDR this becomes <strong>CCTV Clip: <u>Click here!</u></strong> with “Click here!” linked to this URL.
-                        </div>
-                    </div>
-                </div>
-
-                <div class="edr-action-row">
-                    <button type="button" class="edr-outline-btn" id="edrUpdatePreviewBtn">Update Preview</button>
-                    <button type="button" class="edr-danger-btn" id="edrClearFormBtn">Clear Form</button>
-                    <button type="button" class="edr-outline-btn edr-cancel-edit" id="edrCancelEditBtn" hidden>Cancel Edit</button>
-                </div>
-            </section>
-        </div>
-
-        <!-- SHARED EDR RESULT / PREVIEW SECTION -->
-        <section class="edr-crud-card edr-result-card" id="edrResultSection">
+        <section class="edr-crud-card edr-form-card">
             <div class="edr-card-heading">
                 <div>
-                    <h3>EDR Result / Preview</h3>
-                    <p>Live, structured EDR output reflecting your generated or manually edited details.</p>
+                    <h3 id="edrFormHeading">Create EDR</h3>
+                    <p>Compact encoding layout: time, respondent, names, and campaign stay aligned in two clean rows.</p>
+                </div>
+                <span class="edr-session-note" id="edrCloudBadge">Local until Google Docs is connected</span>
+            </div>
+
+            <div class="edr-form-grid">
+                <div class="edr-field edr-span-2 edr-layout-site">
+                    <label for="edrSite">Site</label>
+                    <select id="edrSite">
+                        <option value="Mabini Site A - 1st Floor">Mabini Site A - 1st Floor</option>
+                        <option value="Mabini Site A - 2nd Floor">Mabini Site A - 2nd Floor</option>
+                        <option value="Mabini Site B1 - 2nd Floor">Mabini Site B1 - 2nd Floor</option>
+                        <option value="Mabini Site B2 - 3rd Floor">Mabini Site B2 - 3rd Floor</option>
+                        <option value="Mabini Site B2 - 4th Floor">Mabini Site B2 - 4th Floor</option>
+                        <option value="Ecoland Site">Ecoland Site</option>
+                        <option value="MAA 4th Floor">MAA 4th Floor</option>
+                        <option value="MAA 5th Floor">MAA 5th Floor</option>
+                        <option value="MAA 6th Floor">MAA 6th Floor</option>
+                        <option value="Gensan Site">Gensan Site</option>
+                        <option value="CDO Site">CDO Site</option>
+                        <option value="Digos Site">Digos Site</option>
+                    </select>
+                    <div class="edr-fixed-cctv">CCTV is added automatically to the generated template.</div>
+                </div>
+
+                <div class="edr-field edr-layout-date">
+                    <label for="edrDate">Date</label>
+                    <input type="date" id="edrDate" autocomplete="off" data-lpignore="true" data-1p-ignore="true" data-form-type="other">
+                </div>
+
+                <div class="edr-field edr-layout-time">
+                    <label for="edrTimeObserved">Time Observed</label>
+                    <input type="text"
+                           id="edrTimeObserved"
+                           autocomplete="off"
+                           data-lpignore="true"
+                           data-1p-ignore="true"
+                           data-form-type="other"
+                           placeholder="Paste time, e.g. 3:10:45 AMΓÇô3:18:01 AM">
+                </div>
+
+                <div class="edr-field edr-layout-respondent-role">
+                    <label>Respondent</label>
+                    <input type="hidden" id="edrSupervisorRole" value="Team Leader">
+                    <div class="edr-choice-group" id="edrSupervisorRoleButtons" role="group" aria-label="Choose Team Leader or OM">
+                        <button type="button" class="edr-choice-btn active" data-value="Team Leader">Team Leader</button>
+                        <button type="button" class="edr-choice-btn" data-value="OM">OM</button>
+                    </div>
+                </div>
+
+                <div class="edr-field edr-layout-respondent-name">
+                    <label for="edrSupervisorName" id="edrSupervisorNameLabel">Team Leader</label>
+                    <div class="edr-search-row">
+                        <input type="text"
+                               id="edrSupervisorName"
+                               list="edrSupervisorOptions"
+                               autocomplete="off"
+                               data-lpignore="true"
+                               data-1p-ignore="true"
+                               data-form-type="other"
+                               placeholder="Search Team Leader or OM...">
+                        <button type="button" class="edr-small-add" id="edrAddSupervisorOption" title="Add typed name">Add</button>
+                        <button type="button" class="edr-small-remove" id="edrRemoveSupervisorOption" title="Remove typed name from this session">Remove</button>
+                    </div>
+                    <datalist id="edrSupervisorOptions"></datalist>
+                </div>
+
+                <div class="edr-field edr-layout-om">
+                    <label for="edrOmName">OM</label>
+                    <input type="text"
+                           id="edrOmName"
+                           list="edrOmOptionsDedicated"
+                           autocomplete="off"
+                           data-lpignore="true"
+                           data-1p-ignore="true"
+                           data-form-type="other"
+                           placeholder="Search OM...">
+                    <datalist id="edrOmOptionsDedicated"></datalist>
+                </div>
+
+                <div class="edr-field edr-layout-subject-role">
+                    <label>Violation Subject</label>
+                    <input type="hidden" id="edrSubjectType" value="Agent/s">
+                    <div class="edr-choice-group" id="edrSubjectTypeButtons" role="group" aria-label="Choose Agent or Team Leader">
+                        <button type="button" class="edr-choice-btn active" data-value="Agent/s">Agent/s</button>
+                        <button type="button" class="edr-choice-btn" data-value="Team Leader">Team Leader</button>
+                    </div>
+                </div>
+
+                <div class="edr-field edr-layout-subject-name">
+                    <label for="edrSubjectName" id="edrSubjectNameLabel">Agent/s</label>
+                    <input type="text"
+                           id="edrSubjectName"
+                           list="edrSubjectOptions"
+                           autocomplete="off"
+                           data-lpignore="true"
+                           data-1p-ignore="true"
+                           data-form-type="other"
+                           placeholder="Enter or search the name...">
+                    <datalist id="edrSubjectOptions"></datalist>
+                </div>
+
+                <div class="edr-field edr-span-2 edr-layout-account">
+                    <label for="edrAccount">Account / Campaign</label>
+                    <div class="edr-search-row">
+                        <input type="text"
+                               id="edrAccount"
+                               list="edrAccountOptions"
+                               autocomplete="off"
+                               data-lpignore="true"
+                               data-1p-ignore="true"
+                               data-form-type="other"
+                               placeholder="Search Account / Campaign...">
+                        <button type="button" class="edr-small-add" id="edrAddAccountOption" title="Add typed campaign">Add</button>
+                        <button type="button" class="edr-small-remove" id="edrRemoveAccountOption" title="Remove typed campaign from this session">Remove</button>
+                    </div>
+                    <datalist id="edrAccountOptions"></datalist>
+                </div>
+
+                <div class="edr-field edr-span-2 edr-layout-incident">
+                    <label for="edrIncident">Incident</label>
+                    <textarea id="edrIncident"
+                              placeholder="Example: Agent was observed loitering away from her workstation while the PC was turned off during work hours."></textarea>
+                </div>
+
+                <div class="edr-field edr-span-2 edr-layout-action">
+                    <label for="edrActionRemarks">Action Taken / Remarks</label>
+                    <textarea id="edrActionRemarks"
+                              placeholder="Example: TL confirmed the agent had completed her audits and was assisting another agent while waiting for the next audit."></textarea>
+                </div>
+
+                <div class="edr-field edr-span-2 edr-layout-screenshot">
+                    <label>CCTV Screenshot</label>
+                    <div id="edrScreenshotZone"
+                         class="edr-screenshot-zone edr-screenshot-minimal"
+                         tabindex="0"
+                         aria-label="CCTV Screenshot drop zone">
+                        <input type="file" id="edrScreenshotInput" accept="image/*" hidden>
+
+                        <div class="edr-shot-idle" id="edrScreenshotEmpty">
+                            <button type="button" class="edr-outline-btn edr-shot-add-btn" id="edrChooseScreenshotBtn">
+                                Add Screenshot
+                            </button>
+                            <span class="edr-shot-hint">Drop image here or Ctrl+V</span>
+                        </div>
+
+                        <div id="edrScreenshotPreviewWrap" class="edr-shot-preview" hidden>
+                            <button type="button"
+                                    class="edr-shot-thumb-btn"
+                                    id="edrViewCurrentScreenshotBtn"
+                                    title="View screenshot">
+                                <img id="edrScreenshotPreview" alt="CCTV screenshot preview">
+                            </button>
+
+                            <div class="edr-shot-meta">
+                                <span>Screenshot ready</span>
+                                <div class="edr-shot-actions">
+                                    <button type="button" class="edr-outline-btn" id="edrReplaceScreenshotBtn">Replace</button>
+                                    <button type="button" class="edr-danger-soft-btn" id="edrRemoveScreenshotBtn">Remove</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="edr-field edr-span-2 edr-layout-clip">
+                    <label for="edrClipLink">CCTV Clip - Google Drive Link</label>
+                    <input type="url"
+                           id="edrClipLink"
+                           placeholder="Paste Google Drive link here, e.g. https://drive.google.com/..."
+                           autocomplete="off"
+                           data-lpignore="true"
+                           data-1p-ignore="true"
+                           data-form-type="other">
+                    <div class="edr-fixed-cctv">
+                        In the generated EDR this becomes <strong>CCTV Clip: <u>Click here!</u></strong> with ΓÇ£Click here!ΓÇ¥ linked to this URL.
+                    </div>
                 </div>
             </div>
 
-            <div id="edrLivePreviewContent" class="edr-live-preview-content">
-                <div id="edrPreviewTopLine" class="edr-preview-topline" style="font-weight:700;margin-bottom:8px;font-size:14px;color:var(--ops-accent,#38bdf8);"></div>
-                <div id="edrPreviewBody" class="edr-preview-body"></div>
-            </div>
-
-            <div class="edr-action-row edr-result-action-bar">
-                <button type="button" class="edr-outline-btn" id="edrEditResultBtn">Edit Result</button>
-                <button type="button" class="edr-primary-btn" id="edrSaveBtn">Save Draft</button>
-                <button type="button" class="edr-outline-btn" id="edrCopyTeamsBtn">Copy for MS Teams</button>
-                <button type="button" class="edr-outline-btn" id="edrPreviewBtn">Preview</button>
-                <button type="button" class="edr-success-btn" id="edrSendDocsBtn">Send to Google Docs</button>
-                <span id="edrCopyNotice" class="edr-copy-notice" style="font-size:12px;color:#22c55e;font-weight:600;margin-left:8px;"></span>
+            <div class="edr-form-actions">
+                <button type="button" class="edr-primary-btn" id="edrSaveBtn">Create EDR</button>
+                <button type="button" class="edr-outline-btn" id="edrClearFormBtn">Clear Form</button>
+                <button type="button" class="edr-outline-btn edr-cancel-edit" id="edrCancelEditBtn" hidden>Cancel Edit</button>
             </div>
         </section>
 
@@ -18769,7 +18630,7 @@ textarea:focus {
             <div class="edr-card-heading">
                 <div>
                     <h3>Facebook Shared Posts</h3>
-                    <p>Paste the Facebook shared-post links or text. The Facebook shared-post date uses today’s date automatically.</p>
+                    <p>Paste the Facebook shared-post links or text. The Facebook shared-post date uses todayΓÇÖs date automatically.</p>
                 </div>
             </div>
 
@@ -19041,35 +18902,25 @@ https://www.facebook.com/share/..."></textarea>
     function setThemeToggleIcon(isDark) {
         const toggle = document.getElementById('themeToggle');
         if (!toggle) return;
-        toggle.title = isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode';
-        toggle.setAttribute('aria-label', isDark ? 'Dark Mode active. Switch to Light Mode' : 'Light Mode active. Switch to Dark Mode');
+        toggle.checked = true;
     }
 
     function toggleTheme() {
-        document.body.classList.toggle('dark-mode');
-        const isDark = document.body.classList.contains('dark-mode');
-        document.body.classList.toggle('light-mode', !isDark);
-        document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
-        document.body.setAttribute('data-theme', isDark ? 'dark' : 'light');
-        localStorage.setItem('cctv_theme', isDark ? 'dark' : 'light');
-        setThemeToggleIcon(isDark);
-    }
-
-    const savedTheme = localStorage.getItem('cctv_theme');
-    const isDarkInitial = savedTheme === 'dark';
-    if (isDarkInitial) {
+        // CCTV OPS operates in DARK MODE ONLY
         document.body.classList.add('dark-mode');
         document.body.classList.remove('light-mode');
         document.documentElement.setAttribute('data-theme', 'dark');
         document.body.setAttribute('data-theme', 'dark');
-        setThemeToggleIcon(true);
-    } else {
-        document.body.classList.remove('dark-mode');
-        document.body.classList.add('light-mode');
-        document.documentElement.setAttribute('data-theme', 'light');
-        document.body.setAttribute('data-theme', 'light');
-        setThemeToggleIcon(false);
+        try { localStorage.setItem('cctv_theme', 'dark'); } catch (_) {}
     }
+
+    // Force Dark Mode on startup unconditionally
+    document.body.classList.add('dark-mode');
+    document.body.classList.remove('light-mode');
+    document.documentElement.setAttribute('data-theme', 'dark');
+    document.body.setAttribute('data-theme', 'dark');
+    try { localStorage.setItem('cctv_theme', 'dark'); } catch (_) {}
+    setThemeToggleIcon(true);
 
     // --- AUTO-SAVE LOGIC (LOCALSTORAGE) ---
     const rawCampaignData = `123 Employee\n123 Robotics\n123Employee | HUB International\nDental Back Office Admin\nDNO L1\nESIM\nFranklin Hamilton\nLOGISTICS\nTogether Network\nTriple B\nTV COMMERCIAL TRAFFIC\nWanderJoy\nBIGO - ECOLAND\nBIGO - Mabini\nCFC\nAU Store\nAUTAX\nFWC\nKOMBEA MPI\nKombea Pro Speaking\n123 Employee\n123 Employee - Echo Mortgage\nAUXGP\nClinic P\nClinicP\nCOD Logistics\nDAVI\nDG Dial\nDNE\nDuque Immigration\nGreenfoot\nJethro Mobile\nList Simple\nMAPUA\nMoneyHero Group\nNOX\nOrigin\nQC\nSeesaw\nSmart Staffing Support - Renters\nSPEAK UP\nBrightDelivery\nCommercial Enterprise\nCommercial Merchant Acquisition\nContent Quality Assurance\nCupshe\nGRAB - Commercial Enterprise\nGRAB - MPH\nGRAB - MY\nGRAB - PH\nGRAB - Quality Assurance\nGRAB - SG\nGrabRentals Voice and Digital Support\nOBRB MY\nViewQwest Telesales\nAirbills\nAllied Pain and Spine Institute\nBayou Braces\nBentino\nEDJ DATA\nEVMS\nGreen Health Docs\niMile Logistics\nLeisure-tec\nMi Care\nMoon River Therapy\nPearl Source\nPivot\nReflex Media\nSFP\nSpypoint\nUplift Healthcare LLC\nVeritas\nAFP\nBIGO - ECOLAND\nBIGO - Mabini\nCFC OB\nGLO\nGreenfoot\nKCDO\nKCDO - Billing\nKCDO - Inbound\nKCDO - Outbound\nPOINT CO\nShopee - SIP Global\nBIGO - Mabini\nShopee - QA\nTEMU - 1404\nTEMU - 140X (RSL)\nTEMU - 4029\nTEMU - BATCH 6\nTEMU - BATCH 7\nTEMU - BATCH 8\nTEMU - CPC\nTEMU - LOB-1\nTEMU - LOB-2\nTEMU - LOB-3\nAMG\nCGP\nIDENT\niMarketing\niMarketing Frontline\nKombea Fivestrata\nKombea Kingkong\nTEN28\nTWV\nAll Pro Pay\nClear Insights Group\nDNE\nHBW\nHerb joy\nLSM\nNationGraph\nQA OJR\nSpypoint\nSpypoint Outbound\nSuperdial\nACB\nCOD Logistics\nDG Dial\nEverlife\nEyesurf\nFBB\nFBB QA\nFlexscale Next-Level Recruitment\nFlexscale Truth Finance\nFlexscale Truth Financial\nGardens Alive & Shared\nGlamcor\nGlobalcom - Mountain Valley\nGlobalcom RTA\nJethro Mobile\nLifeMD\nMoneyHero Group\nNeiline\nNLR\nPB&J TV\nPhoenix Direct\nSmart Circle\nSPEAK UP\nSPYFLY\nTalixo\nTelMDFirst\nAMR\nAMR CSR\nJ&T Express\nMMG\nNetworX\nRenogy\nAllen Institute Mouse\nBathroomX\nFlywire\nJustlife\nJustlife \nNISSAN PH\nZetta\nAHABI\nDLPC\nLM Consulting\nLuxor Eye Institute\nSpectee\nEIMS\nEIMS - Data Validator/QA\n123 Employee\n611 VA\nBIGO - DIGOS\nDLG\nLEADMINER\nDASCO\nDASCO BACK OFFICE\nDASCO CSR\nEnvera\nKCDO - Billing\nKCDO - Inbound\nKCDO - Outbound\nKCDO - RCM\n212 Dental Care\nAdams International\nAnother Star\nARS\nCORE LOGIX\nDIAL EXPRESS\nENC\nGARDENS\nGlobalcom - Mountain Valley\nJJILL\nPhoenix Direct\nQA OJR\nSHARED\nThe James Group, LLC\nTMS\nTOP MOVING SOLUTIONS\nShopee - Buyer Chat and Email\nShopee - Buyer CS\nShopee - Buyer Logistics\nShopee - Buyer Non-Logistics\nShopee - CCS\nShopee - CS\nShopee - Data Labelling - Buybox\nShopee - Email\nShopee - FBS\nShopee - L1 Buyer - Email\nShopee - PH - Chat Bot\nShopee - Seller Chats and Email\nShopee - Seller Log x RR\nShopee - SIP Global\nShopee - SPX\nShopee - SPX SSC and NSS\nShopee - Trainee\nShopee - Buybox\nShopee - CB-SCS\nShopee - CBSCS\nShopee - Data Labelling - Buybox\nShopee - L1 Buyer - Email\nShopee - LiveStream\nShopee - PIC\nShopee - QA\nShopee - RTA\nShopee - SBS\nShopee - SIP AME\nShopee - SIP BR & LATAM\nShopee - SIP Global\nShopee - SIP Global - PH\nShopee - SIP L2\nShopee - SIP Malaysia\nShopee - SIP Singapore\nShopee - SIP Taiwan\nShopee - SIP Thailand\nShopee - SPX NSS Outbound\nShopee - WFM\nShopee - Buybox\nShopee - Buybox - Smart UI\nShopee - Buyer Chat and Email\nShopee - Buyer Logistics\nShopee - CS \nShopee - CS and Non-CS\nShopee - Data Labelling - Buybox\nShopee - Data Labelling - Non SPU\nShopee - Data Labelling - SPU\nShopee - Keywords\nShopee - Listing Pages\nShopee - Listings Data Labelling - LLM\nShopee - Listings Data Labelling - SQE\nShopee - Listings Data Labelling - Task Center\nShopee - Listings QC\nShopee - Live Stream Marketing\nShopee - LiveStream\nShopee - Non-CS\nShopee - PH - Chat Bot\nShopee - QAC Department\nShopee - SBS\nShopee - SPU Listings\nShopee - Training\nShopee - Video\nShopee - Video QC\n123 Employee\n123 Employee - Hallandale Pharmacy\nAeroex Technology Inc.\nBrianna Thaxton LLC\nCapLink Group\nCorazon Company LLC\neJam\neJam Inside Sales\nInsight Financial Associates Ltd. (SixEleven Project)\nLegal Solutions 4U\nMBC Consulting Group Inc.\nNextgenID\nNextgenID SRIP\nPinnacle Ozone Solutions\nRevel Hotel\nSBI\nSRIP L2 Support\nTicket Management System SL`;
@@ -19997,7 +19848,7 @@ https://www.facebook.com/share/..."></textarea>
                 }
                 return;
             }
-            safeHtml = `<div style="font-size:10pt;line-height:normal;white-space:pre-wrap;font-family:Arial,sans-serif;">${escapeHtml(safeText).replace(/\n/g, "<br>")}</div>`;
+            safeHtml = `<div style="font-family: Arial, sans-serif; font-size: 10pt; line-height: normal; white-space: pre-wrap;">${escapeHtml(safeText).replace(/\n/g, "<br>")}</div>`;
         } else {
             if (!entryList || entryList.length === 0) {
                 if (typeof showToast === "function") {
@@ -20055,7 +19906,7 @@ https://www.facebook.com/share/..."></textarea>
                 `</tr>`;
             });
 
-            safeHtml = `<div style="font-size:10pt;line-height:normal;white-space:pre-wrap;font-family:Arial,sans-serif;"><table style="border-collapse: collapse; border: none; background-color: transparent !important; color: #000000 !important; font-family: Arial, sans-serif; font-size: 10pt; line-height: normal;"><tbody>${tableRowsHTML}</tbody></table></div>`;
+            safeHtml = `<div style="font-family: Arial, sans-serif; font-size: 10pt; line-height: normal; white-space: pre-wrap;"><table style="border-collapse: collapse; border: none; background-color: transparent !important; color: #000000 !important; font-family: Arial, sans-serif; font-size: 10pt; line-height: normal;"><tbody>${tableRowsHTML}</tbody></table></div>`;
         }
 
         try {
@@ -20077,9 +19928,9 @@ https://www.facebook.com/share/..."></textarea>
             }
 
             if (typeof showToast === "function") {
-                showToast("Audit copied for Tracker (10 pt).", "success");
+                showToast("Audit copied for Tracker (Arial 10pt).", "success");
             } else {
-                alert("Audit copied for Tracker (10 pt).");
+                alert("Audit copied for Tracker (Arial 10pt).");
             }
         } catch (error) {
             console.error("Audit tracker copy failed:", error);
@@ -25679,18 +25530,27 @@ body.ops-redesign-v3.light-mode,
                 </div>
 
                 <div class="eod-block-content ${block.dataHidden ? "is-hidden" : ""}">
-                    <div class="eod-block-data">
-                        <label>Paste Lanes / IT Sheet Rows</label>
-                        <textarea class="eod-paste-area" placeholder="Paste the copied IT sheet lanes/rows here.">${escapeHtml(block.lanesText)}</textarea>
+                    <div class="maintenance-incident-action-grid">
+                        <div class="eod-block-data">
+                            <label>Incident / Station Issues</label>
+                            <textarea class="eod-paste-area" placeholder="Paste the copied IT sheet lanes/rows or incident details here.">${escapeHtml(block.lanesText)}</textarea>
 
-                        <div class="eod-mini-preview">
-                            ${tableHtml(block.lanesText, false)}
+                            <div class="eod-mini-preview">
+                                ${tableHtml(block.lanesText, false)}
+                            </div>
+                        </div>
+
+                        <div class="remarks-section simple-single-remark">
+                            <label>Action Taken / Remarks</label>
+                            <textarea class="remark-text single-remark-text" placeholder="Type your action taken or remarks here...">${escapeHtml(
+                                Array.isArray(block.remarks) ? block.remarks.filter(Boolean).join("\n") : ""
+                            )}</textarea>
                         </div>
                     </div>
 
                     <div class="eod-proof-zone" tabindex="0">
                         <p>
-                            <strong>Screenshot Proof</strong><br>
+                            <strong>Screenshot Proof / Attachments</strong><br>
                             Take a Snip/Screenshot, then press <strong>Ctrl+V</strong>. One paste = one screenshot. Click a thumbnail to view it full-size.
                         </p>
                         <label class="eod-proof-label" for="${fileId}"><span>Add Screenshot</span></label>
@@ -25704,13 +25564,6 @@ body.ops-redesign-v3.light-mode,
                                 </div>
                             `).join("")}
                         </div>
-                    </div>
-
-                    <div class="remarks-section simple-single-remark">
-                        <label>Remarks</label>
-                        <textarea class="remark-text single-remark-text" placeholder="Type your remarks here...">${escapeHtml(
-                            Array.isArray(block.remarks) ? block.remarks.filter(Boolean).join("\n") : ""
-                        )}</textarea>
                     </div>
                 </div>
             </article>
@@ -27122,7 +26975,6 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
 
             renderList();
             refreshOutput();
-    renderLiveEdrPreview();
 
             await edrDbSet(EDR_WORKSPACE_KEY, captureEdrWorkspaceState());
         } finally {
@@ -27631,11 +27483,10 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
 
             renderList();
             refreshOutput();
-    renderLiveEdrPreview();
             await persistEdrWorkspace();
 
             setEdrDocsStatus(
-                `Connected · ${remote.length} saved EDR${remote.length === 1 ? "" : "s"} loaded from Google Docs.`,
+                `Connected ┬╖ ${remote.length} saved EDR${remote.length === 1 ? "" : "s"} loaded from Google Docs.`,
                 "connected"
             );
 
@@ -27850,7 +27701,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         const start = formatTime(report.timeStart);
         const end = formatTime(report.timeEnd);
 
-        if (start && end) return `${start}–${end}`;
+        if (start && end) return `${start}ΓÇô${end}`;
         return start || end || pasted || "";
     }
 
@@ -27953,7 +27804,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
             screenshotFileId: editingId
                 ? (edrReports.find(item => item.id === editingId)?.screenshotFileId || "")
                 : "",
-            clipLink: clean(byId("edrClipLink")?.value || byId("edrAiClipLink")?.value)
+            clipLink: clean(byId("edrClipLink").value)
         };
     }
 
@@ -27991,17 +27842,13 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         byId("edrAccount").value = "";
         byId("edrIncident").value = "";
         byId("edrActionRemarks").value = "";
-                byId("edrClipLink").value = "";
-        if (byId("edrAiClipLink")) byId("edrAiClipLink").value = "";
+        byId("edrClipLink").value = "";
         screenshotDirty = false;
         setCurrentScreenshot("", false);
 
         refreshSupervisorOptions();
         refreshDedicatedOmOptions();
         refreshSubjectOptions();
-
-        if (byId("edrRoughNotes")) byId("edrRoughNotes").value = "";
-        if (byId("edrQuickTemplates")) byId("edrQuickTemplates").value = "";
 
         if (!options.keepEdit) {
             editingId = null;
@@ -28051,7 +27898,6 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         clearForm();
         renderList();
         refreshOutput();
-    renderLiveEdrPreview();
 
         await pushEdrHistory(isUpdate ? "Updated EDR" : "Created EDR");
 
@@ -28100,8 +27946,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         byId("edrAccount").value = report.account;
         byId("edrIncident").value = report.incident;
         byId("edrActionRemarks").value = report.action;
-                byId("edrClipLink").value = report.clipLink || "";
-        if (byId("edrAiClipLink")) byId("edrAiClipLink").value = report.clipLink || "";
+        byId("edrClipLink").value = report.clipLink || "";
         screenshotDirty = false;
         setCurrentScreenshot(report.screenshotData || "", false);
 
@@ -28134,7 +27979,6 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
 
         renderList();
         refreshOutput();
-    renderLiveEdrPreview();
         await pushEdrHistory("Deleted EDR");
         showToast("EDR deleted.", "info");
 
@@ -28188,7 +28032,6 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
 
         renderList();
         refreshOutput();
-    renderLiveEdrPreview();
 
         await pushEdrHistory(makingDone ? "Marked EDR Done" : "Reopened EDR");
 
@@ -28300,7 +28143,6 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
 
                 renderList();
                 refreshOutput();
-    renderLiveEdrPreview();
                 await pushEdrHistory(report.selected ? "Selected EDR" : "Unselected EDR");
             });
 
@@ -28440,17 +28282,6 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         return (reports + facebookHtml(selected)).trim();
     }
 
-    // Teams-Safe Clipboard HTML: Excludes Base64 images to prevent "Message Too Long" error in MS Teams
-    function outputHtmlForClipboard() {
-        const selected = edrReports.filter(item => item.selected && !item.done);
-
-        const reports = selected
-            .map(report => `${reportHtml(report, false)}<hr class="edr-rich-divider">`)
-            .join("");
-
-        return (reports + facebookHtml(selected)).trim();
-    }
-
     function refreshOutput() {
         const rich = outputHtml();
 
@@ -28480,7 +28311,6 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
 
         renderList();
         refreshOutput();
-    renderLiveEdrPreview();
 
         await pushEdrHistory(
             active.length === 1
@@ -28498,7 +28328,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         return active.length;
     }
 
-    async function copyAll() {
+        async function copyAll() {
         const selectedReports = edrReports.filter(item => item.selected && !item.done);
 
         for (const report of selectedReports) {
@@ -28508,64 +28338,41 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         }
 
         refreshOutput();
-    renderLiveEdrPreview();
 
         const text = outputText();
-        const rich = outputHtml();
+        const safeText = String(text || "")
+            .replace(
+                /data:image\/[a-zA-Z0-9.+-]+;base64,[A-Za-z0-9+/=]+/g,
+                ""
+            )
+            .trim();
 
-        if (!text && !rich) {
+        if (!safeText) {
             showToast("Create or select an active EDR first.", "error");
             return;
         }
 
         let copied = false;
-        let copyMode = "rich";
 
         try {
-            if (navigator.clipboard && window.ClipboardItem && navigator.clipboard.write) {
-                const cleanClipboardHtml = outputHtmlForClipboard();
-                const htmlBlob = new Blob(
-                    [clipboardHtmlDocument(cleanClipboardHtml)],
-                    { type: "text/html" }
-                );
-                const textBlob = new Blob(
-                    [text],
-                    { type: "text/plain" }
-                );
-
-                await navigator.clipboard.write([
-                    new ClipboardItem({
-                        "text/html": htmlBlob,
-                        "text/plain": textBlob
-                    })
-                ]);
-            } else if (navigator.clipboard && navigator.clipboard.writeText) {
-                await navigator.clipboard.writeText(text);
-                copyMode = "text";
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                await navigator.clipboard.writeText(safeText);
+                copied = true;
             } else {
                 const textarea = document.createElement("textarea");
-                textarea.value = text;
+                textarea.value = safeText;
                 textarea.style.position = "fixed";
                 textarea.style.left = "-9999px";
                 document.body.appendChild(textarea);
                 textarea.select();
                 document.execCommand("copy");
                 textarea.remove();
-                copyMode = "text";
-            }
-
-            copied = true;
-        } catch (error) {
-            console.error(error);
-
-            try {
-                await navigator.clipboard.writeText(text);
                 copied = true;
-                copyMode = "text";
-            } catch {
-                showToast("Copy failed. Nothing was marked Done.", "error");
-                return;
             }
+        } catch (error) {
+            console.error("Teams copy failed:", error);
+            showToast("Copy failed. Nothing was marked Done.", "error");
+            return;
         }
 
         if (!copied) return;
@@ -28574,16 +28381,12 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
 
         if (doneCount > 0) {
             showToast(
-                copyMode === "rich"
-                    ? `Copied to clipboard. ${doneCount} selected EDR${doneCount === 1 ? "" : "s"} marked Done.`
-                    : `Copied as text. ${doneCount} selected EDR${doneCount === 1 ? "" : "s"} marked Done.`,
+                `Copied as plain text. ${doneCount} selected EDR${doneCount === 1 ? "" : "s"} marked Done.`,
                 "success"
             );
         } else {
             showToast(
-                copyMode === "rich"
-                    ? "Copied with CCTV screenshot and clickable CCTV Clip link."
-                    : "Copied as text.",
+                "Copied as plain text.",
                 "success"
             );
         }
@@ -28596,7 +28399,6 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
 
         renderList();
         refreshOutput();
-    renderLiveEdrPreview();
         await pushEdrHistory(value ? "Selected all active EDRs" : "Unselected all EDRs");
     }
 
@@ -28618,7 +28420,6 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
 
         renderList();
         refreshOutput();
-    renderLiveEdrPreview();
         await pushEdrHistory("Cleared Teams-Ready Output");
 
         showToast("Teams-Ready Output cleared. Saved EDR List was kept.", "info");
@@ -28631,53 +28432,22 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
             screenshotDirty = true;
         }
 
-        // 1. Manual Entry UI
         const empty = byId("edrScreenshotEmpty");
         const wrap = byId("edrScreenshotPreviewWrap");
         const img = byId("edrScreenshotPreview");
 
-        if (empty && wrap && img) {
-            if (currentScreenshot) {
-                img.src = currentScreenshot;
-                empty.hidden = true;
-                wrap.hidden = false;
-                byId("edrScreenshotZone")?.classList.add("has-image");
-            } else {
-                img.removeAttribute("src");
-                empty.hidden = false;
-                wrap.hidden = true;
-                byId("edrScreenshotZone")?.classList.remove("has-image");
-            }
-        }
+        if (!empty || !wrap || !img) return;
 
-        // 2. AI Generator UI (Synchronized Shared State)
-        const aiEmpty = byId("edrAiScreenshotEmpty");
-        const aiWrap = byId("edrAiScreenshotPreviewWrap");
-        const aiImg = byId("edrAiScreenshotPreview");
-
-        if (aiEmpty && aiWrap && aiImg) {
-            if (currentScreenshot) {
-                aiImg.src = currentScreenshot;
-                aiEmpty.hidden = true;
-                aiEmpty.style.display = "none";
-                aiWrap.hidden = false;
-                aiWrap.style.display = "flex";
-                byId("edrAiScreenshotZone")?.classList.add("has-image");
-            } else {
-                aiImg.removeAttribute("src");
-                aiEmpty.hidden = false;
-                aiEmpty.style.display = "flex";
-                aiWrap.hidden = true;
-                aiWrap.style.display = "none";
-                byId("edrAiScreenshotZone")?.classList.remove("has-image");
-            }
-        }
-
-        if (typeof renderLiveEdrPreview === "function") {
-            renderLiveEdrPreview();
-        }
-        if (typeof refreshEdrPreview === "function") {
-            refreshEdrPreview();
+        if (currentScreenshot) {
+            img.src = currentScreenshot;
+            empty.hidden = true;
+            wrap.hidden = false;
+            byId("edrScreenshotZone")?.classList.add("has-image");
+        } else {
+            img.removeAttribute("src");
+            empty.hidden = false;
+            wrap.hidden = true;
+            byId("edrScreenshotZone")?.classList.remove("has-image");
         }
     }
 
@@ -28838,7 +28608,6 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
 
                 renderList();
                 refreshOutput();
-    renderLiveEdrPreview();
                 await pushEdrHistory(
                     report.screenshotFileId ? "Replaced EDR screenshot" : "Added EDR screenshot"
                 );
@@ -28877,7 +28646,6 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
 
         renderList();
         refreshOutput();
-    renderLiveEdrPreview();
         await pushEdrHistory("Removed EDR screenshot");
 
         if (window.CCTV_ACCESS?.isAdmin?.() && isValidEdrDocsUrl(getEdrDocsWebAppUrl())) {
@@ -29198,645 +28966,7 @@ card.querySelectorAll(".eod-proof-remove").forEach(button => {
         if (file) loadScreenshotFile(file);
     });
 
-    // =========================================================================
-    // AI GENERATOR: CCTV SCREENSHOT ZONE WIRING
-    // =========================================================================
-    const aiScreenshotZone = byId("edrAiScreenshotZone");
-    const aiScreenshotInput = byId("edrAiScreenshotInput");
-
-    if (aiScreenshotZone && aiScreenshotInput) {
-        byId("edrAiChooseScreenshotBtn")?.addEventListener("click", event => {
-            event.stopPropagation();
-            aiScreenshotInput.click();
-        });
-
-        byId("edrAiViewCurrentScreenshotBtn")?.addEventListener("click", event => {
-            event.stopPropagation();
-            if (!currentScreenshot) {
-                showToast("No screenshot added yet.", "info");
-                return;
-            }
-            openSavedScreenshotModal(currentScreenshot);
-        });
-
-        byId("edrAiViewBtn")?.addEventListener("click", event => {
-            event.stopPropagation();
-            if (!currentScreenshot) {
-                showToast("No screenshot added yet.", "info");
-                return;
-            }
-            openSavedScreenshotModal(currentScreenshot);
-        });
-
-        byId("edrAiReplaceScreenshotBtn")?.addEventListener("click", event => {
-            event.stopPropagation();
-            aiScreenshotInput.click();
-        });
-
-        byId("edrAiRemoveScreenshotBtn")?.addEventListener("click", event => {
-            event.stopPropagation();
-            setCurrentScreenshot("", true);
-            showToast("CCTV screenshot removed.", "info");
-        });
-
-        aiScreenshotInput.addEventListener("change", () => {
-            const file = aiScreenshotInput.files && aiScreenshotInput.files[0];
-            if (file) loadScreenshotFile(file);
-            aiScreenshotInput.value = "";
-        });
-
-        aiScreenshotZone.addEventListener("click", event => {
-            if (event.target.closest("button")) return;
-            aiScreenshotZone.focus();
-            if (!currentScreenshot) {
-                aiScreenshotInput.click();
-            }
-        });
-
-        aiScreenshotZone.addEventListener("paste", screenshotFromClipboard);
-
-        aiScreenshotZone.addEventListener("dragover", event => {
-            event.preventDefault();
-            aiScreenshotZone.classList.add("is-dragging");
-        });
-
-        aiScreenshotZone.addEventListener("dragleave", event => {
-            if (
-                event.relatedTarget &&
-                aiScreenshotZone.contains(event.relatedTarget)
-            ) return;
-            aiScreenshotZone.classList.remove("is-dragging");
-        });
-
-        aiScreenshotZone.addEventListener("drop", event => {
-            event.preventDefault();
-            aiScreenshotZone.classList.remove("is-dragging");
-
-            const file = Array.from(event.dataTransfer?.files || [])
-                .find(item => item.type && item.type.startsWith("image/"));
-
-            if (file) loadScreenshotFile(file);
-        });
-    }
-
-        // =========================================================================
-    // SMART EDR RAW IMPORT, PARSER & DETERMINISTIC GENERATOR
-    // =========================================================================
-
-    const EDR_QUICK_TEMPLATES = {
-        away: {
-            incident: "was observed away from assigned workstation during work hours without prior endorsement or authorized aux.",
-            remarks: "Informed via Teams and confirmed the observation. Necessary coaching and reminder endorsed."
-        },
-        sleeping: {
-            incident: "was observed sleeping / resting head on desk while on shift during scheduled production hours.",
-            remarks: "Notified via Teams to check condition and issue an administrative reminder on alertness."
-        },
-        phone: {
-            incident: "was observed using an unauthorized cellular phone inside the production floor during work hours.",
-            remarks: "Alerted via Teams to address the security policy breach and reiterate clean-desk compliance."
-        },
-        pcturnedoff: {
-            incident: "was observed with station PC turned off while logged in as active during production hours.",
-            remarks: "Informed via Teams. Confirmed station restart and technical check."
-        },
-        loitering: {
-            incident: "was observed loitering and engaging in non-work-related discussions away from assigned workstation.",
-            remarks: "Notified via Teams. Called agent back to station and documented verbal reminder."
-        },
-        unattended: {
-            incident: "was observed leaving the workstation unattended with terminal unlocked and data exposed.",
-            remarks: "Notified via Teams. Terminal secured and security locking protocol reinforced."
-        }
-    };
-
-    function applyEdrQuickTemplate(key) {
-        const tpl = EDR_QUICK_TEMPLATES[key];
-        if (!tpl) return;
-        const subjType = byId("edrSubjectType") ? byId("edrSubjectType").value : "Agent/s";
-        const subjName = byId("edrSubjectName") ? byId("edrSubjectName").value.trim() : "";
-        const respRole = byId("edrSupervisorRole") ? byId("edrSupervisorRole").value : "Team Leader";
-        const respName = byId("edrSupervisorName") ? byId("edrSupervisorName").value.trim() : "";
-
-        const subjPrefix = subjName ? (subjType + " " + subjName) : subjType;
-        const respPrefix = respName ? (respRole + " " + respName) : respRole;
-
-        byId("edrIncident").value = subjPrefix + " " + tpl.incident;
-        byId("edrActionRemarks").value = respPrefix + " " + tpl.remarks;
-        byId("edrIncident").dispatchEvent(new Event("input"));
-        byId("edrActionRemarks").dispatchEvent(new Event("input"));
-    }
-
-    byId("edrQuickTemplates") && byId("edrQuickTemplates").addEventListener("change", function(e) {
-        if (e.target.value) applyEdrQuickTemplate(e.target.value);
-    });
-
-    // Helper function to match select options using normalized comparison
-    function matchSelectOption(selectEl, rawValue) {
-        if (!selectEl || !rawValue) return null;
-        function norm(s) {
-            return (s || "").toString().trim().toLowerCase()
-                .replace(/[\u2013\u2014–—]/g, "-")
-                .replace(/\s+/g, " ");
-        }
-        const target = norm(rawValue);
-        for (let i = 0; i < selectEl.options.length; i++) {
-            const opt = selectEl.options[i];
-            const vNorm = norm(opt.value);
-            const tNorm = norm(opt.text);
-            if (vNorm === target || tNorm === target) return opt.value;
-            if (target.indexOf(vNorm) !== -1 || target.indexOf(tNorm) !== -1) return opt.value;
-            if (vNorm.indexOf(target) !== -1 || tNorm.indexOf(target) !== -1) return opt.value;
-        }
-        return null;
-    }
-
-    // Helper function to match datalist options using normalized comparison
-    function matchDatalistOption(inputEl, rawValue) {
-        if (!inputEl || !rawValue) return rawValue;
-        const listId = inputEl.getAttribute("list");
-        if (!listId) return rawValue;
-        const dl = byId(listId);
-        if (!dl || !dl.options) return rawValue;
-        function norm(s) {
-            return (s || "").toString().trim().toLowerCase()
-                .replace(/[\u2013\u2014–—]/g, "-")
-                .replace(/\s+/g, " ");
-        }
-        const target = norm(rawValue);
-        for (let i = 0; i < dl.options.length; i++) {
-            const optVal = dl.options[i].value;
-            const optNorm = norm(optVal);
-            if (optNorm === target) return optVal;
-            if (optNorm.indexOf(target) !== -1 || target.indexOf(optNorm) !== -1) return optVal;
-        }
-        return rawValue;
-    }
-
-    // Clean, robust deterministic parser for raw pasted CCTV reports
-    function parseRawCctvReport(rawText) {
-        if (!rawText || typeof rawText !== "string") return null;
-
-        const result = {
-            site: "",
-            date: "",
-            dateIso: "",
-            timeObserved: "",
-            timeStart: "",
-            timeEnd: "",
-            duration: "",
-            violation: "",
-            agent: "",
-            teamLeader: "",
-            om: "",
-            account: "",
-            incident: "",
-            remarks: "",
-            unresolved: []
-        };
-
-        const text = rawText.replace(/\r\n/g, "\n").replace(/\r/g, "\n").trim();
-
-        // 1. SITE / LOCATION
-        const siteMatch = text.match(/(?:Location|Site)\s*[:\-\u2013\u2014]\s*([^\n\r@]+?)(?=\s+(?:Date|Time|Name|\bTL\b|\bOM\b|Account|@|\.mp4|\n|$))/i);
-        if (siteMatch) {
-            let rawSite = siteMatch[1].trim().replace(/[\u2013\u2014–—]/g, "-").replace(/\s+/g, " ");
-            const knownSites = [
-                "Mabini Site A - 1st Floor",
-                "Mabini Site A - 2nd Floor",
-                "Mabini Site B1 - 2nd Floor",
-                "Mabini Site B2 - 3rd Floor",
-                "Mabini Site B2 - 4th Floor",
-                "Ecoland Site",
-                "MAA 4th Floor",
-                "MAA 5th Floor",
-                "MAA 6th Floor",
-                "Gensan Site",
-                "CDO Site",
-                "Digos Site"
-            ];
-            const matched = knownSites.find(function(s) {
-                return s.toLowerCase() === rawSite.toLowerCase() || rawSite.toLowerCase().indexOf(s.toLowerCase()) !== -1;
-            });
-            result.site = matched || rawSite;
-        } else {
-            result.unresolved.push("Site");
-        }
-
-        // 2. DATE
-        const dateMatch = text.match(/(?:Date)\s*[:\-\u2013\u2014]\s*([A-Za-z]+ \d{1,2},? \d{4}|\d{4}-\d{2}-\d{2}|\d{1,2}\/\d{1,2}\/\d{4})/i);
-        if (dateMatch) {
-            const rawDateStr = dateMatch[1].trim();
-            result.date = rawDateStr;
-            try {
-                const d = new Date(rawDateStr);
-                if (!isNaN(d.getTime())) {
-                    const yyyy = d.getFullYear();
-                    const mm = String(d.getMonth() + 1).padStart(2, "0");
-                    const dd = String(d.getDate()).padStart(2, "0");
-                    result.dateIso = yyyy + "-" + mm + "-" + dd;
-                }
-            } catch (_) {}
-        } else {
-            result.unresolved.push("Date");
-        }
-
-        // 3. TIME OBSERVED & DURATION
-        const timeRangeMatch = text.match(/(?:(?:from|observed(?:\s+an?\s+\w+)?\s+from|Time Observed\s*[:\-\u2013\u2014]?|Time\s*[:\-\u2013\u2014]?)\s*)?(\d{1,2}:\d{2}(?::\d{2})?\s*(?:AM|PM|am|pm)?)\s*(?:to|-|\u2013|\u2014|–|—|until)\s*(\d{1,2}:\d{2}(?::\d{2})?\s*(?:AM|PM|am|pm))/i);
-        if (timeRangeMatch) {
-            let t1 = timeRangeMatch[1].trim();
-            let t2 = timeRangeMatch[2].trim();
-            if (!/(?:AM|PM)/i.test(t1) && /(?:AM|PM)/i.test(t2)) {
-                const period = t2.match(/(?:AM|PM)/i)[0];
-                t1 = t1 + " " + period;
-            }
-            result.timeStart = t1;
-            result.timeEnd = t2;
-            result.timeObserved = t1 + " \u2013 " + t2;
-        } else {
-            result.unresolved.push("Time Observed");
-        }
-
-        const durationMatch = text.match(/(?:with a (?:total )?duration of\s+|duration\s*[:\-\u2013\u2014]\s*)(approximately \d+\s*(?:minutes?|mins?|hours?|hrs?|seconds?|secs?)|\d+\s*(?:minutes?|mins?|hours?|hrs?|seconds?|secs?))/i);
-        if (durationMatch) {
-            result.duration = durationMatch[1].trim();
-        }
-
-        // 4. VIOLATION DETECTION
-        if (/sleep(?:ing|s)?\b/i.test(text)) {
-            result.violation = "Sleeping";
-        } else if (/loiter(?:ing)?\b/i.test(text)) {
-            result.violation = "Loitering";
-        } else if (/away from (?:workstation|desk)\b/i.test(text)) {
-            result.violation = "Away from workstation";
-        } else if (/(?:phone|cellphone|mobile)/i.test(text)) {
-            result.violation = "Unauthorized phone use";
-        } else if (/pc turned off|computer turned off|shutdown\b/i.test(text)) {
-            result.violation = "PC turned off";
-        } else if (/unattended|unlocked\b/i.test(text)) {
-            result.violation = "Unattended workstation";
-        } else {
-            result.unresolved.push("Violation");
-        }
-
-        // 5. AGENT / SUBJECT NAME
-        const agentMatch = text.match(/(?:Name of agent|Agent Name)\s*[:\-\u2013\u2014]?\s*([^\n\r]+?)(?=\s+(?:\bTl\b|Team Leader|\bOM\b|Operations Manager|Account|Campaign|Violation|Site|Date)|\s*$)/i)
-            || text.match(/\bAgent\s*[:\-\u2013\u2014]\s*([^\n\r]+?)(?=\s+(?:\bTl\b|Team Leader|\bOM\b|Operations Manager|Account|Campaign|Violation|Site|Date)|\s*$)/i);
-        if (agentMatch) {
-            result.agent = agentMatch[1].trim();
-        } else {
-            result.unresolved.push("Agent Name");
-        }
-
-        // 6. TEAM LEADER
-        const tlMatch = text.match(/\b(?:Tl|Team Leader)\b(?!\s*s\b)\s*[:\-\u2013\u2014]?\s*([^\n\r]+?)(?=\s+(?:\bOM\b|Operations Manager|Account|Campaign|\bAgent\b|Name of agent|Violation|Site|Date)|\s*$)/i);
-        if (tlMatch) {
-            let rawTl = tlMatch[1].trim();
-            const matchedTl = (typeof SOURCE_TLS !== "undefined" ? SOURCE_TLS : []).find(function(t) {
-                return t.toLowerCase() === rawTl.toLowerCase();
-            });
-            result.teamLeader = matchedTl || rawTl;
-        } else {
-            result.unresolved.push("Team Leader");
-        }
-
-        // 7. OM
-        const omMatch = text.match(/\b(?:OM|Operations Manager)\b\s*[:\-\u2013\u2014]?\s*([^\n\r@]+?)(?=\s+(?:Account|Campaign|\bAgent\b|Name of agent|\bTl\b|Team Leader|Violation|Site|Date)|\s*$)/i);
-        if (omMatch) {
-            let rawOm = omMatch[1].trim();
-            const matchedOm = (typeof SOURCE_OMS !== "undefined" ? SOURCE_OMS : []).find(function(o) {
-                return o.toLowerCase() === rawOm.toLowerCase();
-            });
-            result.om = matchedOm || rawOm;
-        } else {
-            result.unresolved.push("OM");
-        }
-
-        // 8. ACCOUNT / CAMPAIGN
-        const accountMatch = text.match(/(?:Account|Campaign)\s*[:\-\u2013\u2014]?\s*([^\n\r]+?)(?=\s+(?:Agent|Name of agent|Tl\b|Team Leader|OM\b|Violation|Site|Date)|\s*$)/i);
-        if (accountMatch) {
-            result.account = accountMatch[1].trim();
-        } else {
-            const tagMatch = text.match(/@([A-Za-z0-9_\-]+)/);
-            if (tagMatch) {
-                const tag = tagMatch[1];
-                const matchedAcct = (typeof SOURCE_ACCOUNTS !== "undefined" ? SOURCE_ACCOUNTS : []).find(function(a) {
-                    return a.toLowerCase() === tag.toLowerCase() || a.toLowerCase().indexOf(tag.toLowerCase() + " -") === 0 || a.toLowerCase().indexOf(tag.toLowerCase() + " |") === 0;
-                });
-                if (matchedAcct) result.account = matchedAcct;
-            }
-        }
-
-        // 9. INCIDENT & ACTION TAKEN / REMARKS
-        const violationWord = result.violation ? result.violation.toLowerCase() : "in violation of policy";
-        let incTimeStr = "";
-        if (result.timeStart && result.timeEnd) {
-            incTimeStr = "from " + result.timeStart + " to " + result.timeEnd;
-        } else if (result.timeObserved) {
-            incTimeStr = "from " + result.timeObserved.replace(/[\u2013\u2014–—]/g, "to");
-        }
-        let incParts = [];
-        if (incTimeStr) incParts.push(incTimeStr);
-        if (result.duration) incParts.push("for " + result.duration);
-        const timingStr = incParts.length > 0 ? (" " + incParts.join(", ")) : "";
-        result.incident = "The agent was observed " + violationWord + timingStr + ".";
-
-        let responseText = "";
-        const respStartMatch = text.match(/(?:good morning\s*,\s*(?:sir|cctv)|good afternoon\s*,\s*(?:sir|cctv)|response\s*[:\-\u2013\u2014]|explanation\s*[:\-\u2013\u2014]|tl response\s*[:\-\u2013\u2014]|the agent was not feeling well|we understand the concern)/i);
-        if (respStartMatch) {
-            const respIdx = respStartMatch.index;
-            const afterResp = text.substring(respIdx);
-            const cutMatch = afterResp.match(/(?:Name of agent|Agent\s*:|\bTl\b\s+[A-Z]|\bOM\b\s+[A-Z])/i);
-            responseText = cutMatch ? afterResp.substring(0, cutMatch.index).trim() : afterResp.trim();
-        }
-
-        responseText = responseText
-            .replace(/@?[A-Za-z0-9_\-\s]+\.(?:mp4|mov|avi|mkv|jpg|jpeg|png)/gi, "")
-            .replace(/good morning\s*,?\s*(?:sir|cctv)?\.?/gi, "")
-            .replace(/good afternoon\s*,?\s*(?:sir|cctv)?\.?/gi, "")
-            .replace(/thank you\s*,?\.?/gi, "")
-            .replace(/thanks\s*,?\.?/gi, "")
-            .replace(/\s+/g, " ")
-            .trim();
-
-        if (responseText) {
-            if (/not feeling well/i.test(responseText) && /file (?:the )?NOC/i.test(responseText)) {
-                result.remarks = "The Team Leader explained that the agent was not feeling well and was sick during the time of the incident. The concern was acknowledged, and the Team Leader confirmed that an NOC would be filed in accordance with the company COD.";
-            } else {
-                const leaderTitle = result.teamLeader ? "Team Leader" : "Leadership";
-                let cleanResp = responseText;
-                if (/^the agent/i.test(cleanResp)) {
-                    result.remarks = "The " + leaderTitle + " explained that " + cleanResp.charAt(0).toLowerCase() + cleanResp.slice(1);
-                } else {
-                    result.remarks = "The " + leaderTitle + " acknowledged the report: " + cleanResp;
-                }
-                if (!result.remarks.endsWith(".")) result.remarks += ".";
-            }
-        } else {
-            const leaderTitle = result.teamLeader ? ("Team Leader (" + result.teamLeader + ")") : "Team Leader";
-            result.remarks = "The " + leaderTitle + " was informed via Teams. Observation acknowledged and case documented for operational compliance.";
-        }
-
-        // 9. CCTV CLIP LINK (Facebook, Drive, SharePoint, OneDrive, mp4, etc.)
-        const clipMatch = text.match(/(https?:\/\/[^\s<>"'\)]+(?:facebook\.com|fb\.watch|drive\.google\.com|sharepoint\.com|1drv\.ms|\.mp4|\.mov)[^\s<>"'\)]*)/i);
-        if (clipMatch) {
-            result.clipLink = clipMatch[1].trim();
-        }
-
-        return result;
-    }
-
-    // Function to apply parsed results to existing EDR fields
-    function applyParsedEdrReport(parsed) {
-        if (!parsed) return;
-        const populatedElements = [];
-
-        if (parsed.site && byId("edrSite")) {
-            const matchedSite = matchSelectOption(byId("edrSite"), parsed.site);
-            byId("edrSite").value = matchedSite || parsed.site;
-            byId("edrSite").dispatchEvent(new Event("change"));
-            populatedElements.push(byId("edrSite"));
-        }
-
-        if (parsed.dateIso && byId("edrDate")) {
-            byId("edrDate").value = parsed.dateIso;
-            byId("edrDate").dispatchEvent(new Event("change"));
-            populatedElements.push(byId("edrDate"));
-        }
-
-        if (parsed.timeObserved && byId("edrTimeObserved")) {
-            byId("edrTimeObserved").value = parsed.timeObserved;
-            byId("edrTimeObserved").dispatchEvent(new Event("input"));
-            populatedElements.push(byId("edrTimeObserved"));
-        }
-
-        if (parsed.teamLeader && byId("edrSupervisorName")) {
-            setEdrChoice("edrSupervisorRole", "edrSupervisorRoleButtons", "Team Leader");
-            refreshSupervisorOptions();
-            const matchedTl = matchDatalistOption(byId("edrSupervisorName"), parsed.teamLeader);
-            byId("edrSupervisorName").value = matchedTl || parsed.teamLeader;
-            byId("edrSupervisorName").dispatchEvent(new Event("input"));
-            populatedElements.push(byId("edrSupervisorName"));
-        }
-
-        if (parsed.om && byId("edrOmName")) {
-            const matchedOm = matchDatalistOption(byId("edrOmName"), parsed.om);
-            byId("edrOmName").value = matchedOm || parsed.om;
-            byId("edrOmName").dispatchEvent(new Event("input"));
-            populatedElements.push(byId("edrOmName"));
-        }
-
-        if (parsed.agent && byId("edrSubjectName")) {
-            setEdrChoice("edrSubjectType", "edrSubjectTypeButtons", "Agent/s");
-            refreshSubjectOptions();
-            byId("edrSubjectName").value = parsed.agent;
-            byId("edrSubjectName").dispatchEvent(new Event("input"));
-            populatedElements.push(byId("edrSubjectName"));
-        }
-
-        if (parsed.account && byId("edrAccount")) {
-            const matchedAcct = matchDatalistOption(byId("edrAccount"), parsed.account);
-            byId("edrAccount").value = matchedAcct || parsed.account;
-            byId("edrAccount").dispatchEvent(new Event("input"));
-            populatedElements.push(byId("edrAccount"));
-        }
-
-        if (parsed.violation && byId("edrQuickTemplates")) {
-            const v = parsed.violation.toLowerCase();
-            if (v.indexOf("sleep") !== -1) byId("edrQuickTemplates").value = "sleeping";
-            else if (v.indexOf("loiter") !== -1) byId("edrQuickTemplates").value = "loitering";
-            else if (v.indexOf("away") !== -1) byId("edrQuickTemplates").value = "away";
-            else if (v.indexOf("phone") !== -1) byId("edrQuickTemplates").value = "phone";
-            else if (v.indexOf("pc") !== -1) byId("edrQuickTemplates").value = "pcturnedoff";
-            else if (v.indexOf("unattend") !== -1) byId("edrQuickTemplates").value = "unattended";
-        }
-
-        if (parsed.incident && byId("edrIncident")) {
-            byId("edrIncident").value = parsed.incident;
-            byId("edrIncident").dispatchEvent(new Event("input"));
-            populatedElements.push(byId("edrIncident"));
-        }
-
-        if (parsed.remarks && byId("edrActionRemarks")) {
-            byId("edrActionRemarks").value = parsed.remarks;
-            byId("edrActionRemarks").dispatchEvent(new Event("input"));
-            populatedElements.push(byId("edrActionRemarks"));
-        }
-
-        if (parsed.clipLink) {
-            if (byId("edrAiClipLink")) byId("edrAiClipLink").value = parsed.clipLink;
-            if (byId("edrClipLink")) byId("edrClipLink").value = parsed.clipLink;
-        } else if (byId("edrAiClipLink") && byId("edrAiClipLink").value.trim()) {
-            if (byId("edrClipLink")) byId("edrClipLink").value = byId("edrAiClipLink").value.trim();
-        }
-
-        // Subtly highlight newly populated controls
-        populatedElements.forEach(function(el) {
-            el.classList.add("edr-field-extracted");
-            setTimeout(function() {
-                el.classList.remove("edr-field-extracted");
-            }, 2500);
-        });
-
-        // Update status message
-        const statusEl = byId("edrRawStatus");
-        if (statusEl) {
-            if (parsed.unresolved && parsed.unresolved.length > 0) {
-                statusEl.textContent = "EDR fields extracted (Could not determine: " + parsed.unresolved.join(", ") + ") \u2014 review before saving.";
-                statusEl.style.color = "#d37c35";
-            } else {
-                statusEl.textContent = "All EDR fields extracted successfully \u2014 review before saving.";
-                statusEl.style.color = "var(--brand-success, #22a06b)";
-            }
-            statusEl.hidden = false;
-        }
-
-        showToast("EDR fields extracted \u2014 review before saving.", "success");
-    }
-
-    // Event listener for Analyze & Fill EDR button
-    byId("edrAnalyzeBtn") && byId("edrAnalyzeBtn").addEventListener("click", function() {
-        const raw = byId("edrRawImport") ? byId("edrRawImport").value.trim() : "";
-        if (!raw) {
-            showToast("Please paste a raw CCTV observation report first.", "info");
-            byId("edrRawImport") && byId("edrRawImport").focus();
-            return;
-        }
-
-        const parsed = parseRawCctvReport(raw);
-        if (parsed) {
-            applyParsedEdrReport(parsed);
-        } else {
-            showToast("Could not parse the provided text.", "error");
-        }
-    });
-
-    // Unified handler for Generate EDR button (supports both edrGenerateBtn and edrAnalyzeBtn)
-    function executeEdrGeneration() {
-        const raw = byId("edrRawImport") ? byId("edrRawImport").value.trim() : "";
-        const clipInput = byId("edrAiClipLink") ? byId("edrAiClipLink").value.trim() : "";
-
-        if (clipInput && byId("edrClipLink")) {
-            byId("edrClipLink").value = clipInput;
-        }
-
-        if (!raw) {
-            if (clipInput) {
-                renderLiveEdrPreview();
-                showToast("CCTV Clip link captured.", "info");
-                return;
-            }
-            showToast("Please paste a raw CCTV observation report first.", "info");
-            byId("edrRawImport") && byId("edrRawImport").focus();
-            return;
-        }
-
-        const parsed = parseRawCctvReport(raw);
-        if (parsed) {
-            applyParsedEdrReport(parsed);
-            if (clipInput && byId("edrClipLink")) {
-                byId("edrClipLink").value = clipInput;
-            }
-            renderLiveEdrPreview();
-        } else {
-            showToast("Could not parse the provided text.", "error");
-        }
-    }
-
-    byId("edrGenerateBtn") && byId("edrGenerateBtn").addEventListener("click", executeEdrGeneration);
-    byId("edrAnalyzeBtn") && byId("edrAnalyzeBtn").addEventListener("click", executeEdrGeneration);
-
-    // Unified handler for Clear Raw / Clear Input button
-    function executeEdrClearInput() {
-        if (byId("edrRawImport")) byId("edrRawImport").value = "";
-        if (byId("edrAiClipLink")) byId("edrAiClipLink").value = "";
-        const statusEl = byId("edrRawStatus");
-        if (statusEl) {
-            statusEl.textContent = "";
-            statusEl.hidden = true;
-        }
-        showToast("Raw report input cleared.", "info");
-    }
-
-    byId("edrClearAiBtn") && byId("edrClearAiBtn").addEventListener("click", executeEdrClearInput);
-    byId("edrClearRawBtn") && byId("edrClearRawBtn").addEventListener("click", executeEdrClearInput);
-
-    // Robust handler for Generate EDR button
-    function handleGenerateEdr() {
-        const rough = byId("edrRoughNotes") ? byId("edrRoughNotes").value.trim() : "";
-        const rawImport = byId("edrRawImport") ? byId("edrRawImport").value.trim() : "";
-        const tplKey = byId("edrQuickTemplates") ? byId("edrQuickTemplates").value : "";
-        const subjType = byId("edrSubjectType") ? byId("edrSubjectType").value : "Agent/s";
-        const subjName = byId("edrSubjectName") ? byId("edrSubjectName").value.trim() : "";
-        const respRole = byId("edrSupervisorRole") ? byId("edrSupervisorRole").value : "Team Leader";
-        const respName = byId("edrSupervisorName") ? byId("edrSupervisorName").value.trim() : "";
-
-        const subjPrefix = subjName ? (subjType + " " + subjName) : subjType;
-        const respPrefix = respName ? (respRole + " " + respName) : respRole;
-
-        if (!rough && !tplKey && !rawImport) {
-            showToast("Enter rough notes, paste a raw report, or choose a quick template first.", "info");
-            if (byId("edrRoughNotes")) byId("edrRoughNotes").focus();
-            return;
-        }
-
-        if (rough) {
-            let inc = rough.endsWith(".") ? rough : (rough + ".");
-            if (subjName && inc.toLowerCase().indexOf(subjName.toLowerCase()) === -1) {
-                inc = subjPrefix + ": " + inc;
-            }
-            byId("edrIncident").value = inc;
-            byId("edrActionRemarks").value = respPrefix + " was informed via Teams. Observation acknowledged and case documented for operational compliance.";
-        } else if (rawImport) {
-            const parsed = parseRawCctvReport(rawImport);
-            if (parsed) {
-                applyParsedEdrReport(parsed);
-                return;
-            }
-        } else if (tplKey) {
-            applyEdrQuickTemplate(tplKey);
-        }
-
-        byId("edrIncident") && byId("edrIncident").dispatchEvent(new Event("input"));
-        byId("edrActionRemarks") && byId("edrActionRemarks").dispatchEvent(new Event("input"));
-        showToast("EDR content drafted! Review and edit before creating.", "success");
-    }
-
-    byId("edrGenerateSmartBtn") && byId("edrGenerateSmartBtn").addEventListener("click", handleGenerateEdr);
-
-    // AI-ready abstraction for future Supabase Edge Function integration
-    window.generateEdrSmartContent = async function(context) {
-        if (window.CCTV_AI_ENDPOINT) {
-            try {
-                const res = await fetch(window.CCTV_AI_ENDPOINT, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(context)
-                });
-                if (res.ok) return await res.json();
-            } catch (e) {
-                console.warn("AI endpoint unreachable, falling back to deterministic template:", e);
-            }
-        }
-        return handleGenerateEdr();
-    };
-
-    // Smart Masterlist Auto-Suggest
-    byId("edrSupervisorName") && byId("edrSupervisorName").addEventListener("change", function() {
-        const val = byId("edrSupervisorName") ? byId("edrSupervisorName").value.trim() : "";
-        if (!val) return;
-        try {
-            const hrList = Array.isArray(window.__cctvHrAssignments) ? window.__cctvHrAssignments : [];
-            const match = hrList.find(function(h) {
-                return h.omTeam && h.omTeam.toLowerCase().indexOf(val.toLowerCase()) !== -1;
-            });
-            if (match && !byId("edrOmName").value) {
-                byId("edrOmName").value = match.omTeam.replace(/^Team\s+/i, "");
-                byId("edrOmName").dispatchEvent(new Event("input"));
-            }
-        } catch (_) {}
-    });
-byId("edrSaveBtn").addEventListener("click", saveReport);
+    byId("edrSaveBtn").addEventListener("click", saveReport);
     byId("edrClearFormBtn").addEventListener("click", async () => {
         clearForm();
         await pushEdrHistory("Cleared EDR form");
@@ -29860,23 +28990,11 @@ byId("edrSaveBtn").addEventListener("click", saveReport);
     byId("edrUnselectAllBtn").addEventListener("click", () => selectAll(false));
     byId("edrFacebookText").addEventListener("input", () => {
         refreshOutput();
-    renderLiveEdrPreview();
         persistEdrWorkspace();
         scheduleFacebookHistory();
     });
-    byId("edrClipLink").addEventListener("input", (e) => {
-        if (byId("edrAiClipLink")) byId("edrAiClipLink").value = e.target.value;
+    byId("edrClipLink").addEventListener("input", () => {
         if (editingId) return;
-    });
-
-    byId("edrAiClipLink")?.addEventListener("input", (e) => {
-        if (byId("edrClipLink")) byId("edrClipLink").value = e.target.value;
-        renderLiveEdrPreview();
-    });
-
-    byId("edrAiClipLink")?.addEventListener("change", (e) => {
-        if (byId("edrClipLink")) byId("edrClipLink").value = e.target.value;
-        renderLiveEdrPreview();
     });
     byId("edrCopyAllBtn").addEventListener("click", copyAll);
     byId("edrClearAllBtn").addEventListener("click", clearAll);
@@ -29895,13 +29013,11 @@ byId("edrSaveBtn").addEventListener("click", saveReport);
         byId(id)?.addEventListener("input", () => {
             persistEdrWorkspace();
             scheduleFormHistory();
-            if (typeof renderLiveEdrPreview === "function") renderLiveEdrPreview();
         });
 
         byId(id)?.addEventListener("change", () => {
             persistEdrWorkspace();
             scheduleFormHistory();
-            if (typeof renderLiveEdrPreview === "function") renderLiveEdrPreview();
         });
     });
 
@@ -29932,107 +29048,7 @@ byId("edrSaveBtn").addEventListener("click", saveReport);
     byId("edrHistoryRedoBtn")?.addEventListener("click", redoEdrHistory);
     byId("edrClearHistoryBtn")?.addEventListener("click", clearEdrHistory);
     byId("edrHistoryClose")?.addEventListener("click", closeEdrHistoryModal);
-        byId("edrHistoryBackdrop")?.addEventListener("click", closeEdrHistoryModal);
-
-    function switchEdrMode(mode) {
-        const aiTab = byId("edrModeAiTab");
-        const manualTab = byId("edrModeManualTab");
-        const aiSec = byId("edrAiModeSection");
-        const manualSec = byId("edrManualModeSection");
-
-        if (mode === "ai") {
-            aiTab?.classList.add("active");
-            aiTab?.setAttribute("aria-selected", "true");
-            manualTab?.classList.remove("active");
-            manualTab?.setAttribute("aria-selected", "false");
-
-            if (aiSec) {
-                aiSec.classList.add("active");
-                aiSec.hidden = false;
-            }
-            if (manualSec) {
-                manualSec.classList.remove("active");
-                manualSec.hidden = true;
-            }
-        } else {
-            manualTab?.classList.add("active");
-            manualTab?.setAttribute("aria-selected", "true");
-            aiTab?.classList.remove("active");
-            aiTab?.setAttribute("aria-selected", "false");
-
-            if (manualSec) {
-                manualSec.classList.add("active");
-                manualSec.hidden = false;
-            }
-            if (aiSec) {
-                aiSec.classList.remove("active");
-                aiSec.hidden = true;
-            }
-        }
-    }
-
-    byId("edrModeAiTab")?.addEventListener("click", () => switchEdrMode("ai"));
-    byId("edrModeManualTab")?.addEventListener("click", () => switchEdrMode("manual"));
-
-    function renderLiveEdrPreview() {
-        const target = byId("edrLivePreviewContent");
-        if (!target) return;
-
-        const site = byId("edrSite") ? byId("edrSite").value.trim() : "";
-        const date = byId("edrDate") ? byId("edrDate").value.trim() : "";
-        const time = byId("edrTimeObserved") ? byId("edrTimeObserved").value.trim() : "";
-        const supRole = byId("edrSupervisorRole") ? byId("edrSupervisorRole").value.trim() : "Team Leader";
-        const supName = byId("edrSupervisorName") ? byId("edrSupervisorName").value.trim() : "";
-        const omName = byId("edrOmName") ? byId("edrOmName").value.trim() : "";
-        const subjType = byId("edrSubjectType") ? byId("edrSubjectType").value.trim() : "Agent/s";
-        const subjName = byId("edrSubjectName") ? byId("edrSubjectName").value.trim() : "";
-        const account = byId("edrAccount") ? byId("edrAccount").value.trim() : "";
-        const incident = byId("edrIncident") ? byId("edrIncident").value.trim() : "";
-        const remarks = byId("edrActionRemarks") ? byId("edrActionRemarks").value.trim() : "";
-        const clipLink = byId("edrClipLink") ? byId("edrClipLink").value.trim() : "";
-
-        const hasAnyContent = Boolean(
-            site || date || time || supName || omName || subjName || account || incident || remarks || currentScreenshot || clipLink
-        );
-
-        if (!hasAnyContent) {
-            target.innerHTML = '<div class="edr-preview-placeholder">Live preview will appear here as you type or generate an EDR.</div>';
-            return;
-        }
-
-        const supText = [supRole, supName].filter(Boolean).join(" ");
-        const subjText = [subjType, subjName].filter(Boolean).join(" ");
-
-        let html = '<div class="edr-preview-table-wrap"><table class="edr-preview-table" style="width:100%;border-collapse:collapse;font-size:13px;">';
-        
-        if (site || date) {
-            html += <tr><td style="padding:6px 10px;font-weight:600;width:140px;color:var(--ops-muted, #94a3b8);border-bottom:1px solid rgba(255,255,255,0.06);">Location / Date</td><td style="padding:6px 10px;border-bottom:1px solid rgba(255,255,255,0.06);"></td></tr>;
-        }
-        if (time) {
-            html += <tr><td style="padding:6px 10px;font-weight:600;color:var(--ops-muted, #94a3b8);border-bottom:1px solid rgba(255,255,255,0.06);">Time Observed</td><td style="padding:6px 10px;border-bottom:1px solid rgba(255,255,255,0.06);"></td></tr>;
-        }
-        if (subjText) {
-            html += <tr><td style="padding:6px 10px;font-weight:600;color:var(--ops-muted, #94a3b8);border-bottom:1px solid rgba(255,255,255,0.06);">Subject</td><td style="padding:6px 10px;border-bottom:1px solid rgba(255,255,255,0.06);"></td></tr>;
-        }
-        if (supText || omName) {
-            html += <tr><td style="padding:6px 10px;font-weight:600;color:var(--ops-muted, #94a3b8);border-bottom:1px solid rgba(255,255,255,0.06);">Supervisor / OM</td><td style="padding:6px 10px;border-bottom:1px solid rgba(255,255,255,0.06);"></td></tr>;
-        }
-        if (incident) {
-            html += <tr><td style="padding:6px 10px;font-weight:600;color:var(--ops-muted, #94a3b8);border-bottom:1px solid rgba(255,255,255,0.06);">Incident</td><td style="padding:6px 10px;border-bottom:1px solid rgba(255,255,255,0.06);white-space:pre-wrap;"></td></tr>;
-        }
-        if (remarks) {
-            html += <tr><td style="padding:6px 10px;font-weight:600;color:var(--ops-muted, #94a3b8);border-bottom:1px solid rgba(255,255,255,0.06);">Action / Remarks</td><td style="padding:6px 10px;border-bottom:1px solid rgba(255,255,255,0.06);white-space:pre-wrap;"></td></tr>;
-        }
-        if (clipLink) {
-            html += <tr><td style="padding:6px 10px;font-weight:600;color:var(--ops-muted, #94a3b8);border-bottom:1px solid rgba(255,255,255,0.06);">CCTV Clip</td><td style="padding:6px 10px;border-bottom:1px solid rgba(255,255,255,0.06);"><a href="" target="_blank" rel="noopener" style="color:var(--ops-accent, #38bdf8);"></a></td></tr>;
-        }
-        if (currentScreenshot) {
-            html += <tr><td style="padding:6px 10px;font-weight:600;color:var(--ops-muted, #94a3b8);border-bottom:1px solid rgba(255,255,255,0.06);">Screenshot</td><td style="padding:6px 10px;border-bottom:1px solid rgba(255,255,255,0.06);"><img src="" style="max-width:280px;max-height:160px;border-radius:6px;border:1px solid rgba(255,255,255,0.1);" alt="EDR Screenshot Preview" /></td></tr>;
-        }
-
-        html += '</table></div>';
-        target.innerHTML = html;
-    }
+    byId("edrHistoryBackdrop")?.addEventListener("click", closeEdrHistoryModal);
 
     byId("edrDocsSetupBtn").addEventListener("click", openEdrDocsSetup);
     byId("edrDocsReloadBtn").addEventListener("click", () => loadSavedEdrsFromDocs(true));
@@ -30088,7 +29104,6 @@ byId("edrSaveBtn").addEventListener("click", saveReport);
     clearForm();
     renderList();
     refreshOutput();
-    renderLiveEdrPreview();
 
     restorePersistentEdrWorkspace().then(() => {
         if (window.CCTV_ACCESS?.isAdmin?.() && isValidEdrDocsUrl(getEdrDocsWebAppUrl())) {
@@ -30128,312 +29143,6 @@ byId("edrSaveBtn").addEventListener("click", saveReport);
         }
     };
 
-})();
-</script>
-
-<script id="edrBulletproofEventDelegationScript">
-// ==========================================================================
-// EDR WORKSPACE: BULLETPROOF EVENT DELEGATION & STATE SYNC
-// ==========================================================================
-(() => {
-    // Helper function para sa pag-ilis sa tab
-    function setEdrMode(mode) {
-        const aiTab = document.getElementById("edrModeAiTab");
-        const manualTab = document.getElementById("edrModeManualTab");
-        const aiSection = document.getElementById("edrAiModeSection");
-        const manualSection = document.getElementById("edrManualModeSection");
-
-        if (mode === "ai") {
-            if (aiTab) {
-                aiTab.classList.add("active");
-                aiTab.setAttribute("aria-selected", "true");
-            }
-            if (manualTab) {
-                manualTab.classList.remove("active");
-                manualTab.setAttribute("aria-selected", "false");
-            }
-            if (aiSection) {
-                aiSection.style.setProperty("display", "block", "important");
-                aiSection.classList.add("active");
-                aiSection.hidden = false;
-            }
-            if (manualSection) {
-                manualSection.style.setProperty("display", "none", "important");
-                manualSection.classList.remove("active");
-                manualSection.hidden = true;
-            }
-        } else if (mode === "manual") {
-            if (manualTab) {
-                manualTab.classList.add("active");
-                manualTab.setAttribute("aria-selected", "true");
-            }
-            if (aiTab) {
-                aiTab.classList.remove("active");
-                aiTab.setAttribute("aria-selected", "false");
-            }
-            if (manualSection) {
-                manualSection.style.setProperty("display", "block", "important");
-                manualSection.classList.add("active");
-                manualSection.hidden = false;
-            }
-            if (aiSection) {
-                aiSection.style.setProperty("display", "none", "important");
-                aiSection.classList.remove("active");
-                aiSection.hidden = true;
-            }
-        }
-    }
-
-    // Helper: Update Preview Content
-    function refreshEdrPreview() {
-        const getVal = (id) => {
-            const el = document.getElementById(id);
-            return el ? el.value.trim() : "";
-        };
-
-        const site = getVal("edrSite") || "[Site]";
-        const account = getVal("edrAccount") || "[Account]";
-        const date = getVal("edrDate") || "[Date]";
-        const time = getVal("edrTimeObserved") || "[Time]";
-        const tl = getVal("edrSupervisorName") || "[Team Leader]";
-        const om = getVal("edrOmName") || "[OM]";
-        const agent = getVal("edrSubjectName") || "[Agent]";
-        const incident = getVal("edrIncident") || "No incident details entered.";
-        const remarks = getVal("edrActionRemarks") || "No remarks entered.";
-        const clip = getVal("edrClipLink");
-
-        const topLine = `${site} | CCTV | ${account}`;
-        const topEl = document.getElementById("edrPreviewTopLine");
-        if (topEl) topEl.textContent = topLine;
-
-        const bodyEl = document.getElementById("edrPreviewBody");
-        if (bodyEl) {
-            bodyEl.innerHTML = `
-                <div><strong>TOP LINE:</strong> ${topLine}</div>
-                <div><strong>DATE & TIME:</strong> ${date} ${time ? 'at ' + time : ''}</div>
-                <div><strong>TEAM LEADER:</strong> ${tl}</div>
-                <div><strong>OM:</strong> ${om}</div>
-                <div><strong>AGENT:</strong> ${agent}</div>
-                <div><strong>ACCOUNT:</strong> ${account}</div>
-                <div style="margin-top: 8px;"><strong>INCIDENT:</strong><br>${incident.replace(/\n/g, '<br>')}</div>
-                <div style="margin-top: 8px;"><strong>ACTION TAKEN / REMARKS:</strong><br>${remarks.replace(/\n/g, '<br>')}</div>
-                ${clip ? `<div style="margin-top: 8px;"><strong>CCTV CLIP:</strong> <a href="${clip}" target="_blank" style="color: #38bdf8; word-break: break-all;">${clip}</a></div>` : ''}
-            `;
-        }
-    }
-
-    // 1. GLOBAL CLICK DELEGATION (Madakpan ang tanang clicks bisan kanus-a na-load ang HTML)
-    document.addEventListener("click", async (e) => {
-        const target = e.target;
-        if (!target) return;
-
-        // Tab: AI Mode
-        if (target.closest("#edrModeAiTab")) {
-            e.preventDefault();
-            setEdrMode("ai");
-            return;
-        }
-
-        // Tab: Manual Mode
-        if (target.closest("#edrModeManualTab")) {
-            e.preventDefault();
-            setEdrMode("manual");
-            return;
-        }
-
-        // Button: Edit Result (Switch to manual)
-        if (target.closest("#edrEditResultBtn")) {
-            e.preventDefault();
-            setEdrMode("manual");
-            const manualSec = document.getElementById("edrManualModeSection");
-            if (manualSec) manualSec.scrollIntoView({ behavior: "smooth" });
-            return;
-        }
-
-        // Button: Generate EDR
-        if (target.closest("#edrGenerateBtn") || target.closest("#edrAnalyzeBtn")) {
-            e.preventDefault();
-            const rawEl = document.getElementById("edrRawImport");
-            const aiClipEl = document.getElementById("edrAiClipLink");
-
-            const text = rawEl ? rawEl.value.trim() : "";
-            const aiClip = aiClipEl ? aiClipEl.value.trim() : "";
-
-            if (!text && !aiClip) {
-                alert("Palihog og butang og observation text o clip link.");
-                return;
-            }
-
-            // Sync Clip Link ngadto sa form model
-            if (aiClip) {
-                const manualClip = document.getElementById("edrClipLink");
-                if (manualClip) manualClip.value = aiClip;
-            }
-
-            // Simple resilient extractor
-            const extract = (regex) => {
-                const m = text.match(regex);
-                return m ? m[1].trim() : "";
-            };
-
-            const site = extract(/(?:Site|Location)\s*[:=-]\s*([^\n\r]+)/i) || "Davao Mabini Site A";
-            const date = extract(/(?:Date)\s*[:=-]\s*(\d{4}-\d{2}-\d{2}|\d{1,2}\/\d{1,2}\/\d{2,4})/i) || new Date().toISOString().split('T')[0];
-            const time = extract(/(?:Time)\s*[:=-]\s*([^\n\r]+)/i) || "";
-            const tl = extract(/(?:TL|Team Leader|Supervisor)\s*[:=-]\s*([^\n\r]+)/i);
-            const om = extract(/(?:OM|Operations Manager|Manager)\s*[:=-]\s*([^\n\r]+)/i);
-            const agent = extract(/(?:Subject|Agent|Employee|Name)\s*[:=-]\s*([^\n\r]+)/i);
-            const account = extract(/(?:Account|Campaign)\s*[:=-]\s*([^\n\r]+)/i);
-            const incident = extract(/(?:Incident|Issue|Observation)\s*[:=-]\s*([\s\S]*?)(?:Remarks|Action Taken|$)/i) || text;
-            const remarks = extract(/(?:Remarks|Action Taken)\s*[:=-]\s*([\s\S]*)$/i);
-
-            const setVal = (id, val) => {
-                const el = document.getElementById(id);
-                if (el && val) el.value = val;
-            };
-
-            setVal("edrSite", site);
-            setVal("edrDate", date);
-            setVal("edrTimeObserved", time);
-            setVal("edrSupervisorName", tl);
-            setVal("edrOmName", om);
-            setVal("edrSubjectName", agent);
-            setVal("edrAccount", account);
-            setVal("edrIncident", incident);
-            setVal("edrActionRemarks", remarks);
-
-            const status = document.getElementById("edrRawStatus");
-            if (status) {
-                status.hidden = false;
-                status.textContent = "✓ EDR generated and synced!";
-                setTimeout(() => { status.textContent = ""; }, 3000);
-            }
-
-            refreshEdrPreview();
-            return;
-        }
-
-        // Button: Clear AI Input
-        if (target.closest("#edrClearAiBtn") || target.closest("#edrClearRawBtn")) {
-            e.preventDefault();
-            const rawEl = document.getElementById("edrRawImport");
-            const clipEl = document.getElementById("edrAiClipLink");
-            if (rawEl) rawEl.value = "";
-            if (clipEl) clipEl.value = "";
-            return;
-        }
-
-        // Button: Update Preview Manually
-        if (target.closest("#edrUpdatePreviewBtn")) {
-            e.preventDefault();
-            refreshEdrPreview();
-            return;
-        }
-
-        // Button: Clear Manual Form
-        if (target.closest("#edrClearFormBtn")) {
-            e.preventDefault();
-            ["edrSite", "edrDate", "edrTimeObserved", "edrSupervisorName", "edrOmName", "edrSubjectName", "edrAccount", "edrIncident", "edrActionRemarks", "edrClipLink"].forEach(id => {
-                const el = document.getElementById(id);
-                if (el) el.value = "";
-            });
-            refreshEdrPreview();
-            return;
-        }
-
-        // Button: Copy for MS Teams (Sanitized plain-text to prevent message length limits)
-        if (target.closest("#edrCopyTeamsBtn")) {
-            e.preventDefault();
-            const getVal = (id) => {
-                const el = document.getElementById(id);
-                return el ? el.value.trim() : "";
-            };
-
-            const site = getVal("edrSite");
-            const account = getVal("edrAccount");
-            const date = getVal("edrDate");
-            const time = getVal("edrTimeObserved");
-            const tl = getVal("edrSupervisorName");
-            const om = getVal("edrOmName");
-            const agent = getVal("edrSubjectName");
-            const incident = getVal("edrIncident");
-            const remarks = getVal("edrActionRemarks");
-            const clip = getVal("edrClipLink");
-
-            // Format as clean, unbloated plain-text Markdown
-            const teamsLines = [
-                `**${site || 'CCTV'} | CCTV OBSERVATION | ${account || 'GENERAL'}**`,
-                `**Date:** ${date} ${time ? `| **Time:** ${time}` : ''}`,
-                `**Team Leader:** ${tl || 'N/A'}`,
-                `**Operations Manager:** ${om || 'N/A'}`,
-                `**Agent / Subject:** ${agent || 'N/A'}`,
-                `**Account:** ${account || 'N/A'}`,
-                ``,
-                `**Incident Details:**`,
-                `${incident || 'N/A'}`,
-                ``,
-                `**Action Taken / Remarks:**`,
-                `${remarks || 'N/A'}`
-            ];
-
-            if (clip) {
-                teamsLines.push(``);
-                teamsLines.push(`**CCTV Clip Link:** ${clip}`);
-            }
-
-            const teamsPayload = teamsLines.join("\n");
-
-            try {
-                await navigator.clipboard.writeText(teamsPayload);
-                const notice = document.getElementById("edrCopyNotice");
-                if (notice) {
-                    notice.textContent = "✓ Copied clean format for Teams!";
-                    setTimeout(() => { notice.textContent = ""; }, 3500);
-                }
-            } catch (err) {
-                console.error("Clipboard error:", err);
-                alert("Failed to auto-copy. Please manually copy from preview.");
-            }
-            return;
-        }
-    });
-
-    // 2. LIVE INPUT TYPING SYNC (Mo-update ang preview samtang nag-type)
-    document.addEventListener("input", (e) => {
-        const id = e.target ? e.target.id : "";
-        if ([
-            "edrSite", "edrDate", "edrTimeObserved", "edrSupervisorName", 
-            "edrOmName", "edrSubjectName", "edrAccount", "edrIncident", 
-            "edrActionRemarks", "edrClipLink"
-        ].includes(id)) {
-            refreshEdrPreview();
-        }
-    });
-
-    // 3. QUICK TEMPLATE PRESET SELECTION
-    document.addEventListener("change", (e) => {
-        if (e.target && e.target.id === "edrQuickTemplates") {
-            const raw = document.getElementById("edrRawImport");
-            if (!raw) return;
-            const val = e.target.value;
-            const today = new Date().toISOString().split('T')[0];
-
-            if (val === "sleeping") {
-                raw.value = `Date: ${today}\nSite: Davao Mabini Site A\nSubject: Agent John Doe\nTL: Dianne Sombilon\nOM: Mirah Paris Macaorao\nAccount: Spypoint\nIncident: CCTV observed agent sleeping on post during shift at station Bay D-44.\nRemarks: TL notified via Teams; agent was verbally warned.`;
-            } else if (val === "cellphone") {
-                raw.value = `Date: ${today}\nSite: Davao Mabini Site A\nSubject: Agent Jane Smith\nTL: Cris Arandilla\nOM: Mirah Paris Macaorao\nAccount: Nationgraph\nIncident: Active use of personal cellular phone observed on production floor.\nRemarks: Phone confiscated by security; escalated to HR.`;
-            } else if (val === "abandonment") {
-                raw.value = `Date: ${today}\nSite: CDO Site\nSubject: Agent Alex Cruz\nTL: Jovert Monticayan\nOM: Mirah Paris Macaorao\nAccount: HBW Insurance\nIncident: Unauthorized early departure from production station.\nRemarks: Logged in attendance tracker; TL following up.`;
-            }
-            refreshEdrPreview();
-        }
-    });
-
-    // Initial preview render on DOM ready
-    if (document.readyState === "loading") {
-        document.addEventListener("DOMContentLoaded", refreshEdrPreview);
-    } else {
-        refreshEdrPreview();
-    }
 })();
 </script>
 
@@ -36039,20 +34748,7 @@ This account will be removed from CCTV OPS and will no longer be able to sign in
        ====================================================== */
 
     function moveThemeToggle() {
-        if (
-            !ui.themeSlot ||
-            !original.themeContainer
-        ) {
-            return;
-        }
-
-        if (
-            original.themeContainer.parentElement !== ui.themeSlot
-        ) {
-            ui.themeSlot.appendChild(
-                original.themeContainer
-            );
-        }
+        return;
     }
 
 
