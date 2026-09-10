@@ -15,6 +15,7 @@
   <link rel="stylesheet" href="./css/base.css">
   <link rel="stylesheet" href="./css/layout.css">
   <link rel="stylesheet" href="./css/components.css">
+  <link rel="stylesheet" href="./css/workspaces.css">
 
   <style>
     /* Premium Split-View EDR Styling */
@@ -410,7 +411,7 @@
           <span class="nav-badge" id="railEdrBadge">0</span>
         </button>
 
-        <!-- Placeholders for Future Workspaces -->
+        <!-- Workspaces -->
         <button type="button" class="nav-item" id="tabAudit" role="tab" aria-selected="false">
           <svg class="nav-icon" viewBox="0 0 24 24">
             <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
@@ -418,7 +419,7 @@
             <line x1="9" y1="21" x2="9" y2="9"></line>
           </svg>
           <span class="nav-label">CCTV Audit</span>
-          <span class="nav-badge">Phase 2</span>
+          <span class="nav-badge" id="railAuditBadge">0</span>
         </button>
 
         <button type="button" class="nav-item" id="tabSorter" role="tab" aria-selected="false">
@@ -433,6 +434,14 @@
             <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path>
           </svg>
           <span class="nav-label">Maintenance</span>
+        </button>
+
+        <button type="button" class="nav-item" id="tabPending" role="tab" aria-selected="false">
+          <svg class="nav-icon" viewBox="0 0 24 24">
+            <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"></path>
+          </svg>
+          <span class="nav-label">Pending</span>
+          <span class="nav-badge" id="railPendingBadge">0</span>
         </button>
 
         <div class="rail-section-label">Management</div>
@@ -533,7 +542,7 @@
 
       <!-- Viewport: Split-View Layout -->
       <div class="workspace-viewport">
-        <section class="workspace-pane" id="paneEdr">
+        <section class="workspace-pane active" id="paneEdr">
           <div class="edr-split-layout">
 
             <!-- LEFT COLUMN: Manual EDR Form (~55% width) -->
@@ -756,6 +765,177 @@
 
           </div>
         </section>
+
+        <!-- CCTV AUDIT WORKSPACE (TOP: Guard, MIDDLE: Form, BOTTOM: Data Grid) -->
+        <section class="workspace-pane" id="paneAudit" hidden>
+          <div class="audit-workspace-layout">
+
+            <!-- TOP: Smart Audit Guard -->
+            <div class="audit-guard-card" id="auditGuardCard">
+              <div class="guard-header-row">
+                <div class="guard-title-wrap">
+                  <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+                  <span style="font-weight:700; font-size:12px; color:var(--text-primary);">Smart Audit Guard</span>
+                  <span class="badge badge-neutral" id="guardRecordCountBadge">0 records</span>
+                  <span class="badge badge-info" id="guardStatusBadge">Idle</span>
+                  <span style="font-size:10.5px; color:var(--text-muted);" id="guardLastSyncText">No snapshot loaded</span>
+                </div>
+                <div class="guard-actions-row">
+                  <input type="file" id="fileGuardUpload" accept=".xlsx,.xls,.csv" style="display:none;">
+                  <button type="button" class="btn btn-outline btn-sm" id="btnGuardUpload" title="Import XLSX / XLS / CSV from Tracker">
+                    <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                    <span>Import Tracker</span>
+                  </button>
+                  <button type="button" class="btn btn-outline btn-sm" id="btnGuardPaste" title="Paste latest rows copied from Google Sheets">
+                    <svg class="icon icon-sm" viewBox="0 0 24 24"><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>
+                    <span>Paste Rows</span>
+                  </button>
+                  <button type="button" class="btn btn-ghost btn-sm" id="btnGuardClear" title="Clear current tracker snapshot">Clear</button>
+                </div>
+              </div>
+
+              <!-- Issue warnings container -->
+              <div class="guard-issues-box" id="guardIssuesBox" style="display:none;">
+                <!-- Dynamically populated issues -->
+              </div>
+            </div>
+
+            <!-- MIDDLE: Compact CCTV Audit Entry Form -->
+            <div class="audit-form-card">
+              <form id="auditForm" autocomplete="off">
+                <div class="audit-form-grid">
+                  <div class="audit-form-field">
+                    <label for="auditDate">Date <span class="required-dot">*</span></label>
+                    <input type="date" id="auditDate" class="form-control" required>
+                  </div>
+
+                  <div class="audit-form-field">
+                    <label for="auditSite">
+                      <span>Site <span class="required-dot">*</span></span>
+                      <span class="btn-opt-mgmt-wrap" style="display:inline-flex; gap:2px;">
+                        <button type="button" class="btn-opt-mgmt" id="btnAddAuditSite" title="Add Site Option">+</button>
+                        <button type="button" class="btn-opt-mgmt" id="btnRemoveAuditSite" title="Remove Site Option">−</button>
+                      </span>
+                    </label>
+                    <select id="auditSite" class="form-control" required></select>
+                  </div>
+
+                  <div class="audit-form-field">
+                    <label for="auditTlName">TL Name <span class="required-dot">*</span></label>
+                    <input type="text" id="auditTlName" class="form-control" list="listAuditTls" placeholder="Search TL..." required>
+                    <datalist id="listAuditTls"></datalist>
+                  </div>
+
+                  <div class="audit-form-field">
+                    <label for="auditAgentName">Agent Name <span class="required-dot">*</span></label>
+                    <input type="text" id="auditAgentName" class="form-control" placeholder="Agent name..." required>
+                  </div>
+
+                  <div class="audit-form-field">
+                    <label for="auditOmName">
+                      <span>OM Name <span class="required-dot">*</span></span>
+                      <span class="btn-opt-mgmt-wrap" style="display:inline-flex; gap:2px;">
+                        <button type="button" class="btn-opt-mgmt" id="btnAddAuditOm" title="Add OM Option">+</button>
+                        <button type="button" class="btn-opt-mgmt" id="btnRemoveAuditOm" title="Remove OM Option">−</button>
+                      </span>
+                    </label>
+                    <select id="auditOmName" class="form-control" required></select>
+                  </div>
+
+                  <div class="audit-form-field">
+                    <label for="auditAccount">
+                      <span>Account / Campaign <span class="required-dot">*</span></span>
+                      <span class="btn-opt-mgmt-wrap" style="display:inline-flex; gap:2px;">
+                        <button type="button" class="btn-opt-mgmt" id="btnAddAuditAccount" title="Add Campaign Option">+</button>
+                        <button type="button" class="btn-opt-mgmt" id="btnRemoveAuditAccount" title="Remove Campaign Option">−</button>
+                      </span>
+                    </label>
+                    <select id="auditAccount" class="form-control" required></select>
+                  </div>
+
+                  <div class="audit-form-field">
+                    <label for="auditReasonCode">
+                      <span>CCTV Reason <span class="required-dot">*</span></span>
+                      <span class="btn-opt-mgmt-wrap" style="display:inline-flex; gap:2px;">
+                        <button type="button" class="btn-opt-mgmt" id="btnAddAuditReason" title="Add Reason Option">+</button>
+                        <button type="button" class="btn-opt-mgmt" id="btnRemoveAuditReason" title="Remove Reason Option">−</button>
+                      </span>
+                    </label>
+                    <select id="auditReasonCode" class="form-control" required></select>
+                  </div>
+
+                  <div class="audit-form-field" style="max-width:110px;">
+                    <label for="auditNoc">NOC <span class="required-dot">*</span></label>
+                    <select id="auditNoc" class="form-control" required>
+                      <option value="YES">YES</option>
+                      <option value="NO">NO</option>
+                      <option value="Pending">Pending</option>
+                      <option value="Disputed">Disputed</option>
+                    </select>
+                  </div>
+
+                  <div class="audit-form-field" style="grid-column: span 2;">
+                    <label for="auditRemarks">Remarks / Action Taken <span class="required-dot">*</span></label>
+                    <input type="text" id="auditRemarks" class="form-control" placeholder="Observations, coaching, supervisor response..." required>
+                  </div>
+
+                  <div class="audit-form-buttons">
+                    <button type="button" class="btn btn-ghost btn-sm" id="btnAuditClearForm">Clear Form</button>
+                    <button type="submit" class="btn btn-primary btn-sm" id="btnAuditSubmit">
+                      <span id="btnAuditSubmitText">Add Entry to List</span>
+                    </button>
+                  </div>
+                </div>
+              </form>
+            </div>
+
+            <!-- BOTTOM: Data Output Grid (Fills remaining height) -->
+            <div class="audit-grid-card">
+              <div class="audit-grid-header">
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <span style="font-weight:700; font-size:12px; color:var(--text-primary);">Data Output Grid</span>
+                  <span class="badge badge-neutral" id="auditTotalRowsBadge">0 rows</span>
+                  <span class="badge badge-info" id="auditLinkedBadge">0 from EDR</span>
+                </div>
+                <div style="display:flex; align-items:center; gap:6px;">
+                  <button type="button" class="btn btn-danger-ghost btn-sm" id="btnAuditClearAll" title="Clear all CCTV audit rows">Clear All</button>
+                  <button type="button" class="btn btn-primary btn-sm" id="btnAuditCopyTracker" title="Copy to clipboard formatted for Tracker (Arial 10pt)">
+                    <svg class="icon icon-sm" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                    <span>Copy for Tracker</span>
+                  </button>
+                </div>
+              </div>
+
+              <div class="audit-grid-table-wrap">
+                <table class="audit-data-table" id="auditOutputTable">
+                  <thead>
+                    <tr>
+                      <th style="width:36px; text-align:center;">#</th>
+                      <th>Date</th>
+                      <th>Auditor</th>
+                      <th>Site</th>
+                      <th>TL Name</th>
+                      <th>Agent Name</th>
+                      <th>OM Name</th>
+                      <th>Account</th>
+                      <th>CCTV Reason</th>
+                      <th>NOC</th>
+                      <th>Remarks</th>
+                      <th style="width:70px; text-align:center;">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="auditTableBody">
+                    <!-- Injected rows -->
+                  </tbody>
+                </table>
+                <div id="auditEmptyNotice" style="color:var(--text-muted); font-size:11.5px; text-align:center; padding:40px 10px;">
+                  No audit entries recorded. Use the form above or "Send to CCTV Audit" from EDR.
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </section>
       </div>
     </main>
   </div>
@@ -832,6 +1012,27 @@
     </div>
   </div>
 
+  <!-- Smart Audit Guard Paste Modal -->
+  <div class="modal-backdrop" id="modalGuardPaste" hidden>
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 class="modal-title">Paste Tracker Rows</h3>
+        <button type="button" class="btn btn-ghost btn-sm" id="btnCloseGuardPaste">✕</button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size:12px; color:var(--text-secondary); margin:0 0 8px 0;">Paste tab-separated rows copied from your Google Sheets Tracker:</p>
+        <textarea id="txtGuardPaste" class="form-control" rows="8" placeholder="Paste rows here (TSV format)..."></textarea>
+      </div>
+      <div class="modal-footer" style="justify-content:space-between;">
+        <button type="button" class="btn btn-outline btn-sm" id="btnGuardMergePasted">Merge with Existing</button>
+        <div style="display:flex; gap:6px;">
+          <button type="button" class="btn btn-ghost btn-sm" id="btnCancelGuardPaste">Cancel</button>
+          <button type="button" class="btn btn-primary btn-sm" id="btnSubmitGuardPaste">Replace Snapshot</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Global App Confirmation Dialog -->
   <div class="modal-backdrop" id="modalAppConfirm" hidden>
     <div class="modal-dialog modal-dialog-sm">
@@ -855,6 +1056,8 @@
   <!-- External Script Dependencies -->
   <script src="../auth-config.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
   <!-- Internal V2 Modules -->
   <script src="./js/config.js"></script>
@@ -862,6 +1065,7 @@
   <script src="./js/shared.js"></script>
   <script src="./js/services/auth-service.js"></script>
   <script src="./js/services/edr-service.js"></script>
+  <script src="./js/services/audit-service.js"></script>
   <script src="./js/app.js"></script>
 </body>
 </html>

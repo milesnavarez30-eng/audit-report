@@ -8,6 +8,7 @@
   const cfg = window.CCTV_V2_CONFIG;
   const storage = window.CCTV_STORAGE;
   const edr = window.CCTV_EDR;
+  const audit = window.CCTV_AUDIT;
   const auth = window.CCTV_AUTH;
 
   let currentScreenshot = "";
@@ -1141,12 +1142,631 @@
     });
   }
 
+  // =========================================================================
+  // WORKSPACE NAVIGATION SYSTEM
+  // =========================================================================
+  let currentWorkspace = "edr";
+
+  const WORKSPACES = {
+    edr: {
+      tabId: "tabEdr",
+      paneId: "paneEdr",
+      title: "End of the Day Report",
+      subtitle: "Manual Operations"
+    },
+    audit: {
+      tabId: "tabAudit",
+      paneId: "paneAudit",
+      title: "CCTV Audit",
+      subtitle: "Daily Operations Tracker"
+    },
+    sorter: {
+      tabId: "tabSorter",
+      paneId: "paneSorter",
+      title: "AI Sorter",
+      subtitle: "Floor Assignment & Shift Sorting"
+    },
+    maintenance: {
+      tabId: "tabMaintenance",
+      paneId: "paneMaintenance",
+      title: "Maintenance",
+      subtitle: "Daily Inspection & Equipment Report"
+    },
+    pending: {
+      tabId: "tabPending",
+      paneId: "panePending",
+      title: "Pending Reports",
+      subtitle: "Follow-Up & Escalation Tracker"
+    },
+    masterlist: {
+      tabId: "tabMasterlist",
+      paneId: "paneMasterlist",
+      title: "Masterlist",
+      subtitle: "Tracker Hub & HR Assignment"
+    },
+    followup: {
+      tabId: "tabFollowup",
+      paneId: "paneFollowup",
+      title: "Follow Up Reports",
+      subtitle: "Resolution Queue"
+    },
+    history: {
+      tabId: "tabHistory",
+      paneId: "paneHistory",
+      title: "Activity History",
+      subtitle: "Audit Log & Snapshots"
+    },
+    accounts: {
+      tabId: "tabAccounts",
+      paneId: "paneAccounts",
+      title: "Account Management",
+      subtitle: "Access Control & Security"
+    }
+  };
+
+  function switchWorkspace(targetKey) {
+    if (!WORKSPACES[targetKey]) return;
+    currentWorkspace = targetKey;
+
+    // Update nav rail buttons
+    Object.entries(WORKSPACES).forEach(([key, ws]) => {
+      const tabBtn = el(ws.tabId);
+      const paneEl = el(ws.paneId);
+      const isActive = key === targetKey;
+
+      if (tabBtn) {
+        tabBtn.classList.toggle("active", isActive);
+        tabBtn.setAttribute("aria-selected", isActive ? "true" : "false");
+      }
+      if (paneEl) {
+        paneEl.hidden = !isActive;
+        paneEl.classList.toggle("active", isActive);
+      }
+    });
+
+    // Update topbar titles
+    const titleEl = document.querySelector(".workspace-main-title");
+    const subBadge = document.querySelector(".workspace-title-wrap .badge");
+    if (titleEl) titleEl.textContent = WORKSPACES[targetKey].title;
+    if (subBadge) subBadge.textContent = WORKSPACES[targetKey].subtitle;
+
+    // Activate hooks
+    if (targetKey === "audit") {
+      renderAuditTable();
+      renderGuardStatus();
+    }
+  }
+
+  function initWorkspaceNavigation() {
+    Object.keys(WORKSPACES).forEach(wsKey => {
+      const btn = el(WORKSPACES[wsKey].tabId);
+      if (btn) {
+        btn.addEventListener("click", () => switchWorkspace(wsKey));
+      }
+    });
+
+    // Rail collapse toggle
+    el("btnToggleRail")?.addEventListener("click", () => {
+      el("navRail")?.classList.toggle("collapsed");
+    });
+  }
+
+  // =========================================================================
+  // CCTV AUDIT CONTROLLER
+  // =========================================================================
+  let auditEditingIndex = -1;
+
+  function initAuditDropdowns() {
+    // Audit Sites
+    const siteSelect = el("auditSite");
+    if (siteSelect) {
+      const sites = storage.getItem(cfg.KEYS.DROPDOWN_SITE, cfg.DEFAULTS.SITES);
+      siteSelect.innerHTML = sites.map(s => `<option value="${s}">${s}</option>`).join("");
+    }
+
+    // Audit OM
+    const omSelect = el("auditOmName");
+    if (omSelect) {
+      const oms = storage.getItem(cfg.KEYS.DROPDOWN_OM, cfg.DEFAULTS.OMS);
+      omSelect.innerHTML = oms.map(o => `<option value="${o}">${o}</option>`).join("");
+    }
+
+    // Audit Account
+    const accSelect = el("auditAccount");
+    if (accSelect) {
+      const accs = storage.getItem(cfg.KEYS.DROPDOWN_ACCOUNT, cfg.DEFAULTS.ACCOUNTS);
+      accSelect.innerHTML = accs.map(a => `<option value="${a}">${a}</option>`).join("");
+    }
+
+    // Audit Reason Code
+    const reasonSelect = el("auditReasonCode");
+    if (reasonSelect) {
+      const reasons = storage.getItem(cfg.KEYS.DROPDOWN_REASON, cfg.DEFAULTS.REASON_CODES);
+      reasonSelect.innerHTML = reasons.map(r => `<option value="${r}">${r}</option>`).join("");
+    }
+
+    // Audit TL datalist
+    const tlList = el("listAuditTls");
+    if (tlList) {
+      const tls = edr.getTeamLeaderNames();
+      tlList.innerHTML = tls.map(t => `<option value="${t}"></option>`).join("");
+    }
+
+    // Audit Date default
+    const dateInput = el("auditDate");
+    if (dateInput && !dateInput.value) {
+      dateInput.value = new Date().toISOString().slice(0, 10);
+    }
+  }
+
+  function renderAuditTable() {
+    const tableBody = el("auditTableBody");
+    const emptyNotice = el("auditEmptyNotice");
+    if (!tableBody) return;
+
+    const entries = audit.getEntries();
+
+    // Update Badges
+    const totalBadge = el("auditTotalRowsBadge");
+    if (totalBadge) {
+      totalBadge.textContent = `${entries.length} ${entries.length === 1 ? "row" : "rows"}`;
+    }
+
+    const linkedCount = entries.filter(e => e.sourceEdrId).length;
+    const linkedBadge = el("auditLinkedBadge");
+    if (linkedBadge) {
+      linkedBadge.textContent = `${linkedCount} from EDR`;
+    }
+
+    const railBadge = el("railAuditBadge");
+    if (railBadge) {
+      railBadge.textContent = entries.length;
+    }
+
+    if (!entries.length) {
+      tableBody.innerHTML = "";
+      if (emptyNotice) emptyNotice.style.display = "block";
+      return;
+    }
+
+    if (emptyNotice) emptyNotice.style.display = "none";
+
+    tableBody.innerHTML = entries.map((entry, idx) => {
+      const rowNum = idx + 1;
+      const dateDisplay = entry.formattedDate || entry.rawDate || "—";
+      const auditor = entry.name || entry.auditorName || "Miles";
+      const nocLower = String(entry.noc || "").toLowerCase();
+      let nocBadgeClass = "badge-info";
+      if (nocLower === "yes") nocBadgeClass = "badge-success";
+      else if (nocLower === "no") nocBadgeClass = "badge-danger";
+      else if (nocLower === "pending") nocBadgeClass = "badge-warning";
+      else if (nocLower === "disputed") nocBadgeClass = "badge-neutral";
+
+      const hasEdr = !!entry.sourceEdrId;
+      const isEditing = auditEditingIndex === idx;
+
+      return `
+        <tr class="audit-row ${isEditing ? 'is-editing' : ''}" data-idx="${idx}">
+          <td style="text-align:center; font-family:var(--font-mono); font-size:10.5px; color:var(--text-dim);">${rowNum}</td>
+          <td style="font-weight:600; color:#38bdf8; white-space:nowrap;">${window.escapeHtml(dateDisplay)}</td>
+          <td style="white-space:nowrap; color:var(--text-secondary);">${window.escapeHtml(auditor)}</td>
+          <td style="white-space:nowrap; font-weight:500;">
+            ${window.escapeHtml(entry.site || "")}
+            ${hasEdr ? '<span class="badge badge-info" style="font-size:8px; padding:1px 4px; margin-left:4px;" title="Linked from EDR">EDR</span>' : ''}
+          </td>
+          <td style="white-space:nowrap; font-weight:600; color:var(--text-primary);">${window.escapeHtml(entry.tlName || "N/A")}</td>
+          <td style="white-space:nowrap;">${window.escapeHtml(entry.agentName || "N/A")}</td>
+          <td style="white-space:nowrap; color:var(--text-secondary);">${window.escapeHtml(entry.omName || "")}</td>
+          <td style="white-space:nowrap; color:var(--text-secondary);">${window.escapeHtml(entry.cleanAccount || "")}</td>
+          <td style="white-space:nowrap;"><span class="badge badge-neutral" style="font-size:9.5px;">${window.escapeHtml(entry.reasonCode || "")}</span></td>
+          <td style="text-align:center;"><span class="badge ${nocBadgeClass}" style="font-size:9.5px;">${window.escapeHtml(entry.noc || "Pending")}</span></td>
+          <td style="max-width:220px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${window.escapeHtml(entry.remarks || "")}">${window.escapeHtml(entry.remarks || "")}</td>
+          <td style="text-align:center; white-space:nowrap;">
+            <div style="display:inline-flex; align-items:center; gap:2px;">
+              <button type="button" class="btn btn-ghost btn-sm btn-edit-audit" data-idx="${idx}" title="Edit this entry" style="padding:2px 5px; height:24px;">
+                <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+              </button>
+              <button type="button" class="btn btn-ghost btn-sm btn-delete-audit text-danger" data-idx="${idx}" title="Delete this entry" style="padding:2px 5px; height:24px;">
+                <svg class="icon icon-sm" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+              </button>
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join("");
+
+    // Wire Edit buttons
+    tableBody.querySelectorAll(".btn-edit-audit").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const idx = parseInt(btn.getAttribute("data-idx"), 10);
+        editAuditEntry(idx);
+      });
+    });
+
+    // Wire Delete buttons
+    tableBody.querySelectorAll(".btn-delete-audit").forEach(btn => {
+      btn.addEventListener("click", async () => {
+        const idx = parseInt(btn.getAttribute("data-idx"), 10);
+        const rep = entries[idx];
+        const agreed = await window.appConfirm({
+          title: "Delete Audit Entry?",
+          message: `Delete audit entry for ${rep?.agentName || rep?.tlName || "entry"} (${rep?.site || ""})?`,
+          confirmText: "Delete",
+          tone: "danger"
+        });
+        if (agreed) {
+          audit.deleteEntry(idx);
+          showToast("Audit entry deleted.", "info");
+        }
+      });
+    });
+  }
+
+  function editAuditEntry(index) {
+    const entries = audit.getEntries();
+    const entry = entries[index];
+    if (!entry) return;
+
+    auditEditingIndex = index;
+
+    if (el("auditDate")) el("auditDate").value = entry.rawDate || "";
+    if (el("auditSite")) {
+      const sVal = entry.site || "";
+      const siteSelect = el("auditSite");
+      const matched = Array.from(siteSelect.options).find(o => 
+        o.value === sVal || 
+        o.value.startsWith(sVal) || 
+        (window.normalizeTrackerSite && window.normalizeTrackerSite(o.value) === window.normalizeTrackerSite(sVal))
+      );
+      if (matched) {
+        siteSelect.value = matched.value;
+      } else {
+        siteSelect.value = sVal;
+      }
+    }
+    if (el("auditTlName")) el("auditTlName").value = entry.tlName || "";
+    if (el("auditAgentName")) el("auditAgentName").value = entry.agentName || "";
+    if (el("auditOmName")) el("auditOmName").value = entry.omName || "";
+    if (el("auditAccount")) el("auditAccount").value = entry.cleanAccount || "";
+    if (el("auditReasonCode")) el("auditReasonCode").value = entry.reasonCode || "";
+    if (el("auditNoc")) el("auditNoc").value = entry.noc || "YES";
+    if (el("auditRemarks")) el("auditRemarks").value = entry.remarks || "";
+
+    const submitBtn = el("btnAuditSubmitText");
+    if (submitBtn) submitBtn.textContent = "Update Entry";
+
+    el("auditForm")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    renderAuditTable();
+  }
+
+  function resetAuditForm() {
+    auditEditingIndex = -1;
+    el("auditForm")?.reset();
+    const dateInput = el("auditDate");
+    if (dateInput) dateInput.value = new Date().toISOString().slice(0, 10);
+    const submitBtn = el("btnAuditSubmitText");
+    if (submitBtn) submitBtn.textContent = "Add Entry to List";
+    renderAuditTable();
+  }
+
+  // Audit Option Management (+ / -)
+  function setupAuditOptionManagement() {
+    function addOpt(storageKey, defaultArray, selectId, label) {
+      const val = prompt(`Enter new ${label}:`);
+      if (val && val.trim()) {
+        const clean = val.trim();
+        const current = storage.getItem(storageKey, defaultArray);
+        if (!current.some(c => c.toLowerCase() === clean.toLowerCase())) {
+          current.push(clean);
+          current.sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base" }));
+          storage.setItem(storageKey, current);
+          initAuditDropdowns();
+          if (el(selectId)) el(selectId).value = clean;
+          showToast(`Added "${clean}" to ${label} list.`, "success");
+        } else {
+          showToast(`"${clean}" is already in the list.`, "info");
+        }
+      }
+    }
+
+    async function removeOpt(storageKey, defaultArray, selectId, label) {
+      const select = el(selectId);
+      const val = select ? select.value : "";
+      if (!val) {
+        showToast(`Please select a ${label} to remove.`, "info");
+        return;
+      }
+      const agreed = await window.appConfirm({
+        title: `Remove ${label}?`,
+        message: `Remove "${val}" from saved ${label} options?`,
+        confirmText: "Remove",
+        tone: "danger"
+      });
+      if (agreed) {
+        let current = storage.getItem(storageKey, defaultArray);
+        current = current.filter(c => c.toLowerCase() !== val.toLowerCase());
+        storage.setItem(storageKey, current);
+        initAuditDropdowns();
+        showToast(`Removed "${val}" from ${label} list.`, "info");
+      }
+    }
+
+    // Site
+    el("btnAddAuditSite")?.addEventListener("click", () => {
+      addOpt(cfg.KEYS.DROPDOWN_SITE, cfg.DEFAULTS.SITES, "auditSite", "Site");
+    });
+    el("btnRemoveAuditSite")?.addEventListener("click", () => {
+      removeOpt(cfg.KEYS.DROPDOWN_SITE, cfg.DEFAULTS.SITES, "auditSite", "Site");
+    });
+
+    // OM
+    el("btnAddAuditOm")?.addEventListener("click", () => {
+      addOpt(cfg.KEYS.DROPDOWN_OM, cfg.DEFAULTS.OMS, "auditOmName", "OM");
+    });
+    el("btnRemoveAuditOm")?.addEventListener("click", () => {
+      removeOpt(cfg.KEYS.DROPDOWN_OM, cfg.DEFAULTS.OMS, "auditOmName", "OM");
+    });
+
+    // Account
+    el("btnAddAuditAccount")?.addEventListener("click", () => {
+      addOpt(cfg.KEYS.DROPDOWN_ACCOUNT, cfg.DEFAULTS.ACCOUNTS, "auditAccount", "Account / Campaign");
+    });
+    el("btnRemoveAuditAccount")?.addEventListener("click", () => {
+      removeOpt(cfg.KEYS.DROPDOWN_ACCOUNT, cfg.DEFAULTS.ACCOUNTS, "auditAccount", "Account / Campaign");
+    });
+
+    // Reason
+    el("btnAddAuditReason")?.addEventListener("click", () => {
+      addOpt(cfg.KEYS.DROPDOWN_REASON, cfg.DEFAULTS.REASON_CODES, "auditReasonCode", "CCTV Reason");
+    });
+    el("btnRemoveAuditReason")?.addEventListener("click", () => {
+      removeOpt(cfg.KEYS.DROPDOWN_REASON, cfg.DEFAULTS.REASON_CODES, "auditReasonCode", "CCTV Reason");
+    });
+  }
+
+  function initAuditEvents() {
+    initAuditDropdowns();
+    setupAuditOptionManagement();
+
+    // Form submission
+    el("auditForm")?.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const dateVal = el("auditDate")?.value;
+      if (!dateVal) {
+        showToast("Please specify the audit date.", "error");
+        return;
+      }
+
+      const entryData = {
+        rawDate: dateVal,
+        site: el("auditSite")?.value || "",
+        tlName: el("auditTlName")?.value.trim() || "N/A",
+        agentName: el("auditAgentName")?.value.trim() || "N/A",
+        omName: el("auditOmName")?.value || "",
+        account: el("auditAccount")?.value || "",
+        cleanAccount: el("auditAccount")?.value || "",
+        reasonCode: el("auditReasonCode")?.value || "SLEEPING",
+        noc: el("auditNoc")?.value || "YES",
+        remarks: el("auditRemarks")?.value.trim() || "N/A"
+      };
+
+      if (auditEditingIndex >= 0) {
+        audit.setEditingIndex(auditEditingIndex);
+        audit.addEntry(entryData);
+        showToast("Audit entry updated.", "success");
+      } else {
+        audit.addEntry(entryData);
+        showToast("Audit entry added to list.", "success");
+      }
+
+      resetAuditForm();
+    });
+
+    // Clear form
+    el("btnAuditClearForm")?.addEventListener("click", resetAuditForm);
+
+    // Clear All
+    el("btnAuditClearAll")?.addEventListener("click", async () => {
+      const agreed = await window.appConfirm({
+        title: "Clear All Audit Rows?",
+        message: "Are you sure you want to clear all CCTV Audit rows? This cannot be undone.",
+        confirmText: "Clear All",
+        tone: "danger"
+      });
+      if (agreed) {
+        audit.clearAllEntries();
+        resetAuditForm();
+        showToast("All CCTV Audit rows cleared.", "info");
+      }
+    });
+
+    // Copy for Tracker (Arial 10pt formatted)
+    el("btnAuditCopyTracker")?.addEventListener("click", async () => {
+      try {
+        await audit.copyAuditForTracker();
+        showToast("Audit data copied for Tracker (Arial 10pt formatted).", "success");
+      } catch (err) {
+        showToast(err.message || "Failed to copy audit data.", "error");
+      }
+    });
+  }
+
+  // =========================================================================
+  // SMART AUDIT GUARD CONTROLLER
+  // =========================================================================
+  function renderGuardStatus() {
+    const rows = audit.getTrackerRows();
+    const snap = audit.getTrackerSnapshot();
+    const analysis = audit.getTrackerAnalysis();
+
+    const countBadge = el("guardRecordCountBadge");
+    if (countBadge) countBadge.textContent = `${rows.length} records`;
+
+    const statusBadge = el("guardStatusBadge");
+    if (statusBadge) {
+      statusBadge.textContent = rows.length ? "Active Snapshot" : "Idle";
+      statusBadge.className = rows.length ? "badge badge-success" : "badge badge-info";
+    }
+
+    const syncText = el("guardLastSyncText");
+    if (syncText) {
+      syncText.textContent = snap
+        ? `Snapshot: ${snap.importedAt ? new Date(snap.importedAt).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }) : "Active"} (${rows.length} rows)`
+        : "No snapshot loaded";
+    }
+
+    const issuesBox = el("guardIssuesBox");
+    if (!issuesBox) return;
+
+    if (!rows.length) {
+      issuesBox.style.display = "none";
+      issuesBox.innerHTML = "";
+      return;
+    }
+
+    issuesBox.style.display = "flex";
+
+    if (!analysis.issues.length) {
+      issuesBox.innerHTML = `
+        <div style="background:rgba(16,185,129,0.08); border:1px solid rgba(16,185,129,0.25); border-radius:var(--radius-sm); padding:8px 12px; font-size:11.5px; color:#34d399; display:flex; align-items:center; gap:8px;">
+          <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+          <span><strong>All rows verified clean.</strong> 0 duplicates, spelling issues, or invalid values detected.</span>
+        </div>
+      `;
+      return;
+    }
+
+    // Render issue items
+    issuesBox.innerHTML = analysis.issues.map(iss => {
+      const isDanger = iss.level === "danger";
+      const badgeClass = isDanger ? "badge-danger" : "badge-warning";
+      const borderCol = isDanger ? "rgba(239,68,68,0.25)" : "rgba(245,158,11,0.25)";
+      const bgCol = isDanger ? "rgba(239,68,68,0.06)" : "rgba(245,158,11,0.06)";
+
+      return `
+        <div style="background:${bgCol}; border:1px solid ${borderCol}; border-radius:var(--radius-sm); padding:8px 12px; font-size:11px; display:flex; flex-direction:column; gap:3px;">
+          <div style="display:flex; align-items:center; gap:6px;">
+            <span class="badge ${badgeClass}" style="font-size:8.5px; text-transform:uppercase;">${window.escapeHtml(iss.type)}</span>
+            <strong style="color:var(--text-primary); font-size:11.5px;">${window.escapeHtml(iss.title)}</strong>
+          </div>
+          <div style="color:var(--text-secondary);">${window.escapeHtml(iss.detail)}</div>
+          ${iss.suggestion ? `<div style="color:#38bdf8; font-weight:600; margin-top:2px;">↳ ${window.escapeHtml(iss.suggestion)}</div>` : ''}
+        </div>
+      `;
+    }).join("");
+  }
+
+  function initSmartAuditGuard() {
+    // Import Button & File Input
+    el("btnGuardUpload")?.addEventListener("click", () => {
+      el("fileGuardUpload")?.click();
+    });
+
+    el("fileGuardUpload")?.addEventListener("change", async (e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+
+      showToast(`Importing ${file.name}...`, "info");
+      try {
+        const reader = new FileReader();
+        reader.onload = async (evt) => {
+          try {
+            const data = new Uint8Array(evt.target.result);
+            const wb = window.XLSX.read(data, { type: "array" });
+            const res = await audit.importTrackerWorkbook(wb);
+            showToast(`Loaded ${res.rowsCount} rows from tracker. ${res.issuesCount} issue(s) flagged.`, res.issuesCount ? "info" : "success");
+            renderGuardStatus();
+          } catch (err) {
+            showToast(`Import error: ${err.message}`, "error");
+          }
+        };
+        reader.readAsArrayBuffer(file);
+      } catch (err) {
+        showToast(`Failed to read file: ${err.message}`, "error");
+      }
+      e.target.value = "";
+    });
+
+    // Paste Modal
+    el("btnGuardPaste")?.addEventListener("click", () => {
+      el("txtGuardPaste").value = "";
+      el("modalGuardPaste").hidden = false;
+    });
+
+    el("btnCloseGuardPaste")?.addEventListener("click", () => {
+      el("modalGuardPaste").hidden = true;
+    });
+    el("btnCancelGuardPaste")?.addEventListener("click", () => {
+      el("modalGuardPaste").hidden = true;
+    });
+
+    el("btnSubmitGuardPaste")?.addEventListener("click", async () => {
+      const text = el("txtGuardPaste")?.value || "";
+      if (!text.trim()) {
+        showToast("Please paste rows before submitting.", "info");
+        return;
+      }
+      try {
+        const res = await audit.pasteTrackerRows(text, false);
+        el("modalGuardPaste").hidden = true;
+        showToast(`Loaded ${res.rowsCount} rows. ${res.issuesCount} issue(s) flagged.`, res.issuesCount ? "info" : "success");
+        renderGuardStatus();
+      } catch (err) {
+        showToast(`Paste failed: ${err.message}`, "error");
+      }
+    });
+
+    el("btnGuardMergePasted")?.addEventListener("click", async () => {
+      const text = el("txtGuardPaste")?.value || "";
+      if (!text.trim()) {
+        showToast("Please paste rows before merging.", "info");
+        return;
+      }
+      try {
+        const res = await audit.pasteTrackerRows(text, true);
+        el("modalGuardPaste").hidden = true;
+        showToast(`Merged ${res.rowsCount} rows. ${res.issuesCount} issue(s) flagged.`, res.issuesCount ? "info" : "success");
+        renderGuardStatus();
+      } catch (err) {
+        showToast(`Merge failed: ${err.message}`, "error");
+      }
+    });
+
+    // Clear Snapshot
+    el("btnGuardClear")?.addEventListener("click", async () => {
+      const agreed = await window.appConfirm({
+        title: "Clear Tracker Snapshot?",
+        message: "Clear imported tracker rows from memory? (Your actual Google Sheet and saved audit entries will NOT be affected)",
+        confirmText: "Clear Snapshot",
+        tone: "danger"
+      });
+      if (agreed) {
+        await audit.clearTrackerSnapshot();
+        renderGuardStatus();
+        showToast("Tracker snapshot cleared.", "info");
+      }
+    });
+  }
+
   // App Initialization
   window.addEventListener("DOMContentLoaded", async () => {
+    initWorkspaceNavigation();
+
+    // Check initial workspace from URL param or hash
+    const params = new URLSearchParams(window.location.search);
+    const initialWorkspace = params.get("workspace") || (window.location.hash ? window.location.hash.slice(1).toLowerCase() : null);
+    if (initialWorkspace && WORKSPACES[initialWorkspace]) {
+      switchWorkspace(initialWorkspace);
+    }
+
     initFormDropdowns();
     initChoiceButtons();
     initScreenshotDropzone();
     initEvents();
+
+    // CCTV Audit & Smart Audit Guard Initialization
+    initAuditEvents();
+    initSmartAuditGuard();
 
     // Manila clock ticker
     updateManilaClock();
@@ -1157,11 +1777,66 @@
       renderEdrList(reports);
     });
 
+    // Watch Audit updates
+    audit.onChange(() => {
+      renderAuditTable();
+    });
+
+    // Watch Guard updates
+    audit.onGuardChange(() => {
+      renderGuardStatus();
+    });
+
     // Initial load of existing EDR records from IndexedDB
     await edr.init();
 
+    // Initial load of existing Audit entries & Guard snapshot
+    await audit.init();
+    await audit.initGuard();
+    renderAuditTable();
+    renderGuardStatus();
+
     // Optional demo seed for testing / visual verification if requested
-    const params = new URLSearchParams(window.location.search);
+    if (params.has("demo") && !audit.getEntries().length) {
+      audit.addEntry({
+        rawDate: "2026-09-10",
+        site: "Mabini Site A - 1st Floor",
+        tlName: "Abegail Llena",
+        agentName: "Juan Dela Cruz",
+        omName: "Abby",
+        account: "Shopee - CB-SCS",
+        cleanAccount: "Shopee - CB-SCS",
+        reasonCode: "SLEEPING",
+        noc: "YES",
+        remarks: "CCTV observed sleeping at workstation. Supervisor coached on shift."
+      });
+      audit.addEntry({
+        rawDate: "2026-09-10",
+        site: "Mabini Site B - 2nd Floor",
+        tlName: "Christian Arcilla",
+        agentName: "Maria Santos",
+        omName: "Renato",
+        account: "AFP",
+        cleanAccount: "AFP",
+        reasonCode: "USING SMARTPHONE",
+        noc: "Pending",
+        remarks: "Device noted in production bay; pending verification with TL."
+      });
+      audit.addEntry({
+        rawDate: "2026-09-09",
+        site: "Ecoland Site",
+        tlName: "Dante Tahuran",
+        agentName: "Pedro Penduko",
+        omName: "Crystal",
+        account: "TEMU - 1404",
+        cleanAccount: "TEMU - 1404",
+        reasonCode: "BROWSING",
+        noc: "YES",
+        remarks: "Non-work streaming detected during call wrap-up.",
+        sourceEdrId: "edr-demo-404"
+      });
+    }
+
     if (params.has("demo") && !edr.getReports().length) {
       const samplePng = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAA7SURBVHhe7c4BDQAACAMw9E/tUwwmFvw+yZptWc3MzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMxfmA0G6kFf2u/6fAAAAABJRU5ErkJggg==";
       await edr.saveReport({

@@ -1,0 +1,464 @@
+/**
+ * CCTV OPS V2 - Workspace-Specific Layouts & Grid Styles
+ * Dark Mode Only, Compact, Professional SaaS Aesthetic
+ */
+
+/* ==========================================================================
+   WORKSPACE PANE MANAGEMENT
+   ========================================================================== */
+.workspace-pane {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.workspace-pane[hidden] {
+  display: none !important;
+}
+
+/* ==========================================================================
+   CCTV AUDIT WORKSPACE (TOP: Guard, MIDDLE: Form, BOTTOM: Data Grid)
+   ========================================================================== */
+.audit-workspace-layout {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  gap: 8px;
+  overflow: hidden;
+  padding: 10px 14px;
+  box-sizing: border-box;
+}
+
+/* TOP: Smart Audit Guard Bar */
+.audit-guard-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.guard-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.guard-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.guard-actions-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.guard-issues-box {
+  background: rgba(239, 68, 68, 0.05);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: 4px;
+  padding: 6px 10px;
+  font-size: 11px;
+  max-height: 100px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.guard-issue-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-primary);
+}
+
+.guard-issue-pill {
+  font-size: 9px;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 3px;
+  text-transform: uppercase;
+}
+
+.guard-issue-pill.danger {
+  background: rgba(239, 68, 68, 0.15);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.guard-issue-pill.warning {
+  background: rgba(245, 158, 11, 0.15);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+/* MIDDLE: Compact Audit Entry Form */
+.audit-form-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  flex-shrink: 0;
+}
+
+.audit-form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 8px;
+  align-items: flex-end;
+}
+
+.audit-form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.audit-form-field label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.audit-form-field .btn-opt-mgmt {
+  width: 15px;
+  height: 15px;
+  font-size: 10px;
+  padding: 0;
+  line-height: 1;
+}
+
+.audit-form-buttons {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  grid-column: 1 / -1;
+  justify-content: flex-end;
+  padding-top: 4px;
+}
+
+/* BOTTOM: Data Output Grid (Fills remaining viewport height) */
+.audit-grid-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 200px;
+  overflow: hidden;
+}
+
+.audit-grid-header {
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border-default);
+  flex-shrink: 0;
+}
+
+.audit-grid-table-wrap {
+  flex: 1;
+  overflow: auto;
+  position: relative;
+}
+
+.audit-data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11.5px;
+  white-space: nowrap;
+  text-align: left;
+}
+
+.audit-data-table thead {
+  position: sticky;
+  top: 0;
+  background: #11141c;
+  z-index: 10;
+}
+
+.audit-data-table th {
+  padding: 7px 10px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  border-bottom: 1px solid var(--border-default);
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  user-select: none;
+}
+
+.audit-data-table td {
+  padding: 6px 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  color: var(--text-primary);
+  line-height: 1.3;
+}
+
+.audit-data-table tr:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.audit-data-table tr.is-editing {
+  background: rgba(56, 189, 248, 0.08);
+}
+
+.noc-badge {
+  font-size: 9.5px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 3px;
+  letter-spacing: 0.3px;
+}
+
+.noc-badge.yes {
+  background: rgba(52, 211, 153, 0.12);
+  color: #34d399;
+  border: 1px solid rgba(52, 211, 153, 0.28);
+}
+
+.noc-badge.no {
+  background: rgba(239, 68, 68, 0.12);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.28);
+}
+
+.noc-badge.pending {
+  background: rgba(245, 158, 11, 0.12);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.28);
+}
+
+.noc-badge.disputed {
+  background: rgba(168, 85, 247, 0.12);
+  color: #c084fc;
+  border: 1px solid rgba(168, 85, 247, 0.28);
+}
+
+/* ==========================================================================
+   AI SORTER WORKSPACE
+   ========================================================================== */
+.sorter-workspace-layout {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  gap: 8px;
+  overflow: hidden;
+  padding: 10px 14px;
+  box-sizing: border-box;
+}
+
+.sorter-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-shrink: 0;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+}
+
+.sorter-grid-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.sorter-spreadsheet {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11.5px;
+  user-select: none;
+}
+
+.sorter-spreadsheet th {
+  background: #11141c;
+  padding: 6px 8px;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  border: 1px solid var(--border-default);
+}
+
+.sorter-spreadsheet td {
+  padding: 5px 8px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  cursor: cell;
+}
+
+.sorter-spreadsheet td.is-selected {
+  background: rgba(56, 189, 248, 0.15);
+  border-color: #38bdf8;
+}
+
+/* ==========================================================================
+   MAINTENANCE WORKSPACE (Lanes, Side-by-Side Issues/Remarks, Block Screenshots)
+   ========================================================================== */
+.maintenance-workspace-layout {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  gap: 8px;
+  overflow-y: auto;
+  padding: 10px 14px;
+  box-sizing: border-box;
+}
+
+.maintenance-topbar-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  flex-shrink: 0;
+}
+
+.maint-block-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.maint-block-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  padding-bottom: 6px;
+}
+
+.maint-side-by-side {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.maint-block-screenshot-area {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  background: var(--bg-input);
+  border: 1px dashed var(--border-default);
+  border-radius: var(--radius-sm);
+}
+
+.maint-shot-thumb {
+  width: 48px;
+  height: 48px;
+  object-fit: cover;
+  border-radius: 4px;
+  border: 1px solid var(--border-default);
+}
+
+/* ==========================================================================
+   PENDING & FOLLOW UP WORKSPACES
+   ========================================================================== */
+.pending-workspace-layout,
+.followup-workspace-layout {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  gap: 8px;
+  overflow: hidden;
+  padding: 10px 14px;
+  box-sizing: border-box;
+}
+
+/* ==========================================================================
+   MASTERLIST WORKSPACE
+   ========================================================================== */
+.masterlist-workspace-layout {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  gap: 8px;
+  overflow: hidden;
+  padding: 10px 14px;
+  box-sizing: border-box;
+}
+
+/* ==========================================================================
+   HISTORY WORKSPACE
+   ========================================================================== */
+.history-workspace-layout {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  gap: 8px;
+  overflow: hidden;
+  padding: 10px 14px;
+  box-sizing: border-box;
+}
+
+/* ==========================================================================
+   ACCOUNTS / ADMIN WORKSPACE
+   ========================================================================== */
+.accounts-workspace-layout {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  gap: 10px;
+  overflow-y: auto;
+  padding: 10px 14px;
+  box-sizing: border-box;
+}
+
+.admin-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.admin-kpi-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.admin-kpi-val {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.admin-kpi-label {
+  font-size: 11px;
+  color: var(--text-muted);
+}
