@@ -21,6 +21,321 @@
 }
 
 /* ==========================================================================
+   AI SORTER WORKSPACE & INTERACTIVE MINI-SHEET SPREADSHEET GRID
+   ========================================================================== */
+.sorter-workspace-layout {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  gap: 8px;
+  overflow: hidden;
+  padding: 10px 14px;
+  box-sizing: border-box;
+}
+
+.sorter-control-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.sorter-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.sorter-textarea {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  resize: vertical;
+  min-height: 48px;
+  max-height: 110px;
+  line-height: 1.4;
+  background: var(--bg-main);
+  border: 1px solid var(--border-default);
+  color: var(--text-primary);
+  border-radius: var(--radius-xs);
+  padding: 6px 8px;
+}
+
+.sorter-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.sorter-stats-strip {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  padding: 6px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+}
+
+.sorter-badges-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.badge-gf {
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.badge-1f {
+  background: rgba(59, 130, 246, 0.15);
+  color: #60a5fa;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.badge-2f {
+  background: rgba(168, 85, 247, 0.15);
+  color: #c084fc;
+  border: 1px solid rgba(168, 85, 247, 0.3);
+}
+
+.badge-review {
+  background: rgba(245, 158, 11, 0.15);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.sorter-grid-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  position: relative;
+}
+
+.mini-sheet-toolbar-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--border-subtle);
+  background: #141b28;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+}
+
+.mini-sheet-findbar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.mini-sheet-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.mini-sheet-scroll {
+  flex: 1;
+  overflow: auto;
+  min-height: 0;
+  position: relative;
+  background: var(--bg-main);
+}
+
+table.mini-sheet {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  table-layout: fixed;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+table.mini-sheet.cell-range-dragging,
+table.mini-sheet.cell-range-dragging * {
+  cursor: cell !important;
+}
+
+.mini-sheet-corner {
+  width: 44px;
+  min-width: 44px;
+  max-width: 44px;
+  background: #182030;
+  color: var(--text-muted);
+  text-align: center;
+  font-size: 10px;
+  border-right: 1px solid var(--border-default);
+  border-bottom: 1px solid var(--border-default);
+  position: sticky;
+  top: 0;
+  left: 0;
+  z-index: 5;
+}
+
+.mini-sheet-column-letters th {
+  background: #141b28;
+  color: var(--text-muted);
+  text-align: center;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 3px 6px;
+  border-right: 1px solid var(--border-default);
+  border-bottom: 1px solid var(--border-default);
+  position: sticky;
+  top: 0;
+  z-index: 4;
+}
+
+.mini-sheet-header-row th {
+  background: #192233;
+  color: var(--text-primary);
+  text-align: left;
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 5px 8px;
+  border-right: 1px solid var(--border-default);
+  border-bottom: 1px solid var(--border-default);
+  position: sticky;
+  top: 21px;
+  z-index: 4;
+}
+
+.mini-sheet-row-number {
+  width: 44px;
+  min-width: 44px;
+  max-width: 44px;
+  background: #141b28;
+  color: var(--text-muted);
+  text-align: center;
+  font-size: 10.5px;
+  font-weight: 600;
+  padding: 3px;
+  border-right: 1px solid var(--border-default);
+  border-bottom: 1px solid var(--border-subtle);
+  position: sticky;
+  left: 0;
+  z-index: 3;
+  cursor: pointer;
+}
+
+table.mini-sheet td[contenteditable="true"] {
+  padding: 3px 8px;
+  border-right: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  outline: none;
+  cursor: cell;
+}
+
+/* Blank visual rows */
+tr.mini-sheet-blank-row td {
+  padding: 3px 8px;
+  border-right: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--border-subtle);
+  background: transparent;
+}
+
+/* Rectangular Cell Range Selection */
+table.mini-sheet td.cell-range-selected {
+  background: rgba(37, 99, 235, 0.3) !important;
+  color: #f8fafc !important;
+  box-shadow: inset 0 0 0 1px rgba(96, 165, 250, 0.45) !important;
+}
+
+table.mini-sheet td.cell-range-active {
+  box-shadow: inset 0 0 0 2px #60a5fa !important;
+}
+
+table.mini-sheet td.cell-editing {
+  background: #0f172a !important;
+  color: #f8fafc !important;
+  cursor: text !important;
+  user-select: text !important;
+  -webkit-user-select: text !important;
+  box-shadow: inset 0 0 0 2px #60a5fa, 0 2px 10px rgba(0, 0, 0, 0.35) !important;
+  z-index: 6 !important;
+}
+
+/* Row selection highlight */
+table.mini-sheet tbody tr.selected-row td {
+  background: rgba(37, 99, 235, 0.22) !important;
+}
+
+table.mini-sheet tbody tr.selected-row th.mini-sheet-row-number {
+  background: #2563eb !important;
+  color: #ffffff !important;
+  font-weight: 700;
+}
+
+/* Find Match Highlight */
+table.mini-sheet td.sheet-cell-match {
+  background: rgba(234, 179, 8, 0.35) !important;
+  color: #fef08a !important;
+  font-weight: 600;
+}
+
+table.mini-sheet tr.find-current td {
+  background: rgba(234, 179, 8, 0.22) !important;
+}
+
+table.mini-sheet tr.floor-break td {
+  border-top: 2px solid #3b82f6 !important;
+}
+
+.maintenance-message {
+  padding: 6px 10px;
+  border-radius: var(--radius-xs);
+  font-size: 11px;
+  line-height: 1.4;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.maintenance-message.info {
+  background: rgba(59, 130, 246, 0.12);
+  color: #93c5fd;
+  border: 1px solid rgba(59, 130, 246, 0.25);
+}
+
+.maintenance-message.success {
+  background: rgba(16, 185, 129, 0.12);
+  color: #6ee7b7;
+  border: 1px solid rgba(16, 185, 129, 0.25);
+}
+
+.maintenance-message.error {
+  background: rgba(239, 68, 68, 0.12);
+  color: #fca5a5;
+  border: 1px solid rgba(239, 68, 68, 0.25);
+}
+
+/* ==========================================================================
    CCTV AUDIT WORKSPACE (TOP: Guard, MIDDLE: Form, BOTTOM: Data Grid)
    ========================================================================== */
 .audit-workspace-layout {

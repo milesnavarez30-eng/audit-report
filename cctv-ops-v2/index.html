@@ -936,6 +936,121 @@
 
           </div>
         </section>
+
+        <!-- WORKSPACE 3: AI Sorter & Interactive Spreadsheet Grid -->
+        <section id="paneSorter" class="workspace-pane" role="tabpanel" aria-labelledby="tabSorter" hidden>
+          <div class="sorter-workspace-layout">
+            
+            <!-- TOP: Paste & Operational Controls -->
+            <div class="sorter-control-card">
+              <div class="sorter-header-row">
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <span style="font-weight:700; font-size:12px; color:var(--text-primary);">Maintenance AI Sorter</span>
+                  <span class="badge badge-neutral">Auto Multi-Floor Parser</span>
+                </div>
+                <div style="display:flex; align-items:center; gap:6px;">
+                  <button type="button" class="btn btn-outline btn-sm" id="btnOpenTlAssignments" title="Manage Team Leader Floor Overrides & Saved Names">
+                    <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                    <span>TL Floor Assignments</span>
+                  </button>
+                  <button type="button" class="btn btn-danger-ghost btn-sm" id="maintenanceResetAssignmentsBtn" title="Reset all saved TL floor overrides and edited names">Reset TL Assignments</button>
+                </div>
+              </div>
+
+              <textarea id="maintenanceInput" class="form-control sorter-textarea" rows="2" placeholder="Paste maintenance rows directly (Markdown table, TSV, CSV, or raw text) — header is optional. Standard order: TIMESTAMP, DATE, TL, ACCOUNT, SITE, STATION NO., STATION ISSUE"></textarea>
+
+              <div class="sorter-toolbar">
+                <div style="display:flex; align-items:center; gap:6px;">
+                  <button type="button" class="btn btn-primary btn-sm" id="maintenanceSortBtn">
+                    <svg class="icon icon-sm" viewBox="0 0 24 24"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
+                    <span>Auto Sort by Floor</span>
+                  </button>
+                  <button type="button" class="btn btn-secondary btn-sm" id="maintenanceCopyBtn" title="Copy sorted report (TSV format) ready for Google Sheets">
+                    <svg class="icon icon-sm" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                    <span>Copy Sorted Report</span>
+                  </button>
+                  <button type="button" class="btn btn-ghost btn-sm" id="maintenanceClearBtn">Clear Report</button>
+                </div>
+
+                <div class="sorter-badges-wrap">
+                  <span class="badge badge-neutral" id="overallRowCount">0 rows</span>
+                  <span class="badge badge-gf" id="sorterGfCount">GF: 0</span>
+                  <span class="badge badge-1f" id="sorter1fCount">1F: 0</span>
+                  <span class="badge badge-2f" id="sorter2fCount">2F: 0</span>
+                  <span class="badge badge-review" id="sorterReviewCount">Review: 0</span>
+                </div>
+              </div>
+
+              <div id="maintenanceMessage" class="maintenance-message" aria-live="polite" style="display:none;"></div>
+            </div>
+
+            <!-- BOTTOM: Interactive Google-Sheets-like Mini Sheet Grid -->
+            <div class="sorter-grid-card mini-sheet-card">
+              <div class="mini-sheet-toolbar-row">
+                <!-- Search / Find Bar -->
+                <div class="mini-sheet-findbar">
+                  <input type="text" id="miniSheetFindTlInput" class="form-control form-control-sm" style="width:200px;" placeholder="Find (TL, Account, Site...)" autocomplete="off" aria-label="Find in sheet">
+                  <button type="button" class="btn btn-ghost btn-sm" id="miniSheetFindTlBtn">Find</button>
+                  <button type="button" class="btn btn-ghost btn-sm" id="miniSheetFindNextBtn" disabled>Next</button>
+                </div>
+
+                <!-- Selection & Sheet Actions -->
+                <div class="mini-sheet-actions">
+                  <span id="miniSheetRowCount" style="font-size:11px; color:var(--text-muted);">0 rows</span>
+                  <span id="miniSheetSelectedCount" class="badge badge-info" style="font-size:11px;">0 selected</span>
+                  <button type="button" id="miniSheetSelectAllBtn" class="btn btn-ghost btn-sm">Select All</button>
+                  <button type="button" id="miniSheetSelectSameTlBtn" class="btn btn-outline btn-sm" disabled>Select Same TL</button>
+                  <button type="button" id="miniSheetCopyRowsBtn" class="btn btn-outline btn-sm" disabled>Copy</button>
+                  <button type="button" id="miniSheetCutRowsBtn" class="btn btn-outline btn-sm" disabled>Cut</button>
+                  <button type="button" id="miniSheetToReportBtn" class="btn btn-primary btn-sm" disabled title="Send selected rows directly to Maintenance Report">Send to Maintenance</button>
+                  <button type="button" id="miniSheetClearSelectionBtn" class="btn btn-ghost btn-sm" disabled>Clear Selection</button>
+                  <button type="button" id="miniSheetRemoveRowBtn" class="btn btn-danger-ghost btn-sm" disabled>Remove Selected</button>
+                  <button type="button" id="miniSheetClearAllBtn" class="btn btn-danger-ghost btn-sm">Clear All</button>
+                </div>
+              </div>
+
+              <!-- Sheet Scroll Area -->
+              <div class="mini-sheet-scroll" id="aiSorterTableWrapper">
+                <table class="mini-sheet" id="maintenanceMiniSheet" aria-label="Editable sorted maintenance mini sheet">
+                  <thead>
+                    <tr class="mini-sheet-column-letters">
+                      <th class="mini-sheet-corner"></th>
+                      <th style="width:110px;">A</th>
+                      <th style="width:90px;">B</th>
+                      <th style="width:140px;">C</th>
+                      <th style="width:130px;">D</th>
+                      <th style="width:130px;">E</th>
+                      <th style="width:90px;">F</th>
+                      <th>G</th>
+                    </tr>
+                    <tr class="mini-sheet-header-row">
+                      <th class="mini-sheet-row-number">1</th>
+                      <th>TIMESTAMP</th>
+                      <th>DATE</th>
+                      <th>TL</th>
+                      <th>ACCOUNT</th>
+                      <th>SITE</th>
+                      <th>STATION NO.</th>
+                      <th>STATION ISSUE</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <!-- Injected rows -->
+                  </tbody>
+                </table>
+                <div id="maintenanceEmpty" class="maintenance-empty" style="padding:40px 10px; text-align:center; color:var(--text-muted); font-size:12px;">
+                  Paste a maintenance report above, then click <strong>Auto Sort by Floor</strong>.
+                </div>
+              </div>
+
+              <!-- Compatibility elements for V1 automated test references -->
+              <div id="maintenanceStats" hidden><strong id="overallRowCountCompatibility">0</strong></div>
+              <div id="sortedReportSection" hidden></div>
+              <table id="maintenanceOutputTable" style="display:none;"><tbody></tbody></table>
+            </div>
+
+          </div>
+        </section>
       </div>
     </main>
   </div>
@@ -1050,6 +1165,37 @@
     </div>
   </div>
 
+  <!-- Team Leader Floor Assignment Modal -->
+  <div class="modal-backdrop" id="modalTlAssignments" hidden>
+    <div class="modal-dialog" style="max-width:680px;">
+      <div class="modal-header">
+        <h3 class="modal-title">Team Leader Floor Assignments</h3>
+        <button type="button" class="btn btn-ghost btn-sm" id="btnCloseTlAssignments">✕</button>
+      </div>
+      <div class="modal-body" style="max-height:420px; overflow-y:auto;">
+        <p style="font-size:11.5px; color:var(--text-secondary); margin:0 0 10px 0;">
+          Override auto-detected floor assignments or edit display names. Changes are saved automatically.
+        </p>
+        <table class="audit-data-table" id="tlSummaryTable" style="width:100%;">
+          <thead>
+            <tr>
+              <th>Team Leader Name</th>
+              <th>Floor Assignment</th>
+              <th style="width:70px; text-align:center;">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- Populated dynamically -->
+          </tbody>
+        </table>
+      </div>
+      <div class="modal-footer" style="justify-content:space-between;">
+        <button type="button" class="btn btn-danger-ghost btn-sm" id="btnModalResetTlAssignments">Reset All Overrides</button>
+        <button type="button" class="btn btn-outline btn-sm" id="btnDoneTlAssignments">Done</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Toast Notification Container -->
   <div class="toast-container" id="toastContainer"></div>
 
@@ -1066,6 +1212,7 @@
   <script src="./js/services/auth-service.js"></script>
   <script src="./js/services/edr-service.js"></script>
   <script src="./js/services/audit-service.js"></script>
+  <script src="./js/services/sorter-service.js"></script>
   <script src="./js/app.js"></script>
 </body>
 </html>

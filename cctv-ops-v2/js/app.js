@@ -10,6 +10,7 @@
   const edr = window.CCTV_EDR;
   const audit = window.CCTV_AUDIT;
   const auth = window.CCTV_AUTH;
+  const sorter = window.sorterService;
 
   let currentScreenshot = "";
   let supervisorRole = "Team Leader";
@@ -1234,6 +1235,8 @@
     if (targetKey === "audit") {
       renderAuditTable();
       renderGuardStatus();
+    } else if (targetKey === "sorter") {
+      renderSorterWorkspace();
     }
   }
 
@@ -1748,6 +1751,1098 @@
     });
   }
 
+  // =========================================================================
+  // AI SORTER & INTERACTIVE MINI-SHEET SPREADSHEET GRID CONTROLLER
+  // =========================================================================
+  let sorterParsedRows = [];
+  let sorterAssignedRows = [];
+  let sorterAssignments = new Map();
+  let miniSheetSelectedRows = new Set();
+  let miniSheetSelectionAnchor = null;
+  let miniSheetCellSelection = null;
+  let miniSheetCellAnchor = null;
+  let miniSheetCellFocus = null;
+  let miniSheetCellDragging = false;
+  let miniSheetFindMatches = [];
+  let miniSheetFindCursor = -1;
+  let miniSheetKeyboardActive = false;
+
+  function showSorterMessage(text, type = "info") {
+    const msgEl = el("maintenanceMessage");
+    if (!msgEl) return;
+    msgEl.textContent = text;
+    msgEl.className = `maintenance-message ${type}`;
+    msgEl.style.display = "flex";
+  }
+
+  function hideSorterMessage() {
+    const msgEl = el("maintenanceMessage");
+    if (!msgEl) return;
+    msgEl.textContent = "";
+    msgEl.style.display = "none";
+  }
+
+  function renderSorterWorkspace() {
+    const emptyNotice = el("maintenanceEmpty");
+    if (emptyNotice) {
+      emptyNotice.style.display = sorterAssignedRows.length ? "none" : "block";
+    }
+    if (sorterAssignedRows.length) {
+      renderSorterRows(sorterAssignedRows, true);
+      updateMiniSheetSelectionUi();
+    }
+  }
+
+  function analyzeMaintenance(scrollToResults = true) {
+    const raw = (el("maintenanceInput")?.value || "").trim();
+    if (!raw) {
+      showSorterMessage("Paste your maintenance report first.", "error");
+      return;
+    }
+
+    try {
+      hideSorterMessage();
+      const rows = sorter.parseReport(raw);
+      const assignments = sorter.buildAssignments(rows);
+      const assignedRows = sorter.assignRows(rows, assignments);
+
+      sorterParsedRows = rows;
+      sorterAssignments = assignments;
+      sorterAssignedRows = assignedRows;
+
+      renderSorterRows(assignedRows);
+
+      const reviewCount = assignedRows.filter(r => r.floor === sorter.FLOOR.REVIEW).length;
+      const recognizedCount = assignedRows.length - reviewCount;
+
+      const gfCount = assignedRows.filter(r => r.floor === sorter.FLOOR.GROUND).length;
+      const f1Count = assignedRows.filter(r => r.floor === sorter.FLOOR.FIRST).length;
+      const f2Count = assignedRows.filter(r => r.floor === sorter.FLOOR.SECOND).length;
+
+      if (el("overallRowCount")) el("overallRowCount").textContent = `${assignedRows.length} rows`;
+      if (el("sorterGfCount")) el("sorterGfCount").textContent = `GF: ${gfCount}`;
+      if (el("sorter1fCount")) el("sorter1fCount").textContent = `1F: ${f1Count}`;
+      if (el("sorter2fCount")) el("sorter2fCount").textContent = `2F: ${f2Count}`;
+      if (el("sorterReviewCount")) el("sorterReviewCount").textContent = `Review: ${reviewCount}`;
+
+      const msg = `Reference-aware sort complete: ${assignedRows.length} rows. ${recognizedCount} were assigned to a floor${reviewCount ? `; ${reviewCount} need review.` : "."}`;
+      showSorterMessage(msg, reviewCount ? "info" : "success");
+
+      if (scrollToResults && el("aiSorterTableWrapper")) {
+        el("aiSorterTableWrapper").scrollIntoView({ behavior: "smooth", block: "nearest" });
+      }
+    } catch (err) {
+      showSorterMessage(err.message || "Unable to read the report.", "error");
+    }
+  }
+
+  function renderSorterRows(rows, skipMiniSheet = false) {
+    const tbodyCompat = el("maintenanceOutputTable")?.querySelector("tbody");
+    if (tbodyCompat) {
+      let previousFloor = null;
+      tbodyCompat.innerHTML = rows.map((row, rowIndex) => {
+        const isFloorBreak = previousFloor !== null && previousFloor !== row.floor;
+        previousFloor = row.floor;
+        return `
+          <tr class="${isFloorBreak ? "floor-break" : ""}" data-floor="${window.escapeHtml(row.floor)}" data-row-index="${rowIndex}">
+            <td>${window.escapeHtml(row.timestamp || "")}</td>
+            <td>${window.escapeHtml(row.date || "")}</td>
+            <td>${window.escapeHtml(sorter.displayTLValue(row.tl))}</td>
+            <td>${window.escapeHtml(row.account || "")}</td>
+            <td>${window.escapeHtml(row.site || "")}</td>
+            <td><strong>${window.escapeHtml(row.station || "")}</strong></td>
+            <td>${window.escapeHtml(row.issue || "")}</td>
+          </tr>
+        `;
+      }).join("");
+    }
+
+    const emptyNotice = el("maintenanceEmpty");
+    if (emptyNotice) {
+      emptyNotice.style.display = rows.length ? "none" : "block";
+    }
+
+    if (!skipMiniSheet) {
+      renderMiniSheet(rows);
+    }
+  }
+
+  function renderMiniSheet(rows) {
+    const sheet = el("maintenanceMiniSheet");
+    if (!sheet) return;
+
+    miniSheetSelectedRows = new Set(
+      [...miniSheetSelectedRows].filter(index => index >= 0 && index < rows.length)
+    );
+
+    const tbody = sheet.querySelector("tbody");
+    if (!tbody) return;
+
+    const fields = sorter.MINI_SHEET_FIELDS;
+
+    let previousFloor = null;
+    const filledRowsHtml = rows.map((row, rowIndex) => {
+      const isFloorBreak = previousFloor !== null && previousFloor !== row.floor;
+      previousFloor = row.floor;
+
+      const displayValues = {
+        timestamp: row.timestamp || "",
+        date: row.date || "",
+        tl: sorter.displayTLValue(row.tl),
+        account: row.account || "",
+        site: row.site || "",
+        station: row.station || "",
+        issue: row.issue || ""
+      };
+
+      return `
+        <tr data-row-index="${rowIndex}" class="${miniSheetSelectedRows.has(rowIndex) ? "selected-row" : ""} ${isFloorBreak ? "floor-break" : ""}">
+          <th class="mini-sheet-row-number" scope="row" title="Click to select row. Shift+Click = range, Ctrl+Click = toggle.">${rowIndex + 2}</th>
+          ${fields.map((field, colIndex) => `
+            <td
+              contenteditable="true"
+              spellcheck="false"
+              data-row-index="${rowIndex}"
+              data-col-index="${colIndex}"
+              data-field="${field}"
+              aria-label="Row ${rowIndex + 2} ${field}">
+              ${window.escapeHtml(displayValues[field])}
+            </td>
+          `).join("")}
+        </tr>
+      `;
+    }).join("");
+
+    const minimumVisibleRows = 32;
+    const blankCount = Math.max(8, minimumVisibleRows - rows.length);
+    const blankRowsHtml = Array.from({ length: blankCount }, (_, i) => {
+      const rowNumber = rows.length + i + 2;
+      return `
+        <tr class="mini-sheet-blank-row">
+          <th class="mini-sheet-row-number" scope="row">${rowNumber}</th>
+          ${fields.map(() => `<td aria-hidden="true"></td>`).join("")}
+        </tr>
+      `;
+    }).join("");
+
+    tbody.innerHTML = filledRowsHtml + blankRowsHtml;
+
+    if (el("miniSheetRowCount")) {
+      el("miniSheetRowCount").textContent = `${rows.length} row${rows.length === 1 ? "" : "s"}`;
+    }
+
+    tbody.querySelectorAll(".mini-sheet-row-number").forEach(rowHeader => {
+      rowHeader.addEventListener("mousedown", event => {
+        if (event.button !== 0) return;
+        event.preventDefault();
+        const tr = rowHeader.closest("tr");
+        if (!tr || tr.dataset.rowIndex == null) return;
+        selectMiniSheetRow(Number(tr.dataset.rowIndex), event);
+      });
+    });
+
+    tbody.querySelectorAll('td[contenteditable="true"]').forEach(cell => {
+      cell.addEventListener("mousedown", event => {
+        if (event.button !== 0) return;
+        if (cell.dataset.editing === "true") return;
+
+        event.preventDefault();
+        setMiniSheetKeyboardActive(true);
+
+        const point = {
+          row: Number(cell.dataset.rowIndex),
+          col: Number(cell.dataset.colIndex)
+        };
+
+        miniSheetSelectedRows.clear();
+        miniSheetSelectionAnchor = null;
+
+        if (event.shiftKey && miniSheetCellAnchor) {
+          setMiniSheetCellSelection(miniSheetCellAnchor, point);
+        } else {
+          miniSheetCellAnchor = point;
+          setMiniSheetCellSelection(point, point);
+        }
+
+        miniSheetCellDragging = true;
+        sheet.classList.add("cell-range-dragging");
+      });
+
+      cell.addEventListener("mouseenter", () => {
+        if (!miniSheetCellDragging || !miniSheetCellAnchor) return;
+        setMiniSheetCellSelection(miniSheetCellAnchor, {
+          row: Number(cell.dataset.rowIndex),
+          col: Number(cell.dataset.colIndex)
+        });
+      });
+
+      cell.addEventListener("dblclick", event => {
+        event.preventDefault();
+        const point = {
+          row: Number(cell.dataset.rowIndex),
+          col: Number(cell.dataset.colIndex)
+        };
+        miniSheetCellAnchor = point;
+        setMiniSheetCellSelection(point, point);
+        beginMiniSheetCellEdit(cell);
+      });
+
+      cell.addEventListener("keydown", event => {
+        if (event.key === "Enter" && !event.shiftKey) {
+          event.preventDefault();
+          cell.blur();
+        }
+        if (event.key === "Escape") {
+          event.preventDefault();
+          cell.blur();
+        }
+      });
+
+      cell.addEventListener("blur", () => {
+        cell.classList.remove("cell-editing");
+        delete cell.dataset.editing;
+
+        const rowIndex = Number(cell.dataset.rowIndex);
+        const field = cell.dataset.field;
+        const row = sorterAssignedRows[rowIndex];
+        if (!row || !field) return;
+
+        const value = cell.textContent
+          .replace(/\u00a0/g, " ")
+          .replace(/\s+/g, " ")
+          .trim();
+
+        row[field] = value;
+        if (field === "tl") {
+          row.tlNames = sorter.extractTLNames(value);
+        }
+
+        renderSorterRows(sorterAssignedRows, true);
+      });
+    });
+
+    updateMiniSheetSelectionUi();
+    highlightMiniSheetFindMatches();
+  }
+
+  function beginMiniSheetCellEdit(cell) {
+    if (!cell) return;
+    miniSheetCellDragging = false;
+    cell.classList.add("cell-editing");
+    cell.dataset.editing = "true";
+    cell.focus();
+
+    const selection = window.getSelection();
+    const range = document.createRange();
+    range.selectNodeContents(cell);
+    range.collapse(false);
+    selection.removeAllRanges();
+    selection.addRange(range);
+  }
+
+  function normalizeMiniSheetCellRange(a, b) {
+    if (!a || !b) return null;
+    return {
+      startRow: Math.min(a.row, b.row),
+      endRow: Math.max(a.row, b.row),
+      startCol: Math.min(a.col, b.col),
+      endCol: Math.max(a.col, b.col)
+    };
+  }
+
+  function hasMiniSheetCellSelection() {
+    return !!miniSheetCellSelection;
+  }
+
+  function miniSheetCellSelectionCount() {
+    if (!miniSheetCellSelection) return 0;
+    const rows = miniSheetCellSelection.endRow - miniSheetCellSelection.startRow + 1;
+    const cols = miniSheetCellSelection.endCol - miniSheetCellSelection.startCol + 1;
+    return Math.max(0, rows * cols);
+  }
+
+  function clearMiniSheetCellSelection(updateUi = true) {
+    miniSheetCellSelection = null;
+    miniSheetCellAnchor = null;
+    miniSheetCellFocus = null;
+    miniSheetCellDragging = false;
+
+    const sheet = el("maintenanceMiniSheet");
+    if (sheet) {
+      sheet.classList.remove("cell-range-dragging");
+      sheet.querySelectorAll("td.cell-range-selected, td.cell-range-active, td.sheet-cell-active")
+        .forEach(cell => cell.classList.remove("cell-range-selected", "cell-range-active", "sheet-cell-active"));
+    }
+
+    if (updateUi) updateMiniSheetSelectionUi();
+  }
+
+  function updateMiniSheetCellSelectionUi() {
+    const sheet = el("maintenanceMiniSheet");
+    if (!sheet) return;
+
+    sheet.querySelectorAll("td.cell-range-selected, td.cell-range-active, td.sheet-cell-active")
+      .forEach(cell => cell.classList.remove("cell-range-selected", "cell-range-active", "sheet-cell-active"));
+
+    if (!miniSheetCellSelection) return;
+
+    const { startRow, endRow, startCol, endCol } = miniSheetCellSelection;
+
+    sheet.querySelectorAll('tbody td[data-row-index][data-col-index]').forEach(cell => {
+      const row = Number(cell.dataset.rowIndex);
+      const col = Number(cell.dataset.colIndex);
+      const inside = row >= startRow && row <= endRow && col >= startCol && col <= endCol;
+      if (inside) {
+        cell.classList.add("cell-range-selected");
+      }
+    });
+
+    const activeRow = (miniSheetCellFocus && Number.isInteger(miniSheetCellFocus.row)) ? miniSheetCellFocus.row : startRow;
+    const activeCol = (miniSheetCellFocus && Number.isInteger(miniSheetCellFocus.col)) ? miniSheetCellFocus.col : startCol;
+
+    const activeCell = sheet.querySelector(
+      `tbody td[data-row-index="${activeRow}"][data-col-index="${activeCol}"]`
+    ) || sheet.querySelector(
+      `tbody td[data-row-index="${startRow}"][data-col-index="${startCol}"]`
+    );
+    if (activeCell) {
+      activeCell.classList.add("cell-range-active", "sheet-cell-active");
+    }
+  }
+
+  function setMiniSheetCellSelection(anchor, current = anchor) {
+    if (!anchor || !current) return;
+    const range = normalizeMiniSheetCellRange(anchor, current);
+    if (!range) return;
+    miniSheetCellSelection = range;
+    updateMiniSheetCellSelectionUi();
+    updateMiniSheetSelectionUi();
+  }
+
+  function selectedMiniSheetIndexes() {
+    return [...miniSheetSelectedRows]
+      .filter(index => Number.isInteger(index) && index >= 0 && index < sorterAssignedRows.length)
+      .sort((a, b) => a - b);
+  }
+
+  function selectMiniSheetRow(rowIndex, event = {}) {
+    if (!Number.isInteger(rowIndex) || rowIndex < 0 || rowIndex >= sorterAssignedRows.length) {
+      return;
+    }
+
+    clearMiniSheetCellSelection(false);
+
+    const isToggle = !!(event.ctrlKey || event.metaKey);
+    const isRange = !!event.shiftKey;
+
+    if (isRange && miniSheetSelectionAnchor !== null) {
+      const start = Math.min(miniSheetSelectionAnchor, rowIndex);
+      const end = Math.max(miniSheetSelectionAnchor, rowIndex);
+      if (!isToggle) miniSheetSelectedRows.clear();
+      for (let i = start; i <= end; i++) {
+        miniSheetSelectedRows.add(i);
+      }
+    } else if (isToggle) {
+      if (miniSheetSelectedRows.has(rowIndex)) {
+        miniSheetSelectedRows.delete(rowIndex);
+      } else {
+        miniSheetSelectedRows.add(rowIndex);
+      }
+      miniSheetSelectionAnchor = rowIndex;
+    } else {
+      miniSheetSelectedRows.clear();
+      miniSheetSelectedRows.add(rowIndex);
+      miniSheetSelectionAnchor = rowIndex;
+    }
+
+    updateMiniSheetSelectionUi();
+  }
+
+  function selectAllMiniSheetRows() {
+    if (!sorterAssignedRows.length) {
+      showToast("There are no rows to select.", "info");
+      return;
+    }
+
+    miniSheetSelectedRows.clear();
+    sorterAssignedRows.forEach((_, index) => miniSheetSelectedRows.add(index));
+    miniSheetSelectionAnchor = 0;
+    updateMiniSheetSelectionUi();
+    showToast(`${sorterAssignedRows.length} rows selected.`, "info");
+  }
+
+  function selectSameTlMiniSheetRows() {
+    const indexes = selectedMiniSheetIndexes();
+    if (!indexes.length) {
+      showToast("Select a row first, then use Select Same TL.", "error");
+      return;
+    }
+
+    const sourceRow = sorterAssignedRows[indexes[0]];
+    if (!sourceRow) return;
+
+    const targetNames = sorter.extractTLNames(sourceRow.tl)
+      .map(name => sorter.normalizeReferenceText(name))
+      .filter(Boolean);
+
+    if (!targetNames.length) {
+      showToast("The selected row has no Team Leader name to match.", "error");
+      return;
+    }
+
+    miniSheetSelectedRows.clear();
+    sorterAssignedRows.forEach((row, index) => {
+      const rowNames = sorter.extractTLNames(row.tl)
+        .map(name => sorter.normalizeReferenceText(name))
+        .filter(Boolean);
+
+      const matches = targetNames.some(target => rowNames.some(name => name === target));
+      if (matches) miniSheetSelectedRows.add(index);
+    });
+
+    miniSheetSelectionAnchor = indexes[0];
+    updateMiniSheetSelectionUi();
+
+    const shown = sorter.displayTLValue(sourceRow.tl) || "same TL";
+    showToast(`${miniSheetSelectedRows.size} row(s) selected for ${shown}.`, "success");
+  }
+
+  function clearMiniSheetSelection() {
+    miniSheetSelectedRows.clear();
+    miniSheetSelectionAnchor = null;
+    clearMiniSheetCellSelection(false);
+    updateMiniSheetSelectionUi();
+  }
+
+  function clearAnyMiniSheetSelection() {
+    if (hasMiniSheetCellSelection()) {
+      clearMiniSheetCellSelection();
+      return;
+    }
+    clearMiniSheetSelection();
+  }
+
+  function updateMiniSheetSelectionUi() {
+    const indexes = selectedMiniSheetIndexes();
+    const rowCount = indexes.length;
+    const cellCount = miniSheetCellSelectionCount();
+    const hasCells = cellCount > 0;
+
+    const selectedCount = el("miniSheetSelectedCount");
+    if (selectedCount) {
+      selectedCount.textContent = hasCells
+        ? `${cellCount} cell${cellCount === 1 ? "" : "s"} selected`
+        : `${rowCount} selected`;
+    }
+
+    const copyButton = el("miniSheetCopyRowsBtn");
+    const cutButton = el("miniSheetCutRowsBtn");
+    const clearButton = el("miniSheetClearSelectionBtn");
+
+    if (copyButton) copyButton.disabled = !hasCells && rowCount === 0;
+    if (cutButton) cutButton.disabled = !hasCells && rowCount === 0;
+    if (clearButton) clearButton.disabled = !hasCells && rowCount === 0;
+
+    [
+      "miniSheetToReportBtn",
+      "miniSheetRemoveRowBtn",
+      "miniSheetSelectSameTlBtn"
+    ].forEach(id => {
+      const button = el(id);
+      if (button) button.disabled = rowCount === 0;
+    });
+
+    const tbody = el("maintenanceMiniSheet")?.querySelector("tbody");
+    if (tbody) {
+      tbody.querySelectorAll("tr").forEach((tr, rowIndex) => {
+        const targetRowIndex = tr.dataset.rowIndex != null ? Number(tr.dataset.rowIndex) : rowIndex;
+        const isSelected = miniSheetSelectedRows.has(targetRowIndex);
+        tr.classList.toggle("selected-row", isSelected);
+      });
+    }
+
+    updateMiniSheetCellSelectionUi();
+  }
+
+  async function copyMiniSheetSelection() {
+    if (hasMiniSheetCellSelection()) {
+      const text = sorter.selectedMiniSheetCellTsv(sorterAssignedRows, miniSheetCellSelection);
+      const ok = await window.copyToClipboardHtmlAndText(text, `<pre>${window.escapeHtml(text)}</pre>`);
+      showToast(
+        ok ? `${miniSheetCellSelectionCount()} selected cell(s) copied.` : "Could not copy the selected cells.",
+        ok ? "success" : "error"
+      );
+      return;
+    }
+
+    const indexes = selectedMiniSheetIndexes();
+    if (!indexes.length) {
+      showToast("Select one or more rows first.", "error");
+      return;
+    }
+
+    const tsv = sorter.selectedMiniSheetTsv(sorterAssignedRows, indexes, false);
+    const ok = await window.copyToClipboardHtmlAndText(tsv, `<pre>${window.escapeHtml(tsv)}</pre>`);
+    showToast(
+      ok ? `${indexes.length} selected row(s) copied. Ready to paste.` : "Could not copy the selected rows.",
+      ok ? "success" : "error"
+    );
+  }
+
+  async function cutMiniSheetSelection() {
+    if (hasMiniSheetCellSelection()) {
+      const text = sorter.selectedMiniSheetCellTsv(sorterAssignedRows, miniSheetCellSelection);
+      const ok = await window.copyToClipboardHtmlAndText(text, `<pre>${window.escapeHtml(text)}</pre>`);
+      if (!ok) {
+        showToast("Could not copy the selected cells, so nothing was cleared.", "error");
+        return;
+      }
+
+      const count = miniSheetCellSelectionCount();
+      const { startRow, endRow, startCol, endCol } = miniSheetCellSelection;
+
+      for (let r = startRow; r <= endRow; r++) {
+        const row = sorterAssignedRows[r];
+        if (!row) continue;
+        for (let c = startCol; c <= endCol; c++) {
+          const field = sorter.MINI_SHEET_FIELDS[c];
+          if (!field) continue;
+          row[field] = "";
+          if (field === "tl") row.tlNames = [];
+        }
+      }
+
+      renderSorterRows(sorterAssignedRows);
+      showToast(`${count} cell(s) cut to clipboard.`, "success");
+      return;
+    }
+
+    const indexes = selectedMiniSheetIndexes();
+    if (!indexes.length) {
+      showToast("Select one or more rows first.", "error");
+      return;
+    }
+
+    const tsv = sorter.selectedMiniSheetTsv(sorterAssignedRows, indexes, false);
+    const ok = await window.copyToClipboardHtmlAndText(tsv, `<pre>${window.escapeHtml(tsv)}</pre>`);
+    if (!ok) {
+      showToast("Could not copy the selected rows, so nothing was removed.", "error");
+      return;
+    }
+
+    [...indexes].sort((a, b) => b - a).forEach(index => {
+      sorterAssignedRows.splice(index, 1);
+    });
+
+    miniSheetSelectedRows.clear();
+    miniSheetSelectionAnchor = null;
+    renderSorterRows(sorterAssignedRows);
+    showToast(`${indexes.length} row(s) cut to clipboard and removed from the Mini Sheet.`, "success");
+  }
+
+  async function removeSelectedMiniSheetRows() {
+    const indexes = selectedMiniSheetIndexes();
+    if (!indexes.length) {
+      showToast("Select one or more rows first.", "error");
+      return;
+    }
+
+    const approved = await window.appConfirm({
+      title: "Remove selected rows?",
+      message: `Remove ${indexes.length} selected row${indexes.length === 1 ? "" : "s"} from the current sorted result?`,
+      confirmText: "Remove",
+      tone: "danger"
+    });
+
+    if (!approved) return;
+
+    [...indexes].sort((a, b) => b - a).forEach(index => {
+      sorterAssignedRows.splice(index, 1);
+    });
+
+    miniSheetSelectedRows.clear();
+    miniSheetSelectionAnchor = null;
+    renderSorterRows(sorterAssignedRows);
+    showToast("Selected Mini Sheet rows were removed.", "info");
+  }
+
+  function sendSelectedMiniSheetRowsToMaintenanceReport() {
+    const indexes = selectedMiniSheetIndexes();
+    if (!indexes.length) {
+      showToast("Select one or more rows first.", "error");
+      return;
+    }
+
+    const tsv = sorter.selectedMiniSheetTsv(sorterAssignedRows, indexes, false);
+    const sourceTl = sorter.displayTLValue(sorterAssignedRows[indexes[0]]?.tl || "");
+
+    if (typeof window.addMaintenanceSorterRowsToReport === "function") {
+      window.addMaintenanceSorterRowsToReport(tsv, {
+        rowCount: indexes.length,
+        sourceTl
+      });
+    } else {
+      window.__pendingMaintenanceRows = {
+        tsv,
+        rowCount: indexes.length,
+        sourceTl
+      };
+    }
+
+    showToast(`${indexes.length} selected row(s) sent directly to Maintenance Report.`, "success");
+    switchWorkspace("maintenance");
+  }
+
+  function normalizeMiniSheetFindText(value) {
+    return String(value || "").toLowerCase().replace(/\s+/g, " ").trim();
+  }
+
+  function highlightMiniSheetFindMatchesRealtime(query) {
+    const sheet = el("maintenanceMiniSheet");
+    if (!sheet) return;
+
+    const tbody = sheet.querySelector("tbody");
+    if (!tbody) return;
+
+    tbody.querySelectorAll(".sheet-cell-match").forEach(cell => cell.classList.remove("sheet-cell-match"));
+
+    const normalized = normalizeMiniSheetFindText(query);
+    miniSheetFindMatches = [];
+
+    if (!normalized) {
+      tbody.querySelectorAll("tr[data-row-index]").forEach(tr => {
+        tr.classList.remove("find-match", "find-current", "sheet-row-match");
+      });
+      if (el("miniSheetFindNextBtn")) el("miniSheetFindNextBtn").disabled = true;
+      miniSheetFindCursor = -1;
+      return;
+    }
+
+    sorterAssignedRows.forEach((row, rowIndex) => {
+      const tr = tbody.querySelector(`tr[data-row-index="${rowIndex}"]`);
+      if (!tr) return;
+
+      let rowHasMatch = false;
+
+      sorter.MINI_SHEET_FIELDS.forEach((field, colIndex) => {
+        let val = field === "tl" ? sorter.displayTLValue(row.tl) : (row[field] != null ? String(row[field]) : "");
+        const cellText = normalizeMiniSheetFindText(val);
+        if (cellText.includes(normalized)) {
+          rowHasMatch = true;
+          const cell = tr.querySelector(`td[data-col-index="${colIndex}"]`);
+          if (cell) cell.classList.add("sheet-cell-match");
+        }
+      });
+
+      if (rowHasMatch) {
+        miniSheetFindMatches.push(rowIndex);
+        tr.classList.add("find-match", "sheet-row-match");
+      } else {
+        tr.classList.remove("find-match", "find-current", "sheet-row-match");
+      }
+    });
+
+    if (el("miniSheetFindNextBtn")) {
+      el("miniSheetFindNextBtn").disabled = miniSheetFindMatches.length <= 1;
+    }
+
+    if (miniSheetFindMatches.length > 0) {
+      if (miniSheetFindCursor < 0 || miniSheetFindCursor >= miniSheetFindMatches.length) {
+        miniSheetFindCursor = 0;
+      }
+      updateCurrentFindMatchHighlight();
+    } else {
+      miniSheetFindCursor = -1;
+    }
+  }
+
+  function updateCurrentFindMatchHighlight() {
+    const tbody = el("maintenanceMiniSheet")?.querySelector("tbody");
+    if (!tbody) return;
+    tbody.querySelectorAll("tr.find-current").forEach(tr => tr.classList.remove("find-current"));
+    if (miniSheetFindCursor >= 0 && miniSheetFindCursor < miniSheetFindMatches.length) {
+      const rowIndex = miniSheetFindMatches[miniSheetFindCursor];
+      const tr = tbody.querySelector(`tr[data-row-index="${rowIndex}"]`);
+      if (tr) tr.classList.add("find-current");
+    }
+  }
+
+  function highlightMiniSheetFindMatches() {
+    const input = el("miniSheetFindTlInput");
+    highlightMiniSheetFindMatchesRealtime(input?.value || "");
+  }
+
+  function scrollToCurrentMiniSheetFindMatch() {
+    if (miniSheetFindCursor < 0 || miniSheetFindCursor >= miniSheetFindMatches.length) return;
+    const rowIndex = miniSheetFindMatches[miniSheetFindCursor];
+    const row = el("maintenanceMiniSheet")?.querySelector(`tr[data-row-index="${rowIndex}"]`);
+    if (row) {
+      row.scrollIntoView({ behavior: "smooth", block: "center", inline: "nearest" });
+    }
+  }
+
+  function findTeamLeaderInMiniSheet() {
+    const input = el("miniSheetFindTlInput");
+    const query = input?.value || "";
+
+    highlightMiniSheetFindMatchesRealtime(query);
+
+    if (!miniSheetFindMatches.length) {
+      const trimmed = query.trim();
+      if (!trimmed) {
+        showToast("Type a search term first (TL, Account, Site, Station, etc.).", "info");
+        input?.focus();
+      } else {
+        showToast(`No matches found for "${trimmed}".`, "error");
+      }
+      return;
+    }
+
+    miniSheetSelectedRows.clear();
+    miniSheetFindMatches.forEach(index => miniSheetSelectedRows.add(index));
+    miniSheetSelectionAnchor = miniSheetFindMatches[0];
+    miniSheetFindCursor = 0;
+
+    updateMiniSheetSelectionUi();
+    updateCurrentFindMatchHighlight();
+    scrollToCurrentMiniSheetFindMatch();
+
+    const count = miniSheetFindMatches.length;
+    showToast(`${count} row(s) matched and selected.`, "success");
+  }
+
+  function findNextTeamLeaderMatch() {
+    if (!miniSheetFindMatches.length) {
+      findTeamLeaderInMiniSheet();
+      return;
+    }
+
+    miniSheetFindCursor = (miniSheetFindCursor + 1) % miniSheetFindMatches.length;
+    updateCurrentFindMatchHighlight();
+    scrollToCurrentMiniSheetFindMatch();
+    showToast(`Match ${miniSheetFindCursor + 1} of ${miniSheetFindMatches.length}.`, "info");
+  }
+
+  function setMiniSheetKeyboardActive(active) {
+    miniSheetKeyboardActive = !!active;
+    const card = el("maintenanceMiniSheet")?.closest(".mini-sheet-card");
+    if (card) {
+      card.classList.toggle("keyboard-active", miniSheetKeyboardActive);
+    }
+  }
+
+  async function copySorted() {
+    if (!sorterAssignedRows.length) {
+      showSorterMessage("Sort a report first before copying.", "error");
+      return;
+    }
+
+    const text = sorter.rowsToTSV(sorterAssignedRows);
+    const ok = await window.copyToClipboardHtmlAndText(text, `<pre>${window.escapeHtml(text)}</pre>`);
+    showToast(
+      ok ? "Sorted report copied. You can paste it directly into Google Sheets." : "Copy failed. Please try again.",
+      ok ? "success" : "error"
+    );
+  }
+
+  function clearMaintenance() {
+    const input = el("maintenanceInput");
+    if (input) input.value = "";
+    sorterParsedRows = [];
+    sorterAssignedRows = [];
+    sorterAssignments = new Map();
+    miniSheetSelectedRows.clear();
+    miniSheetSelectionAnchor = null;
+    miniSheetCellSelection = null;
+    miniSheetCellAnchor = null;
+    miniSheetCellFocus = null;
+    miniSheetFindMatches = [];
+    miniSheetFindCursor = -1;
+    setMiniSheetKeyboardActive(false);
+
+    if (el("miniSheetFindTlInput")) el("miniSheetFindTlInput").value = "";
+    if (el("miniSheetFindNextBtn")) el("miniSheetFindNextBtn").disabled = true;
+    highlightMiniSheetFindMatchesRealtime("");
+
+    const tbodyCompat = el("maintenanceOutputTable")?.querySelector("tbody");
+    if (tbodyCompat) tbodyCompat.innerHTML = "";
+    const tbodyMini = el("maintenanceMiniSheet")?.querySelector("tbody");
+    if (tbodyMini) tbodyMini.innerHTML = "";
+
+    if (el("miniSheetRowCount")) el("miniSheetRowCount").textContent = "0 rows";
+    if (el("overallRowCount")) el("overallRowCount").textContent = "0 rows";
+    if (el("sorterGfCount")) el("sorterGfCount").textContent = "GF: 0";
+    if (el("sorter1fCount")) el("sorter1fCount").textContent = "1F: 0";
+    if (el("sorter2fCount")) el("sorter2fCount").textContent = "2F: 0";
+    if (el("sorterReviewCount")) el("sorterReviewCount").textContent = "Review: 0";
+
+    const emptyNotice = el("maintenanceEmpty");
+    if (emptyNotice) emptyNotice.style.display = "block";
+
+    updateMiniSheetSelectionUi();
+    hideSorterMessage();
+  }
+
+  async function clearAllMiniSheetWorkspace() {
+    if (!sorterAssignedRows.length && !String(el("maintenanceInput")?.value || "").trim()) {
+      showToast("The sorter workspace is already empty.", "info");
+      return;
+    }
+
+    const approved = await window.appConfirm({
+      title: "Clear AI Sorter workspace?",
+      message: "Clear the pasted report and every sorted Mini Sheet row?",
+      confirmText: "Clear Workspace",
+      tone: "danger"
+    });
+
+    if (!approved) return;
+
+    clearMaintenance();
+    showToast("AI Sorter cleared. Paste your next maintenance report.", "info");
+  }
+
+  // TL Floor Assignments Modal
+  function renderTlSummaryTable() {
+    const tbody = el("tlSummaryTable")?.querySelector("tbody");
+    if (!tbody) return;
+
+    const overrides = sorter.loadOverrides();
+    const hidden = new Set(sorter.loadHiddenTLs());
+    const edits = sorter.loadTLNameEdits();
+
+    const entries = [...sorterAssignments.entries()]
+      .filter(([name]) => !hidden.has(name))
+      .sort((a, b) => {
+        const aName = edits[a[0]] || a[0];
+        const bName = edits[b[0]] || b[0];
+        return aName.localeCompare(bName, undefined, { sensitivity: "base" });
+      });
+
+    if (!entries.length) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="3" style="text-align:center; color:var(--text-muted); padding:18px;">
+            No Team Leaders in the assignment list. Analyze a report first.
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
+    tbody.innerHTML = entries.map(([name, item]) => {
+      const detected = item.floor || sorter.FLOOR.REVIEW;
+      const manual = overrides[name] || "";
+      const shownName = edits[name] || name;
+
+      return `
+        <tr>
+          <td>
+            <input
+              type="text"
+              class="form-control form-control-sm tl-name-editor"
+              data-original-tl="${encodeURIComponent(name)}"
+              value="${window.escapeHtml(shownName)}"
+              autocomplete="off"
+              spellcheck="false"
+              aria-label="Edit Team Leader name">
+          </td>
+          <td>
+            <select
+              class="form-control form-control-sm tl-floor-editor"
+              data-original-tl="${encodeURIComponent(name)}"
+              aria-label="Floor assignment for ${window.escapeHtml(shownName)}">
+              <option value="" ${manual === "" ? "selected" : ""}>Auto — ${window.escapeHtml(detected)}</option>
+              <option value="${sorter.FLOOR.GROUND}" ${manual === sorter.FLOOR.GROUND ? "selected" : ""}>Ground Floor</option>
+              <option value="${sorter.FLOOR.FIRST}" ${manual === sorter.FLOOR.FIRST ? "selected" : ""}>1st Floor</option>
+              <option value="${sorter.FLOOR.SECOND}" ${manual === sorter.FLOOR.SECOND ? "selected" : ""}>2nd Floor</option>
+            </select>
+          </td>
+          <td style="text-align:center;">
+            <button
+              type="button"
+              class="btn btn-danger-ghost btn-sm tl-row-remove"
+              data-original-tl="${encodeURIComponent(name)}">
+              Remove
+            </button>
+          </td>
+        </tr>
+      `;
+    }).join("");
+
+    tbody.querySelectorAll(".tl-floor-editor").forEach(select => {
+      select.addEventListener("change", function () {
+        const originalName = decodeURIComponent(this.getAttribute("data-original-tl") || "");
+        const data = sorter.loadOverrides();
+        if (this.value) data[originalName] = this.value;
+        else delete data[originalName];
+        sorter.saveOverrides(data);
+        if (el("maintenanceInput")?.value.trim()) analyzeMaintenance(false);
+      });
+    });
+
+    tbody.querySelectorAll(".tl-name-editor").forEach(input => {
+      const saveName = function () {
+        const originalName = decodeURIComponent(this.getAttribute("data-original-tl") || "");
+        const newName = this.value.replace(/\s+/g, " ").trim();
+        const data = sorter.loadTLNameEdits();
+        if (newName && newName !== originalName) data[originalName] = newName;
+        else delete data[originalName];
+        sorter.saveTLNameEdits(data);
+        if (sorterAssignedRows.length) renderSorterRows(sorterAssignedRows);
+      };
+
+      input.addEventListener("change", saveName);
+      input.addEventListener("keydown", function (e) {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          this.blur();
+        }
+      });
+    });
+
+    tbody.querySelectorAll(".tl-row-remove").forEach(button => {
+      button.addEventListener("click", async function () {
+        const originalName = decodeURIComponent(this.getAttribute("data-original-tl") || "");
+        const shownName = sorter.getEditedTLName(originalName);
+
+        const approved = await window.appConfirm({
+          title: "Remove Team Leader?",
+          message: `Remove "${shownName}" from the Team Leader Floor Assignment list?`,
+          confirmText: "Remove",
+          tone: "danger"
+        });
+
+        if (!approved) return;
+
+        const hiddenNames = new Set(sorter.loadHiddenTLs());
+        hiddenNames.add(originalName);
+        sorter.saveHiddenTLs([...hiddenNames]);
+        renderTlSummaryTable();
+        showToast(`${shownName} removed from assignment list.`, "info");
+      });
+    });
+  }
+
+  function initSorterController() {
+    el("maintenanceSortBtn")?.addEventListener("click", () => {
+      miniSheetSelectedRows.clear();
+      miniSheetSelectionAnchor = null;
+      miniSheetCellSelection = null;
+      miniSheetCellAnchor = null;
+      miniSheetCellFocus = null;
+      miniSheetFindMatches = [];
+      miniSheetFindCursor = -1;
+
+      if (el("miniSheetFindTlInput")) el("miniSheetFindTlInput").value = "";
+      if (el("miniSheetFindNextBtn")) el("miniSheetFindNextBtn").disabled = true;
+
+      analyzeMaintenance(true);
+    });
+
+    el("maintenanceCopyBtn")?.addEventListener("click", copySorted);
+    el("maintenanceClearBtn")?.addEventListener("click", async () => {
+      if (!String(el("maintenanceInput")?.value || "").trim() && !sorterAssignedRows.length) {
+        showToast("The AI Sorter is already empty.", "info");
+        return;
+      }
+      const approved = await window.appConfirm({
+        title: "Clear Maintenance AI Sorter?",
+        message: "The pasted report and current sorted workspace will be cleared.",
+        confirmText: "Clear Report",
+        tone: "danger"
+      });
+      if (approved) clearMaintenance();
+    });
+
+    el("maintenanceResetAssignmentsBtn")?.addEventListener("click", async () => {
+      const approved = await window.appConfirm({
+        title: "Reset Team Leader assignments?",
+        message: "Saved TL floors, edited names, and removed assignment rows will be reset.",
+        confirmText: "Reset",
+        tone: "danger"
+      });
+      if (!approved) return;
+
+      sorter.resetAssignments();
+      if (el("maintenanceInput")?.value.trim()) analyzeMaintenance(false);
+      showToast("Team Leader Floor Assignment was reset. Auto-learning will be used again.", "info");
+    });
+
+    el("btnOpenTlAssignments")?.addEventListener("click", () => {
+      renderTlSummaryTable();
+      el("modalTlAssignments").hidden = false;
+    });
+
+    el("btnCloseTlAssignments")?.addEventListener("click", () => {
+      el("modalTlAssignments").hidden = true;
+    });
+
+    el("btnDoneTlAssignments")?.addEventListener("click", () => {
+      el("modalTlAssignments").hidden = true;
+    });
+
+    el("btnModalResetTlAssignments")?.addEventListener("click", async () => {
+      const approved = await window.appConfirm({
+        title: "Reset Team Leader assignments?",
+        message: "Reset all saved TL floor overrides, edited names, and hidden assignments?",
+        confirmText: "Reset All",
+        tone: "danger"
+      });
+      if (!approved) return;
+      sorter.resetAssignments();
+      renderTlSummaryTable();
+      if (el("maintenanceInput")?.value.trim()) analyzeMaintenance(false);
+      showToast("Assignments reset.", "info");
+    });
+
+    el("miniSheetSelectAllBtn")?.addEventListener("click", selectAllMiniSheetRows);
+    el("miniSheetRemoveRowBtn")?.addEventListener("click", removeSelectedMiniSheetRows);
+    el("miniSheetSelectSameTlBtn")?.addEventListener("click", selectSameTlMiniSheetRows);
+    el("miniSheetCopyRowsBtn")?.addEventListener("click", () => copyMiniSheetSelection().catch(console.error));
+    el("miniSheetCutRowsBtn")?.addEventListener("click", () => cutMiniSheetSelection().catch(console.error));
+    el("miniSheetToReportBtn")?.addEventListener("click", sendSelectedMiniSheetRowsToMaintenanceReport);
+    el("miniSheetClearSelectionBtn")?.addEventListener("click", clearAnyMiniSheetSelection);
+    el("miniSheetFindTlBtn")?.addEventListener("click", findTeamLeaderInMiniSheet);
+    el("miniSheetFindNextBtn")?.addEventListener("click", findNextTeamLeaderMatch);
+    el("miniSheetClearAllBtn")?.addEventListener("click", clearAllMiniSheetWorkspace);
+
+    const miniSheetFindInput = el("miniSheetFindTlInput");
+    if (miniSheetFindInput) {
+      miniSheetFindInput.addEventListener("keydown", event => {
+        if (event.key === "Enter") {
+          event.preventDefault();
+          findTeamLeaderInMiniSheet();
+        }
+        if (event.key === "Escape") {
+          event.preventDefault();
+          event.currentTarget.value = "";
+          miniSheetFindMatches = [];
+          miniSheetFindCursor = -1;
+          highlightMiniSheetFindMatchesRealtime("");
+          if (el("miniSheetFindNextBtn")) el("miniSheetFindNextBtn").disabled = true;
+        }
+      });
+
+      miniSheetFindInput.addEventListener("input", event => {
+        highlightMiniSheetFindMatchesRealtime(event.target.value);
+      });
+
+      miniSheetFindInput.addEventListener("focus", () => {
+        setMiniSheetKeyboardActive(false);
+        clearMiniSheetCellSelection(true);
+        const activeEditing = el("maintenanceMiniSheet")?.querySelector("td.cell-editing, td[data-editing='true']");
+        if (activeEditing) activeEditing.blur();
+      });
+    }
+
+    document.addEventListener("mouseup", () => {
+      if (!miniSheetCellDragging) return;
+      miniSheetCellDragging = false;
+      el("maintenanceMiniSheet")?.classList.remove("cell-range-dragging");
+    });
+  }
+
   // App Initialization
   window.addEventListener("DOMContentLoaded", async () => {
     initWorkspaceNavigation();
@@ -1767,6 +2862,9 @@
     // CCTV Audit & Smart Audit Guard Initialization
     initAuditEvents();
     initSmartAuditGuard();
+
+    // AI Sorter Initialization
+    initSorterController();
 
     // Manila clock ticker
     updateManilaClock();
