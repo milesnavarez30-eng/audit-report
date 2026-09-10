@@ -1,5 +1,6 @@
 /**
  * CCTV OPS V2 - Shell & Workspace Layouts
+ * Calm, balanced, premium SaaS split-view layout
  */
 
 .app-root {
@@ -32,13 +33,13 @@
   min-width: var(--rail-width-collapsed);
 }
 
-/* Rail Brand Header */
+/* Brand Header */
 .rail-brand {
   height: var(--header-height);
   display: flex;
   align-items: center;
-  padding: 0 12px;
-  gap: 8px;
+  padding: 0 14px;
+  gap: 10px;
   border-bottom: 1px solid var(--border-subtle);
 }
 
@@ -46,15 +47,16 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
+  width: 26px;
+  height: 26px;
   border-radius: var(--radius-sm);
-  background: linear-gradient(135deg, #0284c7, #0369a1);
-  color: #fff;
+  background: var(--bg-surface-elevated);
+  border: 1px solid var(--border-default);
+  color: var(--accent-primary);
   font-weight: 800;
-  font-size: 13px;
-  box-shadow: 0 0 10px rgba(14, 165, 233, 0.35);
+  font-size: 11px;
   flex-shrink: 0;
+  letter-spacing: 0.5px;
 }
 
 .brand-text {
@@ -65,16 +67,16 @@
 }
 
 .brand-title {
-  font-size: var(--text-base);
+  font-size: 12.5px;
   font-weight: 700;
-  letter-spacing: 0.5px;
+  letter-spacing: -0.01em;
   color: #fff;
 }
 
 .brand-subtitle {
-  font-size: var(--text-xs);
+  font-size: 9.5px;
   color: var(--text-muted);
-  letter-spacing: 0.8px;
+  letter-spacing: 0.4px;
   text-transform: uppercase;
 }
 
@@ -82,24 +84,24 @@
   display: none;
 }
 
-/* Rail Navigation Menu */
+/* Rail Menu */
 .rail-menu {
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: 8px 6px;
+  padding: 10px 8px;
   display: flex;
   flex-direction: column;
   gap: 2px;
 }
 
 .rail-section-label {
-  font-size: 9.5px;
-  font-weight: 700;
+  font-size: 10px;
+  font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.8px;
+  letter-spacing: 0.6px;
   color: var(--text-dim);
-  padding: 8px 10px 4px;
+  padding: 10px 8px 4px;
 }
 
 .nav-rail.collapsed .rail-section-label {
@@ -109,8 +111,8 @@
 .nav-item {
   display: flex;
   align-items: center;
-  gap: 9px;
-  padding: 6px 10px;
+  gap: 10px;
+  padding: 6px 9px;
   border-radius: var(--radius-sm);
   color: var(--text-secondary);
   font-size: var(--text-sm);
@@ -129,15 +131,14 @@
 }
 
 .nav-item.active {
-  background: var(--bg-surface-active);
+  background: var(--bg-surface-elevated);
   color: #fff;
-  border-color: rgba(56, 189, 248, 0.3);
-  box-shadow: inset 2px 0 0 var(--accent-primary);
+  border-color: var(--border-default);
 }
 
 .nav-item .nav-icon {
-  width: 16px;
-  height: 16px;
+  width: 15px;
+  height: 15px;
   color: var(--text-muted);
   flex-shrink: 0;
   transition: color var(--trans-fast);
@@ -164,10 +165,14 @@
   padding: 1px 6px;
   border-radius: var(--radius-pill);
   background: var(--bg-surface-elevated);
-  border: 1px solid var(--border-default);
-  color: var(--text-secondary);
-  font-weight: 600;
+  color: var(--text-muted);
+  font-weight: 500;
   margin-left: auto;
+}
+
+.nav-item.active .nav-badge {
+  background: var(--accent-primary-soft);
+  color: var(--accent-primary);
 }
 
 .nav-rail.collapsed .nav-badge {
@@ -176,19 +181,18 @@
 
 /* Rail Footer */
 .rail-footer {
-  padding: 8px;
+  padding: 8px 12px;
   border-top: 1px solid var(--border-subtle);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 6px;
 }
 
 .collapse-btn {
   background: transparent;
   border: none;
   color: var(--text-muted);
-  padding: 5px;
+  padding: 4px;
   border-radius: var(--radius-xs);
   cursor: pointer;
   display: flex;
@@ -222,7 +226,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 14px;
+  padding: 0 16px;
   gap: 12px;
   z-index: 90;
 }
@@ -235,20 +239,14 @@
 
 .workspace-title-wrap {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: 8px;
 }
 
 .workspace-main-title {
   font-size: var(--text-md);
-  font-weight: 700;
+  font-weight: 600;
   color: #fff;
-  letter-spacing: 0.2px;
-}
-
-.workspace-desc-tag {
-  font-size: var(--text-xs);
-  color: var(--text-muted);
 }
 
 .appbar-right {
@@ -257,36 +255,29 @@
   gap: 8px;
 }
 
-/* Manila Live Clock Pill */
+/* Manila Live Clock Pill - Minimal Calm Design */
 .manila-clock-pill {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 3px 9px;
+  padding: 3px 8px;
   background: var(--bg-surface);
-  border: 1px solid var(--border-default);
+  border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
   font-family: var(--font-mono);
-  font-size: 11px;
-  color: var(--accent-primary);
-  letter-spacing: 0.3px;
+  font-size: 10.5px;
+  color: var(--text-secondary);
+  letter-spacing: 0.2px;
 }
 
 .clock-live-indicator {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
   border-radius: 50%;
   background: var(--accent-success);
-  box-shadow: 0 0 6px var(--accent-success);
-  animation: pulse-dot 2s infinite;
 }
 
-@keyframes pulse-dot {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.4; transform: scale(0.85); }
-}
-
-/* Sync / Receiver Status Pill */
+/* Sync / Cloud Indicator Pill */
 .sync-status-pill {
   display: flex;
   align-items: center;
@@ -294,31 +285,23 @@
   padding: 3px 8px;
   border-radius: var(--radius-sm);
   font-size: var(--text-xs);
-  background: rgba(16, 185, 129, 0.1);
-  border: 1px solid rgba(16, 185, 129, 0.3);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-muted);
+}
+
+.sync-status-pill.connected {
   color: var(--accent-success);
-}
-
-.sync-status-pill.warning {
-  background: rgba(245, 158, 11, 0.1);
-  border-color: rgba(245, 158, 11, 0.3);
-  color: var(--accent-warning);
-}
-
-.sync-status-pill.error {
-  background: rgba(239, 68, 68, 0.1);
-  border-color: rgba(239, 68, 68, 0.3);
-  color: var(--accent-danger);
 }
 
 /* User Profile Badge */
 .user-profile-badge {
   display: flex;
   align-items: center;
-  gap: 7px;
+  gap: 8px;
   padding: 3px 8px 3px 4px;
   background: var(--bg-surface);
-  border: 1px solid var(--border-default);
+  border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
   cursor: pointer;
   transition: all var(--trans-fast);
@@ -326,17 +309,18 @@
 
 .user-profile-badge:hover {
   background: var(--bg-surface-hover);
-  border-color: var(--border-hover);
+  border-color: var(--border-default);
 }
 
 .user-avatar {
   width: 22px;
   height: 22px;
   border-radius: var(--radius-xs);
-  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
-  color: #fff;
+  background: var(--bg-surface-elevated);
+  border: 1px solid var(--border-default);
+  color: var(--text-primary);
   font-size: 11px;
-  font-weight: 700;
+  font-weight: 600;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -349,13 +333,13 @@
 }
 
 .user-name {
-  font-size: 11.5px;
+  font-size: 11px;
   font-weight: 600;
   color: var(--text-primary);
 }
 
 .user-role-tag {
-  font-size: 9.5px;
+  font-size: 9px;
   color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -385,39 +369,28 @@
   display: none !important;
 }
 
-/* Workspace Scrollable Body */
-.pane-content {
-  flex: 1;
-  overflow-y: auto;
-  overflow-x: hidden;
-  padding: 10px 14px;
+/* EDR Split-View Layout (Left Form, Right Dispatch & Saved Records) */
+.edr-split-layout {
+  display: grid;
+  grid-template-columns: minmax(420px, 1.1fr) minmax(380px, 0.9fr);
+  gap: 12px;
+  height: calc(100vh - var(--header-height));
+  padding: 12px 16px;
+  overflow: hidden;
+}
+
+@media (max-width: 1100px) {
+  .edr-split-layout {
+    grid-template-columns: 1fr;
+    overflow-y: auto;
+    height: auto;
+  }
+}
+
+.edr-split-column {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-}
-
-/* Layout Grid Utilities */
-.compact-grid-2 {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-}
-
-.compact-grid-3 {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
-}
-
-.compact-grid-4 {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 8px;
-}
-
-.compact-split-view {
-  display: grid;
-  grid-template-columns: 1.15fr 0.85fr;
-  gap: 10px;
   height: 100%;
+  overflow: hidden;
+  gap: 12px;
 }

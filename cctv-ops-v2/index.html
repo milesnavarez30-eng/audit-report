@@ -5,148 +5,379 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>CCTV OPS V2 - Operations Platform</title>
 
-  <!-- Plus Jakarta Sans Font -->
+  <!-- Google Fonts: Plus Jakarta Sans -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 
-  <!-- Modular Design System Styles -->
+  <!-- Modular Design System -->
   <link rel="stylesheet" href="./css/tokens.css">
   <link rel="stylesheet" href="./css/base.css">
   <link rel="stylesheet" href="./css/layout.css">
   <link rel="stylesheet" href="./css/components.css">
 
   <style>
-    /* Specific Compact Layout for EDR 3-Column Studio */
-    .edr-workspace-studio {
-      display: grid;
-      grid-template-columns: 380px 1.15fr 0.95fr;
-      gap: 10px;
-      height: calc(100vh - var(--header-height));
-      padding: 10px 14px;
-      overflow: hidden;
-    }
-
-    @media (max-width: 1400px) {
-      .edr-workspace-studio {
-        grid-template-columns: 350px 1fr 1fr;
-      }
-    }
-
-    @media (max-width: 1100px) {
-      .edr-workspace-studio {
-        grid-template-columns: 1fr;
-        overflow-y: auto;
-        height: auto;
-      }
-    }
-
-    .edr-col {
-      display: flex;
-      flex-direction: column;
-      height: 100%;
-      overflow: hidden;
-      gap: 8px;
-    }
-
-    .edr-scroll-body {
+    /* Premium Split-View EDR Styling */
+    .edr-form-scroll {
       flex: 1;
       overflow-y: auto;
-      padding: 8px;
+      padding: 12px 14px;
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 12px;
     }
 
-    /* Form Grid */
-    .edr-form-grid {
+    .form-row-2 {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 8px;
     }
 
-    .span-2 {
-      grid-column: span 2;
-    }
-
-    /* Compact EDR List Item */
-    .edr-item-card {
-      background: var(--bg-surface-elevated);
-      border: 1px solid var(--border-default);
-      border-radius: var(--radius-sm);
-      padding: 7px 9px;
-      display: flex;
-      flex-direction: column;
-      gap: 5px;
-      transition: all var(--trans-fast);
-      user-select: none;
-    }
-
-    .edr-item-card:hover {
-      border-color: var(--border-hover);
-      background: var(--bg-surface-hover);
-    }
-
-    .edr-item-card.is-selected {
-      border-color: rgba(56, 189, 248, 0.4);
-      background: rgba(56, 189, 248, 0.05);
-      box-shadow: inset 2px 0 0 var(--accent-primary);
-    }
-
-    .edr-item-card.is-done {
-      opacity: 0.65;
-      background: rgba(16, 185, 129, 0.04);
-    }
-
-    .edr-item-header {
-      display: flex;
-      align-items: center;
-      gap: 7px;
-    }
-
-    .edr-item-title {
-      font-size: 11.5px;
-      font-weight: 700;
-      color: var(--text-primary);
-      flex: 1;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .edr-item-meta {
-      font-size: 10.5px;
-      color: var(--text-muted);
-      display: flex;
-      gap: 6px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .edr-item-actions {
-      display: flex;
-      align-items: center;
-      justify-content: flex-end;
-      gap: 4px;
-      margin-top: 2px;
-      padding-top: 4px;
-      border-top: 1px solid var(--border-subtle);
-    }
-
-    /* Output Card */
-    .edr-output-preview {
+    /* Output Preview Area */
+    .dispatch-preview-box {
       flex: 1;
       background: var(--bg-input);
       border: 1px solid var(--border-default);
       border-radius: var(--radius-sm);
-      padding: 10px;
-      font-family: var(--font-family);
-      font-size: 11.5px;
-      line-height: 1.45;
+      padding: 10px 12px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      line-height: 1.5;
       overflow-y: auto;
       white-space: pre-wrap;
+      color: var(--text-secondary);
+    }
+
+    /* Refined Saved EDR Record Row & Actions */
+    #edrListContainer {
+      overflow-y: auto !important;
+      overflow-x: hidden !important;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      width: 100%;
+      box-sizing: border-box;
+      padding: 8px 10px;
+    }
+
+    .record-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-height: 54px;
+      padding: 6px 10px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-default);
+      border-radius: var(--radius-sm);
+      transition: all var(--trans-fast);
+      user-select: none;
+      box-sizing: border-box;
+      width: 100%;
+      max-width: 100%;
+      position: relative;
+    }
+
+    .record-row:hover {
+      background: var(--bg-surface-elevated);
+      border-color: var(--border-hover);
+    }
+
+    .record-row.is-selected {
+      border-color: rgba(56, 189, 248, 0.45);
+      background: rgba(56, 189, 248, 0.05);
+    }
+
+    .record-row.is-done {
+      opacity: 0.65;
+    }
+
+    .record-select-col {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    /* Report Info: Main line (Date · Site [Status Chips]), Sub line (Campaign · TL: ... · Subj: ...) */
+    .record-info {
+      flex: 1 1 auto;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 3px;
+      min-width: 0;
+      overflow: hidden;
+    }
+
+    .record-main-line {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      min-width: 0;
+      white-space: nowrap;
+      overflow: hidden;
+    }
+
+    .record-date {
+      font-size: 12px;
+      font-weight: 700;
+      color: #38bdf8;
+      letter-spacing: 0.2px;
+      flex-shrink: 0;
+    }
+
+    .record-sep {
+      color: var(--text-muted);
+      opacity: 0.5;
+      flex-shrink: 0;
+      font-size: 10px;
+    }
+
+    .record-site {
+      font-size: 12px;
+      font-weight: 600;
       color: var(--text-primary);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      flex-shrink: 1;
+    }
+
+    /* Small compact status chips */
+    .status-chips-wrap {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      margin-left: 2px;
+      flex-shrink: 0;
+    }
+
+    .status-chip {
+      font-size: 8.5px;
+      font-weight: 700;
+      padding: 1px 4.5px;
+      border-radius: 3px;
+      letter-spacing: 0.4px;
+      text-transform: uppercase;
+      line-height: 1.1;
+      user-select: none;
+      flex-shrink: 0;
+    }
+
+    .status-chip.chip-ss {
+      background: rgba(245, 158, 11, 0.12);
+      color: #fbbf24;
+      border: 1px solid rgba(245, 158, 11, 0.28);
+    }
+
+    .status-chip.chip-audit {
+      background: rgba(56, 189, 248, 0.12);
+      color: #38bdf8;
+      border: 1px solid rgba(56, 189, 248, 0.28);
+    }
+
+    .status-chip.chip-done {
+      background: rgba(52, 211, 153, 0.12);
+      color: #34d399;
+      border: 1px solid rgba(52, 211, 153, 0.28);
+    }
+
+    .status-chip.chip-docs {
+      background: rgba(168, 85, 247, 0.12);
+      color: #c084fc;
+      border: 1px solid rgba(168, 85, 247, 0.28);
+    }
+
+    .record-sub-line {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 11px;
+      color: var(--text-muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      min-width: 0;
+    }
+
+    .record-sub-line .record-campaign {
+      color: var(--text-secondary);
+      font-weight: 500;
+      flex-shrink: 0;
+    }
+
+    .record-sub-line .record-resp {
+      color: var(--text-muted);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      flex-shrink: 1;
+    }
+
+    .record-sub-line .record-resp strong {
+      color: var(--text-secondary);
+      font-weight: 500;
+    }
+
+    .record-sub-line .record-subj {
+      color: var(--text-muted);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      flex-shrink: 2;
+    }
+
+    /* Actions: Right-aligned, Clean, Non-scrolling */
+    .record-actions {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      flex-shrink: 0;
+      margin-left: auto;
+    }
+
+    .btn-action {
+      height: 24px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 6px;
+      font-size: 10.5px;
+      font-weight: 500;
+      white-space: nowrap;
+      border-radius: 4px;
+      border: 1px solid var(--border-default);
+      background: var(--bg-surface-elevated);
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all var(--trans-fast);
+      flex-shrink: 0;
+      line-height: 1;
+      font-family: inherit;
+    }
+
+    .btn-action:hover {
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text-primary);
+      border-color: var(--border-hover);
+    }
+
+    .btn-action.btn-audit-send.is-linked {
+      color: #38bdf8;
+      border-color: rgba(56, 189, 248, 0.35);
+      background: rgba(56, 189, 248, 0.06);
+    }
+
+    .btn-action.btn-done-toggle.is-done-btn {
+      color: #34d399;
+      border-color: rgba(52, 211, 153, 0.35);
+      background: rgba(52, 211, 153, 0.06);
+    }
+
+    .btn-action.btn-more-trigger {
+      min-width: 22px;
+      padding: 0 4px;
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+    }
+
+    .btn-audit-send .label-short {
+      display: none;
+    }
+
+    @media (max-width: 520px) {
+      .btn-audit-send .label-long {
+        display: none;
+      }
+      .btn-audit-send .label-short {
+        display: inline;
+      }
+    }
+
+    @media (max-width: 1100px) {
+      .record-row {
+        flex-wrap: wrap;
+        min-height: auto;
+      }
+      .record-actions {
+        width: 100%;
+        justify-content: flex-end;
+        padding-top: 4px;
+        border-top: 1px solid rgba(255, 255, 255, 0.04);
+      }
+    }
+
+    /* More Dropdown Menu */
+    .record-more-menu-wrap {
+      position: relative;
+      display: inline-flex;
+    }
+
+    .record-dropdown-menu {
+      position: absolute;
+      top: calc(100% + 4px);
+      right: 0;
+      z-index: 1050;
+      min-width: 125px;
+      background: #151923;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 6px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.55), 0 2px 6px rgba(0, 0, 0, 0.3);
+      padding: 4px;
+      display: none;
+      flex-direction: column;
+      gap: 1px;
+    }
+
+    .record-dropdown-menu.is-open {
+      display: flex;
+    }
+
+    .dropdown-item {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      width: 100%;
+      padding: 5px 8px;
+      border: none;
+      background: transparent;
+      color: var(--text-secondary);
+      font-size: 11px;
+      font-weight: 500;
+      text-align: left;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all var(--trans-fast);
+      font-family: inherit;
+      white-space: nowrap;
+    }
+
+    .dropdown-item:hover {
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text-primary);
+    }
+
+    .dropdown-item.text-danger {
+      color: #f87171;
+    }
+
+    .dropdown-item.text-danger:hover {
+      background: rgba(239, 68, 68, 0.15);
+      color: #fca5a5;
+    }
+
+    .dropdown-divider {
+      height: 1px;
+      background: rgba(255, 255, 255, 0.08);
+      margin: 3px 0;
+    }
+
+    .dropdown-icon {
+      width: 13px;
+      height: 13px;
+      flex-shrink: 0;
+      stroke: currentColor;
     }
   </style>
 </head>
@@ -155,7 +386,6 @@
 
     <!-- Slim Left Navigation Rail -->
     <aside class="nav-rail" id="navRail">
-      <!-- Rail Header -->
       <div class="rail-brand">
         <div class="brand-badge">V2</div>
         <div class="brand-text">
@@ -164,13 +394,12 @@
         </div>
       </div>
 
-      <!-- Rail Menu -->
       <nav class="rail-menu" role="tablist" aria-label="Workspaces">
-        <div class="rail-section-label">Core Workspaces</div>
+        <div class="rail-section-label">Workspaces</div>
 
         <!-- EDR Workspace Tab (Active Prototype) -->
-        <button type="button" class="nav-item active" id="tabEdr" data-workspace="edr" role="tab" aria-selected="true">
-          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <button type="button" class="nav-item active" id="tabEdr" role="tab" aria-selected="true">
+          <svg class="nav-icon" viewBox="0 0 24 24">
             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
             <polyline points="14 2 14 8 20 8"></polyline>
             <line x1="16" y1="13" x2="8" y2="13"></line>
@@ -181,40 +410,35 @@
           <span class="nav-badge" id="railEdrBadge">0</span>
         </button>
 
-        <!-- CCTV Audit Tab (Phase 2) -->
-        <button type="button" class="nav-item" id="tabAudit" data-workspace="audit" role="tab" aria-selected="false">
-          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <!-- Placeholders for Future Workspaces -->
+        <button type="button" class="nav-item" id="tabAudit" role="tab" aria-selected="false">
+          <svg class="nav-icon" viewBox="0 0 24 24">
             <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
             <line x1="3" y1="9" x2="21" y2="9"></line>
             <line x1="9" y1="21" x2="9" y2="9"></line>
           </svg>
           <span class="nav-label">CCTV Audit</span>
-          <span class="nav-badge" style="font-size:9px; opacity:0.6;">Soon</span>
+          <span class="nav-badge">Phase 2</span>
         </button>
 
-        <!-- AI Sorter Tab (Phase 3) -->
-        <button type="button" class="nav-item" id="tabSorter" data-workspace="sorter" role="tab" aria-selected="false">
-          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <button type="button" class="nav-item" id="tabSorter" role="tab" aria-selected="false">
+          <svg class="nav-icon" viewBox="0 0 24 24">
             <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
           </svg>
           <span class="nav-label">AI Sorter</span>
-          <span class="nav-badge" style="font-size:9px; opacity:0.6;">Soon</span>
         </button>
 
-        <!-- Maintenance Tab (Phase 3) -->
-        <button type="button" class="nav-item" id="tabMaintenance" data-workspace="maintenance" role="tab" aria-selected="false">
-          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <button type="button" class="nav-item" id="tabMaintenance" role="tab" aria-selected="false">
+          <svg class="nav-icon" viewBox="0 0 24 24">
             <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path>
           </svg>
           <span class="nav-label">Maintenance</span>
-          <span class="nav-badge" style="font-size:9px; opacity:0.6;">Soon</span>
         </button>
 
         <div class="rail-section-label">Management</div>
 
-        <!-- Masterlist Tab (Phase 3) -->
-        <button type="button" class="nav-item" id="tabMasterlist" data-workspace="masterlist" role="tab" aria-selected="false">
-          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <button type="button" class="nav-item" id="tabMasterlist" role="tab" aria-selected="false">
+          <svg class="nav-icon" viewBox="0 0 24 24">
             <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
             <circle cx="9" cy="7" r="4"></circle>
             <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
@@ -223,18 +447,16 @@
           <span class="nav-label">Masterlist</span>
         </button>
 
-        <!-- Follow Up Tab (Phase 4) -->
-        <button type="button" class="nav-item" id="tabFollowup" data-workspace="followup" role="tab" aria-selected="false">
-          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <button type="button" class="nav-item" id="tabFollowup" role="tab" aria-selected="false">
+          <svg class="nav-icon" viewBox="0 0 24 24">
             <circle cx="12" cy="12" r="10"></circle>
             <polyline points="12 6 12 12 16 14"></polyline>
           </svg>
           <span class="nav-label">Follow Up</span>
         </button>
 
-        <!-- History Tab (Phase 4) -->
-        <button type="button" class="nav-item" id="tabHistory" data-workspace="history" role="tab" aria-selected="false">
-          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <button type="button" class="nav-item" id="tabHistory" role="tab" aria-selected="false">
+          <svg class="nav-icon" viewBox="0 0 24 24">
             <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
             <path d="M3 3v5h5"></path>
             <polyline points="12 7 12 12 15 15"></polyline>
@@ -242,9 +464,8 @@
           <span class="nav-label">History</span>
         </button>
 
-        <!-- Accounts Tab (Phase 4) -->
-        <button type="button" class="nav-item" id="tabAccounts" data-workspace="accounts" role="tab" aria-selected="false">
-          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <button type="button" class="nav-item" id="tabAccounts" role="tab" aria-selected="false">
+          <svg class="nav-icon" viewBox="0 0 24 24">
             <circle cx="12" cy="12" r="3"></circle>
             <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
           </svg>
@@ -252,46 +473,55 @@
         </button>
       </nav>
 
-      <!-- Rail Footer -->
       <div class="rail-footer">
-        <span style="font-size:10px; color:var(--text-dim); padding-left:4px;">V2.0.0-beta</span>
+        <span style="font-size:10px; color:var(--text-dim);">V2.0.0-beta</span>
         <button type="button" class="collapse-btn" id="btnToggleRail" title="Toggle Sidebar">
-          <svg class="icon icon-sm" viewBox="0 0 24 24">
-            <polyline points="15 18 9 12 15 6"></polyline>
-          </svg>
+          <svg class="icon icon-sm" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"></polyline></svg>
         </button>
       </div>
     </aside>
 
     <!-- Main Content Area -->
     <main class="app-main">
-      <!-- Fixed Compact Top App Bar -->
+      <!-- Minimalist Topbar -->
       <header class="top-appbar">
         <div class="appbar-left">
           <div class="workspace-title-wrap">
-            <h1 class="workspace-main-title" id="topWorkspaceTitle">Electronic Disciplinary Report</h1>
-            <span class="badge badge-info" id="topWorkspaceBadge">EDR Manual Studio</span>
+            <h1 class="workspace-main-title">End of the Day Report</h1>
+            <span class="badge badge-info">Manual Operations</span>
           </div>
         </div>
 
         <div class="appbar-right">
-          <!-- Google Docs Web App Status -->
+          <!-- EDR Template Link -->
+          <a href="https://docs.google.com/document/d/1-i54dxMosFgiNcdEO7fHqvN15yIsicdOjmsW0XTYbUw/edit?tab=t.ob2cyz0wou1" target="_blank" rel="noopener noreferrer" class="btn btn-ghost btn-sm" id="btnOpenTemplate" title="Open Google Docs EDR Template" style="text-decoration:none; gap:5px;">
+            <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+            <span>Template</span>
+          </a>
+
+          <!-- Reload Saved EDRs from Google Docs -->
+          <button type="button" class="btn btn-ghost btn-sm" id="btnReloadDocs" title="Reload saved EDRs from Google Docs" style="gap:5px;">
+            <svg class="icon icon-sm" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+            <span>Reload</span>
+          </button>
+
+          <!-- Google Docs Status -->
           <div class="sync-status-pill" id="edrDocsPill" title="Google Docs Receiver Status">
-            <span style="width:6px; height:6px; border-radius:50%; background:currentColor;"></span>
+            <span style="width:5px; height:5px; border-radius:50%; background:currentColor;"></span>
             <span id="edrDocsStatusText">Local Storage</span>
             <button type="button" class="btn btn-ghost btn-sm" id="btnOpenDocsSetup" style="padding:0 2px; height:18px;">
               <svg class="icon icon-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
             </button>
           </div>
 
-          <!-- Manila Live Time -->
-          <div class="manila-clock-pill" id="manilaClockWrap" title="Asia/Manila (PHT) Operational Clock">
+          <!-- Manila Live Clock -->
+          <div class="manila-clock-pill" title="Asia/Manila (PHT) Operational Clock">
             <span class="clock-live-indicator"></span>
             <span id="manilaClockText">00:00:00 AM PHT</span>
           </div>
 
-          <!-- User Account Badge / Auth Gate -->
-          <div class="user-profile-badge" id="btnUserMenu">
+          <!-- User Badge / Terminal -->
+          <div class="user-profile-badge" id="btnUserMenu" title="Account settings & switch">
             <div class="user-avatar" id="userAvatarText">M</div>
             <div class="user-meta">
               <span class="user-name" id="userNameText">Miles</span>
@@ -301,17 +531,13 @@
         </div>
       </header>
 
-      <!-- Viewport -->
+      <!-- Viewport: Split-View Layout -->
       <div class="workspace-viewport">
-
-        <!-- ===================================================================
-             EDR WORKSPACE PANE (3-Column Desktop Studio)
-             =================================================================== -->
         <section class="workspace-pane" id="paneEdr">
-          <div class="edr-workspace-studio">
+          <div class="edr-split-layout">
 
-            <!-- COLUMN 1: Compact Manual Form (Never AI generated) -->
-            <div class="edr-col">
+            <!-- LEFT COLUMN: Manual EDR Form (~55% width) -->
+            <div class="edr-split-column">
               <div class="card" style="height:100%;">
                 <div class="card-header">
                   <span class="card-title">
@@ -319,117 +545,192 @@
                     <span id="edrFormTitle">Manual EDR Entry</span>
                   </span>
                   <div class="card-actions">
-                    <button type="button" class="btn btn-outline btn-sm" id="btnEdrClear">Clear</button>
+                    <button type="button" class="btn btn-ghost btn-sm" id="btnEdrClear">Reset</button>
                   </div>
                 </div>
 
-                <div class="edr-scroll-body">
-                  <form id="edrForm" autocomplete="off">
-                    <div class="edr-form-grid">
-                      <!-- Site -->
-                      <div class="form-group span-2">
-                        <label class="form-label" for="edrSite">Site <span class="required-dot">*</span></label>
-                        <select id="edrSite" class="form-control"></select>
-                      </div>
+                <!-- Structured Grouped Form -->
+                <div class="edr-form-scroll">
+                  <form id="edrForm" autocomplete="off" style="display:flex; flex-direction:column; gap:10px;">
+                    
+                    <!-- SECTION 1: Location & Time -->
+                    <div class="form-section-header">
+                      <span class="form-section-tag">01</span>
+                      <span class="form-section-title">Event & Location</span>
+                    </div>
 
-                      <!-- Date -->
+                    <div class="form-group">
+                      <label class="form-label" for="edrSite">Site Location <span class="required-dot">*</span></label>
+                      <select id="edrSite" class="form-control"></select>
+                    </div>
+
+                    <div class="form-row-2">
                       <div class="form-group">
-                        <label class="form-label" for="edrDate">Date <span class="required-dot">*</span></label>
+                        <label class="form-label" for="edrDate">Date Observed <span class="required-dot">*</span></label>
                         <input type="date" id="edrDate" class="form-control" required>
                       </div>
-
-                      <!-- Time Observed -->
                       <div class="form-group">
                         <label class="form-label" for="edrTimeObserved">Time Observed <span class="required-dot">*</span></label>
                         <input type="text" id="edrTimeObserved" class="form-control" placeholder="e.g. 3:10:45 AM-3:18:01 AM" required>
                       </div>
+                    </div>
 
-                      <!-- Respondent Role & Name -->
-                      <div class="form-group span-2">
+                    <!-- SECTION 2: People Involved -->
+                    <div class="form-section-header">
+                      <span class="form-section-tag">02</span>
+                      <span class="form-section-title">Parties Involved</span>
+                    </div>
+
+                    <div class="form-row-2">
+                      <div class="form-group">
                         <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:2px;">
-                          <label class="form-label" style="margin:0;">Respondent</label>
+                          <div style="display:flex; align-items:center; gap:2px;">
+                            <label class="form-label" style="margin:0;">Respondent</label>
+                            <button type="button" class="btn-opt-mgmt" id="btnAddSupervisorOption" title="Add custom Team Leader/OM to masterlist">+</button>
+                            <button type="button" class="btn-opt-mgmt" id="btnRemoveSupervisorOption" title="Remove custom Team Leader/OM from masterlist">−</button>
+                          </div>
                           <div class="choice-segment">
-                            <button type="button" class="choice-btn active" id="btnRoleTl">Team Leader</button>
+                            <button type="button" class="choice-btn active" id="btnRoleTl">TL</button>
                             <button type="button" class="choice-btn" id="btnRoleOm">OM</button>
                           </div>
                         </div>
-                        <div class="input-with-action">
-                          <input type="text" id="edrSupervisorName" class="form-control" list="listRespondents" placeholder="Search or enter respondent name..." required>
-                          <datalist id="listRespondents"></datalist>
-                        </div>
+                        <input type="text" id="edrSupervisorName" class="form-control" list="listRespondents" placeholder="Search Team Leader..." required>
+                        <datalist id="listRespondents"></datalist>
                       </div>
 
-                      <!-- Dedicated OM -->
-                      <div class="form-group span-2">
+                      <div class="form-group">
                         <label class="form-label" for="edrOmName">Dedicated OM</label>
-                        <input type="text" id="edrOmName" class="form-control" list="listOms" placeholder="Search or select OM...">
+                        <input type="text" id="edrOmName" class="form-control" list="listOms" placeholder="Search OM...">
                         <datalist id="listOms"></datalist>
                       </div>
+                    </div>
 
-                      <!-- Violation Subject Role & Name -->
-                      <div class="form-group span-2">
+                    <div class="form-row-2">
+                      <div class="form-group">
                         <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:2px;">
                           <label class="form-label" style="margin:0;">Violation Subject</label>
                           <div class="choice-segment">
                             <button type="button" class="choice-btn active" id="btnSubjAgent">Agent/s</button>
-                            <button type="button" class="choice-btn" id="btnSubjTl">Team Leader</button>
+                            <button type="button" class="choice-btn" id="btnSubjTl">TL</button>
                           </div>
                         </div>
-                        <input type="text" id="edrSubjectName" class="form-control" placeholder="Enter employee name..." required>
+                        <input type="text" id="edrSubjectName" class="form-control" placeholder="Employee name..." required>
+                        <datalist id="listSubjectTls"></datalist>
                       </div>
 
-                      <!-- Account / Campaign -->
-                      <div class="form-group span-2">
-                        <label class="form-label" for="edrAccount">Account / Campaign <span class="required-dot">*</span></label>
+                      <div class="form-group">
+                        <div style="display:flex; align-items:center; justify-content:space-between;">
+                          <label class="form-label" for="edrAccount" style="margin:0;">Account / Campaign <span class="required-dot">*</span></label>
+                          <div style="display:flex; align-items:center; gap:2px;">
+                            <button type="button" class="btn-opt-mgmt" id="btnAddAccountOption" title="Add custom Account/Campaign to masterlist">+</button>
+                            <button type="button" class="btn-opt-mgmt" id="btnRemoveAccountOption" title="Remove custom Account/Campaign from masterlist">−</button>
+                          </div>
+                        </div>
                         <input type="text" id="edrAccount" class="form-control" list="listAccounts" placeholder="Search campaign..." required>
                         <datalist id="listAccounts"></datalist>
                       </div>
+                    </div>
 
-                      <!-- Incident -->
-                      <div class="form-group span-2">
-                        <label class="form-label" for="edrIncident">Incident <span class="required-dot">*</span></label>
-                        <textarea id="edrIncident" class="form-control" rows="2" placeholder="Describe the violation observed on CCTV..." required></textarea>
-                      </div>
+                    <!-- SECTION 3: Findings -->
+                    <div class="form-section-header">
+                      <span class="form-section-tag">03</span>
+                      <span class="form-section-title">Findings & Action Taken</span>
+                    </div>
 
-                      <!-- Action Taken / Remarks -->
-                      <div class="form-group span-2">
-                        <label class="form-label" for="edrActionRemarks">Action Taken / Remarks <span class="required-dot">*</span></label>
-                        <textarea id="edrActionRemarks" class="form-control" rows="2" placeholder="TL confirmation / remarks / actions taken..." required></textarea>
-                      </div>
+                    <div class="form-group">
+                      <label class="form-label" for="edrIncident">Incident Description <span class="required-dot">*</span></label>
+                      <textarea id="edrIncident" class="form-control" rows="2" placeholder="Specific violation observed on camera..." required></textarea>
+                    </div>
 
-                      <!-- Screenshot Drop/Paste Zone -->
-                      <div class="form-group span-2">
-                        <label class="form-label">CCTV Screenshot</label>
-                        <div class="dropzone-compact" id="dropzoneScreenshot" tabindex="0">
-                          <input type="file" id="fileScreenshot" accept="image/*" style="display:none;">
-                          <img id="shotThumb" class="drop-thumb" style="display:none;" alt="Screenshot">
-                          <span class="drop-text" id="dropText">Drop image, Ctrl+V, or click to browse</span>
-                          <button type="button" class="btn btn-ghost btn-sm" id="btnRemoveShot" style="display:none; margin-left:auto;">Remove</button>
-                        </div>
-                      </div>
+                    <div class="form-group">
+                      <label class="form-label" for="edrActionRemarks">Action Taken / Remarks <span class="required-dot">*</span></label>
+                      <textarea id="edrActionRemarks" class="form-control" rows="2" placeholder="Supervisor response, investigation, and remarks..." required></textarea>
+                    </div>
 
-                      <!-- Google Drive Clip URL -->
-                      <div class="form-group span-2">
-                        <label class="form-label" for="edrClipLink">CCTV Clip (Google Drive Link)</label>
-                        <input type="url" id="edrClipLink" class="form-control" placeholder="https://drive.google.com/...">
+                    <!-- SECTION 4: Evidence -->
+                    <div class="form-section-header">
+                      <span class="form-section-tag">04</span>
+                      <span class="form-section-title">Evidence & Footage</span>
+                    </div>
+
+                    <div class="form-group">
+                      <label class="form-label">CCTV Screenshot</label>
+                      <div class="dropzone-compact" id="dropzoneScreenshot" tabindex="0">
+                        <input type="file" id="fileScreenshot" accept="image/*" style="display:none;">
+                        <img id="shotThumb" class="drop-thumb" style="display:none;" alt="Screenshot">
+                        <span class="drop-text" id="dropText">Drop image, Ctrl+V, or click to browse</span>
+                        <button type="button" class="btn btn-ghost btn-sm" id="btnRemoveShot" style="display:none; margin-left:auto;">Remove</button>
                       </div>
+                    </div>
+
+                    <div class="form-group">
+                      <label class="form-label" for="edrClipLink">CCTV Clip (Google Drive URL)</label>
+                      <input type="url" id="edrClipLink" class="form-control" placeholder="https://drive.google.com/...">
                     </div>
                   </form>
                 </div>
 
+                <!-- Form Action Bar -->
                 <div class="card-footer">
-                  <button type="button" class="btn btn-outline btn-sm" id="btnEdrCancelEdit" style="display:none;">Cancel</button>
-                  <button type="submit" form="edrForm" class="btn btn-primary" id="btnEdrSubmit" style="margin-left:auto;">
-                    <svg class="icon icon-sm" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                    <span id="btnEdrSubmitText">Create EDR</span>
-                  </button>
+                  <button type="button" class="btn btn-outline btn-sm" id="btnEdrCancelEdit" style="display:none;">Cancel Edit</button>
+                  <div style="display:flex; align-items:center; gap:6px; margin-left:auto; flex-wrap:wrap;">
+                    <button type="submit" form="edrForm" class="btn btn-primary btn-sm" id="btnEdrSubmit">
+                      <svg class="icon icon-sm" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                      <span id="btnEdrSubmitText">Save EDR</span>
+                    </button>
+                    <button type="button" class="btn btn-outline btn-sm" id="btnSendFormToDocs" title="Send current EDR to Google Docs">
+                      Send to Google Docs
+                    </button>
+                    <button type="button" class="btn btn-outline btn-sm" id="btnSendFormToAudit" title="Send current EDR to CCTV Audit">
+                      Send to CCTV Audit
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
 
-            <!-- COLUMN 2: EDR List (Always Visible & Accessible) -->
-            <div class="edr-col">
-              <div class="card" style="height:100%;">
+            <!-- RIGHT COLUMN: Dispatch & Saved Records (~45% width) -->
+            <div class="edr-split-column">
+
+              <!-- Top Panel: Dispatch & Teams Output -->
+              <div class="card" style="flex: 0.95; min-height: 220px;">
+                <div class="card-header">
+                  <div style="display:flex; align-items:center; gap:6px;">
+                    <svg class="icon" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                    <span class="card-title">Teams Dispatch</span>
+                  </div>
+                  <div class="card-actions">
+                    <button type="button" class="btn btn-outline btn-sm" id="btnSendSelectedToDocs" title="Send selected EDR to Google Docs">
+                      Send to Google Docs
+                    </button>
+                    <button type="button" class="btn btn-outline btn-sm" id="btnSendSelectedToAudit" title="Send selected EDR to CCTV Audit">
+                      Send to CCTV Audit
+                    </button>
+                    <button type="button" class="btn btn-outline btn-sm" id="btnCopyScreenshot" title="Copy CCTV screenshot to clipboard as PNG image">
+                      Copy Screenshot
+                    </button>
+                    <button type="button" class="btn btn-primary btn-sm" id="btnCopyAllTeams">
+                      <svg class="icon icon-sm" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                      Copy for Teams
+                    </button>
+                  </div>
+                </div>
+
+                <div class="card-body" style="flex:1; overflow:hidden; gap:8px;">
+                  <!-- Quiet Facebook Input -->
+                  <div style="display:flex; align-items:center; gap:8px;">
+                    <span style="font-size:11px; font-weight:500; color:var(--text-secondary); white-space:nowrap;">Facebook Shared Post</span>
+                    <span id="fbDateTag" class="badge badge-neutral" style="font-size:10px;">Sep 10</span>
+                  </div>
+                  <input type="text" id="edrFacebookText" class="form-control" placeholder="Paste Facebook post link here...">
+
+                  <!-- Formatted Preview -->
+                  <div class="dispatch-preview-box" id="edrPreviewBox">Select active EDRs in the list to generate output.</div>
+                </div>
+              </div>
+
+              <!-- Bottom Panel: Saved Records List -->
+              <div class="card" style="flex: 1.05; min-height: 240px;">
                 <div class="card-header">
                   <div style="display:flex; align-items:center; gap:8px;">
                     <span class="card-title">Saved EDRs</span>
@@ -438,94 +739,71 @@
                     <span class="badge badge-success" id="badgeDoneCount">0 done</span>
                   </div>
                   <div class="card-actions">
-                    <button type="button" class="btn btn-outline btn-sm" id="btnSelectAll">Select All</button>
-                    <button type="button" class="btn btn-outline btn-sm" id="btnUnselectAll">Clear</button>
+                    <button type="button" class="btn btn-ghost btn-sm" id="btnSelectAll">Select All</button>
+                    <button type="button" class="btn btn-ghost btn-sm" id="btnUnselectAll">Clear</button>
                   </div>
                 </div>
 
-                <!-- EDR Cards Scrollable List -->
-                <div class="edr-scroll-body" id="edrListContainer">
-                  <div style="color:var(--text-muted); font-size:12px; text-align:center; padding:30px 10px;">
-                    No EDR records found. Create an EDR or check existing storage.
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- COLUMN 3: Teams-Ready Output & Facebook Shared Posts -->
-            <div class="edr-col">
-              <div class="card" style="height:100%;">
-                <div class="card-header">
-                  <span class="card-title">
-                    <svg class="icon" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
-                    Teams-Ready Output
-                  </span>
-                  <div class="card-actions">
-                    <button type="button" class="btn btn-success btn-sm" id="btnCopyAllTeams">
-                      <svg class="icon icon-sm" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
-                      Copy All (Teams)
-                    </button>
-                  </div>
-                </div>
-
-                <div class="edr-scroll-body" style="gap:10px;">
-                  <!-- Facebook Shared Posts Input Card -->
-                  <div class="card" style="border-color:var(--border-subtle); background:var(--bg-surface);">
-                    <div class="card-header" style="padding:4px 8px; min-height:28px;">
-                      <span style="font-size:11px; font-weight:700; color:var(--text-secondary);">Facebook Shared Posts</span>
-                      <span id="fbDateTag" style="font-size:10px; color:var(--accent-primary);">Today</span>
-                    </div>
-                    <div style="padding:6px;">
-                      <textarea id="edrFacebookText" class="form-control" rows="2" placeholder="Paste Facebook post links here..."></textarea>
-                    </div>
-                  </div>
-
-                  <!-- Plain Text / Rich Preview Box -->
-                  <div style="display:flex; flex-direction:column; flex:1; overflow:hidden; gap:4px;">
-                    <div style="font-size:10.5px; font-weight:700; text-transform:uppercase; color:var(--text-muted); letter-spacing:0.4px;">
-                      Live Output Preview (Selected Active EDRs)
-                    </div>
-                    <div class="edr-output-preview" id="edrPreviewBox">
-                      Select active EDRs in the list to generate output.
-                    </div>
+                <!-- Sleek Scrollable List of Records -->
+                <div class="card-body" id="edrListContainer" style="overflow-y:auto; overflow-x:hidden; gap:6px;">
+                  <div style="color:var(--text-muted); font-size:11.5px; text-align:center; padding:30px 10px;">
+                    No EDR records found. Complete the form on the left to save an incident.
                   </div>
                 </div>
               </div>
+
             </div>
 
           </div>
         </section>
-
-        <!-- Placeholder Panes for Future Workspaces -->
-        <section class="workspace-pane" id="paneAudit" hidden>
-          <div style="padding:30px; text-align:center; color:var(--text-muted);">
-            <h3>CCTV Audit Workspace</h3>
-            <p>Reserved for Phase 2 implementation. The V1 production version remains available in the main branch.</p>
-          </div>
-        </section>
-
       </div>
     </main>
-
   </div>
 
   <!-- Google Docs Web App Receiver Setup Dialog -->
   <div class="modal-backdrop" id="modalDocsSetup" hidden>
     <div class="modal-dialog">
       <div class="modal-header">
-        <h3 class="modal-title">Google Docs Receiver Setup</h3>
+        <h3 class="modal-title">Google Docs Integration</h3>
         <button type="button" class="btn btn-ghost btn-sm" id="btnCloseDocsSetup">✕</button>
       </div>
       <div class="modal-body">
-        <p>Enter the Google Apps Script Web App URL to sync EDR records automatically to Google Docs.</p>
+        <p style="font-size:12px; color:var(--text-secondary);">Enter the Google Apps Script Web App URL to sync EDR records automatically to Google Docs.</p>
         <div class="form-group">
           <label class="form-label" for="inputDocsUrl">Web App URL</label>
           <input type="url" id="inputDocsUrl" class="form-control" placeholder="https://script.google.com/macros/s/.../exec">
+          <div class="docs-url-hint" id="edrDocsUrlHint">URL must end in <strong>/exec</strong>.</div>
         </div>
       </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-outline" id="btnCancelDocsSetup">Cancel</button>
-        <button type="button" class="btn btn-primary" id="btnSaveDocsSetup">Save Connection</button>
+      <div class="modal-footer" style="justify-content:space-between;">
+        <button type="button" class="btn btn-danger-ghost btn-sm" id="btnClearDocsSetup" title="Disconnect Google Docs from this browser">Disconnect</button>
+        <div style="display:flex; align-items:center; gap:6px;">
+          <button type="button" class="btn btn-outline btn-sm" id="btnTestDocsSetup">Test Connection</button>
+          <button type="button" class="btn btn-primary btn-sm" id="btnSaveDocsSetup">Save & Connect</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Full Resolution Screenshot Evidence Viewer Modal -->
+  <div class="modal-backdrop" id="modalScreenshotViewer" hidden>
+    <div class="modal-dialog modal-screenshot-dialog">
+      <div class="modal-header">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <h3 class="modal-title" id="screenshotViewerTitle">CCTV Incident Evidence</h3>
+          <span class="badge badge-warning" id="screenshotViewerBadge">CCTV Screenshot</span>
+        </div>
+        <div style="display:flex; align-items:center; gap:6px;">
+          <button type="button" class="btn btn-ghost btn-sm" id="btnViewerCopyScreenshot" title="Copy screenshot to clipboard as PNG">Copy SS</button>
+          <button type="button" class="btn btn-ghost btn-sm" id="btnCloseScreenshotViewer">✕</button>
+        </div>
+      </div>
+      <div class="modal-screenshot-body">
+        <img id="screenshotViewerImg" class="modal-screenshot-img" src="" alt="CCTV Incident Screenshot">
+      </div>
+      <div class="modal-footer" style="justify-content:space-between;">
+        <span style="font-size:11px; color:var(--text-muted);" id="screenshotViewerMeta">Full Resolution Screenshot</span>
+        <button type="button" class="btn btn-outline btn-sm" id="btnViewerCloseBottom">Close</button>
       </div>
     </div>
   </div>
@@ -547,9 +825,26 @@
             <label class="form-label" for="loginPass">Password</label>
             <input type="password" id="loginPass" class="form-control" placeholder="••••••••" required>
           </div>
-          <div id="authErrorMsg" style="color:var(--accent-danger); font-size:11.5px; display:none;"></div>
+          <div id="authErrorMsg" style="color:var(--accent-danger); font-size:11px; display:none;"></div>
           <button type="submit" class="btn btn-primary" style="margin-top:6px;">Sign In</button>
         </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Global App Confirmation Dialog -->
+  <div class="modal-backdrop" id="modalAppConfirm" hidden>
+    <div class="modal-dialog modal-dialog-sm">
+      <div class="modal-header">
+        <h3 class="modal-title" id="confirmDialogTitle">Confirm Action</h3>
+        <button type="button" class="btn btn-ghost btn-sm" onclick="handleConfirmDialog(false)">✕</button>
+      </div>
+      <div class="modal-body">
+        <p id="confirmDialogMessage" style="font-size:12.5px; color:var(--text-secondary); margin:0; line-height:1.5;">Are you sure you want to proceed?</p>
+      </div>
+      <div class="modal-footer" style="justify-content:flex-end; gap:8px;">
+        <button type="button" class="btn btn-outline btn-sm" id="btnConfirmDialogCancel" onclick="handleConfirmDialog(false)">Cancel</button>
+        <button type="button" class="btn btn-primary btn-sm" id="btnConfirmDialogAccept" onclick="handleConfirmDialog(true)">Confirm</button>
       </div>
     </div>
   </div>
@@ -564,6 +859,7 @@
   <!-- Internal V2 Modules -->
   <script src="./js/config.js"></script>
   <script src="./js/storage.js"></script>
+  <script src="./js/shared.js"></script>
   <script src="./js/services/auth-service.js"></script>
   <script src="./js/services/edr-service.js"></script>
   <script src="./js/app.js"></script>

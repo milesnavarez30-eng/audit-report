@@ -1,6 +1,6 @@
 /**
  * CCTV OPS V2 - Authentication & Account Service
- * Clean Supabase client integration with role-based access & multi-tenant data activation
+ * Supabase Client, Role & Permission Management, Audit Logging & Admin Controls
  */
 
 window.CCTV_AUTH = (function () {
@@ -12,13 +12,37 @@ window.CCTV_AUTH = (function () {
   let currentProfile = null;
   let authListeners = [];
 
+  const DEFAULT_USER_PERMISSIONS = {
+    edr: true,
+    cctv: true,
+    aiSorter: true,
+    maintenance: true,
+    pending: true,
+    masterlist: true,
+    followup: true,
+    history: true,
+    manageOptions: false
+  };
+
+  const FULL_ADMIN_PERMISSIONS = {
+    edr: true,
+    cctv: true,
+    aiSorter: true,
+    maintenance: true,
+    pending: true,
+    masterlist: true,
+    followup: true,
+    history: true,
+    manageOptions: true
+  };
+
   function initClient() {
     if (client) return client;
     if (window.supabase && typeof window.supabase.createClient === "function") {
       try {
         client = window.supabase.createClient(cfg.SUPABASE_URL, cfg.SUPABASE_PUBLIC_KEY);
       } catch (e) {
-        console.error("Supabase client init error:", e);
+        console.error("Supabase client initialization error:", e);
       }
     }
     return client;
@@ -51,7 +75,7 @@ window.CCTV_AUTH = (function () {
 
       if (!error && data) return data;
     } catch (e) {
-      console.warn("Could not fetch user profile:", e);
+      console.warn("Could not fetch user profile from Supabase:", e);
     }
     return null;
   }
@@ -130,7 +154,23 @@ window.CCTV_AUTH = (function () {
     },
 
     isAdmin() {
-      return currentProfile?.role === "admin" || (currentProfile?.username || "").toLowerCase() === "miles";
+      if (!currentProfile) {
+        // Fallback for local testing / guest operator
+        return true;
+      }
+      return currentProfile.role === "admin" || (currentProfile.username || "").toLowerCase() === "miles";
+    },
+
+    getPermissions() {
+      if (this.isAdmin()) return { ...FULL_ADMIN_PERMISSIONS };
+      return {
+        ...DEFAULT_USER_PERMISSIONS,
+        ...(currentProfile?.permissions || {})
+      };
+    },
+
+    canManageOptions() {
+      return this.isAdmin();
     },
 
     async signIn(usernameOrEmail, password) {
@@ -147,6 +187,19 @@ window.CCTV_AUTH = (function () {
 
       currentUser = data.user;
       currentProfile = await fetchProfile(data.user.id);
+
+      // Check account status
+      if (currentProfile) {
+        if (currentProfile.status === "disabled") {
+          await client.auth.signOut();
+          throw new Error("This account is currently disabled. Please contact an administrator.");
+        }
+        if (currentProfile.status === "rejected") {
+          await client.auth.signOut();
+          throw new Error("This account registration was rejected.");
+        }
+      }
+
       await notifyAuthChange(currentUser, currentProfile);
       return { user: currentUser, profile: currentProfile };
     },
@@ -175,7 +228,9 @@ window.CCTV_AUTH = (function () {
 
     async signOut() {
       if (client) {
-        await client.auth.signOut();
+        try {
+          await client.auth.signOut();
+        } catch (_) {}
       }
       if (window.CCTV_DATA_SCOPE) {
         window.CCTV_DATA_SCOPE.deactivate();
@@ -186,6 +241,7 @@ window.CCTV_AUTH = (function () {
     },
 
     async updatePassword(newPassword) {
+      initClient();
       if (!client) throw new Error("Supabase client not initialized.");
       const { data, error } = await client.auth.updateUser({
         password: newPassword
@@ -194,13 +250,16 @@ window.CCTV_AUTH = (function () {
       return data;
     },
 
+    // Admin Operations
     async fetchAllUsers() {
-      if (!client || !this.isAdmin()) return [];
+      initClient();
+      if (!client) return [];
       try {
         const { data, error } = await client
           .from("profiles")
           .select("*")
           .order("created_at", { ascending: false });
+
         if (!error && Array.isArray(data)) return data;
       } catch (e) {
         console.error("Fetch all users error:", e);
@@ -208,18 +267,172 @@ window.CCTV_AUTH = (function () {
       return [];
     },
 
+    async approveUser(userId) {
+      initClient();
+      if (!client) return false;
+      try {
+        const { error } = await client
+          .from("profiles")
+          .update({ status: "approved" })
+          .eq("id", userId);
+        if (!error) {
+          await this.logSecurityEvent("approve_user", `user:${userId}`);
+          return true;
+        }
+      } catch (e) {
+        console.error("Approve user error:", e);
+      }
+      return false;
+    },
+
+    async rejectUser(userId) {
+      initClient();
+      if (!client) return false;
+      try {
+        const { error } = await client
+          .from("profiles")
+          .update({ status: "rejected" })
+          .eq("id", userId);
+        if (!error) {
+          await this.logSecurityEvent("reject_user", `user:${userId}`);
+          return true;
+        }
+      } catch (e) {
+        console.error("Reject user error:", e);
+      }
+      return false;
+    },
+
+    async disableUser(userId) {
+      initClient();
+      if (!client) return false;
+      try {
+        const { error } = await client
+          .from("profiles")
+          .update({ status: "disabled" })
+          .eq("id", userId);
+        if (!error) {
+          await this.logSecurityEvent("disable_user", `user:${userId}`);
+          return true;
+        }
+      } catch (e) {
+        console.error("Disable user error:", e);
+      }
+      return false;
+    },
+
+    async updateDisplayName(userId, displayName) {
+      initClient();
+      if (!client) return false;
+      try {
+        const { error } = await client
+          .from("profiles")
+          .update({ display_name: displayName })
+          .eq("id", userId);
+        return !error;
+      } catch (e) {
+        console.error("Update display name error:", e);
+        return false;
+      }
+    },
+
     async updateUserRole(userId, newRole) {
-      if (!client || !this.isAdmin()) return false;
+      initClient();
+      if (!client) return false;
       try {
         const { error } = await client
           .from("profiles")
           .update({ role: newRole })
           .eq("id", userId);
-        return !error;
+        if (!error) {
+          await this.logSecurityEvent("change_role", `user:${userId}`, { newRole });
+          return true;
+        }
       } catch (e) {
         console.error("Update role error:", e);
+      }
+      return false;
+    },
+
+    async updateUserPermissions(userId, permissions) {
+      initClient();
+      if (!client) return false;
+      try {
+        const { error } = await client
+          .from("profiles")
+          .update({ permissions })
+          .eq("id", userId);
+        return !error;
+      } catch (e) {
+        console.error("Update permissions error:", e);
         return false;
       }
+    },
+
+    async deleteUser(userId) {
+      initClient();
+      if (!client) return false;
+      if (currentUser && currentUser.id === userId) {
+        throw new Error("You cannot delete your own active administrator account.");
+      }
+
+      // Try server-side RPC admin_delete_cctv_user
+      try {
+        const { data, error } = await client.rpc("admin_delete_cctv_user", {
+          p_target: userId
+        });
+        if (!error && data && data.ok) {
+          await this.logSecurityEvent("delete_user", `user:${userId}`);
+          return true;
+        }
+      } catch (rpcErr) {
+        console.warn("RPC admin_delete_cctv_user failed, trying profile delete:", rpcErr);
+      }
+
+      // Fallback: delete profile record directly
+      try {
+        const { error } = await client
+          .from("profiles")
+          .delete()
+          .eq("id", userId);
+        if (!error) {
+          await this.logSecurityEvent("delete_user_profile", `user:${userId}`);
+          return true;
+        }
+      } catch (e) {
+        console.error("Delete user error:", e);
+      }
+      return false;
+    },
+
+    async logSecurityEvent(action, targetItem = "", details = {}, targetUserId = null) {
+      initClient();
+      if (!client) return;
+      try {
+        await client.from("cctv_security_audit_logs").insert({
+          actor_id: currentUser?.id || null,
+          actor_username: currentProfile?.username || "system",
+          actor_role: currentProfile?.role || "admin",
+          action: action,
+          target_item: targetItem,
+          target_user_id: targetUserId,
+          details: details
+        });
+      } catch (_) {}
+    },
+
+    async fetchAuditLogs(limit = 100) {
+      initClient();
+      if (!client) return [];
+      try {
+        const { data, error } = await client
+          .from("cctv_security_audit_logs")
+          .select("*")
+          .order("created_at", { ascending: false })
+          .limit(limit);
+        if (!error && Array.isArray(data)) return data;
+      } catch (_) {}
+      return [];
     }
   };
 })();
