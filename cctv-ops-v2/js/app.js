@@ -1250,6 +1250,10 @@
       renderMasterlistWorkspace();
     } else if (targetKey === "history") {
       renderHistoryWorkspace();
+    } else if (targetKey === "accounts") {
+      if (typeof window._renderAccountsWorkspaceFn === 'function') {
+        window._renderAccountsWorkspaceFn();
+      }
     }
   }
 
@@ -5134,6 +5138,589 @@ ${escapeHtml(JSON.stringify(entry.after || entry.before, null, 2))}
     history.init();
   }
 
+  // =========================================================================
+  // ACCOUNTS / ADMIN OPERATIONS CONSOLE CONTROLLER
+  // =========================================================================
+  function initAccountsController() {
+    const svc = window.CCTV_ACCOUNTS;
+    if (!svc) { console.warn('[Accounts] CCTV_ACCOUNTS service not loaded.'); return; }
+    svc.init();
+
+    let accessEditingUser = null;
+
+    // ── Utility helpers ────────────────────────────────────────────────────
+    const $ = id => document.getElementById(id);
+    const esc = t => String(t ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    const dt = v => { if (!v) return '—'; const d = new Date(v); if (isNaN(d)) return '—'; return d.toLocaleString([],{month:'short',day:'numeric',year:'numeric',hour:'2-digit',minute:'2-digit'}); };
+    const cleanUsername = u => String(u||'').trim().replace(/^@+/,'');
+    const usernameLabel = u => { const c = cleanUsername(u); return c ? `@${c}` : ''; };
+
+    const statusPill = s => {
+      const n = String(s||'').toLowerCase();
+      if (n === 'approved' || n === 'active') return `<span class="admin-badge badge-active">Active</span>`;
+      if (n === 'disabled' || n === 'suspended') return `<span class="admin-badge badge-disabled">Disabled</span>`;
+      if (n === 'pending') return `<span class="admin-badge badge-pending">Pending</span>`;
+      if (n === 'rejected') return `<span class="admin-badge badge-disabled">Rejected</span>`;
+      return `<span class="admin-badge badge-user">${esc(s||'Unknown')}</span>`;
+    };
+
+    const permSummary = item => {
+      if (item?.role === 'admin') return 'Full Admin Access';
+      const p = item?.permissions || {};
+      const list = [];
+      if (p.edr !== false) list.push('EDR');
+      if (p.cctv !== false) list.push('CCTV');
+      if (p.aiSorter !== false || p.sorter !== false) list.push('AI');
+      if (p.maintenance !== false) list.push('Maint');
+      if (p.masterlist !== false) list.push('Master');
+      if (p.followup !== false) list.push('Followup');
+      if (p.history !== false) list.push('History');
+      return list.join(', ') || 'No workspaces';
+    };
+
+    const setStatus = (text, kind = '') => {
+      const s = $('adminCreateAccountStatus');
+      if (!s) return;
+      s.textContent = text;
+      s.className = 'auth-create-status';
+      if (kind) s.classList.add(`is-${kind}`);
+    };
+
+    async function copyText(text, btn, label = 'Copied!') {
+      try {
+        if (navigator.clipboard?.writeText) await navigator.clipboard.writeText(text);
+        else {
+          const ta = document.createElement('textarea');
+          ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+          document.body.appendChild(ta); ta.focus(); ta.select();
+          document.execCommand('copy'); ta.remove();
+        }
+        if (btn) {
+          const oldHtml = btn.innerHTML;
+          btn.classList.add('is-copied');
+          const span = btn.querySelector('span');
+          if (span) span.textContent = label; else btn.textContent = `✓ ${label}`;
+          setTimeout(() => { btn.classList.remove('is-copied'); btn.innerHTML = oldHtml; }, 1800);
+        }
+        showToast('Copied to clipboard.');
+      } catch (_) { showToast('Could not copy.'); }
+    }
+
+    // ── KPI + System Status update ─────────────────────────────────────────
+    async function updateKpiDisplay() {
+      const metrics = await svc.getMetrics();
+      if ($('adminTotalUsers')) $('adminTotalUsers').textContent = metrics.totalUsers;
+      if ($('adminCountAdmins')) $('adminCountAdmins').textContent = metrics.countAdmins;
+      if ($('adminCountUsers')) $('adminCountUsers').textContent = metrics.countUsers;
+      if ($('adminPendingUsers')) $('adminPendingUsers').textContent = metrics.pendingUsers;
+      if ($('adminDisabledUsers')) $('adminDisabledUsers').textContent = metrics.disabledUsers;
+      if ($('adminRecentUsers')) $('adminRecentUsers').textContent = metrics.recentUsers;
+      if ($('adminEdrCount')) $('adminEdrCount').textContent = metrics.edrCount;
+      if ($('adminCctvCount')) $('adminCctvCount').textContent = metrics.cctvCount;
+      if ($('adminFollowupCount')) $('adminFollowupCount').textContent = metrics.followupCount;
+
+      const sys = svc.getSystemStatus();
+      if ($('adminSupabaseStatus')) $('adminSupabaseStatus').textContent = sys.supabase.label;
+      if ($('adminSupabaseDot')) {
+        $('adminSupabaseDot').classList.toggle('is-online', sys.supabase.isOnline);
+        $('adminSupabaseDot').classList.toggle('is-warning', !sys.supabase.isOnline);
+      }
+      if ($('adminDocsStatus')) $('adminDocsStatus').textContent = sys.docs.label;
+      if ($('adminDocsDot')) {
+        $('adminDocsDot').classList.toggle('is-online', sys.docs.isOnline);
+        $('adminDocsDot').classList.toggle('is-warning', !sys.docs.isOnline);
+      }
+      if ($('adminSheetsStatus')) $('adminSheetsStatus').textContent = sys.sheets.label;
+      if ($('adminSheetsDot')) {
+        $('adminSheetsDot').classList.toggle('is-online', sys.sheets.isOnline);
+        $('adminSheetsDot').classList.toggle('is-warning', !sys.sheets.isOnline);
+      }
+    }
+
+    // ── Render Recent Credentials ──────────────────────────────────────────
+    function renderRecentCredentials() {
+      const section = $('adminRecentCredsSection');
+      const listEl = $('adminRecentCredsList');
+      if (!section || !listEl) return;
+      const list = svc.getRecentCredentials();
+      if (!list.length) { section.hidden = true; listEl.innerHTML = ''; return; }
+      section.hidden = false;
+      listEl.innerHTML = list.map(item => `
+        <div class="recent-cred-card" data-cred-id="${esc(item.id)}">
+          <div class="recent-cred-top">
+            <div class="recent-cred-identity">
+              <span class="admin-badge badge-${esc(String(item.role||'user').toLowerCase())}">${esc(item.role||'User')}</span>
+              <span class="recent-cred-name" title="${esc(item.name)}">${esc(item.name)}</span>
+            </div>
+            <button type="button" class="recent-cred-btn cred-remove-btn" data-id="${esc(item.id)}" title="Remove" aria-label="Remove">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+          <div class="recent-cred-body">
+            <div class="recent-cred-row">
+              <span class="recent-cred-label">Username</span>
+              <div class="recent-cred-val-wrap">
+                <span class="recent-cred-val">${esc(cleanUsername(item.username))}</span>
+                <button type="button" class="recent-cred-btn cred-copy-user-btn" data-username="${esc(cleanUsername(item.username))}" title="Copy Username">
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                  <span>Copy</span>
+                </button>
+              </div>
+            </div>
+            <div class="recent-cred-row">
+              <span class="recent-cred-label">Temp Password</span>
+              <div class="recent-cred-val-wrap">
+                <span class="recent-cred-val recent-cred-pw-val is-masked" data-pw="${esc(item.password)}">••••••••</span>
+                <button type="button" class="recent-cred-btn cred-toggle-pw-btn" aria-label="Show password" title="Show password">
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                  <span>Show</span>
+                </button>
+                <button type="button" class="recent-cred-btn cred-copy-pw-btn" data-password="${esc(item.password)}" title="Copy Password">
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                  <span>Copy</span>
+                </button>
+              </div>
+            </div>
+          </div>
+          <div class="recent-cred-footer">
+            <button type="button" class="recent-cred-copy-all-btn cred-copy-all-btn" data-id="${esc(item.id)}" title="Copy all credentials">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              <span>Copy All Credentials</span>
+            </button>
+            <button type="button" class="recent-cred-btn-danger cred-remove-btn" data-id="${esc(item.id)}">Remove</button>
+          </div>
+        </div>
+      `).join('');
+
+      listEl.querySelectorAll('.cred-remove-btn').forEach(btn =>
+        btn.addEventListener('click', () => { svc.removeRecentCredential(btn.dataset.id); renderRecentCredentials(); showToast('Credential removed.'); })
+      );
+      listEl.querySelectorAll('.cred-copy-user-btn').forEach(btn =>
+        btn.addEventListener('click', () => copyText(btn.dataset.username || '', btn, 'Copied!'))
+      );
+      listEl.querySelectorAll('.cred-copy-pw-btn').forEach(btn =>
+        btn.addEventListener('click', () => copyText(btn.dataset.password || '', btn, 'Copied!'))
+      );
+      listEl.querySelectorAll('.cred-toggle-pw-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const card = btn.closest('.recent-cred-card');
+          const pw = card?.querySelector('.recent-cred-pw-val');
+          if (!pw) return;
+          const masked = pw.classList.contains('is-masked');
+          if (masked) { pw.classList.remove('is-masked'); pw.textContent = pw.dataset.pw || ''; btn.querySelector('span').textContent = 'Hide'; }
+          else { pw.classList.add('is-masked'); pw.textContent = '••••••••'; btn.querySelector('span').textContent = 'Show'; }
+        });
+      });
+      listEl.querySelectorAll('.cred-copy-all-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const item = list.find(x => x.id === btn.dataset.id);
+          if (!item) return;
+          copyText(svc.formatAllCredentialsText(item), btn, 'Copied All!');
+        });
+      });
+    }
+
+    // ── Render User Accounts ───────────────────────────────────────────────
+    function renderUsers(rows) {
+      const body = $('adminUsersBody');
+      if (!body) return;
+      if (!rows || !rows.length) {
+        body.innerHTML = '<div class="auth-admin-empty" style="grid-column:1/-1;">No accounts found.</div>';
+        return;
+      }
+      const recentCreds = svc.getRecentCredentials();
+      const activeUser = window.CCTV_AUTH?.getUser?.();
+
+      body.innerHTML = rows.map(item => {
+        const self = item.id === activeUser?.id;
+        const search = ((item.display_name||'') + ' ' + (item.username||'') + ' ' + (item.email||'')).toLowerCase();
+        const roleLabel = item.role === 'admin' ? 'Admin' : 'User';
+        const isApproved = item.status === 'approved';
+        const isDisabled = item.status === 'disabled' || item.status === 'suspended';
+        const isPending = item.status === 'pending';
+        const permsText = permSummary(item);
+        const uKey = cleanUsername(item.username).toLowerCase();
+        const cred = recentCreds.find(c => cleanUsername(c.username).toLowerCase() === uKey);
+
+        const pwRowHtml = cred?.password ? `
+          <div class="admin-user-card-pw-row">
+            <span class="admin-user-meta-label">Temp Password</span>
+            <div class="recent-cred-val-wrap">
+              <span class="recent-cred-val recent-cred-pw-val is-masked" data-pw="${esc(cred.password)}">••••••••</span>
+              <button type="button" class="recent-cred-btn user-card-toggle-pw-btn" aria-label="Show password" title="Show password">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                <span>Show</span>
+              </button>
+              <button type="button" class="recent-cred-btn user-card-copy-pw-btn" data-password="${esc(cred.password)}" title="Copy">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span>Copy</span>
+              </button>
+            </div>
+          </div>` : `
+          <div class="admin-user-card-pw-row">
+            <span class="admin-user-meta-label">Password</span>
+            <span style="font-size:11px; color:var(--text-dim);">Not available</span>
+          </div>`;
+
+        return `
+        <div class="admin-user-card" data-id="${esc(item.id)}" data-search="${esc(search)}">
+          <div class="admin-user-card-top">
+            <div class="admin-user-card-identity">
+              <div class="admin-user-avatar">${esc(svc.getInitials(item.display_name || item.username))}</div>
+              <div class="admin-user-info">
+                <strong class="admin-user-name" title="${esc(item.display_name||item.username||'User')}">${esc(item.display_name||item.username||'User')}</strong>
+                <span class="admin-user-username">${esc(usernameLabel(item.username))}</span>
+              </div>
+            </div>
+            <div class="admin-user-card-badges">
+              ${statusPill(item.status)}
+              <span class="admin-badge badge-${esc(String(item.role||'user').toLowerCase())}">${roleLabel}</span>
+            </div>
+          </div>
+          <div class="admin-user-card-body">
+            ${pwRowHtml}
+            <div class="admin-user-meta-row">
+              <span class="admin-user-meta-label">Permissions</span>
+              <span class="admin-user-meta-val">${esc(permsText)}</span>
+            </div>
+            <div class="admin-user-card-dates">
+              <div><span class="admin-user-meta-label">Created</span> <span>${esc(dt(item.created_at))}</span></div>
+              <div><span class="admin-user-meta-label">Last Active</span> <span>${esc(dt(item.last_seen_at))}</span></div>
+            </div>
+          </div>
+          <div class="admin-user-card-footer">
+            <div class="admin-user-card-actions">
+              ${isPending ? `<button type="button" class="admin-action-btn auth-approve-btn" data-id="${esc(item.id)}">Approve</button>` : ''}
+              ${isPending ? `<button type="button" class="admin-action-btn auth-reject-btn" data-id="${esc(item.id)}">Reject</button>` : ''}
+              <button type="button" class="admin-action-btn auth-access-btn" data-id="${esc(item.id)}">Access</button>
+              ${!self && isApproved ? `<button type="button" class="admin-action-btn auth-disable-btn" data-id="${esc(item.id)}">Disable</button>` : ''}
+              ${!self && isDisabled ? `<button type="button" class="admin-action-btn auth-reactivate-btn" data-id="${esc(item.id)}">Reactivate</button>` : ''}
+              ${!self ? `<button type="button" class="admin-action-btn auth-delete-danger auth-remove-user-btn" data-id="${esc(item.id)}">Delete</button>` : '<span class="auth-self-label">You</span>'}
+            </div>
+          </div>
+        </div>`;
+      }).join('');
+
+      body.querySelectorAll('.auth-approve-btn').forEach(btn =>
+        btn.addEventListener('click', () => doSetStatus(btn.dataset.id, 'approved'))
+      );
+      body.querySelectorAll('.auth-reject-btn').forEach(btn =>
+        btn.addEventListener('click', async () => {
+          const item = svc.getCachedUsers().find(x => x.id === btn.dataset.id);
+          const ok = await (window.appConfirm ? window.appConfirm({ title:'Reject signup?', message:`Reject request for ${item?.display_name || item?.username || 'this user'}?`, confirmText:'Reject', tone:'danger' }) : window.confirm('Reject this signup request?'));
+          if (ok) doSetStatus(btn.dataset.id, 'rejected');
+        })
+      );
+      body.querySelectorAll('.auth-access-btn').forEach(btn =>
+        btn.addEventListener('click', () => openAccessEditor(btn.dataset.id))
+      );
+      body.querySelectorAll('.auth-disable-btn').forEach(btn =>
+        btn.addEventListener('click', async () => {
+          const item = svc.getCachedUsers().find(x => x.id === btn.dataset.id);
+          const ok = await (window.appConfirm ? window.appConfirm({ title:'Disable account?', message:`${item?.display_name || item?.username || 'This account'} will be locked out immediately.`, confirmText:'Disable Account', tone:'danger' }) : window.confirm('Disable this account?'));
+          if (ok) doSetStatus(btn.dataset.id, 'disabled');
+        })
+      );
+      body.querySelectorAll('.auth-reactivate-btn').forEach(btn =>
+        btn.addEventListener('click', () => doSetStatus(btn.dataset.id, 'approved'))
+      );
+      body.querySelectorAll('.auth-remove-user-btn').forEach(btn =>
+        btn.addEventListener('click', async () => {
+          const item = svc.getCachedUsers().find(x => x.id === btn.dataset.id);
+          const ok = await (window.appConfirm ? window.appConfirm({ title:'Delete Account Permanently', message:`Permanently delete ${item?.display_name || item?.username || 'this user'}? This cannot be undone.`, confirmText:'Delete', tone:'danger' }) : window.confirm('Permanently delete this account?'));
+          if (!ok) return;
+          try { await svc.deleteAccount(btn.dataset.id); showToast('Account deleted.'); await loadAdmin(); } catch(e) { showToast(e.message || 'Could not delete.'); }
+        })
+      );
+      body.querySelectorAll('.user-card-toggle-pw-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const row = btn.closest('.admin-user-card-pw-row');
+          const pw = row?.querySelector('.recent-cred-pw-val');
+          if (!pw) return;
+          const masked = pw.classList.contains('is-masked');
+          if (masked) { pw.classList.remove('is-masked'); pw.textContent = pw.dataset.pw||''; btn.querySelector('span').textContent = 'Hide'; }
+          else { pw.classList.add('is-masked'); pw.textContent = '••••••••'; btn.querySelector('span').textContent = 'Show'; }
+        });
+      });
+      body.querySelectorAll('.user-card-copy-pw-btn').forEach(btn =>
+        btn.addEventListener('click', () => copyText(btn.dataset.password||'', btn, 'Copied!'))
+      );
+
+      filterUsers();
+    }
+
+    function filterUsers() {
+      const q = String($('adminUserSearch')?.value||'').trim().toLowerCase();
+      $('adminUsersBody')?.querySelectorAll('.admin-user-card[data-search]').forEach(card => {
+        card.hidden = !!(q && !card.dataset.search.includes(q));
+      });
+    }
+
+    async function doSetStatus(id, status) {
+      try {
+        await svc.setStatus(id, status);
+        showToast(status === 'approved' ? 'Account active.' : (status === 'disabled' ? 'Account disabled.' : 'Status updated.'));
+        await loadAdmin();
+      } catch(e) { showToast(e.message||'Could not update status.'); }
+    }
+
+    async function loadAdmin() {
+      const refreshBtn = $('adminRefreshBtn');
+      if (refreshBtn) { refreshBtn.disabled = true; refreshBtn.textContent = 'Refreshing...'; }
+      try {
+        await svc.fetchUsers(true);
+        renderUsers(svc.getCachedUsers());
+        renderRecentCredentials();
+        await updateKpiDisplay();
+        await loadAuditLogs();
+      } catch(e) { showToast(e.message||'Could not load accounts.'); }
+      finally { if (refreshBtn) { refreshBtn.disabled = false; refreshBtn.textContent = 'Refresh'; } }
+    }
+
+    async function loadAuditLogs(forceRemote = false) {
+      const body = $('adminSecurityAuditBody');
+      if (!body) return;
+      const logs = await svc.fetchAuditLogs(forceRemote);
+      renderAuditLogs(logs);
+    }
+
+    function renderAuditLogs(logs) {
+      const body = $('adminSecurityAuditBody');
+      if (!body) return;
+      if (!logs || !logs.length) {
+        body.innerHTML = '<tr><td colspan="6" class="auth-admin-empty">No security audit events recorded yet.</td></tr>';
+        return;
+      }
+      body.innerHTML = logs.map(item => {
+        const search = ((item.actor_username||'') + ' ' + (item.action||'') + ' ' + (item.target_item||'')).toLowerCase();
+        const detailsStr = typeof item.details === 'object' ? JSON.stringify(item.details) : String(item.details||'');
+        return `<tr data-search="${esc(search)}">
+          <td>${esc(dt(item.created_at))}</td>
+          <td><strong>${esc(item.actor_username||'admin')}</strong></td>
+          <td><span class="admin-badge badge-${item.actor_role==='admin'?'admin':'user'}">${esc(item.actor_role||'admin')}</span></td>
+          <td><strong>${esc(item.action||'event')}</strong></td>
+          <td>${esc(item.target_item||'—')}</td>
+          <td><code>${esc(detailsStr||'—')}</code></td>
+        </tr>`;
+      }).join('');
+    }
+
+    function filterAuditLogs() {
+      const q = String($('adminAuditSearch')?.value||'').trim().toLowerCase();
+      $('adminSecurityAuditBody')?.querySelectorAll('tr[data-search]').forEach(row => {
+        row.hidden = !!(q && !row.dataset.search.includes(q));
+      });
+    }
+
+    // ── Account Creation ───────────────────────────────────────────────────
+    async function createStaffAccount() {
+      const name = String($('adminCreateName')?.value||'').trim();
+      const username = String($('adminCreateUsername')?.value||'').trim().replace(/^@+/,'');
+      const password = $('adminCreatePassword')?.value || '';
+      const role = $('adminCreateRole')?.value === 'admin' ? 'admin' : 'user';
+      const btn = $('adminCreateAccountBtn');
+
+      if (!name) { setStatus('Enter the staff member\'s name.', 'error'); $('adminCreateName')?.focus(); return; }
+      if (!username || username.length < 2) { setStatus('Enter a valid username.', 'error'); $('adminCreateUsername')?.focus(); return; }
+      if (password.length < 6) { setStatus('Temporary password must contain at least 6 characters.', 'error'); $('adminCreatePassword')?.focus(); return; }
+
+      if (btn) { btn.disabled = true; btn.textContent = 'Creating...'; }
+      setStatus('Creating account...', 'info');
+
+      try {
+        const newAcc = await svc.createAccount({ name, username, password, role });
+        setStatus(`${newAcc.display_name} created and approved · @${newAcc.username} · Role: ${role === 'admin' ? 'Admin' : 'User'}`, 'success');
+        showToast(`${newAcc.display_name} account created.`);
+        if ($('adminCreateName')) $('adminCreateName').value = '';
+        if ($('adminCreateUsername')) $('adminCreateUsername').value = '';
+        if ($('adminCreatePassword')) { $('adminCreatePassword').value = ''; $('adminCreatePassword').type = 'password'; }
+        if ($('adminCreateRole')) $('adminCreateRole').value = 'user';
+        renderRecentCredentials();
+        await loadAdmin();
+      } catch(e) {
+        setStatus(e.message || 'Could not create account.', 'error');
+        showToast(e.message || 'Could not create account.');
+      } finally {
+        if (btn) { btn.disabled = false; btn.textContent = 'Create Account'; }
+      }
+    }
+
+    // ── Access Editor Modal ────────────────────────────────────────────────
+    function openAccessEditor(id) {
+      const item = svc.getCachedUsers().find(x => x.id === id);
+      if (!item) return;
+      accessEditingUser = item;
+      if ($('adminAccessTargetId')) $('adminAccessTargetId').value = item.id;
+      if ($('adminAccessDisplayName')) $('adminAccessDisplayName').value = item.display_name || '';
+      if ($('adminAccessUserLabel')) $('adminAccessUserLabel').textContent = `${item.display_name||item.username||'User'} · ${usernameLabel(item.username)}`;
+      if ($('adminAccessRole')) $('adminAccessRole').value = item.role === 'admin' ? 'admin' : 'user';
+      if ($('adminAccessStatus')) $('adminAccessStatus').value = (item.status === 'disabled'||item.status === 'suspended') ? 'disabled' : 'active';
+
+      const perms = item.role === 'admin'
+        ? svc.FULL_ADMIN_PERMISSIONS
+        : { ...svc.DEFAULT_USER_PERMISSIONS, ...(item.permissions||{}) };
+
+      $('adminAccessGrid')?.querySelectorAll('[data-permission]').forEach(input => {
+        input.checked = !!perms[input.dataset.permission];
+      });
+      refreshAccessRoleUi();
+      const modal = $('adminAccessModal');
+      if (modal) { modal.hidden = false; document.body.classList.add('modal-open'); }
+    }
+
+    function closeAccessEditor() {
+      const modal = $('adminAccessModal');
+      if (modal) { modal.hidden = true; document.body.classList.remove('modal-open'); }
+      accessEditingUser = null;
+    }
+
+    function refreshAccessRoleUi() {
+      const isAdmin = $('adminAccessRole')?.value === 'admin';
+      $('adminAccessGrid')?.querySelectorAll('[data-permission]').forEach(input => {
+        const isManage = input.dataset.permission === 'manageOptions';
+        if (isAdmin) input.checked = true;
+        if (!isAdmin && isManage) input.checked = false;
+        input.disabled = isAdmin || isManage;
+        input.closest('label')?.toggleAttribute('hidden', isManage);
+      });
+    }
+
+    async function saveAccessEditor() {
+      const id = $('adminAccessTargetId')?.value;
+      if (!id) return;
+      const role = $('adminAccessRole')?.value === 'admin' ? 'admin' : 'user';
+      const status = $('adminAccessStatus')?.value === 'disabled' ? 'disabled' : 'approved';
+      const displayName = String($('adminAccessDisplayName')?.value||'').trim();
+
+      const permissions = {};
+      $('adminAccessGrid')?.querySelectorAll('[data-permission]').forEach(input => {
+        permissions[input.dataset.permission] = input.dataset.permission === 'manageOptions'
+          ? role === 'admin' : (role === 'admin' ? true : !!input.checked);
+      });
+      if (role !== 'admin') permissions.manageOptions = false;
+
+      const saveBtn = $('adminAccessSave');
+      if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = 'Saving...'; }
+      try {
+        await svc.saveUserAccess(id, { role, status, displayName, permissions });
+        showToast(role === 'admin' ? 'Admin access saved.' : 'User access updated.');
+        closeAccessEditor();
+        await loadAdmin();
+      } catch(e) { showToast(e.message||'Could not update access.'); }
+      finally { if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = 'Save Access'; } }
+    }
+
+    // ── Operational Settings ───────────────────────────────────────────────
+    function loadOperationalSettings() {
+      const s = svc.getOperationalSettings();
+      if ($('adminSettingTheme')) $('adminSettingTheme').value = s.theme;
+      if ($('adminSettingLanding')) $('adminSettingLanding').value = s.landing;
+      if ($('adminSettingSubtitle')) $('adminSettingSubtitle').value = s.subtitle;
+      if ($('adminSettingAutoTrim')) $('adminSettingAutoTrim').checked = s.autoTrim;
+    }
+
+    async function saveOperationalSettings() {
+      const settings = {
+        theme: $('adminSettingTheme')?.value || 'dark',
+        landing: $('adminSettingLanding')?.value || 'cctv',
+        subtitle: String($('adminSettingSubtitle')?.value||'').trim() || 'Secure operations workspace',
+        autoTrim: !!$('adminSettingAutoTrim')?.checked
+      };
+      await svc.saveOperationalSettings(settings);
+      const notice = $('adminSaveSettingsNotice');
+      if (notice) { notice.textContent = '✓ Settings saved successfully.'; setTimeout(() => { notice.textContent = ''; }, 3500); }
+      showToast('Operational settings saved.');
+    }
+
+    // ── Subnav Tab Switching ───────────────────────────────────────────────
+    function initAdminSubnav() {
+      document.querySelectorAll('.admin-subnav-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const target = btn.dataset.adminTab;
+          document.querySelectorAll('.admin-subnav-btn').forEach(b => {
+            b.classList.toggle('active', b === btn);
+            b.setAttribute('aria-selected', b === btn ? 'true' : 'false');
+          });
+          const tabUsers = $('adminTabUsers');
+          const tabAudit = $('adminTabAudit');
+          const tabSettings = $('adminTabSettings');
+          if (tabUsers) tabUsers.hidden = target !== 'users';
+          if (tabAudit) tabAudit.hidden = target !== 'audit';
+          if (tabSettings) tabSettings.hidden = target !== 'settings';
+          if (target === 'audit') loadAuditLogs(true);
+          if (target === 'settings') loadOperationalSettings();
+        });
+      });
+    }
+
+    // ── Password toggle for create form ───────────────────────────────────
+    function initPasswordToggles() {
+      document.querySelectorAll('.auth-password-toggle').forEach(btn => {
+        btn.addEventListener('click', e => {
+          e.preventDefault(); e.stopPropagation();
+          const input = document.getElementById(btn.dataset.target||'');
+          if (!input) return;
+          const showing = input.type === 'text';
+          input.type = showing ? 'password' : 'text';
+          btn.classList.toggle('is-visible', !showing);
+          const label = showing ? 'Show password' : 'Hide password';
+          btn.setAttribute('aria-label', label); btn.setAttribute('title', label);
+        });
+      });
+    }
+
+    // ── Wire Events ────────────────────────────────────────────────────────
+    $('adminCreateAccountBtn')?.addEventListener('click', createStaffAccount);
+    $('adminCreateAccountForm')?.addEventListener('submit', e => { e.preventDefault(); createStaffAccount(); });
+    $('adminRefreshBtn')?.addEventListener('click', () => loadAdmin());
+    $('adminUserSearch')?.addEventListener('input', filterUsers);
+
+    $('adminClearAllCredsBtn')?.addEventListener('click', () => {
+      svc.clearRecentCredentials();
+      renderRecentCredentials();
+      showToast('Session credentials cleared.');
+    });
+
+    $('adminRefreshAuditBtn')?.addEventListener('click', () => loadAuditLogs(true));
+    $('adminExportAuditBtn')?.addEventListener('click', () => { svc.exportAuditLogs(); showToast('Audit log exported.'); });
+    $('adminAuditSearch')?.addEventListener('input', filterAuditLogs);
+
+    $('adminSaveSettingsBtn')?.addEventListener('click', saveOperationalSettings);
+
+    $('adminAccessRole')?.addEventListener('change', refreshAccessRoleUi);
+    $('adminAccessSave')?.addEventListener('click', saveAccessEditor);
+    $('adminAccessCancel')?.addEventListener('click', closeAccessEditor);
+    $('adminAccessClose')?.addEventListener('click', closeAccessEditor);
+    $('adminAccessModal')?.addEventListener('click', e => { if (e.target === $('adminAccessModal')) closeAccessEditor(); });
+
+    initAdminSubnav();
+    initPasswordToggles();
+    loadOperationalSettings();
+
+    window._renderAccountsWorkspaceFn = async function() {
+      renderUsers(svc.getCachedUsers());
+      renderRecentCredentials();
+      await updateKpiDisplay();
+      // Show Users tab by default
+      const tabUsers = $('adminTabUsers');
+      const tabAudit = $('adminTabAudit');
+      const tabSettings = $('adminTabSettings');
+      if (tabUsers) tabUsers.hidden = false;
+      if (tabAudit) tabAudit.hidden = true;
+      if (tabSettings) tabSettings.hidden = true;
+      document.querySelectorAll('.admin-subnav-btn').forEach(b => {
+        b.classList.toggle('active', b.dataset.adminTab === 'users');
+      });
+      // Lazy-load users if cache empty
+      if (!svc.getCachedUsers().length) await loadAdmin();
+    };
+
+    // Initial load from local cache
+    renderUsers(svc.getCachedUsers());
+    renderRecentCredentials();
+    updateKpiDisplay();
+  }
+
   // App Initialization
   window.addEventListener("DOMContentLoaded", async () => {
     initWorkspaceNavigation();
@@ -5171,6 +5758,9 @@ ${escapeHtml(JSON.stringify(entry.after || entry.before, null, 2))}
 
     // Activity History Initialization
     initHistoryController();
+
+    // Accounts / Admin Console Initialization
+    initAccountsController();
 
     // Manila clock ticker
     updateManilaClock();
