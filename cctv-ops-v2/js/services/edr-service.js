@@ -425,7 +425,7 @@ window.CCTV_EDR = (function () {
   }
 
   async function buildTeamsClipboardHtml(reports, facebookText = "") {
-    const dividerHtml = '<div><br>────────────────────────────────────────<br><br></div>';
+    const dividerHtml = '<div style="margin:0;padding:0;line-height:1;">────────────────────────────────────────</div>';
     const edrBodyHtml = (await Promise.all(reports.map(reportTeamsClipboardHtml))).join(dividerHtml);
     const fb = String(facebookText || "").trim();
     let fbHtml = "";
@@ -437,9 +437,9 @@ window.CCTV_EDR = (function () {
           ? `<div><a href="${escapeHtml(u)}">${escapeHtml(line)}</a></div>`
           : `<div>${escapeHtml(line)}</div>`;
       }).join("");
-      fbHtml = `${dividerHtml}<div><strong>Facebook shared post ${escapeHtml(fbDate)}</strong></div>${fbLines}`;
+      fbHtml = `${dividerHtml}<div style="margin:0;padding:0;"><strong>Facebook Shared Post:</strong></div>${fbLines}`;
     }
-    const fragment = `<div style="font-family:Arial,sans-serif;font-size:10pt;color:#111;line-height:1.4;">${edrBodyHtml}${fbHtml}</div>`;
+    const fragment = `<div style="font-family:Arial,sans-serif;font-size:10pt;color:#111;line-height:1.2;margin:0;padding:0;">${edrBodyHtml}${fbHtml}</div>`;
     return `<!DOCTYPE html><html><body><!--StartFragment-->${fragment}<!--EndFragment--></body></html>`;
   }
 
@@ -820,12 +820,12 @@ window.CCTV_EDR = (function () {
       const activeSelected = edrReports.filter(r => r.selected && !r.done);
       const divider = "────────────────────────────────────────";
 
-      const body = activeSelected.map(r => reportPlainText(r)).join(`\n\n${divider}\n\n`);
+      const body = activeSelected.map(r => reportPlainText(r)).join(`\n${divider}\n`);
       let result = body;
 
       const fb = String(facebookText || currentFacebookText || "").trim();
       if (fb) {
-        if (result) result += `\n\n${divider}\n\n`;
+        if (result) result += `\n${divider}\n`;
         const fbDate = formatFacebookDate(todayLocal());
         result += `Facebook shared post ${fbDate}\n${fb}`;
       }
@@ -859,12 +859,12 @@ window.CCTV_EDR = (function () {
 
     generateTeamsPlainText(reports, facebookText = "") {
       const active = Array.isArray(reports) ? reports : edrReports.filter(r => r.selected && !r.done);
-      const divider = "\n\n────────────────────────────────────────\n\n";
+      const divider = "\n────────────────────────────────────────\n";
       const body = active.map(r => reportPlainText(r)).join(divider);
       let result = body;
       const fb = String(facebookText || "").trim();
       if (fb) {
-        if (result) result += "\n\n";
+        if (result) result += "\n────────────────────────────────────────\n";
         const fbDate = formatFacebookDate(todayLocal());
         result += `Facebook shared post ${fbDate}\n${fb}`;
       }
