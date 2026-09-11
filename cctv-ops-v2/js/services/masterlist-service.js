@@ -371,7 +371,7 @@
       try {
         const separator = this.apiUrl.includes("?") ? "&" : "?";
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 4000);
+        const timeoutId = setTimeout(() => controller.abort(), 25000);
         const response = await fetch(`${this.apiUrl}${separator}_=${Date.now()}`, {
           method: "GET",
           mode: "cors",

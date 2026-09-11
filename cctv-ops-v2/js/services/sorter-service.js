@@ -889,6 +889,23 @@
     localStorage.removeItem(TL_HIDDEN_KEY);
   }
 
+  let currentSortedRows = [];
+
+  function getSortedRows() {
+    return currentSortedRows;
+  }
+
+  function setSortedRows(rows) {
+    currentSortedRows = Array.isArray(rows) ? rows.map(r => ({ ...r })) : [];
+    if (typeof sorterService._onSortedRowsChange === "function") {
+      try {
+        sorterService._onSortedRowsChange(currentSortedRows);
+      } catch (err) {
+        console.error("sorterService._onSortedRowsChange error:", err);
+      }
+    }
+  }
+
   const sorterService = {
     FLOOR,
     floorOrder,
@@ -918,7 +935,9 @@
     selectedMiniSheetTsv,
     selectedMiniSheetCellTsv,
     parseMiniSheetClipboardRows,
-    resetAssignments
+    resetAssignments,
+    getSortedRows,
+    setSortedRows
   };
 
   root.sorterService = sorterService;

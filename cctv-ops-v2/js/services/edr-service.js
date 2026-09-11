@@ -18,6 +18,7 @@ window.CCTV_EDR = (function () {
   let currentFormDraft = null;
   let editingId = null;
   let listeners = [];
+  let saveReportsTimer = null;
 
   function uid() {
     return "edr_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 8);
@@ -335,7 +336,7 @@ window.CCTV_EDR = (function () {
     ];
 
     if (report.clipLink) {
-      lines.push(`CCTV Clip: ${report.clipLink}`);
+      lines.push(`CCTV Clip: Click here! (${report.clipLink})`);
     }
 
     return lines.join("\n");
@@ -348,17 +349,19 @@ window.CCTV_EDR = (function () {
       ? `<div>CCTV Clip: <a href="${escapeHtml(clipUrl)}">Click here!</a></div>`
       : "";
 
-    return `
-      <div>${escapeHtml(topLine)}</div>
-      <div>Date: ${escapeHtml(formatDate(report.date))}</div>
-      <div>Time Observed: ${escapeHtml(report.timeObserved || report.timeStart || "")}</div>
-      <div>${escapeHtml(supervisorOutputLabel(report))}: ${escapeHtml(report.supervisorName || "")}</div>
-      <div>${escapeHtml(subjectOutputLabel(report))}: ${escapeHtml(report.subjectName || "")}</div>
-      <div>Account/Campaign: ${escapeHtml(report.account || "")}</div>
-      <div>Incident: ${escapeHtml(report.incident || "")}</div>
-      <div>Action Taken/Remarks: ${escapeHtml(report.action || "")}</div>
-      ${clip}
-    `.trim();
+    const lines = [
+      `<div>${escapeHtml(topLine)}</div>`,
+      `<div>Date: ${escapeHtml(formatDate(report.date))}</div>`,
+      `<div>Time Observed: ${escapeHtml(report.timeObserved || report.timeStart || "")}</div>`,
+      `<div>${escapeHtml(supervisorOutputLabel(report))}: ${escapeHtml(report.supervisorName || "")}</div>`,
+      `<div>${escapeHtml(subjectOutputLabel(report))}: ${escapeHtml(report.subjectName || "")}</div>`,
+      `<div>Account/Campaign: ${escapeHtml(report.account || "")}</div>`,
+      `<div>Incident: ${escapeHtml(report.incident || "")}</div>`,
+      `<div>Action Taken/Remarks: ${escapeHtml(report.action || "")}</div>`
+    ];
+    if (clip) lines.push(clip);
+
+    return lines.join("");
   }
 
   function buildTeamsHtml(facebookText = "") {
@@ -379,15 +382,10 @@ window.CCTV_EDR = (function () {
           : `<div>${escapeHtml(line)}</div>`;
       }).join("");
 
-      fbHtml = `<div><br><strong>Facebook shared post ${escapeHtml(fbDate)}</strong></div>${fbLines}`;
+      fbHtml = `${activeSelected.length ? dividerHtml : ""}<div><strong>Facebook shared post ${escapeHtml(fbDate)}</strong></div>${fbLines}`;
     }
 
-    return `
-      <div style="font-family:Arial,sans-serif;font-size:10pt;color:#111;line-height:1.4;">
-        ${edrBodyHtml}
-        ${fbHtml}
-      </div>
-    `.trim();
+    return `<div style="font-family:Arial,sans-serif;font-size:10pt;color:#111;line-height:1.4;">${edrBodyHtml}${fbHtml}</div>`.trim();
   }
 
   async function dataUrlToPngBlob(dataUrl) {
@@ -424,27 +422,25 @@ window.CCTV_EDR = (function () {
     const topLine = [report.site, "CCTV", report.account].filter(Boolean).join(" | ");
     const clipUrl = safeUrl(report.clipLink);
     const screenshot = includeImage && report.screenshotData
-      ? `<div class="edr-preview-shot"><img src="${report.screenshotData}" alt="CCTV Screenshot" style="max-width:100%; border-radius:4px; margin-top:6px; border:1px solid var(--border-default);"></div>`
+      ? `<div class="edr-preview-shot" style="margin:8px 0 6px 0;"><img src="${report.screenshotData}" alt="CCTV Screenshot" style="max-width:100%; max-height:260px; border-radius:4px; border:1px solid var(--border-default); display:block;"></div>`
       : "";
 
     const clip = clipUrl
-      ? `<div class="edr-preview-line"><strong>CCTV Clip:</strong> <a href="${clipUrl}" target="_blank" rel="noopener noreferrer">Click here!</a></div>`
+      ? `<div class="edr-preview-line edr-preview-clip" style="margin-top:4px;"><strong>CCTV Clip:</strong> <a href="${clipUrl}" target="_blank" rel="noopener noreferrer">Click here!</a></div>`
       : "";
 
-    return `
-      <div class="edr-preview-card" style="padding:10px; border-bottom:1px solid var(--border-subtle); font-size:12px; line-height:1.4;">
-        <div style="font-weight:700; color:var(--accent-primary); margin-bottom:4px;">${topLine}</div>
-        <div class="edr-preview-line"><strong>Date:</strong> ${formatDate(report.date)}</div>
-        <div class="edr-preview-line"><strong>Time Observed:</strong> ${report.timeObserved || report.timeStart || ""}</div>
-        <div class="edr-preview-line"><strong>${supervisorOutputLabel(report)}:</strong> ${report.supervisorName || ""}</div>
-        <div class="edr-preview-line"><strong>${subjectOutputLabel(report)}:</strong> ${report.subjectName || ""}</div>
-        <div class="edr-preview-line"><strong>Account/Campaign:</strong> ${report.account || ""}</div>
-        <div class="edr-preview-line"><strong>Incident:</strong> ${report.incident || ""}</div>
-        <div class="edr-preview-line"><strong>Action Taken/Remarks:</strong> ${report.action || ""}</div>
-        ${screenshot}
-        ${clip}
-      </div>
-    `;
+    return `<div class="edr-preview-card" data-edr-id="${escapeHtml(report.id)}" style="padding:10px 12px; font-size:12px; line-height:1.45;">` +
+      `<div style="font-weight:700; color:var(--accent-primary); margin-bottom:5px;">${escapeHtml(topLine)}</div>` +
+      `<div class="edr-preview-line"><strong>Date:</strong> ${escapeHtml(formatDate(report.date))}</div>` +
+      `<div class="edr-preview-line"><strong>Time Observed:</strong> ${escapeHtml(report.timeObserved || report.timeStart || "")}</div>` +
+      `<div class="edr-preview-line"><strong>${escapeHtml(supervisorOutputLabel(report))}:</strong> ${escapeHtml(report.supervisorName || "")}</div>` +
+      `<div class="edr-preview-line"><strong>${escapeHtml(subjectOutputLabel(report))}:</strong> ${escapeHtml(report.subjectName || "")}</div>` +
+      `<div class="edr-preview-line"><strong>Account/Campaign:</strong> ${escapeHtml(report.account || "")}</div>` +
+      `<div class="edr-preview-line"><strong>Incident:</strong> ${escapeHtml(report.incident || "")}</div>` +
+      `<div class="edr-preview-line"><strong>Action Taken/Remarks:</strong> ${escapeHtml(report.action || "")}</div>` +
+      screenshot +
+      clip +
+    `</div>`;
   }
 
   function notify() {
@@ -456,6 +452,11 @@ window.CCTV_EDR = (function () {
   return {
     async init() {
       await this.loadReports();
+      for (const rep of edrReports) {
+        if (rep.selected && !rep.done && !rep.screenshotData && rep.screenshotFileId) {
+          this.ensureRemoteScreenshot(rep).catch(() => {});
+        }
+      }
       return edrReports;
     },
 
@@ -562,6 +563,10 @@ window.CCTV_EDR = (function () {
     },
 
     async saveReports() {
+      if (saveReportsTimer) {
+        clearTimeout(saveReportsTimer);
+        saveReportsTimer = null;
+      }
       try {
         // 1. Authoritative write to cctv_edr_workspace_v2
         const workspaceState = {
@@ -587,6 +592,14 @@ window.CCTV_EDR = (function () {
       notify();
     },
 
+    saveReportsDebounced(delay = 150) {
+      if (saveReportsTimer) clearTimeout(saveReportsTimer);
+      saveReportsTimer = setTimeout(() => {
+        saveReportsTimer = null;
+        this.saveReports().catch(console.error);
+      }, delay);
+    },
+
     // Draft Management
     getDraftForm() {
       return currentFormDraft ? { ...currentFormDraft } : null;
@@ -599,7 +612,7 @@ window.CCTV_EDR = (function () {
 
     async clearDraftForm() {
       currentFormDraft = null;
-      await this.saveReports();
+      this.saveReportsDebounced(250);
     },
 
     getFacebookText() {
@@ -666,27 +679,33 @@ window.CCTV_EDR = (function () {
       }
     },
 
-    async toggleSelect(id, selected) {
+    toggleSelect(id, selected) {
       const rep = edrReports.find(r => r.id === id);
       if (rep && !rep.done) {
         rep.selected = typeof selected === "boolean" ? selected : !rep.selected;
+        notify();
+        this.saveReportsDebounced(150);
         if (rep.selected && !rep.screenshotData && rep.screenshotFileId) {
-          await this.ensureRemoteScreenshot(rep);
+          this.ensureRemoteScreenshot(rep).then(() => notify()).catch(() => {});
         }
-        await this.saveReports();
       }
     },
 
-    async selectAll(select = true) {
+    selectAll(select = true) {
       for (const r of edrReports) {
         if (!r.done) {
           r.selected = select;
-          if (select && !r.screenshotData && r.screenshotFileId) {
-            await this.ensureRemoteScreenshot(r);
+        }
+      }
+      notify();
+      this.saveReportsDebounced(150);
+      if (select) {
+        for (const r of edrReports) {
+          if (!r.done && !r.screenshotData && r.screenshotFileId) {
+            this.ensureRemoteScreenshot(r).then(() => notify()).catch(() => {});
           }
         }
       }
-      await this.saveReports();
     },
 
     async toggleDone(id) {
@@ -736,12 +755,12 @@ window.CCTV_EDR = (function () {
       const activeSelected = edrReports.filter(r => r.selected && !r.done);
       const divider = "────────────────────────────────────────";
 
-      const body = activeSelected.map(r => `${reportPlainText(r)}\n\n${divider}`).join("\n\n");
+      const body = activeSelected.map(r => reportPlainText(r)).join(`\n\n${divider}\n\n`);
       let result = body;
 
       const fb = String(facebookText || currentFacebookText || "").trim();
       if (fb) {
-        if (result) result += "\n\n";
+        if (result) result += `\n\n${divider}\n\n`;
         const fbDate = formatFacebookDate(todayLocal());
         result += `Facebook shared post ${fbDate}\n${fb}`;
       }
@@ -816,22 +835,25 @@ window.CCTV_EDR = (function () {
       const activeSelected = edrReports.filter(r => r.selected && !r.done);
       const fb = String(facebookText || currentFacebookText || "").trim();
       if (!activeSelected.length && !fb) {
-        return '<div style="color:var(--text-muted); font-size:12px; padding:12px; text-align:center;">Create or select active EDRs above to generate the Teams-ready output.</div>';
+        return '<div style="color:var(--text-muted); font-size:12px; padding:16px 12px; text-align:center;">Create or select active EDRs above to generate the Teams-ready output.</div>';
       }
 
-      let html = activeSelected.map(r => reportHtml(r, true)).join("");
+      const divider = '<div class="edr-preview-divider" style="padding:8px 12px; color:var(--text-muted); font-family:var(--font-mono); font-size:11px; letter-spacing:1px; user-select:none; opacity:0.75;">────────────────────────────────────────</div>';
+      let html = activeSelected.map(r => reportHtml(r, true)).join(divider);
       if (fb) {
         const fbDate = formatFacebookDate(todayLocal());
         const links = fb.split(/\n+/).filter(Boolean).map(line => {
           const u = safeUrl(line);
           return u
-            ? `<div><a href="${u}" target="_blank" rel="noopener noreferrer">${line}</a></div>`
-            : `<div>${line}</div>`;
+            ? `<div><a href="${u}" target="_blank" rel="noopener noreferrer">${escapeHtml(line)}</a></div>`
+            : `<div>${escapeHtml(line)}</div>`;
         }).join("");
 
+        const fbDivider = activeSelected.length ? divider : "";
         html += `
-          <div style="padding:10px; font-size:12px; border-top:1px solid var(--border-subtle); margin-top:8px;">
-            <div style="font-weight:700; color:var(--accent-primary); margin-bottom:4px;">Facebook shared post ${fbDate}</div>
+          ${fbDivider}
+          <div style="padding:10px 12px; font-size:12px; line-height:1.45;">
+            <div style="font-weight:700; color:var(--accent-primary); margin-bottom:5px;">Facebook shared post ${escapeHtml(fbDate)}</div>
             ${links}
           </div>
         `;
@@ -841,8 +863,9 @@ window.CCTV_EDR = (function () {
 
     /**
      * Copy All to Microsoft Teams Clipboard
-     * Multi-MIME with text/plain, minimal text/html (hyperlinks), and native image/png Blob.
-     * Never puts Base64 into HTML.
+     * Multi-MIME with text/plain and minimal text/html (hyperlinks).
+     * Never puts Base64 into HTML and never attaches image/png in ClipboardItem
+     * so Microsoft Teams pastes the formatted text/HTML properly.
      */
     async copyAllToTeams(facebookText = "") {
       const activeSelected = edrReports.filter(r => r.selected && !r.done);
@@ -862,44 +885,21 @@ window.CCTV_EDR = (function () {
       const safePlainText = plainText.replace(/data:image\/[a-zA-Z0-9.+-]+;base64,[A-Za-z0-9+/=]+/g, "").trim();
       const minimalHtml = buildTeamsHtml(fb);
 
-      // Check if any selected report has a screenshot
-      let screenshotBlob = null;
-      const firstWithShot = activeSelected.find(r => r.screenshotData);
-      if (firstWithShot && firstWithShot.screenshotData) {
-        screenshotBlob = await dataUrlToPngBlob(firstWithShot.screenshotData);
-      }
-
       let wroteSuccessfully = false;
-      let wroteWithImage = false;
 
-      // Preferred multi-MIME ClipboardItem write
+      // Clean multi-MIME write: text/plain + text/html ONLY
       if (window.ClipboardItem && navigator.clipboard && navigator.clipboard.write) {
         try {
           const clipboardData = {
             "text/plain": new Blob([safePlainText], { type: "text/plain" }),
             "text/html": new Blob([minimalHtml], { type: "text/html" })
           };
-          if (screenshotBlob) {
-            clipboardData["image/png"] = screenshotBlob;
-          }
           await navigator.clipboard.write([
             new ClipboardItem(clipboardData)
           ]);
           wroteSuccessfully = true;
-          wroteWithImage = !!screenshotBlob;
         } catch (err) {
-          console.warn("ClipboardItem multi-MIME with image failed, attempting text/html + text/plain fallback:", err);
-          try {
-            await navigator.clipboard.write([
-              new ClipboardItem({
-                "text/plain": new Blob([safePlainText], { type: "text/plain" }),
-                "text/html": new Blob([minimalHtml], { type: "text/html" })
-              })
-            ]);
-            wroteSuccessfully = true;
-          } catch (err2) {
-            console.warn("ClipboardItem text fallback failed:", err2);
-          }
+          console.warn("ClipboardItem write failed, attempting text fallback:", err);
         }
       }
 
@@ -937,8 +937,8 @@ window.CCTV_EDR = (function () {
 
       return {
         count: activeSelected.length,
-        hasScreenshot: !!screenshotBlob,
-        wroteWithImage: wroteWithImage
+        hasScreenshot: activeSelected.some(r => !!r.screenshotData),
+        wroteWithImage: false
       };
     },
 

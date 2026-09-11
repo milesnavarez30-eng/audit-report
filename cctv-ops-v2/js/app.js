@@ -342,6 +342,29 @@
       return;
     }
 
+    const existingCards = listContainer.querySelectorAll(".record-row");
+    const existingIds = Array.from(existingCards).map(c => c.dataset.id);
+    const newIds = reports.map(r => r.id);
+    const isSameStructure = existingIds.length === newIds.length &&
+      existingIds.every((id, i) => id === newIds[i]);
+
+    if (isSameStructure) {
+      reports.forEach((r, idx) => {
+        const card = existingCards[idx];
+        const isDone = !!r.done;
+        const isSelected = !!r.selected && !isDone;
+        card.classList.toggle("is-selected", isSelected);
+        card.classList.toggle("is-done", isDone);
+        const chk = card.querySelector(".edr-check");
+        if (chk) {
+          chk.checked = isSelected;
+          chk.disabled = isDone;
+        }
+      });
+      updateLivePreview();
+      return;
+    }
+
     listContainer.innerHTML = reports.map((r) => {
       const isDone = !!r.done;
       const isSelected = !!r.selected && !isDone;
@@ -459,19 +482,33 @@
       const report = reports.find(r => r.id === id);
       if (!report) return;
 
-      // Clicking the checkbox itself handles selection via change event
-      card.querySelector(".edr-check")?.addEventListener("change", (e) => {
-        edr.toggleSelect(id, e.target.checked);
+      const chk = card.querySelector(".edr-check");
+      if (chk) {
+        chk.addEventListener("click", (e) => {
+          e.stopPropagation();
+        });
+        chk.addEventListener("change", (e) => {
+          e.stopPropagation();
+          edr.toggleSelect(id, chk.checked);
+        });
+      }
+
+      // Clicking checkbox column directly toggles checkbox
+      const selectCol = card.querySelector(".record-select-col");
+      selectCol?.addEventListener("click", (e) => {
+        e.stopPropagation();
+        if (report.done || !chk) return;
+        if (e.target !== chk) {
+          chk.checked = !chk.checked;
+          edr.toggleSelect(id, chk.checked);
+        }
       });
 
-      // Clicking the row body (not action buttons) also toggles selection (item 2 & 3: multi-select via checkbox)
+      // Clicking the row body (not action buttons) toggles selection
       card.addEventListener("click", (e) => {
-        // Only act if click is NOT on action buttons, checkboxes, dropdowns, or links
         const ignore = e.target.closest(".record-actions, .record-select-col, .record-dropdown-menu, a, button, input");
         if (ignore) return;
-        if (report.done) return;
-        const chk = card.querySelector(".edr-check");
-        if (!chk) return;
+        if (report.done || !chk) return;
         chk.checked = !chk.checked;
         edr.toggleSelect(id, chk.checked);
       });
@@ -1823,6 +1860,7 @@
       sorterAssignedRows = assignedRows;
 
       renderSorterRows(assignedRows);
+      window.historyService?.captureIfChanged("aiSorter", "Analyzed maintenance report");
 
       const reviewCount = assignedRows.filter(r => r.floor === sorter.FLOOR.REVIEW).length;
       const recognizedCount = assignedRows.length - reviewCount;
@@ -1949,7 +1987,12 @@
         event.preventDefault();
         const tr = rowHeader.closest("tr");
         if (!tr || tr.dataset.rowIndex == null) return;
+        setMiniSheetKeyboardActive(true);
         selectMiniSheetRow(Number(tr.dataset.rowIndex), event);
+      });
+      rowHeader.addEventListener("click", event => {
+        if (event.button !== 0) return;
+        event.preventDefault();
       });
     });
 
@@ -2030,6 +2073,7 @@
         }
 
         renderSorterRows(sorterAssignedRows, true);
+        window.historyService?.scheduleCapture("aiSorter", `Edited ${field} in AI Sorter`, 400);
       });
     });
 
@@ -2120,6 +2164,7 @@
     });
 
     renderSorterRows(sorterAssignedRows);
+    window.historyService?.captureIfChanged("aiSorter", "Pasted into cells in AI Sorter");
     showToast("Pasted into selected cells.", "success");
   }
 
@@ -2142,6 +2187,7 @@
     }
     miniSheetSelectionAnchor = start;
     renderSorterRows(sorterAssignedRows);
+    window.historyService?.captureIfChanged("aiSorter", `Pasted ${newRows.length} rows into AI Sorter`);
     setTimeout(() => {
       el("maintenanceMiniSheet")?.querySelector(`tr[data-row-index="${start}"]`)
         ?.scrollIntoView({ behavior: "smooth", block: "center", inline: "nearest" });
@@ -2266,6 +2312,7 @@
       miniSheetSelectionAnchor = rowIndex;
     }
 
+    setMiniSheetKeyboardActive(true);
     updateMiniSheetSelectionUi();
   }
 
@@ -2278,6 +2325,7 @@
     miniSheetSelectedRows.clear();
     sorterAssignedRows.forEach((_, index) => miniSheetSelectedRows.add(index));
     miniSheetSelectionAnchor = 0;
+    setMiniSheetKeyboardActive(true);
     updateMiniSheetSelectionUi();
     showToast(`${sorterAssignedRows.length} rows selected.`, "info");
   }
@@ -2312,6 +2360,7 @@
     });
 
     miniSheetSelectionAnchor = indexes[0];
+    setMiniSheetKeyboardActive(true);
     updateMiniSheetSelectionUi();
 
     const shown = sorter.displayTLValue(sourceRow.tl) || "same TL";
@@ -2424,6 +2473,9 @@
       }
 
       renderSorterRows(sorterAssignedRows);
+      if (window.historyService?.captureIfChanged) {
+        await window.historyService.captureIfChanged("aiSorter", `Cut ${count} cell(s) in AI Sorter`);
+      }
       showToast(`${count} cell(s) cut to clipboard.`, "success");
       return;
     }
@@ -2448,6 +2500,9 @@
     miniSheetSelectedRows.clear();
     miniSheetSelectionAnchor = null;
     renderSorterRows(sorterAssignedRows);
+    if (window.historyService?.captureIfChanged) {
+      await window.historyService.captureIfChanged("aiSorter", `Cut ${indexes.length} row(s) in AI Sorter`);
+    }
     showToast(`${indexes.length} row(s) cut to clipboard and removed from the Mini Sheet.`, "success");
   }
 
@@ -2474,6 +2529,9 @@
     miniSheetSelectedRows.clear();
     miniSheetSelectionAnchor = null;
     renderSorterRows(sorterAssignedRows);
+    if (window.historyService?.captureIfChanged) {
+      await window.historyService.captureIfChanged("aiSorter", `Removed ${indexes.length} row(s) from AI Sorter`);
+    }
     showToast("Selected Mini Sheet rows were removed.", "info");
   }
 
@@ -2618,6 +2676,9 @@
     updateCurrentFindMatchHighlight();
     scrollToCurrentMiniSheetFindMatch();
 
+    input?.blur();
+    setMiniSheetKeyboardActive(true);
+
     const count = miniSheetFindMatches.length;
     showToast(`${count} row(s) matched and selected.`, "success");
   }
@@ -2631,6 +2692,8 @@
     miniSheetFindCursor = (miniSheetFindCursor + 1) % miniSheetFindMatches.length;
     updateCurrentFindMatchHighlight();
     scrollToCurrentMiniSheetFindMatch();
+    el("miniSheetFindTlInput")?.blur();
+    setMiniSheetKeyboardActive(true);
     showToast(`Match ${miniSheetFindCursor + 1} of ${miniSheetFindMatches.length}.`, "info");
   }
 
@@ -2836,6 +2899,18 @@
   }
 
   function initSorterController() {
+    // History adapter binding for AI Sorter undo/redo transactions
+    sorter.getSortedRows = () => (sorterAssignedRows || []).map(r => ({ ...r }));
+    sorter.setSortedRows = (rows) => {
+      sorterAssignedRows = Array.isArray(rows) ? rows.map(r => ({ ...r })) : [];
+      renderSorterRows(sorterAssignedRows);
+      updateMiniSheetSelectionUi();
+    };
+    if (window.sorterService) {
+      window.sorterService.getSortedRows = sorter.getSortedRows;
+      window.sorterService.setSortedRows = sorter.setSortedRows;
+    }
+
     el("maintenanceSortBtn")?.addEventListener("click", () => {
       miniSheetSelectedRows.clear();
       miniSheetSelectionAnchor = null;
@@ -2947,6 +3022,41 @@
       });
     }
 
+    // Table focus & outside click listener (mirrors V1 lines 23700-23730)
+    document.addEventListener("mousedown", (event) => {
+      if (currentWorkspace !== "sorter") return;
+
+      const isInsideFindBar = !!event.target.closest?.(".mini-sheet-findbar");
+      if (isInsideFindBar) {
+        setMiniSheetKeyboardActive(false);
+        clearMiniSheetCellSelection(true);
+        return;
+      }
+
+      const isInsideTable = !!event.target.closest?.("#maintenanceMiniSheet");
+      if (isInsideTable) {
+        setMiniSheetKeyboardActive(true);
+        return;
+      }
+
+      const isInsideActions = !!event.target.closest?.(".mini-sheet-actions, .ai-sorter-toolbar, .mini-sheet-header, .mini-sheet-footer");
+      if (isInsideActions) {
+        // Keep current selection active so action buttons operate properly
+        return;
+      }
+
+      // Clicked outside table and toolbar -> clear keyboard active and cell selection
+      setMiniSheetKeyboardActive(false);
+      clearMiniSheetCellSelection(true);
+
+      // If clicked outside the entire sheet card, clear row selection as well
+      if (!event.target.closest?.(".mini-sheet-card, #maintenanceMiniSheetCard, .card")) {
+        miniSheetSelectedRows.clear();
+        miniSheetSelectionAnchor = null;
+        updateMiniSheetSelectionUi();
+      }
+    });
+
     document.addEventListener("mouseup", () => {
       if (!miniSheetCellDragging) return;
       miniSheetCellDragging = false;
@@ -3036,6 +3146,9 @@
             }
           }
           renderSorterRows(sorterAssignedRows);
+          if (window.historyService?.captureIfChanged) {
+            window.historyService.captureIfChanged("aiSorter", "Cleared selected cell(s) in AI Sorter");
+          }
           showToast("Selected cells cleared.", "info");
           return;
         }
@@ -3052,6 +3165,14 @@
           const { startRow, startCol } = miniSheetCellSelection;
           const cell = el("maintenanceMiniSheet")?.querySelector(
             `td[data-row-index="${startRow}"][data-col-index="${startCol}"]`
+          );
+          if (cell) beginMiniSheetCellEdit(cell);
+        } else if (miniSheetSelectedRows.size) {
+          event.preventDefault();
+          const sorted = [...miniSheetSelectedRows].sort((a, b) => a - b);
+          const firstRow = sorted[0];
+          const cell = el("maintenanceMiniSheet")?.querySelector(
+            `td[data-row-index="${firstRow}"][data-col-index="0"]`
           );
           if (cell) beginMiniSheetCellEdit(cell);
         }
@@ -3123,6 +3244,9 @@
 
   function queueMaintenanceAutosave() {
     updateMaintenanceAutosaveIndicator("● Saving...", "saving");
+    if (window.historyService?.scheduleCapture) {
+      window.historyService.scheduleCapture("maintenanceReport", "Updated maintenance report", 800);
+    }
     if (maintenanceAutosaveTimer) clearTimeout(maintenanceAutosaveTimer);
     maintenanceAutosaveTimer = setTimeout(async () => {
       try {
@@ -3212,9 +3336,12 @@
 
     maintenanceState.blocks.forEach((block, index) => {
       const blockEl = document.createElement("div");
-      blockEl.className = "eod-block-card";
+      blockEl.className = "eod-block-card" + (block.dataHidden ? " is-hidden-report" : "");
       blockEl.id = `block_${block.id}`;
       blockEl.dataset.blockId = block.id;
+      blockEl.addEventListener("click", () => {
+        if (!block.dataHidden) activePasteBlockId = block.id;
+      });
 
       // Header row
       const headerRow = document.createElement("div");
@@ -3238,6 +3365,27 @@
       titleWrap.appendChild(badge);
       titleWrap.appendChild(titleSpan);
 
+      if (block.dataHidden) {
+        const hiddenBadge = document.createElement("span");
+        hiddenBadge.className = "badge";
+        hiddenBadge.style.background = "rgba(245, 158, 11, 0.18)";
+        hiddenBadge.style.color = "#f59e0b";
+        hiddenBadge.style.border = "1px solid rgba(245, 158, 11, 0.45)";
+        hiddenBadge.style.fontSize = "10px";
+        hiddenBadge.style.fontWeight = "700";
+        hiddenBadge.style.letterSpacing = "0.5px";
+        hiddenBadge.textContent = "HIDDEN REPORT";
+        titleWrap.appendChild(hiddenBadge);
+
+        const rowsCount = maintenance.maintenanceRowsForSheets(block.lanesText || "").length;
+        const shotCount = (block.screenshots || []).length;
+        const summarySpan = document.createElement("span");
+        summarySpan.style.fontSize = "11.5px";
+        summarySpan.style.color = "var(--text-muted)";
+        summarySpan.textContent = `(${rowsCount} row${rowsCount === 1 ? "" : "s"} · ${shotCount} screenshot${shotCount === 1 ? "" : "s"})`;
+        titleWrap.appendChild(summarySpan);
+      }
+
       const actionsWrap = document.createElement("div");
       actionsWrap.style.display = "flex";
       actionsWrap.style.alignItems = "center";
@@ -3246,18 +3394,30 @@
       // ── Hide Report / Show Report toggle button (V1 parity, item 10) ──
       const toggleBtn = document.createElement("button");
       toggleBtn.type = "button";
-      toggleBtn.className = "btn btn-outline btn-sm";
-      toggleBtn.textContent = block.dataHidden ? "Show Report" : "Hide Report";
-      toggleBtn.title = block.dataHidden ? "Show block content" : "Hide block content";
+      if (block.dataHidden) {
+        toggleBtn.className = "btn btn-primary btn-sm";
+        toggleBtn.textContent = "Show Report";
+        toggleBtn.title = "Show report content";
+        toggleBtn.style.fontWeight = "600";
+      } else {
+        toggleBtn.className = "btn btn-outline btn-sm";
+        toggleBtn.textContent = "Hide Report";
+        toggleBtn.title = "Hide report content";
+      }
       toggleBtn.addEventListener("click", () => {
         block.dataHidden = !block.dataHidden;
         // Update active paste target if this block was it
         if (block.dataHidden && activePasteBlockId === block.id) {
           const nextVisible = maintenanceState.blocks.find(b => b.id !== block.id && !b.dataHidden);
           activePasteBlockId = nextVisible ? nextVisible.id : null;
+        } else if (!block.dataHidden) {
+          activePasteBlockId = block.id;
         }
         renderMaintenanceBlocks();
         queueMaintenanceAutosave();
+        if (window.historyService?.captureIfChanged) {
+          window.historyService.captureIfChanged("maintenanceReport", block.dataHidden ? `Hid Block #${index + 1}` : `Showed Block #${index + 1}`);
+        }
       });
       actionsWrap.appendChild(toggleBtn);
 
@@ -3278,6 +3438,9 @@
           maintenanceState.blocks.splice(index, 1);
           renderMaintenanceBlocks();
           queueMaintenanceAutosave();
+          if (window.historyService?.captureIfChanged) {
+            await window.historyService.captureIfChanged("maintenanceReport", `Removed Block #${index + 1}`);
+          }
           showToast(`Block #${index + 1} removed.`, "info");
         });
         actionsWrap.appendChild(removeBtn);
@@ -3621,11 +3784,12 @@
       element.style.color = "#111827";
 
       const opt = {
-        margin: [10, 10, 10, 10],
+        margin: [8, 8, 8, 8],
         filename: `Maintenance_Report_${maintenanceState.destinationKey}_${maintenanceState.date}.pdf`,
         image: { type: "jpeg", quality: 0.98 },
         html2canvas: { scale: 2, useCORS: true },
-        jsPDF: { unit: "mm", format: "a4", orientation: "landscape" }
+        jsPDF: { unit: "mm", format: "a4", orientation: "landscape" },
+        pagebreak: { mode: ['css', 'legacy'], avoid: ['tr', '.maintenance-pdf-image-row', '.maintenance-pdf-remarks-row'] }
       };
 
       showToast("Generating PDF export...", "info");
@@ -3742,6 +3906,19 @@
   }
 
   function initMaintenanceController() {
+    // Wire maintenanceService getBlocks and saveBlocks for History undo/redo support (items 11 & 12)
+    maintenance.getBlocks = () => {
+      return (maintenanceState.blocks || []).map(b => ({ ...b }));
+    };
+    maintenance.saveBlocks = async (blocks) => {
+      maintenanceState.blocks = Array.isArray(blocks) && blocks.length
+        ? blocks.map(b => ({ ...b }))
+        : [maintenance.makeBlock()];
+      renderMaintenanceBlocks();
+      queueMaintenanceAutosave();
+      return maintenanceState.blocks;
+    };
+
     // Destination selector
     el("simpleEodDestination")?.addEventListener("change", (e) => {
       const destKey = e.target.value;
@@ -3970,7 +4147,29 @@
           break;
         }
       }
-      if (!imageFile) return;
+      if (!imageFile) {
+        // Text paste in maintenance when not inside an input/textarea
+        const text = event.clipboardData?.getData("text/plain") || "";
+        if (text.trim()) {
+          const active = document.activeElement;
+          const inTypingField = active && (/^(INPUT|TEXTAREA)$/i.test(active.tagName) || active.isContentEditable);
+          if (!inTypingField) {
+            event.preventDefault();
+            const targetBlock = maintenanceState.blocks.find(b => b.id === activePasteBlockId && !b.dataHidden) ||
+              maintenanceState.blocks.find(b => !b.dataHidden);
+            if (targetBlock) {
+              targetBlock.lanesText = targetBlock.lanesText ? `${targetBlock.lanesText}\n${text.trim()}` : text.trim();
+              renderMaintenanceBlocks();
+              queueMaintenanceAutosave();
+              if (window.historyService?.captureIfChanged) {
+                window.historyService.captureIfChanged("maintenanceReport", `Pasted text into Block #${maintenanceState.blocks.indexOf(targetBlock) + 1}`);
+              }
+              showToast("Pasted text into active Maintenance block.", "success");
+            }
+          }
+        }
+        return;
+      }
       event.preventDefault();
 
       // Find the active paste block
@@ -3987,6 +4186,9 @@
         targetBlock.screenshots.push(compressed);
         renderMaintenanceBlocks();
         queueMaintenanceAutosave();
+        if (window.historyService?.captureIfChanged) {
+          window.historyService.captureIfChanged("maintenanceReport", `Added screenshot to Block #${maintenanceState.blocks.indexOf(targetBlock) + 1}`);
+        }
         showToast("Screenshot pasted into Maintenance block.", "success");
       } catch (err) {
         console.error("Global maintenance paste error:", err);
@@ -3994,25 +4196,110 @@
     });
 
     // =========================================================================
-    // GLOBAL KEYBOARD: Maintenance Ctrl+A selects Maintenance data (item 13)
+    // GLOBAL KEYBOARD: Maintenance Universal Shortcuts
     // =========================================================================
-    document.addEventListener("keydown", (event) => {
+    document.addEventListener("keydown", async (event) => {
       if (currentWorkspace !== "maintenance") return;
-      if (!(event.ctrlKey || event.metaKey)) return;
       const active = document.activeElement;
-      // Ctrl+A inside an input/textarea: let browser handle (select text in field)
-      if (active && /^(INPUT|TEXTAREA)$/i.test(active.tagName)) return;
-      if (event.key.toLowerCase() === "a") {
-        // Select all lanes text in visible blocks (focus first lanes textarea)
-        const firstVisibleBlock = maintenanceState.blocks.find(b => !b.dataHidden);
-        if (!firstVisibleBlock) return;
-        const blockEl = document.getElementById(`block_${firstVisibleBlock.id}`);
-        const firstTextarea = blockEl?.querySelector("textarea.eod-lanes-textarea");
-        if (firstTextarea) {
-          event.preventDefault();
-          firstTextarea.focus();
-          firstTextarea.select();
+      // Guard: when cursor is inside normal text field (input, textarea, contenteditable),
+      // preserve normal text editing behavior where expected.
+      const inTypingField = active && (/^(INPUT|TEXTAREA|SELECT)$/i.test(active.tagName) || active.isContentEditable);
+      if (inTypingField) return;
+
+      const key = event.key ? event.key.toLowerCase() : "";
+      const isCtrlOrMeta = !!(event.ctrlKey || event.metaKey);
+
+      // Target block for shortcuts: active block or first visible block
+      const targetBlock = maintenanceState.blocks.find(b => b.id === activePasteBlockId && !b.dataHidden) ||
+        maintenanceState.blocks.find(b => !b.dataHidden);
+
+      // Ctrl+A: Select All lanes text in active block
+      if (isCtrlOrMeta && !event.shiftKey && key === "a") {
+        if (!targetBlock) return;
+        event.preventDefault();
+        const blockEl = document.getElementById(`block_${targetBlock.id}`);
+        const lanesArea = blockEl?.querySelector("textarea.eod-lanes-textarea");
+        if (lanesArea) {
+          lanesArea.focus();
+          lanesArea.select();
         }
+        return;
+      }
+
+      // Ctrl+C: Copy selected maintenance data where applicable
+      if (isCtrlOrMeta && !event.shiftKey && key === "c") {
+        if (!targetBlock || !targetBlock.lanesText) return;
+        event.preventDefault();
+        try {
+          await navigator.clipboard.writeText(targetBlock.lanesText);
+          showToast(`Copied lanes data from Block #${maintenanceState.blocks.indexOf(targetBlock) + 1}.`, "success");
+        } catch (_) {}
+        return;
+      }
+
+      // Ctrl+X: Cut selected editable maintenance data where safe
+      if (isCtrlOrMeta && !event.shiftKey && key === "x") {
+        if (!targetBlock || !targetBlock.lanesText) return;
+        event.preventDefault();
+        try {
+          await navigator.clipboard.writeText(targetBlock.lanesText);
+          targetBlock.lanesText = "";
+          renderMaintenanceBlocks();
+          queueMaintenanceAutosave();
+          if (window.historyService?.captureIfChanged) {
+            await window.historyService.captureIfChanged("maintenanceReport", `Cut lanes data in Block #${maintenanceState.blocks.indexOf(targetBlock) + 1}`);
+          }
+          showToast("Lanes data cut to clipboard.", "success");
+        } catch (_) {}
+        return;
+      }
+
+      // Ctrl+F: Focus destination selector or filter
+      if (isCtrlOrMeta && !event.shiftKey && key === "f") {
+        event.preventDefault();
+        const destSelect = el("simpleEodDestination");
+        if (destSelect) destSelect.focus();
+        return;
+      }
+
+      // Delete/Backspace: Clear selected block's lanes data
+      if (key === "delete" || key === "backspace") {
+        if (!targetBlock || !targetBlock.lanesText) return;
+        event.preventDefault();
+        targetBlock.lanesText = "";
+        renderMaintenanceBlocks();
+        queueMaintenanceAutosave();
+        if (window.historyService?.captureIfChanged) {
+          await window.historyService.captureIfChanged("maintenanceReport", `Cleared lanes in Block #${maintenanceState.blocks.indexOf(targetBlock) + 1}`);
+        }
+        showToast("Block lanes data cleared.", "info");
+        return;
+      }
+
+      // Escape: Clear active block selection
+      if (key === "escape") {
+        activePasteBlockId = null;
+        document.querySelectorAll(".eod-block-card.is-active-target").forEach(c => c.classList.remove("is-active-target"));
+        return;
+      }
+
+      // ArrowUp / ArrowDown: Navigate between blocks
+      if (key === "arrowup" || key === "arrowdown") {
+        event.preventDefault();
+        const visibleBlocks = maintenanceState.blocks.filter(b => !b.dataHidden);
+        if (!visibleBlocks.length) return;
+        const curIdx = visibleBlocks.findIndex(b => b.id === activePasteBlockId);
+        let nextIdx = 0;
+        if (key === "arrowup") {
+          nextIdx = curIdx <= 0 ? visibleBlocks.length - 1 : curIdx - 1;
+        } else {
+          nextIdx = curIdx < 0 || curIdx >= visibleBlocks.length - 1 ? 0 : curIdx + 1;
+        }
+        activePasteBlockId = visibleBlocks[nextIdx].id;
+        const blockEl = document.getElementById(`block_${activePasteBlockId}`);
+        blockEl?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        showToast(`Selected Block #${maintenanceState.blocks.indexOf(visibleBlocks[nextIdx]) + 1}.`, "info");
+        return;
       }
     });
   }

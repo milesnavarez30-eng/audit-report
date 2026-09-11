@@ -41,12 +41,45 @@
       border: 1px solid var(--border-default);
       border-radius: var(--radius-sm);
       padding: 10px 12px;
-      font-family: var(--font-mono);
-      font-size: 11px;
+      font-size: 11.5px;
       line-height: 1.5;
       overflow-y: auto;
-      white-space: pre-wrap;
       color: var(--text-secondary);
+      user-select: text;
+    }
+
+    .edr-preview-card {
+      border-radius: var(--radius-sm);
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      margin-bottom: 4px;
+    }
+    .edr-preview-line {
+      margin-bottom: 2px;
+    }
+    .edr-preview-line strong {
+      color: var(--text-primary);
+    }
+    .edr-preview-shot {
+      margin: 8px 0 6px 0;
+    }
+    .edr-preview-shot img {
+      max-width: 100%;
+      max-height: 260px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-default);
+      display: block;
+    }
+    .edr-preview-clip a {
+      color: var(--accent-primary);
+      text-decoration: underline;
+    }
+    .edr-preview-divider {
+      text-align: center;
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+      font-size: 11px;
+      margin: 6px 0;
     }
 
     /* Refined Saved EDR Record Row & Actions */

@@ -1716,6 +1716,29 @@ table.mini-sheet tr.floor-break td {
   box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.25);
 }
 
+.eod-block-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md, 8px);
+  padding: 14px 16px;
+  margin-bottom: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+
+.eod-block-card:hover {
+  border-color: var(--border-hover, var(--border-subtle));
+}
+
+.eod-block-card.is-hidden-report {
+  border: 1.5px dashed rgba(245, 158, 11, 0.65) !important;
+  background: rgba(245, 158, 11, 0.05) !important;
+  box-shadow: 0 0 0 1px rgba(245, 158, 11, 0.15);
+  padding: 10px 16px;
+}
+
 .eod-block-head {
   display: flex;
   align-items: center;

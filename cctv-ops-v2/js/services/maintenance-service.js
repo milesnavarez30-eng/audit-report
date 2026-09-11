@@ -381,7 +381,7 @@
 
     const blocks = (state.blocks || []).map((block, index) => ({
       blockNumber: index + 1,
-      rows: block.dataHidden ? [] : maintenanceRowsForSheets(block.lanesText || ""),
+      rows: maintenanceRowsForSheets(block.lanesText || ""),
       screenshots: Array.isArray(block.screenshots)
         ? block.screenshots.map(maintenanceScreenshotSource).filter(Boolean)
         : [],
@@ -622,7 +622,7 @@
       const remarks = Array.isArray(block.remarks) ? block.remarks.filter(Boolean) : [];
 
       const dataRows = rows.map(row => `
-        <tr>
+        <tr style="page-break-inside:avoid;">
           ${row.map((cell, idx) => `
             <td style="border:1px solid #e5e7eb; padding:5px 7px; background:#ffffff; color:#202124; font-family:Arial,sans-serif; font-size:10px; vertical-align:top; ${idx === 6 ? "text-align:left;" : "text-align:center;"}">
               ${esc(cell)}
@@ -632,7 +632,7 @@
       `).join("");
 
       const imageRow = screenshots.length ? `
-        <tr>
+        <tr class="maintenance-pdf-image-row" style="page-break-inside:avoid;">
           <td colspan="7" style="padding:8px 4px; border:0; background:#ffffff; text-align:left;">
             <div style="white-space:nowrap;">
               ${screenshots.map((shot, shotIdx) => `
@@ -644,7 +644,7 @@
       ` : "";
 
       const remarksRow = remarks.length ? `
-        <tr>
+        <tr class="maintenance-pdf-remarks-row" style="page-break-inside:avoid;">
           <td colspan="7" style="border:0; border-left:4px solid #278914; padding:7px 9px; background:#f5faf3; color:#1f3b24; font-family:Arial,sans-serif; font-size:10px; text-align:left;">
             <strong style="color:#278914;">Remarks:</strong>
             ${remarks.map(item => `<div>${esc(item)}</div>`).join("")}
@@ -652,22 +652,54 @@
         </tr>
       ` : "";
 
-      const spacer = blockIndex < state.blocks.length - 1 ? `<tr><td colspan="7" style="height:10px; border:0; background:#ffffff;"></td></tr>` : "";
-      return dataRows + imageRow + remarksRow + spacer;
+      const blockLabel = state.blocks.length > 1
+        ? `<div style="font-family:Arial,sans-serif; font-size:12px; font-weight:700; color:#31495f; padding:8px 0 4px 0;">Block #${blockIndex + 1}</div>`
+        : "";
+
+      return `
+        <div class="maintenance-pdf-block" style="margin-bottom:16px;">
+          ${blockLabel}
+          <table class="maintenance-pdf-table" style="border-collapse:collapse; width:100%; background:#ffffff; page-break-inside:auto;">
+            <thead style="display:table-header-group;">
+              <tr style="page-break-inside:avoid;">${headerCells}</tr>
+            </thead>
+            <tbody style="display:table-row-group;">
+              ${dataRows}
+              ${imageRow}
+              ${remarksRow}
+            </tbody>
+          </table>
+        </div>
+      `;
     }).join("");
 
     return `
+      <!DOCTYPE html>
       <html>
-        <body>
-          <table style="border-collapse:collapse; width:100%; background:#ffffff;">
-            <tr>
-              <td colspan="7" style="border:0; padding:0 0 8px 0; background:#ffffff; color:#111827; font-family:Arial,sans-serif; font-size:16px; font-weight:700; text-align:left;">
-                ${esc(titleLine)}
-              </td>
-            </tr>
-            <tr>${headerCells}</tr>
-            ${blockHtml}
-          </table>
+        <head>
+          <meta charset="utf-8">
+          <style>
+            @media print {
+              thead { display: table-header-group !important; }
+              tbody { display: table-row-group !important; }
+              tr { page-break-inside: avoid !important; }
+              .maintenance-pdf-image-row { page-break-inside: avoid !important; }
+              .maintenance-pdf-remarks-row { page-break-inside: avoid !important; }
+              .maintenance-pdf-block { page-break-inside: auto; }
+            }
+            table { border-collapse: collapse; width: 100%; }
+            thead { display: table-header-group; }
+            tbody { display: table-row-group; }
+            tr { page-break-inside: avoid; }
+            .maintenance-pdf-image-row { page-break-inside: avoid; }
+            .maintenance-pdf-remarks-row { page-break-inside: avoid; }
+          </style>
+        </head>
+        <body style="margin:0; padding:10px; background:#ffffff;">
+          <div style="padding:0 0 10px 0; color:#111827; font-family:Arial,sans-serif; font-size:16px; font-weight:700; text-align:left;">
+            ${esc(titleLine)}
+          </div>
+          ${blockHtml}
         </body>
       </html>
     `;
@@ -703,7 +735,22 @@
     testMaintenanceSheetsConnection,
     sendMaintenanceReportToGoogleSheets,
     maintenanceReportPlainTextForSheets,
-    maintenanceReportHtmlForSheets
+    maintenanceReportHtmlForSheets,
+    getBlocks() {
+      if (Array.isArray(root.maintenanceService?._currentBlocks)) {
+        return root.maintenanceService._currentBlocks.map(b => ({ ...b }));
+      }
+      return [];
+    },
+    async saveBlocks(blocks) {
+      if (root.maintenanceService) {
+        root.maintenanceService._currentBlocks = Array.isArray(blocks) ? blocks.map(b => ({ ...b })) : [];
+      }
+      const draft = await loadDraft();
+      draft.blocks = Array.isArray(blocks) ? blocks.map(b => ({ ...b })) : [];
+      await saveDraft(draft);
+      return draft.blocks;
+    }
   };
 
   root.maintenanceService = maintenanceService;
