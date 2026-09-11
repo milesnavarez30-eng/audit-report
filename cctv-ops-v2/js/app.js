@@ -544,7 +544,7 @@
       // Copy SS (in More menu)
       card.querySelector(".btn-shot-copy")?.addEventListener("click", async (e) => {
         e.stopPropagation();
-        card.querySelector(".record-dropdown-menu")?.classList.remove("is-open");
+        closeMoreMenu(moreMenu);
         try {
           await edr.copyScreenshot(report);
           showToast("CCTV screenshot copied to clipboard as PNG image.", "success");
@@ -571,23 +571,23 @@
       moreBtn?.addEventListener("click", (e) => {
         e.stopPropagation();
         const isOpen = moreMenu?.classList.contains("is-open");
-        document.querySelectorAll(".record-dropdown-menu.is-open").forEach(m => m.classList.remove("is-open"));
+        document.querySelectorAll(".record-dropdown-menu.is-open").forEach(closeMoreMenu);
         if (!isOpen && moreMenu) {
-          moreMenu.classList.add("is-open");
+          openMoreMenu(moreMenu, moreBtn, moreMenu.parentElement);
         }
       });
 
       // Replace SS (in More menu)
       card.querySelector(".btn-action-replace")?.addEventListener("click", (e) => {
         e.stopPropagation();
-        moreMenu?.classList.remove("is-open");
+        closeMoreMenu(moreMenu);
         triggerAddReplace();
       });
 
       // Remove SS (in More menu)
       card.querySelector(".btn-action-remove")?.addEventListener("click", async (e) => {
         e.stopPropagation();
-        moreMenu?.classList.remove("is-open");
+        closeMoreMenu(moreMenu);
         if (confirm("Remove CCTV screenshot from this saved EDR?")) {
           await edr.removeScreenshotFromReport(id);
           showToast("CCTV screenshot removed.", "info");
@@ -597,7 +597,7 @@
       // Delete EDR (in More menu)
       card.querySelector(".btn-action-delete")?.addEventListener("click", (e) => {
         e.stopPropagation();
-        moreMenu?.classList.remove("is-open");
+        closeMoreMenu(moreMenu);
         if (confirm(`Delete EDR for ${report.subjectName || 'this record'}?`)) {
           edr.deleteReport(id);
           showToast("EDR deleted.", "info");
@@ -608,8 +608,13 @@
     // Global listener for closing dropdowns on outside click
     if (!window._edrMoreMenuGlobalBound) {
       document.addEventListener("click", (e) => {
-        if (!e.target.closest(".record-more-menu-wrap")) {
-          document.querySelectorAll(".record-dropdown-menu.is-open").forEach(m => m.classList.remove("is-open"));
+        if (!e.target.closest(".record-more-menu-wrap") && !e.target.closest(".record-dropdown-menu")) {
+          document.querySelectorAll(".record-dropdown-menu.is-open").forEach(closeMoreMenu);
+        }
+      });
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+          document.querySelectorAll(".record-dropdown-menu.is-open").forEach(closeMoreMenu);
         }
       });
       window._edrMoreMenuGlobalBound = true;
@@ -744,6 +749,39 @@
     const fbText = el("edrFacebookText")?.value || "";
     const html = edr.buildPreviewHtml(fbText);
     previewBox.innerHTML = html;
+  }
+
+  function closeMoreMenu(menu) {
+    if (!menu) return;
+    menu.classList.remove("is-open");
+    const owner = menu._edrMenuOwner;
+    if (owner && menu.parentElement !== owner) owner.appendChild(menu);
+    menu._edrMenuOwner = null;
+    menu.style.position = "";
+    menu.style.left = "";
+    menu.style.top = "";
+    menu.style.right = "";
+    menu.style.zIndex = "";
+  }
+
+  function openMoreMenu(menu, trigger, owner) {
+    if (!menu || !trigger || !owner) return;
+    menu._edrMenuOwner = owner;
+    document.body.appendChild(menu);
+    menu.classList.add("is-open");
+    const triggerRect = trigger.getBoundingClientRect();
+    const menuRect = menu.getBoundingClientRect();
+    const gap = 4;
+    const openUpward = triggerRect.bottom + gap + menuRect.height > window.innerHeight;
+    const left = Math.max(4, Math.min(triggerRect.right - menuRect.width, window.innerWidth - menuRect.width - 4));
+    const top = openUpward
+      ? Math.max(4, triggerRect.top - menuRect.height - gap)
+      : Math.min(window.innerHeight - menuRect.height - 4, triggerRect.bottom + gap);
+    menu.style.position = "fixed";
+    menu.style.left = `${left}px`;
+    menu.style.top = `${top}px`;
+    menu.style.right = "auto";
+    menu.style.zIndex = "10000";
   }
 
   function getFormData() {
