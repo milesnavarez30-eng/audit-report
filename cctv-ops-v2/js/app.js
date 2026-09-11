@@ -4086,9 +4086,9 @@
       }
       try {
         const res = await maintenance.testMaintenanceSheetsConnection(url, maintenanceState.destinationKey);
-        if (res && res.success) {
+        if (res && (res.ok === true || res.success === true)) {
           if (testRes) {
-            testRes.textContent = `Connection successful! Destination: ${res.destination || "OK"}`;
+            testRes.textContent = `Connection successful! Destination: ${res.destinationLabel || res.destination || "OK"}`;
             testRes.style.color = "#4ade80";
           }
         } else {
