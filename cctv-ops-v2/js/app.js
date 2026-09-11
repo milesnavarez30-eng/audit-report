@@ -3804,7 +3804,7 @@
         }
       });
 
-      if (result && result.success) {
+      if (result && (result.ok === true || result.success === true)) {
         setMaintenanceStatusMessage(`Report successfully logged to Google Sheets! (${result.rowsLogged || "OK"})`, "success");
         showToast("Maintenance Report uploaded to Google Sheets!", "success");
       } else {
