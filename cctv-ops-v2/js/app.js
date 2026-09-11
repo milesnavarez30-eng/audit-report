@@ -1227,7 +1227,7 @@
       tabId: "tabMasterlist",
       paneId: "paneMasterlist",
       title: "Masterlist",
-      subtitle: "Tracker Hub & HR Assignment"
+      subtitle: ""
     },
     followup: {
       tabId: "tabFollowup",
@@ -1239,13 +1239,13 @@
       tabId: "tabHistory",
       paneId: "paneHistory",
       title: "Activity History",
-      subtitle: "Audit Log & Snapshots"
+      subtitle: ""
     },
     accounts: {
       tabId: "tabAccounts",
       paneId: "paneAccounts",
       title: "Account Management",
-      subtitle: "Access Control & Security"
+      subtitle: ""
     }
   };
 
@@ -3792,13 +3792,13 @@
       }
       const element = document.createElement("div");
       element.innerHTML = maintenance.maintenanceReportHtmlForSheets(maintenanceState);
-      element.style.padding = "20px";
+      element.style.padding = "0";
       element.style.background = "#ffffff";
       element.style.color = "#111827";
 
       const opt = {
-        margin: [8, 8, 8, 8],
-        filename: `Maintenance_Report_${maintenanceState.destinationKey}_${maintenanceState.date}.pdf`,
+        margin: [25.4, 25.4, 25.4, 25.4],
+        filename: `${String(maintenanceState.title || "Maintenance").replace(/[<>:"/\\|?*]+/g, "-").replace(/\s+/g, " ").trim()} - ${maintenanceState.date || "report"}.pdf`,
         image: { type: "jpeg", quality: 0.98 },
         html2canvas: { scale: 2, useCORS: true },
         jsPDF: { unit: "mm", format: "a4", orientation: "landscape" },

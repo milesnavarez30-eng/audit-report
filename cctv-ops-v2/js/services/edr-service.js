@@ -367,6 +367,39 @@ window.CCTV_EDR = (function () {
     return lines.join("");
   }
 
+  function compressClipboardImage(dataUrl) {
+    if (!dataUrl || !String(dataUrl).startsWith("data:image/")) return Promise.resolve("");
+    return new Promise(resolve => {
+      const image = new Image();
+      image.onload = () => {
+        const maxWidth = 800;
+        const maxHeight = 600;
+        const scale = Math.min(1, maxWidth / image.naturalWidth, maxHeight / image.naturalHeight);
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.max(1, Math.round(image.naturalWidth * scale));
+        canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
+        const context = canvas.getContext("2d");
+        context.drawImage(image, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL("image/jpeg", 0.62));
+      };
+      image.onerror = () => resolve("");
+      image.src = dataUrl;
+    });
+  }
+
+  async function reportTeamsClipboardHtml(report) {
+    const screenshot = await compressClipboardImage(report.screenshotData);
+    const image = screenshot
+      ? `<div><img src="${escapeHtml(screenshot)}" alt="CCTV Screenshot" style="max-width:800px;display:block;"></div>`
+      : "";
+    const body = reportTeamsHtml(report);
+    const clipMarker = '<div>CCTV Clip:';
+    const clipIndex = body.indexOf(clipMarker);
+    return clipIndex === -1
+      ? `${body}${image}`
+      : `${body.slice(0, clipIndex)}${image}${body.slice(clipIndex)}`;
+  }
+
   function buildTeamsHtml(facebookText = "") {
     const activeSelected = edrReports.filter(r => r.selected && !r.done);
     if (!activeSelected.length) return "";
@@ -388,6 +421,24 @@ window.CCTV_EDR = (function () {
       fbHtml = `${activeSelected.length ? dividerHtml : ""}<div><strong>Facebook shared post ${escapeHtml(fbDate)}</strong></div>${fbLines}`;
     }
 
+    return `<div style="font-family:Arial,sans-serif;font-size:10pt;color:#111;line-height:1.4;">${edrBodyHtml}${fbHtml}</div>`.trim();
+  }
+
+  async function buildTeamsClipboardHtml(reports, facebookText = "") {
+    const dividerHtml = '<div><br>────────────────────────────────────────<br><br></div>';
+    const edrBodyHtml = (await Promise.all(reports.map(reportTeamsClipboardHtml))).join(dividerHtml);
+    const fb = String(facebookText || "").trim();
+    let fbHtml = "";
+    if (fb) {
+      const fbDate = formatFacebookDate(todayLocal());
+      const fbLines = fb.split(/\n+/).map(l => clean(l)).filter(Boolean).map(line => {
+        const u = safeUrl(line);
+        return u
+          ? `<div><a href="${escapeHtml(u)}">${escapeHtml(line)}</a></div>`
+          : `<div>${escapeHtml(line)}</div>`;
+      }).join("");
+      fbHtml = `${dividerHtml}<div><strong>Facebook shared post ${escapeHtml(fbDate)}</strong></div>${fbLines}`;
+    }
     return `<div style="font-family:Arial,sans-serif;font-size:10pt;color:#111;line-height:1.4;">${edrBodyHtml}${fbHtml}</div>`.trim();
   }
 
@@ -896,7 +947,7 @@ window.CCTV_EDR = (function () {
       const fb = facebookText || currentFacebookText;
       const plainText = this.buildTeamsOutput(fb);
       const safePlainText = plainText.replace(/data:image\/[a-zA-Z0-9.+-]+;base64,[A-Za-z0-9+/=]+/g, "").trim();
-      const minimalHtml = buildTeamsHtml(fb);
+      const minimalHtml = await buildTeamsClipboardHtml(activeSelected, fb);
 
       let wroteSuccessfully = false;
 
