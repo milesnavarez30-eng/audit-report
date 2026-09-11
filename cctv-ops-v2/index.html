@@ -1,0 +1,2115 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CCTV OPS V2 - Operations Platform</title>
+
+  <!-- Google Fonts: Plus Jakarta Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+  <!-- Modular Design System -->
+  <link rel="stylesheet" href="./css/tokens.css">
+  <link rel="stylesheet" href="./css/base.css">
+  <link rel="stylesheet" href="./css/layout.css">
+  <link rel="stylesheet" href="./css/components.css">
+  <link rel="stylesheet" href="./css/workspaces.css">
+
+  <style>
+    /* Premium Split-View EDR Styling */
+    .edr-form-scroll {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .form-row-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    /* Output Preview Area */
+    .dispatch-preview-box {
+      flex: 1;
+      background: var(--bg-input);
+      border: 1px solid var(--border-default);
+      border-radius: var(--radius-sm);
+      padding: 10px 12px;
+      font-size: 11.5px;
+      line-height: 1.5;
+      overflow-y: auto;
+      color: var(--text-secondary);
+      user-select: text;
+    }
+
+    .edr-preview-card {
+      border-radius: var(--radius-sm);
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      margin-bottom: 4px;
+    }
+    .edr-preview-line {
+      margin-bottom: 2px;
+    }
+    .edr-preview-line strong {
+      color: var(--text-primary);
+    }
+    .edr-preview-shot {
+      margin: 8px 0 6px 0;
+    }
+    .edr-preview-shot img {
+      max-width: 100%;
+      max-height: 260px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-default);
+      display: block;
+    }
+    .edr-preview-clip a {
+      color: var(--accent-primary);
+      text-decoration: underline;
+    }
+    .edr-preview-divider {
+      text-align: center;
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+      font-size: 11px;
+      margin: 6px 0;
+    }
+
+    /* Refined Saved EDR Record Row & Actions */
+    #edrListContainer {
+      overflow-y: auto !important;
+      overflow-x: hidden !important;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      width: 100%;
+      box-sizing: border-box;
+      padding: 8px 10px;
+    }
+
+    .record-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-height: 54px;
+      padding: 6px 10px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-default);
+      border-radius: var(--radius-sm);
+      transition: all var(--trans-fast);
+      user-select: none;
+      box-sizing: border-box;
+      width: 100%;
+      max-width: 100%;
+      position: relative;
+    }
+
+    .record-row:hover {
+      background: var(--bg-surface-elevated);
+      border-color: var(--border-hover);
+    }
+
+    .record-row.is-selected {
+      border-color: rgba(56, 189, 248, 0.45);
+      background: rgba(56, 189, 248, 0.05);
+    }
+
+    .record-row.is-done {
+      opacity: 0.65;
+    }
+
+    .record-select-col {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    /* Report Info: Main line (Date · Site [Status Chips]), Sub line (Campaign · TL: ... · Subj: ...) */
+    .record-info {
+      flex: 1 1 auto;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 3px;
+      min-width: 0;
+      overflow: hidden;
+    }
+
+    .record-main-line {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      min-width: 0;
+      white-space: nowrap;
+      overflow: hidden;
+    }
+
+    .record-date {
+      font-size: 12px;
+      font-weight: 700;
+      color: #38bdf8;
+      letter-spacing: 0.2px;
+      flex-shrink: 0;
+    }
+
+    .record-sep {
+      color: var(--text-muted);
+      opacity: 0.5;
+      flex-shrink: 0;
+      font-size: 10px;
+    }
+
+    .record-site {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-primary);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      flex-shrink: 1;
+    }
+
+    /* Small compact status chips */
+    .status-chips-wrap {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      margin-left: 2px;
+      flex-shrink: 0;
+    }
+
+    .status-chip {
+      font-size: 8.5px;
+      font-weight: 700;
+      padding: 1px 4.5px;
+      border-radius: 3px;
+      letter-spacing: 0.4px;
+      text-transform: uppercase;
+      line-height: 1.1;
+      user-select: none;
+      flex-shrink: 0;
+    }
+
+    .status-chip.chip-ss {
+      background: rgba(245, 158, 11, 0.12);
+      color: #fbbf24;
+      border: 1px solid rgba(245, 158, 11, 0.28);
+    }
+
+    .status-chip.chip-audit {
+      background: rgba(56, 189, 248, 0.12);
+      color: #38bdf8;
+      border: 1px solid rgba(56, 189, 248, 0.28);
+    }
+
+    .status-chip.chip-done {
+      background: rgba(52, 211, 153, 0.12);
+      color: #34d399;
+      border: 1px solid rgba(52, 211, 153, 0.28);
+    }
+
+    .status-chip.chip-docs {
+      background: rgba(168, 85, 247, 0.12);
+      color: #c084fc;
+      border: 1px solid rgba(168, 85, 247, 0.28);
+    }
+
+    .record-sub-line {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 11px;
+      color: var(--text-muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      min-width: 0;
+    }
+
+    .record-sub-line .record-campaign {
+      color: var(--text-secondary);
+      font-weight: 500;
+      flex-shrink: 0;
+    }
+
+    .record-sub-line .record-resp {
+      color: var(--text-muted);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      flex-shrink: 1;
+    }
+
+    .record-sub-line .record-resp strong {
+      color: var(--text-secondary);
+      font-weight: 500;
+    }
+
+    .record-sub-line .record-subj {
+      color: var(--text-muted);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      flex-shrink: 2;
+    }
+
+    /* Actions: Right-aligned, Clean, Non-scrolling */
+    .record-actions {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      flex-shrink: 0;
+      margin-left: auto;
+    }
+
+    .btn-action {
+      height: 24px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 6px;
+      font-size: 10.5px;
+      font-weight: 500;
+      white-space: nowrap;
+      border-radius: 4px;
+      border: 1px solid var(--border-default);
+      background: var(--bg-surface-elevated);
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all var(--trans-fast);
+      flex-shrink: 0;
+      line-height: 1;
+      font-family: inherit;
+    }
+
+    .btn-action:hover {
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text-primary);
+      border-color: var(--border-hover);
+    }
+
+    .btn-action.btn-audit-send.is-linked {
+      color: #38bdf8;
+      border-color: rgba(56, 189, 248, 0.35);
+      background: rgba(56, 189, 248, 0.06);
+    }
+
+    .btn-action.btn-done-toggle.is-done-btn {
+      color: #34d399;
+      border-color: rgba(52, 211, 153, 0.35);
+      background: rgba(52, 211, 153, 0.06);
+    }
+
+    .btn-action.btn-more-trigger {
+      min-width: 22px;
+      padding: 0 4px;
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+    }
+
+    .btn-audit-send .label-short {
+      display: none;
+    }
+
+    @media (max-width: 520px) {
+      .btn-audit-send .label-long {
+        display: none;
+      }
+      .btn-audit-send .label-short {
+        display: inline;
+      }
+    }
+
+    @media (max-width: 1100px) {
+      .record-row {
+        flex-wrap: wrap;
+        min-height: auto;
+      }
+      .record-actions {
+        width: 100%;
+        justify-content: flex-end;
+        padding-top: 4px;
+        border-top: 1px solid rgba(255, 255, 255, 0.04);
+      }
+    }
+
+    /* More Dropdown Menu */
+    .record-more-menu-wrap {
+      position: relative;
+      display: inline-flex;
+    }
+
+    .record-dropdown-menu {
+      position: absolute;
+      top: calc(100% + 4px);
+      right: 0;
+      z-index: 1050;
+      min-width: 125px;
+      background: #151923;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 6px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.55), 0 2px 6px rgba(0, 0, 0, 0.3);
+      padding: 4px;
+      display: none;
+      flex-direction: column;
+      gap: 1px;
+    }
+
+    .record-dropdown-menu.is-open {
+      display: flex;
+    }
+
+    .dropdown-item {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      width: 100%;
+      padding: 5px 8px;
+      border: none;
+      background: transparent;
+      color: var(--text-secondary);
+      font-size: 11px;
+      font-weight: 500;
+      text-align: left;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all var(--trans-fast);
+      font-family: inherit;
+      white-space: nowrap;
+    }
+
+    .dropdown-item:hover {
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text-primary);
+    }
+
+    .dropdown-item.text-danger {
+      color: #f87171;
+    }
+
+    .dropdown-item.text-danger:hover {
+      background: rgba(239, 68, 68, 0.15);
+      color: #fca5a5;
+    }
+
+    .dropdown-divider {
+      height: 1px;
+      background: rgba(255, 255, 255, 0.08);
+      margin: 3px 0;
+    }
+
+    .dropdown-icon {
+      width: 13px;
+      height: 13px;
+      flex-shrink: 0;
+      stroke: currentColor;
+    }
+  </style>
+</head>
+<body>
+  <div class="app-root">
+
+    <!-- Slim Left Navigation Rail -->
+    <aside class="nav-rail" id="navRail">
+      <div class="rail-brand">
+        <div class="brand-badge">V2</div>
+        <div class="brand-text">
+          <span class="brand-title">CCTV OPS</span>
+          <span class="brand-subtitle">Operations Hub</span>
+        </div>
+      </div>
+
+      <nav class="rail-menu" role="tablist" aria-label="Workspaces">
+        <div class="rail-section-label">Workspaces</div>
+
+        <!-- EDR Workspace Tab (Active Prototype) -->
+        <button type="button" class="nav-item active" id="tabEdr" role="tab" aria-selected="true">
+          <svg class="nav-icon" viewBox="0 0 24 24">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+            <line x1="16" y1="13" x2="8" y2="13"></line>
+            <line x1="16" y1="17" x2="8" y2="17"></line>
+            <polyline points="10 9 9 9 8 9"></polyline>
+          </svg>
+          <span class="nav-label">EDR</span>
+          <span class="nav-badge" id="railEdrBadge">0</span>
+        </button>
+
+        <!-- Workspaces -->
+        <button type="button" class="nav-item" id="tabAudit" role="tab" aria-selected="false">
+          <svg class="nav-icon" viewBox="0 0 24 24">
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+            <line x1="3" y1="9" x2="21" y2="9"></line>
+            <line x1="9" y1="21" x2="9" y2="9"></line>
+          </svg>
+          <span class="nav-label">CCTV Audit</span>
+          <span class="nav-badge" id="railAuditBadge">0</span>
+        </button>
+
+        <button type="button" class="nav-item" id="tabSorter" role="tab" aria-selected="false">
+          <svg class="nav-icon" viewBox="0 0 24 24">
+            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+          </svg>
+          <span class="nav-label">AI Sorter</span>
+        </button>
+
+        <button type="button" class="nav-item" id="tabMaintenance" role="tab" aria-selected="false">
+          <svg class="nav-icon" viewBox="0 0 24 24">
+            <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path>
+          </svg>
+          <span class="nav-label">Maintenance</span>
+        </button>
+
+        <button type="button" class="nav-item" id="tabPending" role="tab" aria-selected="false">
+          <svg class="nav-icon" viewBox="0 0 24 24">
+            <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"></path>
+          </svg>
+          <span class="nav-label">Pending</span>
+          <span class="nav-badge" id="railPendingBadge">0</span>
+        </button>
+
+        <div class="rail-section-label">Management</div>
+
+        <button type="button" class="nav-item" id="tabMasterlist" role="tab" aria-selected="false">
+          <svg class="nav-icon" viewBox="0 0 24 24">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+            <circle cx="9" cy="7" r="4"></circle>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+          </svg>
+          <span class="nav-label">Masterlist</span>
+        </button>
+
+        <button type="button" class="nav-item" id="tabFollowup" role="tab" aria-selected="false">
+          <svg class="nav-icon" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="10"></circle>
+            <polyline points="12 6 12 12 16 14"></polyline>
+          </svg>
+          <span class="nav-label">Follow Up</span>
+          <span class="nav-badge" id="railFollowupBadge">0</span>
+        </button>
+
+        <button type="button" class="nav-item" id="tabHistory" role="tab" aria-selected="false">
+          <svg class="nav-icon" viewBox="0 0 24 24">
+            <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+            <path d="M3 3v5h5"></path>
+            <polyline points="12 7 12 12 15 15"></polyline>
+          </svg>
+          <span class="nav-label">History</span>
+        </button>
+
+        <button type="button" class="nav-item" id="tabAccounts" role="tab" aria-selected="false">
+          <svg class="nav-icon" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+          </svg>
+          <span class="nav-label">Accounts</span>
+        </button>
+      </nav>
+
+      <div class="rail-footer">
+        <span style="font-size:10px; color:var(--text-dim);">V2.0.0-beta</span>
+        <button type="button" class="collapse-btn" id="btnToggleRail" title="Toggle Sidebar">
+          <svg class="icon icon-sm" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"></polyline></svg>
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="app-main">
+      <!-- Minimalist Topbar -->
+      <header class="top-appbar">
+        <div class="appbar-left">
+          <div class="workspace-title-wrap">
+            <h1 class="workspace-main-title">End of the Day Report</h1>
+            <span class="badge badge-info" style="display:none;"></span>
+          </div>
+        </div>
+
+        <div class="appbar-right">
+          <!-- EDR Template Link -->
+          <a href="https://docs.google.com/document/d/1-i54dxMosFgiNcdEO7fHqvN15yIsicdOjmsW0XTYbUw/edit?tab=t.ob2cyz0wou1" target="_blank" rel="noopener noreferrer" class="btn btn-ghost btn-sm" id="btnOpenTemplate" title="Open Google Docs EDR Template" style="text-decoration:none; gap:5px;">
+            <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+            <span>Template</span>
+          </a>
+
+          <!-- Reload Saved EDRs from Google Docs -->
+          <button type="button" class="btn btn-ghost btn-sm" id="btnReloadDocs" title="Reload saved EDRs from Google Docs" style="gap:5px;">
+            <svg class="icon icon-sm" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+            <span>Reload</span>
+          </button>
+
+          <!-- Google Docs Status -->
+          <div class="sync-status-pill" id="edrDocsPill" title="Google Docs Receiver Status">
+            <span style="width:5px; height:5px; border-radius:50%; background:currentColor;"></span>
+            <span id="edrDocsStatusText">Local Storage</span>
+            <button type="button" class="btn btn-ghost btn-sm" id="btnOpenDocsSetup" style="padding:0 2px; height:18px;">
+              <svg class="icon icon-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+            </button>
+          </div>
+
+          <!-- Manila Live Clock -->
+          <div class="manila-clock-pill" title="Asia/Manila (PHT) Operational Clock">
+            <span class="clock-live-indicator"></span>
+            <span id="manilaClockText">00:00:00 AM PHT</span>
+          </div>
+
+          <!-- User Badge / Terminal -->
+          <div class="user-profile-badge" id="btnUserMenu" title="Account settings & switch">
+            <div class="user-avatar" id="userAvatarText">M</div>
+            <div class="user-meta">
+              <span class="user-name" id="userNameText">Miles</span>
+              <span class="user-role-tag" id="userRoleText">Operator</span>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <!-- Viewport: Split-View Layout -->
+      <div class="workspace-viewport">
+        <section class="workspace-pane active" id="paneEdr">
+          <div class="edr-split-layout">
+
+            <!-- LEFT COLUMN: Manual EDR Form (~55% width) -->
+            <div class="edr-split-column">
+              <div class="card" style="height:100%;">
+                <div class="card-header">
+                  <span class="card-title">
+                    <svg class="icon" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                    <span id="edrFormTitle">Manual EDR Entry</span>
+                  </span>
+                  <div class="card-actions">
+                    <button type="button" class="btn btn-ghost btn-sm" id="btnEdrClear">Reset</button>
+                  </div>
+                </div>
+
+                <!-- Structured Grouped Form -->
+                <div class="edr-form-scroll">
+                  <form id="edrForm" autocomplete="off" style="display:flex; flex-direction:column; gap:10px;">
+                    
+                    <!-- SECTION 1: Location & Time -->
+                    <div class="form-section-header">
+                      <span class="form-section-tag">01</span>
+                      <span class="form-section-title">Event & Location</span>
+                    </div>
+
+                    <div class="form-group">
+                      <label class="form-label" for="edrSite">Site Location <span class="required-dot">*</span></label>
+                      <select id="edrSite" class="form-control"></select>
+                    </div>
+
+                    <div class="form-row-2">
+                      <div class="form-group">
+                        <label class="form-label" for="edrDate">Date Observed <span class="required-dot">*</span></label>
+                        <input type="date" id="edrDate" class="form-control" required>
+                      </div>
+                      <div class="form-group">
+                        <label class="form-label" for="edrTimeObserved">Time Observed <span class="required-dot">*</span></label>
+                        <input type="text" id="edrTimeObserved" class="form-control" placeholder="e.g. 3:10:45 AM-3:18:01 AM" required>
+                      </div>
+                    </div>
+
+                    <!-- SECTION 2: People Involved -->
+                    <div class="form-section-header">
+                      <span class="form-section-tag">02</span>
+                      <span class="form-section-title">Parties Involved</span>
+                    </div>
+
+                    <div class="form-row-2">
+                      <div class="form-group">
+                        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:2px;">
+                          <div style="display:flex; align-items:center; gap:2px;">
+                            <label class="form-label" style="margin:0;">Respondent</label>
+                            <button type="button" class="btn-opt-mgmt" id="btnAddSupervisorOption" title="Add custom Team Leader/OM to masterlist">+</button>
+                            <button type="button" class="btn-opt-mgmt" id="btnRemoveSupervisorOption" title="Remove custom Team Leader/OM from masterlist">−</button>
+                          </div>
+                          <div class="choice-segment">
+                            <button type="button" class="choice-btn active" id="btnRoleTl">TL</button>
+                            <button type="button" class="choice-btn" id="btnRoleOm">OM</button>
+                          </div>
+                        </div>
+                        <input type="text" id="edrSupervisorName" class="form-control" list="listRespondents" placeholder="Search Team Leader..." required>
+                        <datalist id="listRespondents"></datalist>
+                      </div>
+
+                      <div class="form-group">
+                        <label class="form-label" for="edrOmName">Dedicated OM</label>
+                        <input type="text" id="edrOmName" class="form-control" list="listOms" placeholder="Search OM...">
+                        <datalist id="listOms"></datalist>
+                      </div>
+                    </div>
+
+                    <div class="form-row-2">
+                      <div class="form-group">
+                        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:2px;">
+                          <label class="form-label" style="margin:0;">Violation Subject</label>
+                          <div class="choice-segment">
+                            <button type="button" class="choice-btn active" id="btnSubjAgent">Agent/s</button>
+                            <button type="button" class="choice-btn" id="btnSubjTl">TL</button>
+                          </div>
+                        </div>
+                        <input type="text" id="edrSubjectName" class="form-control" placeholder="Employee name..." required>
+                        <datalist id="listSubjectTls"></datalist>
+                      </div>
+
+                      <div class="form-group">
+                        <div style="display:flex; align-items:center; justify-content:space-between;">
+                          <label class="form-label" for="edrAccount" style="margin:0;">Account / Campaign <span class="required-dot">*</span></label>
+                          <div style="display:flex; align-items:center; gap:2px;">
+                            <button type="button" class="btn-opt-mgmt" id="btnAddAccountOption" title="Add custom Account/Campaign to masterlist">+</button>
+                            <button type="button" class="btn-opt-mgmt" id="btnRemoveAccountOption" title="Remove custom Account/Campaign from masterlist">−</button>
+                          </div>
+                        </div>
+                        <input type="text" id="edrAccount" class="form-control" list="listAccounts" placeholder="Search campaign..." required>
+                        <datalist id="listAccounts"></datalist>
+                      </div>
+                    </div>
+
+                    <!-- SECTION 3: Findings -->
+                    <div class="form-section-header">
+                      <span class="form-section-tag">03</span>
+                      <span class="form-section-title">Findings & Action Taken</span>
+                    </div>
+
+                    <div class="form-group">
+                      <label class="form-label" for="edrIncident">Incident Description <span class="required-dot">*</span></label>
+                      <textarea id="edrIncident" class="form-control" rows="2" placeholder="Specific violation observed on camera..." required></textarea>
+                    </div>
+
+                    <div class="form-group">
+                      <label class="form-label" for="edrActionRemarks">Action Taken / Remarks <span class="required-dot">*</span></label>
+                      <textarea id="edrActionRemarks" class="form-control" rows="2" placeholder="Supervisor response, investigation, and remarks..." required></textarea>
+                    </div>
+
+                    <!-- SECTION 4: Evidence -->
+                    <div class="form-section-header">
+                      <span class="form-section-tag">04</span>
+                      <span class="form-section-title">Evidence & Footage</span>
+                    </div>
+
+                    <div class="form-group">
+                      <label class="form-label">CCTV Screenshot</label>
+                      <div class="dropzone-compact" id="dropzoneScreenshot" tabindex="0">
+                        <input type="file" id="fileScreenshot" accept="image/*" style="display:none;">
+                        <img id="shotThumb" class="drop-thumb" style="display:none;" alt="Screenshot">
+                        <span class="drop-text" id="dropText">Drop image, Ctrl+V, or click to browse</span>
+                        <button type="button" class="btn btn-ghost btn-sm" id="btnRemoveShot" style="display:none; margin-left:auto;">Remove</button>
+                      </div>
+                    </div>
+
+                    <div class="form-group">
+                      <label class="form-label" for="edrClipLink">CCTV Clip (Google Drive URL)</label>
+                      <input type="url" id="edrClipLink" class="form-control" placeholder="https://drive.google.com/...">
+                    </div>
+                  </form>
+                </div>
+
+                <!-- Form Action Bar -->
+                <div class="card-footer">
+                  <button type="button" class="btn btn-outline btn-sm" id="btnEdrCancelEdit" style="display:none;">Cancel Edit</button>
+                  <div style="display:flex; align-items:center; gap:6px; margin-left:auto; flex-wrap:wrap;">
+                    <button type="submit" form="edrForm" class="btn btn-primary btn-sm" id="btnEdrSubmit">
+                      <svg class="icon icon-sm" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                      <span id="btnEdrSubmitText">Save EDR</span>
+                    </button>
+                    <button type="button" class="btn btn-outline btn-sm" id="btnSendFormToDocs" title="Send current EDR to Google Docs">
+                      Send to Google Docs
+                    </button>
+                    <button type="button" class="btn btn-outline btn-sm" id="btnSendFormToAudit" title="Send current EDR to CCTV Audit">
+                      Send to CCTV Audit
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- RIGHT COLUMN: Dispatch & Saved Records (~45% width) -->
+            <div class="edr-split-column">
+
+              <!-- Top Panel: Dispatch & Teams Output -->
+              <div class="card" style="flex: 0.95; min-height: 220px;">
+                <div class="card-header">
+                  <div style="display:flex; align-items:center; gap:6px;">
+                    <svg class="icon" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                    <span class="card-title">Teams Dispatch</span>
+                  </div>
+                  <div class="card-actions">
+                    <button type="button" class="btn btn-outline btn-sm" id="btnSendSelectedToDocs" title="Send selected EDR to Google Docs">
+                      Send to Google Docs
+                    </button>
+                    <button type="button" class="btn btn-outline btn-sm" id="btnSendSelectedToAudit" title="Send selected EDR to CCTV Audit">
+                      Send to CCTV Audit
+                    </button>
+                    <button type="button" class="btn btn-primary btn-sm" id="btnCopyAllTeams">
+                      <svg class="icon icon-sm" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                      Copy for Teams
+                    </button>
+                  </div>
+                </div>
+
+                <div class="card-body" style="flex:1; overflow:hidden; gap:8px;">
+                  <!-- Quiet Facebook Input -->
+                  <div style="display:flex; align-items:center; gap:8px;">
+                    <span style="font-size:11px; font-weight:500; color:var(--text-secondary); white-space:nowrap;">Facebook Shared Post</span>
+                    <span id="fbDateTag" class="badge badge-neutral" style="font-size:10px;">Sep 10</span>
+                  </div>
+                  <textarea id="edrFacebookText" class="form-control" rows="2" placeholder="Paste Facebook post links here, one per line..."></textarea>
+
+                  <!-- Formatted Preview -->
+                  <div class="dispatch-preview-box" id="edrPreviewBox">Select active EDRs in the list to generate output.</div>
+                </div>
+              </div>
+
+              <!-- Bottom Panel: Saved Records List -->
+              <div class="card" style="flex: 1.05; min-height: 240px;">
+                <div class="card-header">
+                  <div style="display:flex; align-items:center; gap:8px;">
+                    <span class="card-title">Saved EDRs</span>
+                    <span class="badge badge-neutral" id="badgeTotalCount">0</span>
+                    <span class="badge badge-info" id="badgeSelectedCount">0 selected</span>
+                    <span class="badge badge-success" id="badgeDoneCount">0 done</span>
+                  </div>
+                  <div class="card-actions">
+                    <button type="button" class="btn btn-ghost btn-sm" id="btnSelectAll">Select All</button>
+                    <button type="button" class="btn btn-ghost btn-sm" id="btnUnselectAll">Clear</button>
+                  </div>
+                </div>
+
+                <!-- Sleek Scrollable List of Records -->
+                <div class="card-body" id="edrListContainer" style="overflow-y:auto; overflow-x:hidden; gap:6px;">
+                  <div style="color:var(--text-muted); font-size:11.5px; text-align:center; padding:30px 10px;">
+                    No EDR records found. Complete the form on the left to save an incident.
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+          </div>
+        </section>
+
+        <!-- CCTV AUDIT WORKSPACE (TOP: Guard, MIDDLE: Form, BOTTOM: Data Grid) -->
+        <section class="workspace-pane" id="paneAudit" hidden>
+          <div class="audit-workspace-layout">
+
+            <!-- TOP: Smart Audit Guard -->
+            <div class="audit-guard-card" id="auditGuardCard">
+              <div class="guard-header-row">
+                <div class="guard-title-wrap">
+                  <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+                  <span style="font-weight:700; font-size:12px; color:var(--text-primary);">Smart Audit Guard</span>
+                  <span class="badge badge-neutral" id="guardRecordCountBadge">0 records</span>
+                  <span class="badge badge-info" id="guardStatusBadge">Idle</span>
+                  <span style="font-size:10.5px; color:var(--text-muted);" id="guardLastSyncText">No snapshot loaded</span>
+                </div>
+                <div class="guard-actions-row">
+                  <input type="file" id="fileGuardUpload" accept=".xlsx,.xls,.csv" style="display:none;">
+                  <button type="button" class="btn btn-outline btn-sm" id="btnGuardUpload" title="Import XLSX / XLS / CSV from Tracker">
+                    <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                    <span>Import Tracker</span>
+                  </button>
+                  <button type="button" class="btn btn-outline btn-sm" id="btnGuardPaste" title="Paste latest rows copied from Google Sheets">
+                    <svg class="icon icon-sm" viewBox="0 0 24 24"><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>
+                    <span>Paste Rows</span>
+                  </button>
+                  <button type="button" class="btn btn-ghost btn-sm" id="btnGuardClear" title="Clear current tracker snapshot">Clear</button>
+                </div>
+              </div>
+
+              <!-- Issue warnings container -->
+              <div class="guard-issues-box" id="guardIssuesBox" style="display:none;">
+                <!-- Dynamically populated issues -->
+              </div>
+            </div>
+
+            <!-- MIDDLE: Compact CCTV Audit Entry Form -->
+            <div class="audit-form-card">
+              <form id="auditForm" autocomplete="off">
+                <div class="audit-form-grid">
+                  <div class="audit-form-field">
+                    <label for="auditDate">Date <span class="required-dot">*</span></label>
+                    <input type="date" id="auditDate" class="form-control" required>
+                  </div>
+
+                  <div class="audit-form-field">
+                    <label for="auditSite">
+                      <span>Site <span class="required-dot">*</span></span>
+                      <span class="btn-opt-mgmt-wrap" style="display:inline-flex; gap:2px;">
+                        <button type="button" class="btn-opt-mgmt" id="btnAddAuditSite" title="Add Site Option">+</button>
+                        <button type="button" class="btn-opt-mgmt" id="btnRemoveAuditSite" title="Remove Site Option">−</button>
+                      </span>
+                    </label>
+                    <select id="auditSite" class="form-control" required></select>
+                  </div>
+
+                  <div class="audit-form-field">
+                    <label for="auditTlName">TL Name <span class="required-dot">*</span></label>
+                    <input type="text" id="auditTlName" class="form-control" list="listAuditTls" placeholder="Search TL..." required>
+                    <datalist id="listAuditTls"></datalist>
+                  </div>
+
+                  <div class="audit-form-field">
+                    <label for="auditAgentName">Agent Name <span class="required-dot">*</span></label>
+                    <input type="text" id="auditAgentName" class="form-control" placeholder="Agent name..." required>
+                  </div>
+
+                  <div class="audit-form-field">
+                    <label for="auditOmName">
+                      <span>OM Name <span class="required-dot">*</span></span>
+                      <span class="btn-opt-mgmt-wrap" style="display:inline-flex; gap:2px;">
+                        <button type="button" class="btn-opt-mgmt" id="btnAddAuditOm" title="Add OM Option">+</button>
+                        <button type="button" class="btn-opt-mgmt" id="btnRemoveAuditOm" title="Remove OM Option">−</button>
+                      </span>
+                    </label>
+                    <select id="auditOmName" class="form-control" required></select>
+                  </div>
+
+                  <div class="audit-form-field">
+                    <label for="auditAccount">
+                      <span>Account / Campaign <span class="required-dot">*</span></span>
+                      <span class="btn-opt-mgmt-wrap" style="display:inline-flex; gap:2px;">
+                        <button type="button" class="btn-opt-mgmt" id="btnAddAuditAccount" title="Add Campaign Option">+</button>
+                        <button type="button" class="btn-opt-mgmt" id="btnRemoveAuditAccount" title="Remove Campaign Option">−</button>
+                      </span>
+                    </label>
+                    <select id="auditAccount" class="form-control" required></select>
+                  </div>
+
+                  <div class="audit-form-field">
+                    <label for="auditReasonCode">
+                      <span>CCTV Reason <span class="required-dot">*</span></span>
+                      <span class="btn-opt-mgmt-wrap" style="display:inline-flex; gap:2px;">
+                        <button type="button" class="btn-opt-mgmt" id="btnAddAuditReason" title="Add Reason Option">+</button>
+                        <button type="button" class="btn-opt-mgmt" id="btnRemoveAuditReason" title="Remove Reason Option">−</button>
+                      </span>
+                    </label>
+                    <select id="auditReasonCode" class="form-control" required></select>
+                  </div>
+
+                  <div class="audit-form-field" style="max-width:110px;">
+                    <label for="auditNoc">NOC <span class="required-dot">*</span></label>
+                    <select id="auditNoc" class="form-control" required>
+                      <option value="YES">YES</option>
+                      <option value="NO">NO</option>
+                      <option value="Pending">Pending</option>
+                      <option value="Disputed">Disputed</option>
+                    </select>
+                  </div>
+
+                  <div class="audit-form-field" style="grid-column: span 2;">
+                    <label for="auditRemarks">Remarks / Action Taken <span class="required-dot">*</span></label>
+                    <input type="text" id="auditRemarks" class="form-control" placeholder="Observations, coaching, supervisor response..." required>
+                  </div>
+
+                  <div class="audit-form-buttons">
+                    <button type="button" class="btn btn-ghost btn-sm" id="btnAuditClearForm">Clear Form</button>
+                    <button type="submit" class="btn btn-primary btn-sm" id="btnAuditSubmit">
+                      <span id="btnAuditSubmitText">Add Entry to List</span>
+                    </button>
+                  </div>
+                </div>
+              </form>
+            </div>
+
+            <!-- BOTTOM: Data Output Grid (Fills remaining height) -->
+            <div class="audit-grid-card">
+              <div class="audit-grid-header">
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <span style="font-weight:700; font-size:12px; color:var(--text-primary);">Data Output Grid</span>
+                  <span class="badge badge-neutral" id="auditTotalRowsBadge">0 rows</span>
+                  <span class="badge badge-info" id="auditLinkedBadge">0 from EDR</span>
+                </div>
+                <div style="display:flex; align-items:center; gap:6px;">
+                  <button type="button" class="btn btn-danger-ghost btn-sm" id="btnAuditClearAll" title="Clear all CCTV audit rows">Clear All</button>
+                  <button type="button" class="btn btn-primary btn-sm" id="btnAuditCopyTracker" title="Copy to clipboard formatted for Tracker (Arial 10pt)">
+                    <svg class="icon icon-sm" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                    <span>Copy for Tracker</span>
+                  </button>
+                </div>
+              </div>
+
+              <div class="audit-grid-table-wrap">
+                <table class="audit-data-table" id="auditOutputTable">
+                  <thead>
+                    <tr>
+                      <th style="width:36px; text-align:center;">#</th>
+                      <th>Date</th>
+                      <th>Auditor</th>
+                      <th>Site</th>
+                      <th>TL Name</th>
+                      <th>Agent Name</th>
+                      <th>OM Name</th>
+                      <th>Account</th>
+                      <th>CCTV Reason</th>
+                      <th>NOC</th>
+                      <th>Remarks</th>
+                      <th style="width:70px; text-align:center;">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="auditTableBody">
+                    <!-- Injected rows -->
+                  </tbody>
+                </table>
+                <div id="auditEmptyNotice" style="color:var(--text-muted); font-size:11.5px; text-align:center; padding:40px 10px;">
+                  No audit entries recorded. Use the form above or "Send to CCTV Audit" from EDR.
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </section>
+
+        <!-- WORKSPACE 3: AI Sorter & Interactive Spreadsheet Grid -->
+        <section id="paneSorter" class="workspace-pane" role="tabpanel" aria-labelledby="tabSorter" hidden>
+          <div class="sorter-workspace-layout">
+            
+            <!-- TOP: Paste & Operational Controls -->
+            <div class="sorter-control-card">
+              <div class="sorter-header-row">
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <span style="font-weight:700; font-size:12px; color:var(--text-primary);">Maintenance AI Sorter</span>
+                  <span class="badge badge-neutral">Auto Multi-Floor Parser</span>
+                </div>
+                <div style="display:flex; align-items:center; gap:6px;">
+                  <button type="button" class="btn btn-outline btn-sm" id="btnOpenTlAssignments" title="Manage Team Leader Floor Overrides & Saved Names">
+                    <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                    <span>TL Floor Assignments</span>
+                  </button>
+                  <button type="button" class="btn btn-danger-ghost btn-sm" id="maintenanceResetAssignmentsBtn" title="Reset all saved TL floor overrides and edited names">Reset TL Assignments</button>
+                </div>
+              </div>
+
+              <textarea id="maintenanceInput" class="form-control sorter-textarea" rows="2" placeholder="Paste maintenance rows directly (Markdown table, TSV, CSV, or raw text) — header is optional. Standard order: TIMESTAMP, DATE, TL, ACCOUNT, SITE, STATION NO., STATION ISSUE"></textarea>
+
+              <div class="sorter-toolbar">
+                <div style="display:flex; align-items:center; gap:6px;">
+                  <button type="button" class="btn btn-primary btn-sm" id="maintenanceSortBtn">
+                    <svg class="icon icon-sm" viewBox="0 0 24 24"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
+                    <span>Auto Sort by Floor</span>
+                  </button>
+                  <button type="button" class="btn btn-secondary btn-sm" id="maintenanceCopyBtn" title="Copy sorted report (TSV format) ready for Google Sheets">
+                    <svg class="icon icon-sm" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                    <span>Copy Sorted Report</span>
+                  </button>
+                  <button type="button" class="btn btn-ghost btn-sm" id="maintenanceClearBtn">Clear Report</button>
+                </div>
+
+                <div class="sorter-badges-wrap">
+                  <span class="badge badge-neutral" id="overallRowCount">0 rows</span>
+                  <span class="badge badge-gf" id="sorterGfCount">GF: 0</span>
+                  <span class="badge badge-1f" id="sorter1fCount">1F: 0</span>
+                  <span class="badge badge-2f" id="sorter2fCount">2F: 0</span>
+                  <span class="badge badge-review" id="sorterReviewCount">Review: 0</span>
+                </div>
+              </div>
+
+              <div id="maintenanceMessage" class="maintenance-message" aria-live="polite" style="display:none;"></div>
+            </div>
+
+            <!-- BOTTOM: Interactive Google-Sheets-like Mini Sheet Grid -->
+            <div class="sorter-grid-card mini-sheet-card">
+              <div class="mini-sheet-toolbar-row">
+                <!-- Search / Find Bar -->
+                <div class="mini-sheet-findbar">
+                  <input type="text" id="miniSheetFindTlInput" class="form-control form-control-sm" style="width:200px;" placeholder="Find (TL, Account, Site...)" autocomplete="off" aria-label="Find in sheet">
+                  <button type="button" class="btn btn-ghost btn-sm" id="miniSheetFindTlBtn">Find</button>
+                  <button type="button" class="btn btn-ghost btn-sm" id="miniSheetFindNextBtn" disabled>Next</button>
+                </div>
+
+                <!-- Selection & Sheet Actions -->
+                <div class="mini-sheet-actions">
+                  <span id="miniSheetRowCount" style="font-size:11px; color:var(--text-muted);">0 rows</span>
+                  <span id="miniSheetSelectedCount" class="badge badge-info" style="font-size:11px;">0 selected</span>
+                  <button type="button" id="miniSheetSelectAllBtn" class="btn btn-ghost btn-sm">Select All</button>
+                  <button type="button" id="miniSheetSelectSameTlBtn" class="btn btn-outline btn-sm" disabled>Select Same TL</button>
+                  <button type="button" id="miniSheetCopyRowsBtn" class="btn btn-outline btn-sm" disabled>Copy</button>
+                  <button type="button" id="miniSheetCutRowsBtn" class="btn btn-outline btn-sm" disabled>Cut</button>
+                  <button type="button" id="miniSheetToReportBtn" class="btn btn-primary btn-sm" disabled title="Send selected rows directly to Maintenance Report">Send to Maintenance</button>
+                  <button type="button" id="miniSheetClearSelectionBtn" class="btn btn-ghost btn-sm" disabled>Clear Selection</button>
+                  <button type="button" id="miniSheetRemoveRowBtn" class="btn btn-danger-ghost btn-sm" disabled>Remove Selected</button>
+                  <button type="button" id="miniSheetClearAllBtn" class="btn btn-danger-ghost btn-sm">Clear All</button>
+                </div>
+              </div>
+
+              <!-- Sheet Scroll Area -->
+              <div class="mini-sheet-scroll" id="aiSorterTableWrapper">
+                <table class="mini-sheet" id="maintenanceMiniSheet" aria-label="Editable sorted maintenance mini sheet">
+                  <thead>
+                    <tr class="mini-sheet-column-letters">
+                      <th class="mini-sheet-corner"></th>
+                      <th style="width:110px;">A</th>
+                      <th style="width:90px;">B</th>
+                      <th style="width:140px;">C</th>
+                      <th style="width:130px;">D</th>
+                      <th style="width:130px;">E</th>
+                      <th style="width:90px;">F</th>
+                      <th>G</th>
+                    </tr>
+                    <tr class="mini-sheet-header-row">
+                      <th class="mini-sheet-row-number">1</th>
+                      <th>TIMESTAMP</th>
+                      <th>DATE</th>
+                      <th>TL</th>
+                      <th>ACCOUNT</th>
+                      <th>SITE</th>
+                      <th>STATION NO.</th>
+                      <th>STATION ISSUE</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <!-- Injected rows -->
+                  </tbody>
+                </table>
+                <div id="maintenanceEmpty" class="maintenance-empty" style="padding:40px 10px; text-align:center; color:var(--text-muted); font-size:12px;">
+                  Paste a maintenance report above, then click <strong>Auto Sort by Floor</strong>.
+                </div>
+              </div>
+
+              <!-- Compatibility elements for V1 automated test references -->
+              <div id="maintenanceStats" hidden><strong id="overallRowCountCompatibility">0</strong></div>
+              <div id="sortedReportSection" hidden></div>
+              <table id="maintenanceOutputTable" style="display:none;"><tbody></tbody></table>
+            </div>
+
+          </div>
+        </section>
+
+        <!-- WORKSPACE 4: Maintenance Report & Multi-Block Canvas -->
+        <section id="paneMaintenance" class="workspace-pane" role="tabpanel" aria-labelledby="tabMaintenance" hidden>
+          <div class="maintenance-workspace-layout">
+            
+            <!-- TOP: Destination, Date, and Actions Control Card -->
+            <div class="maintenance-control-card">
+              <div class="maintenance-top-grid">
+                <div class="form-group" style="margin-bottom:0;">
+                  <label class="form-label" for="simpleEodDestination">Destination Tracker / Assigned Site</label>
+                  <select id="simpleEodDestination" class="form-control form-control-sm">
+                    <option value="mabini_a" selected>Mabini Site A - 1st &amp; 2nd Floor</option>
+                    <option value="mabini_b">Mabini Site B - 2nd, 3rd &amp; 4th Floor</option>
+                    <option value="gensan">Gensan Site</option>
+                    <option value="maa_4_5">MAA 4th &amp; 5th Floor</option>
+                    <option value="maa_6">MAA 6th Floor</option>
+                    <option value="digos">Digos Site</option>
+                    <option value="ecoland">Ecoland Site</option>
+                    <option value="cdo">CDO Site</option>
+                  </select>
+                </div>
+
+                <div class="form-group" style="margin-bottom:0;">
+                  <label class="form-label" for="simpleEodDate">Report Date</label>
+                  <input type="date" id="simpleEodDate" class="form-control form-control-sm" autocomplete="off">
+                </div>
+
+                <div class="maintenance-status-cluster">
+                  <span class="maintenance-sheet-connection-state is-unchecked" id="maintenanceSheetConnectionState">Sheets: not checked</span>
+                </div>
+
+                <div class="maintenance-status-cluster">
+                  <span id="simpleEodAutosaveStatus" class="maintenance-autosave-status saved">● Auto-save active</span>
+                </div>
+              </div>
+
+              <input type="hidden" id="simpleEodSite" value="Mabini Site A - 1st & 2nd Floor">
+
+              <div class="maintenance-actions-row">
+                <div class="maintenance-btn-cluster">
+                  <button type="button" class="btn btn-outline btn-sm" id="simpleEodSaveBtn" title="Save current state to named working draft">
+                    <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+                    <span>Save to Drafts</span>
+                  </button>
+                  <button type="button" class="btn btn-outline btn-sm" id="simpleEodDraftsBtn" title="View, load, or delete saved drafts">
+                    <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+                    <span>Drafts</span>
+                  </button>
+                  <button type="button" class="btn btn-secondary btn-sm" id="simpleEodCopySheetsBtn" title="Copy full report with Arial 10pt and screenshots for Google Sheets">
+                    <svg class="icon icon-sm" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                    <span>Copy Full Report to Sheets</span>
+                  </button>
+                  <button type="button" class="btn btn-primary btn-sm" id="simpleEodSendSheetsBtn" title="Upload directly to Google Sheets via Apps Script Web App">
+                    <svg class="icon icon-sm" viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                    <span>Send to Google Sheets</span>
+                  </button>
+                  <button type="button" class="btn btn-outline btn-sm" id="simpleEodSheetSetupBtn" title="Configure Google Sheets Apps Script Web App URL">
+                    <svg class="icon icon-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                    <span>Sheet Setup</span>
+                  </button>
+                </div>
+
+                <div class="maintenance-btn-cluster">
+                  <button type="button" class="btn btn-ghost btn-sm" id="simpleEodPreviewBtn">Preview / Print</button>
+                  <button type="button" class="btn btn-outline btn-sm" id="simpleEodPdfBtn">Download PDF</button>
+                  <button type="button" class="btn btn-danger-ghost btn-sm" id="simpleEodClearBtn">Clear All</button>
+                </div>
+              </div>
+
+              <div id="simpleEodMessage" class="maintenance-message" aria-live="polite" style="display:none;"></div>
+            </div>
+
+            <!-- CANVAS: List of Editable Blocks -->
+            <div class="maintenance-canvas-workspace">
+              <div id="simpleEodBlocks" class="eod-block-list">
+                <!-- Dynamically populated report blocks -->
+              </div>
+              <button type="button" id="simpleEodAddBtn" class="btn btn-outline" style="align-self:flex-start; margin: 4px 0 16px 0;">
+                <svg class="icon icon-sm" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                <span>Add another editable lanes + screenshot block</span>
+              </button>
+            </div>
+
+          </div>
+        </section>
+
+        <!-- WORKSPACE 5: Pending Reports -->
+        <section id="panePending" class="workspace-pane" role="tabpanel" aria-labelledby="tabPending" hidden>
+          <div class="pending-workspace-layout">
+
+            <!-- TOP: Summary KPI & Attention Alert Banner -->
+            <div class="pending-top-card">
+              <div class="pending-stats-row">
+                <div class="pending-stats-cluster">
+                  <span style="font-weight:700; font-size:12px; color:var(--text-primary);">Pending Operations</span>
+                  <div class="pending-stat-pill">
+                    <span>Total:</span>
+                    <strong id="pendingTotalCount">0</strong>
+                  </div>
+                  <div class="pending-stat-pill stat-followup">
+                    <span>1d Follow-up:</span>
+                    <strong id="pendingFollowupCount">0</strong>
+                  </div>
+                  <div class="pending-stat-pill stat-email">
+                    <span>4d Send Email:</span>
+                    <strong id="pendingEmailCount">0</strong>
+                  </div>
+                </div>
+
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <span id="pendingAlertStatus" style="font-size:11px; color:var(--text-muted);">In-app alerts active</span>
+                  <button type="button" class="btn btn-outline btn-sm" id="btnEnablePendingAlerts" title="Enable browser push notifications for 1-day follow-up and 4-day email reminders">
+                    <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+                    <span>Enable Alerts</span>
+                  </button>
+                </div>
+              </div>
+
+              <div id="pendingDueBanner" class="pending-due-banner" hidden>
+                <!-- Injected attention items -->
+              </div>
+            </div>
+
+            <!-- MAIN SPLIT: Add Pending Form & Pending Queue -->
+            <div class="pending-split-container">
+              
+              <!-- LEFT: Add Pending Report Card -->
+              <div class="pending-form-card">
+                <div class="pending-form-title">
+                  <svg class="icon icon-sm" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                  <span>New Pending Report</span>
+                </div>
+
+                <div class="form-group" style="margin-bottom:0;">
+                  <label class="form-label" for="pendingReportLabel">Report / Agent Name</label>
+                  <input type="text" id="pendingReportLabel" class="form-control form-control-sm" placeholder="e.g. Agent John Doe or Case Label" autocomplete="off">
+                </div>
+
+                <div class="form-group" style="margin-bottom:0;">
+                  <label class="form-label" for="pendingReportDate">Report Date</label>
+                  <input type="date" id="pendingReportDate" class="form-control form-control-sm" autocomplete="off">
+                </div>
+
+                <div class="form-group" style="margin-bottom:0;">
+                  <label class="form-label" for="pendingReportOm">Operations Manager (OM) <span class="required-dot">*</span></label>
+                  <input type="text" id="pendingReportOm" list="pendingOmOptions" class="form-control form-control-sm" placeholder="Select or type OM name" autocomplete="off">
+                  <datalist id="pendingOmOptions"></datalist>
+                </div>
+
+                <div class="form-group" style="margin-bottom:0;">
+                  <label class="form-label" for="pendingTeamsLink">Microsoft Teams Link</label>
+                  <input type="url" id="pendingTeamsLink" class="form-control form-control-sm" placeholder="https://teams.microsoft.com/l/message/..." autocomplete="off">
+                </div>
+
+                <div class="form-group" style="margin-bottom:0;">
+                  <label class="form-label">Proof Screenshot (Optional)</label>
+                  <div class="pending-dropzone" id="pendingAddShotDropzone">
+                    <input type="file" id="pendingAddShotInput" accept="image/*" style="display:none;">
+                    <div id="pendingAddShotEmpty">
+                      <div style="font-size:11px; color:var(--text-secondary); margin-bottom:4px;">Click to browse, drag & drop image, or Ctrl+V to paste</div>
+                      <span class="btn btn-outline btn-sm" style="pointer-events:none;">Choose File</span>
+                    </div>
+                    <div id="pendingAddShotPreviewWrap" hidden>
+                      <img id="pendingAddShotPreview" class="pending-drop-preview" alt="Screenshot preview">
+                      <div style="margin-top:6px;">
+                        <button type="button" class="btn btn-danger-ghost btn-sm" id="btnRemovePendingShot">Remove</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-top:auto; padding-top:10px;">
+                  <button type="button" class="btn btn-ghost btn-sm" id="btnClearPendingForm">Clear</button>
+                  <button type="button" class="btn btn-primary btn-sm" id="btnAddPendingReport">Add Report</button>
+                </div>
+              </div>
+
+              <!-- RIGHT: Pending Reports Queue -->
+              <div class="pending-queue-card">
+                <div class="pending-queue-header">
+                  <div style="display:flex; align-items:center; gap:8px;">
+                    <span style="font-weight:700; font-size:12px; color:var(--text-primary);">Active Queue</span>
+                    <span class="badge badge-neutral" id="pendingQueueCountBadge">0 items</span>
+                  </div>
+                  <span style="font-size:11px; color:var(--text-dim);">Sorted by priority &amp; age</span>
+                </div>
+
+                <div class="pending-queue-list" id="pendingReportList">
+                  <!-- Dynamically populated cards -->
+                </div>
+              </div>
+
+            </div>
+
+          </div>
+        </section>
+
+        <!-- Follow Up Reports Workspace Pane -->
+        <section id="paneFollowup" class="workspace-pane" role="tabpanel" aria-labelledby="tabFollowup" hidden>
+          <div class="followup-workspace-layout">
+
+            <!-- TOP: Summary KPI -->
+            <div class="followup-top-card">
+              <div class="followup-stats-row">
+                <div class="followup-stats-cluster">
+                  <span style="font-weight:700; font-size:12px; color:var(--text-primary);">Follow Up Operations</span>
+                  <div class="followup-stat-pill stat-open">
+                    <span>Open:</span>
+                    <strong id="followupOpenCount">0</strong>
+                  </div>
+                  <div class="followup-stat-pill stat-resolved">
+                    <span>Resolved:</span>
+                    <strong id="followupResolvedCount">0</strong>
+                  </div>
+                  <div class="followup-stat-pill">
+                    <span>Total Tracked:</span>
+                    <strong id="followupTotalCount">0</strong>
+                  </div>
+                </div>
+
+                <div style="font-size:11px; color:var(--text-dim);">
+                  TL conversation screenshot required for audit evidence
+                </div>
+              </div>
+            </div>
+
+            <!-- New Follow Up Form -->
+            <div class="followup-add-card">
+              <div class="followup-add-header">
+                <span style="font-weight:700; font-size:11.5px; color:var(--text-primary); text-transform:uppercase; letter-spacing:0.5px;">Add Follow Up Report</span>
+                <span id="followupMessage" class="followup-form-message" style="font-size:11px;" aria-live="polite"></span>
+              </div>
+
+              <div class="followup-add-grid">
+                <div class="form-group" style="margin:0;">
+                  <label class="form-label" for="followupDate">Date</label>
+                  <input type="date" id="followupDate" class="form-control form-control-sm">
+                </div>
+
+                <div class="form-group" style="margin:0;">
+                  <label class="form-label" for="followupOm">OM / Group Chat</label>
+                  <input type="text" id="followupOm" list="followupOmOptions" class="form-control form-control-sm" placeholder="e.g. CCTV OM MIRAH">
+                  <datalist id="followupOmOptions"></datalist>
+                </div>
+
+                <div class="form-group" style="margin:0;">
+                  <label class="form-label" for="followupLabel">TL / Report Label</label>
+                  <input type="text" id="followupLabel" class="form-control form-control-sm" placeholder="Optional TL / label">
+                </div>
+
+                <div class="form-group" style="margin:0;">
+                  <label class="form-label" for="followupCctvLink">Teams / CCTV Link</label>
+                  <input type="url" id="followupCctvLink" class="form-control form-control-sm" placeholder="Paste Teams message URL">
+                </div>
+
+                <div class="form-group" style="margin:0;">
+                  <label class="form-label" for="followupStatus">Status</label>
+                  <select id="followupStatus" class="form-control form-control-sm">
+                    <option value="Waiting for TL">Waiting for TL</option>
+                    <option value="TL Replied">TL Replied</option>
+                    <option value="TL Disputed">TL Disputed</option>
+                    <option value="Need OM Verification">Need OM Verification</option>
+                    <option value="Verified by OM">Verified by OM</option>
+                    <option value="Resolved">Resolved</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="followup-add-lower">
+                <div class="followup-add-shot-zone" id="followupAddShotZone" tabindex="0">
+                  <input type="file" id="followupAddShotInput" accept="image/*" hidden>
+                  <div id="followupAddShotEmpty" class="followup-add-shot-empty" style="display:flex; flex-direction:column; align-items:center; gap:4px;">
+                    <button type="button" class="btn btn-outline btn-sm" id="followupChooseShotBtn">Add Screenshot</button>
+                    <span style="font-size:10px; color:var(--text-muted);">Drop image here or Ctrl+V</span>
+                  </div>
+                  <div id="followupAddShotPreviewWrap" class="followup-add-shot-preview" hidden>
+                    <img id="followupAddShotPreview" alt="Screenshot preview">
+                    <div class="followup-shot-preview-actions">
+                      <span style="font-size:10.5px; color:#34d399; font-weight:600;">Screenshot ready</span>
+                      <div style="display:flex; gap:4px;">
+                        <button type="button" class="btn btn-outline btn-sm" id="followupReplaceAddShotBtn" style="padding:2px 6px; font-size:10px;">Replace</button>
+                        <button type="button" class="btn btn-danger-ghost btn-sm" id="followupRemoveAddShotBtn" style="padding:2px 6px; font-size:10px;">Remove</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div style="display:flex; flex-direction:column; gap:6px;">
+                  <textarea id="followupRemarks" class="form-control form-control-sm" rows="3" placeholder="Remarks / TL Reply (e.g., TL disputed the report. Need OM verification)..." style="resize:vertical;"></textarea>
+                  <div style="display:flex; align-items:center; justify-content:flex-end; gap:8px;">
+                    <button type="button" class="btn btn-ghost btn-sm" id="followupClearBtn">Clear Form</button>
+                    <button type="button" class="btn btn-primary btn-sm" id="followupAddBtn">Add Follow Up Report</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Follow Up Reports Queue -->
+            <div class="followup-queue-card">
+              <div class="followup-queue-header">
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <span style="font-weight:700; font-size:12px; color:var(--text-primary);">Resolution Queue</span>
+                  <span class="badge badge-neutral" id="followupQueueBadge">0 items</span>
+                </div>
+                <span style="font-size:11px; color:var(--text-dim);">Open reports prioritized first</span>
+              </div>
+
+              <div class="followup-report-list" id="followupReportList">
+                <div class="empty-state" style="padding:40px; text-align:center; color:var(--text-muted); font-size:12px;">No follow-up reports yet.</div>
+              </div>
+            </div>
+
+          </div>
+        </section>
+
+        <!-- Masterlist Workspace Pane -->
+        <section id="paneMasterlist" class="workspace-pane" role="tabpanel" aria-labelledby="tabMasterlist" hidden>
+          <div class="masterlist-workspace-layout">
+
+            <!-- Sync Banner Strip -->
+            <div class="masterlist-sync-strip">
+              <div class="masterlist-sync-info">
+                <span class="masterlist-sync-dot is-syncing" id="masterlistSyncDot"></span>
+                <div class="masterlist-sync-texts">
+                  <span class="masterlist-sync-title" id="masterlistSyncTitle">Connecting to Google Sheets...</span>
+                  <span class="masterlist-sync-detail" id="masterlistSyncDetail">Checking Pending Trackers and Assigned HR per OM.</span>
+                </div>
+              </div>
+              <div class="masterlist-sync-actions">
+                <span class="masterlist-last-updated" id="masterlistLastUpdated">Not synced yet</span>
+                <button type="button" class="btn btn-outline btn-sm" id="masterlistRefreshBtn" style="gap:4px;">
+                  <svg class="icon icon-sm" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+                  <span>Refresh</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="masterlist-sections">
+              <!-- Pending Trackers Card -->
+              <section class="masterlist-card">
+                <div class="masterlist-card-head">
+                  <div>
+                    <span class="masterlist-kicker">Pending Trackers</span>
+                    <h3 class="masterlist-card-title" id="masterPendingTitle">Pending Miles</h3>
+                  </div>
+                  <span class="badge badge-info" id="masterPendingMilesCount">0</span>
+                </div>
+
+                <!-- Tracker Sub-Tabs -->
+                <div class="masterlist-tabs" id="masterPendingTabs">
+                  <button type="button" class="masterlist-tab-btn active" data-pending-key="miles">
+                    <span>Miles</span>
+                    <span class="masterlist-tab-badge" id="badgeMiles">0</span>
+                  </button>
+                  <button type="button" class="masterlist-tab-btn" data-pending-key="seth">
+                    <span>Seth</span>
+                    <span class="masterlist-tab-badge" id="badgeSeth">0</span>
+                  </button>
+                  <button type="button" class="masterlist-tab-btn" data-pending-key="wendie">
+                    <span>Wendie</span>
+                    <span class="masterlist-tab-badge" id="badgeWendie">0</span>
+                  </button>
+                  <button type="button" class="masterlist-tab-btn" data-pending-key="kenneth">
+                    <span>Kenneth</span>
+                    <span class="masterlist-tab-badge" id="badgeKenneth">0</span>
+                  </button>
+                  <button type="button" class="masterlist-tab-btn" data-pending-key="jr">
+                    <span>JR</span>
+                    <span class="masterlist-tab-badge" id="badgeJr">0</span>
+                  </button>
+                </div>
+
+                <!-- Scrollable Pending Rows Table -->
+                <div class="masterlist-table-wrap">
+                  <table class="masterlist-data-table" id="masterPendingMilesTable">
+                    <thead></thead>
+                    <tbody></tbody>
+                  </table>
+                </div>
+
+                <!-- Active Tracker Notepad -->
+                <div class="masterlist-notepad">
+                  <div class="masterlist-notepad-head">
+                    <div>
+                      <span class="masterlist-kicker">Notepad</span>
+                      <strong class="masterlist-notepad-title" id="masterPendingNotesTitle">Pending Miles Notes</strong>
+                    </div>
+                    <span class="masterlist-notepad-status" id="masterNotepadStatus">Saved locally</span>
+                  </div>
+                  <textarea id="masterPendingNotepad" class="masterlist-notepad-textarea" rows="4" placeholder="Type follow-up notes, reminders, HR responses, NOC status, or anything you need to remember..."></textarea>
+                  <div class="masterlist-notepad-actions">
+                    <button type="button" class="btn btn-danger-ghost btn-sm" id="masterNotepadClearBtn">Clear Notepad</button>
+                  </div>
+                </div>
+              </section>
+
+              <!-- Assigned HR per OM Card -->
+              <section class="masterlist-card">
+                <div class="masterlist-card-head">
+                  <div>
+                    <span class="masterlist-kicker">Google Sheets &amp; Ops</span>
+                    <h3 class="masterlist-card-title">Assigned HR per OM</h3>
+                  </div>
+                  <span class="badge badge-info" id="masterAssignedHrCount">0</span>
+                </div>
+
+                <!-- HR CRUD Form (Admin / Operational) -->
+                <div class="masterlist-hr-form" id="masterHrCrudForm">
+                  <input type="hidden" id="masterHrEditId">
+
+                  <div class="form-group" style="margin:0;">
+                    <label class="form-label" for="masterHrSiteInput">Site</label>
+                    <input type="text" id="masterHrSiteInput" list="allCctvSiteOptions" class="form-control form-control-sm" placeholder="Select or type site">
+                  </div>
+
+                  <div class="form-group" style="margin:0;">
+                    <label class="form-label" for="masterHrTeamInput">Team / OM / Campaign</label>
+                    <input type="text" id="masterHrTeamInput" class="form-control form-control-sm" placeholder="Team Mirah / OM Jordan">
+                  </div>
+
+                  <div class="form-group" style="margin:0;">
+                    <label class="form-label" for="masterHrAssignedInput">HR Assigned</label>
+                    <input type="text" id="masterHrAssignedInput" class="form-control form-control-sm" placeholder="HR name">
+                  </div>
+
+                  <div style="display:flex; align-items:center; gap:6px;">
+                    <button type="button" class="btn btn-ghost btn-sm" id="masterHrCancelBtn">Clear</button>
+                    <button type="button" class="btn btn-primary btn-sm" id="masterHrSaveBtn">Add</button>
+                  </div>
+                </div>
+
+                <div id="masterHrCrudStatus" class="masterlist-hr-status" style="display:none;"></div>
+
+                <!-- Realtime Search Row -->
+                <div class="masterlist-search-row">
+                  <svg class="icon icon-sm" style="color:var(--text-muted);" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                  <input type="search" id="masterHrSearch" class="form-control form-control-sm masterlist-search-input" placeholder="Find site, team, OM, campaign, or HR...">
+                  <button type="button" class="btn btn-ghost btn-sm" id="masterHrSearchClear">Clear</button>
+                </div>
+
+                <!-- HR Assignments Table -->
+                <div class="masterlist-table-wrap">
+                  <table class="masterlist-data-table" id="masterAssignedHrTable">
+                    <thead>
+                      <tr>
+                        <th>Site</th>
+                        <th>Team / OM / Campaign</th>
+                        <th>HR Assigned</th>
+                        <th style="width:100px;">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody id="masterAssignedHrBody"></tbody>
+                  </table>
+                </div>
+              </section>
+            </div>
+
+          </div>
+        </section>
+
+        <!-- Activity History Workspace Pane -->
+        <section id="paneHistory" class="workspace-pane" role="tabpanel" aria-labelledby="tabHistory" hidden>
+          <div class="history-workspace-layout">
+
+            <!-- History Action Toolbar -->
+            <div class="history-toolbar-card">
+              <div class="history-toolbar-left">
+                <button type="button" class="btn btn-outline btn-sm" id="historyUndoBtn" title="Undo change (Ctrl+Z)" disabled style="gap:4px;">
+                  <svg class="icon icon-sm" viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>
+                  <span>Undo</span>
+                </button>
+                <button type="button" class="btn btn-outline btn-sm" id="historyRedoBtn" title="Redo change (Ctrl+Y)" disabled style="gap:4px;">
+                  <svg class="icon icon-sm" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
+                  <span>Redo</span>
+                </button>
+                <button type="button" class="btn btn-primary btn-sm" id="historyRestoreSelectedBtn" disabled style="gap:4px;">
+                  <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path></svg>
+                  <span>Restore Selected</span>
+                </button>
+                <button type="button" class="btn btn-danger-ghost btn-sm" id="historyClearBtn" title="Clear all history snapshots">
+                  <span>Clear History</span>
+                </button>
+              </div>
+
+              <div class="history-toolbar-right">
+                <span class="history-summary-text" id="historySummaryText">No changes recorded yet.</span>
+                <span class="badge badge-neutral">Max 20 snapshots</span>
+              </div>
+            </div>
+
+            <!-- Main Split: Timeline List & Preview Panel -->
+            <div class="history-split-container">
+              <!-- Timeline List Card -->
+              <div class="history-list-card">
+                <div class="history-card-head">
+                  <span class="history-card-title">Timeline Changes</span>
+                  <span class="badge badge-info" id="historyCountBadge">0</span>
+                </div>
+                <div class="history-list-scroll" id="historyListContainer">
+                  <div class="history-preview-empty">No workspace changes recorded yet. Actions across all workspaces are automatically tracked here.</div>
+                </div>
+              </div>
+
+              <!-- Preview Card -->
+              <div class="history-preview-card">
+                <div class="history-card-head">
+                  <span class="history-card-title">Snapshot Inspection</span>
+                  <span class="badge badge-neutral" id="historySelectedWsBadge">—</span>
+                </div>
+                <div class="history-preview-scroll" id="historyPreviewContainer">
+                  <div class="history-preview-empty">Select a history item to inspect affected reports or data.</div>
+                </div>
+                <div class="history-instruction-note">
+                  Select an item and click <strong>Restore Selected</strong>. Deleted rows, blocks, or screenshots are merged back without rolling back newer unrelated work when possible.
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </section>
+
+        <!-- Accounts / Admin Operations Console Workspace Pane -->
+        <section id="paneAccounts" class="workspace-pane" role="tabpanel" aria-labelledby="tabAccounts" hidden>
+          <div class="accounts-workspace-layout">
+
+            <!-- Admin Head Card -->
+            <div class="accounts-head-card">
+              <div class="accounts-head-info">
+                <h2 class="accounts-head-title">Admin Operations Console</h2>
+                <p class="accounts-head-desc">System status monitoring, staff account management, centralized security audit log, and operational workspace preferences.</p>
+              </div>
+              <div class="accounts-head-actions">
+                <button type="button" class="btn btn-outline btn-sm" id="adminRefreshBtn" style="gap:5px;">
+                  <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M23 4v6h-6"></path><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
+                  <span>Refresh</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- System Status Health Strip -->
+            <div class="admin-system-strip">
+              <div class="admin-system-item" id="adminSupabaseStatusCard">
+                <span class="admin-dot is-online" id="adminSupabaseDot"></span>
+                <span class="admin-sys-label">Supabase Auth:</span>
+                <strong id="adminSupabaseStatus">Connected</strong>
+              </div>
+              <div class="admin-system-item" id="adminDocsStatusCard">
+                <span class="admin-dot" id="adminDocsDot"></span>
+                <span class="admin-sys-label">Google Docs EDR:</span>
+                <strong id="adminDocsStatus">Checking...</strong>
+              </div>
+              <div class="admin-system-item" id="adminSheetsStatusCard">
+                <span class="admin-dot" id="adminSheetsDot"></span>
+                <span class="admin-sys-label">Google Sheets Maint:</span>
+                <strong id="adminSheetsStatus">Configured</strong>
+              </div>
+            </div>
+
+            <!-- Operations KPI Metrics Grid (9 Cards) -->
+            <div class="admin-kpi-grid">
+              <div class="admin-kpi-card"><span>Total Accounts</span><strong id="adminTotalUsers">0</strong></div>
+              <div class="admin-kpi-card"><span>Admins</span><strong id="adminCountAdmins">0</strong></div>
+              <div class="admin-kpi-card"><span>Staff Users</span><strong id="adminCountUsers">0</strong></div>
+              <div class="admin-kpi-card is-pending"><span>Pending</span><strong id="adminPendingUsers">0</strong></div>
+              <div class="admin-kpi-card is-disabled"><span>Disabled</span><strong id="adminDisabledUsers">0</strong></div>
+              <div class="admin-kpi-card is-recent"><span>Active 24h</span><strong id="adminRecentUsers">0</strong></div>
+              <div class="admin-kpi-card is-ops"><span>Local EDRs</span><strong id="adminEdrCount">0</strong></div>
+              <div class="admin-kpi-card is-ops"><span>CCTV Audits</span><strong id="adminCctvCount">0</strong></div>
+              <div class="admin-kpi-card is-ops"><span>Open Follow-ups</span><strong id="adminFollowupCount">0</strong></div>
+            </div>
+
+            <!-- macOS Segmented Subnav Switcher -->
+            <div class="admin-subnav-bar" role="tablist" aria-label="Admin Sub-Sections">
+              <button type="button" class="admin-subnav-btn active" data-admin-tab="users" role="tab" aria-selected="true">Staff Accounts</button>
+              <button type="button" class="admin-subnav-btn" data-admin-tab="audit" role="tab" aria-selected="false">Security Audit Log</button>
+              <button type="button" class="admin-subnav-btn" data-admin-tab="settings" role="tab" aria-selected="false">Operational Settings</button>
+            </div>
+
+            <!-- SECTION 1: STAFF ACCOUNTS -->
+            <div id="adminTabUsers" class="admin-tab-content active">
+              
+              <!-- Create Account Card -->
+              <section class="auth-admin-card auth-create-account-card">
+                <div class="auth-admin-card-head">
+                  <div>
+                    <h3>Create Account</h3>
+                    <p>Create a ready-to-use Username + Password account. Admin-created accounts are approved immediately.</p>
+                  </div>
+                </div>
+                <form id="adminCreateAccountForm" class="auth-create-account-grid" autocomplete="off" onsubmit="return false;">
+                  <label>
+                    <span>Name</span>
+                    <input type="text" id="adminCreateName" class="form-control form-control-sm" placeholder="Staff full name" autocomplete="off" data-lpignore="true">
+                  </label>
+                  <label>
+                    <span>Username</span>
+                    <input type="text" id="adminCreateUsername" class="form-control form-control-sm" placeholder="e.g. Seth Dajao, seth123, Staff01" maxlength="60" autocomplete="off" data-lpignore="true">
+                  </label>
+                  <label>
+                    <span>Temporary Password</span>
+                    <div class="auth-password-wrap">
+                      <input type="password" id="adminCreatePassword" class="form-control form-control-sm" minlength="6" placeholder="At least 6 characters" autocomplete="new-password">
+                      <button type="button" class="auth-password-toggle" data-target="adminCreatePassword" aria-label="Show password" title="Show password">
+                        <svg class="auth-eye-open" viewBox="0 0 24 24"><path d="M2.4 12s3.5-6 9.6-6 9.6 6 9.6 6-3.5 6-9.6 6-9.6-6Z"/><circle cx="12" cy="12" r="2.6"/></svg>
+                        <svg class="auth-eye-closed" viewBox="0 0 24 24"><path d="M3 3l18 18"/><path d="M10.6 6.1A10.8 10.8 0 0 1 12 6c6.1 0 9.6 6 9.6 6a16.7 16.7 0 0 1-3.1 3.7M14.5 14.5A3.5 3.5 0 0 1 9.5 9.5M6.2 6.2C3.7 8 2.4 12 2.4 12s3.5 6 9.6 6c1.5 0 2.8-.4 4-.9"/></svg>
+                      </button>
+                    </div>
+                  </label>
+                  <label>
+                    <span>Role</span>
+                    <select id="adminCreateRole" class="form-control form-control-sm">
+                      <option value="user" selected>User</option>
+                      <option value="admin">Admin</option>
+                    </select>
+                  </label>
+                  <div style="display:flex; align-items:flex-end;">
+                    <button type="button" class="btn btn-primary btn-sm" id="adminCreateAccountBtn" style="width:100%; height:32px;">Create Account</button>
+                  </div>
+                </form>
+                <div id="adminCreateAccountStatus" class="auth-create-status"></div>
+              </section>
+
+              <!-- Recently Created Credentials Section -->
+              <section id="adminRecentCredsSection" class="auth-admin-card auth-recent-creds-card" hidden>
+                <div class="auth-admin-card-head">
+                  <div>
+                    <div class="recent-creds-title-wrap">
+                      <span class="recent-creds-indicator">●</span>
+                      <h3>Recently Created Credentials</h3>
+                    </div>
+                    <p>Temporary credentials generated during this Admin session. Hand over to staff or copy credentials.</p>
+                  </div>
+                  <button type="button" id="adminClearAllCredsBtn" class="btn btn-outline btn-sm">Clear All</button>
+                </div>
+                <div id="adminRecentCredsList" class="recent-creds-grid"></div>
+              </section>
+
+              <!-- User Accounts List Section -->
+              <section class="auth-admin-card">
+                <div class="auth-admin-card-head">
+                  <div>
+                    <h3>User Accounts</h3>
+                    <p>Manage staff access, edit workspace permissions, approve signups, or disable accounts.</p>
+                  </div>
+                  <input type="search" id="adminUserSearch" class="form-control form-control-sm" placeholder="Find name or username..." style="max-width:240px;" autocomplete="off" data-lpignore="true">
+                </div>
+                <div id="adminUsersBody" class="admin-users-grid">
+                  <div class="auth-admin-empty" style="grid-column: 1 / -1;">Loading accounts...</div>
+                </div>
+              </section>
+            </div>
+
+            <!-- SECTION 2: SECURITY AUDIT LOG -->
+            <div id="adminTabAudit" class="admin-tab-content" hidden>
+              <section class="auth-admin-card">
+                <div class="auth-admin-card-head">
+                  <div>
+                    <h3>Security &amp; Administrative Audit Log</h3>
+                    <p>Chronological record of account creations, role changes, permission modifications, and security events.</p>
+                  </div>
+                  <div class="admin-audit-tools">
+                    <input type="search" id="adminAuditSearch" class="form-control form-control-sm" placeholder="Filter audit events..." style="max-width:220px;" autocomplete="off" data-lpignore="true">
+                    <button type="button" class="btn btn-outline btn-sm" id="adminRefreshAuditBtn">Refresh</button>
+                    <button type="button" class="btn btn-outline btn-sm" id="adminExportAuditBtn">Export Log</button>
+                  </div>
+                </div>
+                <div class="admin-audit-banner">
+                  <span>Persistent across PCs when <code>supabase_audit_log.sql</code> is applied to Supabase. Fully protected by Row Level Security (RLS).</span>
+                </div>
+                <div class="auth-admin-table-wrap">
+                  <table class="auth-admin-table" id="adminAuditTable">
+                    <thead>
+                      <tr><th>Timestamp</th><th>Actor</th><th>Role</th><th>Action</th><th>Target</th><th>Details</th></tr>
+                    </thead>
+                    <tbody id="adminSecurityAuditBody">
+                      <tr><td colspan="6">Loading audit events...</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </section>
+            </div>
+
+            <!-- SECTION 3: OPERATIONAL SETTINGS -->
+            <div id="adminTabSettings" class="admin-tab-content" hidden>
+              <section class="auth-admin-card">
+                <div class="auth-admin-card-head">
+                  <div>
+                    <h3>Operational Settings</h3>
+                    <p>Configure defaults and operational preferences for the CCTV OPS console. Stored securely.</p>
+                  </div>
+                </div>
+                <div class="admin-settings-body">
+                  <div class="admin-setting-row">
+                    <div class="admin-setting-meta">
+                      <strong>Default Interface Theme</strong>
+                      <span>Choose default color mode for newly opened sessions on this browser.</span>
+                    </div>
+                    <select id="adminSettingTheme" class="form-control form-control-sm admin-setting-control">
+                      <option value="dark" selected>Dark Mode (Operations Default)</option>
+                      <option value="light">Light Mode</option>
+                      <option value="system">System Preference</option>
+                    </select>
+                  </div>
+
+                  <div class="admin-setting-row">
+                    <div class="admin-setting-meta">
+                      <strong>Default Landing Workspace</strong>
+                      <span>The first workspace presented to authenticated staff upon login.</span>
+                    </div>
+                    <select id="adminSettingLanding" class="form-control form-control-sm admin-setting-control">
+                      <option value="edr">EDR</option>
+                      <option value="cctv" selected>CCTV Audit</option>
+                      <option value="sorter">AI Sorter</option>
+                      <option value="maintenance">Maintenance</option>
+                      <option value="masterlist">Masterlist</option>
+                      <option value="followup">Follow Up Reports</option>
+                      <option value="history">Activity History</option>
+                    </select>
+                  </div>
+
+                  <div class="admin-setting-row">
+                    <div class="admin-setting-meta">
+                      <strong>Application Display Subtitle</strong>
+                      <span>Operational title displayed beneath the CCTV OPS brand.</span>
+                    </div>
+                    <input type="text" id="adminSettingSubtitle" class="form-control form-control-sm admin-setting-control" value="Secure operations workspace" placeholder="e.g. Operations Console" autocomplete="off" data-lpignore="true">
+                  </div>
+
+                  <div class="admin-setting-row">
+                    <div class="admin-setting-meta">
+                      <strong>CCTV Audit Auto-Trim Formatting</strong>
+                      <span>Automatically remove extraneous trailing and leading whitespace from pasted TL, Agent, and OM names.</span>
+                    </div>
+                    <label class="admin-setting-toggle">
+                      <input type="checkbox" id="adminSettingAutoTrim" checked>
+                      <span>Enable automatic name cleanup</span>
+                    </label>
+                  </div>
+
+                  <div class="admin-settings-actions">
+                    <button type="button" class="btn btn-primary btn-sm" id="adminSaveSettingsBtn">Save Settings</button>
+                    <span id="adminSaveSettingsNotice" class="admin-settings-notice"></span>
+                  </div>
+
+                  <div class="admin-settings-info">
+                    <small>Note: Integration endpoints (Supabase credentials, Google Apps Script URLs, and document IDs) are governed by protected configuration and cannot be modified from public forms.</small>
+                  </div>
+                </div>
+              </section>
+            </div>
+
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <!-- Google Docs Web App Receiver Setup Dialog -->
+  <div class="modal-backdrop" id="modalDocsSetup" hidden>
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 class="modal-title">Google Docs Integration</h3>
+        <button type="button" class="btn btn-ghost btn-sm" id="btnCloseDocsSetup">✕</button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size:12px; color:var(--text-secondary);">Enter the Google Apps Script Web App URL to sync EDR records automatically to Google Docs.</p>
+        <div class="form-group">
+          <label class="form-label" for="inputDocsUrl">Web App URL</label>
+          <input type="url" id="inputDocsUrl" class="form-control" placeholder="https://script.google.com/macros/s/.../exec">
+          <div class="docs-url-hint" id="edrDocsUrlHint">URL must end in <strong>/exec</strong>.</div>
+        </div>
+      </div>
+      <div class="modal-footer" style="justify-content:space-between;">
+        <button type="button" class="btn btn-danger-ghost btn-sm" id="btnClearDocsSetup" title="Disconnect Google Docs from this browser">Disconnect</button>
+        <div style="display:flex; align-items:center; gap:6px;">
+          <button type="button" class="btn btn-outline btn-sm" id="btnTestDocsSetup">Test Connection</button>
+          <button type="button" class="btn btn-primary btn-sm" id="btnSaveDocsSetup">Save & Connect</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Full Resolution Screenshot Evidence Viewer Modal -->
+  <div class="modal-backdrop" id="modalScreenshotViewer" hidden>
+    <div class="modal-dialog modal-screenshot-dialog">
+      <div class="modal-header">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <h3 class="modal-title" id="screenshotViewerTitle">CCTV Incident Evidence</h3>
+          <span class="badge badge-warning" id="screenshotViewerBadge">CCTV Screenshot</span>
+        </div>
+        <div style="display:flex; align-items:center; gap:6px;">
+          <button type="button" class="btn btn-ghost btn-sm" id="btnViewerCopyScreenshot" title="Copy screenshot to clipboard as PNG">Copy SS</button>
+          <button type="button" class="btn btn-ghost btn-sm" id="btnCloseScreenshotViewer">✕</button>
+        </div>
+      </div>
+      <div class="modal-screenshot-body">
+        <img id="screenshotViewerImg" class="modal-screenshot-img" src="" alt="CCTV Incident Screenshot">
+      </div>
+      <div class="modal-footer" style="justify-content:space-between;">
+        <span style="font-size:11px; color:var(--text-muted);" id="screenshotViewerMeta">Full Resolution Screenshot</span>
+        <button type="button" class="btn btn-outline btn-sm" id="btnViewerCloseBottom">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Auth Sign In / User Profile Dialog -->
+  <div class="modal-backdrop" id="modalAuth" hidden>
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 class="modal-title" id="authModalTitle">Operator Terminal</h3>
+        <button type="button" class="btn btn-ghost btn-sm" id="btnCloseAuth">✕</button>
+      </div>
+      <div class="modal-body" id="authModalBody">
+        <form id="formSignIn" style="display:flex; flex-direction:column; gap:10px;">
+          <div class="form-group">
+            <label class="form-label" for="loginUser">Operator Username</label>
+            <input type="text" id="loginUser" class="form-control" placeholder="e.g. miles" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="loginPass">Password</label>
+            <input type="password" id="loginPass" class="form-control" placeholder="••••••••" required>
+          </div>
+          <div id="authErrorMsg" style="color:var(--accent-danger); font-size:11px; display:none;"></div>
+          <button type="submit" class="btn btn-primary" style="margin-top:6px;">Sign In</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Smart Audit Guard Paste Modal -->
+  <div class="modal-backdrop" id="modalGuardPaste" hidden>
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 class="modal-title">Paste Tracker Rows</h3>
+        <button type="button" class="btn btn-ghost btn-sm" id="btnCloseGuardPaste">✕</button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size:12px; color:var(--text-secondary); margin:0 0 8px 0;">Paste tab-separated rows copied from your Google Sheets Tracker:</p>
+        <textarea id="txtGuardPaste" class="form-control" rows="8" placeholder="Paste rows here (TSV format)..."></textarea>
+      </div>
+      <div class="modal-footer" style="justify-content:space-between;">
+        <button type="button" class="btn btn-outline btn-sm" id="btnGuardMergePasted">Merge with Existing</button>
+        <div style="display:flex; gap:6px;">
+          <button type="button" class="btn btn-ghost btn-sm" id="btnCancelGuardPaste">Cancel</button>
+          <button type="button" class="btn btn-primary btn-sm" id="btnSubmitGuardPaste">Replace Snapshot</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Global App Confirmation Dialog -->
+  <div class="modal-backdrop" id="modalAppConfirm" hidden>
+    <div class="modal-dialog modal-dialog-sm">
+      <div class="modal-header">
+        <h3 class="modal-title" id="confirmDialogTitle">Confirm Action</h3>
+        <button type="button" class="btn btn-ghost btn-sm" onclick="handleConfirmDialog(false)">✕</button>
+      </div>
+      <div class="modal-body">
+        <p id="confirmDialogMessage" style="font-size:12.5px; color:var(--text-secondary); margin:0; line-height:1.5;">Are you sure you want to proceed?</p>
+      </div>
+      <div class="modal-footer" style="justify-content:flex-end; gap:8px;">
+        <button type="button" class="btn btn-outline btn-sm" id="btnConfirmDialogCancel" onclick="handleConfirmDialog(false)">Cancel</button>
+        <button type="button" class="btn btn-primary btn-sm" id="btnConfirmDialogAccept" onclick="handleConfirmDialog(true)">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Team Leader Floor Assignment Modal -->
+  <div class="modal-backdrop" id="modalTlAssignments" hidden>
+    <div class="modal-dialog" style="max-width:680px;">
+      <div class="modal-header">
+        <h3 class="modal-title">Team Leader Floor Assignments</h3>
+        <button type="button" class="btn btn-ghost btn-sm" id="btnCloseTlAssignments">✕</button>
+      </div>
+      <div class="modal-body" style="max-height:420px; overflow-y:auto;">
+        <p style="font-size:11.5px; color:var(--text-secondary); margin:0 0 10px 0;">
+          Override auto-detected floor assignments or edit display names. Changes are saved automatically.
+        </p>
+        <table class="audit-data-table" id="tlSummaryTable" style="width:100%;">
+          <thead>
+            <tr>
+              <th>Team Leader Name</th>
+              <th>Floor Assignment</th>
+              <th style="width:70px; text-align:center;">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- Populated dynamically -->
+          </tbody>
+        </table>
+      </div>
+      <div class="modal-footer" style="justify-content:space-between;">
+        <button type="button" class="btn btn-danger-ghost btn-sm" id="btnModalResetTlAssignments">Reset All Overrides</button>
+        <button type="button" class="btn btn-outline btn-sm" id="btnDoneTlAssignments">Done</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Maintenance Google Sheets Apps Script Setup Modal -->
+  <div class="modal-backdrop" id="modalMaintenanceSheetSetup" hidden>
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 class="modal-title">Google Sheets Maintenance Setup</h3>
+        <button type="button" class="btn btn-ghost btn-sm" id="btnCloseMaintenanceSheetSetup">✕</button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size:12px; color:var(--text-secondary); margin:0 0 10px 0;">
+          Enter the Apps Script Web App URL ending in <strong>/exec</strong> to enable true in-cell images and automatic report logging.
+        </p>
+        <div class="form-group">
+          <label class="form-label" for="maintenanceSheetWebAppUrl">Web App URL</label>
+          <input type="url" id="maintenanceSheetWebAppUrl" class="form-control form-control-sm" placeholder="https://script.google.com/macros/s/.../exec">
+        </div>
+        <div id="maintenanceSheetTestResult" class="maintenance-sheet-test-result" style="font-size:11px; margin-top:8px;"></div>
+      </div>
+      <div class="modal-footer" style="justify-content:space-between;">
+        <button type="button" class="btn btn-danger-ghost btn-sm" id="btnClearMaintenanceSheet">Disconnect</button>
+        <div style="display:flex; align-items:center; gap:6px;">
+          <button type="button" class="btn btn-outline btn-sm" id="btnTestMaintenanceSheet">Test Connection</button>
+          <button type="button" class="btn btn-primary btn-sm" id="btnSaveMaintenanceSheet">Save &amp; Connect</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Maintenance Drafts Manager Modal -->
+  <div class="modal-backdrop" id="modalMaintenanceDrafts" hidden>
+    <div class="modal-dialog" style="max-width:600px;">
+      <div class="modal-header">
+        <h3 class="modal-title">Saved Maintenance Drafts</h3>
+        <button type="button" class="btn btn-ghost btn-sm" id="btnCloseMaintenanceDrafts">✕</button>
+      </div>
+      <div class="modal-body" style="max-height:420px; overflow-y:auto;">
+        <div style="display:flex; gap:8px; margin-bottom:12px;">
+          <input type="text" id="maintenanceDraftName" class="form-control form-control-sm" placeholder="Enter draft snapshot name...">
+          <button type="button" class="btn btn-primary btn-sm" id="btnSaveNamedDraft" style="white-space:nowrap;">Save Snapshot</button>
+        </div>
+        <div id="maintenanceDraftList" class="maintenance-draft-list" style="display:flex; flex-direction:column; gap:8px;">
+          <!-- Dynamically populated drafts -->
+        </div>
+      </div>
+      <div class="modal-footer" style="justify-content:flex-end;">
+        <button type="button" class="btn btn-outline btn-sm" id="btnDoneMaintenanceDrafts">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- User Account Access Editor Modal -->
+  <div class="modal-backdrop" id="adminAccessModal" hidden>
+    <div class="modal-dialog" style="max-width:560px;">
+      <div class="modal-header">
+        <div>
+          <h3 class="modal-title" id="adminAccessTitle">Account Access</h3>
+          <p id="adminAccessUserLabel" style="font-size:11px; color:var(--text-muted); margin:2px 0 0 0;">Choose the role and workspaces this account can open.</p>
+        </div>
+        <button type="button" class="btn btn-ghost btn-sm" id="adminAccessClose" aria-label="Close">✕</button>
+      </div>
+      <div class="modal-body" style="display:flex; flex-direction:column; gap:12px;">
+        <input type="hidden" id="adminAccessTargetId">
+        <label style="display:flex; flex-direction:column; gap:4px; font-size:12px;">
+          <span style="font-weight:600; color:var(--text-secondary);">Display Name</span>
+          <input type="text" id="adminAccessDisplayName" class="form-control form-control-sm" placeholder="Staff full name" autocomplete="off" data-lpignore="true">
+        </label>
+        <div style="display:flex; gap:12px;">
+          <label style="flex:1; display:flex; flex-direction:column; gap:4px; font-size:12px;">
+            <span style="font-weight:600; color:var(--text-secondary);">Role</span>
+            <select id="adminAccessRole" class="form-control form-control-sm">
+              <option value="user">User</option>
+              <option value="admin">Admin</option>
+            </select>
+          </label>
+          <label style="flex:1; display:flex; flex-direction:column; gap:4px; font-size:12px;">
+            <span style="font-weight:600; color:var(--text-secondary);">Status</span>
+            <select id="adminAccessStatus" class="form-control form-control-sm">
+              <option value="active">Active</option>
+              <option value="disabled">Disabled / Suspended</option>
+            </select>
+          </label>
+        </div>
+        <div>
+          <span style="font-size:12px; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:6px;">Workspace Access Permissions</span>
+          <div class="auth-access-grid" id="adminAccessGrid">
+            <label><input type="checkbox" data-permission="edr"> EDR</label>
+            <label><input type="checkbox" data-permission="cctv"> CCTV Audit</label>
+            <label><input type="checkbox" data-permission="sorter"> AI Sorter</label>
+            <label><input type="checkbox" data-permission="maintenance"> Maintenance</label>
+            <label><input type="checkbox" data-permission="masterlist"> Master List</label>
+            <label><input type="checkbox" data-permission="followup"> Follow Up Reports</label>
+            <label><input type="checkbox" data-permission="history"> History</label>
+            <label class="auth-access-manage" hidden><input type="checkbox" data-permission="manageOptions" disabled> Manage site / OM / campaign options</label>
+          </div>
+        </div>
+        <div class="auth-access-note" style="font-size:11px; color:var(--text-muted); background:var(--bg-input); padding:8px 10px; border-radius:var(--radius-xs); border:1px solid var(--border-default);">
+          Admin = full access. Normal user cannot manage options. User access can be changed anytime.
+        </div>
+      </div>
+      <div class="modal-footer" style="justify-content:flex-end; gap:8px;">
+        <button type="button" class="btn btn-outline btn-sm" id="adminAccessCancel">Cancel</button>
+        <button type="button" class="btn btn-primary btn-sm" id="adminAccessSave">Save Access</button>
+      </div>
+    </div>
+  </div>
+
+  <input type="file" id="followupReplaceInput" accept="image/*" hidden>
+
+  <!-- Toast Notification Container -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- External Script Dependencies -->
+  <script src="../auth-config.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+  <!-- Internal V2 Modules -->
+  <script src="./js/config.js"></script>
+  <script src="./js/storage.js"></script>
+  <script src="./js/shared.js"></script>
+  <script src="./js/services/auth-service.js"></script>
+  <script src="./js/services/edr-service.js"></script>
+  <script src="./js/services/audit-service.js"></script>
+  <script src="./js/services/sorter-service.js"></script>
+  <script src="./js/services/maintenance-service.js"></script>
+  <script src="./js/services/pending-service.js"></script>
+  <script src="./js/services/followup-service.js"></script>
+  <script src="./js/services/masterlist-service.js"></script>
+  <script src="./js/services/history-service.js"></script>
+  <script src="./js/services/accounts-service.js"></script>
+  <script src="./js/app.js"></script>
+</body>
+</html>
