@@ -626,7 +626,7 @@
           <td colspan="7" style="padding:8px 4px; border:0; background:#ffffff; text-align:left;">
             <div style="white-space:nowrap;">
               ${screenshots.map((shot, shotIdx) => `
-                <img src="${shot.dataUrl || shot}" alt="CCTV Screenshot ${shotIdx + 1}" style="display:inline-block; width:220px; height:132px; object-fit:contain; vertical-align:top; margin:0 8px 6px 0; background:#ffffff;">
+                <img src="${esc(maintenanceScreenshotSource(shot))}" alt="CCTV Screenshot ${shotIdx + 1}" style="display:inline-block; width:220px; height:132px; object-fit:contain; vertical-align:top; margin:0 8px 6px 0; background:#ffffff;">
               `).join("")}
             </div>
           </td>
@@ -659,7 +659,7 @@
       return rowChunks.map((chunkRows, chunkIdx) => {
         const isFirstChunk = chunkIdx === 0;
         const isLastChunk = chunkIdx === rowChunks.length - 1;
-        const pageBreakStyle = isFirstChunk ? "" : "page-break-before:always;";
+        const pageBreakStyle = "";
 
         const dataRows = chunkRows.map(row => `
           <tr style="page-break-inside:avoid;">

@@ -491,7 +491,6 @@
           card.classList.toggle("is-selected", chk.checked);
           updateLivePreview();
         };
-        chk.addEventListener("click", handleToggle);
         chk.addEventListener("change", handleToggle);
       }
 
@@ -1677,7 +1676,7 @@
     const syncText = el("guardLastSyncText");
     if (syncText) {
       syncText.textContent = snap
-        ? `Snapshot: ${snap.importedAt ? new Date(snap.importedAt).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }) : "Active"} (${rows.length} rows)`
+        ? `Snapshot: ${snap.syncedAt ? new Date(snap.syncedAt).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }) : "Active"} (${rows.length} rows)`
         : "No snapshot loaded";
     }
 

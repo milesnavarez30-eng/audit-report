@@ -894,7 +894,7 @@ window.CCTV_AUDIT = (function () {
           site: entry.site,
           tl: entry.tlName,
           agent: entry.agentName,
-          account: entry.account,
+          account: entry.cleanAccount || entry.account,
           reason: entry.reasonCode
         });
         const matched = rows.find(r => coreKey(r) === entryKey);
