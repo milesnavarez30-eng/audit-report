@@ -459,8 +459,21 @@
       const report = reports.find(r => r.id === id);
       if (!report) return;
 
+      // Clicking the checkbox itself handles selection via change event
       card.querySelector(".edr-check")?.addEventListener("change", (e) => {
         edr.toggleSelect(id, e.target.checked);
+      });
+
+      // Clicking the row body (not action buttons) also toggles selection (item 2 & 3: multi-select via checkbox)
+      card.addEventListener("click", (e) => {
+        // Only act if click is NOT on action buttons, checkboxes, dropdowns, or links
+        const ignore = e.target.closest(".record-actions, .record-select-col, .record-dropdown-menu, a, button, input");
+        if (ignore) return;
+        if (report.done) return;
+        const chk = card.querySelector(".edr-check");
+        if (!chk) return;
+        chk.checked = !chk.checked;
+        edr.toggleSelect(id, chk.checked);
       });
 
       // View SS
@@ -706,13 +719,13 @@
     }
   }
 
-  // Update Live Preview in Column 3
+  // Update Live Preview in Column 3 — uses rich HTML so screenshots are visible
   function updateLivePreview() {
     const previewBox = el("edrPreviewBox");
     if (!previewBox) return;
     const fbText = el("edrFacebookText")?.value || "";
-    const plainText = edr.buildTeamsOutput(fbText);
-    previewBox.textContent = plainText || "Select active EDRs in the list to generate output.";
+    const html = edr.buildPreviewHtml(fbText);
+    previewBox.innerHTML = html;
   }
 
   function getFormData() {
@@ -924,24 +937,6 @@
 
     // Facebook textarea input
     el("edrFacebookText")?.addEventListener("input", updateLivePreview);
-
-    // Copy Screenshot Button (Teams Dispatch Header)
-    el("btnCopyScreenshot")?.addEventListener("click", async () => {
-      try {
-        const selectedWithShot = edr.getReports().find(r => r.selected && !r.done && r.screenshotData);
-        const editing = edr.getEditingReport();
-        const target = selectedWithShot || (editing && editing.screenshotData ? editing : null) || (currentScreenshot ? currentScreenshot : null);
-
-        if (!target) {
-          showToast("No screenshot found in active selection or form.", "info");
-          return;
-        }
-        await edr.copyScreenshot(target);
-        showToast("CCTV screenshot copied to clipboard (native PNG).", "success");
-      } catch (err) {
-        showToast(err.message || "Could not copy screenshot.", "error");
-      }
-    });
 
     // Copy All Teams Button
     el("btnCopyAllTeams")?.addEventListener("click", async () => {
@@ -2057,6 +2052,105 @@
     selection.addRange(range);
   }
 
+  // ─── Missing Helpers for Global Keyboard Shortcut Handler ──────────────────
+
+  /**
+   * Moves cell selection by arrow keys (item 5-8 parity with V1)
+   */
+  function handleMiniSheetArrowNavigation(event) {
+    if (!miniSheetCellSelection && !miniSheetSelectedRows.size) return;
+    event.preventDefault();
+
+    const numRows = sorterAssignedRows.length;
+    const numCols = sorter.MINI_SHEET_FIELDS.length;
+
+    if (miniSheetCellSelection) {
+      // Move cell selection
+      let { startRow, startCol } = miniSheetCellSelection;
+      if (event.key === "ArrowUp")    startRow = Math.max(0, startRow - 1);
+      if (event.key === "ArrowDown")  startRow = Math.min(numRows - 1, startRow + 1);
+      if (event.key === "ArrowLeft")  startCol = Math.max(0, startCol - 1);
+      if (event.key === "ArrowRight") startCol = Math.min(numCols - 1, startCol + 1);
+
+      const point = { row: startRow, col: startCol };
+      miniSheetCellAnchor = point;
+      miniSheetCellFocus = point;
+      setMiniSheetCellSelection(point, point);
+
+      // Scroll cell into view
+      const targetCell = el("maintenanceMiniSheet")?.querySelector(
+        `td[data-row-index="${startRow}"][data-col-index="${startCol}"]`
+      );
+      targetCell?.scrollIntoView({ block: "nearest", inline: "nearest" });
+    } else if (miniSheetSelectedRows.size) {
+      // Move row selection
+      const sorted = [...miniSheetSelectedRows].sort((a, b) => a - b);
+      let newIndex;
+      if (event.key === "ArrowUp")   newIndex = Math.max(0, sorted[0] - 1);
+      if (event.key === "ArrowDown") newIndex = Math.min(numRows - 1, sorted[sorted.length - 1] + 1);
+      if (newIndex === undefined) return;
+      miniSheetSelectedRows.clear();
+      miniSheetSelectedRows.add(newIndex);
+      miniSheetSelectionAnchor = newIndex;
+      updateMiniSheetSelectionUi();
+    }
+  }
+
+  /**
+   * Paste clipboard text into the current cell-range selection
+   */
+  function pasteIntoMiniSheetCellSelection(text) {
+    if (!miniSheetCellSelection || !text) return;
+    const lines = text.split(/\r?\n/).filter(l => l.trim() !== "");
+    const { startRow, startCol } = miniSheetCellSelection;
+    const fields = sorter.MINI_SHEET_FIELDS;
+
+    lines.forEach((line, lineIdx) => {
+      const cols = line.split("\t");
+      cols.forEach((val, colIdx) => {
+        const rowIdx = startRow + lineIdx;
+        const colI = startCol + colIdx;
+        if (rowIdx >= sorterAssignedRows.length || colI >= fields.length) return;
+        const row = sorterAssignedRows[rowIdx];
+        if (!row) return;
+        const field = fields[colI];
+        row[field] = val.trim();
+        if (field === "tl") row.tlNames = sorter.extractTLNames(val.trim());
+      });
+    });
+
+    renderSorterRows(sorterAssignedRows);
+    showToast("Pasted into selected cells.", "success");
+  }
+
+  /**
+   * Append TSV rows from clipboard into the mini sheet (Ctrl+V when rows active)
+   */
+  function pasteRowsIntoMiniSheet(text) {
+    if (!text) return;
+    const newRows = sorter.parseMiniSheetClipboardRows(text);
+    if (!newRows || !newRows.length) {
+      showSorterMessage("Clipboard does not contain readable maintenance rows.", "error");
+      return;
+    }
+    const start = sorterAssignedRows.length;
+    sorterAssignedRows.push(...newRows);
+    // Select newly pasted rows
+    miniSheetSelectedRows.clear();
+    for (let i = start; i < sorterAssignedRows.length; i++) {
+      miniSheetSelectedRows.add(i);
+    }
+    miniSheetSelectionAnchor = start;
+    renderSorterRows(sorterAssignedRows);
+    setTimeout(() => {
+      el("maintenanceMiniSheet")?.querySelector(`tr[data-row-index="${start}"]`)
+        ?.scrollIntoView({ behavior: "smooth", block: "center", inline: "nearest" });
+    }, 60);
+    showToast(`${newRows.length} pasted row(s) added to AI Sorter.`, "success");
+  }
+
+  // ────────────────────────────────────────────────────────────────────────────
+
   function normalizeMiniSheetCellRange(a, b) {
     if (!a || !b) return null;
     return {
@@ -2858,6 +2952,140 @@
       miniSheetCellDragging = false;
       el("maintenanceMiniSheet")?.classList.remove("cell-range-dragging");
     });
+
+    // =========================================================================
+    // GLOBAL KEYBOARD SHORTCUTS: AI SORTER (items 5-8)
+    // Mirrors V1 lines 23840-23967 exactly
+    // =========================================================================
+    document.addEventListener("keydown", (event) => {
+      if (currentWorkspace !== "sorter") return;
+      const active = document.activeElement;
+      // Guard: never hijack shortcuts when user is typing in a non-minisheet input
+      const inTypingField = active && /^(INPUT|TEXTAREA|SELECT)$/i.test(active.tagName) &&
+        !active.closest("#maintenanceMiniSheet");
+      if (inTypingField) return;
+      const editingCell = active && active.matches &&
+        active.matches('#maintenanceMiniSheet td[contenteditable="true"]') &&
+        active.dataset.editing === "true";
+      // Ctrl+F: Focus find bar
+      if ((event.ctrlKey || event.metaKey) && !event.shiftKey && event.key.toLowerCase() === "f") {
+        if (editingCell) active.blur();
+        event.preventDefault();
+        setMiniSheetKeyboardActive(false);
+        clearMiniSheetCellSelection(true);
+        const findInput = el("miniSheetFindTlInput");
+        if (findInput) { findInput.focus(); findInput.select(); }
+        return;
+      }
+      // F3: Find next match
+      if (event.key === "F3" && !editingCell) {
+        event.preventDefault();
+        setMiniSheetKeyboardActive(true);
+        findNextTeamLeaderMatch();
+        return;
+      }
+      // Arrow keys when mini-sheet keyboard active
+      if (miniSheetKeyboardActive &&
+          ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(event.key) &&
+          !editingCell) {
+        handleMiniSheetArrowNavigation(event);
+        return;
+      }
+      if (!miniSheetKeyboardActive) return;
+      if (editingCell) return;
+      // Ctrl+A: Select all rows
+      if ((event.ctrlKey || event.metaKey) && !event.shiftKey && event.key.toLowerCase() === "a") {
+        event.preventDefault();
+        selectAllMiniSheetRows();
+        return;
+      }
+      // Ctrl+C: Copy selected rows / cells
+      if ((event.ctrlKey || event.metaKey) && !event.shiftKey && event.key.toLowerCase() === "c") {
+        if (!hasMiniSheetCellSelection() && !miniSheetSelectedRows.size) return;
+        event.preventDefault();
+        copyMiniSheetSelection().catch(console.error);
+        return;
+      }
+      // Ctrl+X: Cut selected rows / cells
+      if ((event.ctrlKey || event.metaKey) && !event.shiftKey && event.key.toLowerCase() === "x") {
+        if (!hasMiniSheetCellSelection() && !miniSheetSelectedRows.size) return;
+        event.preventDefault();
+        cutMiniSheetSelection().catch(console.error);
+        return;
+      }
+      // Ctrl+Shift+M: Send to Maintenance report
+      if ((event.ctrlKey || event.metaKey) && event.shiftKey && event.key.toLowerCase() === "m") {
+        if (!miniSheetSelectedRows.size) return;
+        event.preventDefault();
+        sendSelectedMiniSheetRowsToMaintenanceReport();
+        return;
+      }
+      // Delete / Backspace: Clear cells or remove rows
+      if (event.key === "Delete" || event.key === "Backspace") {
+        if (hasMiniSheetCellSelection()) {
+          event.preventDefault();
+          const { startRow, endRow, startCol, endCol } = miniSheetCellSelection;
+          for (let r = startRow; r <= endRow; r++) {
+            const row = sorterAssignedRows[r];
+            if (!row) continue;
+            for (let c = startCol; c <= endCol; c++) {
+              const field = sorter.MINI_SHEET_FIELDS[c];
+              if (!field) continue;
+              row[field] = "";
+              if (field === "tl") row.tlNames = [];
+            }
+          }
+          renderSorterRows(sorterAssignedRows);
+          showToast("Selected cells cleared.", "info");
+          return;
+        }
+        if (miniSheetSelectedRows.size) {
+          event.preventDefault();
+          removeSelectedMiniSheetRows();
+          return;
+        }
+      }
+      // Enter: Begin editing top-left selected cell
+      if (event.key === "Enter") {
+        if (hasMiniSheetCellSelection()) {
+          event.preventDefault();
+          const { startRow, startCol } = miniSheetCellSelection;
+          const cell = el("maintenanceMiniSheet")?.querySelector(
+            `td[data-row-index="${startRow}"][data-col-index="${startCol}"]`
+          );
+          if (cell) beginMiniSheetCellEdit(cell);
+        }
+        return;
+      }
+      // Escape: Clear selection
+      if (event.key === "Escape") {
+        if (!hasMiniSheetCellSelection() && !miniSheetSelectedRows.size) return;
+        event.preventDefault();
+        clearAnyMiniSheetSelection();
+        return;
+      }
+    });
+
+    // Ctrl+V paste for AI Sorter: routes clipboard rows into mini sheet
+    document.addEventListener("paste", (event) => {
+      if (currentWorkspace !== "sorter") return;
+      if (!miniSheetKeyboardActive) return;
+      const active = document.activeElement;
+      if (active && /^(INPUT|TEXTAREA|SELECT)$/i.test(active.tagName) &&
+          !active.closest("#maintenanceMiniSheet")) return;
+      const editingCell = active && active.matches &&
+        active.matches('#maintenanceMiniSheet td[contenteditable="true"]') &&
+        active.dataset.editing === "true";
+      if (editingCell) return;
+      const text = event.clipboardData?.getData("text/plain") || "";
+      if (!text.trim()) return;
+      event.preventDefault();
+      if (hasMiniSheetCellSelection()) {
+        pasteIntoMiniSheetCellSelection(text);
+        return;
+      }
+      pasteRowsIntoMiniSheet(text);
+    });
   }
 
   // =========================================================================
@@ -2865,6 +3093,7 @@
   // =========================================================================
   let maintenanceState = {
     date: "",
+
     destinationKey: "mabini_a",
     title: "Mabini Site A - 1st & 2nd Floor",
     blocks: []
@@ -3014,25 +3243,23 @@
       actionsWrap.style.alignItems = "center";
       actionsWrap.style.gap = "8px";
 
-      // Hide Data Checkbox
-      const hideLabel = document.createElement("label");
-      hideLabel.style.display = "inline-flex";
-      hideLabel.style.alignItems = "center";
-      hideLabel.style.gap = "4px";
-      hideLabel.style.fontSize = "11px";
-      hideLabel.style.color = "var(--text-secondary)";
-      hideLabel.style.cursor = "pointer";
-
-      const hideCheck = document.createElement("input");
-      hideCheck.type = "checkbox";
-      hideCheck.checked = !!block.dataHidden;
-      hideCheck.addEventListener("change", () => {
-        block.dataHidden = hideCheck.checked;
+      // ── Hide Report / Show Report toggle button (V1 parity, item 10) ──
+      const toggleBtn = document.createElement("button");
+      toggleBtn.type = "button";
+      toggleBtn.className = "btn btn-outline btn-sm";
+      toggleBtn.textContent = block.dataHidden ? "Show Report" : "Hide Report";
+      toggleBtn.title = block.dataHidden ? "Show block content" : "Hide block content";
+      toggleBtn.addEventListener("click", () => {
+        block.dataHidden = !block.dataHidden;
+        // Update active paste target if this block was it
+        if (block.dataHidden && activePasteBlockId === block.id) {
+          const nextVisible = maintenanceState.blocks.find(b => b.id !== block.id && !b.dataHidden);
+          activePasteBlockId = nextVisible ? nextVisible.id : null;
+        }
+        renderMaintenanceBlocks();
         queueMaintenanceAutosave();
       });
-      hideLabel.appendChild(hideCheck);
-      hideLabel.appendChild(document.createTextNode("Exclude rows from send"));
-      actionsWrap.appendChild(hideLabel);
+      actionsWrap.appendChild(toggleBtn);
 
       // Remove block button
       if (maintenanceState.blocks.length > 1) {
@@ -3059,6 +3286,13 @@
       headerRow.appendChild(titleWrap);
       headerRow.appendChild(actionsWrap);
       blockEl.appendChild(headerRow);
+
+      // Content wrapper — hidden when block.dataHidden is true (item 10)
+      const contentWrapper = document.createElement("div");
+      contentWrapper.className = "eod-block-content";
+      if (block.dataHidden) {
+        contentWrapper.style.display = "none";
+      }
 
       // Desktop side-by-side grid
       const grid = document.createElement("div");
@@ -3122,7 +3356,7 @@
       rightCol.appendChild(remarksArea);
       grid.appendChild(rightCol);
 
-      blockEl.appendChild(grid);
+      contentWrapper.appendChild(grid);
 
       // Screenshot Proof Zone (REQUIRED)
       const proofZone = document.createElement("div");
@@ -3235,7 +3469,7 @@
 
       proofZone.appendChild(gridEl);
 
-      // Drag and drop handlers
+      // Drag and drop handlers for proofZone
       proofZone.addEventListener("dragover", (e) => {
         e.preventDefault();
         proofZone.classList.add("drag-over");
@@ -3266,8 +3500,12 @@
         }
       });
 
-      // Ctrl+V Paste handler on the block
+      contentWrapper.appendChild(proofZone);
+      blockEl.appendChild(contentWrapper);
+
+      // Paste listener: routes Ctrl+V screenshot into this block's proof zone (item 9)
       blockEl.addEventListener("paste", async (e) => {
+        if (block.dataHidden) return;
         const items = (e.clipboardData || window.clipboardData)?.items;
         if (!items) return;
         for (let i = 0; i < items.length; i++) {
@@ -3275,6 +3513,7 @@
             e.preventDefault();
             const file = items[i].getAsFile();
             if (file) {
+              activePasteBlockId = block.id;
               updateMaintenanceAutosaveIndicator("● Processing pasted image...", "saving");
               try {
                 const compressed = await maintenance.compressImage(file);
@@ -3292,10 +3531,11 @@
         }
       });
 
-      blockEl.appendChild(proofZone);
       container.appendChild(blockEl);
     });
   }
+
+
 
   async function checkMaintenanceSheetsConnectionState() {
     const pill = el("maintenanceSheetConnectionState");
@@ -3709,6 +3949,72 @@
       renderMaintenanceBlocks();
       queueMaintenanceAutosave();
     };
+
+    // =========================================================================
+    // GLOBAL PASTE HANDLER: Maintenance workspace (item 9)
+    // Routes Ctrl+V screenshot paste to the active block even when focus is
+    // not directly on a proof zone (mirrors V1 document-level paste handler)
+    // =========================================================================
+    document.addEventListener("paste", async (event) => {
+      if (currentWorkspace !== "maintenance") return;
+      const active = document.activeElement;
+      // If focus is in a specific textarea, let the block-level paste handler manage it
+      if (active && active.tagName === "TEXTAREA") return;
+      // Check if clipboard has an image
+      const items = (event.clipboardData || window.clipboardData)?.items;
+      if (!items) return;
+      let imageFile = null;
+      for (let i = 0; i < items.length; i++) {
+        if (items[i].type.indexOf("image") !== -1) {
+          imageFile = items[i].getAsFile();
+          break;
+        }
+      }
+      if (!imageFile) return;
+      event.preventDefault();
+
+      // Find the active paste block
+      const targetBlock = maintenanceState.blocks.find(b => b.id === activePasteBlockId && !b.dataHidden) ||
+        maintenanceState.blocks.find(b => !b.dataHidden);
+      if (!targetBlock) {
+        showToast("No visible block found to receive screenshot.", "info");
+        return;
+      }
+      updateMaintenanceAutosaveIndicator("● Processing pasted image...", "saving");
+      try {
+        const compressed = await maintenance.compressImage(imageFile);
+        if (!Array.isArray(targetBlock.screenshots)) targetBlock.screenshots = [];
+        targetBlock.screenshots.push(compressed);
+        renderMaintenanceBlocks();
+        queueMaintenanceAutosave();
+        showToast("Screenshot pasted into Maintenance block.", "success");
+      } catch (err) {
+        console.error("Global maintenance paste error:", err);
+      }
+    });
+
+    // =========================================================================
+    // GLOBAL KEYBOARD: Maintenance Ctrl+A selects Maintenance data (item 13)
+    // =========================================================================
+    document.addEventListener("keydown", (event) => {
+      if (currentWorkspace !== "maintenance") return;
+      if (!(event.ctrlKey || event.metaKey)) return;
+      const active = document.activeElement;
+      // Ctrl+A inside an input/textarea: let browser handle (select text in field)
+      if (active && /^(INPUT|TEXTAREA)$/i.test(active.tagName)) return;
+      if (event.key.toLowerCase() === "a") {
+        // Select all lanes text in visible blocks (focus first lanes textarea)
+        const firstVisibleBlock = maintenanceState.blocks.find(b => !b.dataHidden);
+        if (!firstVisibleBlock) return;
+        const blockEl = document.getElementById(`block_${firstVisibleBlock.id}`);
+        const firstTextarea = blockEl?.querySelector("textarea.eod-lanes-textarea");
+        if (firstTextarea) {
+          event.preventDefault();
+          firstTextarea.focus();
+          firstTextarea.select();
+        }
+      }
+    });
   }
 
   // =========================================================================
@@ -5100,8 +5406,46 @@ ${escapeHtml(JSON.stringify(entry.after || entry.before, null, 2))}
       if (ok) showToast("Redone workspace change.", "info");
     });
 
+    // =========================================================================
+    // GLOBAL KEYBOARD SHORTCUTS: Undo (Ctrl+Z) and Redo (Ctrl+Y / Ctrl+Shift+Z)
+    // Items 11 and 12 — works from any workspace when not typing in an input field
+    // =========================================================================
+    document.addEventListener("keydown", async (event) => {
+      if (!(event.ctrlKey || event.metaKey)) return;
+      const active = document.activeElement;
+      const isTyping = active && /^(INPUT|TEXTAREA|SELECT)$/i.test(active.tagName);
+      // Allow undo/redo in contenteditable cells only when NOT in editing mode
+      const isEditingCell = active && active.matches &&
+        active.matches('[contenteditable="true"]') && active.dataset.editing === "true";
+      if (isTyping || isEditingCell) return;
+
+      const key = event.key;
+      // Ctrl+Z: Undo
+      if (!event.shiftKey && key === "z") {
+        event.preventDefault();
+        const ok = await history.undo();
+        if (ok) showToast("Undone last workspace change.", "info");
+        return;
+      }
+      // Ctrl+Y: Redo
+      if (!event.shiftKey && key === "y") {
+        event.preventDefault();
+        const ok = await history.redo();
+        if (ok) showToast("Redone workspace change.", "info");
+        return;
+      }
+      // Ctrl+Shift+Z: Redo (alternate)
+      if (event.shiftKey && key === "z") {
+        event.preventDefault();
+        const ok = await history.redo();
+        if (ok) showToast("Redone workspace change.", "info");
+        return;
+      }
+    });
+
     restoreBtn?.addEventListener("click", async () => {
       const timeline = history.getTimeline();
+
       if (!timeline.selectedId) return;
 
       const ok = await history.restoreSelectedEntry(timeline.selectedId);
