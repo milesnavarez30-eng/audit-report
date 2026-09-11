@@ -989,13 +989,10 @@
       try {
         const fb = el("edrFacebookText")?.value || "";
         const res = await edr.copyAllToTeams(fb);
-        if (res.hasScreenshot && res.wroteWithImage) {
-          showToast(`Copied ${res.count} EDR(s) with hyperlinks + screenshot. Marked as Done.`, "success");
-        } else if (res.hasScreenshot && !res.wroteWithImage) {
-          showToast(`Copied ${res.count} EDR(s) (Formatted Hyperlinks). Use "Copy Screenshot" for image. Marked as Done.`, "info");
-        } else {
-          showToast(`Copied ${res.count} EDR(s) to Teams (Formatted Hyperlinks). Marked as Done.`, "success");
-        }
+        const imageText = res.inlineScreenshotCount
+          ? ` with ${res.inlineScreenshotCount} inline screenshot${res.inlineScreenshotCount === 1 ? "" : "s"}`
+          : "";
+        showToast(`Copied ${res.count} complete EDR report(s)${imageText} for Teams.`, "success");
       } catch (err) {
         showToast(err.message || "Failed to copy.", "error");
       }

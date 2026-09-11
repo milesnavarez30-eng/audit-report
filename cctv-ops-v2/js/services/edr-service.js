@@ -380,7 +380,7 @@ window.CCTV_EDR = (function () {
         canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
         const context = canvas.getContext("2d");
         context.drawImage(image, 0, 0, canvas.width, canvas.height);
-        resolve(canvas.toDataURL("image/jpeg", 0.62));
+        resolve(canvas.toDataURL("image/png"));
       };
       image.onerror = () => resolve("");
       image.src = dataUrl;
@@ -439,7 +439,8 @@ window.CCTV_EDR = (function () {
       }).join("");
       fbHtml = `${dividerHtml}<div><strong>Facebook shared post ${escapeHtml(fbDate)}</strong></div>${fbLines}`;
     }
-    return `<div style="font-family:Arial,sans-serif;font-size:10pt;color:#111;line-height:1.4;">${edrBodyHtml}${fbHtml}</div>`.trim();
+    const fragment = `<div style="font-family:Arial,sans-serif;font-size:10pt;color:#111;line-height:1.4;">${edrBodyHtml}${fbHtml}</div>`;
+    return `<!DOCTYPE html><html><body><!--StartFragment-->${fragment}<!--EndFragment--></body></html>`;
   }
 
   async function dataUrlToPngBlob(dataUrl) {
@@ -927,9 +928,7 @@ window.CCTV_EDR = (function () {
 
     /**
      * Copy All to Microsoft Teams Clipboard
-     * Multi-MIME with text/plain and minimal text/html (hyperlinks).
-     * Never puts Base64 into HTML and never attaches image/png in ClipboardItem
-     * so Microsoft Teams pastes the formatted text/HTML properly.
+      * Multi-MIME with text/plain and compact text/html containing inline images.
      */
     async copyAllToTeams(facebookText = "") {
       const activeSelected = edrReports.filter(r => r.selected && !r.done);
@@ -947,7 +946,7 @@ window.CCTV_EDR = (function () {
       const fb = facebookText || currentFacebookText;
       const plainText = this.buildTeamsOutput(fb);
       const safePlainText = plainText.replace(/data:image\/[a-zA-Z0-9.+-]+;base64,[A-Za-z0-9+/=]+/g, "").trim();
-      const minimalHtml = await buildTeamsClipboardHtml(activeSelected, fb);
+      const richHtml = await buildTeamsClipboardHtml(activeSelected, fb);
 
       let wroteSuccessfully = false;
 
@@ -956,7 +955,7 @@ window.CCTV_EDR = (function () {
         try {
           const clipboardData = {
             "text/plain": new Blob([safePlainText], { type: "text/plain" }),
-            "text/html": new Blob([minimalHtml], { type: "text/html" })
+            "text/html": new Blob([richHtml], { type: "text/html" })
           };
           await navigator.clipboard.write([
             new ClipboardItem(clipboardData)
@@ -973,7 +972,7 @@ window.CCTV_EDR = (function () {
           const onCopy = (e) => {
             e.preventDefault();
             e.clipboardData.setData("text/plain", safePlainText);
-            e.clipboardData.setData("text/html", minimalHtml);
+            e.clipboardData.setData("text/html", richHtml);
           };
           document.addEventListener("copy", onCopy, { once: true });
           wroteSuccessfully = document.execCommand("copy");
@@ -1009,10 +1008,10 @@ window.CCTV_EDR = (function () {
       return {
         count: activeSelected.length,
         hasScreenshot: activeSelected.some(r => !!r.screenshotData),
-        wroteWithImage: false,
-        richHtml: minimalHtml,
+        richHtml,
         plainText: safePlainText,
-        wroteSuccessfully
+        wroteSuccessfully,
+        inlineScreenshotCount: activeSelected.filter(r => r.screenshotData).length
       };
     },
 
