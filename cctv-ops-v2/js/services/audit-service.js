@@ -257,6 +257,15 @@ window.CCTV_AUDIT = (function () {
     return [row.date, row.site, row.tl, row.agent, row.account, row.reason].map(norm).join("|");
   }
 
+  function hasSpacingIssue(rawValue) {
+    const raw = String(rawValue == null ? "" : rawValue).replace(/\u00a0/g, " ");
+    return !!raw && (raw !== raw.trim() || /\s{2,}/.test(raw));
+  }
+
+  function rowSignature(row) {
+    return TRACKER_FIELDS.map(field => norm(row[field])).join("|");
+  }
+
   function sortEntries() {
     entryList.sort((a, b) => new Date(a.rawDate || a.date) - new Date(b.rawDate || b.date));
   }
@@ -368,6 +377,21 @@ window.CCTV_AUDIT = (function () {
       notify();
       notifyGuard();
       return entryList;
+    },
+
+    async initGuard() {
+      try {
+        const snap = await trackerDbGet();
+        if (snap && Array.isArray(snap.rows)) {
+          trackerSnapshot = snap;
+          trackerRows = snap.rows;
+          trackerAnalysis = this.analyzeRows(trackerRows);
+        }
+      } catch (e) {
+        console.warn("Could not load tracker snapshot in initGuard:", e);
+      }
+      notifyGuard();
+      return trackerSnapshot;
     },
 
     onChange(fn) {
@@ -697,11 +721,14 @@ window.CCTV_AUDIT = (function () {
       const matrix = splitPastedText(text);
       const parsed = parseMatrix(matrix, "Pasted Merge");
 
-      const existingMap = new Map(trackerRows.map(r => [coreKey(r), r]));
-      parsed.rows.forEach(r => {
-        existingMap.set(coreKey(r), r);
+      const merged = [];
+      const seen = new Set();
+      [...trackerRows, ...parsed.rows].forEach(row => {
+        const sig = rowSignature(row);
+        if (!sig || seen.has(sig)) return;
+        seen.add(sig);
+        merged.push(row);
       });
-      const merged = Array.from(existingMap.values());
       return this.saveSnapshot(merged, `${trackerSnapshot?.sourceLabel || "Snapshot"} + Merge`);
     },
 
@@ -767,9 +794,6 @@ window.CCTV_AUDIT = (function () {
         accounts: window.getAccountNames ? window.getAccountNames() : (cfg.DEFAULTS.ACCOUNTS || [])
       };
 
-      // Also check against existing CCTV Audit grid rows for "already sent" detection
-      const gridKeys = new Set(entryList.map(e => coreKey(e)));
-
       rows.forEach((row, idx) => {
         const sourceRow = row.sourceRow || idx + 2;
         const key = coreKey(row);
@@ -811,6 +835,18 @@ window.CCTV_AUDIT = (function () {
           });
         }
 
+        if (hasSpacingIssue(row.raw?.tl)) {
+          const rawValue = String(row.raw?.tl ?? "").replace(/\u00a0/g, " ");
+          issues.push({
+            type: "extra-space",
+            level: "danger",
+            title: "TL Name contains extra spaces",
+            detail: `Row ${sourceRow} · Current: “${rawValue}”`,
+            suggestion: `Clean TL name: “${cleanText(rawValue)}”`,
+            row
+          });
+        }
+
         const tlValue = cleanText(row.tl);
         if (tlValue && masters.tls.length) {
           const exact = masters.tls.find(t => norm(t) === norm(tlValue));
@@ -818,7 +854,7 @@ window.CCTV_AUDIT = (function () {
             let best = null;
             masters.tls.forEach(candidate => {
               const score = similarity(tlValue, candidate);
-              if (score >= 0.90 && (!best || score > best.score)) {
+              if (score >= 0.88 && (!best || score > best.score)) {
                 best = { value: candidate, score: Math.round(score * 100) };
               }
             });
@@ -849,6 +885,37 @@ window.CCTV_AUDIT = (function () {
           row: group[0],
           groupRows: group
         });
+      });
+
+      // Also check against existing CCTV Audit grid rows for "already sent" detection
+      entryList.forEach((entry, eIdx) => {
+        const entryKey = coreKey({
+          date: entry.rawDate || parseDateToIso(entry.formattedDate),
+          site: entry.site,
+          tl: entry.tlName,
+          agent: entry.agentName,
+          account: entry.account,
+          reason: entry.reasonCode
+        });
+        const matched = rows.find(r => coreKey(r) === entryKey);
+        if (matched) {
+          issues.push({
+            type: "already-sent",
+            level: "warning",
+            title: `Audit entry #${eIdx + 1} (${entry.agentName || entry.tlName}) matches Tracker row ${matched.sourceRow}`,
+            detail: `Audit entry matches row ${matched.sourceRow} from ${prettyIsoDate(matched.date)}`,
+            row: matched,
+            entry
+          });
+        }
+      });
+
+      const priority = { duplicate: 0, spelling: 1, "extra-space": 2, noc: 3, "already-sent": 4, formatting: 5, missing: 6, "future-date": 7 };
+      issues.sort((a, b) => {
+        const pa = priority[a.type] ?? 99;
+        const pb = priority[b.type] ?? 99;
+        if (pa !== pb) return pa - pb;
+        return (a.row?.sourceRow || 0) - (b.row?.sourceRow || 0);
       });
 
       return { duplicateGroups, issues };

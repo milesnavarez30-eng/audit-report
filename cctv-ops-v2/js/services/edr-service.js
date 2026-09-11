@@ -58,11 +58,14 @@ window.CCTV_EDR = (function () {
   }
 
   function safeUrl(value) {
-    const raw = clean(value);
+    let raw = clean(value);
     if (!raw) return "";
+    if (!/^https?:\/\//i.test(raw)) {
+      raw = "https://" + raw;
+    }
     try {
       const parsed = new URL(raw);
-      if (!/^https?:$/.test(parsed.protocol)) return "";
+      if (!/^https?:$/i.test(parsed.protocol)) return "";
       return parsed.href;
     } catch (_) {
       return "";
@@ -465,6 +468,16 @@ window.CCTV_EDR = (function () {
         listeners.push(fn);
         fn(edrReports);
       }
+    },
+
+    subscribe(fn) {
+      if (typeof fn === "function") {
+        listeners.push(fn);
+        fn(edrReports);
+      }
+      return () => {
+        listeners = listeners.filter(f => f !== fn);
+      };
     },
 
     getReports() {
@@ -903,42 +916,52 @@ window.CCTV_EDR = (function () {
         }
       }
 
+      // Rich copy event fallback
+      if (!wroteSuccessfully) {
+        try {
+          const onCopy = (e) => {
+            e.preventDefault();
+            e.clipboardData.setData("text/plain", safePlainText);
+            e.clipboardData.setData("text/html", minimalHtml);
+          };
+          document.addEventListener("copy", onCopy, { once: true });
+          wroteSuccessfully = document.execCommand("copy");
+        } catch (_) {}
+      }
+
       if (!wroteSuccessfully) {
         if (navigator.clipboard && navigator.clipboard.writeText) {
-          await navigator.clipboard.writeText(safePlainText);
-          wroteSuccessfully = true;
-        } else {
-          const ta = document.createElement("textarea");
-          ta.value = safePlainText;
-          ta.style.position = "fixed";
-          ta.style.left = "-9999px";
-          document.body.appendChild(ta);
-          ta.select();
-          document.execCommand("copy");
-          ta.remove();
-          wroteSuccessfully = true;
+          try {
+            await navigator.clipboard.writeText(safePlainText);
+            wroteSuccessfully = true;
+          } catch (_) {
+            // Fallback to hidden textarea execCommand
+          }
+        }
+        if (!wroteSuccessfully) {
+          try {
+            const ta = document.createElement("textarea");
+            ta.value = safePlainText;
+            ta.style.position = "fixed";
+            ta.style.left = "-9999px";
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand("copy");
+            ta.remove();
+            wroteSuccessfully = true;
+          } catch (_) {}
         }
       }
 
-      // Mark copied reports as Done
-      const now = new Date().toISOString();
-      activeSelected.forEach(r => {
-        r.done = true;
-        r.doneAt = now;
-        r.selected = false;
-      });
-
-      await this.saveReports();
-
-      // Cloud sync if connected
-      if (this.isValidDocsUrl(this.getDocsUrl())) {
-        activeSelected.forEach(r => this.syncReportToGoogleDocs(r).catch(() => {}));
-      }
-
+      // Preserve selection state so user can continue seeing checked items in Teams Dispatch
+      // (Explicit "Done" button is available on each card if completion is desired)
       return {
         count: activeSelected.length,
         hasScreenshot: activeSelected.some(r => !!r.screenshotData),
-        wroteWithImage: false
+        wroteWithImage: false,
+        richHtml: minimalHtml,
+        plainText: safePlainText,
+        wroteSuccessfully
       };
     },
 
@@ -1305,6 +1328,24 @@ window.CCTV_EDR = (function () {
       const result = window.cctvAuditBridge.sendFromEdr(report);
       notify();
       return result;
+    },
+
+    // Multi-report CCTV Audit Export
+    sendReportsToAudit(reports) {
+      const list = Array.isArray(reports) ? reports : [reports];
+      if (!list.length) throw new Error("No reports specified.");
+      if (!window.cctvAuditBridge?.sendFromEdr) {
+        throw new Error("CCTV Audit bridge is not ready.");
+      }
+      let created = 0;
+      let updated = 0;
+      list.forEach(rep => {
+        const result = window.cctvAuditBridge.sendFromEdr(rep);
+        if (result?.action === "created") created++;
+        else updated++;
+      });
+      notify();
+      return { count: list.length, created, updated };
     },
 
     isReportInAudit(reportId) {

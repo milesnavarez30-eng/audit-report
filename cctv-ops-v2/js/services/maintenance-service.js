@@ -621,16 +621,6 @@
       const screenshots = Array.isArray(block.screenshots) ? block.screenshots : [];
       const remarks = Array.isArray(block.remarks) ? block.remarks.filter(Boolean) : [];
 
-      const dataRows = rows.map(row => `
-        <tr style="page-break-inside:avoid;">
-          ${row.map((cell, idx) => `
-            <td style="border:1px solid #e5e7eb; padding:5px 7px; background:#ffffff; color:#202124; font-family:Arial,sans-serif; font-size:10px; vertical-align:top; ${idx === 6 ? "text-align:left;" : "text-align:center;"}">
-              ${esc(cell)}
-            </td>
-          `).join("")}
-        </tr>
-      `).join("");
-
       const imageRow = screenshots.length ? `
         <tr class="maintenance-pdf-image-row" style="page-break-inside:avoid;">
           <td colspan="7" style="padding:8px 4px; border:0; background:#ffffff; text-align:left;">
@@ -656,21 +646,54 @@
         ? `<div style="font-family:Arial,sans-serif; font-size:12px; font-weight:700; color:#31495f; padding:8px 0 4px 0;">Block #${blockIndex + 1}</div>`
         : "";
 
-      return `
-        <div class="maintenance-pdf-block" style="margin-bottom:16px;">
-          ${blockLabel}
-          <table class="maintenance-pdf-table" style="border-collapse:collapse; width:100%; background:#ffffff; page-break-inside:auto;">
-            <thead style="display:table-header-group;">
-              <tr style="page-break-inside:avoid;">${headerCells}</tr>
-            </thead>
-            <tbody style="display:table-row-group;">
-              ${dataRows}
-              ${imageRow}
-              ${remarksRow}
-            </tbody>
-          </table>
-        </div>
-      `;
+      const chunkSize = 14;
+      const rowChunks = [];
+      if (!rows.length) {
+        rowChunks.push([]);
+      } else {
+        for (let i = 0; i < rows.length; i += chunkSize) {
+          rowChunks.push(rows.slice(i, i + chunkSize));
+        }
+      }
+
+      return rowChunks.map((chunkRows, chunkIdx) => {
+        const isFirstChunk = chunkIdx === 0;
+        const isLastChunk = chunkIdx === rowChunks.length - 1;
+        const pageBreakStyle = isFirstChunk ? "" : "page-break-before:always;";
+
+        const dataRows = chunkRows.map(row => `
+          <tr style="page-break-inside:avoid;">
+            ${row.map((cell, idx) => `
+              <td style="border:1px solid #e5e7eb; padding:5px 7px; background:#ffffff; color:#202124; font-family:Arial,sans-serif; font-size:10px; vertical-align:top; ${idx === 6 ? "text-align:left;" : "text-align:center;"}">
+                ${esc(cell)}
+              </td>
+            `).join("")}
+          </tr>
+        `).join("");
+
+        const imageContent = isLastChunk ? imageRow : "";
+        const remarksContent = isLastChunk ? remarksRow : "";
+
+        const label = isFirstChunk ? blockLabel : (state.blocks.length > 1
+          ? `<div style="font-family:Arial,sans-serif; font-size:11px; font-weight:700; color:#31495f; padding:8px 0 4px 0;">Block #${blockIndex + 1} (Continued)</div>`
+          : "");
+
+        return `
+          <div class="maintenance-pdf-block" style="margin-bottom:16px; ${pageBreakStyle}">
+            ${label}
+            <table class="maintenance-pdf-table" style="border-collapse:collapse; width:100%; background:#ffffff; page-break-inside:auto;">
+              <thead style="display:table-header-group;">
+                <tr style="page-break-inside:avoid;">${headerCells}</tr>
+              </thead>
+              <tbody style="display:table-row-group;">
+                ${dataRows}
+                ${imageContent}
+                ${remarksContent}
+              </tbody>
+            </table>
+          </div>
+        `;
+      }).join("");
     }).join("");
 
     return `

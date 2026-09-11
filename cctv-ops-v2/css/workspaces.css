@@ -386,7 +386,7 @@ table.mini-sheet tr.floor-break td {
   border-radius: 4px;
   padding: 6px 10px;
   font-size: 11px;
-  max-height: 100px;
+  max-height: 180px;
   overflow-y: auto;
   display: flex;
   flex-direction: column;

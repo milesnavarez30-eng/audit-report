@@ -350,7 +350,8 @@
 
     if (isSameStructure) {
       reports.forEach((r, idx) => {
-        const card = existingCards[idx];
+        const card = listContainer.querySelector(`.record-row[data-id="${r.id}"]`) || existingCards[idx];
+        if (!card) return;
         const isDone = !!r.done;
         const isSelected = !!r.selected && !isDone;
         card.classList.toggle("is-selected", isSelected);
@@ -392,9 +393,9 @@
 
       return `
         <div class="record-row ${isSelected ? 'is-selected' : ''} ${isDone ? 'is-done' : ''}" data-id="${r.id}">
-          <div class="record-select-col">
-            <input type="checkbox" class="edr-check" ${isSelected ? 'checked' : ''} ${isDone ? 'disabled' : ''} style="cursor:pointer;" title="${isDone ? 'Completed (uncheck Done to select)' : 'Select for export'}">
-          </div>
+          <label class="record-select-col" style="cursor:pointer;" title="${isDone ? 'Completed (uncheck Done to select)' : 'Select for export'}">
+            <input type="checkbox" class="edr-check" data-id="${r.id}" ${isSelected ? 'checked' : ''} ${isDone ? 'disabled' : ''} style="cursor:pointer;">
+          </label>
 
           <div class="record-info">
             <div class="record-main-line">
@@ -484,34 +485,15 @@
 
       const chk = card.querySelector(".edr-check");
       if (chk) {
-        chk.addEventListener("click", (e) => {
-          e.stopPropagation();
-        });
-        chk.addEventListener("change", (e) => {
+        const handleToggle = (e) => {
           e.stopPropagation();
           edr.toggleSelect(id, chk.checked);
-        });
+          card.classList.toggle("is-selected", chk.checked);
+          updateLivePreview();
+        };
+        chk.addEventListener("click", handleToggle);
+        chk.addEventListener("change", handleToggle);
       }
-
-      // Clicking checkbox column directly toggles checkbox
-      const selectCol = card.querySelector(".record-select-col");
-      selectCol?.addEventListener("click", (e) => {
-        e.stopPropagation();
-        if (report.done || !chk) return;
-        if (e.target !== chk) {
-          chk.checked = !chk.checked;
-          edr.toggleSelect(id, chk.checked);
-        }
-      });
-
-      // Clicking the row body (not action buttons) toggles selection
-      card.addEventListener("click", (e) => {
-        const ignore = e.target.closest(".record-actions, .record-select-col, .record-dropdown-menu, a, button, input");
-        if (ignore) return;
-        if (report.done || !chk) return;
-        chk.checked = !chk.checked;
-        edr.toggleSelect(id, chk.checked);
-      });
 
       // View SS
       const triggerView = async () => {
@@ -810,6 +792,42 @@
     }
   }
 
+  async function sendSelectedReportsToAudit(selectedReports) {
+    const reports = Array.isArray(selectedReports) ? selectedReports : [selectedReports];
+    if (!reports.length) {
+      showToast("Select at least one EDR to send to CCTV Audit.", "warning");
+      return;
+    }
+
+    let createdCount = 0;
+    let updatedCount = 0;
+
+    for (const rep of reports) {
+      try {
+        const res = edr.sendReportToAudit(rep);
+        if (res && res.action === "created") createdCount++;
+        else updatedCount++;
+      } catch (err) {
+        console.error("sendReportToAudit error for EDR:", rep.id, err);
+      }
+    }
+
+    renderEdrList(edr.getReports());
+    if (typeof renderAuditTable === "function") {
+      renderAuditTable();
+    }
+
+    if (createdCount > 0 && updatedCount > 0) {
+      showToast(`Sent ${createdCount} EDR(s) to CCTV Audit (${updatedCount} updated).`, "success");
+    } else if (createdCount > 0) {
+      showToast(`Sent ${createdCount} EDR(s) to CCTV Audit. NOC starts as Pending.`, "success");
+    } else if (updatedCount > 0) {
+      showToast(`Updated ${updatedCount} existing record(s) in CCTV Audit.`, "info");
+    } else {
+      showToast("Selected EDRs processed for CCTV Audit.", "info");
+    }
+  }
+
   async function sendSingleReportToDocs(report) {
     if (!report) {
       showToast("No EDR report specified.", "error");
@@ -914,16 +932,12 @@
       }
 
       const selected = edr.getReports().filter(r => r.selected && !r.done);
-      if (selected.length === 1) {
-        await sendSingleReportToAudit(selected[0]);
-        return;
-      }
-      if (selected.length > 1) {
-        showToast("Please select only ONE EDR to send to CCTV Audit.", "warning");
+      if (selected.length >= 1) {
+        await sendSelectedReportsToAudit(selected);
         return;
       }
 
-      showToast("Complete the EDR form or select a saved record from the list.", "info");
+      showToast("Complete the EDR form or select at least one saved record from the list.", "info");
     });
 
     // Send to Google Docs (From Right Column Teams Dispatch Header)
@@ -950,22 +964,18 @@
     // Send to CCTV Audit (From Right Column Teams Dispatch Header)
     el("btnSendSelectedToAudit")?.addEventListener("click", async () => {
       const selected = edr.getReports().filter(r => r.selected && !r.done);
-      if (selected.length === 1) {
-        await sendSingleReportToAudit(selected[0]);
-        return;
-      }
-      if (selected.length > 1) {
-        showToast("Please select only ONE EDR to send to CCTV Audit.", "warning");
+      if (selected.length >= 1) {
+        await sendSelectedReportsToAudit(selected);
         return;
       }
 
       const editing = edr.getEditingReport();
       if (editing) {
-        await sendSingleReportToAudit(editing);
+        await sendSelectedReportsToAudit([editing]);
         return;
       }
 
-      showToast("Select one EDR from the saved list to send to CCTV Audit.", "info");
+      showToast("Select at least one EDR from the saved list to send to CCTV Audit.", "info");
     });
 
     // Select all / Clear selection
@@ -1188,13 +1198,13 @@
       tabId: "tabEdr",
       paneId: "paneEdr",
       title: "End of the Day Report",
-      subtitle: "Manual Operations"
+      subtitle: ""
     },
     audit: {
       tabId: "tabAudit",
       paneId: "paneAudit",
       title: "CCTV Audit",
-      subtitle: "Daily Operations Tracker"
+      subtitle: ""
     },
     sorter: {
       tabId: "tabSorter",
@@ -1206,13 +1216,13 @@
       tabId: "tabMaintenance",
       paneId: "paneMaintenance",
       title: "Maintenance",
-      subtitle: "Daily Inspection & Equipment Report"
+      subtitle: ""
     },
     pending: {
       tabId: "tabPending",
       paneId: "panePending",
       title: "Pending Reports",
-      subtitle: "Follow-Up & Escalation Tracker"
+      subtitle: ""
     },
     masterlist: {
       tabId: "tabMasterlist",
@@ -1264,7 +1274,11 @@
     const titleEl = document.querySelector(".workspace-main-title");
     const subBadge = document.querySelector(".workspace-title-wrap .badge");
     if (titleEl) titleEl.textContent = WORKSPACES[targetKey].title;
-    if (subBadge) subBadge.textContent = WORKSPACES[targetKey].subtitle;
+    if (subBadge) {
+      const sub = WORKSPACES[targetKey].subtitle || "";
+      subBadge.textContent = sub;
+      subBadge.style.display = sub ? "inline-flex" : "none";
+    }
 
     // Activate hooks
     if (targetKey === "audit") {
