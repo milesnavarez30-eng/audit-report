@@ -1,0 +1,264 @@
+﻿<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="UTF-8">
+  <title>CCTV OPS V2 - Follow Up Reports Functional Parity Suite</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #0b0f19;
+      color: #f1f5f9;
+      padding: 24px;
+      margin: 0;
+    }
+    h1 { font-size: 18px; margin: 0 0 12px 0; color: #38bdf8; }
+    #summary {
+      padding: 12px 16px;
+      border-radius: 6px;
+      font-weight: 600;
+      margin-bottom: 16px;
+      font-size: 14px;
+    }
+    .pass-banner { background: rgba(16, 185, 129, 0.2); border: 1px solid #10b981; color: #34d399; }
+    .fail-banner { background: rgba(239, 68, 68, 0.2); border: 1px solid #ef4444; color: #f87171; }
+    .test-log {
+      font-family: monospace;
+      font-size: 11.5px;
+      line-height: 1.6;
+      background: #151923;
+      padding: 16px;
+      border: 1px solid #232a3b;
+      border-radius: 6px;
+      max-height: 500px;
+      overflow-y: auto;
+    }
+    .pass { color: #34d399; }
+    .fail { color: #f87171; font-weight: bold; }
+    .info { color: #94a3b8; }
+    iframe {
+      width: 1280px;
+      height: 700px;
+      border: 1px solid #232a3b;
+      border-radius: 6px;
+      margin-top: 20px;
+      background: #0e121b;
+    }
+  </style>
+</head>
+<body>
+  <h1>CCTV OPS V2 - Follow Up Reports Functional Parity Test Suite</h1>
+  <div id="summary" class="info">Running parity verification suite...</div>
+  <div id="log" class="test-log"><div class="info">Γä╣ SECTION 1: Service contracts and constants</div><div class="pass">Γ£ö PASS: window.followupService is defined</div><div class="pass">Γ£ö PASS: window.CCTV_FOLLOWUP alias is defined</div><div class="pass">Γ£ö PASS: DB_NAME is cctv_followup_reports_v1</div><div class="pass">Γ£ö PASS: STORE_NAME is workspace</div><div class="pass">Γ£ö PASS: STATE_KEY is reports</div><div class="pass">Γ£ö PASS: CLOSED status includes 'Resolved'</div><div class="pass">Γ£ö PASS: CLOSED status does not include 'Waiting for TL'</div><div class="info">Γä╣ SECTION 2: Statuses and helper functions</div><div class="pass">Γ£ö PASS: STATUSES contains all 6 authoritative statuses</div><div class="pass">Γ£ö PASS: statusClass('Resolved') returns 'resolved'</div><div class="pass">Γ£ö PASS: statusClass('TL Disputed') returns 'disputed'</div><div class="pass">Γ£ö PASS: statusClass('Need OM Verification') returns 'verify'</div><div class="pass">Γ£ö PASS: statusClass('Verified by OM') returns 'verified'</div><div class="pass">Γ£ö PASS: statusClass('TL Replied') returns 'replied'</div><div class="pass">Γ£ö PASS: statusClass('Waiting for TL') returns 'waiting'</div><div class="info">Γä╣ SECTION 3: URL safety validation</div><div class="pass">Γ£ö PASS: safeWebUrl accepts https URL</div><div class="pass">Γ£ö PASS: safeWebUrl accepts http URL</div><div class="pass">Γ£ö PASS: safeWebUrl blocks javascript: URLs</div><div class="pass">Γ£ö PASS: safeWebUrl rejects malformed strings</div><div class="info">Γä╣ SECTION 4: Record Creation &amp; Sorting</div><div class="pass">Γ£ö PASS: Generated report ID starts with 'fu_'</div><div class="pass">Γ£ö PASS: Report contains createdAt ISO timestamp</div><div class="pass">Γ£ö PASS: Open newest report is prioritized first</div><div class="pass">Γ£ö PASS: Open older report is prioritized second</div><div class="pass">Γ£ö PASS: Resolved report is sorted to the bottom</div><div class="pass">Γ£ö PASS: getOpenCount correctly returns 2 open reports</div><div class="info">Γä╣ SECTION 5: IndexedDB Direct Read/Write Persistence</div></div>
+  <iframe id="appFrame" src="../cctv-ops-v2/index.html?workspace=followup"></iframe>
+
+  <script>
+    const logEl = document.getElementById("log");
+    const summaryEl = document.getElementById("summary");
+    let passed = 0;
+    let failed = 0;
+
+    function log(msg, type = "info") {
+      const div = document.createElement("div");
+      div.className = type;
+      div.textContent = (type === "pass" ? "Γ£ö PASS: " : type === "fail" ? "Γ£û FAIL: " : "Γä╣ ") + msg;
+      logEl.appendChild(div);
+      console.log(div.textContent);
+    }
+
+    function assert(cond, desc) {
+      if (cond) {
+        passed++;
+        log(desc, "pass");
+      } else {
+        failed++;
+        log(desc, "fail");
+      }
+    }
+
+    const testPng = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAA7SURBVHhe7c4BDQAACAMw9E/tUwwmFvw+yZptWc3MzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMxfmA0G6kFf2u/6fAAAAABJRU5ErkJggg==";
+
+    window.addEventListener("message", async (e) => {
+      // reserved for child messages
+    });
+
+    const frame = document.getElementById("appFrame");
+    frame.onload = async () => {
+      // Allow modules to boot
+      await new Promise(r => setTimeout(r, 1200));
+      const win = frame.contentWindow;
+      const doc = frame.contentDocument;
+
+      try {
+        log("SECTION 1: Service contracts and constants");
+        assert(win.followupService !== undefined, "window.followupService is defined");
+        assert(win.CCTV_FOLLOWUP !== undefined, "window.CCTV_FOLLOWUP alias is defined");
+        assert(win.followupService.DB_NAME === "cctv_followup_reports_v1", "DB_NAME is cctv_followup_reports_v1");
+        assert(win.followupService.STORE_NAME === "workspace", "STORE_NAME is workspace");
+        assert(win.followupService.STATE_KEY === "reports", "STATE_KEY is reports");
+        assert(win.followupService.CLOSED.has("Resolved") === true, "CLOSED status includes 'Resolved'");
+        assert(win.followupService.CLOSED.has("Waiting for TL") === false, "CLOSED status does not include 'Waiting for TL'");
+
+        log("SECTION 2: Statuses and helper functions");
+        assert(win.followupService.STATUSES.length === 6, "STATUSES contains all 6 authoritative statuses");
+        assert(win.followupService.statusClass("Resolved") === "resolved", "statusClass('Resolved') returns 'resolved'");
+        assert(win.followupService.statusClass("TL Disputed") === "disputed", "statusClass('TL Disputed') returns 'disputed'");
+        assert(win.followupService.statusClass("Need OM Verification") === "verify", "statusClass('Need OM Verification') returns 'verify'");
+        assert(win.followupService.statusClass("Verified by OM") === "verified", "statusClass('Verified by OM') returns 'verified'");
+        assert(win.followupService.statusClass("TL Replied") === "replied", "statusClass('TL Replied') returns 'replied'");
+        assert(win.followupService.statusClass("Waiting for TL") === "waiting", "statusClass('Waiting for TL') returns 'waiting'");
+
+        log("SECTION 3: URL safety validation");
+        assert(win.followupService.safeWebUrl("https://teams.microsoft.com/l/message/123") === "https://teams.microsoft.com/l/message/123", "safeWebUrl accepts https URL");
+        assert(win.followupService.safeWebUrl("http://teams.microsoft.com") === "http://teams.microsoft.com/", "safeWebUrl accepts http URL");
+        assert(win.followupService.safeWebUrl("javascript:alert(1)") === "", "safeWebUrl blocks javascript: URLs");
+        assert(win.followupService.safeWebUrl("not-a-url") === "", "safeWebUrl rejects malformed strings");
+
+        log("SECTION 4: Record Creation & Sorting");
+        const r1 = win.followupService.createReport({
+          date: "2026-09-08",
+          om: "CCTV OM MIRAH",
+          label: "TL Sarah Connor",
+          cctvLink: "https://teams.microsoft.com/m1",
+          status: "Resolved",
+          remarks: "Case closed by OM",
+          screenshotData: testPng
+        });
+        const r2 = win.followupService.createReport({
+          date: "2026-09-09",
+          om: "CCTV OM JOHN",
+          label: "TL Dutch Schaefer",
+          cctvLink: "https://teams.microsoft.com/m2",
+          status: "Waiting for TL",
+          remarks: "Pending TL response",
+          screenshotData: testPng
+        });
+        const r3 = win.followupService.createReport({
+          date: "2026-09-10",
+          om: "CCTV OM KYLE",
+          label: "TL Reese",
+          cctvLink: "",
+          status: "TL Disputed",
+          remarks: "TL claims device is company-issued",
+          screenshotData: testPng
+        });
+
+        assert(r1.id.startsWith("fu_"), "Generated report ID starts with 'fu_'");
+        assert(r1.createdAt !== undefined, "Report contains createdAt ISO timestamp");
+
+        const sorted = win.followupService.sortReports([r1, r2, r3]);
+        assert(sorted[0].id === r3.id, "Open newest report is prioritized first");
+        assert(sorted[1].id === r2.id, "Open older report is prioritized second");
+        assert(sorted[2].id === r1.id, "Resolved report is sorted to the bottom");
+        assert(win.followupService.getOpenCount([r1, r2, r3]) === 2, "getOpenCount correctly returns 2 open reports");
+
+        log("SECTION 5: IndexedDB Direct Read/Write Persistence");
+        await win.followupService.saveReports([r1, r2, r3]);
+        const loadedFromDb = await win.followupService.loadReports();
+        assert(loadedFromDb.length === 3, "Successfully loaded 3 reports from IndexedDB");
+        assert(loadedFromDb.some(r => r.label === "TL Sarah Connor"), "IndexedDB contains Sarah Connor report");
+        assert(loadedFromDb.some(r => r.screenshotData === testPng), "IndexedDB preserved proof screenshot data URL");
+
+        log("SECTION 6: History Adapter Integration");
+        assert(win.__workspaceHistoryAdapters !== undefined, "window.__workspaceHistoryAdapters is defined");
+        assert(win.__workspaceHistoryAdapters.followupReports !== undefined, "followupReports adapter is registered");
+        const historySnap = await win.__workspaceHistoryAdapters.followupReports.snapshot();
+        assert(Array.isArray(historySnap) && historySnap.length === 3, "Snapshot returns valid array of 3 reports");
+
+        log("SECTION 7: DOM Structure & Controls Parity");
+        const pane = doc.getElementById("paneFollowup");
+        assert(pane !== null, "#paneFollowup exists in document");
+        assert(!pane.hidden, "#paneFollowup is visible when workspace=followup");
+
+        assert(doc.getElementById("followupOpenCount") !== null, "#followupOpenCount element exists");
+        assert(doc.getElementById("followupResolvedCount") !== null, "#followupResolvedCount element exists");
+        assert(doc.getElementById("followupTotalCount") !== null, "#followupTotalCount element exists");
+
+        assert(doc.getElementById("followupDate") !== null, "#followupDate input exists");
+        assert(doc.getElementById("followupOm") !== null, "#followupOm input exists");
+        assert(doc.getElementById("followupLabel") !== null, "#followupLabel input exists");
+        assert(doc.getElementById("followupCctvLink") !== null, "#followupCctvLink input exists");
+        assert(doc.getElementById("followupStatus") !== null, "#followupStatus select exists");
+        assert(doc.getElementById("followupRemarks") !== null, "#followupRemarks textarea exists");
+
+        assert(doc.getElementById("followupAddShotZone") !== null, "#followupAddShotZone dropzone exists");
+        assert(doc.getElementById("followupChooseShotBtn") !== null, "#followupChooseShotBtn button exists");
+        assert(doc.getElementById("followupAddBtn") !== null, "#followupAddBtn button exists");
+        assert(doc.getElementById("followupClearBtn") !== null, "#followupClearBtn button exists");
+
+        assert(doc.getElementById("followupReportList") !== null, "#followupReportList queue exists");
+        assert(doc.getElementById("tabFollowup") !== null, "#tabFollowup rail button exists");
+        assert(doc.getElementById("railFollowupBadge") !== null, "#railFollowupBadge badge exists");
+
+        log("SECTION 8: UI End-to-End Workflow Validation");
+        // Clear existing reports first for deterministic test
+        await win.followupService.saveReports([]);
+        win.renderFollowupWorkspace();
+        await new Promise(r => setTimeout(r, 200));
+
+        // Fill Add Form
+        doc.getElementById("followupDate").value = "2026-09-10";
+        doc.getElementById("followupOm").value = "CCTV OM VERIFIED";
+        doc.getElementById("followupLabel").value = "TL James Bond Agent 007";
+        doc.getElementById("followupCctvLink").value = "https://teams.microsoft.com/l/message/test";
+        doc.getElementById("followupStatus").value = "Waiting for TL";
+        doc.getElementById("followupRemarks").value = "Observed mobile device on production floor.";
+        win.setFollowupAddScreenshot(testPng);
+
+        // Click Add
+        doc.getElementById("followupAddBtn").click();
+        await new Promise(r => setTimeout(r, 400));
+
+        // Verify queue updated
+        const cards = doc.querySelectorAll(".followup-report-card");
+        assert(cards.length === 1, "Queue rendered exactly 1 card after addition");
+        const firstCard = cards[0];
+        assert(firstCard.querySelector(".followup-card-title").textContent.includes("James Bond"), "Card title contains 'James Bond'");
+        assert(firstCard.querySelector(".followup-status-pill").classList.contains("waiting"), "Status pill has 'waiting' CSS class");
+        assert(firstCard.querySelector(".followup-large-shot img") !== null, "Proof screenshot thumbnail is displayed in card");
+
+        // Verify Open button is enabled
+        const openBtn = firstCard.querySelector(".followup-open-link-btn");
+        assert(openBtn !== null && !openBtn.disabled, "CCTV link 'Open' button is enabled for valid URL");
+
+        // Verify KPI counts
+        assert(doc.getElementById("followupOpenCount").textContent === "1", "Open count KPI is 1");
+        assert(doc.getElementById("railFollowupBadge").textContent === "1", "Rail badge count is 1");
+
+        // Inline edit status to Resolved
+        const statusSelect = firstCard.querySelector(".followup-edit-status");
+        statusSelect.value = "Resolved";
+        statusSelect.dispatchEvent(new Event("change"));
+        await new Promise(r => setTimeout(r, 500));
+
+        assert(doc.getElementById("followupOpenCount").textContent === "0", "Open count decremented to 0 upon resolving");
+        assert(doc.getElementById("followupResolvedCount").textContent === "1", "Resolved count KPI is 1");
+
+        // Clean up database
+        await win.followupService.saveReports([]);
+
+        // Final Summary
+        summaryEl.textContent = `PARITY SUITE COMPLETED: ${passed} PASSED, ${failed} FAILED`;
+        summaryEl.className = failed === 0 ? "pass-banner" : "fail-banner";
+
+        // Send results back to test runner
+        fetch("http://localhost:8080/api/test_report", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            testSuite: "V2 Follow Up Reports Parity",
+            passed,
+            failed,
+            summary: `FOLLOWUP PARITY: ${passed} PASSED, ${failed} FAILED`
+          })
+        }).catch(() => {});
+
+      } catch (err) {
+        log(`CRITICAL TEST EXCEPTION: ${err.message}\n${err.stack}`, "fail");
+        failed++;
+        summaryEl.textContent = `TEST SUITE ERROR: ${err.message}`;
+        summaryEl.className = "fail-banner";
+      }
+    };
+  </script>
+
+
+</body></html>

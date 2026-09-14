@@ -906,6 +906,187 @@
     }
   }
 
+  // =========================================================================
+  // AI SORTER DRAFT PERSISTENCE (IndexedDB primary + localStorage meta/fallback)
+  // Scoped per active operator via CCTV_DATA_SCOPE
+  // =========================================================================
+  const DRAFT_DB_NAME = "cctv_ai_sorter_workspace_v1";
+  const DRAFT_META_KEY = "cctv_ai_sorter_draft_meta_v1";
+  const DRAFT_FALLBACK_KEY = "cctv_ai_sorter_draft_fallback_v1";
+
+  async function openSorterDb(timeoutMs = 1500) {
+    const dbName = window.CCTV_V2_CONFIG?.DATABASES?.AI_SORTER || DRAFT_DB_NAME;
+    return new Promise((resolve, reject) => {
+      let settled = false;
+      const timer = setTimeout(() => {
+        if (!settled) {
+          settled = true;
+          reject(new Error("IndexedDB open timeout"));
+        }
+      }, timeoutMs);
+
+      try {
+        const req = indexedDB.open(dbName, 1);
+        req.onupgradeneeded = () => {
+          const db = req.result;
+          if (!db.objectStoreNames.contains("state")) {
+            db.createObjectStore("state", { keyPath: "key" });
+          }
+        };
+        req.onsuccess = () => {
+          if (!settled) {
+            settled = true;
+            clearTimeout(timer);
+            resolve(req.result);
+          } else {
+            try { req.result.close(); } catch (_) {}
+          }
+        };
+        req.onerror = () => {
+          if (!settled) {
+            settled = true;
+            clearTimeout(timer);
+            reject(req.error);
+          }
+        };
+        req.onblocked = () => {
+          if (!settled) {
+            settled = true;
+            clearTimeout(timer);
+            reject(new Error("IndexedDB open blocked"));
+          }
+        };
+      } catch (err) {
+        if (!settled) {
+          settled = true;
+          clearTimeout(timer);
+          reject(err);
+        }
+      }
+    });
+  }
+
+  async function saveDraft(draft) {
+    if (!draft) return false;
+    const payload = {
+      rawText: typeof draft.rawText === "string" ? draft.rawText : "",
+      assignedRows: Array.isArray(draft.assignedRows) ? draft.assignedRows : [],
+      parsedRows: Array.isArray(draft.parsedRows) ? draft.parsedRows : [],
+      assignments: Array.isArray(draft.assignments) ? draft.assignments : [],
+      selectedRows: Array.isArray(draft.selectedRows) ? draft.selectedRows : [],
+      searchQuery: typeof draft.searchQuery === "string" ? draft.searchQuery : "",
+      savedAt: Date.now()
+    };
+
+    // 1. Synchronously save lightweight metadata to localStorage (scoped per user)
+    try {
+      localStorage.setItem(DRAFT_META_KEY, JSON.stringify({
+        hasDraft: true,
+        rowCount: payload.assignedRows.length,
+        hasRawText: !!payload.rawText.trim(),
+        savedAt: payload.savedAt
+      }));
+    } catch (e) {
+      console.warn("Could not save sorter draft meta to localStorage:", e);
+    }
+
+    // 2. Synchronously save fallback copy to localStorage for instant recovery
+    try {
+      localStorage.setItem(DRAFT_FALLBACK_KEY, JSON.stringify(payload));
+    } catch (fbErr) {
+      // QuotaExceededError is gracefully handled; IndexedDB will hold full payload
+    }
+
+    // 3. Persist authoritative working state into IndexedDB
+    try {
+      const db = await openSorterDb(1500);
+      return await new Promise((resolve, reject) => {
+        const tx = db.transaction("state", "readwrite");
+        tx.objectStore("state").put({ key: "current_draft", value: payload });
+        tx.oncomplete = () => {
+          db.close();
+          resolve(true);
+        };
+        tx.onerror = () => {
+          db.close();
+          reject(tx.error);
+        };
+      });
+    } catch (idbErr) {
+      console.warn("IndexedDB saveDraft encountered error (using localStorage fallback):", idbErr);
+      return true; // Fallback in localStorage is already set
+    }
+  }
+
+  async function loadDraft() {
+    // 1. Try IndexedDB first
+    try {
+      const db = await openSorterDb(1500);
+      const record = await new Promise((resolve) => {
+        const tx = db.transaction("state", "readonly");
+        const req = tx.objectStore("state").get("current_draft");
+        req.onsuccess = () => {
+          const val = req.result ? req.result.value : null;
+          resolve(val);
+        };
+        req.onerror = () => resolve(null);
+        tx.oncomplete = () => db.close();
+      });
+      if (record && (record.assignedRows?.length || record.rawText?.trim())) {
+        return record;
+      }
+    } catch (err) {
+      console.warn("IndexedDB loadDraft error, checking localStorage fallback:", err);
+    }
+
+    // 2. Try localStorage fallback if IndexedDB is empty or failed
+    try {
+      const raw = localStorage.getItem(DRAFT_FALLBACK_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed && (parsed.assignedRows?.length || parsed.rawText?.trim())) {
+          return parsed;
+        }
+      }
+    } catch (e) {
+      console.warn("localStorage fallback loadDraft error:", e);
+    }
+
+    return null;
+  }
+
+  async function clearDraft() {
+    try {
+      localStorage.removeItem(DRAFT_META_KEY);
+      localStorage.removeItem(DRAFT_FALLBACK_KEY);
+    } catch (e) {
+      console.warn("Could not remove sorter draft from localStorage:", e);
+    }
+
+    try {
+      const db = await openSorterDb(1500);
+      return await new Promise((resolve) => {
+        const tx = db.transaction("state", "readwrite");
+        const req = tx.objectStore("state").delete("current_draft");
+        req.onsuccess = () => resolve(true);
+        req.onerror = () => resolve(false);
+        tx.oncomplete = () => db.close();
+      });
+    } catch (err) {
+      console.warn("IndexedDB clearDraft error:", err);
+      return false;
+    }
+  }
+
+  function getDraftMeta() {
+    try {
+      const raw = localStorage.getItem(DRAFT_META_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
   const sorterService = {
     FLOOR,
     floorOrder,
@@ -937,7 +1118,11 @@
     parseMiniSheetClipboardRows,
     resetAssignments,
     getSortedRows,
-    setSortedRows
+    setSortedRows,
+    saveDraft,
+    loadDraft,
+    clearDraft,
+    getDraftMeta
   };
 
   root.sorterService = sorterService;

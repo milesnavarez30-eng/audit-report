@@ -1,0 +1,16 @@
+﻿<!DOCTYPE html>
+<html>
+<body style="margin:0; background:#0b0f17;">
+<iframe id="f" src="http://localhost:8080/cctv-ops-v2/index.html?workspace=maintenance" style="width:960px; height:800px; border:none;"></iframe>
+<script>
+window.onload = async () => {
+  const frame = document.getElementById('f');
+  await new Promise(r => frame.onload = r);
+  await new Promise(r => setTimeout(r, 1500));
+  const doc = frame.contentDocument;
+  const chips = doc.querySelectorAll('.maint-preset-chip');
+  if (chips.length > 0) chips[0].click();
+};
+</script>
+</body>
+</html>

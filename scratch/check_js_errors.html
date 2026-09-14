@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head><title>Check JS Errors</title></head>
+<body>
+<div id="log"></div>
+<script>
+window.onerror = function(msg, url, line, col, err) {
+  const d = document.createElement("div");
+  d.textContent = `ERROR: ${msg} at ${url}:${line}:${col} \n ${err ? err.stack : ""}`;
+  document.getElementById("log").appendChild(d);
+  fetch("http://localhost:8080/api/test_report", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({ summary: `JS ERROR: ${msg} line ${line}`, error: msg, line, stack: err ? err.stack : "" })
+  });
+};
+</script>
+<script src="../auth-config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script src="../cctv-ops-v2/js/config.js"></script>
+<script src="../cctv-ops-v2/js/storage.js"></script>
+<script src="../cctv-ops-v2/js/shared.js"></script>
+<script src="../cctv-ops-v2/js/services/auth-service.js"></script>
+<script src="../cctv-ops-v2/js/services/edr-service.js"></script>
+<script src="../cctv-ops-v2/js/services/audit-service.js"></script>
+<script src="../cctv-ops-v2/js/services/sorter-service.js"></script>
+<script src="../cctv-ops-v2/js/services/maintenance-service.js"></script>
+<script src="../cctv-ops-v2/js/services/pending-service.js"></script>
+<script src="../cctv-ops-v2/js/services/followup-service.js"></script>
+<script src="../cctv-ops-v2/js/app.js"></script>
+<script>
+setTimeout(() => {
+  if (!document.getElementById("log").children.length) {
+    const d = document.createElement("div");
+    d.textContent = "SUCCESS: All scripts parsed and loaded without syntax errors!";
+    document.getElementById("log").appendChild(d);
+    fetch("http://localhost:8080/api/test_report", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({ summary: "SCRIPTS_OK: All scripts parsed successfully" })
+    });
+  }
+}, 500);
+</script>
+</body>
+</html>

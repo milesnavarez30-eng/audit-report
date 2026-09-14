@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="UTF-8">
+  <title>V1 -&gt; V2 EDR Parity Test Runner</title>
+  <style>
+    body { font-family: monospace; background: #0b0f19; color: #e2e8f0; padding: 20px; font-size: 13px; line-height: 1.5; }
+    .pass { color: #4ade80; font-weight: bold; }
+    .fail { color: #f87171; font-weight: bold; }
+    .section { margin-top: 15px; border-bottom: 1px solid #334155; padding-bottom: 4px; color: #38bdf8; font-size: 14px; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <h2>CCTV OPS V2 - EDR Function Parity Verification Suite</h2>
+  <div id="log"></div>
+
+  <!-- Dependencies -->
+  <script src="../auth-config.js"></script>
+  <script src="../cctv-ops-v2/js/config.js"></script>
+  <script src="../cctv-ops-v2/js/storage.js"></script>
+  <script src="../cctv-ops-v2/js/services/auth-service.js"></script>
+  <script src="../cctv-ops-v2/js/services/edr-service.js"></script>
+
+  <script>
+    const logDiv = document.getElementById("log");
+    let totalTests = 0;
+    let passedTests = 0;
+    let failedTests = 0;
+
+    function assert(desc, condition, details = "") {
+      totalTests++;
+      const el = document.createElement("div");
+      if (condition) {
+        passedTests++;
+        el.innerHTML = `<span class="pass">[PASS]</span> ${desc}`;
+      } else {
+        failedTests++;
+        el.innerHTML = `<span class="fail">[FAIL]</span> ${desc} - <small>${details}</small>`;
+      }
+      logDiv.appendChild(el);
+    }
+
+    function section(title) {
+      const el = document.createElement("div");
+      el.className = "section";
+      el.textContent = `=== ${title} ===`;
+      logDiv.appendChild(el);
+    }
+
+    async function runSuite() {
+      const edr = window.CCTV_EDR;
+      const cfg = window.CCTV_V2_CONFIG;
+      const storage = window.CCTV_STORAGE;
+
+      // Initialize EDR service
+      await edr.init();
+
+      // TEST 1: EDR Service & Title Confirmation
+      section("TEST 1: EDR Workspace & Service Init");
+      assert("EDR service initialized", typeof edr.init === "function");
+      assert("EDR Title is 'End of the Day Report'", cfg.EDR_WORKSPACE_TITLE === "End of the Day Report");
+      assert("EDR Sidebar Tab is 'EDR'", cfg.EDR_TAB_LABEL === "EDR");
+
+      // TEST 2 & 3: Create & Save complete EDR report
+      section("TEST 2 & 3: Create & Save Complete EDR Report");
+      const testShot = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==";
+      const testReportData = {
+        site: "Mabini Site A - 1st Floor",
+        date: "2026-09-10",
+        timeObserved: "03:15:00 AM - 03:25:00 AM",
+        supervisorRole: "Team Leader",
+        supervisorName: "Abdurajan, Radzmil",
+        omName: "Alfeche, Llyr",
+        subjectType: "Agent/s",
+        subjectName: "Dela Cruz, Juan",
+        account: "Sales Inbound",
+        incident: "Sleeping while on active shift queue",
+        action: "Supervisor issued verbal warning and verified CCTV footage",
+        clipLink: "https://drive.google.com/file/d/123456789/view",
+        screenshotData: testShot
+      };
+
+      const savedReport = await edr.createOrUpdate(testReportData);
+      assert("Report saved with unique ID", !!savedReport && !!savedReport.id);
+      assert("Saved report has screenshot attached", savedReport.screenshotData === testShot);
+      assert("Saved report has CCTV Clip URL", savedReport.clipLink === "https://drive.google.com/file/d/123456789/view");
+
+      const allReports = edr.getReports();
+      assert("Report immediately appears in EDR list", allReports.some(r => r.id === savedReport.id));
+
+      // TEST 4 & 5: Screenshot Actions & Conversion
+      section("TEST 4 & 5: Screenshot Actions & PNG Blob");
+      let copyShotWorked = false;
+      try {
+        const pngBlob = await edr.dataUrlToBlob(savedReport.screenshotData);
+        copyShotWorked = !!pngBlob && pngBlob.type === "image/png";
+      } catch (_) {}
+      assert("Screenshot converts to native image/png Blob", copyShotWorked);
+
+      // TEST 6: Persistence in cctv_edr_workspace_v2 (Simulate reload)
+      section("TEST 6: Storage Persistence in cctv_edr_workspace_v2");
+      const workspaceSnapshot = await edr.readWorkspaceDb();
+      assert("Workspace stored in cctv_edr_workspace_v2", !!workspaceSnapshot);
+      assert("Workspace contains reports array", Array.isArray(workspaceSnapshot.reports));
+      const foundInDb = workspaceSnapshot.reports.find(r => r.id === savedReport.id);
+      assert("Saved report exists in cctv_edr_workspace_v2 DB", !!foundInDb);
+      assert("Screenshot persists in cctv_edr_workspace_v2 DB", foundInDb && foundInDb.screenshotData === testShot);
+
+      // TEST 7 & 8: Edit and Update report
+      section("TEST 7 & 8: Edit and Update Report");
+      edr.setEditingId(savedReport.id);
+      const editingRep = edr.getEditingReport();
+      assert("getEditingReport returns target report", editingRep && editingRep.id === savedReport.id);
+      assert("Editing report retains all fields", editingRep.supervisorName === "Abdurajan, Radzmil" && editingRep.incident.includes("Sleeping"));
+
+      const updatedRep = await edr.createOrUpdate({
+        ...editingRep,
+        action: "Supervisor updated coaching documentation and submitted ticket"
+      });
+      assert("Update preserved same report ID", updatedRep.id === savedReport.id);
+      assert("Update preserved screenshot", updatedRep.screenshotData === testShot);
+      assert("Update updated action text", updatedRep.action.includes("coaching documentation"));
+
+      // TEST 9 & 10: TL vs OM Respondent Separation
+      section("TEST 9 & 10: TL vs OM Respondent Isolation");
+      const tls = edr.getTeamLeaderNames();
+      const oms = edr.getOmNames();
+      assert("Authoritative TL list loaded (>300 names)", tls.length > 300);
+      assert("Authoritative OM list loaded (>20 names)", oms.length >= 20);
+      const tlSample = tls[0];
+      const omSample = oms[0];
+      assert("TLs do not contain OMs", !tls.includes("Alfeche, Llyr"));
+      assert("OMs do not contain TLs", !oms.includes("Abdurajan, Radzmil"));
+
+      // TEST 11: Send to CCTV Audit Bridge
+      section("TEST 11: Send to CCTV Audit Parity");
+      const auditResult = edr.sendReportToAudit(updatedRep);
+      assert("sendReportToAudit returns created/updated status", auditResult && (auditResult.action === "created" || auditResult.action === "updated"));
+      assert("isReportInAudit returns true", edr.isReportInAudit(updatedRep.id) === true);
+      const auditEntries = storage.getItem(cfg.KEYS.ENTRY_LIST, []);
+      const matchedEntry = auditEntries.find(e => e.sourceEdrId === updatedRep.id);
+      assert("CCTV Audit entry contains mapped reasonCode", matchedEntry && matchedEntry.reasonCode === "SLEEPING");
+      assert("CCTV Audit entry contains NOC 'Pending'", matchedEntry && matchedEntry.noc === "Pending");
+      assert("CCTV Audit entry contains clean site", matchedEntry && matchedEntry.site === "Mabini Site A");
+
+      // TEST 12: Google Docs Sync Methods
+      section("TEST 12: Google Docs Integration");
+      assert("getDocsUrl returns valid default or saved URL", edr.isValidDocsUrl(edr.getDocsUrl()));
+      assert("cloudRecordPayload formats report correctly", edr.cloudRecordPayload(updatedRep).id === updatedRep.id);
+
+      // TEST 13 & 14: Facebook Posts & Teams Output
+      section("TEST 13 & 14: Facebook Shared Posts & Teams Output");
+      const fbLinks = [
+        "https://www.facebook.com/share/p/1B4wXyZ1/",
+        "https://www.facebook.com/share/p/2C5xYzA2/",
+        "https://www.facebook.com/share/p/3D6yZaB3/",
+        "https://www.facebook.com/share/p/4E7zAbC4/",
+        "https://www.facebook.com/share/p/5F8aBcD5/",
+        "https://www.facebook.com/share/p/6G9bCdE6/",
+        "https://www.facebook.com/share/p/7H0cDeF7/",
+        "https://www.facebook.com/share/p/8I1dEfG8/",
+        "https://www.facebook.com/share/p/9J2eFgH9/",
+        "https://www.facebook.com/share/p/0K3fGhI0/"
+      ].join("\n");
+
+      const teamsText = edr.buildTeamsOutput(fbLinks);
+      assert("Teams plain text contains site header", teamsText.includes("Mabini Site A - 1st Floor | CCTV | Sales Inbound"));
+      assert("Teams plain text contains Facebook shared post header", teamsText.includes("Facebook shared post"));
+      assert("Teams plain text contains CCTV Clip URL", teamsText.includes("CCTV Clip: https://drive.google.com/file/d/123456789/view"));
+      assert("Teams plain text does NOT contain 'data:image'", !teamsText.includes("data:image/"));
+
+      const teamsHtml = edr.buildTeamsHtml(fbLinks);
+      assert("Teams HTML contains Click here! hyperlink", teamsHtml.includes('>Click here!</a>'));
+      assert("Teams HTML hides raw URL beside Click here!", !teamsHtml.includes('Click here! (http'));
+      assert("Teams HTML contains all 10 Facebook links as <a> tags", teamsHtml.split('<a href="https://www.facebook.com').length === 11);
+      assert("Teams HTML does NOT contain Base64 data", !teamsHtml.includes("data:image/"));
+      assert("Teams HTML payload is compact (< 8KB)", teamsHtml.length < 8192);
+
+      // TEST 15 & 16: Done Toggle & Status Behavior
+      section("TEST 15 & 16: Done Toggle & Unselection");
+      assert("Report is initially selected and not done", updatedRep.selected === true && updatedRep.done === false);
+      await edr.toggleDone(updatedRep.id);
+      const doneRep = edr.getReports().find(r => r.id === updatedRep.id);
+      assert("toggleDone sets done = true", doneRep && doneRep.done === true);
+      assert("toggleDone unselects report (selected = false)", doneRep && doneRep.selected === false);
+
+      // TEST 17: Drafts Auto-Save & Restore Parity
+      section("TEST 17: Drafts Auto-Save & Restore");
+      const sampleDraft = {
+        site: "Mabini Site B - 3rd Floor",
+        date: "2026-09-10",
+        timeObserved: "04:00 AM",
+        supervisorRole: "OM",
+        supervisorName: "Alfeche, Llyr",
+        omName: "Alfeche, Llyr",
+        subjectType: "Agent/s",
+        subjectName: "Santos, Maria",
+        account: "Tech Support",
+        incident: "Unattended workstation with screen unlocked",
+        action: "Coaching given",
+        clipLink: ""
+      };
+      await edr.saveDraftForm(sampleDraft);
+      const retrievedDraft = edr.getDraftForm();
+      assert("Draft form saved and retrieved", retrievedDraft && retrievedDraft.subjectName === "Santos, Maria");
+      assert("Draft form preserved in workspace snapshot", (await edr.readWorkspaceDb()).form.subjectName === "Santos, Maria");
+
+      // TEST 18: Old V1 EDR Record Compatibility
+      section("TEST 18: Old V1 EDR Record Compatibility");
+      const oldV1Report = {
+        id: "edr_legacy_v1_test_99",
+        site: "Mabini Site A - 2nd Floor",
+        date: "2026-08-15",
+        timeObserved: "10:30 AM",
+        timeStart: "10:30 AM",
+        timeEnd: "",
+        supervisorRole: "Team Leader",
+        supervisorName: "Amor, Wendie",
+        omName: "",
+        subjectType: "Agent/s",
+        subjectName: "Reyes, Pedro",
+        account: "Customer Service",
+        incident: "Unauthorized mobile phone usage on production floor",
+        action: "Phone surrendered to locker, TL issued written notice",
+        clipLink: "",
+        screenshotData: testShot,
+        screenshotFileId: "drive_file_id_12345",
+        done: true,
+        doneAt: "2026-08-15T10:45:00.000Z",
+        createdAt: "2026-08-15T10:30:00.000Z",
+        updatedAt: "2026-08-15T10:45:00.000Z"
+      };
+
+      const normalized = edr.normalizeCloudRecord(oldV1Report);
+      assert("Old V1 record normalizes cleanly without data loss", normalized.id === oldV1Report.id);
+      assert("Old V1 screenshot preserved", normalized.screenshotData === testShot);
+      assert("Old V1 cloud file ID preserved", normalized.screenshotFileId === "drive_file_id_12345");
+
+      // Final summary
+      section("RESULTS SUMMARY");
+      const summaryEl = document.createElement("div");
+      summaryEl.style.fontSize = "16px";
+      summaryEl.style.marginTop = "10px";
+      window.__TEST_RESULTS__ = { total: totalTests, passed: passedTests, failed: failedTests };
+
+      // Send to server report endpoint
+      try {
+        await fetch("http://localhost:8080/api/test_report", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            summary: `RESULTS: ${passedTests} passed, ${failedTests} failed out of ${totalTests} assertions`,
+            totalPassed: passedTests,
+            totalFailed: failedTests,
+            timestamp: new Date().toISOString()
+          })
+        });
+      } catch (_) {}
+    }
+
+    runSuite();
+  </script>
+
+
+</body></html>

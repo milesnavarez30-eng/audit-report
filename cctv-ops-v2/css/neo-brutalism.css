@@ -1,0 +1,1090 @@
+/**
+ * CCTV OPS V2 — Dark Terminal / Neo-Brutalist Design System
+ * Stitch Redesign Integration — Final Approved Visual Direction
+ *
+ * Loaded LAST in the CSS chain to win specificity.
+ * Covers: global overrides, shell, shared components, workspace accents.
+ */
+
+/* ==========================================================================
+   GLOBAL DARK TERMINAL OVERRIDES
+   Switch app from any residual light-mode defaults to dark terminal.
+   ========================================================================== */
+
+html {
+  color-scheme: dark;
+}
+
+body {
+  font-family: var(--font-family);
+  background-color: var(--bg-app);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Dark terminal scrollbars */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #30363D; border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: #3D444D; }
+
+/* Selection */
+::selection { background: rgba(108, 92, 231, 0.35); color: #E6EDF3; }
+
+/* Focus rings */
+:focus-visible { outline: 2px solid var(--accent-primary); outline-offset: 2px; }
+
+/* Global headings — Space Grotesk for display presence */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
+  color: var(--text-primary);
+}
+
+p { color: var(--text-secondary); }
+a { color: var(--accent-secondary); }
+a:hover { color: #7BEEFD; }
+
+/* ==========================================================================
+   BUTTONS — Hard-edge neo-brutalist, dark surfaces
+   ========================================================================== */
+
+.btn {
+  font-family: var(--font-family);
+  font-weight: 600;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid var(--border-default);
+  background: var(--bg-surface-elevated);
+  color: var(--text-primary);
+  box-shadow: var(--shadow-xs);
+  transition: box-shadow var(--trans-fast), transform var(--trans-fast), background var(--trans-fast), border-color var(--trans-fast);
+}
+
+.btn:hover:not(:disabled) {
+  background: var(--bg-surface-hover);
+  border-color: var(--border-hover);
+  box-shadow: var(--shadow-sm);
+  transform: translate(-1px, -1px);
+}
+
+.btn:active:not(:disabled) {
+  box-shadow: none;
+  transform: translate(1px, 1px);
+}
+
+.btn:disabled {
+  opacity: 0.38;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* Primary — Violet command */
+.btn-primary {
+  background: var(--accent-primary);
+  color: #fff;
+  border-color: var(--accent-primary-hover);
+  box-shadow: var(--shadow-sm);
+}
+.btn-primary:hover:not(:disabled) {
+  background: var(--accent-primary-hover);
+  border-color: #8B5CF6;
+  box-shadow: var(--shadow-md);
+}
+
+/* Secondary — dark elevated */
+.btn-secondary {
+  background: var(--bg-surface-elevated);
+  color: var(--text-primary);
+  border-color: var(--border-default);
+}
+.btn-secondary:hover:not(:disabled) {
+  background: var(--bg-surface-hover);
+  border-color: var(--border-hover);
+}
+
+/* Outline — transparent fill */
+.btn-outline {
+  background: transparent;
+  color: var(--text-secondary);
+  border-color: var(--border-default);
+  box-shadow: none;
+}
+.btn-outline:hover:not(:disabled) {
+  background: var(--bg-surface-hover);
+  color: var(--text-primary);
+  border-color: var(--border-hover);
+  box-shadow: var(--shadow-xs);
+}
+
+/* Ghost — no chrome */
+.btn-ghost {
+  background: transparent;
+  border-color: transparent;
+  color: var(--text-muted);
+  box-shadow: none;
+}
+.btn-ghost:hover:not(:disabled) {
+  background: var(--bg-surface-hover);
+  border-color: var(--border-subtle);
+  color: var(--text-primary);
+  box-shadow: none;
+  transform: none;
+}
+
+/* Danger ghost — red accent on hover */
+.btn-danger-ghost {
+  background: transparent;
+  border-color: transparent;
+  color: var(--text-muted);
+  box-shadow: none;
+}
+.btn-danger-ghost:hover:not(:disabled) {
+  background: var(--accent-danger-soft);
+  border-color: var(--accent-danger);
+  color: var(--accent-danger);
+  box-shadow: none;
+  transform: none;
+}
+
+/* ==========================================================================
+   FORM CONTROLS — Dark input fields with violet focus
+   ========================================================================== */
+
+.form-control {
+  font-family: var(--font-family);
+  font-weight: 400;
+  background: var(--bg-input);
+  border: 1.5px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  box-shadow: none;
+  transition: border-color var(--trans-fast), box-shadow var(--trans-fast), background var(--trans-fast);
+}
+.form-control:focus {
+  border-color: var(--border-focus);
+  background: var(--bg-input-focus);
+  box-shadow: var(--shadow-focus);
+  outline: none;
+}
+.form-control::placeholder { color: var(--text-dim); }
+
+/* Labels — uppercase JetBrains Mono, muted */
+.form-label {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  font-size: 10px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+/* Section headers — step dividers (01, 02...) */
+.form-section-tag {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  color: var(--accent-primary);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+}
+.form-section-title {
+  font-family: var(--font-display);
+  font-weight: 600;
+  color: var(--text-secondary);
+  font-size: 11.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.form-section-header {
+  border-bottom: 1.5px solid var(--border-default);
+  margin-bottom: 4px;
+}
+
+/* Choice segment (TL|OM, Agent|TL toggles) */
+.choice-segment {
+  background: var(--bg-surface);
+  border: 1.5px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  box-shadow: none;
+}
+.choice-btn {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  font-size: 10px;
+  color: var(--text-muted);
+  border-radius: 2px;
+  border: none;
+  background: transparent;
+  letter-spacing: 0.04em;
+}
+.choice-btn:hover { color: var(--text-primary); background: var(--bg-surface-hover); }
+.choice-btn.active { background: var(--accent-primary); color: #fff; border: none; }
+
+/* Opt management +/− buttons */
+.btn-opt-mgmt {
+  border: 1px solid var(--border-default);
+  border-radius: 2px;
+  background: var(--bg-surface);
+  color: var(--text-muted);
+  font-weight: 700;
+  font-size: 12px;
+}
+.btn-opt-mgmt:hover { background: var(--bg-surface-hover); color: var(--text-primary); border-color: var(--border-hover); }
+
+/* ==========================================================================
+   CARDS — Dark surface, hard-edge borders, neo-brutalist shadows
+   ========================================================================== */
+
+.card {
+  background: var(--bg-surface);
+  border: 1.5px solid var(--border-default);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+}
+.card-header {
+  background: var(--bg-rail);
+  border-bottom: 1.5px solid var(--border-default);
+}
+.card-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  color: var(--text-primary);
+  font-size: 12.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.card-footer {
+  background: var(--bg-surface);
+  border-top: 1.5px solid var(--border-default);
+}
+
+/* ==========================================================================
+   BADGES — JetBrains Mono, semantic color-coded, compact
+   ========================================================================== */
+
+.badge {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border-radius: 3px;
+  border: 1px solid;
+  padding: 1px 5px;
+}
+.badge-info    { background: var(--accent-primary-soft);  color: #A78BFA; border-color: rgba(108, 92, 231, 0.4); }
+.badge-success { background: var(--accent-success-soft);  color: var(--accent-success); border-color: rgba(74, 222, 128, 0.4); }
+.badge-warning { background: var(--accent-warning-soft);  color: var(--accent-warning); border-color: rgba(251, 146, 60, 0.4); }
+.badge-neutral { background: var(--bg-surface-elevated);  color: var(--text-muted); border-color: var(--border-default); }
+
+/* ==========================================================================
+   DROPZONE — Dark terminal dashed border
+   ========================================================================== */
+
+.dropzone-compact {
+  border: 2px dashed var(--border-hover);
+  background: var(--bg-surface);
+  border-radius: var(--radius-sm);
+  transition: border-color var(--trans-fast), background var(--trans-fast);
+}
+.dropzone-compact:hover,
+.dropzone-compact.drag-over {
+  border-color: var(--accent-primary);
+  background: var(--accent-primary-soft);
+}
+.dropzone-compact .drop-text {
+  color: var(--text-dim);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
+}
+
+/* ==========================================================================
+   MODALS — Dark panel with hard shadow
+   ========================================================================== */
+
+.modal-backdrop { background: rgba(0, 0, 0, 0.72); backdrop-filter: blur(3px); }
+.modal-dialog {
+  background: var(--bg-surface);
+  border: 1.5px solid var(--border-default);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+}
+.modal-header {
+  background: var(--bg-rail);
+  border-bottom: 1.5px solid var(--border-default);
+  padding: 10px 16px;
+}
+.modal-title {
+  font-family: var(--font-display);
+  color: var(--text-primary);
+  font-weight: 700;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.modal-body { background: var(--bg-surface); color: var(--text-primary); }
+.modal-footer { background: var(--bg-surface-elevated); border-top: 1.5px solid var(--border-default); }
+@keyframes modal-enter {
+  from { transform: translate(-3px, 3px) scale(0.98); opacity: 0; }
+  to   { transform: none; opacity: 1; }
+}
+
+/* ==========================================================================
+   TOASTS — Dark surface with left-accent semantic strip
+   ========================================================================== */
+
+.toast {
+  background: var(--bg-surface-elevated) !important;
+  border: 1.5px solid var(--border-default) !important;
+  border-radius: var(--radius-sm) !important;
+  box-shadow: var(--shadow-md) !important;
+  color: var(--text-primary) !important;
+  font-family: var(--font-family) !important;
+}
+.toast.toast-success { border-left: 4px solid var(--accent-success) !important; background: rgba(74, 222, 128, 0.06) !important; }
+.toast.toast-danger  { border-left: 4px solid var(--accent-danger) !important;  background: rgba(248, 113, 113, 0.06) !important; }
+.toast.toast-info    { border-left: 4px solid var(--accent-primary) !important; background: rgba(108, 92, 231, 0.06) !important; }
+.toast.toast-warning { border-left: 4px solid var(--accent-warning) !important; background: rgba(251, 146, 60, 0.06) !important; }
+
+/* ==========================================================================
+   SCREENSHOT THUMBS
+   ========================================================================== */
+
+.record-thumb-wrap {
+  border: 1.5px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  background: var(--bg-surface-elevated);
+  box-shadow: var(--shadow-xs);
+  transition: border-color var(--trans-fast), box-shadow var(--trans-fast), transform var(--trans-fast);
+}
+.record-thumb-wrap:hover {
+  border-color: var(--border-hover);
+  box-shadow: var(--shadow-sm);
+  transform: translate(-1px, -1px);
+}
+.record-thumb-placeholder {
+  border: 2px dashed var(--border-default);
+  border-radius: var(--radius-sm);
+  background: var(--bg-surface);
+  color: var(--text-dim);
+}
+
+/* ==========================================================================
+   DOCS URL HINT
+   ========================================================================== */
+.docs-url-hint { color: var(--text-muted); font-size: 11px; font-family: var(--font-mono); }
+.docs-url-hint.valid   { color: var(--accent-success); font-weight: 700; }
+.docs-url-hint.invalid { color: var(--accent-danger);  font-weight: 700; }
+.modal-screenshot-body { background: var(--bg-surface); border-top: 1.5px solid var(--border-default); }
+
+/* ==========================================================================
+   STATUS DOTS
+   ========================================================================== */
+.status-dot.active { background: var(--accent-primary); }
+.status-dot.done   { background: var(--accent-success); }
+
+/* ==========================================================================
+   NAV RAIL — Dark navy sidebar
+   ========================================================================== */
+
+.nav-rail {
+  background: var(--bg-rail);
+  border-right: 1.5px solid var(--border-default);
+  width: var(--rail-width);
+  min-width: var(--rail-width);
+}
+.nav-rail.collapsed {
+  width: var(--rail-width-collapsed);
+  min-width: var(--rail-width-collapsed);
+}
+
+.rail-brand {
+  background: var(--bg-rail);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.brand-badge {
+  background: var(--accent-primary);
+  border: 1.5px solid var(--accent-primary-hover);
+  border-radius: 3px;
+  color: #fff;
+  font-family: var(--font-mono);
+  font-weight: 800;
+  font-size: 10px;
+  letter-spacing: 0.05em;
+}
+
+.brand-title {
+  font-family: var(--font-display);
+  color: #fff;
+  font-weight: 700;
+  font-size: 12.5px;
+  letter-spacing: 0.04em;
+}
+
+.brand-subtitle {
+  font-family: var(--font-mono);
+  color: rgba(92, 225, 230, 0.60);
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.10em;
+}
+
+.rail-section-label {
+  font-family: var(--font-mono);
+  color: var(--text-dim);
+  font-weight: 700;
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.10em;
+}
+
+.nav-item {
+  font-family: var(--font-family);
+  color: var(--text-muted);
+  font-weight: 500;
+  font-size: 12px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  transition: all var(--trans-fast);
+}
+.nav-item:hover {
+  background: var(--bg-surface-hover);
+  color: var(--text-primary);
+  border-color: var(--border-subtle);
+}
+
+/* Default active (EDR) — violet */
+.nav-item.active {
+  background: var(--accent-primary);
+  color: #fff;
+  border: 1.5px solid var(--accent-primary-hover);
+  box-shadow: var(--shadow-xs);
+  font-weight: 600;
+}
+.nav-item.active .nav-icon { color: #fff; }
+
+/* Nav icons */
+.nav-item .nav-icon {
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  color: #94a3b8;
+}
+.nav-item:hover .nav-icon { color: #f8fafc; }
+.nav-rail.collapsed .nav-item:not(.active) .nav-icon {
+  stroke: currentColor !important;
+  fill: none !important;
+  stroke-width: 2 !important;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  color: #94a3b8 !important;
+}
+.nav-rail.collapsed .nav-item:not(.active):hover .nav-icon { color: #f8fafc !important; }
+
+/* Nav badges */
+.nav-badge {
+  font-family: var(--font-mono);
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-muted);
+  border-radius: 3px;
+  font-weight: 700;
+  font-size: 10px;
+  padding: 1px 5px;
+}
+.nav-item.active .nav-badge {
+  background: rgba(255, 255, 255, 0.18);
+  color: #fff;
+}
+
+/* Rail footer */
+.rail-footer {
+  background: var(--bg-rail);
+  border-top: 1px solid var(--border-subtle);
+}
+.collapse-btn {
+  background: var(--bg-surface, #161b22);
+  border: 1px solid var(--border-default, rgba(255, 255, 255, 0.12));
+  color: #94a3b8;
+  border-radius: 4px;
+}
+.collapse-btn:hover {
+  background: var(--bg-surface-hover, #1f293d);
+  color: #f8fafc;
+  border-color: var(--border-strong, #475569);
+}
+
+/* ==========================================================================
+   WORKSPACE-SPECIFIC ACTIVE TAB COLORS
+   Per-workspace nav tab accent (applied when that workspace is active)
+   ========================================================================== */
+#tabAudit.active        { background: var(--ws-audit) !important;       color: #0D1117 !important; border-color: var(--ws-audit) !important; }
+#tabSorter.active       { background: var(--ws-sorter) !important;      color: #0D1117 !important; border-color: var(--ws-sorter) !important; }
+#tabMaintenance.active  { background: var(--ws-maintenance) !important; color: #0D1117 !important; border-color: var(--ws-maintenance) !important; }
+#tabPending.active      { background: var(--ws-pending) !important;     color: #0D1117 !important; border-color: var(--ws-pending) !important; }
+#tabFollowup.active     { background: var(--ws-followup) !important;    color: #0D1117 !important; border-color: var(--ws-followup) !important; }
+#tabMasterlist.active   { background: var(--ws-masterlist) !important;  color: #fff !important;    border-color: var(--ws-masterlist) !important; }
+#tabHistory.active      { background: var(--ws-history) !important;     color: #0D1117 !important; border-color: var(--ws-history) !important; }
+#tabAccounts.active     { background: var(--ws-accounts) !important;    color: #0D1117 !important; border-color: var(--ws-accounts) !important; }
+
+/* ==========================================================================
+   TOP APPBAR — Dark terminal header bar
+   ========================================================================== */
+
+.top-appbar {
+  background: var(--bg-topbar);
+  border-bottom: 1px solid var(--border-default);
+  box-shadow: none;
+}
+
+.workspace-main-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--text-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* Manila live clock */
+.manila-clock-pill {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  box-shadow: none;
+}
+.clock-live-indicator { background: var(--accent-success); border-radius: 50%; }
+
+/* Sync status pill */
+.sync-status-pill {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 500;
+  font-family: var(--font-mono);
+}
+.sync-status-pill.connected {
+  color: var(--accent-success);
+  border-color: rgba(74, 222, 128, 0.35);
+  background: rgba(74, 222, 128, 0.06);
+}
+
+/* User profile badge */
+.user-profile-badge {
+  background: var(--bg-surface);
+  border: 1.5px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-xs);
+  cursor: pointer;
+  transition: box-shadow var(--trans-fast), transform var(--trans-fast), border-color var(--trans-fast);
+}
+.user-profile-badge:hover {
+  border-color: var(--border-hover);
+  box-shadow: var(--shadow-sm);
+  transform: translate(-1px, -1px);
+}
+
+.user-avatar {
+  background: var(--accent-primary);
+  border: 1.5px solid var(--accent-primary-hover);
+  border-radius: 3px;
+  color: #fff;
+  font-family: var(--font-display);
+  font-weight: 700;
+}
+.user-name    { color: var(--text-primary); font-weight: 600; font-family: var(--font-family); }
+.user-role-tag { color: var(--text-dim); font-weight: 600; font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 0.06em; }
+
+/* ==========================================================================
+   WORKSPACE CARD HEADER LEFT-ACCENT STRIPS
+   (Visual cue: each workspace has its own color accent on card headers)
+   ========================================================================== */
+#paneEdr         .card-header { border-left: 4px solid var(--ws-edr); }
+#paneAudit       .card-header { border-left: 4px solid var(--ws-audit); }
+#paneSorter      .card-header { border-left: 4px solid var(--ws-sorter); }
+#paneMaintenance .card-header { border-left: 4px solid var(--ws-maintenance); }
+#panePending     .card-header { border-left: 4px solid var(--ws-pending); }
+#paneFollowup    .card-header { border-left: 4px solid var(--ws-followup); }
+#paneMasterlist  .card-header { border-left: 4px solid var(--ws-masterlist); }
+#paneHistory     .card-header { border-left: 4px solid var(--ws-history); }
+#paneAccounts    .card-header { border-left: 4px solid var(--ws-accounts); }
+
+/* ==========================================================================
+   EDR WORKSPACE — Record rows, status chips, preview, dispatch
+   ========================================================================== */
+
+/* Record rows — dark surface with hard shadow */
+.record-row {
+  background: var(--bg-surface) !important;
+  border: 1.5px solid var(--border-default) !important;
+  border-radius: var(--radius-sm) !important;
+  box-shadow: var(--shadow-xs) !important;
+  transition: box-shadow var(--trans-fast), transform var(--trans-fast), background var(--trans-fast) !important;
+}
+.record-row:hover {
+  background: var(--bg-surface-hover) !important;
+  border-color: var(--border-hover) !important;
+  box-shadow: var(--shadow-sm) !important;
+  transform: translate(-1px, -1px) !important;
+}
+.record-row.is-selected {
+  background: var(--accent-primary-soft) !important;
+  border-color: var(--accent-primary) !important;
+  box-shadow: var(--shadow-sm) !important;
+}
+.record-row.is-done { opacity: 0.50 !important; }
+
+/* Record row data display */
+.record-date   { color: var(--accent-secondary) !important; font-family: var(--font-mono) !important; font-weight: 700 !important; font-size: 11.5px !important; }
+.record-site   { color: var(--text-primary) !important; font-weight: 600 !important; }
+.record-sep    { color: var(--text-dim) !important; opacity: 1 !important; }
+.record-campaign { color: var(--text-secondary) !important; font-weight: 500 !important; }
+.record-sub-line .record-resp { color: var(--text-muted) !important; }
+.record-sub-line .record-resp strong { color: var(--text-secondary) !important; font-weight: 600 !important; }
+
+/* Status chips — semantic dark-mode variants */
+.status-chip {
+  font-family: var(--font-mono) !important;
+  border-radius: 3px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.04em !important;
+  border-width: 1px !important;
+  border-style: solid !important;
+}
+.status-chip.chip-ss {
+  background: var(--accent-warning-soft) !important;
+  color: var(--accent-warning) !important;
+  border-color: rgba(251, 146, 60, 0.45) !important;
+}
+.status-chip.chip-audit {
+  background: var(--accent-primary-soft) !important;
+  color: #A78BFA !important;
+  border-color: rgba(108, 92, 231, 0.45) !important;
+}
+.status-chip.chip-done {
+  background: var(--accent-success-soft) !important;
+  color: var(--accent-success) !important;
+  border-color: rgba(74, 222, 128, 0.45) !important;
+}
+.status-chip.chip-docs {
+  background: var(--accent-secondary-soft) !important;
+  color: var(--accent-secondary) !important;
+  border-color: rgba(92, 225, 230, 0.45) !important;
+}
+
+/* Record action buttons */
+.btn-action {
+  border: 1px solid var(--border-default) !important;
+  border-radius: var(--radius-sm) !important;
+  background: var(--bg-surface-elevated) !important;
+  color: var(--text-secondary) !important;
+  font-weight: 600 !important;
+  font-size: 10.5px !important;
+  box-shadow: var(--shadow-xs) !important;
+  transition: box-shadow var(--trans-fast), transform var(--trans-fast), background var(--trans-fast) !important;
+}
+.btn-action:hover {
+  background: var(--bg-surface-hover) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border-hover) !important;
+  box-shadow: var(--shadow-sm) !important;
+  transform: translate(-1px, -1px) !important;
+}
+.btn-action:active { box-shadow: none !important; transform: translate(1px, 1px) !important; }
+
+.btn-action.btn-audit-send.is-linked {
+  color: var(--accent-secondary) !important;
+  border-color: rgba(92, 225, 230, 0.40) !important;
+  background: var(--accent-secondary-soft) !important;
+}
+.btn-action.btn-done-toggle.is-done-btn {
+  color: var(--accent-success) !important;
+  border-color: rgba(74, 222, 128, 0.40) !important;
+  background: var(--accent-success-soft) !important;
+}
+
+/* Record dropdown menus */
+.record-dropdown-menu {
+  background: var(--bg-surface-elevated) !important;
+  border: 1.5px solid var(--border-hover) !important;
+  border-radius: var(--radius-sm) !important;
+  box-shadow: var(--shadow-lg) !important;
+}
+.dropdown-item {
+  color: var(--text-secondary) !important;
+  font-weight: 500 !important;
+  border-radius: 3px !important;
+  font-size: 11px !important;
+}
+.dropdown-item:hover { background: var(--bg-surface-hover) !important; color: var(--text-primary) !important; }
+.dropdown-item.text-danger { color: var(--accent-danger) !important; }
+.dropdown-item.text-danger:hover { background: var(--accent-danger-soft) !important; color: #FCA5A5 !important; }
+.dropdown-divider { background: var(--border-subtle) !important; }
+
+/* Dispatch preview box */
+.dispatch-preview-box {
+  background: var(--bg-rail) !important;
+  border: 1.5px solid var(--border-default) !important;
+  border-radius: var(--radius-sm) !important;
+  color: var(--text-secondary) !important;
+  font-family: var(--font-mono) !important;
+  font-size: 11px !important;
+}
+.edr-preview-card {
+  background: var(--bg-surface-elevated) !important;
+  border: 1px solid var(--border-default) !important;
+  border-radius: var(--radius-sm) !important;
+}
+.edr-preview-line strong { color: var(--text-primary) !important; }
+.edr-preview-shot img { border: 1.5px solid var(--border-default) !important; border-radius: var(--radius-sm) !important; }
+.edr-preview-clip a { color: var(--accent-secondary) !important; }
+.edr-preview-divider { color: var(--text-dim) !important; font-family: var(--font-mono) !important; }
+
+/* EDR form title */
+#edrFormTitle {
+  font-family: var(--font-display) !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.04em !important;
+}
+
+/* ==========================================================================
+   AI SORTER / MINI-SHEET WORKSPACE
+   ========================================================================== */
+
+.sorter-control-card,
+.sorter-stats-strip {
+  background: var(--bg-surface) !important;
+  border: 1.5px solid var(--border-default) !important;
+  border-radius: var(--radius-sm) !important;
+  box-shadow: none !important;
+}
+.sorter-grid-card {
+  background: var(--bg-surface) !important;
+  border: 1.5px solid var(--border-default) !important;
+  border-radius: var(--radius-sm) !important;
+  box-shadow: var(--shadow-sm) !important;
+}
+
+/* Mini-sheet toolbar */
+.mini-sheet-toolbar-row {
+  background: var(--bg-rail) !important;
+  border-bottom: 1.5px solid var(--border-default) !important;
+}
+
+/* Mini-sheet table headers */
+table.mini-sheet thead th,
+.mini-sheet-column-letters th {
+  background: var(--bg-rail) !important;
+  color: var(--text-muted) !important;
+  border-color: var(--border-default) !important;
+  font-family: var(--font-mono) !important;
+  font-weight: 700 !important;
+  font-size: 10px !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.06em !important;
+}
+.mini-sheet-corner { background: var(--bg-rail) !important; border-color: var(--border-default) !important; }
+.mini-sheet-scroll,
+table.mini-sheet { background: var(--bg-surface) !important; }
+
+/* Sorter textarea */
+.sorter-textarea {
+  background: var(--bg-surface) !important;
+  border: 1.5px solid var(--border-default) !important;
+  color: var(--text-primary) !important;
+  border-radius: var(--radius-sm) !important;
+  font-family: var(--font-mono) !important;
+}
+
+/* Floor badge variants — dark-mode */
+.badge-gf     { background: var(--accent-success-soft) !important; color: var(--accent-success) !important; border: 1px solid rgba(74, 222, 128, 0.4) !important; }
+.badge-1f     { background: var(--accent-primary-soft) !important; color: #A78BFA !important;              border: 1px solid rgba(108, 92, 231, 0.4) !important; }
+.badge-2f     { background: var(--accent-secondary-soft) !important; color: var(--accent-secondary) !important; border: 1px solid rgba(92, 225, 230, 0.4) !important; }
+.badge-review { background: var(--accent-warning-soft) !important; color: var(--accent-warning) !important;  border: 1px solid rgba(251, 146, 60, 0.4) !important; }
+
+/* ==========================================================================
+   MAINTENANCE WORKSPACE
+   ========================================================================== */
+
+.maint-block,
+.maint-section {
+  background: var(--bg-surface) !important;
+  border: 1.5px solid var(--border-default) !important;
+  border-radius: var(--radius-sm) !important;
+  box-shadow: var(--shadow-xs) !important;
+}
+
+/* ==========================================================================
+   PENDING / FOLLOW-UP LIST ROWS
+   ========================================================================== */
+
+.pending-list-row,
+.followup-list-row {
+  background: var(--bg-surface) !important;
+  border: 1.5px solid var(--border-default) !important;
+  border-radius: var(--radius-sm) !important;
+  box-shadow: var(--shadow-xs) !important;
+  transition: box-shadow var(--trans-fast), transform var(--trans-fast) !important;
+}
+.pending-list-row:hover,
+.followup-list-row:hover {
+  background: var(--bg-surface-hover) !important;
+  border-color: var(--border-hover) !important;
+  box-shadow: var(--shadow-sm) !important;
+  transform: translate(-1px, -1px) !important;
+}
+
+/* ==========================================================================
+   MASTERLIST / HISTORY
+   ========================================================================== */
+
+.masterlist-card,
+.history-card,
+.hr-section-card {
+  background: var(--bg-surface) !important;
+  border: 1.5px solid var(--border-default) !important;
+  border-radius: var(--radius-sm) !important;
+  box-shadow: var(--shadow-sm) !important;
+}
+
+/* Timeline */
+.timeline-entry { border-left: 2px solid var(--border-default) !important; }
+.timeline-dot {
+  background: var(--accent-primary) !important;
+  border: 2px solid var(--bg-surface) !important;
+  box-shadow: 0 0 0 2px var(--accent-primary) !important;
+}
+
+/* ==========================================================================
+   ACCOUNTS / ADMIN TABLES
+   ========================================================================== */
+
+.accounts-table,
+.admin-table {
+  border: 1.5px solid var(--border-default) !important;
+  border-radius: var(--radius-sm) !important;
+}
+
+/* ==========================================================================
+   AUDIT WORKSPACE ROWS
+   ========================================================================== */
+
+.guard-status-card,
+.guard-panel {
+  background: var(--bg-surface) !important;
+  border: 1.5px solid var(--border-default) !important;
+  border-radius: var(--radius-sm) !important;
+  box-shadow: var(--shadow-sm) !important;
+}
+.audit-table-row:hover    { background: var(--bg-surface-hover) !important; }
+.audit-table-row.is-selected { background: var(--accent-primary-soft) !important; }
+
+/* ==========================================================================
+   UTILITY TEXT STATES
+   ========================================================================== */
+
+.text-danger  { color: var(--accent-danger)  !important; }
+.text-success { color: var(--accent-success)  !important; }
+.text-warning { color: var(--accent-warning)  !important; }
+.text-muted   { color: var(--text-muted)      !important; }
+.text-primary { color: var(--text-primary)    !important; }
+
+/* Error / success state blocks */
+.error-state {
+  border: 1.5px solid var(--border-default) !important;
+  border-left: 4px solid var(--accent-danger) !important;
+  background: var(--accent-danger-soft) !important;
+  color: var(--accent-danger) !important;
+  border-radius: var(--radius-sm) !important;
+}
+.success-state {
+  border: 1.5px solid var(--border-default) !important;
+  border-left: 4px solid var(--accent-success) !important;
+  background: var(--accent-success-soft) !important;
+  color: var(--accent-success) !important;
+  border-radius: var(--radius-sm) !important;
+}
+
+/* ==========================================================================
+   TABLES — General dark terminal data tables
+   (covers audit-data-table, accounts tables, masterlist tables, etc.)
+   ========================================================================== */
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+/* Table header cells */
+thead th {
+  background: var(--bg-rail);
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  border-bottom: 2px solid var(--border-default);
+  white-space: nowrap;
+  padding: 6px 8px;
+}
+
+/* Table body rows */
+tbody tr {
+  border-bottom: 1px solid var(--border-subtle);
+  transition: background var(--trans-fast);
+}
+tbody tr:nth-child(even) { background: rgba(27, 33, 41, 0.40); }
+tbody tr:hover { background: var(--bg-surface-hover); }
+
+tbody td {
+  color: var(--text-secondary);
+  font-size: 12px;
+  padding: 5px 8px;
+  vertical-align: middle;
+}
+
+/* ==========================================================================
+   AUDIT TABLE SPECIFIC — Column width guarantees
+   ========================================================================== */
+
+/* Ensure the Remarks column never becomes unusably narrow */
+.audit-data-table th:nth-child(11),
+.audit-data-table td:nth-child(11) {
+  min-width: 180px;
+  white-space: normal;
+  word-break: break-word;
+}
+
+/* Ensure all audit table columns remain accessible */
+.audit-grid-table-wrap {
+  overflow-x: auto;
+}
+.audit-data-table {
+  min-width: 900px;  /* Force horizontal scroll before columns are clipped */
+}
+
+/* ==========================================================================
+   AI SORTER — Station Issue column minimum width
+   ========================================================================== */
+.mini-sheet thead th:last-child,
+.mini-sheet tbody td:last-child {
+  min-width: 200px;
+  white-space: normal;
+}
+
+/* ==========================================================================
+   INLINE STYLE OVERRIDES — Override hardcoded colors in index.html <style>
+   These ensure the inline <style> block in index.html (which referenced
+   old dark-mode colors like #38bdf8 for .record-date etc.) is superseded.
+   ========================================================================== */
+
+/* Record date color override (was hardcoded #38bdf8 inline) */
+.record-date {
+  color: var(--accent-secondary) !important;
+}
+
+/* Dropdown item danger color override */
+.dropdown-item.text-danger {
+  color: var(--accent-danger) !important;
+}
+
+/* Record dropdown menu background */
+.record-dropdown-menu {
+  background: #151923;   /* keep close to existing dark for blend */
+  background: var(--bg-surface-elevated) !important;
+}
+
+/* ==========================================================================
+   DARK TERMINAL TOASTS & FEEDBACK
+   ========================================================================== */
+
+.toast-container {
+  z-index: var(--z-toast, 1300);
+}
+
+.toast {
+  background: var(--bg-surface-elevated) !important;
+  border: 1.5px solid var(--border-default) !important;
+  color: var(--text-primary) !important;
+  box-shadow: var(--shadow-md) !important;
+  font-family: var(--font-family);
+  font-size: 12px;
+  position: relative;
+  overflow: hidden;
+}
+
+.toast-success {
+  border-left: 3.5px solid var(--accent-success) !important;
+  color: var(--accent-success);
+}
+.toast-success .toast-msg {
+  color: var(--text-primary);
+}
+
+.toast-error, .toast-danger {
+  border-left: 3.5px solid var(--accent-danger) !important;
+  color: var(--accent-danger);
+}
+.toast-error .toast-msg, .toast-danger .toast-msg {
+  color: var(--text-primary);
+}
+
+.toast-warning {
+  border-left: 3.5px solid var(--accent-warning) !important;
+  color: var(--accent-warning);
+}
+.toast-warning .toast-msg {
+  color: var(--text-primary);
+}
+
+.toast-info {
+  border-left: 3.5px solid var(--accent-primary) !important;
+  color: var(--accent-primary);
+}
+.toast-info .toast-msg {
+  color: var(--text-primary);
+}
+
+@keyframes toast-shrink {
+  from { transform: scaleX(1); }
+  to { transform: scaleX(0); }
+}
+
+/* ==========================================================================
+   MOBILE & TOUCH VIEWPORT ADAPTATIONS
+   ========================================================================== */
+
+@media (pointer: coarse) {
+  .btn, .nav-item, .choice-btn, .collapse-btn, .btn-mobile-nav-toggle {
+    min-height: 38px;
+  }
+  .form-control {
+    min-height: 36px;
+    font-size: 13px; /* Prevents auto-zoom on iOS Safari */
+  }
+}
+
+@media (max-width: 768px) {
+  .toast-container {
+    left: 12px;
+    right: 12px;
+    bottom: 12px;
+    align-items: stretch;
+  }
+  .toast {
+    max-width: 100%;
+    width: 100%;
+    box-sizing: border-box;
+  }
+}
+

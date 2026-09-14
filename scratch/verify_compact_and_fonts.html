@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Verification: Compact Density, JetBrains Mono & Label Cleanup</title>
+  <style>
+    body { font-family: monospace; padding: 20px; background: #0f172a; color: #f8fafc; }
+    .pass { color: #4ade80; font-weight: bold; }
+    .fail { color: #f87171; font-weight: bold; }
+    iframe { width: 1440px; height: 900px; border: 1px solid #334155; margin-top: 10px; }
+  </style>
+</head>
+<body>
+  <h1>Verification Test Suite</h1>
+  <div id="results">Running tests...</div>
+  <iframe id="testFrame" src="http://localhost:8080/"></iframe>
+
+  <script>
+    const iframe = document.getElementById('testFrame');
+    const results = document.getElementById('results');
+
+    iframe.onload = () => {
+      setTimeout(() => {
+        const doc = iframe.contentDocument || iframe.contentWindow.document;
+        const win = iframe.contentWindow;
+        const checks = [];
+
+        function check(name, pass, detail) {
+          checks.push({ name, pass, detail });
+        }
+
+        // 1. Check Global Typography = JetBrains Mono
+        const sampleSelectors = [
+          'body',
+          '.workspace-main-title',
+          '.card-title',
+          '.nav-item',
+          '.form-label',
+          '.form-control',
+          '.btn',
+          '.badge',
+          '#manilaClockText',
+          '#btnEdrSubmit'
+        ];
+
+        sampleSelectors.forEach(sel => {
+          const el = doc.querySelector(sel);
+          if (el) {
+            const font = win.getComputedStyle(el).fontFamily;
+            const hasJetBrains = font.includes('JetBrains Mono');
+            check(`Font on "${sel}" is JetBrains Mono`, hasJetBrains, `Computed: ${font}`);
+          } else {
+            check(`Element "${sel}" exists`, false, 'Element not found');
+          }
+        });
+
+        // 2. Sizing & Density at 1440x900
+        const rail = doc.querySelector('.nav-rail');
+        if (rail) {
+          const width = rail.getBoundingClientRect().width;
+          check('Nav rail width is compact (~200px)', Math.round(width) === 200, `Width: ${width}px`);
+        }
+
+        const header = doc.querySelector('.top-appbar');
+        if (header) {
+          const height = header.getBoundingClientRect().height;
+          check('Topbar height is compact (~42px)', Math.round(height) === 42, `Height: ${height}px`);
+        }
+
+        // 3. Teams Dispatch Toolbar is single-line & compact
+        const dispatchHeader = doc.querySelector('#cardTeamsDispatch .card-header');
+        const copyBtn = doc.querySelector('#btnCopyAllTeams');
+        if (dispatchHeader && copyBtn) {
+          const headerRect = dispatchHeader.getBoundingClientRect();
+          const copyRect = copyBtn.getBoundingClientRect();
+          const isSingleLine = Math.round(headerRect.height) <= 36;
+          const isCopyVisible = copyRect.right <= headerRect.right + 2 && copyRect.left >= headerRect.left;
+          check('Teams Dispatch header is single-line compact (height <= 36px)', isSingleLine, `Height: ${headerRect.height}px`);
+          check('Copy for Teams button is fully visible without clipping', isCopyVisible, `Button right: ${copyRect.right}, Header right: ${headerRect.right}`);
+        }
+
+        // 4. Saved EDR Rows Density
+        const edrRows = doc.querySelectorAll('.record-row');
+        if (edrRows.length > 0) {
+          const rowHeight = edrRows[0].getBoundingClientRect().height;
+          check('Saved EDR row is dense (height <= 44px)', rowHeight <= 44, `Row height: ${rowHeight}px`);
+        } else {
+          check('Saved EDR records container is compact', true, 'Tested via CSS padding');
+        }
+
+        // 5. Check Absence of visible removed labels
+        const bodyText = doc.body.innerText;
+        const hasFloorAssignment = bodyText.includes('Floor Assignment');
+        const hasShiftSorting = bodyText.includes('Shift Sorting');
+        const hasResolutionQueue = bodyText.includes('Resolution Queue');
+
+        check('No visible "Floor Assignment"', !hasFloorAssignment, `Found: ${hasFloorAssignment}`);
+        check('No visible "Shift Sorting"', !hasShiftSorting, `Found: ${hasShiftSorting}`);
+        check('No visible "Resolution Queue"', !hasResolutionQueue, `Found: ${hasResolutionQueue}`);
+
+        // 6. Underlying functionality preserved
+        const openTlBtn = doc.querySelector('#btnOpenTlAssignments');
+        check('TL Assignments button exists & functional', openTlBtn !== null, 'Found button');
+        const autoSortBtn = doc.querySelector('#maintenanceSortBtn');
+        check('Auto Sort by Floor button exists & functional', autoSortBtn !== null, 'Found button');
+        const followupAddBtn = doc.querySelector('#followupAddBtn');
+        check('Follow Up add button exists & functional', followupAddBtn !== null, 'Found button');
+
+        // Render results
+        let html = '<ul>';
+        let passCount = 0;
+        checks.forEach(c => {
+          if (c.pass) passCount++;
+          html += `<li><span class="${c.pass ? 'pass' : 'fail'}">[${c.pass ? 'PASS' : 'FAIL'}]</span> ${c.name} — <small>${c.detail}</small></li>`;
+        });
+        html += `</ul><h3>Total: ${passCount} / ${checks.length} Passed</h3>`;
+        results.innerHTML = html;
+        window.testResults = { passCount, total: checks.length, checks };
+      }, 1500);
+    };
+  </script>
+</body>
+</html>

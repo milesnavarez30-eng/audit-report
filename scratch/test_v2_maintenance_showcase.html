@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>CCTV OPS V2 - Maintenance Live Showcase</title>
+  <style>
+    body, html {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+    }
+    iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+  </style>
+</head>
+<body>
+  <iframe id="v2Frame" src="http://localhost:8080/cctv-ops-v2/#maintenance"></iframe>
+  <script>
+    const samplePng = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAA7SURBVHhe7c4BDQAACAMw9E/tUwwmFvw+yZptWc3MzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMxfmA0G6kFf2u/6fAAAAABJRU5ErkJggg==";
+
+    window.addEventListener("message", async (e) => {
+      // Handle iframe load
+    });
+
+    const frame = document.getElementById("v2Frame");
+    frame.onload = async () => {
+      const win = frame.contentWindow;
+      const doc = frame.contentDocument;
+
+      // Seed a sample draft into maintenance report
+      const m = win.maintenanceService;
+      if (m) {
+        const showcaseState = {
+          date: "2026-09-10",
+          destinationKey: "gensan",
+          title: "Gensan Site",
+          blocks: [
+            {
+              id: "b_demo_1",
+              lanesText: "09/10/2026 14:00\t2026-09-10\tJuan Dela Cruz\tShopee\tGensan Site\tST-101\tStation monitor flickering\n09/10/2026 14:15\t2026-09-10\tMaria Santos\tAFP\tGensan Site\tST-104\tPeripherals not recognized",
+              remarks: ["IT replaced HDMI cable on ST-101.", "Hub reconnected and verified functional."],
+              screenshots: [samplePng],
+              dataHidden: false
+            },
+            {
+              id: "b_demo_2",
+              lanesText: "09/10/2026 15:30\t2026-09-10\tPedro Penduko\tTEMU\tGensan Site\tST-208\tKeyboard keys sticking",
+              remarks: ["Replaced keyboard with spare unit from supply cabinet."],
+              screenshots: [],
+              dataHidden: false
+            }
+          ]
+        };
+        await m.saveDraft(showcaseState);
+
+        // Switch workspace and trigger render
+        const tab = doc.getElementById("tabMaintenance");
+        if (tab) tab.click();
+      }
+    };
+  </script>
+</body>
+</html>

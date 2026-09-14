@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>CCTV OPS V2 - Restored AI Sorter Workspace</title>
+  <style>
+    body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #0b0f17; font-family: sans-serif; }
+    iframe { width: 100%; height: 100%; border: none; }
+  </style>
+  <script src="../cctv-ops-v2/js/config.js"></script>
+  <script src="../cctv-ops-v2/js/storage.js"></script>
+  <script src="../cctv-ops-v2/js/services/sorter-service.js"></script>
+</head>
+<body>
+  <iframe id="appFrame"></iframe>
+
+  <script>
+    async function start() {
+      const sampleReport = [
+        "TIMESTAMP\tDATE\tTL\tACCOUNT\tSITE\tSTATION NO.\tSTATION ISSUE",
+        "09/10/2026 08:30\t09/10/2026\tAllan Albert Sadili\tMapua\tMabini Site A\t1A-01\t[RESTORED EDIT] Dual monitor second screen black",
+        "09/10/2026 09:15\t09/10/2026\tAllan Albert Sadili\tMapua\tMabini Site A\t1A-05\tHeadset microphone no input audio",
+        "09/10/2026 10:00\t09/10/2026\tJovert Monticayan\tHBW Insurance\tMabini Site A\t1F Station 12\tKeyboard spacebar unresponsive",
+        "09/10/2026 10:45\t09/10/2026\tCris Arandilla\tHerb Joy\tMabini Site A\t2B-10\tMouse right button intermittent click",
+        "09/10/2026 11:30\t09/10/2026\tDames Alfred Veloso\tListsimple\tMabini Site A\t2P-11\tLAN cable clip broken / loose connection",
+        "09/10/2026 12:15\t09/10/2026\tNew Agent Team\tSpecial Operations\tMabini Site A\tUnknown Bay\tUnregistered workstation needs floor check"
+      ].join("\n");
+
+      const rows = window.sorterService.parseReport(sampleReport);
+      const assigns = window.sorterService.buildAssignments(rows);
+      const assigned = window.sorterService.assignRows(rows, assigns);
+
+      await window.sorterService.saveDraft({
+        rawText: sampleReport,
+        assignedRows: assigned,
+        parsedRows: rows,
+        assignments: Array.from(assigns.entries()),
+        selectedRows: [0, 1]
+      });
+
+      const frame = document.getElementById("appFrame");
+      frame.src = "../cctv-ops-v2/?workspace=sorter";
+    }
+
+    start();
+  </script>
+</body>
+</html>

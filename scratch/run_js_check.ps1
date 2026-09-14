@@ -1,0 +1,12 @@
+$edge = 'C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe'
+if (-not (Test-Path $edge)) {
+    $edge = 'C:\Program Files\Microsoft\Edge\Application\msedge.exe'
+}
+Remove-Item -Force .\scratch\test_report.txt -ErrorAction SilentlyContinue
+& $edge --headless=new --disable-gpu 'http://localhost:8080/scratch/check_js_errors.html'
+Start-Sleep -Seconds 2
+if (Test-Path .\scratch\test_report.txt) {
+    Get-Content .\scratch\test_report.txt
+} else {
+    Write-Output 'No report generated'
+}

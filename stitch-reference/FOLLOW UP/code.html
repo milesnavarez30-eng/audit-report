@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>CCTV OPS Hub - Follow Up Reports &amp; Resolution Queue</title>
+<!-- Tailwind CSS CDN with forms and container queries -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Google Fonts: Space Grotesk & JetBrains Mono -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&amp;family=Space+Grotesk:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            surface: {
+              base: '#0D1117',
+              panel: '#151B23',
+              card: '#1A212D',
+              elevated: '#212836',
+              border: '#2A3342'
+            },
+            accent: {
+              violet: '#6C5CE7',
+              magenta: '#E056FD',
+              cyan: '#5CE1E6',
+              lime: '#A8FF78',
+              amber: '#FACC15',
+              crimson: '#FF6B6B'
+            }
+          },
+          fontFamily: {
+            sans: ['"Space Grotesk"', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace']
+          },
+          boxShadow: {
+            'brutal-sm': '2px 2px 0px #000000',
+            'brutal': '3px 3px 0px #000000',
+            'brutal-violet': '3px 3px 0px #6C5CE7',
+            'brutal-cyan': '3px 3px 0px #5CE1E6'
+          }
+        }
+      }
+    }
+  </script>
+<style data-purpose="custom-scrollbars">
+    /* Custom terminal scrollbars */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0D1117;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #2A3342;
+      border-radius: 2px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #6C5CE7;
+    }
+  </style>
+<style data-purpose="terminal-effects">
+    /* Subtle scanline and high-contrast terminal styling */
+    .terminal-badge {
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+    .retro-border {
+      border: 2px solid #2A3342;
+    }
+    .retro-input {
+      background-color: #0D1117;
+      border: 1.5px solid #2A3342;
+      color: #E6EDF3;
+      transition: all 0.15s ease-in-out;
+    }
+    .retro-input:focus {
+      border-color: #6C5CE7;
+      outline: none;
+      box-shadow: 0 0 0 2px rgba(108, 92, 231, 0.25);
+    }
+  </style>
+</head>
+<body class="bg-surface-base text-[#E6EDF3] font-sans antialiased h-screen flex overflow-hidden select-none">
+<!-- BEGIN: SidebarNav -->
+<!-- Left permanent sidebar navigation rail -->
+<aside class="w-64 bg-surface-panel border-r border-surface-border flex flex-col justify-between shrink-0 select-none z-20">
+<div class="p-3">
+<!-- App Header Logo / Version Badge -->
+<div class="flex items-center gap-2.5 pb-4 mb-4 border-b border-surface-border">
+<div class="w-8 h-8 bg-surface-base border-2 border-accent-violet rounded flex items-center justify-center font-mono font-bold text-accent-cyan text-sm shadow-brutal-sm">
+          V2
+        </div>
+<div>
+<h1 class="font-bold text-sm leading-tight tracking-wider uppercase flex items-center gap-1.5">
+            CCTV OPS <span class="text-[10px] bg-accent-violet/20 text-accent-violet border border-accent-violet/40 px-1 py-0.2 rounded font-mono">HUB</span>
+</h1>
+<p class="text-[10px] font-mono text-gray-400 tracking-tight">OPERATIONS COMMAND</p>
+</div>
+</div>
+<!-- Section: Workspaces -->
+<div class="mb-5">
+<div class="text-[10px] font-mono font-semibold tracking-wider text-gray-400 uppercase px-2 mb-1.5">
+          Workspaces
+        </div>
+<nav class="space-y-0.5 font-medium text-xs">
+<a class="flex items-center justify-between px-2.5 py-1.5 rounded text-gray-300 hover:bg-surface-elevated hover:text-white transition-colors" href="#">
+<span class="flex items-center gap-2">
+<span class="w-1.5 h-1.5 rounded-full bg-gray-500"></span>
+              EDR
+            </span>
+<span class="font-mono text-[10px] bg-surface-base border border-surface-border text-gray-400 px-1.5 py-0.2 rounded">7</span>
+</a>
+<a class="flex items-center justify-between px-2.5 py-1.5 rounded text-gray-300 hover:bg-surface-elevated hover:text-white transition-colors" href="#">
+<span class="flex items-center gap-2">
+<span class="w-1.5 h-1.5 rounded-full bg-gray-500"></span>
+              CCTV Audit
+            </span>
+<span class="font-mono text-[10px] bg-surface-base border border-surface-border text-gray-400 px-1.5 py-0.2 rounded">0</span>
+</a>
+<a class="flex items-center justify-between px-2.5 py-1.5 rounded text-gray-300 hover:bg-surface-elevated hover:text-white transition-colors" href="#">
+<span class="flex items-center gap-2">
+<span class="w-1.5 h-1.5 rounded-full bg-gray-500"></span>
+              AI Sorter
+            </span>
+</a>
+<a class="flex items-center justify-between px-2.5 py-1.5 rounded text-gray-300 hover:bg-surface-elevated hover:text-white transition-colors" href="#">
+<span class="flex items-center gap-2">
+<span class="w-1.5 h-1.5 rounded-full bg-gray-500"></span>
+              Maintenance
+            </span>
+</a>
+<a class="flex items-center justify-between px-2.5 py-1.5 rounded text-gray-300 hover:bg-surface-elevated hover:text-white transition-colors" href="#">
+<span class="flex items-center gap-2">
+<span class="w-1.5 h-1.5 rounded-full bg-accent-amber"></span>
+              Pending
+            </span>
+<span class="font-mono text-[10px] bg-accent-amber/10 border border-accent-amber/40 text-accent-amber px-1.5 py-0.2 rounded font-bold">1</span>
+</a>
+</nav>
+</div>
+<!-- Section: Management -->
+<div>
+<div class="text-[10px] font-mono font-semibold tracking-wider text-gray-400 uppercase px-2 mb-1.5">
+          Management
+        </div>
+<nav class="space-y-0.5 font-medium text-xs">
+<a class="flex items-center justify-between px-2.5 py-1.5 rounded text-gray-300 hover:bg-surface-elevated hover:text-white transition-colors" href="#">
+<span class="flex items-center gap-2">
+<span class="w-1.5 h-1.5 rounded-full bg-gray-500"></span>
+              Masterlist
+            </span>
+</a>
+<!-- Active Workspace: Follow Up -->
+<a class="flex items-center justify-between px-2.5 py-1.5 rounded bg-surface-card border-l-4 border-accent-magenta text-white font-semibold shadow-inner" href="#">
+<span class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-accent-magenta animate-pulse"></span>
+              Follow Up
+            </span>
+<span class="font-mono text-[10px] bg-accent-magenta/20 border border-accent-magenta/60 text-accent-magenta px-1.5 py-0.5 rounded font-bold">0</span>
+</a>
+<a class="flex items-center justify-between px-2.5 py-1.5 rounded text-gray-300 hover:bg-surface-elevated hover:text-white transition-colors" href="#">
+<span class="flex items-center gap-2">
+<span class="w-1.5 h-1.5 rounded-full bg-gray-500"></span>
+              History
+            </span>
+</a>
+<a class="flex items-center justify-between px-2.5 py-1.5 rounded text-gray-300 hover:bg-surface-elevated hover:text-white transition-colors" href="#">
+<span class="flex items-center gap-2">
+<span class="w-1.5 h-1.5 rounded-full bg-gray-500"></span>
+              Accounts
+            </span>
+</a>
+</nav>
+</div>
+</div>
+<!-- Sidebar Terminal Footer -->
+<div class="p-3 border-t border-surface-border bg-surface-base/60 flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-accent-lime"></span>
+<span class="text-[11px] font-mono text-gray-400">v2.0.4-prod</span>
+</div>
+<button class="w-6 h-6 rounded bg-surface-card border border-surface-border flex items-center justify-center text-gray-400 hover:text-white hover:border-gray-500 transition-colors" title="Toggle Compact Rail" type="button">
+<span class="text-xs">&lt;</span>
+</button>
+</div>
+</aside>
+<!-- END: SidebarNav -->
+<!-- BEGIN: MainContentArea -->
+<main class="flex-1 flex flex-col min-w-0 bg-surface-base overflow-hidden">
+<!-- Top Command Header -->
+<header class="h-14 bg-surface-panel border-b border-surface-border px-4 flex items-center justify-between shrink-0 select-none">
+<!-- Title & Retro Workspace Badge -->
+<div class="flex items-center gap-3">
+<h2 class="font-bold text-base tracking-wide text-white flex items-center gap-2 uppercase">
+          Follow Up Reports
+        </h2>
+<span class="font-mono text-xs px-2 py-0.5 bg-accent-violet/15 text-accent-violet border border-accent-violet/40 rounded tracking-wider font-semibold">
+          [RESOLUTION QUEUE]
+        </span>
+</div>
+<!-- Command Quick Utilities -->
+<div class="flex items-center gap-2.5 text-xs font-mono">
+<button class="px-2.5 py-1 bg-surface-card border border-surface-border hover:border-gray-500 text-gray-300 rounded flex items-center gap-1.5 hover:text-white transition-all shadow-brutal-sm" type="button">
+<span>📄</span>
+<span>Template</span>
+</button>
+<button class="px-2.5 py-1 bg-surface-card border border-surface-border hover:border-gray-500 text-gray-300 rounded flex items-center gap-1.5 hover:text-white transition-all shadow-brutal-sm" type="button">
+<span>🔄</span>
+<span>Reload</span>
+</button>
+<!-- Interactive Dark / Light Switch Indicator -->
+<div class="px-2 py-1 bg-surface-base border border-surface-border rounded text-[11px] text-gray-300 font-mono">
+<span class="text-accent-cyan">[◉ DARK</span> / <span class="text-gray-500">○ LIGHT]</span>
+</div>
+<!-- Docs Sync Connection Status -->
+<div class="px-2.5 py-1 bg-accent-lime/10 border border-accent-lime/30 text-accent-lime rounded flex items-center gap-1.5 text-xs">
+<span class="w-1.5 h-1.5 rounded-full bg-accent-lime animate-pulse"></span>
+<span>Docs Connected</span>
+<span class="text-[10px] opacity-75">⚙</span>
+</div>
+<!-- Monospace Clock -->
+<div class="px-2.5 py-1 bg-surface-base border border-surface-border rounded font-mono text-accent-amber font-semibold">
+          11:18:54 AM PHT
+        </div>
+<!-- User Profile Pill -->
+<div class="flex items-center gap-2 pl-1 border-l border-surface-border">
+<div class="w-7 h-7 rounded bg-accent-violet border border-accent-violet flex items-center justify-center font-bold text-xs text-white shadow-brutal-sm">
+            M
+          </div>
+<div class="leading-none text-left">
+<div class="font-bold text-xs text-white">Miles</div>
+<div class="text-[9px] font-mono text-gray-400 uppercase tracking-tighter">OPERATOR</div>
+</div>
+</div>
+</div>
+</header>
+<!-- Scrollable Workspace Container -->
+<div class="flex-1 overflow-y-auto px-5 py-4 space-y-4">
+<!-- BEGIN: TelemetryBar -->
+<!-- Telemetry & Metric Summary Strip -->
+<section class="flex items-center justify-between bg-surface-panel p-2.5 px-4 rounded border-2 border-surface-border" data-purpose="telemetry-bar">
+<div class="flex items-center gap-4">
+<span class="text-xs font-bold uppercase tracking-wider text-gray-200">Follow Up Operations</span>
+<div class="flex items-center gap-2 font-mono text-xs">
+<div class="px-2.5 py-0.5 rounded bg-surface-base border border-accent-amber/50 text-accent-amber flex items-center gap-1.5">
+<span class="text-gray-400 text-[11px]">Open:</span>
+<span class="font-bold">3</span>
+</div>
+<div class="px-2.5 py-0.5 rounded bg-surface-base border border-accent-lime/50 text-accent-lime flex items-center gap-1.5">
+<span class="text-gray-400 text-[11px]">Resolved:</span>
+<span class="font-bold">12</span>
+</div>
+<div class="px-2.5 py-0.5 rounded bg-surface-base border border-accent-violet/50 text-accent-violet flex items-center gap-1.5">
+<span class="text-gray-400 text-[11px]">Total Tracked:</span>
+<span class="font-bold">15</span>
+</div>
+</div>
+</div>
+<!-- Right Side Audit Warning Note -->
+<div class="font-mono text-xs text-accent-amber/90 flex items-center gap-1.5 tracking-tight">
+<span class="text-accent-amber">⚠</span>
+<span>TL conversation screenshot required for audit evidence</span>
+</div>
+</section>
+<!-- END: TelemetryBar -->
+<!-- BEGIN: AddFollowUpForm -->
+<!-- Neo-brutalist High Efficiency Submission Deck -->
+<section class="bg-surface-panel rounded border-2 border-surface-border p-3.5 shadow-brutal" data-purpose="add-followup-form">
+<div class="text-xs font-mono font-bold uppercase text-gray-300 tracking-wider mb-2.5 flex items-center justify-between">
+<span class="flex items-center gap-1.5">
+<span class="text-accent-violet font-bold">＋</span> ADD FOLLOW UP REPORT
+          </span>
+<span class="text-[10px] text-gray-500 font-normal">Audit Compliance Mode Active</span>
+</div>
+<!-- Input Grid: Row 1 -->
+<div class="grid grid-cols-12 gap-2.5 mb-2.5 text-xs">
+<!-- Date -->
+<div class="col-span-2">
+<label class="block font-mono text-[10px] uppercase text-gray-400 mb-1 font-semibold">DATE</label>
+<div class="relative">
+<input class="retro-input w-full px-2.5 py-1.5 rounded font-mono text-xs focus:ring-0 text-white" type="text" value="09/14/2026"/>
+<span class="absolute right-2.5 top-1.5 text-gray-400 pointer-events-none text-xs">📅</span>
+</div>
+</div>
+<!-- OM / Group Chat -->
+<div class="col-span-3">
+<label class="block font-mono text-[10px] uppercase text-gray-400 mb-1 font-semibold">OM / GROUP CHAT</label>
+<input class="retro-input w-full px-2.5 py-1.5 rounded text-xs focus:ring-0 text-white placeholder-gray-600" placeholder="e.g., CCTV OM MIRAH" type="text"/>
+</div>
+<!-- TL / Report Label -->
+<div class="col-span-3">
+<label class="block font-mono text-[10px] uppercase text-gray-400 mb-1 font-semibold">TL / REPORT LABEL</label>
+<input class="retro-input w-full px-2.5 py-1.5 rounded text-xs focus:ring-0 text-white placeholder-gray-600" placeholder="Optional TL / label" type="text"/>
+</div>
+<!-- Teams / CCTV Link -->
+<div class="col-span-2">
+<label class="block font-mono text-[10px] uppercase text-gray-400 mb-1 font-semibold">TEAMS / CCTV LINK</label>
+<input class="retro-input w-full px-2.5 py-1.5 rounded text-xs focus:ring-0 text-white placeholder-gray-600" placeholder="Paste Teams message URL" type="text"/>
+</div>
+<!-- Status Dropdown -->
+<div class="col-span-2">
+<label class="block font-mono text-[10px] uppercase text-gray-400 mb-1 font-semibold">STATUS</label>
+<select class="retro-input w-full px-2.5 py-1.5 rounded text-xs focus:ring-0 text-accent-amber font-semibold cursor-pointer">
+<option class="bg-surface-panel text-accent-amber" selected="">Waiting for TL</option>
+<option class="bg-surface-panel text-accent-cyan">Open / In Review</option>
+<option class="bg-surface-panel text-accent-crimson">Escalated to OM</option>
+<option class="bg-surface-panel text-accent-lime">Resolved</option>
+</select>
+</div>
+</div>
+<!-- Input Grid: Row 2 (Screenshot dropzone + Remarks textarea) -->
+<div class="grid grid-cols-12 gap-2.5">
+<!-- Screenshot Dropzone -->
+<div class="col-span-3">
+<label class="block font-mono text-[10px] uppercase text-gray-400 mb-1 font-semibold">PROOF EVIDENCE</label>
+<div class="border-2 border-dashed border-surface-border hover:border-accent-violet bg-surface-base rounded h-20 flex flex-col items-center justify-center p-2 text-center cursor-pointer transition-colors group">
+<button class="px-2 py-0.5 bg-surface-card border border-surface-border group-hover:border-accent-violet rounded text-[11px] font-mono text-white mb-1 shadow-brutal-sm" type="button">
+                Add Screenshot
+              </button>
+<span class="text-[10px] font-mono text-gray-400">Drop image here or Ctrl+V</span>
+</div>
+</div>
+<!-- Remarks / TL Reply -->
+<div class="col-span-9">
+<label class="block font-mono text-[10px] uppercase text-gray-400 mb-1 font-semibold">REMARKS / TL REPLY (INCIDENT AUDIT LOG)</label>
+<textarea class="retro-input w-full px-2.5 py-1.5 rounded text-xs focus:ring-0 text-white placeholder-gray-600 resize-none h-20" placeholder="Remarks / TL Reply (e.g., TL disputed the report. Need OM verification)..." rows="3"></textarea>
+</div>
+</div>
+<!-- Actions Deck Bar -->
+<div class="mt-3 pt-2.5 border-t border-surface-border flex items-center justify-between">
+<div class="text-[11px] font-mono text-gray-400">
+            Press <kbd class="px-1 py-0.5 bg-surface-card rounded text-gray-300 border border-surface-border">Tab</kbd> to move next · <kbd class="px-1 py-0.5 bg-surface-card rounded text-gray-300 border border-surface-border">Ctrl+Enter</kbd> to submit
+          </div>
+<div class="flex items-center gap-2">
+<button class="px-3 py-1.5 font-mono text-xs text-gray-400 hover:text-white rounded border border-surface-border hover:bg-surface-elevated transition-all" type="button">
+              Clear Form
+            </button>
+<button class="px-4 py-1.5 bg-accent-violet hover:bg-accent-violet/90 text-white font-bold font-mono text-xs rounded border-2 border-accent-violet shadow-brutal-sm active:translate-x-[1px] active:translate-y-[1px] transition-transform flex items-center gap-1.5" type="button">
+<span>+</span> Add Follow Up Report
+            </button>
+</div>
+</div>
+</section>
+<!-- END: AddFollowUpForm -->
+<!-- BEGIN: ResolutionQueueSection -->
+<!-- Resolution Queue Workspace Cards & Controls -->
+<section class="space-y-3 pb-8" data-purpose="resolution-queue">
+<!-- Queue Header & Filter Utilities -->
+<div class="flex items-center justify-between pt-1">
+<div class="flex items-center gap-3">
+<h3 class="font-bold text-sm tracking-wide text-white uppercase flex items-center gap-2">
+              Resolution Queue
+            </h3>
+<span class="font-mono text-xs px-2 py-0.5 bg-surface-card border border-surface-border text-gray-300 rounded font-bold">
+              3 ACTIVE / 15 TOTAL
+            </span>
+<span class="text-xs font-mono text-accent-cyan flex items-center gap-1">
+<span>↓</span> Open reports prioritized first
+            </span>
+</div>
+<!-- Quick Filters and Bulk Controls -->
+<div class="flex items-center gap-2">
+<div class="relative">
+<input class="retro-input w-64 px-2.5 py-1 text-xs rounded pl-7 font-mono text-white placeholder-gray-500" placeholder="Filter by TL, OM, status..." type="text"/>
+<span class="absolute left-2.5 top-1.5 text-gray-500 text-xs">⌕</span>
+</div>
+<button class="px-2.5 py-1 bg-surface-card border border-surface-border hover:border-gray-500 text-gray-300 rounded font-mono text-xs flex items-center gap-1 shadow-brutal-sm" type="button">
+<span>⬇</span> Export Queue
+            </button>
+<button class="px-2.5 py-1 bg-surface-card border border-surface-border hover:border-gray-500 text-gray-300 rounded font-mono text-xs flex items-center gap-1 shadow-brutal-sm" type="button">
+<span>↻</span> Refresh
+            </button>
+</div>
+</div>
+<!-- Queue Cards List -->
+<div class="space-y-2.5">
+<!-- Card 1: Escalated to OM (Crimson Accent) -->
+<article class="bg-surface-panel rounded border-2 border-accent-crimson/80 p-3.5 shadow-brutal relative hover:border-accent-crimson transition-all" data-purpose="queue-card-escalated">
+<div class="flex items-start justify-between gap-4 mb-2">
+<div class="flex items-center gap-2.5 flex-wrap">
+<!-- Status Badge -->
+<span class="px-2 py-0.5 bg-accent-crimson/20 border border-accent-crimson text-accent-crimson font-mono font-bold text-xs rounded tracking-wide">
+                  [ESCALATED - OM ACTION]
+                </span>
+<!-- Date -->
+<span class="font-mono text-xs text-gray-400 flex items-center gap-1">
+<span>📅</span> Sep 13, 2026
+                </span>
+<!-- OM Pill -->
+<span class="font-mono text-xs bg-surface-base px-2 py-0.5 rounded border border-surface-border text-gray-300">
+                  OM: <strong class="text-white">CCTV OM MIRAH</strong>
+</span>
+<!-- TL Pill -->
+<span class="font-mono text-xs bg-surface-base px-2 py-0.5 rounded border border-surface-border text-gray-300">
+                  TL: <strong class="text-white">Kevin Kyle Omiping</strong>
+</span>
+<!-- Violation Label -->
+<span class="text-xs font-semibold px-2 py-0.5 bg-red-950/40 text-red-300 border border-red-800/60 rounded">
+                  Sleeping on Post Dispute
+                </span>
+</div>
+<!-- Quick Link Button -->
+<a class="px-2.5 py-1 bg-surface-base hover:bg-surface-card border border-surface-border hover:border-accent-cyan text-accent-cyan font-mono text-xs rounded flex items-center gap-1 shrink-0 transition-colors" href="#">
+<span>Teams Clip</span>
+<span class="font-bold text-[11px]">↗</span>
+</a>
+</div>
+<!-- Content Body: Evidence & Remarks -->
+<div class="grid grid-cols-12 gap-3 mt-2 bg-surface-base p-2.5 rounded border border-surface-border/70">
+<!-- Screenshot Evidence Thumbnail -->
+<div class="col-span-2 flex flex-col items-center justify-center bg-surface-card border border-dashed border-gray-700 rounded p-2 text-center h-16">
+<span class="text-accent-crimson font-mono text-xs font-bold">proof_0913.png</span>
+<span class="text-[10px] text-gray-400 mt-0.5 font-mono">1.4 MB [View]</span>
+</div>
+<!-- Remarks Text -->
+<div class="col-span-10 text-xs flex flex-col justify-center">
+<span class="font-mono text-[10px] text-gray-400 uppercase font-semibold">Incident Audit Remarks &amp; TL Reply:</span>
+<p class="text-gray-200 mt-0.5 leading-relaxed font-sans">
+                  "TL claims agent was on authorized break sync mismatch. Requested floor CCTV footage angle 3 to confirm relief agent handover timing."
+                </p>
+</div>
+</div>
+<!-- Card Bottom Bar: Quick Action Buttons -->
+<div class="mt-2.5 flex items-center justify-between">
+<span class="text-[10px] font-mono text-gray-500">Audit ID: #FLW-8821 · Last ping: 42m ago</span>
+<div class="flex items-center gap-2">
+<button class="px-3 py-1 font-mono text-xs bg-surface-card hover:bg-surface-elevated border border-surface-border text-gray-300 hover:text-white rounded shadow-brutal-sm" type="button">
+                  Replace SS
+                </button>
+<button class="px-3 py-1 font-mono text-xs bg-surface-card hover:bg-surface-elevated border border-surface-border text-accent-amber hover:text-white rounded shadow-brutal-sm" type="button">
+                  Update Status
+                </button>
+<button class="px-3 py-1 font-mono text-xs font-bold bg-accent-lime/20 hover:bg-accent-lime/30 border border-accent-lime text-accent-lime rounded shadow-brutal-sm flex items-center gap-1" type="button">
+<span>✓</span> Resolve
+                </button>
+</div>
+</div>
+</article>
+<!-- Card 2: Waiting for TL (Amber Accent) -->
+<article class="bg-surface-panel rounded border-2 border-accent-amber/70 p-3.5 shadow-brutal relative hover:border-accent-amber transition-all" data-purpose="queue-card-waiting">
+<div class="flex items-start justify-between gap-4 mb-2">
+<div class="flex items-center gap-2.5 flex-wrap">
+<!-- Status Badge -->
+<span class="px-2 py-0.5 bg-accent-amber/15 border border-accent-amber text-accent-amber font-mono font-bold text-xs rounded tracking-wide">
+                  [WAITING FOR TL]
+                </span>
+<!-- Date -->
+<span class="font-mono text-xs text-gray-400 flex items-center gap-1">
+<span>📅</span> Sep 14, 2026
+                </span>
+<!-- OM Pill -->
+<span class="font-mono text-xs bg-surface-base px-2 py-0.5 rounded border border-surface-border text-gray-300">
+                  OM: <strong class="text-white">CCTV OM JORDAN</strong>
+</span>
+<!-- TL Pill -->
+<span class="font-mono text-xs bg-surface-base px-2 py-0.5 rounded border border-surface-border text-gray-300">
+                  TL: <strong class="text-white">Sarah Connor</strong>
+</span>
+<!-- Violation Label -->
+<span class="text-xs font-semibold px-2 py-0.5 bg-amber-950/40 text-amber-300 border border-amber-800/60 rounded">
+                  Unauthorized Phone Usage
+                </span>
+</div>
+<!-- Quick Link Button -->
+<a class="px-2.5 py-1 bg-surface-base hover:bg-surface-card border border-surface-border hover:border-accent-cyan text-accent-cyan font-mono text-xs rounded flex items-center gap-1 shrink-0 transition-colors" href="#">
+<span>Teams Message</span>
+<span class="font-bold text-[11px]">↗</span>
+</a>
+</div>
+<!-- Content Body: Evidence & Remarks -->
+<div class="grid grid-cols-12 gap-3 mt-2 bg-surface-base p-2.5 rounded border border-surface-border/70">
+<!-- Screenshot Evidence Thumbnail -->
+<div class="col-span-2 flex flex-col items-center justify-center bg-surface-card border border-dashed border-gray-700 rounded p-2 text-center h-16">
+<span class="text-accent-amber font-mono text-xs font-bold">ss_phone_0914.jpg</span>
+<span class="text-[10px] text-gray-400 mt-0.5 font-mono">2.1 MB [View]</span>
+</div>
+<!-- Remarks Text -->
+<div class="col-span-10 text-xs flex flex-col justify-center">
+<span class="font-mono text-[10px] text-gray-400 uppercase font-semibold">Incident Audit Remarks &amp; TL Reply:</span>
+<p class="text-gray-200 mt-0.5 leading-relaxed font-sans">
+                  "Sent incident timestamp and snapshot to TL via dedicated escalation thread. Awaiting written explanation before closing audit tag."
+                </p>
+</div>
+</div>
+<!-- Card Bottom Bar: Quick Action Buttons -->
+<div class="mt-2.5 flex items-center justify-between">
+<span class="text-[10px] font-mono text-gray-500">Audit ID: #FLW-8822 · Awaiting reply 3h 12m</span>
+<div class="flex items-center gap-2">
+<button class="px-3 py-1 font-mono text-xs bg-surface-card hover:bg-surface-elevated border border-surface-border text-accent-amber hover:text-white rounded shadow-brutal-sm flex items-center gap-1" type="button">
+<span>🔔</span> Ping TL
+                </button>
+<button class="px-3 py-1 font-mono text-xs bg-surface-card hover:bg-surface-elevated border border-surface-border text-gray-300 hover:text-white rounded shadow-brutal-sm" type="button">
+                  Update Remarks
+                </button>
+<button class="px-3 py-1 font-mono text-xs font-bold bg-accent-lime/20 hover:bg-accent-lime/30 border border-accent-lime text-accent-lime rounded shadow-brutal-sm flex items-center gap-1" type="button">
+<span>✓</span> Resolve
+                </button>
+</div>
+</div>
+</article>
+<!-- Card 3: In Review (Cyan Accent) -->
+<article class="bg-surface-panel rounded border-2 border-accent-cyan/70 p-3.5 shadow-brutal relative hover:border-accent-cyan transition-all" data-purpose="queue-card-in-review">
+<div class="flex items-start justify-between gap-4 mb-2">
+<div class="flex items-center gap-2.5 flex-wrap">
+<!-- Status Badge -->
+<span class="px-2 py-0.5 bg-accent-cyan/15 border border-accent-cyan text-accent-cyan font-mono font-bold text-xs rounded tracking-wide">
+                  [IN REVIEW]
+                </span>
+<!-- Date -->
+<span class="font-mono text-xs text-gray-400 flex items-center gap-1">
+<span>📅</span> Sep 14, 2026
+                </span>
+<!-- OM Pill -->
+<span class="font-mono text-xs bg-surface-base px-2 py-0.5 rounded border border-surface-border text-gray-300">
+                  OM: <strong class="text-white">CCTV OM FREDA</strong>
+</span>
+<!-- TL Pill -->
+<span class="font-mono text-xs bg-surface-base px-2 py-0.5 rounded border border-surface-border text-gray-300">
+                  TL: <strong class="text-white">Melvinson Laguting</strong>
+</span>
+<!-- Violation Label -->
+<span class="text-xs font-semibold px-2 py-0.5 bg-cyan-950/40 text-cyan-300 border border-cyan-800/60 rounded">
+                  Station Clutter &amp; Hardware
+                </span>
+</div>
+<!-- Quick Link Button -->
+<a class="px-2.5 py-1 bg-surface-base hover:bg-surface-card border border-surface-border hover:border-accent-cyan text-accent-cyan font-mono text-xs rounded flex items-center gap-1 shrink-0 transition-colors" href="#">
+<span>Teams Chat</span>
+<span class="font-bold text-[11px]">↗</span>
+</a>
+</div>
+<!-- Content Body: Evidence & Remarks -->
+<div class="grid grid-cols-12 gap-3 mt-2 bg-surface-base p-2.5 rounded border border-surface-border/70">
+<!-- Screenshot Evidence Thumbnail -->
+<div class="col-span-2 flex flex-col items-center justify-center bg-surface-card border border-dashed border-gray-700 rounded p-2 text-center h-16">
+<span class="text-accent-cyan font-mono text-xs font-bold">clean_check.png</span>
+<span class="text-[10px] text-gray-400 mt-0.5 font-mono">890 KB [View]</span>
+</div>
+<!-- Remarks Text -->
+<div class="col-span-10 text-xs flex flex-col justify-center">
+<span class="font-mono text-[10px] text-gray-400 uppercase font-semibold">Incident Audit Remarks &amp; TL Reply:</span>
+<p class="text-gray-200 mt-0.5 leading-relaxed font-sans">
+                  "Station cleaned and cables secured. Waiting for shift-turnover audit camera sweep to mark compliant."
+                </p>
+</div>
+</div>
+<!-- Card Bottom Bar: Quick Action Buttons -->
+<div class="mt-2.5 flex items-center justify-between">
+<span class="text-[10px] font-mono text-gray-500">Audit ID: #FLW-8823 · Secondary sweep pending</span>
+<div class="flex items-center gap-2">
+<button class="px-3 py-1 font-mono text-xs bg-surface-card hover:bg-surface-elevated border border-surface-border text-accent-cyan hover:text-white rounded shadow-brutal-sm flex items-center gap-1" type="button">
+<span>🔍</span> Verify Feed
+                </button>
+<button class="px-3 py-1 font-mono text-xs font-bold bg-accent-lime/20 hover:bg-accent-lime/30 border border-accent-lime text-accent-lime rounded shadow-brutal-sm flex items-center gap-1" type="button">
+<span>✓</span> Resolve
+                </button>
+</div>
+</div>
+</article>
+<!-- Card 4: Resolved History Example (Lime Subdued State) -->
+<article class="bg-surface-panel/70 rounded border border-accent-lime/40 p-3 opacity-80 hover:opacity-100 transition-opacity" data-purpose="queue-card-resolved">
+<div class="flex items-center justify-between gap-4">
+<div class="flex items-center gap-2.5 flex-wrap">
+<!-- Status Badge -->
+<span class="px-2 py-0.5 bg-accent-lime/10 border border-accent-lime/40 text-accent-lime font-mono font-semibold text-xs rounded">
+                  [RESOLVED ✓]
+                </span>
+<!-- Date -->
+<span class="font-mono text-xs text-gray-400">Sep 12, 2026</span>
+<!-- OM Pill -->
+<span class="font-mono text-xs text-gray-400">OM: <span class="text-gray-300">CCTV OM ABBY</span></span>
+<!-- TL Pill -->
+<span class="font-mono text-xs text-gray-400">TL: <span class="text-gray-300">John Vincent Sotto</span></span>
+<!-- Resolution Note -->
+<span class="text-xs text-gray-400 italic">"Verified and closed with coaching acknowledgement."</span>
+</div>
+<!-- Action Buttons -->
+<div class="flex items-center gap-2 shrink-0">
+<button class="px-2.5 py-0.5 bg-surface-card border border-surface-border hover:border-gray-500 text-gray-400 hover:text-white text-xs font-mono rounded" type="button">
+                  View Evidence
+                </button>
+<button class="px-2.5 py-0.5 bg-surface-card border border-surface-border hover:border-accent-amber text-gray-400 hover:text-accent-amber text-xs font-mono rounded" type="button">
+                  Reopen
+                </button>
+</div>
+</div>
+</article>
+</div>
+<!-- Informational Queue Footer Notice -->
+<div class="mt-3 p-3 bg-surface-panel/40 border border-dashed border-surface-border rounded text-center text-xs font-mono text-gray-400 flex items-center justify-center gap-2">
+<span class="text-accent-cyan">ℹ</span>
+<span>All urgent resolution queue items require verified CCTV timestamp attachments before marking as Resolved.</span>
+</div>
+</section>
+<!-- END: ResolutionQueueSection -->
+</div>
+</main>
+<!-- END: MainContentArea -->
+</body></html>

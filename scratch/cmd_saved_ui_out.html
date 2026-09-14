@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="UTF-8">
+  <title>V2 EDR Saved List UI Verification Test</title>
+  <link rel="stylesheet" href="../cctv-ops-v2/css/variables.css">
+  <link rel="stylesheet" href="../cctv-ops-v2/css/base.css">
+  <link rel="stylesheet" href="../cctv-ops-v2/css/layout.css">
+  <link rel="stylesheet" href="../cctv-ops-v2/css/components.css">
+  <style>
+    body { font-family: monospace; background: #0b0f19; color: #e2e8f0; padding: 20px; font-size: 13px; line-height: 1.5; }
+    .pass { color: #4ade80; font-weight: bold; }
+    .fail { color: #f87171; font-weight: bold; }
+    .section { margin-top: 15px; border-bottom: 1px solid #334155; padding-bottom: 4px; color: #38bdf8; font-size: 14px; font-weight: bold; }
+
+    /* Refined Saved EDR Record Row & Actions (from index.html) */
+    #edrListContainer {
+      overflow-y: auto !important;
+      overflow-x: hidden !important;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      width: 100%;
+      box-sizing: border-box;
+      padding: 8px 10px;
+    }
+
+    .record-row {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      padding: 7px 9px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-default);
+      border-radius: var(--radius-sm);
+      transition: all var(--trans-fast);
+      user-select: none;
+      box-sizing: border-box;
+      width: 100%;
+      max-width: 100%;
+      overflow: hidden;
+    }
+
+    .record-row:hover {
+      background: var(--bg-surface-elevated);
+      border-color: var(--border-hover);
+    }
+
+    .record-row.is-selected {
+      border-color: rgba(56, 189, 248, 0.4);
+      background: rgba(56, 189, 248, 0.04);
+    }
+
+    .record-row.is-done {
+      opacity: 0.65;
+    }
+
+    .record-main-block {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+      min-width: 0;
+      box-sizing: border-box;
+    }
+
+    .record-selector-col {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+
+    .record-thumb-wrap {
+      width: 42px;
+      height: 42px;
+      min-width: 42px;
+      min-height: 42px;
+      flex-shrink: 0;
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+      border: 1px solid var(--border-default);
+      background: var(--bg-surface-elevated);
+      cursor: pointer;
+      position: relative;
+      transition: border-color var(--trans-fast), transform var(--trans-fast);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-sizing: border-box;
+    }
+
+    .record-thumb-wrap:hover {
+      border-color: #38bdf8;
+      transform: scale(1.03);
+    }
+
+    .record-thumb {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .record-thumb-placeholder {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 1px;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px dashed var(--border-default);
+      border-radius: var(--radius-sm);
+      color: var(--text-muted);
+      transition: all var(--trans-fast);
+      box-sizing: border-box;
+    }
+
+    .record-thumb-wrap:hover .record-thumb-placeholder {
+      border-color: #38bdf8;
+      color: #38bdf8;
+      background: rgba(56, 189, 248, 0.05);
+    }
+
+    .thumb-ph-icon {
+      width: 14px;
+      height: 14px;
+      stroke: currentColor;
+    }
+
+    .thumb-ph-label {
+      font-size: 8px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+      line-height: 1;
+    }
+
+    .record-info {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      overflow: hidden;
+      min-width: 0;
+    }
+
+    .record-title-line {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 11.5px;
+      color: var(--text-primary);
+      white-space: nowrap;
+      overflow: hidden;
+      min-width: 0;
+    }
+
+    .record-date {
+      font-weight: 700;
+      color: #38bdf8;
+      flex-shrink: 0;
+      letter-spacing: 0.2px;
+    }
+
+    .record-sep {
+      color: var(--text-muted);
+      opacity: 0.6;
+      flex-shrink: 0;
+      font-size: 10px;
+    }
+
+    .record-site {
+      font-weight: 600;
+      color: var(--text-primary);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      flex-shrink: 1;
+    }
+
+    .record-account {
+      font-size: 10.5px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      background: rgba(255, 255, 255, 0.06);
+      padding: 0 4px;
+      border-radius: 3px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      flex-shrink: 2;
+    }
+
+    .record-badges-group {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      margin-left: auto;
+      flex-shrink: 0;
+    }
+
+    .record-status-badge {
+      font-size: 9.5px;
+      padding: 0 5px;
+    }
+
+    .record-link-badge {
+      font-size: 9.5px;
+      padding: 0 5px;
+    }
+
+    .record-sub-line {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 10.5px;
+      color: var(--text-muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      min-width: 0;
+    }
+
+    .record-sub-line .sub-item {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .record-sub-line .sub-label {
+      color: var(--text-muted);
+      font-weight: 400;
+    }
+
+    .record-sub-line strong {
+      color: var(--text-secondary);
+      font-weight: 500;
+    }
+
+    .record-actions-bar {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 4px;
+      padding-top: 4px;
+      margin-top: 1px;
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+      width: 100%;
+      box-sizing: border-box;
+      overflow: hidden;
+    }
+
+    .btn-action {
+      height: 22px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 6px;
+      font-size: 10.5px;
+      font-weight: 500;
+      white-space: nowrap;
+      border-radius: 3px;
+      border: 1px solid var(--border-default);
+      background: var(--bg-surface-elevated);
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all var(--trans-fast);
+      flex-shrink: 0;
+      line-height: 1;
+      font-family: inherit;
+    }
+
+    .btn-action:hover {
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text-primary);
+      border-color: var(--border-hover);
+    }
+
+    .btn-action.btn-audit-send.is-linked {
+      color: #38bdf8;
+      border-color: rgba(56, 189, 248, 0.35);
+      background: rgba(56, 189, 248, 0.06);
+    }
+
+    .btn-action.btn-done-toggle.is-done-btn {
+      color: #34d399;
+      border-color: rgba(52, 211, 153, 0.35);
+      background: rgba(52, 211, 153, 0.06);
+    }
+
+    .btn-action.btn-action-danger {
+      color: #f87171;
+      border-color: rgba(239, 68, 68, 0.25);
+      background: rgba(239, 68, 68, 0.04);
+    }
+
+    .btn-action.btn-action-danger:hover {
+      background: rgba(239, 68, 68, 0.15);
+      color: #fca5a5;
+      border-color: #ef4444;
+    }
+  </style>
+</head>
+<body>
+  <h2>CCTV OPS V2 - Saved EDR List UI Verification Suite</h2>
+  <div id="log"></div>
+
+  <!-- Test Container simulating right panel column width (500px) -->
+  <div style="width: 500px; max-width: 500px; background: var(--bg-surface); border: 1px solid var(--border-default); border-radius: 8px; margin: 20px 0; overflow: hidden;">
+    <div style="padding: 8px 12px; border-bottom: 1px solid var(--border-subtle); display:flex; justify-content:space-between; align-items:center;">
+      <span style="font-weight:600; font-size:12px;">Saved EDRs Panel Simulation (500px)</span>
+      <div style="display:flex; gap:6px;">
+        <span class="badge badge-neutral" id="badgeTotalCount">0</span>
+        <span class="badge badge-info" id="badgeSelectedCount">0 selected</span>
+        <span class="badge badge-success" id="badgeDoneCount">0 done</span>
+      </div>
+    </div>
+    <div class="card-body" id="edrListContainer" style="overflow-y:auto; overflow-x:hidden; gap:6px;">
+    </div>
+  </div>
+
+  <!-- Viewer modal simulation -->
+  <div id="modalScreenshotViewer" style="display:none; background: rgba(0,0,0,0.8); position:fixed; inset:0; align-items:center; justify-content:center; z-index:9999;">
+    <div style="background:#1e293b; padding:20px; border-radius:8px;">
+      <img id="screenshotViewerImg" src="" style="max-width:200px;">
+      <button id="btnCloseScreenshotViewer">Close</button>
+    </div>
+  </div>
+
+  <!-- Dependencies -->
+  <script src="../auth-config.js"></script>
+  <script src="../cctv-ops-v2/js/config.js"></script>
+  <script src="../cctv-ops-v2/js/storage.js"></script>
+  <script src="../cctv-ops-v2/js/services/auth-service.js"></script>
+  <script src="../cctv-ops-v2/js/services/edr-service.js"></script>
+
+  <script>
+    const logDiv = document.getElementById("log");
+    let totalTests = 0;
+    let passedTests = 0;
+    let failedTests = 0;
+    const testDetails = [];
+
+    function assert(desc, condition, details = "") {
+      totalTests++;
+      const el = document.createElement("div");
+      if (condition) {
+        passedTests++;
+        el.innerHTML = `<span class="pass">[PASS]</span> ${desc}`;
+        testDetails.push({ name: desc, passed: true, detail: details });
+      } else {
+        failedTests++;
+        el.innerHTML = `<span class="fail">[FAIL]</span> ${desc} - <small style="color:#fca5a5">${details}</small>`;
+        testDetails.push({ name: desc, passed: false, detail: details });
+      }
+      logDiv.appendChild(el);
+    }
+
+    function section(title) {
+      const el = document.createElement("div");
+      el.className = "section";
+      el.textContent = `=== ${title} ===`;
+      logDiv.appendChild(el);
+    }
+
+    // Embed render logic identically to app.js
+    function renderSavedList(reports, edr) {
+      const listContainer = document.getElementById("edrListContainer");
+      const total = reports.length;
+      const selected = reports.filter(r => r.selected && !r.done).length;
+      const done = reports.filter(r => r.done).length;
+
+      document.getElementById("badgeTotalCount").textContent = total;
+      document.getElementById("badgeSelectedCount").textContent = `${selected} selected`;
+      document.getElementById("badgeDoneCount").textContent = `${done} done`;
+
+      if (!reports.length) {
+        listContainer.innerHTML = '<div style="color:var(--text-muted); font-size:11.5px; text-align:center; padding:30px 10px;">No EDR records found.</div>';
+        return;
+      }
+
+      listContainer.innerHTML = reports.map((r) => {
+        const isDone = !!r.done;
+        const isSelected = !!r.selected && !isDone;
+        const isLinked = !!edr.isReportInAudit(r.id);
+        const hasRealImage = !!(r.screenshotData && r.screenshotData.trim().length > 10);
+        const hasRemoteOnly = !hasRealImage && !!r.screenshotFileId;
+        const hasShot = hasRealImage || hasRemoteOnly;
+
+        return `
+          <div class="record-row ${isSelected ? 'is-selected' : ''} ${isDone ? 'is-done' : ''}" data-id="${r.id}">
+            <div class="record-main-block">
+              <div class="record-selector-col">
+                <input type="checkbox" class="edr-check" ${isSelected ? 'checked' : ''} ${isDone ? 'disabled' : ''} style="cursor:pointer;" title="${isDone ? 'Completed' : 'Select'}">
+                <span class="status-dot ${isDone ? 'done' : 'active'}" title="${isDone ? 'Completed' : 'Active'}"></span>
+              </div>
+
+              <div class="record-thumb-wrap ${hasRealImage ? 'has-shot' : 'is-empty'}" title="${hasRealImage ? 'Click to view' : 'No screenshot'}" data-id="${r.id}">
+                ${hasRealImage ? `
+                  <img src="${r.screenshotData}" class="record-thumb" alt="CCTV Thumbnail">
+                ` : (hasRemoteOnly ? `
+                  <div class="record-thumb-placeholder">
+                    <svg class="thumb-ph-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/></svg>
+                    <span class="thumb-ph-label">Cloud</span>
+                  </div>
+                ` : `
+                  <div class="record-thumb-placeholder">
+                    <svg class="thumb-ph-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"></polyline>
+                    </svg>
+                    <span class="thumb-ph-label">No SS</span>
+                  </div>
+                `)}
+              </div>
+
+              <div class="record-info">
+                <div class="record-title-line">
+                  <span class="record-date">${r.date || 'No Date'}</span>
+                  <span class="record-sep">·</span>
+                  <span class="record-site" title="${r.site || 'Site'}">${r.site || 'Site'}</span>
+                  ${r.account ? `<span class="record-sep">·</span><span class="record-account" title="${r.account}">${r.account}</span>` : ''}
+                  <div class="record-badges-group">
+                    <span class="badge ${isDone ? 'badge-success' : 'badge-neutral'} record-status-badge">${isDone ? 'Done' : 'Active'}</span>
+                    ${isLinked ? '<span class="badge badge-info record-link-badge">In Audit</span>' : ''}
+                  </div>
+                </div>
+                <div class="record-sub-line">
+                  <span class="sub-item"><span class="sub-label">${r.supervisorRole || 'TL'}:</span> <strong>${r.supervisorName || 'N/A'}</strong></span>
+                  <span class="record-sep">·</span>
+                  <span class="sub-item"><span class="sub-label">Subj:</span> <strong>${r.subjectName || 'N/A'}</strong></span>
+                  ${(r.timeObserved || r.timeStart) ? `<span class="record-sep">·</span><span class="sub-item"><span class="sub-label">Time:</span> ${r.timeObserved || r.timeStart}</span>` : ''}
+                </div>
+              </div>
+            </div>
+
+            <div class="record-actions-bar">
+              ${hasShot ? `
+                <button type="button" class="btn-action btn-shot-view" title="View CCTV screenshot">View SS</button>
+                <button type="button" class="btn-action btn-shot-copy" title="Copy screenshot image">Copy SS</button>
+                <button type="button" class="btn-action btn-shot-replace" title="Replace screenshot">Replace SS</button>
+                <button type="button" class="btn-action btn-shot-remove" title="Remove screenshot">Remove SS</button>
+              ` : `
+                <button type="button" class="btn-action btn-shot-add" title="Add screenshot">Add SS</button>
+              `}
+              <button type="button" class="btn-action btn-audit-send ${isLinked ? 'is-linked' : ''}">
+                ${isLinked ? 'In CCTV Audit' : 'Send to CCTV Audit'}
+              </button>
+              <button type="button" class="btn-action btn-done-toggle ${isDone ? 'is-done-btn' : ''}">
+                ${isDone ? 'Reopen' : 'Done'}
+              </button>
+              <button type="button" class="btn-action btn-edit">Edit</button>
+              <button type="button" class="btn-action btn-action-danger btn-delete">Delete</button>
+            </div>
+          </div>
+        `;
+      }).join("");
+
+      // Event bindings
+      listContainer.querySelectorAll(".record-row").forEach(card => {
+        const id = card.dataset.id;
+        const report = reports.find(r => r.id === id);
+        if (!report) return;
+
+        const hasRealImage = !!(report.screenshotData && report.screenshotData.trim().length > 10);
+        const hasRemoteOnly = !hasRealImage && !!report.screenshotFileId;
+        const hasShot = hasRealImage || hasRemoteOnly;
+
+        const triggerView = () => {
+          const modal = document.getElementById("modalScreenshotViewer");
+          const img = document.getElementById("screenshotViewerImg");
+          if (modal && img) {
+            img.src = report.screenshotData;
+            modal.style.display = "flex";
+          }
+        };
+
+        if (hasShot) {
+          card.querySelector(".record-thumb-wrap")?.addEventListener("click", triggerView);
+        }
+        card.querySelector(".btn-shot-view")?.addEventListener("click", triggerView);
+
+        card.querySelector(".btn-done-toggle")?.addEventListener("click", () => {
+          edr.toggleDone(id);
+          renderSavedList(edr.getReports(), edr);
+        });
+      });
+    }
+
+    async function runSuite() {
+      try {
+        const edr = window.CCTV_EDR;
+        await edr.init();
+
+        const samplePng = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAFUlEQVR42mNk+M9QzwAEjDAGgAQDAwB+FwIB9g1OaAAAAABJRU5ErkJggg==";
+
+        // Clear existing reports for clean test
+        const existing = edr.getReports();
+        for (const r of existing) {
+          await edr.deleteReport(r.id);
+        }
+
+      // TEST 1: Screenshot Thumbnail Persistence & Visibility
+      section("TEST 1: SCREENSHOT THUMBNAIL MUST APPEAR");
+      await edr.saveReport({
+        date: "2026-09-10",
+        site: "Mabini Site A",
+        account: "AFP",
+        timeObserved: "14:30",
+        supervisorRole: "Team Leader",
+        supervisorName: "Sarah Connor",
+        subjectType: "Agent/s",
+        subjectName: "John Matrix",
+        incident: "CCTV test incident with screenshot",
+        action: "Verbal warning",
+        clipLink: "http://122.54.123.45:8080/clip1",
+        screenshotData: samplePng,
+        selected: true,
+        done: false
+      });
+
+      // Also add report WITHOUT screenshot
+      await edr.saveReport({
+        date: "2026-09-10",
+        site: "Shaw Site B",
+        account: "Healthcare",
+        timeObserved: "16:00",
+        supervisorRole: "OM",
+        supervisorName: "Dutch Schaefer",
+        subjectType: "Agent/s",
+        subjectName: "Kyle Reese",
+        incident: "Test incident without screenshot",
+        action: "Documented",
+        clipLink: "",
+        screenshotData: "",
+        selected: false,
+        done: false
+      });
+
+      const reports = edr.getReports();
+      renderSavedList(reports, edr);
+
+      const container = document.getElementById("edrListContainer");
+      const rows = container.querySelectorAll(".record-row");
+
+      assert("Saved EDR list rendered 2 reports", rows.length === 2);
+
+      const rowWithShot = rows[0];
+      const rowWithoutShot = rows[1];
+
+      // Check thumbnail with shot
+      const thumbWrap1 = rowWithShot.querySelector(".record-thumb-wrap");
+      assert("Row 1 has .record-thumb-wrap", !!thumbWrap1);
+      assert("Row 1 thumb has .has-shot class", thumbWrap1.classList.contains("has-shot"));
+      
+      const thumbImg = thumbWrap1.querySelector("img.record-thumb");
+      assert("Row 1 thumbnail <img> exists", !!thumbImg);
+      assert("Row 1 thumbnail src matches screenshot data", thumbImg && thumbImg.src.startsWith("data:image/png"));
+      
+      const thumbRect = thumbWrap1.getBoundingClientRect();
+      assert("Thumbnail is approximately 42px square (between 36px and 48px)", Math.round(thumbRect.width) >= 36 && Math.round(thumbRect.width) <= 48, `Width: ${thumbRect.width}, Height: ${thumbRect.height}`);
+
+      // Check placeholder without shot
+      const thumbWrap2 = rowWithoutShot.querySelector(".record-thumb-wrap");
+      assert("Row 2 has .record-thumb-wrap", !!thumbWrap2);
+      assert("Row 2 thumb has .is-empty class", thumbWrap2.classList.contains("is-empty"));
+      const ph = thumbWrap2.querySelector(".record-thumb-placeholder");
+      assert("Row 2 displays compact placeholder", !!ph);
+      assert("Placeholder displays 'No SS'", ph && ph.textContent.includes("No SS"));
+
+      // TEST 2: Date Display
+      section("TEST 2: DATE MUST BE CLEARLY VISIBLE");
+      const dateSpan1 = rowWithShot.querySelector(".record-date");
+      assert("Row 1 has .record-date element", !!dateSpan1);
+      assert("Row 1 displays clear date '2026-09-10'", dateSpan1 && dateSpan1.textContent.trim() === "2026-09-10");
+      
+      const siteSpan1 = rowWithShot.querySelector(".record-site");
+      assert("Row 1 displays site 'Mabini Site A'", siteSpan1 && siteSpan1.textContent.trim() === "Mabini Site A");
+
+      const acctSpan1 = rowWithShot.querySelector(".record-account");
+      assert("Row 1 displays account 'AFP'", acctSpan1 && acctSpan1.textContent.trim() === "AFP");
+
+      const titleLineText = rowWithShot.querySelector(".record-title-line").textContent;
+      assert("Formatted metadata layout contains '2026-09-10 · Mabini Site A · AFP'", titleLineText.includes("2026-09-10") && titleLineText.includes("Mabini Site A") && titleLineText.includes("AFP"), `Actual: ${titleLineText}`);
+
+      // TEST 3: Action Buttons Arrangement
+      section("TEST 3: ARRANGE ACTION BUTTONS");
+      const actionsBar1 = rowWithShot.querySelector(".record-actions-bar");
+      assert("Row 1 has .record-actions-bar", !!actionsBar1);
+      
+      const btnViewSS = actionsBar1.querySelector(".btn-shot-view");
+      const btnCopySS = actionsBar1.querySelector(".btn-shot-copy");
+      const btnReplaceSS = actionsBar1.querySelector(".btn-shot-replace");
+      const btnRemoveSS = actionsBar1.querySelector(".btn-shot-remove");
+      const btnAudit = actionsBar1.querySelector(".btn-audit-send");
+      const btnDone = actionsBar1.querySelector(".btn-done-toggle");
+      const btnEdit = actionsBar1.querySelector(".btn-edit");
+      const btnDelete = actionsBar1.querySelector(".btn-delete");
+
+      assert("Has 'View SS' button", !!btnViewSS);
+      assert("Has 'Copy SS' button", !!btnCopySS);
+      assert("Has 'Replace SS' button", !!btnReplaceSS);
+      assert("Has 'Remove SS' button", !!btnRemoveSS);
+      assert("Has 'Send to CCTV Audit' button", !!btnAudit);
+      assert("Has 'Done' button", !!btnDone);
+      assert("Has 'Edit' button", !!btnEdit);
+      assert("Has 'Delete' button", !!btnDelete);
+
+      // Check uniform button height
+      const btns = actionsBar1.querySelectorAll(".btn-action");
+      let all22px = true;
+      btns.forEach(b => {
+        const h = Math.round(b.getBoundingClientRect().height);
+        if (h < 20 || h > 24) all22px = false;
+      });
+      assert("Action buttons have neat uniform compact height (22px)", all22px);
+
+      // Check Add SS on record without screenshot
+      const actionsBar2 = rowWithoutShot.querySelector(".record-actions-bar");
+      const btnAddSS = actionsBar2.querySelector(".btn-shot-add");
+      assert("Row 2 without screenshot has 'Add SS' button", !!btnAddSS);
+
+      // TEST 4: Remove Horizontal Scrolling
+      section("TEST 4: REMOVE HORIZONTAL SCROLLING");
+      assert("Container scrollWidth <= clientWidth (zero overflow)", container.scrollWidth <= container.clientWidth, `scrollWidth: ${container.scrollWidth}, clientWidth: ${container.clientWidth}`);
+      
+      const contStyle = window.getComputedStyle(container);
+      assert("Container CSS overflow-x is hidden", contStyle.overflowX === "hidden");
+
+      let rowsFit = true;
+      rows.forEach((r, idx) => {
+        if (r.scrollWidth > r.clientWidth + 1) {
+          rowsFit = false;
+        }
+      });
+      assert("Each saved EDR row fits within panel width without overflowing", rowsFit);
+
+      // TEST 5: Remove 'Show' Action Confirmation
+      section("TEST 5: REMOVE 'SHOW' ACTION");
+      const allActionTexts = Array.from(container.querySelectorAll("button")).map(b => b.textContent.trim());
+      const hasShow = allActionTexts.some(t => t.toLowerCase() === "show");
+      assert("No 'Show' action is present in Saved EDR buttons", !hasShow, `Found buttons: ${allActionTexts.join(", ")}`);
+
+      // TEST 6: Functionality Preserved
+      section("TEST 6: FUNCTIONALITY PRESERVATION");
+      // Test View SS modal
+      thumbWrap1.click();
+      const modal = document.getElementById("modalScreenshotViewer");
+      const modalImg = document.getElementById("screenshotViewerImg");
+      assert("Clicking thumbnail opens full screenshot viewer", modal.style.display === "flex" && modalImg.src.startsWith("data:image/png"));
+      modal.style.display = "none";
+
+      // Test Done toggle
+      btnDone.click();
+      const repAfter = edr.getReports()[0];
+      assert("Done state toggled successfully", repAfter.done === true);
+      assert("Done count updated to 1", document.getElementById("badgeDoneCount").textContent.includes("1 done"));
+
+      // Re-toggle back
+      const btnReopen = rowWithShot.querySelector(".btn-done-toggle");
+      btnReopen.click();
+      assert("Done state toggled back to active", edr.getReports()[0].done === false);
+
+      // Final summary
+      section("FINAL RESULTS");
+      const summaryText = `RESULTS: ${passedTests} passed, ${failedTests} failed out of ${totalTests} assertions`;
+      const resEl = document.createElement("div");
+      resEl.style.fontSize = "16px";
+      resEl.style.marginTop = "10px";
+      resEl.style.fontWeight = "bold";
+      resEl.style.color = failedTests === 0 ? "#4ade80" : "#f87171";
+      resEl.textContent = summaryText;
+      logDiv.appendChild(resEl);
+
+      try {
+        await fetch("http://localhost:8080/api/test_report", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            summary: summaryText,
+            totalPassed: passedTests,
+            totalFailed: failedTests,
+            tests: testDetails,
+            timestamp: new Date().toISOString()
+          })
+        });
+      } catch (_) {}
+    } catch (err) {
+      console.error(err);
+      const errEl = document.createElement("div");
+      errEl.className = "fail";
+      errEl.textContent = "SUITE ERROR: " + err.message + "\n" + err.stack;
+      logDiv.appendChild(errEl);
+    }
+  }
+
+    runSuite();
+  </script>
+
+
+</body></html>

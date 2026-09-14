@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Debug Expand/Collapse</title>
+</head>
+<body style="background:#0f172a; color:#fff; font-family:monospace; padding:20px;">
+  <h2>Debug Expand/Collapse States</h2>
+  <div id="output">Starting...</div>
+  <iframe id="frame" src="/cctv-ops-v2/" style="width:1440px; height:900px; border:1px solid #334155;"></iframe>
+
+  <script>
+    const frame = document.getElementById("frame");
+    const output = document.getElementById("output");
+
+    frame.onload = async () => {
+      await new Promise(r => setTimeout(r, 1500));
+      const doc = frame.contentDocument;
+      const win = frame.contentWindow;
+
+      function getLayoutState() {
+        const layout = doc.querySelector("#paneEdr .edr-split-layout");
+        const colForm = doc.getElementById("colEdrForm");
+        const colDispatch = doc.getElementById("colEdrDispatch");
+        const cardDispatch = doc.getElementById("cardTeamsDispatch");
+        const cardSaved = doc.getElementById("cardSavedEdrs");
+
+        return {
+          classes: layout.className,
+          layoutGridCols: win.getComputedStyle(layout).gridTemplateColumns,
+          layoutWidth: layout.offsetWidth,
+          colFormDisplay: win.getComputedStyle(colForm).display,
+          colFormWidth: colForm.offsetWidth,
+          colDispatchDisplay: win.getComputedStyle(colDispatch).display,
+          colDispatchWidth: colDispatch.offsetWidth,
+          colDispatchGridCols: win.getComputedStyle(colDispatch).gridTemplateColumns,
+          cardDispatchWidth: cardDispatch.offsetWidth,
+          cardDispatchHeight: cardDispatch.offsetHeight,
+          cardSavedWidth: cardSaved.offsetWidth,
+          cardSavedHeight: cardSaved.offsetHeight
+        };
+      }
+
+      const state1 = getLayoutState(); // Initial Normal
+      
+      const btn = doc.getElementById("btnToggleDispatchExpand");
+      btn.click(); // Click Expand
+      await new Promise(r => setTimeout(r, 300));
+      const state2 = getLayoutState(); // Expanded
+
+      btn.click(); // Click Collapse
+      await new Promise(r => setTimeout(r, 300));
+      const state3 = getLayoutState(); // Collapsed (Expected Normal)
+
+      let resText = "=== STATE 1 (INITIAL NORMAL) ===\n" + JSON.stringify(state1, null, 2) + "\n\n";
+      resText += "=== STATE 2 (EXPANDED) ===\n" + JSON.stringify(state2, null, 2) + "\n\n";
+      resText += "=== STATE 3 (AFTER COLLAPSE) ===\n" + JSON.stringify(state3, null, 2) + "\n\n";
+
+      output.innerText = resText;
+
+      fetch("/api/test_report", {
+        method: "POST",
+        headers: { "Content-Type": "text/plain" },
+        body: resText
+      });
+    };
+  </script>
+</body>
+</html>

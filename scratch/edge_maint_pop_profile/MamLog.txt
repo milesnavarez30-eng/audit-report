@@ -1,0 +1,15 @@
+[2026-09-14T07:20:20.326Z] [INFO] ========================================================================================================================
+[2026-09-14T07:20:20.326Z] [INFO] Initializing MAM Client.
+App: com.microsoft.edge 153.0.4234.32
+SDK: 2.1.367.0
+OS: windows 10.0.26200.6584
+DeviceType: Desktop
+Manufacturer: Gigabyte Technology Co., Ltd.
+Model: H310M H 2.0
+Telemetry: yes
+Managed device support: enabled
+[2026-09-14T07:20:20.326Z] [INFO] Telemetry session 7a758982-46fa-44d9-b05f-bc212eef8fce.
+[2026-09-14T07:20:20.326Z] [INFO] Initializing cache (v1).
+[2026-09-14T07:20:20.888Z] [INFO] Shutting down.
+[2026-09-14T07:20:20.888Z] [INFO] Stopping the task scheduler and canceling any outstanding work items...
+[2026-09-14T07:20:20.888Z] [INFO] Task scheduler has stopped, and all work has been canceled.

@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>CCTV OPS V2 - Pending Reports Workspace Parity Suite</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: #0f172a;
+      color: #f8fafc;
+      padding: 24px;
+      margin: 0;
+    }
+    .test-card {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 12px;
+    }
+    .test-pass { color: #4ade80; }
+    .test-fail { color: #f87171; }
+    .summary-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 9999px;
+      font-weight: bold;
+      font-size: 14px;
+      margin-bottom: 16px;
+    }
+    .summary-pass { background: rgba(74, 222, 128, 0.2); color: #4ade80; border: 1px solid #4ade80; }
+    .summary-fail { background: rgba(248, 113, 113, 0.2); color: #f87171; border: 1px solid #f87171; }
+    #log { font-family: monospace; font-size: 12px; line-height: 1.6; }
+  </style>
+</head>
+<body>
+  <h2>CCTV OPS V2 - Pending Reports Workspace 100% Parity Test Suite</h2>
+  <div id="summary" class="summary-badge">Running tests...</div>
+  <div class="test-card">
+    <div id="log"></div>
+  </div>
+
+  <!-- Load dependencies -->
+  <script src="../auth-config.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <script src="../cctv-ops-v2/js/config.js"></script>
+  <script src="../cctv-ops-v2/js/storage.js"></script>
+  <script src="../cctv-ops-v2/js/shared.js"></script>
+  <script src="../cctv-ops-v2/js/services/auth-service.js"></script>
+  <script src="../cctv-ops-v2/js/services/edr-service.js"></script>
+  <script src="../cctv-ops-v2/js/services/audit-service.js"></script>
+  <script src="../cctv-ops-v2/js/services/sorter-service.js"></script>
+  <script src="../cctv-ops-v2/js/services/maintenance-service.js"></script>
+  <script src="../cctv-ops-v2/js/services/pending-service.js"></script>
+
+  <script>
+    const p = window.pendingService;
+    let passed = 0;
+    let failed = 0;
+    let failedList = [];
+    const logEl = document.getElementById("log");
+
+    function assert(desc, condition) {
+      const line = document.createElement("div");
+      if (condition) {
+        passed++;
+        line.className = "test-pass";
+        line.textContent = `[PASS] ${desc}`;
+      } else {
+        failed++;
+        failedList.push(desc);
+        line.className = "test-fail";
+        line.textContent = `[FAIL] ${desc}`;
+      }
+      logEl.appendChild(line);
+    }
+
+    async function runTests() {
+      try {
+        // 1. Constants & DB config
+        assert("DB_NAME matches authoritative V1 name", p.DB_NAME === "cctv_pending_reports_v1");
+        assert("STORE_NAME matches authoritative V1 store", p.STORE_NAME === "state");
+        assert("STATE_KEY matches authoritative V1 key", p.STATE_KEY === "reports");
+        assert("DAY_MS is exactly 24 hours in milliseconds", p.DAY_MS === 86400000);
+
+        // 2. URL Sanitization
+        assert("Valid https Teams URL is preserved", p.safeUrl("https://teams.microsoft.com/l/message/123") === "https://teams.microsoft.com/l/message/123");
+        assert("Valid http Teams URL is preserved", p.safeUrl("http://teams.microsoft.com/test") === "http://teams.microsoft.com/test");
+        assert("Malicious javascript: URL is stripped", p.safeUrl("javascript:alert('xss')") === "");
+        assert("Empty or invalid string returns empty", p.safeUrl("not-a-url") === "");
+
+        // 3. Age & Due Calculations
+        const now = new Date();
+        const todayStr = p.todayLocal();
+        const freshReport = {
+          id: p.uid(),
+          reportDate: todayStr,
+          createdAt: now.toISOString()
+        };
+        assert("Today report age is less than 1 day", p.reportAgeMs(freshReport) < p.DAY_MS);
+        assert("Today report is not due for follow-up", !p.isFollowupDue(freshReport));
+        assert("Today report is not due for email", !p.isEmailDue(freshReport));
+
+        // 1-day old report
+        const oneDayAgo = new Date(Date.now() - (26 * 3600 * 1000));
+        const oneDayStr = `${oneDayAgo.getFullYear()}-${String(oneDayAgo.getMonth()+1).padStart(2,'0')}-${String(oneDayAgo.getDate()).padStart(2,'0')}`;
+        const dueFollowupReport = {
+          id: p.uid(),
+          reportDate: oneDayStr,
+          createdAt: oneDayAgo.toISOString()
+        };
+        assert("1-day old report is due for follow-up", p.isFollowupDue(dueFollowupReport));
+        assert("1-day old report is not yet due for email", !p.isEmailDue(dueFollowupReport));
+        assert("ageText formats 1-day correctly", p.ageText(p.reportAgeMs(dueFollowupReport)) === "1d");
+
+        // 4-day old report
+        const fourDaysAgo = new Date(Date.now() - (98 * 3600 * 1000));
+        const fourDaysStr = `${fourDaysAgo.getFullYear()}-${String(fourDaysAgo.getMonth()+1).padStart(2,'0')}-${String(fourDaysAgo.getDate()).padStart(2,'0')}`;
+        const dueEmailReport = {
+          id: p.uid(),
+          reportDate: fourDaysStr,
+          createdAt: fourDaysAgo.toISOString()
+        };
+        assert("4-day old report is due for follow-up", p.isFollowupDue(dueEmailReport));
+        assert("4-day old report is due for email", p.isEmailDue(dueEmailReport));
+        assert("ageText formats 4-day correctly", p.ageText(p.reportAgeMs(dueEmailReport)) === "4d");
+
+        // 4. Image compression
+        const samplePixel = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAAYdEVYdFNvZnR3YXJlAHBhaW50Lm5ldCA0LjAuNWWFMmUAAAAYSURBVBhXY/jPwPD/PwMDAwMDAwMDAwMDAwMB8wL/Yd2W0QAAAABJRU5ErkJggg==";
+        const compressed = await p.compressBase64(samplePixel);
+        assert("compressBase64 returns valid data URL", typeof compressed === "string" && compressed.startsWith("data:image/jpeg;base64,"));
+
+        // 5. IndexedDB Round-Trip Persistence
+        const sampleReport = {
+          id: "pending_test_parity_1",
+          label: "Agent Juan Dela Cruz - Escalation",
+          reportDate: todayStr,
+          om: "Abby",
+          teamsLink: "https://teams.microsoft.com/l/message/19%3Ameeting_123",
+          remarks: "Waiting for TL reply regarding unauthorized break",
+          screenshotData: samplePixel,
+          createdAt: now.toISOString(),
+          updatedAt: now.toISOString(),
+          followupNotifiedAt: null,
+          emailNotifiedAt: null
+        };
+
+        await p.saveReports([sampleReport]);
+        const loaded = await p.loadReports();
+        assert("loadReports retrieves reports array from IndexedDB", Array.isArray(loaded) && loaded.length > 0);
+        const retrieved = loaded.find(r => r.id === "pending_test_parity_1");
+        assert("Retrieved report preserves id", retrieved?.id === "pending_test_parity_1");
+        assert("Retrieved report preserves label", retrieved?.label === "Agent Juan Dela Cruz - Escalation");
+        assert("Retrieved report preserves OM", retrieved?.om === "Abby");
+        assert("Retrieved report preserves Teams link", retrieved?.teamsLink === "https://teams.microsoft.com/l/message/19%3Ameeting_123");
+        assert("Retrieved report preserves remarks", retrieved?.remarks === "Waiting for TL reply regarding unauthorized break");
+        assert("Retrieved report preserves screenshot data", !!retrieved?.screenshotData);
+
+        // 6. Notification checker updates
+        const testNotifyReports = [
+          {
+            id: "notify_test_due",
+            label: "Due Agent",
+            reportDate: fourDaysStr,
+            createdAt: fourDaysAgo.toISOString(),
+            followupNotifiedAt: null,
+            emailNotifiedAt: null
+          }
+        ];
+        const changed = await p.checkDueNotifications(testNotifyReports, false);
+        assert("checkDueNotifications detects due notifications", changed === true);
+        assert("checkDueNotifications updates emailNotifiedAt timestamp", !!testNotifyReports[0].emailNotifiedAt);
+        assert("checkDueNotifications updates followupNotifiedAt timestamp", !!testNotifyReports[0].followupNotifiedAt);
+
+        // Summary
+        const summaryEl = document.getElementById("summary");
+        summaryEl.textContent = `${passed} PASSED / ${failed} FAILED`;
+        summaryEl.className = `summary-badge ${failed === 0 ? "summary-pass" : "summary-fail"}`;
+
+        // Send report to server
+        fetch("http://localhost:8080/api/test_report", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            summary: `PENDING_PARITY: ${passed} PASSED, ${failed} FAILED`,
+            passed,
+            failed,
+            failedList
+          })
+        });
+      } catch (err) {
+        console.error("Test error:", err);
+        const errDiv = document.createElement("div");
+        errDiv.className = "test-fail";
+        errDiv.textContent = `[EXCEPTION] ${err.message} \n ${err.stack}`;
+        logEl.appendChild(errDiv);
+        failed++;
+        fetch("http://localhost:8080/api/test_report", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ summary: `PENDING_ERROR: ${err.message}`, error: err.message, stack: err.stack })
+        });
+      }
+    }
+
+    window.addEventListener("DOMContentLoaded", runTests);
+  </script>
+</body>
+</html>

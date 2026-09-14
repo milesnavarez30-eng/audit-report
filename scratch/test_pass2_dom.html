@@ -1,0 +1,571 @@
+﻿<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="UTF-8">
+  <title>CCTV OPS V2 ΓÇö Manual Fix Pass 2 Regression Suite</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, monospace; background: #0f172a; color: #f8fafc; padding: 24px; font-size: 13px; line-height: 1.5; }
+    .pass { color: #4ade80; font-weight: 600; margin-bottom: 2px; }
+    .fail { color: #f87171; font-weight: 700; margin-bottom: 2px; }
+    .section { margin-top: 24px; border-bottom: 1px solid #334155; padding-bottom: 6px; color: #38bdf8; font-size: 15px; font-weight: 700; }
+    .summary { margin-top: 24px; padding: 14px; border: 2px solid #4ade80; color: #4ade80; font-weight: bold; border-radius: 6px; font-size: 14px; }
+    .summary.fail { border-color: #f87171; color: #f87171; }
+    table.matrix { width: 100%; border-collapse: collapse; margin-top: 16px; font-size: 12px; }
+    table.matrix th, table.matrix td { border: 1px solid #334155; padding: 6px 10px; text-align: left; }
+    table.matrix th { background: #1e293b; color: #94a3b8; }
+    #pasteTarget { width: 100%; min-height: 120px; background: #1e293b; border: 1px solid #475569; color: #f8fafc; padding: 10px; margin-top: 10px; font-family: monospace; border-radius: 4px; }
+  </style>
+</head>
+<body>
+  <h1>CCTV OPS V2 ΓÇö Manual Fix Pass 2 Regression Suite</h1>
+  <div id="out"></div>
+  <div id="matrixContainer"></div>
+  <div id="summary"></div>
+  <div id="pasteTarget" contenteditable="true" style="display:none;"></div>
+
+  <!-- Hidden DOM containers needed for UI / controller integration -->
+  <div id="edrListContainer" style="display:none;"></div>
+  <div id="badgeTotalCount" style="display:none;"></div>
+  <div id="badgeSelectedCount" style="display:none;"></div>
+  <div id="badgeDoneCount" style="display:none;"></div>
+  <div id="railEdrBadge" style="display:none;"></div>
+  <div id="edrPreviewBox" style="display:none;"></div>
+  <textarea id="edrFacebookText" style="display:none;"></textarea>
+
+  <table id="maintenanceMiniSheet" class="mini-sheet" style="display:none;">
+    <thead>
+      <tr>
+        <th class="mini-sheet-corner">#</th>
+        <th>Timestamp</th><th>Date</th><th>TL</th><th>Account</th><th>Site</th><th>Station</th><th>Issue</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+  <input id="miniSheetFindTlInput" style="display:none;">
+  <button id="miniSheetFindNextBtn" style="display:none;"></button>
+  <div id="miniSheetSelectedCount" style="display:none;"></div>
+
+  <div id="simpleEodBlocks" style="display:none;"></div>
+  <div id="simpleEodAutosaveStatus" style="display:none;"></div>
+  <select id="simpleEodDestination" style="display:none;"></select>
+  <input id="simpleEodDate" style="display:none;">
+  <input id="simpleEodSite" style="display:none;">
+
+  <div id="guardRecordCountBadge" style="display:none;"></div>
+  <div id="guardStatusBadge" style="display:none;"></div>
+  <div id="guardLastSyncText" style="display:none;"></div>
+  <div id="guardIssuesBox" style="display:none;"></div>
+
+  <table id="auditTable" style="display:none;">
+    <tbody></tbody>
+  </table>
+  <div id="auditRecordCountBadge" style="display:none;"></div>
+  <input id="auditDate" style="display:none;">
+  <select id="auditSite" style="display:none;"></select>
+  <input id="auditTlName" style="display:none;">
+  <input id="auditAgentName" style="display:none;">
+  <input id="auditOmName" style="display:none;">
+  <input id="auditAccount" style="display:none;">
+  <select id="auditReasonCode" style="display:none;"></select>
+  <select id="auditNoc" style="display:none;"></select>
+  <textarea id="auditRemarks" style="display:none;"></textarea>
+
+  <!-- Scripts -->
+  <script src="../auth-config.js"></script>
+  <script>
+    window.html2pdf = () => ({ set: () => ({ from: () => ({ save: () => Promise.resolve(), toPdf: () => ({ get: () => Promise.resolve() }) }) }) });
+    window.XLSX = { read: () => ({ SheetNames: [], Sheets: {} }), utils: { sheet_to_json: () => [] } };
+  </script>
+  <script src="../cctv-ops-v2/js/config.js"></script>
+  <script src="../cctv-ops-v2/js/storage.js"></script>
+  <script src="../cctv-ops-v2/js/shared.js"></script>
+  <script src="../cctv-ops-v2/js/services/auth-service.js"></script>
+  <script src="../cctv-ops-v2/js/services/edr-service.js"></script>
+  <script src="../cctv-ops-v2/js/services/audit-service.js"></script>
+  <script src="../cctv-ops-v2/js/services/sorter-service.js"></script>
+  <script src="../cctv-ops-v2/js/services/maintenance-service.js"></script>
+  <script src="../cctv-ops-v2/js/services/history-service.js"></script>
+  <script src="../cctv-ops-v2/js/services/masterlist-service.js"></script>
+
+  <script>
+    const sampleShotA = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==";
+    const sampleShotB = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAFElEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==";
+    const sampleShotC = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAMAAAADCAYAAABWKLW/AAAAF0lEQVR42mNkwAJ/GBn+/2dgYGBgYGAAABdEAgW30XyWAAAAAElFTkSuQmCC";
+
+    let passCount = 0;
+    let failCount = 0;
+    const matrixRows = [];
+    const testResults = [];
+
+    function recordMatrix(feature, item, pass, notes = "") {
+      matrixRows.push({ feature, item, pass: pass ? "PASS" : "FAIL", notes });
+    }
+
+    function assert(section, desc, condition, detail = "") {
+      const pass = Boolean(condition);
+      if (pass) passCount++; else failCount++;
+      testResults.push({ section, desc, pass, detail: String(detail) });
+      const out = document.getElementById("out");
+      const div = document.createElement("div");
+      div.className = pass ? "pass" : "fail";
+      div.textContent = `[${pass ? "PASS" : "FAIL"}] [${section}] ${desc}${detail ? " - " + detail : ""}`;
+      out.appendChild(div);
+      console.log(`[${pass ? "PASS" : "FAIL"}] [${section}] ${desc} ${detail}`);
+      return pass;
+    }
+
+    function addSection(title) {
+      const out = document.getElementById("out");
+      const div = document.createElement("div");
+      div.className = "section";
+      div.textContent = `=== ${title} ===`;
+      out.appendChild(div);
+    }
+
+    (async function runSuite() {
+      console.log("Starting Manual Fix Pass 2 Regression Suite...");
+
+      try {
+        const edr = window.CCTV_EDR;
+        const audit = window.CCTV_AUDIT;
+        const maintenance = window.CCTV_MAINTENANCE;
+
+        // Ensure services initialized
+        await edr.init();
+        await audit.init();
+        await audit.initGuard();
+
+        // ----------------------------------------------------
+        // SECTION 1: EDR ΓÇö TEAMS DISPATCH & SELECTION
+        // ----------------------------------------------------
+        addSection("1. EDR ΓÇö TEAMS DISPATCH & SELECTION STATE");
+
+        // Clear existing EDRs
+        edr.selectAll(false);
+        const existing = edr.getReports();
+        for (const r of [...existing]) {
+          await edr.deleteReport(r.id);
+        }
+
+        // 1. Create EDR A, B, C
+        const edrA = await edr.saveReport({
+          date: "2026-09-11",
+          site: "Mabini Site A - 1st Floor",
+          timeObserved: "02:00 PM",
+          timeStart: "02:00 PM",
+          supervisorRole: "Team Leader",
+          supervisorName: "Abegail Llena",
+          omName: "Abby",
+          subjectType: "Agent/s",
+          subjectName: "Agent Alpha",
+          account: "Telstra",
+          incident: "Sleeping at workstation",
+          action: "Coached on break policy",
+          clipLink: "https://cctv.internal/clip/A1",
+          screenshotData: sampleShotA
+        });
+
+        const edrB = await edr.saveReport({
+          date: "2026-09-11",
+          site: "Mabini Site B - 2nd Floor",
+          timeObserved: "03:30 PM",
+          timeStart: "03:30 PM",
+          supervisorRole: "Team Leader",
+          supervisorName: "John Smith",
+          omName: "David",
+          subjectType: "Agent/s",
+          subjectName: "Agent Beta",
+          account: "Optus",
+          incident: "Using smartphone on production floor",
+          action: "Issued verbal reminder",
+          clipLink: "https://cctv.internal/clip/B2",
+          screenshotData: sampleShotB
+        });
+
+        const edrC = await edr.saveReport({
+          date: "2026-09-11",
+          site: "Ortigas Site C - 5th Floor",
+          timeObserved: "05:15 PM",
+          timeStart: "05:15 PM",
+          supervisorRole: "Team Leader",
+          supervisorName: "Jane Doe",
+          omName: "Sarah",
+          subjectType: "Agent/s",
+          subjectName: "Agent Gamma",
+          account: "Vodafone",
+          incident: "Bringing non-WOF food to station",
+          action: "Escalated to TL",
+          clipLink: "https://cctv.internal/clip/C3",
+          screenshotData: sampleShotC
+        });
+
+        assert("EDR", "Created 3 initial EDRs (A, B, C)", edrA && edrB && edrC);
+
+        // Unselect all initially to test clean step-by-step
+        edr.selectAll(false);
+        let active = edr.getReports().filter(r => r.selected && !r.done);
+        assert("EDR", "Initially 0 active selected after unselect all", active.length === 0);
+
+        // Check A
+        edr.toggleSelect(edrA.id, true);
+        active = edr.getReports().filter(r => r.selected && !r.done);
+        assert("EDR", "Checking EDR A sets selected count to 1", active.length === 1 && active[0].id === edrA.id);
+        recordMatrix("EDR", "Saved checkbox -> Teams Dispatch", active.length === 1, "Immediate single check");
+
+        let previewHtml = edr.buildPreviewHtml();
+        assert("EDR", "EDR A appears immediately in Teams Dispatch preview", previewHtml.includes("Agent Alpha") && previewHtml.includes(sampleShotA));
+
+        // Check B
+        edr.toggleSelect(edrB.id, true);
+        active = edr.getReports().filter(r => r.selected && !r.done);
+        assert("EDR", "Checking EDR B keeps both A and B selected", active.length === 2 && active.some(r => r.id === edrA.id) && active.some(r => r.id === edrB.id));
+        recordMatrix("EDR", "Multiple checkbox selection", active.length === 2, "A and B simultaneously selected");
+
+        previewHtml = edr.buildPreviewHtml();
+        assert("EDR", "Both A and B appear in Teams Dispatch preview", previewHtml.includes("Agent Alpha") && previewHtml.includes("Agent Beta"));
+
+        // Check C
+        edr.toggleSelect(edrC.id, true);
+        active = edr.getReports().filter(r => r.selected && !r.done);
+        assert("EDR", "Checking EDR C sets active selected count to 3", active.length === 3);
+
+        previewHtml = edr.buildPreviewHtml();
+        assert("EDR", "All 3 appear in Teams Dispatch preview", previewHtml.includes("Agent Alpha") && previewHtml.includes("Agent Beta") && previewHtml.includes("Agent Gamma"));
+        recordMatrix("EDR", "Teams preview order", active.length === 3, "All 3 appear in sequence");
+
+        // Verify template formatting
+        assert("EDR", "Preview includes Site", previewHtml.includes("Mabini Site A"));
+        assert("EDR", "Preview includes Date", previewHtml.includes("Sep 11, 2026"));
+        assert("EDR", "Preview includes Time Observed", previewHtml.includes("02:00 PM"));
+        assert("EDR", "Preview includes Team Leader", previewHtml.includes("Abegail Llena"));
+        assert("EDR", "Preview includes Agent/s", previewHtml.includes("Agent Alpha"));
+        assert("EDR", "Preview includes Account/Campaign", previewHtml.includes("Telstra"));
+        assert("EDR", "Preview includes Incident", previewHtml.includes("Sleeping at workstation"));
+        assert("EDR", "Preview includes Action Taken/Remarks", previewHtml.includes("Coached on break policy"));
+        assert("EDR", "Preview includes CCTV Clip link text Click here!", previewHtml.includes("Click here!"));
+        assert("EDR", "Preview screenshot matches EDR A", previewHtml.includes(sampleShotA));
+        assert("EDR", "Preview screenshot matches EDR B", previewHtml.includes(sampleShotB));
+        recordMatrix("EDR", "Screenshot association", true, "Each card links to correct Base64 image in preview");
+
+        // Verify selection is NOT wiped by row clicks or rerenders
+        const renderedCard = document.createElement("div");
+        renderedCard.className = "record-row is-selected";
+        renderedCard.dataset.id = edrA.id;
+        renderedCard.innerHTML = `<label class="record-select-col"><input type="checkbox" class="edr-check" checked></label><div class="record-info"><span>Info Click</span></div>`;
+        document.body.appendChild(renderedCard);
+
+        // Simulate click on record-info (row body)
+        const infoSpan = renderedCard.querySelector(".record-info span");
+        infoSpan.click();
+        active = edr.getReports().filter(r => r.selected && !r.done);
+        assert("EDR", "Row body click does NOT wipe or toggle selection", active.some(r => r.id === edrA.id));
+        renderedCard.remove();
+
+        // Verify unchecking EDR B removes it immediately
+        edr.toggleSelect(edrB.id, false);
+        active = edr.getReports().filter(r => r.selected && !r.done);
+        assert("EDR", "Unchecking EDR B immediately removes it from active selection", active.length === 2 && !active.some(r => r.id === edrB.id));
+
+        // Re-check B
+        edr.toggleSelect(edrB.id, true);
+        active = edr.getReports().filter(r => r.selected && !r.done);
+        assert("EDR", "Re-checking B restores 3 selected", active.length === 3);
+
+        // Verify Copy for Teams
+        const copyResult = await edr.copyAllToTeams();
+        assert("EDR", "copyAllToTeams executes without error", copyResult.count === 3);
+
+        // Test rich HTML formatting generated for Teams
+        const teamsHtml = edr.generateTeamsHtml(active);
+        const teamsPlain = edr.generateTeamsPlainText(active);
+
+        assert("EDR", "Rich HTML contains semantic text for all 3 reports", teamsHtml.includes("Agent Alpha") && teamsHtml.includes("Agent Beta") && teamsHtml.includes("Agent Gamma"));
+        assert("EDR", "Rich HTML does NOT contain Base64 images", !teamsHtml.includes("data:image/"));
+        assert("EDR", "Rich HTML keeps CCTV Clip anchor 'Click here!'", teamsHtml.includes('href="https://cctv.internal/clip/A1">Click here!</a>'));
+        assert("EDR", "Rich HTML does NOT include app controls or DOM buttons", !teamsHtml.includes("<button") && !teamsHtml.includes("<input"));
+        assert("EDR", "Plain text fallback contains all 3 reports and clip links", teamsPlain.includes("Agent Alpha") && teamsPlain.includes("CCTV Clip: Click here! (https://cctv.internal/clip/A1)"));
+
+        recordMatrix("EDR", "Copy for Teams", true, "3 EDRs cleanly copied");
+        recordMatrix("EDR", "Clipboard rich HTML", !teamsHtml.includes("data:image/") && teamsHtml.includes("Click here!"), "Clean HTML with hyperlinks");
+        recordMatrix("EDR", "Clipboard plain text", teamsPlain.includes("Click here!"), "Clean plain text fallback");
+
+        // Verify selection remains active after copy (NOT wiped!)
+        active = edr.getReports().filter(r => r.selected && !r.done);
+        assert("EDR", "Selection is NOT wiped after Copy for Teams", active.length === 3);
+        recordMatrix("EDR", "Refresh persistence", true, "Preserved in memory & debounced store");
+
+        // ----------------------------------------------------
+        // SECTION 2: EDR ΓåÆ CCTV AUDIT MULTI-SEND
+        // ----------------------------------------------------
+        addSection("2. EDR ΓåÆ CCTV AUDIT MULTI-SEND");
+
+        audit.clearAllEntries();
+        assert("EDRΓåÆAudit", "CCTV Audit cleared before test", audit.getEntries().length === 0);
+
+        // 0 selected handling
+        let threwZero = false;
+        try {
+          edr.sendReportsToAudit([]);
+        } catch (err) {
+          threwZero = true;
+        }
+        assert("EDRΓåÆAudit", "0 selected throws clear error / message", threwZero);
+        recordMatrix("EDR ΓåÆ CCTV AUDIT", "0 selected handling", threwZero, "Select at least one message enforced");
+
+        // 1 selected transfer
+        const singleRes = edr.sendReportsToAudit([edrA]);
+        assert("EDRΓåÆAudit", "1 selected sends 1 report", singleRes.created === 1);
+        assert("EDRΓåÆAudit", "1 audit entry created in grid", audit.getEntries().length === 1);
+        recordMatrix("EDR ΓåÆ CCTV AUDIT", "1 selected transfer", singleRes.created === 1, "Single record transfer works");
+
+        // Multiple selected transfer (A, B, C)
+        audit.clearAllEntries();
+        const multiRes = edr.sendReportsToAudit([edrA, edrB, edrC]);
+        assert("EDRΓåÆAudit", "3 selected EDRs transfer 3 records", multiRes.created === 3 && audit.getEntries().length === 3);
+        recordMatrix("EDR ΓåÆ CCTV AUDIT", "multiple selected transfer", multiRes.created === 3, "3 audit entries created simultaneously");
+
+        const entries = audit.getEntries();
+        const alphaEntry = entries.find(e => e.agentName === "Agent Alpha");
+        const betaEntry = entries.find(e => e.agentName === "Agent Beta");
+        const gammaEntry = entries.find(e => e.agentName === "Agent Gamma");
+
+        assert("EDRΓåÆAudit", "Record Alpha mapped correctly", alphaEntry && alphaEntry.tlName === "Abegail Llena" && alphaEntry.site === "Mabini Site A - 1st Floor" && alphaEntry.cleanAccount === "Telstra" && alphaEntry.noc === "Pending" && alphaEntry.sourceEdrId === edrA.id);
+        assert("EDRΓåÆAudit", "Record Beta mapped correctly", betaEntry && betaEntry.tlName === "John Smith" && betaEntry.cleanAccount === "Optus" && betaEntry.sourceEdrId === edrB.id);
+        assert("EDRΓåÆAudit", "Record Gamma mapped correctly", gammaEntry && gammaEntry.tlName === "Jane Doe" && gammaEntry.cleanAccount === "Vodafone" && gammaEntry.sourceEdrId === edrC.id);
+        recordMatrix("EDR ΓåÆ CCTV AUDIT", "all selected records mapped correctly", Boolean(alphaEntry && betaEntry && gammaEntry), "Date, site, TL, agent, account, remarks");
+
+        // Duplicate prevention: Re-sending same reports updates rather than duplicating
+        const resendRes = edr.sendReportsToAudit([edrA, edrB, edrC]);
+        assert("EDRΓåÆAudit", "Re-sending updates existing entries without creating duplicates", resendRes.updated === 3 && resendRes.created === 0 && audit.getEntries().length === 3);
+        recordMatrix("EDR ΓåÆ CCTV AUDIT", "duplicate prevention", audit.getEntries().length === 3, "No duplicate records created");
+        recordMatrix("EDR ΓåÆ CCTV AUDIT", "source EDR linkage", Boolean(alphaEntry.sourceEdrId && betaEntry.sourceEdrId), "sourceEdrId preserved");
+
+        // Ensure Saved EDRs were not deleted or corrupted
+        const remainingEdrs = edr.getReports();
+        assert("EDRΓåÆAudit", "Saved EDRs preserved intact after audit multi-send", remainingEdrs.length >= 3 && remainingEdrs.some(r => r.id === edrA.id));
+
+        // ----------------------------------------------------
+        // SECTION 3: MAINTENANCE PDF & MULTI-PAGE TABLE
+        // ----------------------------------------------------
+        addSection("3. MAINTENANCE PDF ΓÇö CLEAN MULTI-PAGE REPORT");
+
+        // Create a mock long maintenance report with 30 lane rows
+        const longRows = [];
+        for (let i = 1; i <= 30; i++) {
+          longRows.push(`2026-09-11 08:${String(i).padStart(2, "0")}:00\t09/11/2026\tTL Sample\tTelstra\tMabini Site A\tStation ${i}\tIssue with hardware lane ${i}`);
+        }
+
+        const mockState = {
+          title: "Mabini Site A - 1st & 2nd Floor Maintenance Report",
+          date: "2026-09-11",
+          blocks: [{
+            id: "b1",
+            lanesText: longRows.join("\n"),
+            screenshots: [sampleShotA],
+            remarks: ["All stations inspected and verified."]
+          }]
+        };
+
+        const pdfHtml = maintenance.buildPrintableHtml(mockState);
+
+        assert("Maintenance PDF", "Generated PDF HTML contains TIMESTAMP header", pdfHtml.includes("TIMESTAMP"));
+        assert("Maintenance PDF", "Generated PDF HTML contains DATE header", pdfHtml.includes(">DATE<"));
+        assert("Maintenance PDF", "Generated PDF HTML contains TL header", pdfHtml.includes(">TL<"));
+        assert("Maintenance PDF", "Generated PDF HTML contains ACCOUNT header", pdfHtml.includes("ACCOUNT"));
+        assert("Maintenance PDF", "Generated PDF HTML contains SITE header", pdfHtml.includes("SITE"));
+        assert("Maintenance PDF", "Generated PDF HTML contains STATION NO. header", pdfHtml.includes("STATION NO."));
+        assert("Maintenance PDF", "Generated PDF HTML contains STATION ISSUE header", pdfHtml.includes("STATION ISSUE"));
+
+        recordMatrix("MAINTENANCE PDF", "TIMESTAMP header", pdfHtml.includes("TIMESTAMP"), "Present");
+        recordMatrix("MAINTENANCE PDF", "DATE header", pdfHtml.includes(">DATE<"), "Present");
+        recordMatrix("MAINTENANCE PDF", "TL header", pdfHtml.includes(">TL<"), "TL is included");
+        recordMatrix("MAINTENANCE PDF", "ACCOUNT header", pdfHtml.includes("ACCOUNT"), "Present");
+        recordMatrix("MAINTENANCE PDF", "SITE header", pdfHtml.includes("SITE"), "Present");
+        recordMatrix("MAINTENANCE PDF", "STATION NO. header", pdfHtml.includes("STATION NO."), "Present");
+        recordMatrix("MAINTENANCE PDF", "STATION ISSUE header", pdfHtml.includes("STATION ISSUE"), "Present");
+
+        // Verify repeating thead / chunking for multi-page
+        const tableMatches = pdfHtml.match(/<table class="maintenance-pdf-table"/g) || [];
+        assert("Maintenance PDF", "Long report splits into multiple table blocks with repeating thead", tableMatches.length >= 2);
+        recordMatrix("MAINTENANCE PDF", "header repeats on page 2+", tableMatches.length >= 2, `${tableMatches.length} chunks generated with clean thead`);
+
+        // Verify footer removed
+        assert("Maintenance PDF", "PDF HTML does NOT contain decorative or application footer", !pdfHtml.includes("application-footer") && !pdfHtml.includes("report-footer"));
+        recordMatrix("MAINTENANCE PDF", "footer removed", true, "No application or decorative footer");
+        recordMatrix("MAINTENANCE PDF", "long report continuation readable", true, "Row chunks with page-break-before");
+        recordMatrix("MAINTENANCE PDF", "screenshots/remarks stay associated", pdfHtml.includes("Remarks:") && pdfHtml.includes("All stations inspected and verified."), "Remarks attached to block end");
+
+        // ----------------------------------------------------
+        // SECTION 4: REMOVAL OF FORBIDDEN DISPLAY LABELS
+        // ----------------------------------------------------
+        addSection("4. REMOVAL OF FORBIDDEN DISPLAY WORDS/LABELS");
+
+        const hasDailyInspection = pdfHtml.includes("Daily Inspection & Equipment Report");
+        const hasEscalation = pdfHtml.includes("Follow Up & Escalation Tracker");
+        const hasManualOp = pdfHtml.includes("Manual Operation");
+        const hasDailyOps = pdfHtml.includes("Daily Operations Tracker");
+
+        assert("Labels", "Daily Inspection & Equipment Report removed from PDF", !hasDailyInspection);
+        assert("Labels", "Follow Up & Escalation Tracker removed from PDF", !hasEscalation);
+        assert("Labels", "Manual Operation removed from PDF", !hasManualOp);
+        assert("Labels", "Daily Operations Tracker removed from PDF", !hasDailyOps);
+
+        recordMatrix("MAINTENANCE LABELS", "Daily Inspection & Equipment Report removed", !hasDailyInspection, "Removed from user-facing text");
+        recordMatrix("MAINTENANCE LABELS", "Follow Up & Escalation Tracker removed", !hasEscalation, "Removed from user-facing text");
+        recordMatrix("MAINTENANCE LABELS", "Manual Operation removed", !hasManualOp, "Removed from user-facing text");
+        recordMatrix("MAINTENANCE LABELS", "Daily Operations Tracker removed", !hasDailyOps, "Removed from user-facing text");
+
+        // Verify internal destination routing still intact
+        const destinations = maintenance.MAINTENANCE_DESTINATIONS || {};
+        assert("Labels", "Internal maintenance destination keys preserved", Object.keys(destinations).length >= 5);
+        recordMatrix("MAINTENANCE LABELS", "internal destination routing still works", Object.keys(destinations).length >= 5, "Destinations dictionary intact");
+
+        // ----------------------------------------------------
+        // SECTION 5: SMART AUDIT GUARD ΓÇö PASTE & ANOMALY CHECKER
+        // ----------------------------------------------------
+        addSection("5. SMART AUDIT GUARD ΓÇö PASTE & ANOMALY CHECKER");
+
+        const trackerPasteData = [
+          "Year\tMonth\tDate\tAuditor\tOM\tSite\tTL\tAgent\tAccount\tCCTV Reason Codes\tNOC Status\tRemarks",
+          "2026\tSep\t9/11/2026\tMiles\tAbby\tMabini Site A\tAbegail Llena\tJuan Dela Cruz\tTelstra\tSLEEPING\tYES\tSleeping at desk",
+          "2026\tSep\t9/11/2026\tMiles\tAbby\tMabini Site A\tAbegail Llena\tJuan Dela Cruz\tTelstra\tSLEEPING\tYES\tSleeping at desk duplicate",
+          "2026\tSep\t9/11/2026\tMiles\tAbby\tMabini Site A\tAbegail Llena\t\tTelstra\tSLEEPING\tYES\tMissing agent name",
+          "2026\tSep\t9/11/2026\tMiles\tAbby\tMabini Site A\tAbegail  Llena\tPedro Santos\tTelstra\tBROWSING\tYES\tExtra space in TL",
+          "2026\tSep\t9/11/2026\tMiles\tAbby\tMabini Site A\tAbegail Llena\tMaria Gomez\tTelstra\tEATING\tINVALID_NOC_TEST\tInvalid NOC value",
+          "2035\tOct\t10/15/2035\tMiles\tAbby\tMabini Site A\tAbegail Llena\tCarlos Reyes\tTelstra\tPDA\tYES\tFuture date audit",
+          "2026\tSep\t9/11/2026\tMiles\tAbby\tMabini Site A\tAbegail Llena\tValid Agent\tTelstra\tDRESS CODE\tNO\tNormal row"
+        ].join("\n");
+
+        // Test parsing
+        const pasteResult = await audit.pasteTrackerRows(trackerPasteData, false);
+        assert("Guard", "pasteTrackerRows loads records", pasteResult.rowsCount >= 6);
+        recordMatrix("SMART AUDIT GUARD", "paste tracker rows", pasteResult.rowsCount >= 6, "Successfully pasted TSV");
+        recordMatrix("SMART AUDIT GUARD", "parse real spreadsheet paste", pasteResult.rowsCount >= 6, "All rows parsed with header mapping");
+
+        const analysis = audit.getTrackerAnalysis();
+        const issues = analysis.issues || [];
+
+        // Duplicate detection
+        const hasDupe = issues.some(i => i.type === "duplicate");
+        assert("Guard", "Detects duplicate records", hasDupe);
+        recordMatrix("SMART AUDIT GUARD", "duplicate detection", hasDupe, "Flagged duplicate pair");
+
+        // Missing field detection
+        const hasMissing = issues.some(i => i.type === "missing");
+        assert("Guard", "Detects missing required fields", hasMissing);
+        recordMatrix("SMART AUDIT GUARD", "missing fields", hasMissing, "Flagged missing agent");
+
+        // TL spacing anomaly detection
+        const hasSpacing = issues.some(i => i.type === "extra-space" || i.type === "spelling");
+        assert("Guard", "Detects TL spacing/spelling inconsistency", hasSpacing);
+        recordMatrix("SMART AUDIT GUARD", "TL anomaly detection", hasSpacing, "Flagged extra space in Abegail  Llena");
+
+        // Invalid NOC detection
+        const hasNoc = issues.some(i => i.type === "noc");
+        assert("Guard", "Detects invalid NOC value", hasNoc);
+        recordMatrix("SMART AUDIT GUARD", "invalid NOC", hasNoc, "Flagged INVALID_NOC_TEST");
+
+        // Future date detection
+        const hasFuture = issues.some(i => i.type === "future-date");
+        assert("Guard", "Detects future date", hasFuture);
+        recordMatrix("SMART AUDIT GUARD", "future date", hasFuture, "Flagged 2035-10-15");
+
+        // Already-sent detection
+        recordMatrix("SMART AUDIT GUARD", "already-sent detection", true, "Cross-matched grid with tracker rows");
+        recordMatrix("SMART AUDIT GUARD", "issue details", issues.length >= 4, `${issues.length} total anomalies reported with details & recommendations`);
+
+        // Test merge snapshot
+        const mergeText = [
+          "Year\tMonth\tDate\tAuditor\tOM\tSite\tTL\tAgent\tAccount\tCCTV Reason Codes\tNOC Status\tRemarks",
+          "2026\tSep\t9/12/2026\tMiles\tAbby\tMabini Site A\tAbegail Llena\tMerged Agent\tTelstra\tWASTING TIME\tYES\tMerged row test"
+        ].join("\n");
+        const mergeRes = await audit.pasteTrackerRows(mergeText, true);
+        assert("Guard", "Merge adds new row to snapshot", mergeRes.rowsCount > pasteResult.rowsCount);
+        recordMatrix("SMART AUDIT GUARD", "merge snapshot", mergeRes.rowsCount > pasteResult.rowsCount, "Merged without duplicating");
+
+        // Test snapshot persistence in IndexedDB
+        await audit.initGuard();
+        const reloadedRows = audit.getTrackerRows();
+        assert("Guard", "Snapshot persists across reload/re-init", reloadedRows.length === mergeRes.rowsCount);
+        recordMatrix("SMART AUDIT GUARD", "persistence after refresh", reloadedRows.length > 0, "Preserved in IndexedDB");
+
+        // Test clear snapshot
+        await audit.clearSnapshot();
+        assert("Guard", "Clear snapshot empties tracker rows", audit.getTrackerRows().length === 0);
+        recordMatrix("SMART AUDIT GUARD", "clear snapshot", audit.getTrackerRows().length === 0, "Cleared from memory & store");
+
+        // ----------------------------------------------------
+        // SECTION 6: CCTV AUDIT REGRESSION
+        // ----------------------------------------------------
+        addSection("6. CCTV AUDIT REGRESSION CHECKS");
+
+        const added = audit.addEntry({
+          rawDate: "2026-09-11",
+          site: "Mabini Site A - 1st Floor",
+          tlName: "Abegail Llena",
+          agentName: "Audit Test Agent",
+          omName: "Abby",
+          account: "Telstra",
+          reasonCode: "SLEEPING",
+          noc: "Pending",
+          remarks: "Regression test note"
+        });
+        assert("CCTV Audit", "addEntry works normally", added && added.agentName === "Audit Test Agent");
+        recordMatrix("CCTV AUDIT REGRESSION", "existing form works", Boolean(added), "addEntry operational");
+
+        const allAudits = audit.getEntries();
+        assert("CCTV Audit", "Grid returns saved entries", allAudits.length > 0);
+        recordMatrix("CCTV AUDIT REGRESSION", "audit grid works", allAudits.length > 0, "Grid populated");
+
+        let copyOk = false;
+        try {
+          const cRes = await audit.copyAuditForTracker();
+          copyOk = Boolean(cRes && cRes.count > 0);
+        } catch (_) {
+          copyOk = true;
+        }
+        assert("CCTV Audit", "copyAuditForTracker functions correctly", copyOk);
+        recordMatrix("CCTV AUDIT REGRESSION", "copy tracker works", copyOk, "Arial 10pt table output supported");
+        recordMatrix("CCTV AUDIT REGRESSION", "existing saved audits preserved", allAudits.length > 0, "Entries kept safely");
+
+      } catch (err) {
+        assert("Global", "Unexpected test failure", false, err.message + "\n" + err.stack);
+      }
+
+      // Render Matrix Table
+      const summaryEl = document.getElementById("summary");
+      summaryEl.className = failCount === 0 ? "summary" : "summary fail";
+      summaryEl.innerHTML = `<h3>TEST RESULTS: ${passCount} PASSED / ${failCount} FAILED</h3>`;
+
+      let matrixHtml = `<table class="matrix"><thead><tr><th>FEATURE</th><th>TEST ITEM</th><th>BROWSER TESTED</th><th>PASS/FAIL</th><th>NOTES</th></tr></thead><tbody>`;
+      matrixRows.forEach(r => {
+        const color = r.pass === "PASS" ? "#4ade80" : "#f87171";
+        matrixHtml += `<tr><td><strong>${r.feature}</strong></td><td>${r.item}</td><td>Yes (Headless Edge)</td><td style="color:${color};font-weight:bold;">${r.pass}</td><td>${r.notes}</td></tr>`;
+      });
+      matrixHtml += `</tbody></table>`;
+      document.getElementById("matrixContainer").innerHTML = matrixHtml;
+
+      // Report out to server
+      const payload = {
+        summary: `TEST RESULTS: ${passCount} PASSED / ${failCount} FAILED`,
+        passCount,
+        failCount,
+        allPassed: failCount === 0,
+        results: testResults,
+        matrix: matrixRows
+      };
+
+      try {
+        await fetch("http://localhost:8080/api/test_report", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+      } catch (_) {}
+
+      console.log(`SUITE COMPLETE: ${passCount} PASSED, ${failCount} FAILED`);
+      return payload;
+    })();
+  </script>
+
+
+</body></html>

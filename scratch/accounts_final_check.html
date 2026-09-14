@@ -1,0 +1,269 @@
+﻿<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="UTF-8">
+  <title>CCTV Audit &amp; Smart Audit Guard Automated Parity Test Suite</title>
+  <style>
+    body { font-family: sans-serif; background: #0f172a; color: #e2e8f0; padding: 20px; }
+    .pass { color: #34d399; }
+    .fail { color: #f87171; font-weight: bold; }
+    .log-item { margin: 4px 0; font-family: monospace; font-size: 13px; }
+    iframe { width: 1200px; height: 800px; border: 1px solid #334155; margin-top: 20px; }
+  </style>
+</head>
+<body>
+  <h1>CCTV Audit &amp; Smart Audit Guard Parity Tests</h1>
+  <div id="results">Running tests...<div class="log-item pass">Γ£ô PASS: window.CCTV_V2_CONFIG exists </div><div class="log-item pass">Γ£ô PASS: window.CCTV_EDR exists </div><div class="log-item pass">Γ£ô PASS: window.CCTV_AUDIT exists </div><div class="log-item pass">Γ£ô PASS: window.cctvAuditBridge exists </div><div class="log-item pass">Γ£ô PASS: tabEdr and tabAudit exist </div><div class="log-item pass">Γ£ô PASS: paneEdr is initially visible </div><div class="log-item pass">Γ£ô PASS: paneAudit is initially hidden </div><div class="log-item pass">Γ£ô PASS: After clicking tabAudit: paneEdr is hidden </div><div class="log-item pass">Γ£ô PASS: After clicking tabAudit: paneAudit is visible </div><div class="log-item pass">Γ£ô PASS: tabAudit has active class </div><div class="log-item pass">Γ£ô PASS: tabEdr does not have active class </div><div class="log-item pass">Γ£ô PASS: Header title updated to 'CCTV Audit' </div><div class="log-item pass">Γ£ô PASS: Audit form fields exist </div><div class="log-item pass">Γ£ô PASS: Site options populated (found 12)</div><div class="log-item pass">Γ£ô PASS: OM options populated (found 27)</div><div class="log-item pass">Γ£ô PASS: Account options populated (found 273)</div><div class="log-item pass">Γ£ô PASS: Reason Code options populated (found 13)</div><div class="log-item pass">Γ£ô PASS: CCTV_AUDIT contains newly added entry </div><div class="log-item pass">Γ£ô PASS: Entry data correctly stored </div><div class="log-item pass">Γ£ô PASS: Data Output Grid table body has rows </div><div class="log-item pass">Γ£ô PASS: Rendered row contains agent name </div><div class="log-item pass">Γ£ô PASS: Rendered row contains TL name </div><div class="log-item pass">Γ£ô PASS: Rendered row contains NOC badge </div><div class="log-item pass">Γ£ô PASS: Tracker copy generated HTML </div><div class="log-item pass">Γ£ô PASS: Tracker copy generated plain text TSV </div><div class="log-item pass">Γ£ô PASS: Tracker HTML contains font-family: Arial </div><div class="log-item pass">Γ£ô PASS: Tracker HTML contains font-size: 10pt </div><div class="log-item pass">Γ£ô PASS: Tracker HTML table contains 12 columns per row </div><div class="log-item pass">Γ£ô PASS: Edit button exists on row </div><div class="log-item pass">Γ£ô PASS: Form filled with agent name for edit </div><div class="log-item pass">Γ£ô PASS: Submit button text changed to 'Update Entry' </div><div class="log-item pass">Γ£ô PASS: Audit entry remarks successfully updated </div><div class="log-item pass">Γ£ô PASS: Submit button reverted to 'Add Entry to List' </div><div class="log-item pass">Γ£ô PASS: Switched back to EDR workspace </div><div class="log-item pass">Γ£ô PASS: Bridge sendReportToAudit succeeded </div><div class="log-item pass">Γ£ô PASS: CCTV Audit received EDR entry with sourceEdrId </div><div class="log-item pass">Γ£ô PASS: EDR reason auto-detected as BROWSING </div><div class="log-item pass">Γ£ô PASS: EDR NOC initialized as Pending </div><div class="log-item pass">Γ£ô PASS: EDR agent name preserved </div><div class="log-item pass">Γ£ô PASS: Data grid renders EDR link badge </div><div class="log-item pass">Γ£ô PASS: Paste modal opened </div><div class="log-item pass">Γ£ô PASS: Paste modal closed </div><div class="log-item pass">Γ£ô PASS: Guard loaded 2 rows from paste </div><div class="log-item pass">Γ£ô PASS: Guard detected duplicate rows </div><div class="log-item pass">Γ£ô PASS: Guard detected TL spelling issue (Abegail Llenas vs Abegail Llena) </div><div class="log-item pass">Γ£ô PASS: Issues box is visible </div><div class="log-item pass">Γ£ô PASS: Issues box rendered duplicate warning </div><div class="log-item pass">Γ£ô PASS: Issues box rendered spelling suggestion </div></div>
+  <iframe id="testFrame" src="http://localhost:8080/cctv-ops-v2/index.html"></iframe>
+
+  <script>
+    const results = [];
+    function assert(name, condition, extra = "") {
+      results.push({ name, pass: !!condition, extra });
+      const div = document.createElement("div");
+      div.className = "log-item " + (condition ? "pass" : "fail");
+      div.textContent = `${condition ? "Γ£ô PASS" : "Γ£ù FAIL"}: ${name} ${extra ? `(${extra})` : ""}`;
+      document.getElementById("results").appendChild(div);
+    }
+
+    window.onerror = (msg, url, line, col, err) => {
+      assert("Test runner error: " + msg, false, line);
+      try {
+        fetch("http://localhost:8080/api/test_report", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ summary: `TEST RUNNER ERROR: ${msg}`, error: msg, line, stack: err ? err.stack : "" })
+        });
+      } catch (_) {}
+    };
+
+    const frame = document.getElementById("testFrame");
+    let testStarted = false;
+
+    async function runTest() {
+      if (testStarted) return;
+      testStarted = true;
+      // Wait 1.2s for app init
+      await new Promise(r => setTimeout(r, 1200));
+      const doc = frame.contentDocument;
+      const win = frame.contentWindow;
+
+      try {
+        // Test 1: App loaded and window objects present
+        assert("window.CCTV_V2_CONFIG exists", !!win.CCTV_V2_CONFIG);
+        assert("window.CCTV_EDR exists", !!win.CCTV_EDR);
+        assert("window.CCTV_AUDIT exists", !!win.CCTV_AUDIT);
+        assert("window.cctvAuditBridge exists", !!win.cctvAuditBridge);
+
+        // Test 2: Workspace tabs present
+        const tabEdr = doc.getElementById("tabEdr");
+        const tabAudit = doc.getElementById("tabAudit");
+        const paneEdr = doc.getElementById("paneEdr");
+        const paneAudit = doc.getElementById("paneAudit");
+
+        assert("tabEdr and tabAudit exist", !!tabEdr && !!tabAudit);
+        assert("paneEdr is initially visible", !paneEdr.hidden);
+        assert("paneAudit is initially hidden", paneAudit.hidden);
+
+        // Test 3: Tab navigation switching to CCTV Audit
+        tabAudit.click();
+        await new Promise(r => setTimeout(r, 100));
+        assert("After clicking tabAudit: paneEdr is hidden", paneEdr.hidden);
+        assert("After clicking tabAudit: paneAudit is visible", !paneAudit.hidden);
+        assert("tabAudit has active class", tabAudit.classList.contains("active"));
+        assert("tabEdr does not have active class", !tabEdr.classList.contains("active"));
+
+        const titleEl = doc.querySelector(".workspace-main-title");
+        assert("Header title updated to 'CCTV Audit'", titleEl?.textContent === "CCTV Audit");
+
+        // Test 4: Audit form elements exist
+        const auditDate = doc.getElementById("auditDate");
+        const auditSite = doc.getElementById("auditSite");
+        const auditTlName = doc.getElementById("auditTlName");
+        const auditAgentName = doc.getElementById("auditAgentName");
+        const auditOmName = doc.getElementById("auditOmName");
+        const auditAccount = doc.getElementById("auditAccount");
+        const auditReasonCode = doc.getElementById("auditReasonCode");
+        const auditNoc = doc.getElementById("auditNoc");
+        const auditRemarks = doc.getElementById("auditRemarks");
+        const btnAuditSubmit = doc.getElementById("btnAuditSubmit");
+
+        assert("Audit form fields exist", !!(auditDate && auditSite && auditTlName && auditAgentName && auditOmName && auditAccount && auditReasonCode && auditNoc && auditRemarks));
+        assert("Site options populated", auditSite.options.length > 5, `found ${auditSite.options.length}`);
+        assert("OM options populated", auditOmName.options.length > 5, `found ${auditOmName.options.length}`);
+        assert("Account options populated", auditAccount.options.length > 10, `found ${auditAccount.options.length}`);
+        assert("Reason Code options populated", auditReasonCode.options.length >= 10, `found ${auditReasonCode.options.length}`);
+
+        // Test 5: Add a new Audit Entry via Form
+        auditDate.value = "2026-09-10";
+        auditSite.value = "Mabini Site A - 1st Floor";
+        auditTlName.value = "Abegail Llena";
+        auditAgentName.value = "Test Agent Alpha";
+        auditOmName.value = "Abby";
+        auditAccount.value = "AFP";
+        auditReasonCode.value = "SLEEPING";
+        auditNoc.value = "YES";
+        auditRemarks.value = "Coached agent regarding sleeping on shift.";
+
+        btnAuditSubmit.click();
+        await new Promise(r => setTimeout(r, 100));
+
+        const entries = win.CCTV_AUDIT.getEntries();
+        assert("CCTV_AUDIT contains newly added entry", entries.length >= 1);
+        const latest = entries[entries.length - 1];
+        assert("Entry data correctly stored", latest.agentName === "Test Agent Alpha" && latest.tlName === "Abegail Llena");
+
+        // Test 6: Verify Data Output Grid rendered row immediately
+        const tableBody = doc.getElementById("auditTableBody");
+        assert("Data Output Grid table body has rows", tableBody.children.length >= 1);
+        const lastRow = tableBody.lastElementChild;
+        assert("Rendered row contains agent name", lastRow.textContent.includes("Test Agent Alpha"));
+        assert("Rendered row contains TL name", lastRow.textContent.includes("Abegail Llena"));
+        assert("Rendered row contains NOC badge", lastRow.textContent.includes("YES"));
+
+        // Test 7: Verify Arial 10pt formatted Tracker Copy
+        let trackerHtml = "";
+        let trackerText = "";
+        // Override copyToClipboardHtmlAndText to capture payload (arg 1: plainText, arg 2: htmlText)
+        const origClipboard = win.copyToClipboardHtmlAndText;
+        win.copyToClipboardHtmlAndText = async (text, html) => {
+          trackerText = text;
+          trackerHtml = html;
+          return true;
+        };
+
+        const btnCopyTracker = doc.getElementById("btnAuditCopyTracker");
+        btnCopyTracker.click();
+        await new Promise(r => setTimeout(r, 100));
+
+        win.copyToClipboardHtmlAndText = origClipboard;
+        assert("Tracker copy generated HTML", !!trackerHtml);
+        assert("Tracker copy generated plain text TSV", !!trackerText && trackerText.includes("Test Agent Alpha"));
+        assert("Tracker HTML contains font-family: Arial", trackerHtml.includes("font-family: Arial"));
+        assert("Tracker HTML contains font-size: 10pt", trackerHtml.includes("font-size: 10pt"));
+        assert("Tracker HTML table contains 12 columns per row", trackerHtml.includes("<td") && trackerHtml.includes("Test Agent Alpha"));
+
+        // Test 8: Edit Audit Entry
+        const editBtn = lastRow.querySelector(".btn-edit-audit");
+        assert("Edit button exists on row", !!editBtn);
+        editBtn.click();
+        await new Promise(r => setTimeout(r, 100));
+
+        assert("Form filled with agent name for edit", auditAgentName.value === "Test Agent Alpha");
+        const submitText = doc.getElementById("btnAuditSubmitText");
+        assert("Submit button text changed to 'Update Entry'", submitText.textContent === "Update Entry");
+
+        auditRemarks.value = "Updated coaching remarks: verbal warning acknowledged.";
+        doc.getElementById("auditForm").dispatchEvent(new Event("submit", { cancelable: true, bubbles: true }));
+        await new Promise(r => setTimeout(r, 100));
+
+        const updatedEntries = win.CCTV_AUDIT.getEntries();
+        const updatedLatest = updatedEntries[updatedEntries.length - 1];
+        assert("Audit entry remarks successfully updated", updatedLatest.remarks.includes("acknowledged"));
+        assert("Submit button reverted to 'Add Entry to List'", doc.getElementById("btnAuditSubmitText").textContent === "Add Entry to List");
+
+        // Test 9: Bridge Test - Send EDR to CCTV Audit
+        tabEdr.click();
+        await new Promise(r => setTimeout(r, 100));
+        assert("Switched back to EDR workspace", !paneEdr.hidden && paneAudit.hidden);
+
+        const edrReport = {
+          id: "edr-bridge-test-101",
+          date: "2026-09-10",
+          site: "Mabini Site B - 2nd Floor",
+          supervisorRole: "Team Leader",
+          supervisorName: "Sarah Connor",
+          subjectType: "Agent/s",
+          subjectName: "T-800 Cyberdyne",
+          account: "Healthcare",
+          incident: "CCTV observed browsing non-work related videos during shift",
+          action: "Issued verbal reminder on acceptable internet use policy",
+          selected: true,
+          done: false
+        };
+
+        const bridgeResult = win.CCTV_EDR.sendReportToAudit(edrReport);
+        assert("Bridge sendReportToAudit succeeded", bridgeResult && bridgeResult.action === "created");
+
+        // Switch to CCTV Audit and verify bridge entry
+        tabAudit.click();
+        await new Promise(r => setTimeout(r, 100));
+
+        const postBridgeEntries = win.CCTV_AUDIT.getEntries();
+        const bridgeAuditEntry = postBridgeEntries.find(e => e.sourceEdrId === "edr-bridge-test-101");
+        assert("CCTV Audit received EDR entry with sourceEdrId", !!bridgeAuditEntry);
+        assert("EDR reason auto-detected as BROWSING", bridgeAuditEntry.reasonCode === "BROWSING");
+        assert("EDR NOC initialized as Pending", bridgeAuditEntry.noc === "Pending");
+        assert("EDR agent name preserved", bridgeAuditEntry.agentName === "T-800 Cyberdyne");
+
+        // Verify Data Output Grid displays EDR badge on that row
+        const tableContent = doc.getElementById("auditTableBody").innerHTML;
+        assert("Data grid renders EDR link badge", tableContent.includes('title="Linked from EDR">EDR</span>'));
+
+        // Test 10: Smart Audit Guard - Paste rows & Anomaly Detection
+        const btnGuardPaste = doc.getElementById("btnGuardPaste");
+        btnGuardPaste.click();
+        await new Promise(r => setTimeout(r, 100));
+        const modalGuardPaste = doc.getElementById("modalGuardPaste");
+        assert("Paste modal opened", !modalGuardPaste.hidden);
+
+        // Paste a test TSV row with a misspelled TL and a duplicate
+        const testTsv = [
+          "Year\tMonth\tDate\tAuditor\tOM\tSite\tTL\tAgent\tAccount\tReason\tNOC\tRemarks",
+          "2026\tSep\t9/10/2026\tMiles\tAbby\tMabini Site A\tAbegail Llenas\tJohn Doe\tAFP\tSLEEPING\tYES\tTest row 1",
+          "2026\tSep\t9/10/2026\tMiles\tAbby\tMabini Site A\tAbegail Llenas\tJohn Doe\tAFP\tSLEEPING\tYES\tTest row 2"
+        ].join("\n");
+
+        doc.getElementById("txtGuardPaste").value = testTsv;
+        doc.getElementById("btnSubmitGuardPaste").click();
+        await new Promise(r => setTimeout(r, 200));
+
+        assert("Paste modal closed", modalGuardPaste.hidden);
+        const guardRows = win.CCTV_AUDIT.getTrackerRows();
+        assert("Guard loaded 2 rows from paste", guardRows.length === 2);
+
+        const guardAnalysis = win.CCTV_AUDIT.getTrackerAnalysis();
+        assert("Guard detected duplicate rows", guardAnalysis.issues.some(i => i.type === "duplicate"));
+        assert("Guard detected TL spelling issue (Abegail Llenas vs Abegail Llena)", guardAnalysis.issues.some(i => i.type === "spelling"));
+
+        const issuesBox = doc.getElementById("guardIssuesBox");
+        assert("Issues box is visible", issuesBox.style.display !== "none");
+        assert("Issues box rendered duplicate warning", issuesBox.textContent.includes("Duplicate"));
+        assert("Issues box rendered spelling suggestion", issuesBox.textContent.includes("Abegail Llena"));
+
+        // Clean up test audit entries so we leave a pristine state
+        win.CCTV_AUDIT.clearAllEntries();
+        await win.CCTV_AUDIT.clearTrackerSnapshot();
+        assert("Cleanup: CCTV Audit entries cleared", win.CCTV_AUDIT.getEntries().length === 0);
+        assert("Cleanup: Guard snapshot cleared", win.CCTV_AUDIT.getTrackerRows().length === 0);
+
+        // Summary
+        const passedCount = results.filter(r => r.pass).length;
+        const totalCount = results.length;
+        const summary = document.createElement("h2");
+        summary.className = passedCount === totalCount ? "pass" : "fail";
+        summary.textContent = `FINAL SCORE: ${passedCount} / ${totalCount} PASSED (${passedCount === totalCount ? "100% SUCCESS" : "FAILURES DETECTED"})`;
+        document.body.insertBefore(summary, document.getElementById("results"));
+
+        window.testResults = { passedCount, totalCount, pass: passedCount === totalCount, results };
+
+        try {
+          await fetch("http://localhost:8080/api/test_report", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ summary: `CCTV Audit Parity: ${passedCount} / ${totalCount} PASSED`, totalPassed: passedCount, totalFailed: totalCount - passedCount, results })
+          });
+        } catch (_) {}
+      } catch (err) {
+        console.error("Test execution error:", err);
+        assert("Test runner encountered error", false, err.message);
+      }
+    }
+
+    frame.addEventListener("load", runTest);
+    if (frame.contentDocument && frame.contentDocument.readyState === "complete") {
+      runTest();
+    }
+  </script>
+
+
+</body></html>

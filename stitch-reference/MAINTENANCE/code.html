@@ -1,0 +1,427 @@
+<!DOCTYPE html><html class="dark h-full" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>CCTV OPS - Maintenance Terminal</title>
+<!-- Google Fonts: Space Grotesk & JetBrains Mono -->
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&amp;family=Space+Grotesk:wght@500;600;700&amp;display=swap" rel="stylesheet">
+<!-- Tailwind CSS v3 CDN -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              black: '#0D1117',
+              panel: '#151B23',
+              inner: '#1C2128',
+              border: '#30363D',
+              borderLight: '#444C56',
+              violet: '#6C5CE7',
+              violetHover: '#5849BE',
+              cyan: '#5CE1E6',
+              green: '#A8FF78',
+              orange: '#FB923C',
+              orangeActive: '#EA580C',
+              red: '#F87171',
+              muted: '#8B949E',
+              text: '#E6EDF3',
+            }
+          },
+          fontFamily: {
+            mono: ['"JetBrains Mono"', 'monospace'],
+            sans: ['"Space Grotesk"', 'sans-serif'],
+          },
+          boxShadow: {
+            'brutal-sm': '2px 2px 0px #000000',
+            'brutal': '3px 3px 0px #000000',
+            'brutal-lg': '4px 4px 0px #000000',
+          }
+        }
+      }
+    }
+  </script>
+<!-- BEGIN: Custom Terminal & Neo-Brutalist Styles -->
+<style data-purpose="retro-terminal-theme">
+    body {
+      background-color: #0D1117;
+      color: #E6EDF3;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    /* Hard-edge scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #151B23;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #30363D;
+      border: 1px solid #000000;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #444C56;
+    }
+    /* High contrast focus ring */
+    input:focus, select:focus, textarea:focus, button:focus {
+      outline: 2px solid #6C5CE7 !important;
+      outline-offset: 1px;
+    }
+  </style>
+<!-- END: Custom Terminal & Neo-Brutalist Styles -->
+</head>
+<body class="h-full flex overflow-hidden antialiased text-xs select-none">
+<!-- BEGIN: Left Navigation Sidebar -->
+<aside class="w-60 bg-[#0D1117] border-r-2 border-[#30363D] flex flex-col justify-between shrink-0 z-20">
+<div>
+<!-- Brand & Hub Header -->
+<div class="p-3.5 border-b border-[#30363D] flex items-center gap-2.5">
+<div class="bg-[#6C5CE7] text-black font-bold px-1.5 py-0.5 rounded-sm text-[10px] tracking-wider border border-black shadow-brutal-sm">
+          V2
+        </div>
+<div>
+<div class="font-bold text-sm tracking-wider text-white leading-none">CCTV OPS</div>
+<div class="text-[9px] font-mono text-[#5CE1E6] tracking-widest mt-0.5">OPERATIONS HUB</div>
+</div>
+</div>
+<!-- Navigation Workspaces -->
+<div class="px-3 pt-4 pb-2">
+<div class="text-[10px] font-mono uppercase tracking-widest text-[#8B949E] px-2 mb-2 font-semibold">Workspaces</div>
+<nav class="space-y-1">
+<!-- EDR -->
+<a class="flex items-center justify-between px-2.5 py-1.5 rounded text-[#8B949E] hover:text-white hover:bg-[#151B23] border border-transparent transition-all" href="#">
+<span class="flex items-center gap-2">
+<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+<span class="">EDR</span>
+</span>
+<span class="px-1.5 py-0.2 text-[9px] font-mono bg-[#1C2128] border border-[#30363D] text-[#8B949E] rounded">[7]</span>
+</a>
+<!-- CCTV Audit -->
+<a class="flex items-center justify-between px-2.5 py-1.5 rounded text-[#8B949E] hover:text-white hover:bg-[#151B23] border border-transparent transition-all" href="#">
+<span class="flex items-center gap-2">
+<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+<span class="">CCTV Audit</span>
+</span>
+<span class="px-1.5 py-0.2 text-[9px] font-mono bg-[#1C2128] border border-[#30363D] text-[#8B949E] rounded">[0]</span>
+</a>
+<!-- AI Sorter -->
+<a class="flex items-center justify-between px-2.5 py-1.5 rounded text-[#8B949E] hover:text-white hover:bg-[#151B23] border border-transparent transition-all" href="#">
+<span class="flex items-center gap-2">
+<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+<span class="">AI Sorter</span>
+</span>
+</a>
+<!-- Maintenance (Active) -->
+<a class="flex items-center justify-between px-2.5 py-1.5 rounded font-semibold text-black bg-[#FB923C] border border-black shadow-brutal-sm" href="#">
+<span class="flex items-center gap-2">
+<svg class="w-3.5 h-3.5 stroke-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2"></path>
+<path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2"></path>
+</svg>
+<span class="">Maintenance</span>
+</span>
+<span class="w-2 h-2 rounded-full bg-black"></span>
+</a>
+<!-- Pending -->
+<a class="flex items-center justify-between px-2.5 py-1.5 rounded text-[#8B949E] hover:text-white hover:bg-[#151B23] border border-transparent transition-all" href="#">
+<span class="flex items-center gap-2">
+<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+<span class="">Pending</span>
+</span>
+<span class="px-1.5 py-0.2 text-[9px] font-mono bg-[#1C2128] border border-[#30363D] text-[#8B949E] rounded">[7]</span>
+</a>
+</nav>
+</div>
+<!-- Navigation Management -->
+<div class="px-3 pt-3 pb-2 border-t border-[#30363D]/60 mt-2">
+<div class="text-[10px] font-mono uppercase tracking-widest text-[#8B949E] px-2 mb-2 font-semibold">Management</div>
+<nav class="space-y-1">
+<a class="flex items-center gap-2 px-2.5 py-1.5 rounded text-[#8B949E] hover:text-white hover:bg-[#151B23] border border-transparent transition-all" href="#">
+<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 6h16M4 10h16M4 14h16M4 18h16" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+<span class="">Masterlist</span>
+</a>
+<a class="flex items-center justify-between px-2.5 py-1.5 rounded text-[#8B949E] hover:text-white hover:bg-[#151B23] border border-transparent transition-all" href="#">
+<span class="flex items-center gap-2">
+<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+<span class="">Follow Up</span>
+</span>
+<span class="px-1.5 py-0.2 text-[9px] font-mono bg-[#1C2128] border border-[#30363D] text-[#8B949E] rounded">[0]</span>
+</a>
+<a class="flex items-center gap-2 px-2.5 py-1.5 rounded text-[#8B949E] hover:text-white hover:bg-[#151B23] border border-transparent transition-all" href="#">
+<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+<span class="">History</span>
+</a>
+<a class="flex items-center gap-2 px-2.5 py-1.5 rounded text-[#8B949E] hover:text-white hover:bg-[#151B23] border border-transparent transition-all" href="#">
+<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+<span class="">Accounts</span>
+</a>
+</nav>
+</div>
+</div>
+<!-- Sidebar Footer Version / Collapse -->
+<div class="p-3 border-t border-[#30363D] flex items-center justify-between text-[11px] font-mono text-[#8B949E]">
+<span class="">v2.0.4-prod</span>
+<button class="hover:text-white px-1.5 py-0.5 rounded hover:bg-[#1C2128] border border-transparent hover:border-[#30363D] transition-colors" title="Collapse Sidebar">
+        &lt;&lt;
+      </button>
+</div>
+</aside>
+<!-- END: Left Navigation Sidebar -->
+<!-- BEGIN: Main Content Area -->
+<div class="flex-1 flex flex-col min-w-0 overflow-hidden bg-[#0D1117]">
+<!-- BEGIN: Top Header Bar -->
+<header class="h-14 border-b-2 border-[#30363D] px-5 flex items-center justify-between shrink-0 bg-[#0D1117]">
+<!-- Workspace Title & Badge -->
+<div class="flex items-center gap-3">
+<h1 class="text-base font-bold tracking-wider text-white uppercase font-sans">MAINTENANCE</h1>
+<span class="bg-[#151B23] border border-[#5CE1E6] text-[#5CE1E6] px-2 py-0.5 text-[10px] tracking-wider rounded font-mono shadow-brutal-sm font-semibold">
+          REPORT BUILDER
+        </span>
+</div>
+<!-- Action Utilities & Operational Indicators -->
+<div class="flex items-center flex-wrap gap-2.5">
+<!-- Template Button -->
+<button class="flex items-center gap-1.5 bg-[#151B23] hover:bg-[#1C2128] border border-[#30363D] text-[#E6EDF3] px-2.5 py-1.5 rounded text-xs font-mono shadow-brutal-sm hover:border-[#8B949E] transition-all">
+<svg class="w-3.5 h-3.5 text-[#8B949E]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+<span class="">Template</span>
+</button>
+<!-- Reload Button -->
+<button class="flex items-center gap-1.5 bg-[#151B23] hover:bg-[#1C2128] border border-[#30363D] text-[#E6EDF3] px-2.5 py-1.5 rounded text-xs font-mono shadow-brutal-sm hover:border-[#8B949E] transition-all">
+<svg class="w-3.5 h-3.5 text-[#8B949E]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+<span class="">Reload</span>
+</button>
+<!-- Dark / Light Pill Switch -->
+<div class="flex items-center gap-2 bg-[#151B23] border border-[#30363D] px-2.5 py-1 rounded text-[11px] font-mono shadow-brutal-sm text-[#8B949E]">
+<span class="text-[#A8FF78] font-bold">◉ DARK</span>
+<span class="">/</span>
+<span class="hover:text-white cursor-pointer">○ LIGHT</span>
+</div>
+<!-- Docs Connected Pill -->
+<div class="flex items-center gap-2 bg-[#151B23] border border-[#30363D] px-2.5 py-1 rounded text-[11px] font-mono shadow-brutal-sm">
+<span class="w-2 h-2 rounded-full bg-[#22C55E] animate-pulse"></span>
+<span class="text-[#E6EDF3]">Docs Connected</span>
+<svg class="w-3 h-3 text-[#8B949E]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+</div>
+<!-- Terminal Clock -->
+<div class="flex items-center gap-1.5 bg-[#151B23] border border-[#30363D] px-2.5 py-1 rounded text-[11px] font-mono text-[#A8FF78] shadow-brutal-sm font-semibold">
+<span class="w-1.5 h-1.5 rounded-full bg-[#A8FF78]"></span>
+<span class="">10:59:58 AM PHT</span>
+</div>
+<!-- Operator Badge -->
+<div class="flex items-center gap-2 bg-[#151B23] border border-[#30363D] px-2 py-1 rounded shadow-brutal-sm">
+<div class="w-5 h-5 bg-[#30363D] text-[#E6EDF3] flex items-center justify-center font-bold text-[10px] rounded border border-black font-mono">
+            M
+          </div>
+<div class="leading-none text-left">
+<div class="font-bold text-[#E6EDF3] text-[11px] leading-tight">Miles</div>
+<div class="text-[8px] font-mono text-[#8B949E] tracking-wider">OPERATOR</div>
+</div>
+</div>
+</div>
+</header>
+<!-- END: Top Header Bar -->
+<!-- BEGIN: Workspace Main Canvas -->
+<main class="flex-1 overflow-y-auto p-4 space-y-4">
+<!-- BEGIN: Section 1 - Configuration & Metadata Panel -->
+<section class="bg-[#151B23] border-2 border-[#30363D] rounded p-3.5 shadow-brutal" data-purpose="report-configuration">
+<div class="grid grid-cols-12 gap-3 items-end">
+<!-- Destination Site Selector -->
+<div class="col-span-8">
+<label class="block text-[10px] font-mono uppercase tracking-wider text-[#8B949E] font-semibold mb-1">
+              Destination Tracker / Assigned Site
+            </label>
+<div class="relative">
+<select class="w-full bg-[#1C2128] border-2 border-[#30363D] text-[#E6EDF3] px-3 py-1.5 rounded font-mono text-xs focus:ring-1 focus:ring-[#6C5CE7] focus:border-[#6C5CE7] appearance-none pr-8">
+<option selected="">Mabini Site A - 1st &amp; 2nd Floor</option>
+<option>Mabini Site B - 3rd &amp; 4th Floor</option>
+<option>Quezon Central Facility - Ground</option>
+<option>Annex Hub - Perimeter &amp; Parking</option>
+</select>
+<div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2.5 text-[#8B949E]">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+</div>
+</div>
+</div>
+<!-- Report Date Picker -->
+<div class="col-span-2">
+<label class="block text-[10px] font-mono uppercase tracking-wider text-[#8B949E] font-semibold mb-1">
+              Report Date
+            </label>
+<div class="relative">
+<input class="w-full bg-[#1C2128] border-2 border-[#30363D] text-[#E6EDF3] px-3 py-1.5 rounded font-mono text-xs focus:ring-1 focus:ring-[#6C5CE7] focus:border-[#6C5CE7] pr-8" type="text" value="09/14/2026">
+<div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2.5 text-[#8B949E]">
+<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+</div>
+</div>
+</div>
+<!-- Live Auto-Save & Sheets Status Cluster -->
+<div class="col-span-2 flex flex-col items-end justify-center h-full pb-1 font-mono gap-1">
+<div class="text-[10px] text-[#8B949E]">Sheets: <span class="text-[#FB923C] font-semibold">Not Connected</span></div>
+<div class="text-[10px] text-[#A8FF78] flex items-center gap-1 font-medium mt-0.5">
+<span class="w-1.5 h-1.5 rounded-full bg-[#A8FF78] animate-pulse"></span>
+<span class="">Auto-saved (10:59:44 AM)</span>
+</div>
+</div>
+</div>
+<!-- Global Action Toolbar -->
+<div class="mt-3 pt-3 border-t border-[#30363D] flex items-center justify-between flex-wrap gap-2">
+<!-- Draft & Sync Workflows -->
+<div class="flex items-center flex-wrap gap-2">
+<!-- Save to Drafts -->
+<button class="flex items-center gap-1.5 bg-[#1C2128] hover:bg-[#30363D] text-[#E6EDF3] border border-[#30363D] px-2.5 py-1.5 rounded font-mono text-xs shadow-brutal-sm transition-all active:translate-y-0.5">
+<svg class="w-3.5 h-3.5 text-[#8B949E]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+<span class="">Save to Drafts</span>
+</button>
+<!-- Drafts List -->
+<button class="flex items-center gap-1.5 bg-[#1C2128] hover:bg-[#30363D] text-[#E6EDF3] border border-[#30363D] px-2.5 py-1.5 rounded font-mono text-xs shadow-brutal-sm transition-all active:translate-y-0.5">
+<svg class="w-3.5 h-3.5 text-[#8B949E]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+<span class="">Drafts</span>
+</button>
+<!-- Copy Full Report to Sheets -->
+<button class="flex items-center gap-1.5 bg-[#1C2128] hover:bg-[#30363D] text-[#E6EDF3] border border-[#30363D] px-2.5 py-1.5 rounded font-mono text-xs shadow-brutal-sm transition-all active:translate-y-0.5">
+<svg class="w-3.5 h-3.5 text-[#5CE1E6]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+<span class="">Copy Full Report to Sheets</span>
+</button>
+<!-- Send to Google Sheets (Primary Electric Violet) -->
+<button class="flex items-center gap-1.5 bg-[#6C5CE7] hover:bg-[#5849BE] text-white border-2 border-black font-semibold px-3 py-1.5 rounded font-mono text-xs shadow-brutal transition-all active:translate-y-0.5">
+<svg class="w-3.5 h-3.5 transform -rotate-45" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+<span class="">Send to Google Sheets</span>
+</button>
+<!-- Sheet Setup -->
+<button class="flex items-center gap-1.5 bg-[#1C2128] hover:bg-[#30363D] text-[#8B949E] hover:text-white border border-[#30363D] px-2.5 py-1.5 rounded font-mono text-xs shadow-brutal-sm transition-all active:translate-y-0.5">
+<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+<span class="">Sheet Setup</span>
+</button>
+</div>
+<!-- Document Output & Clearance Cluster -->
+<div class="flex items-center flex-wrap gap-2">
+<button class="bg-[#1C2128] hover:bg-[#30363D] text-[#8B949E] hover:text-white border border-[#30363D] px-2.5 py-1.5 rounded font-mono text-xs shadow-brutal-sm transition-all active:translate-y-0.5">
+              Preview / Print
+            </button>
+<button class="bg-[#151B23] hover:bg-[#1C2128] text-[#E6EDF3] border-2 border-[#30363D] px-3 py-1.5 rounded font-mono text-xs font-semibold shadow-brutal-sm transition-all active:translate-y-0.5">
+              Download PDF
+            </button>
+<div class="w-px h-5 bg-[#30363D] mx-1"></div>
+<button class="bg-transparent hover:bg-[#F87171]/10 text-[#F87171] border border-[#F87171]/50 hover:border-[#F87171] px-2.5 py-1.5 rounded font-mono text-xs shadow-brutal-sm transition-all active:translate-y-0.5">
+              Clear All
+            </button>
+</div>
+</div>
+</section>
+<!-- END: Section 1 - Configuration & Metadata Panel -->
+<!-- BEGIN: Section 2 - Report Block #1 -->
+<article class="bg-[#151B23] border-2 border-[#30363D] rounded-sm p-4 shadow-brutal relative" data-purpose="report-block-section">
+<!-- Block Sub-Header -->
+<div class="flex items-center justify-between border-b border-[#30363D] pb-3 mb-3.5">
+<div class="flex items-center gap-2">
+<span class="bg-[#1C2128] text-[#5CE1E6] border border-[#5CE1E6] px-1.5 py-0.5 rounded text-[10px] font-mono font-bold tracking-wider shadow-brutal-sm">
+              BLOCK #1
+            </span>
+<span class="font-sans font-bold text-sm tracking-wide text-white">Report Section 1</span>
+</div>
+<!-- Hide Report Button -->
+<button class="bg-[#1C2128] hover:bg-[#30363D] border border-[#30363D] text-[#8B949E] hover:text-white px-2 py-1 rounded font-mono text-[11px] shadow-brutal-sm transition-all">
+            Hide Report
+          </button>
+</div>
+<!-- 2-Column Operational Lanes -->
+<div class="grid grid-cols-2 gap-4">
+<!-- Left Lane: Station Issues / Incident -->
+<div class="flex flex-col" data-purpose="station-issues-lane">
+<div class="flex items-center justify-between mb-1.5">
+<label class="font-mono text-[11px] font-bold text-[#E6EDF3] tracking-wide uppercase flex items-center gap-1.5">
+<span class="w-2 h-2 bg-[#FB923C] rounded-sm"></span>
+                STATION ISSUES / INCIDENT (LANES)
+              </label>
+<span class="text-[10px] font-mono text-[#8B949E]">TSV / Multi-line</span>
+</div>
+<textarea class="w-full bg-[#0D1117] border-2 border-[#30363D] text-[#E6EDF3] placeholder-[#444C56] p-3.5 rounded font-mono text-xs leading-relaxed focus:border-[#6C5CE7] focus:ring-0 resize-y min-h-[160px]" placeholder="Paste station rows or enter incident issues (TSV format from Sorter or manual)..." rows="7"></textarea>
+</div>
+<!-- Right Lane: Action Taken / Remarks -->
+<div class="flex flex-col" data-purpose="action-taken-lane">
+<div class="flex items-center justify-between mb-1.5">
+<label class="font-mono text-[11px] font-bold text-[#E6EDF3] tracking-wide uppercase flex items-center gap-1.5">
+<span class="w-2 h-2 bg-[#A8FF78] rounded-sm"></span>
+                ACTION TAKEN / REMARKS
+              </label>
+<span class="text-[10px] font-mono text-[#8B949E]">One per line</span>
+</div>
+<textarea class="w-full bg-[#0D1117] border-2 border-[#30363D] text-[#E6EDF3] placeholder-[#444C56] p-3.5 rounded font-mono text-xs leading-relaxed focus:border-[#6C5CE7] focus:ring-0 resize-y min-h-[160px]" placeholder="Enter action taken or remarks (one per line)..." rows="7"></textarea>
+</div>
+</div>
+<!-- Proof Screenshots Evidence Sub-Panel -->
+<div class="mt-4 pt-3.5 border-t border-[#30363D]" data-purpose="proof-screenshots">
+<div class="flex items-center justify-between mb-2">
+<div class="flex items-center gap-2">
+<span class="font-mono text-[11px] text-[#E6EDF3] font-semibold tracking-wide">Proof Screenshots</span>
+<span class="bg-[#1C2128] border border-[#30363D] text-[#8B949E] px-1.5 py-0.5 rounded text-[10px] font-mono">
+                0 IMAGE(S)
+              </span>
+</div>
+<!-- Add Screenshot Button -->
+<button class="flex items-center gap-1.5 bg-[#1C2128] hover:bg-[#30363D] text-[#E6EDF3] border border-[#30363D] px-2.5 py-1 rounded font-mono text-xs shadow-brutal-sm transition-all active:translate-y-0.5">
+<svg class="w-3.5 h-3.5 text-[#5CE1E6]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+<span class="">Add Screenshot</span>
+</button>
+</div>
+<!-- Drag and Drop Dropzone -->
+<div class="border-2 border-dashed border-[#30363D] hover:border-[#6C5CE7] bg-[#0D1117]/60 hover:bg-[#1C2128]/40 rounded p-4 text-center cursor-pointer transition-colors group">
+<div class="flex items-center justify-center gap-2 text-[#8B949E] group-hover:text-[#E6EDF3]">
+<svg class="w-4 h-4 text-[#8B949E] group-hover:text-[#6C5CE7]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+<span class="font-mono text-xs">Browse, drag &amp; drop image files, or press <kbd class="px-1.5 py-0.5 bg-[#1C2128] border border-[#30363D] text-[#5CE1E6] rounded text-[10px]">Ctrl+V</kbd> to paste screenshot here.</span>
+</div>
+</div>
+</div>
+</article>
+<!-- END: Section 2 - Report Block #1 -->
+<!-- BEGIN: Section 3 - Add Block Action Button -->
+<div class="pt-1" data-purpose="add-block-control">
+<button class="flex items-center gap-2 bg-[#151B23] hover:bg-[#1C2128] text-[#E6EDF3] hover:text-white border-2 border-[#30363D] hover:border-[#6C5CE7] px-4 py-2.5 rounded font-mono text-xs font-semibold shadow-brutal transition-all active:translate-y-0.5">
+<svg class="w-4 h-4 text-[#6C5CE7]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 4v16m8-8H4" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"></path></svg>
+<span class="">Add another editable lanes + screenshot block</span>
+</button>
+</div>
+<!-- END: Section 3 - Add Block Action Button -->
+</main>
+<!-- END: Workspace Main Canvas -->
+<!-- BEGIN: Floating Bottom Notification Toast -->
+<div class="fixed bottom-4 right-5 z-50" style="transition: opacity 0.4s; opacity: 0; display: none;">
+<div class="flex items-center justify-between gap-4 bg-[#E6EDF3] text-black border-2 border-black px-4 py-2.5 rounded-sm shadow-brutal font-mono text-xs">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-[#22C55E]"></span>
+<span class="font-semibold text-black">Maintenance Report cleared.</span>
+</div>
+<button class="text-black/60 hover:text-black ml-2 font-bold leading-none text-sm">×</button>
+</div>
+</div>
+<!-- END: Floating Bottom Notification Toast -->
+</div>
+<!-- END: Main Content Area -->
+<!-- BEGIN: Core Interactive Handlers Script -->
+<script data-purpose="maintenance-interactions">
+    document.addEventListener('DOMContentLoaded', () => {
+      // Auto-dismiss or manual dismiss toast notification
+      const toast = document.querySelector('.fixed.bottom-4.right-5');
+      if (toast) {
+        const closeBtn = toast.querySelector('button');
+        if (closeBtn) {
+          closeBtn.addEventListener('click', () => {
+            toast.style.display = 'none';
+          });
+        }
+        setTimeout(() => {
+          toast.style.transition = 'opacity 0.4s ease';
+          toast.style.opacity = '0';
+          setTimeout(() => { toast.style.display = 'none'; }, 400);
+        }, 5000);
+      }
+    });
+  </script>
+<!-- END: Core Interactive Handlers Script -->
+
+
+</body></html>

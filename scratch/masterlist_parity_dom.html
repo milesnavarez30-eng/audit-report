@@ -1,0 +1,183 @@
+﻿<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="UTF-8">
+  <title>Masterlist V2 Parity Test Suite</title>
+</head>
+<body>
+  <h1>Running Masterlist Parity Tests...</h1>
+  <div id="results"></div>
+
+  <!-- Dependencies -->
+  <script src="../cctv-ops-v2/js/config.js"></script>
+  <script src="../cctv-ops-v2/js/storage.js"></script>
+  <script src="../cctv-ops-v2/js/shared.js"></script>
+  <script src="../cctv-ops-v2/js/services/auth-service.js"></script>
+  <script src="../cctv-ops-v2/js/services/masterlist-service.js"></script>
+
+  <script>
+    (async function() {
+      const results = [];
+      function assert(desc, condition) {
+        results.push({ desc, passed: !!condition });
+        console.log((condition ? "PASS: " : "FAIL: ") + desc);
+      }
+
+      try {
+        const masterlist = window.masterlistService;
+        assert("Masterlist service exists", !!masterlist);
+
+        // Test 1: Trackers count & labels
+        const trackers = masterlist.getTrackers();
+        assert("Has 5 pending trackers", trackers.length === 5);
+        const keys = trackers.map(t => t.key);
+        assert("Contains miles, seth, wendie, kenneth, jr",
+          keys.includes("miles") && keys.includes("seth") && keys.includes("wendie") &&
+          keys.includes("kenneth") && keys.includes("jr")
+        );
+
+        // Test 2: 12 Exact PENDING_COLUMNS
+        const cols = masterlist.getColumns();
+        assert("Columns count is 12", cols.length === 12);
+        assert("Columns match V1 contract",
+          cols[0] === "Year" && cols[1] === "Month" && cols[2] === "Date" &&
+          cols[3] === "Name" && cols[4] === "OM" && cols[5] === "SITE" &&
+          cols[6] === "TL" && cols[7] === "Agent Name" && cols[8] === "Account" &&
+          cols[9] === "CCTV Reason Codes" && cols[10] === "NOC" && cols[11] === "Remarks"
+        );
+
+        // Test 3: Column Value Extraction
+        const sampleRow = {
+          year: "2026",
+          month: "September",
+          date: "2026-09-10",
+          name: "Miles",
+          om: "OM Mirah",
+          site: "Mabini Site A",
+          tl: "Abegail Llena",
+          agentName: "Juan Dela Cruz",
+          account: "Shopee",
+          cctvReasonCodes: "SLEEPING",
+          noc: "Pending",
+          remarks: "Observed sleeping at bay 3"
+        };
+        assert("Extracts Year correctly", masterlist.valueForPendingColumn(sampleRow, "Year") === "2026");
+        assert("Extracts SITE correctly", masterlist.valueForPendingColumn(sampleRow, "SITE") === "Mabini Site A");
+        assert("Extracts NOC correctly", masterlist.valueForPendingColumn(sampleRow, "NOC") === "Pending");
+        assert("Extracts Reason Codes correctly", masterlist.valueForPendingColumn(sampleRow, "CCTV Reason Codes") === "SLEEPING");
+
+        // Test 4: Aliased Column Value Extraction
+        const aliasedRow = {
+          yr: "2026",
+          mo: "Sept",
+          Location: "Shaw B",
+          "Team Leader": "Sarah Connor",
+          Agent: "John Matrix",
+          Campaign: "Healthcare",
+          "Reason Code": "DRESS CODE",
+          Status: "Pending",
+          Notes: "Reviewed footage"
+        };
+        assert("Extracts aliased Year", masterlist.valueForPendingColumn(aliasedRow, "Year") === "2026");
+        assert("Extracts aliased SITE (Location)", masterlist.valueForPendingColumn(aliasedRow, "SITE") === "Shaw B");
+        assert("Extracts aliased TL", masterlist.valueForPendingColumn(aliasedRow, "TL") === "Sarah Connor");
+        assert("Extracts aliased Reason Code", masterlist.valueForPendingColumn(aliasedRow, "CCTV Reason Codes") === "DRESS CODE");
+
+        // Test 5: Notepad Persistence & Clear
+        masterlist.saveNotepad("miles", "Priority follow-up for Mabini NOC responses");
+        assert("Retrieves saved notepad for miles",
+          masterlist.getNotepad("miles") === "Priority follow-up for Mabini NOC responses"
+        );
+        masterlist.clearNotepad("miles");
+        assert("Notepad cleared successfully", masterlist.getNotepad("miles") === "");
+
+        // Test 6: Built-in HR Assignments Seeding
+        await masterlist.init();
+        const hrList = masterlist.getHrAssignments();
+        assert("Initial HR assignments count >= 37 (built-in seeds)", hrList.length >= 37);
+        const hasMarianne = hrList.some(h => h.site === "Mabini Site" && h.omTeam === "Team Mirah" && h.hr === "Marianne Perez");
+        assert("Contains built-in Mabini / Team Mirah / Marianne Perez", hasMarianne);
+
+        // Test 7: HR Assignment CRUD - Save / Add
+        const testItem = {
+          id: "",
+          site: "Shaw Site",
+          omTeam: "OM Marcus",
+          hr: "Elena Fisher"
+        };
+        const saveRes = await masterlist.saveHrAssignment(testItem);
+        assert("Save HR assignment returns record with id", !!saveRes.record?.id);
+        const afterSaveList = masterlist.getHrAssignments();
+        const foundNew = afterSaveList.find(h => h.id === saveRes.record.id);
+        assert("New HR assignment is immediately derived in list", !!foundNew && foundNew.hr === "Elena Fisher");
+
+        // Test 8: HR Assignment Search Filter
+        const searchElena = masterlist.getHrAssignments("Elena");
+        assert("Search finds 'Elena'", searchElena.length === 1 && searchElena[0].hr === "Elena Fisher");
+        const searchShaw = masterlist.getHrAssignments("Shaw Site");
+        assert("Search finds 'Shaw Site'", searchShaw.length >= 1);
+        const searchNone = masterlist.getHrAssignments("NonExistentXYZ");
+        assert("Search returns empty array for non-matching query", searchNone.length === 0);
+
+        // Test 9: HR Assignment Update
+        await masterlist.saveHrAssignment({
+          id: saveRes.record.id,
+          site: "Shaw Site",
+          omTeam: "OM Marcus",
+          hr: "Elena Fisher-Drake"
+        });
+        const updatedList = masterlist.getHrAssignments();
+        const foundUpdated = updatedList.find(h => h.id === saveRes.record.id);
+        assert("Updated HR name matches 'Elena Fisher-Drake'", foundUpdated?.hr === "Elena Fisher-Drake");
+
+        // Test 10: HR Assignment Delete (Tombstone)
+        await masterlist.deleteHrAssignment(saveRes.record.id);
+        const afterDeleteList = masterlist.getHrAssignments();
+        const foundDeleted = afterDeleteList.find(h => h.id === saveRes.record.id);
+        assert("Deleted HR assignment no longer appears in active list", !foundDeleted);
+
+        // Test 11: Global History Adapter
+        const adapter = window.__workspaceHistoryAdapters?.masterlist;
+        assert("Global history adapter for masterlist is registered", !!adapter);
+        masterlist.saveNotepad("seth", "Seth history test notes");
+        const snap = adapter.snapshot();
+        assert("Adapter snapshot contains note and hrLocal", snap && typeof snap.note === "string" && Array.isArray(snap.hrLocal));
+        masterlist.saveNotepad("seth", "Changed notes");
+        await adapter.restore(snap);
+        assert("Adapter restore reverts note", masterlist.getNotepad("seth") === "Seth history test notes");
+
+        // Test 12: Sync State structure
+        const sync = masterlist.getSyncState();
+        assert("Sync state contains kind, title, detail, formattedTime",
+          typeof sync.kind === "string" && typeof sync.title === "string" && typeof sync.detail === "string" && typeof sync.formattedTime === "string"
+        );
+
+      } catch (e) {
+        assert("Unexpected exception during test execution: " + e.message, false);
+      }
+
+      const total = results.length;
+      const passed = results.filter(r => r.passed).length;
+      const failed = total - passed;
+
+      const output = {
+        total,
+        passed,
+        failed,
+        allPassed: failed === 0,
+        results
+      };
+
+      document.getElementById("results").textContent = JSON.stringify(output, null, 2);
+
+      // Report to window for headless readers
+      window.TEST_OUTPUT = output;
+      const el = document.createElement("div");
+      el.id = "testComplete";
+      el.setAttribute("data-passed", passed);
+      el.setAttribute("data-total", total);
+      document.body.appendChild(el);
+    })();
+  </script>
+
+
+</body></html>

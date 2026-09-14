@@ -5,10 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>CCTV OPS V2 - Operations Platform</title>
 
-  <!-- Google Fonts: Plus Jakarta Sans -->
+  <!-- Google Fonts: Space Grotesk (display) + Inter (body) + JetBrains Mono (mono/labels) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 
   <!-- Modular Design System -->
   <link rel="stylesheet" href="./css/tokens.css">
@@ -16,6 +16,8 @@
   <link rel="stylesheet" href="./css/layout.css">
   <link rel="stylesheet" href="./css/components.css">
   <link rel="stylesheet" href="./css/workspaces.css">
+  <!-- Neo-Brutalist Design System Override — loaded last to win specificity -->
+  <link rel="stylesheet" href="./css/neo-brutalism.css">
 
   <style>
     /* Premium Split-View EDR Styling */
@@ -32,6 +34,12 @@
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 8px;
+    }
+
+    @media (max-width: 500px) {
+      .form-row-2 {
+        grid-template-columns: 1fr;
+      }
     }
 
     /* Output Preview Area */
@@ -88,18 +96,18 @@
       overflow-x: hidden !important;
       display: flex;
       flex-direction: column;
-      gap: 6px;
+      gap: 4px;
       width: 100%;
       box-sizing: border-box;
-      padding: 8px 10px;
+      padding: 4px 6px;
     }
 
     .record-row {
       display: flex;
       align-items: center;
-      gap: 10px;
-      min-height: 54px;
-      padding: 6px 10px;
+      gap: 8px;
+      min-height: 42px;
+      padding: 4px 8px;
       background: var(--bg-surface);
       border: 1px solid var(--border-default);
       border-radius: var(--radius-sm);
@@ -418,6 +426,9 @@
 <body>
   <div class="app-root">
 
+    <!-- Mobile Drawer Backdrop Overlay -->
+    <div class="nav-rail-backdrop" id="navRailBackdrop"></div>
+
     <!-- Slim Left Navigation Rail -->
     <aside class="nav-rail" id="navRail">
       <div class="rail-brand">
@@ -432,7 +443,7 @@
         <div class="rail-section-label">Workspaces</div>
 
         <!-- EDR Workspace Tab (Active Prototype) -->
-        <button type="button" class="nav-item active" id="tabEdr" role="tab" aria-selected="true">
+        <button type="button" class="nav-item active" id="tabEdr" role="tab" aria-selected="true" title="End of the Day Report" data-tooltip="End of the Day Report" data-tooltip-pos="right">
           <svg class="nav-icon" viewBox="0 0 24 24">
             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
             <polyline points="14 2 14 8 20 8"></polyline>
@@ -445,7 +456,7 @@
         </button>
 
         <!-- Workspaces -->
-        <button type="button" class="nav-item" id="tabAudit" role="tab" aria-selected="false">
+        <button type="button" class="nav-item" id="tabAudit" role="tab" aria-selected="false" title="CCTV Audit" data-tooltip="CCTV Audit" data-tooltip-pos="right">
           <svg class="nav-icon" viewBox="0 0 24 24">
             <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
             <line x1="3" y1="9" x2="21" y2="9"></line>
@@ -455,21 +466,32 @@
           <span class="nav-badge" id="railAuditBadge">0</span>
         </button>
 
-        <button type="button" class="nav-item" id="tabSorter" role="tab" aria-selected="false">
+        <button type="button" class="nav-item" id="tabSorter" role="tab" aria-selected="false" title="AI Sorter" data-tooltip="AI Sorter" data-tooltip-pos="right">
           <svg class="nav-icon" viewBox="0 0 24 24">
             <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
           </svg>
           <span class="nav-label">AI Sorter</span>
         </button>
 
-        <button type="button" class="nav-item" id="tabMaintenance" role="tab" aria-selected="false">
+        <button type="button" class="nav-item" id="tabMaintenance" role="tab" aria-selected="false" title="Maintenance" data-tooltip="Maintenance" data-tooltip-pos="right">
           <svg class="nav-icon" viewBox="0 0 24 24">
             <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path>
           </svg>
           <span class="nav-label">Maintenance</span>
         </button>
 
-        <button type="button" class="nav-item" id="tabPending" role="tab" aria-selected="false">
+        <!-- Follow Up moved to main operational group in place of Pending -->
+        <button type="button" class="nav-item" id="tabFollowup" role="tab" aria-selected="false" title="Follow Up" data-tooltip="Follow Up" data-tooltip-pos="right">
+          <svg class="nav-icon" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="10"></circle>
+            <polyline points="12 6 12 12 16 14"></polyline>
+          </svg>
+          <span class="nav-label">Follow Up</span>
+          <span class="nav-badge" id="railFollowupBadge">0</span>
+        </button>
+
+        <!-- Pending hidden from rail navigation; data & workspace preserved -->
+        <button type="button" class="nav-item" id="tabPending" role="tab" aria-selected="false" style="display:none !important;" aria-hidden="true" tabindex="-1" title="Pending" data-tooltip="Pending" data-tooltip-pos="right">
           <svg class="nav-icon" viewBox="0 0 24 24">
             <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"></path>
           </svg>
@@ -479,7 +501,7 @@
 
         <div class="rail-section-label">Management</div>
 
-        <button type="button" class="nav-item" id="tabMasterlist" role="tab" aria-selected="false">
+        <button type="button" class="nav-item" id="tabMasterlist" role="tab" aria-selected="false" title="Masterlist" data-tooltip="Masterlist" data-tooltip-pos="right">
           <svg class="nav-icon" viewBox="0 0 24 24">
             <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
             <circle cx="9" cy="7" r="4"></circle>
@@ -489,16 +511,7 @@
           <span class="nav-label">Masterlist</span>
         </button>
 
-        <button type="button" class="nav-item" id="tabFollowup" role="tab" aria-selected="false">
-          <svg class="nav-icon" viewBox="0 0 24 24">
-            <circle cx="12" cy="12" r="10"></circle>
-            <polyline points="12 6 12 12 16 14"></polyline>
-          </svg>
-          <span class="nav-label">Follow Up</span>
-          <span class="nav-badge" id="railFollowupBadge">0</span>
-        </button>
-
-        <button type="button" class="nav-item" id="tabHistory" role="tab" aria-selected="false">
+        <button type="button" class="nav-item" id="tabHistory" role="tab" aria-selected="false" title="History" data-tooltip="History" data-tooltip-pos="right">
           <svg class="nav-icon" viewBox="0 0 24 24">
             <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
             <path d="M3 3v5h5"></path>
@@ -507,7 +520,7 @@
           <span class="nav-label">History</span>
         </button>
 
-        <button type="button" class="nav-item" id="tabAccounts" role="tab" aria-selected="false">
+        <button type="button" class="nav-item" id="tabAccounts" role="tab" aria-selected="false" title="Accounts" data-tooltip="Accounts" data-tooltip-pos="right">
           <svg class="nav-icon" viewBox="0 0 24 24">
             <circle cx="12" cy="12" r="3"></circle>
             <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
@@ -517,9 +530,10 @@
       </nav>
 
       <div class="rail-footer">
-        <span style="font-size:10px; color:var(--text-dim);">V2.0.0-beta</span>
-        <button type="button" class="collapse-btn" id="btnToggleRail" title="Toggle Sidebar">
-          <svg class="icon icon-sm" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"></polyline></svg>
+        <span class="rail-version">V2.0.0-beta</span>
+        <button type="button" class="collapse-btn" id="btnToggleRail" title="Collapse sidebar" data-tooltip="Collapse sidebar" data-tooltip-pos="right" aria-label="Collapse sidebar">
+          <svg class="icon collapse-btn-icon" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"></polyline></svg>
+          <span class="collapse-btn-text">Collapse</span>
         </button>
       </div>
     </aside>
@@ -528,7 +542,11 @@
     <main class="app-main">
       <!-- Minimalist Topbar -->
       <header class="top-appbar">
+        <div class="topbar-progress-line" id="topbarProgressLine"></div>
         <div class="appbar-left">
+          <button type="button" class="btn-mobile-nav-toggle" id="btnMobileNavToggle" aria-label="Toggle Navigation Menu" data-tooltip="Menu" data-tooltip-pos="bottom">
+            <svg class="icon icon-sm" viewBox="0 0 24 24"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+          </button>
           <div class="workspace-title-wrap">
             <h1 class="workspace-main-title">End of the Day Report</h1>
             <span class="badge badge-info" style="display:none;"></span>
@@ -536,35 +554,38 @@
         </div>
 
         <div class="appbar-right">
-          <!-- EDR Template Link -->
-          <a href="https://docs.google.com/document/d/1-i54dxMosFgiNcdEO7fHqvN15yIsicdOjmsW0XTYbUw/edit?tab=t.ob2cyz0wou1" target="_blank" rel="noopener noreferrer" class="btn btn-ghost btn-sm" id="btnOpenTemplate" title="Open Google Docs EDR Template" style="text-decoration:none; gap:5px;">
-            <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
-            <span>Template</span>
-          </a>
+          <!-- Compact Live Integration Status Indicators -->
+          <div class="integration-status-group" id="integrationStatusGroup" role="status" aria-label="Live Integrations Status">
+            <!-- Supabase Auth Status -->
+            <div class="integration-pill is-disconnected" id="pillSupabaseAuth" title="Supabase Authentication Status">
+              <span class="status-dot"></span>
+              <span class="status-label">Supabase Auth: <strong class="status-val" id="valSupabaseAuth">Checking...</strong></span>
+            </div>
 
-          <!-- Reload Saved EDRs from Google Docs -->
-          <button type="button" class="btn btn-ghost btn-sm" id="btnReloadDocs" title="Reload saved EDRs from Google Docs" style="gap:5px;">
-            <svg class="icon icon-sm" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
-            <span>Reload</span>
-          </button>
+            <!-- Google Docs EDR Status -->
+            <div class="integration-pill is-disconnected" id="pillGoogleDocs" title="Google Docs EDR Sync Status">
+              <span class="status-dot"></span>
+              <span class="status-label">Google Docs EDR: <strong class="status-val" id="valGoogleDocs">Checking...</strong></span>
+              <button type="button" class="btn btn-ghost btn-sm" id="btnOpenDocsSetup" aria-label="Docs Setup" data-tooltip="Setup Docs Receiver" data-tooltip-pos="bottom" style="padding:0 2px; height:16px; margin-left:2px;">
+                <svg class="icon icon-sm" viewBox="0 0 24 24" style="width:12px; height:12px;"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l-.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l-.06-.06a2 2 0 0 1 2.83 2.83l-.06-.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+              </button>
+            </div>
 
-          <!-- Google Docs Status -->
-          <div class="sync-status-pill" id="edrDocsPill" title="Google Docs Receiver Status">
-            <span style="width:5px; height:5px; border-radius:50%; background:currentColor;"></span>
-            <span id="edrDocsStatusText">Local Storage</span>
-            <button type="button" class="btn btn-ghost btn-sm" id="btnOpenDocsSetup" style="padding:0 2px; height:18px;">
-              <svg class="icon icon-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
-            </button>
+            <!-- Google Sheets Maintenance Status -->
+            <div class="integration-pill is-disconnected" id="pillGoogleSheets" title="Google Sheets Maintenance Sync Status">
+              <span class="status-dot"></span>
+              <span class="status-label">Google Sheets Maint: <strong class="status-val" id="valGoogleSheets">Checking...</strong></span>
+            </div>
           </div>
 
           <!-- Manila Live Clock -->
-          <div class="manila-clock-pill" title="Asia/Manila (PHT) Operational Clock">
+          <div class="manila-clock-pill" title="Asia/Manila (PHT) Operational Clock" data-tooltip="Manila Operational Clock" data-tooltip-pos="bottom">
             <span class="clock-live-indicator"></span>
             <span id="manilaClockText">00:00:00 AM PHT</span>
           </div>
 
           <!-- User Badge / Terminal -->
-          <div class="user-profile-badge" id="btnUserMenu" title="Account settings & switch">
+          <div class="user-profile-badge" id="btnUserMenu" title="Account settings & switch" data-tooltip="Operator Profile & Access" data-tooltip-pos="bottom" role="button" tabindex="0" aria-label="Account Settings and Switch Profile">
             <div class="user-avatar" id="userAvatarText">M</div>
             <div class="user-meta">
               <span class="user-name" id="userNameText">Miles</span>
@@ -580,7 +601,7 @@
           <div class="edr-split-layout">
 
             <!-- LEFT COLUMN: Manual EDR Form (~55% width) -->
-            <div class="edr-split-column">
+            <div class="edr-split-column" id="colEdrForm">
               <div class="card" style="height:100%;">
                 <div class="card-header">
                   <span class="card-title">
@@ -733,16 +754,20 @@
             </div>
 
             <!-- RIGHT COLUMN: Dispatch & Saved Records (~45% width) -->
-            <div class="edr-split-column">
+            <div class="edr-split-column" id="colEdrDispatch">
 
               <!-- Top Panel: Dispatch & Teams Output -->
-              <div class="card" style="flex: 0.95; min-height: 220px;">
+              <div class="card" id="cardTeamsDispatch" style="flex: 0.95; min-height: 220px;">
                 <div class="card-header">
                   <div style="display:flex; align-items:center; gap:6px;">
                     <svg class="icon" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
                     <span class="card-title">Teams Dispatch</span>
                   </div>
                   <div class="card-actions">
+                    <button type="button" class="btn btn-outline btn-sm" id="btnToggleDispatchExpand" title="Toggle expanded dispatch review layout" style="gap:4px;">
+                      <svg class="icon icon-sm" id="iconDispatchExpand" viewBox="0 0 24 24"><polyline points="15 3 21 3 21 9"></polyline><polyline points="9 21 3 21 3 15"></polyline><line x1="21" y1="3" x2="14" y2="10"></line><line x1="3" y1="21" x2="10" y2="14"></line></svg>
+                      <span id="labelDispatchExpand">Expand Review</span>
+                    </button>
                     <button type="button" class="btn btn-outline btn-sm" id="btnSendSelectedToDocs" title="Send selected EDR to Google Docs">
                       Send to Google Docs
                     </button>
@@ -770,7 +795,7 @@
               </div>
 
               <!-- Bottom Panel: Saved Records List -->
-              <div class="card" style="flex: 1.05; min-height: 240px;">
+              <div class="card" id="cardSavedEdrs" style="flex: 1.05; min-height: 240px;">
                 <div class="card-header">
                   <div style="display:flex; align-items:center; gap:8px;">
                     <span class="card-title">Saved EDRs</span>
@@ -937,7 +962,7 @@
                 </div>
               </div>
 
-              <div class="audit-grid-table-wrap">
+              <div class="audit-grid-table-wrap table-responsive-wrapper">
                 <table class="audit-data-table" id="auditOutputTable">
                   <thead>
                     <tr>
@@ -980,9 +1005,9 @@
                   <span class="badge badge-neutral">Auto Multi-Floor Parser</span>
                 </div>
                 <div style="display:flex; align-items:center; gap:6px;">
-                  <button type="button" class="btn btn-outline btn-sm" id="btnOpenTlAssignments" title="Manage Team Leader Floor Overrides & Saved Names">
+                  <button type="button" class="btn btn-outline btn-sm" id="btnOpenTlAssignments" title="Manage Team Leader Overrides & Saved Names">
                     <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
-                    <span>TL Floor Assignments</span>
+                    <span>TL Assignments</span>
                   </button>
                   <button type="button" class="btn btn-danger-ghost btn-sm" id="maintenanceResetAssignmentsBtn" title="Reset all saved TL floor overrides and edited names">Reset TL Assignments</button>
                 </div>
@@ -1041,7 +1066,7 @@
               </div>
 
               <!-- Sheet Scroll Area -->
-              <div class="mini-sheet-scroll" id="aiSorterTableWrapper">
+              <div class="mini-sheet-scroll table-responsive-wrapper" id="aiSorterTableWrapper">
                 <table class="mini-sheet" id="maintenanceMiniSheet" aria-label="Editable sorted maintenance mini sheet">
                   <thead>
                     <tr class="mini-sheet-column-letters">
@@ -1383,7 +1408,6 @@
             <div class="followup-queue-card">
               <div class="followup-queue-header">
                 <div style="display:flex; align-items:center; gap:8px;">
-                  <span style="font-weight:700; font-size:12px; color:var(--text-primary);">Resolution Queue</span>
                   <span class="badge badge-neutral" id="followupQueueBadge">0 items</span>
                 </div>
                 <span style="font-size:11px; color:var(--text-dim);">Open reports prioritized first</span>
@@ -1455,7 +1479,7 @@
                 </div>
 
                 <!-- Scrollable Pending Rows Table -->
-                <div class="masterlist-table-wrap">
+                <div class="masterlist-table-wrap table-responsive-wrapper">
                   <table class="masterlist-data-table" id="masterPendingMilesTable">
                     <thead></thead>
                     <tbody></tbody>
@@ -1523,7 +1547,7 @@
                 </div>
 
                 <!-- HR Assignments Table -->
-                <div class="masterlist-table-wrap">
+                <div class="masterlist-table-wrap table-responsive-wrapper">
                   <table class="masterlist-data-table" id="masterAssignedHrTable">
                     <thead>
                       <tr>
@@ -1685,8 +1709,8 @@
                     <div class="auth-password-wrap">
                       <input type="password" id="adminCreatePassword" class="form-control form-control-sm" minlength="6" placeholder="At least 6 characters" autocomplete="new-password">
                       <button type="button" class="auth-password-toggle" data-target="adminCreatePassword" aria-label="Show password" title="Show password">
-                        <svg class="auth-eye-open" viewBox="0 0 24 24"><path d="M2.4 12s3.5-6 9.6-6 9.6 6 9.6 6-3.5 6-9.6 6-9.6-6Z"/><circle cx="12" cy="12" r="2.6"/></svg>
-                        <svg class="auth-eye-closed" viewBox="0 0 24 24"><path d="M3 3l18 18"/><path d="M10.6 6.1A10.8 10.8 0 0 1 12 6c6.1 0 9.6 6 9.6 6a16.7 16.7 0 0 1-3.1 3.7M14.5 14.5A3.5 3.5 0 0 1 9.5 9.5M6.2 6.2C3.7 8 2.4 12 2.4 12s3.5 6 9.6 6c1.5 0 2.8-.4 4-.9"/></svg>
+                        <svg class="auth-eye-open" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                        <svg class="auth-eye-closed" viewBox="0 0 24 24"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
                       </button>
                     </div>
                   </label>
@@ -1751,7 +1775,7 @@
                 <div class="admin-audit-banner">
                   <span>Persistent across PCs when <code>supabase_audit_log.sql</code> is applied to Supabase. Fully protected by Row Level Security (RLS).</span>
                 </div>
-                <div class="auth-admin-table-wrap">
+                <div class="auth-admin-table-wrap table-responsive-wrapper">
                   <table class="auth-admin-table" id="adminAuditTable">
                     <thead>
                       <tr><th>Timestamp</th><th>Actor</th><th>Role</th><th>Action</th><th>Target</th><th>Details</th></tr>
@@ -1953,18 +1977,18 @@
   <div class="modal-backdrop" id="modalTlAssignments" hidden>
     <div class="modal-dialog" style="max-width:680px;">
       <div class="modal-header">
-        <h3 class="modal-title">Team Leader Floor Assignments</h3>
+        <h3 class="modal-title">Team Leader Assignments</h3>
         <button type="button" class="btn btn-ghost btn-sm" id="btnCloseTlAssignments">✕</button>
       </div>
       <div class="modal-body" style="max-height:420px; overflow-y:auto;">
         <p style="font-size:11.5px; color:var(--text-secondary); margin:0 0 10px 0;">
-          Override auto-detected floor assignments or edit display names. Changes are saved automatically.
+          Override auto-detected assignments or edit display names. Changes are saved automatically.
         </p>
         <table class="audit-data-table" id="tlSummaryTable" style="width:100%;">
           <thead>
             <tr>
               <th>Team Leader Name</th>
-              <th>Floor Assignment</th>
+              <th>Assigned Floor</th>
               <th style="width:70px; text-align:center;">Action</th>
             </tr>
           </thead>

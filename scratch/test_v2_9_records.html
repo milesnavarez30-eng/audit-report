@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Test V2 Saved EDR List - 9 Records</title>
+  <style>
+    body { margin: 0; background: #0b0f19; color: #fff; font-family: sans-serif; }
+    iframe { width: 1440px; height: 900px; border: none; }
+  </style>
+</head>
+<body>
+<iframe id="testFrame" src="http://localhost:8080/cctv-ops-v2/index.html"></iframe>
+
+<script>
+const samplePng = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAA7SURBVHhe7c4BDQAACAMw9E/tUwwmFvw+yZptWc3MzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMxfmA0G6kFf2u/6fAAAAABJRU5ErkJggg==";
+
+const test9Records = [
+  {
+    id: "edr-101",
+    date: "2026-09-09",
+    site: "Mabini Site A - 1st Floor",
+    account: "HBW",
+    timeObserved: "03:15 AM - 03:22 AM",
+    supervisorRole: "TL",
+    supervisorName: "Jovert Monticayan",
+    subjectType: "Agent/s",
+    subjectName: "Alex Mercer",
+    incident: "Sleeping at production terminal",
+    action: "Documented verbal warning",
+    clipLink: "http://cctv.corp/clip101",
+    screenshotData: samplePng,
+    selected: true,
+    done: false
+  },
+  {
+    id: "edr-102",
+    date: "2026-09-09",
+    site: "Shaw Site B - 2nd Floor",
+    account: "Healthcare Support",
+    timeObserved: "04:10 AM - 04:18 AM",
+    supervisorRole: "OM",
+    supervisorName: "Dutch Schaefer",
+    subjectType: "Agent/s",
+    subjectName: "Sarah Connor",
+    incident: "Unauthorized mobile device on production floor",
+    action: "Device surrendered to security desk",
+    clipLink: "",
+    screenshotData: "",
+    selected: true,
+    done: false
+  },
+  {
+    id: "edr-103",
+    date: "2026-09-08",
+    site: "Mabini Site B - 3rd Floor",
+    account: "Retail Logistics",
+    timeObserved: "11:20 PM - 11:35 PM",
+    supervisorRole: "TL",
+    supervisorName: "Abegail Llena",
+    subjectType: "Agent/s",
+    subjectName: "Kyle Reese",
+    incident: "Extended non-productive break exceeding 15 mins",
+    action: "Coached on break schedule adherence",
+    clipLink: "http://cctv.corp/clip103",
+    screenshotData: samplePng,
+    selected: false,
+    done: true
+  },
+  {
+    id: "edr-104",
+    date: "2026-09-08",
+    site: "Cebu IT Park - Tower 1",
+    account: "Financial Services",
+    timeObserved: "01:05 AM - 01:12 AM",
+    supervisorRole: "TL",
+    supervisorName: "Zyrie Christian Wasil",
+    subjectType: "Agent/s",
+    subjectName: "Marcus Wright",
+    incident: "Tailgating through security turnstile",
+    action: "Badge re-verified at guard post",
+    clipLink: "",
+    screenshotData: samplePng,
+    selected: false,
+    done: false
+  },
+  {
+    id: "edr-105",
+    date: "2026-09-07",
+    site: "Bacolod Main Site",
+    account: "Telco Enterprise",
+    timeObserved: "05:40 AM - 05:50 AM",
+    supervisorRole: "OM",
+    supervisorName: "Abby",
+    subjectType: "TL",
+    subjectName: "John Connor",
+    incident: "Unattended workstation unlocked",
+    action: "Workstation auto-locked and documented",
+    clipLink: "http://cctv.corp/clip105",
+    screenshotData: "",
+    selected: false,
+    done: false
+  },
+  {
+    id: "edr-106",
+    date: "2026-09-07",
+    site: "Davao Hub - 4th Floor",
+    account: "Gaming Solutions",
+    timeObserved: "02:45 AM - 02:55 AM",
+    supervisorRole: "TL",
+    supervisorName: "Sheryl Quinto",
+    subjectType: "Agent/s",
+    subjectName: "Miles Dyson",
+    incident: "Eating at production workstation",
+    action: "Food removed to pantry area",
+    clipLink: "",
+    screenshotData: samplePng,
+    selected: false,
+    done: false
+  },
+  {
+    id: "edr-107",
+    date: "2026-09-06",
+    site: "Clark Global Site",
+    account: "Travel Operations",
+    timeObserved: "06:10 AM - 06:20 AM",
+    supervisorRole: "TL",
+    supervisorName: "Willy",
+    subjectType: "Agent/s",
+    subjectName: "Kate Brewster",
+    incident: "Unauthorized visitor in restricted ops bay",
+    action: "Escorted out by floor security",
+    clipLink: "http://cctv.corp/clip107",
+    screenshotData: samplePng,
+    selected: false,
+    done: false
+  },
+  {
+    id: "edr-108",
+    date: "2026-09-06",
+    site: "Iloilo Center - 2nd Floor",
+    account: "E-Commerce Support",
+    timeObserved: "03:30 AM - 03:40 AM",
+    supervisorRole: "TL",
+    supervisorName: "Mark Anthony",
+    subjectType: "Agent/s",
+    subjectName: "Grace Harper",
+    incident: "Headset improper usage / rough handling",
+    action: "Equipment replaced and reminder issued",
+    clipLink: "",
+    screenshotData: "",
+    selected: false,
+    done: false
+  },
+  {
+    id: "edr-109",
+    date: "2026-09-05",
+    site: "Mabini Site A - Ground Floor",
+    account: "Security Monitoring",
+    timeObserved: "10:15 PM - 10:25 PM",
+    supervisorRole: "OM",
+    supervisorName: "Sarah Connor",
+    subjectType: "Agent/s",
+    subjectName: "Dani Ramos",
+    incident: "Camera line of sight obstructed by jacket",
+    action: "Obstruction cleared immediately",
+    clipLink: "http://cctv.corp/clip109",
+    screenshotData: samplePng,
+    selected: false,
+    done: false
+  }
+];
+
+const frame = document.getElementById("testFrame");
+
+frame.onload = async () => {
+  const results = [];
+  function assert(name, condition, detail = "") {
+    results.push({ name, passed: !!condition, detail });
+  }
+
+  try {
+    const win = frame.contentWindow;
+    const doc = frame.contentDocument;
+    const edr = win.CCTV_EDR;
+
+    await new Promise(r => setTimeout(r, 600));
+
+    // Clear and populate the 9 records directly via edr service
+    for (const r of test9Records) {
+      await edr.createOrUpdate(r);
+    }
+    await edr.loadReports();
+    await new Promise(r => setTimeout(r, 400));
+
+    const listContainer = doc.getElementById("edrListContainer");
+    const rows = doc.querySelectorAll(".record-row");
+
+    // 1. All 9 remain present
+    assert("1. Exactly 9 saved EDR records are present in DOM", rows.length === 9, `Found: ${rows.length}`);
+    assert("1b. Total badge shows 9", doc.getElementById("badgeTotalCount").textContent.trim() === "9");
+
+    // Retrieve specific test cards
+    const card101 = doc.querySelector('.record-row[data-id="edr-101"]');
+    const card102 = doc.querySelector('.record-row[data-id="edr-102"]');
+    const card103 = doc.querySelector('.record-row[data-id="edr-103"]');
+
+    assert("Cards exist by ID", !!card101 && !!card102 && !!card103);
+
+    // 2. Screenshot thumbnails remain visible
+    const thumbWrap101 = card101.querySelector(".record-thumb-wrap");
+    const thumbImg101 = card101.querySelector(".record-thumb");
+    const thumbWrap102 = card102.querySelector(".record-thumb-wrap");
+    const placeholder102 = card102.querySelector(".record-thumb-placeholder");
+
+    assert("2a. Card 101 has .record-thumb-wrap with .has-shot", thumbWrap101 && thumbWrap101.classList.contains("has-shot"));
+    assert("2b. Card 101 displays <img> thumbnail", !!thumbImg101 && thumbImg101.src.startsWith("data:image"));
+    assert("2c. Thumbnail dimensions are ~42px square", thumbWrap101 && Math.abs(thumbWrap101.getBoundingClientRect().width - 42) <= 3, `Width: ${thumbWrap101.getBoundingClientRect().width}`);
+    assert("2d. Card 102 has .is-empty placeholder", thumbWrap102 && thumbWrap102.classList.contains("is-empty"));
+    assert("2e. Placeholder displays 'No SS' label", placeholder102 && placeholder102.textContent.includes("No SS"));
+
+    // 3. Date and Site are clearly readable
+    const dateEl = card101.querySelector(".record-date");
+    const siteEl = card101.querySelector(".record-site");
+    assert("3a. Date element exists and formats as 'Sep 9, 2026'", dateEl && dateEl.textContent.trim() === "Sep 9, 2026", `Date text: ${dateEl ? dateEl.textContent : 'none'}`);
+    assert("3b. Site element exists and shows full site name", siteEl && siteEl.textContent.includes("Mabini Site A - 1st Floor"), `Site: ${siteEl ? siteEl.textContent : 'none'}`);
+    assert("3c. Secondary line shows Campaign and TL", card101.querySelector(".record-sub-line").textContent.includes("HBW") && card101.querySelector(".record-sub-line").textContent.includes("Jovert Monticayan"));
+
+    // 4. Selected rows remain highlighted
+    assert("4a. Card 101 has .is-selected class", card101.classList.contains("is-selected"));
+    assert("4b. Card 102 has .is-selected class", card102.classList.contains("is-selected"));
+    assert("4c. Badge selected count shows 2 selected", doc.getElementById("badgeSelectedCount").textContent.includes("2 selected"));
+
+    // 5. No horizontal scrollbar
+    const clientW = listContainer.clientWidth;
+    const scrollW = listContainer.scrollWidth;
+    assert("5a. Container scrollWidth <= clientWidth (no horizontal scroll)", scrollW <= clientW, `scrollWidth: ${scrollW}, clientWidth: ${clientW}`);
+    const overflowX = win.getComputedStyle(listContainer).overflowX;
+    assert("5b. Container overflow-x is hidden", overflowX === "hidden");
+    assert("5c. Card 101 scrollWidth <= clientWidth", card101.scrollWidth <= card101.clientWidth);
+
+    // 6. Vertical scrolling works
+    const scrollH = listContainer.scrollHeight;
+    const clientH = listContainer.clientHeight;
+    assert("6a. Container scrollHeight > clientHeight with 9 records (overflowing vertically)", scrollH > clientH, `scrollHeight: ${scrollH}, clientHeight: ${clientH}`);
+    const overflowY = win.getComputedStyle(listContainer).overflowY;
+    assert("6b. Container overflow-y is auto", overflowY === "auto");
+
+    // 7. View SS works
+    const modalViewer = doc.getElementById("modalScreenshotViewer");
+    thumbWrap101.click();
+    await new Promise(r => setTimeout(r, 200));
+    assert("7a. Clicking thumbnail opens #modalScreenshotViewer", modalViewer && !modalViewer.hidden);
+    const viewerImg = doc.getElementById("screenshotViewerImg");
+    assert("7b. Viewer displays full screenshot src", viewerImg && viewerImg.src.startsWith("data:image"));
+    doc.getElementById("btnCloseScreenshotViewer").click();
+    await new Promise(r => setTimeout(r, 100));
+    assert("7c. Closing viewer hides modal", modalViewer.hidden);
+
+    // 8. Copy SS works (Blob generation)
+    const blob = await edr.dataUrlToBlob(test9Records[0].screenshotData);
+    assert("8. dataUrlToBlob produces valid native PNG Blob", blob && blob.type === "image/png" && blob.size > 0);
+
+    // 9. Send to Audit works
+    const btnAudit = card101.querySelector(".btn-audit-send");
+    assert("9a. Send to Audit button exists on row", !!btnAudit);
+    btnAudit.click();
+    await new Promise(r => setTimeout(r, 300));
+    assert("9b. Card updates to In Audit state", btnAudit.classList.contains("is-linked") || edr.isReportInAudit("edr-101"));
+
+    // 10. Done works
+    const btnDone = card101.querySelector(".btn-done-toggle");
+    assert("10a. Done button exists", !!btnDone);
+    btnDone.click();
+    await new Promise(r => setTimeout(r, 250));
+    const reCard101 = doc.querySelector('.record-row[data-id="edr-101"]');
+    assert("10b. Card toggles to is-done", reCard101 && reCard101.classList.contains("is-done"));
+    assert("10c. Done badge increments", doc.getElementById("badgeDoneCount").textContent.includes("2 done")); // 103 was already done
+    reCard101.querySelector(".btn-done-toggle").click(); // Revert back
+    await new Promise(r => setTimeout(r, 250));
+
+    // 11. Edit works
+    const liveCard101 = doc.querySelector('.record-row[data-id="edr-101"]');
+    const btnEdit = liveCard101.querySelector(".btn-edit");
+    assert("11a. Edit button exists", !!btnEdit);
+    btnEdit.click();
+    await new Promise(r => setTimeout(r, 200));
+    assert("11b. Form supervisor populated with Jovert Monticayan", doc.getElementById("edrSupervisorName").value === "Jovert Monticayan");
+    assert("11c. Form account populated with HBW", doc.getElementById("edrAccount").value === "HBW");
+
+    // 12. Delete/Replace/Remove remain accessible inside More menu
+    const moreBtn = liveCard101.querySelector(".btn-more-trigger");
+    const moreMenu = liveCard101.querySelector(".record-dropdown-menu");
+    assert("12a. More button '⋯' exists on row", !!moreBtn);
+    assert("12b. More menu exists on row", !!moreMenu);
+    assert("12c. More menu is initially closed", !moreMenu.classList.contains("is-open"));
+    moreBtn.click();
+    await new Promise(r => setTimeout(r, 100));
+    assert("12d. Clicking '⋯' opens More menu", moreMenu.classList.contains("is-open"));
+    assert("12e. Replace SS button is present in More menu", !!liveCard101.querySelector(".btn-action-replace"));
+    assert("12f. Remove SS button is present in More menu", !!liveCard101.querySelector(".btn-action-remove"));
+    assert("12g. Delete button is present in More menu", !!liveCard101.querySelector(".btn-action-delete"));
+
+    // Close menu by clicking outside
+    doc.getElementById("btnEdrClear").click();
+    await new Promise(r => setTimeout(r, 100));
+    assert("12h. Clicking outside closes More menu", !moreMenu.classList.contains("is-open"));
+
+    // 13. No data changes
+    const reportsAfter = edr.getReports();
+    assert("13a. All 9 reports retained", reportsAfter.length === 9);
+    for (const orig of test9Records) {
+      const match = reportsAfter.find(r => r.id === orig.id);
+      assert(`13-check-${orig.id} exists and matches date/site`, match && match.date === orig.date && match.site === orig.site);
+    }
+
+  } catch(err) {
+    assert("SUITE ERROR: " + err.message, false, err.stack);
+  }
+
+  const passedCount = results.filter(r => r.passed).length;
+  const failedCount = results.filter(r => !r.passed).length;
+  const summaryText = `RESULTS: ${passedCount} passed, ${failedCount} failed out of ${results.length} assertions`;
+
+  const outputPayload = {
+    summary: summaryText,
+    totalPassed: passedCount,
+    totalFailed: failedCount,
+    results: results
+  };
+
+  fetch("http://localhost:8080/api/test_report", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(outputPayload)
+  });
+
+  const div = document.createElement("div");
+  div.id = "testResultsSummary";
+  div.style.cssText = "padding:20px; font-size:16px; font-family:monospace;";
+  div.innerHTML = `<h2>${summaryText}</h2>` + results.map(r => `<div style="color:${r.passed ? '#4ade80' : '#f87171'}">[${r.passed ? 'PASS' : 'FAIL'}] ${r.name} ${r.detail ? '(' + r.detail + ')' : ''}</div>`).join("");
+  document.body.appendChild(div);
+};
+</script>
+</body>
+</html>

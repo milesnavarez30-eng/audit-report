@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>V2 Targeted Remaining Fixes Test Suite</title>
+  <style>
+    body { font-family: monospace; background: #0b0f19; color: #e2e8f0; padding: 20px; font-size: 13px; line-height: 1.5; }
+    .pass { color: #4ade80; font-weight: bold; }
+    .fail { color: #f87171; font-weight: bold; }
+    .section { margin-top: 20px; border-bottom: 1px solid #334155; padding-bottom: 4px; color: #38bdf8; font-size: 14px; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <h1>V2 Targeted Remaining Fixes Test Suite</h1>
+  <div id="results"></div>
+
+  <!-- Hidden iframe hosting the actual app for full DOM and controller integration -->
+  <iframe id="appFrame" src="../cctv-ops-v2/index.html" style="width: 1280px; height: 900px; border: 1px solid #334155; margin-top: 15px;"></iframe>
+
+  <script>
+    const samplePng = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==";
+    const testResults = [];
+
+    function assert(section, desc, condition, detail = "") {
+      const pass = Boolean(condition);
+      testResults.push({ section, desc, pass, detail });
+      const out = document.getElementById("results");
+      const div = document.createElement("div");
+      div.className = pass ? "pass" : "fail";
+      div.textContent = `[${pass ? "PASS" : "FAIL"}] [${section}] ${desc}${detail ? " - " + detail : ""}`;
+      out.appendChild(div);
+      console.log(`[${pass ? "PASS" : "FAIL"}] [${section}] ${desc} ${detail}`);
+    }
+
+    function addSection(title) {
+      const out = document.getElementById("results");
+      const div = document.createElement("div");
+      div.className = "section";
+      div.textContent = `=== ${title} ===`;
+      out.appendChild(div);
+    }
+
+    window.addEventListener("load", () => {
+      const frame = document.getElementById("appFrame");
+      frame.onload = async () => {
+        const win = frame.contentWindow;
+        const doc = frame.contentDocument;
+
+        // Wait a tick for app controllers to initialize
+        await new Promise(r => setTimeout(r, 800));
+
+        try {
+          const edr = win.edrService;
+          const sorter = win.sorterService;
+          const maintenance = win.maintenanceService;
+          const masterlist = win.masterlistService;
+          const history = win.historyService;
+
+          // ===================================================================
+          // PRIORITY 1 & 2: EDR SCREENSHOT & MULTI-SELECTION IN TEAMS DISPATCH
+          // ===================================================================
+          addSection("Priority 1 & 2: EDR Screenshot & Multi-Selection in Teams Dispatch");
+
+          assert("EDR", "EDR service available", !!edr);
+
+          // Clear any existing reports for clean test
+          const existingReports = edr.getReports();
+          for (const rep of existingReports) {
+            await edr.deleteReport(rep.id);
+          }
+
+          // 1. Create Report A with screenshot
+          const repA = await edr.createOrUpdate({
+            site: "Mabini Site A",
+            date: "2026-09-11",
+            timeObserved: "10:00",
+            supervisorRole: "Team Leader",
+            supervisorName: "Sarah Connor",
+            subjectType: "Agent/s",
+            subjectName: "John Matrix",
+            account: "AFP",
+            incident: "Sleeping at workstation",
+            action: "Coaching session documented",
+            clipLink: "https://drive.google.com/clip1",
+            screenshotData: samplePng
+          });
+
+          // 2. Create Report B with screenshot
+          const repB = await edr.createOrUpdate({
+            site: "Shaw Site B",
+            date: "2026-09-11",
+            timeObserved: "11:30",
+            supervisorRole: "OM",
+            supervisorName: "Dutch Schaefer",
+            subjectType: "Agent/s",
+            subjectName: "Kyle Reese",
+            account: "Healthcare",
+            incident: "Unauthorized mobile device usage",
+            action: "Device surrendered to security desk",
+            clipLink: "https://drive.google.com/clip2",
+            screenshotData: samplePng
+          });
+
+          assert("EDR", "Report A saved with screenshot", !!repA && repA.screenshotData === samplePng);
+          assert("EDR", "Report B saved with screenshot", !!repB && repB.screenshotData === samplePng);
+
+          // Test Multi-Selection: select both reports
+          await edr.toggleSelect(repA.id, true);
+          await edr.toggleSelect(repB.id, true);
+
+          const activeSelected = edr.getReports().filter(r => r.selected && !r.done);
+          assert("EDR", "Multi-selection: both EDRs simultaneously selected", activeSelected.length === 2);
+
+          // Verify preview box in DOM
+          const previewBox = doc.getElementById("edrPreviewBox");
+          assert("EDR", "edrPreviewBox element exists", !!previewBox);
+
+          const previewCards = previewBox.querySelectorAll(".edr-preview-card");
+          assert("EDR", "Teams Dispatch renders both selected EDRs together", previewCards.length === 2, `Found: ${previewCards.length}`);
+
+          const previewShots = previewBox.querySelectorAll(".edr-preview-shot img");
+          assert("EDR", "Teams Dispatch renders screenshots for both selected EDRs", previewShots.length === 2, `Found: ${previewShots.length}`);
+          if (previewShots.length >= 2) {
+            assert("EDR", "Screenshot img src contains base64 image data", previewShots[0].src.startsWith("data:image/png;base64"));
+          }
+
+          // Verify Copy Screenshot button was removed from Teams Dispatch Header
+          const copyScreenshotBtn = doc.getElementById("btnCopyScreenshot");
+          assert("EDR", "Header Copy Screenshot button removed from Teams Dispatch", !copyScreenshotBtn);
+
+          // Verify Row dropdown menu has Copy SS button
+          const rowCopyBtns = doc.querySelectorAll(".btn-shot-copy");
+          assert("EDR", "Row-level More menu retains Copy SS button", rowCopyBtns.length >= 2);
+
+          // ===================================================================
+          // PRIORITY 3: AI SORTER ROW SELECTION + KEYBOARD SHORTCUTS
+          // ===================================================================
+          addSection("Priority 3: AI Sorter Row Selection + Shortcuts");
+
+          // Switch to Sorter workspace
+          win.switchWorkspace("sorter");
+          await new Promise(r => setTimeout(r, 200));
+
+          assert("Sorter", "Switched to AI Sorter workspace", doc.getElementById("paneSorter") && !doc.getElementById("paneSorter").hidden);
+
+          // Paste test report to sort
+          const sorterInput = doc.getElementById("maintenanceInput");
+          sorterInput.value = [
+            "TIMESTAMP\tDATE\tTL\tACCOUNT\tSITE\tSTATION NO.\tSTATION ISSUE",
+            "09/10/2026 10:00\t09/10/2026\tAllan Albert Sadili\tMapua\tMabini Site A\t1A-01\tMonitor flickering",
+            "09/10/2026 11:00\t09/10/2026\tCris Arandilla\tHerb Joy\tMabini Site A\t2B-10\tMouse optical sensor",
+            "09/10/2026 12:00\t09/10/2026\tJovert Monticayan\tHBW Insurance\tMabini Site A\t1F Station 05\tKeyboard key stuck"
+          ].join("\n");
+
+          doc.getElementById("maintenanceAnalyzeBtn")?.click();
+          await new Promise(r => setTimeout(r, 300));
+
+          const sheetTable = doc.getElementById("maintenanceMiniSheet");
+          assert("Sorter", "Mini-sheet rendered table", !!sheetTable);
+
+          const sheetRows = sheetTable.querySelectorAll("tbody tr:not(.mini-sheet-blank-row)");
+          assert("Sorter", "Mini-sheet contains 3 sorted rows", sheetRows.length === 3, `Found: ${sheetRows.length}`);
+
+          // Test 1: Clicking row number selects/highlights row
+          const row0Header = sheetRows[0].querySelector(".mini-sheet-row-number");
+          assert("Sorter", "Row 0 header exists", !!row0Header);
+
+          row0Header.dispatchEvent(new MouseEvent("mousedown", { bubbles: true, cancelable: true, button: 0 }));
+          await new Promise(r => setTimeout(r, 100));
+
+          assert("Sorter", "Clicking row 0 number applies selected-row class", sheetRows[0].classList.contains("selected-row"));
+          assert("Sorter", "Clicking row number activates keyboard shortcuts", sheetTable.closest(".mini-sheet-card")?.classList.contains("keyboard-active"));
+
+          // Test 2: Ctrl+click row 2 = multi-select
+          const row2Header = sheetRows[2].querySelector(".mini-sheet-row-number");
+          row2Header.dispatchEvent(new MouseEvent("mousedown", { bubbles: true, cancelable: true, button: 0, ctrlKey: true }));
+          await new Promise(r => setTimeout(r, 100));
+
+          assert("Sorter", "Ctrl+click: Row 0 still selected", sheetRows[0].classList.contains("selected-row"));
+          assert("Sorter", "Ctrl+click: Row 2 also selected (multi-select)", sheetRows[2].classList.contains("selected-row"));
+
+          // Test 3: Shift+click = range selection
+          // Normal click row 0 to set anchor
+          row0Header.dispatchEvent(new MouseEvent("mousedown", { bubbles: true, cancelable: true, button: 0 }));
+          await new Promise(r => setTimeout(r, 50));
+          // Shift+click row 1
+          const row1Header = sheetRows[1].querySelector(".mini-sheet-row-number");
+          row1Header.dispatchEvent(new MouseEvent("mousedown", { bubbles: true, cancelable: true, button: 0, shiftKey: true }));
+          await new Promise(r => setTimeout(r, 100));
+
+          assert("Sorter", "Shift+click range: Row 0 selected", sheetRows[0].classList.contains("selected-row"));
+          assert("Sorter", "Shift+click range: Row 1 selected", sheetRows[1].classList.contains("selected-row"));
+          assert("Sorter", "Shift+click range: Row 2 not in range", !sheetRows[2].classList.contains("selected-row"));
+
+          // Test 4: Ctrl+A selects all rows
+          doc.dispatchEvent(new KeyboardEvent("keydown", { bubbles: true, cancelable: true, key: "a", ctrlKey: true }));
+          await new Promise(r => setTimeout(r, 100));
+
+          const allSelected = Array.from(sheetRows).every(r => r.classList.contains("selected-row"));
+          assert("Sorter", "Ctrl+A selects all rows in mini-sheet", allSelected);
+
+          // Test 5: Escape clears selection
+          doc.dispatchEvent(new KeyboardEvent("keydown", { bubbles: true, cancelable: true, key: "Escape" }));
+          await new Promise(r => setTimeout(r, 100));
+
+          const noneSelected = Array.from(sheetRows).every(r => !r.classList.contains("selected-row"));
+          assert("Sorter", "Escape clears all row selections", noneSelected);
+
+          // Test 6: Arrow keys navigation
+          row0Header.dispatchEvent(new MouseEvent("mousedown", { bubbles: true, cancelable: true, button: 0 }));
+          await new Promise(r => setTimeout(r, 50));
+          doc.dispatchEvent(new KeyboardEvent("keydown", { bubbles: true, cancelable: true, key: "ArrowDown" }));
+          await new Promise(r => setTimeout(r, 100));
+
+          assert("Sorter", "ArrowDown moves row selection to Row 1", sheetRows[1].classList.contains("selected-row") && !sheetRows[0].classList.contains("selected-row"));
+
+          // ===================================================================
+          // PRIORITY 4: MAINTENANCE PASTE, HIDE/SHOW, UNDO/REDO, CTRL+A
+          // ===================================================================
+          addSection("Priority 4: Maintenance Ctrl+V Screenshot + Hide/Show + Undo/Redo + Ctrl+A");
+
+          win.switchWorkspace("maintenance");
+          await new Promise(r => setTimeout(r, 200));
+
+          assert("Maintenance", "Switched to Maintenance workspace", doc.getElementById("paneMaintenance") && !doc.getElementById("paneMaintenance").hidden);
+
+          const blocksContainer = doc.getElementById("simpleEodBlocks");
+          assert("Maintenance", "Maintenance blocks container exists", !!blocksContainer);
+
+          let blocks = blocksContainer.querySelectorAll(".eod-block-card");
+          assert("Maintenance", "Initial report block exists", blocks.length >= 1);
+
+          const block0 = blocks[0];
+          const block0Id = block0.dataset.blockId;
+          assert("Maintenance", "Block 0 has block ID", !!block0Id);
+
+          // Test 1: Paste Screenshot via block paste event
+          // Create dummy image file blob
+          const pngBytes = Uint8Array.from(atob(samplePng.split(",")[1]), c => c.charCodeAt(0));
+          const testImageFile = new File([pngBytes], "test-screenshot.png", { type: "image/png" });
+
+          // Simulate paste event
+          const dt = new DataTransfer();
+          dt.items.add(testImageFile);
+          const pasteEvent = new ClipboardEvent("paste", { bubbles: true, cancelable: true, clipboardData: dt });
+
+          block0.dispatchEvent(pasteEvent);
+          await new Promise(r => setTimeout(r, 500));
+
+          // Check if screenshot proof rendered in block
+          const blockShots = block0.querySelectorAll(".eod-proof-item img");
+          assert("Maintenance", "Ctrl+V screenshot pasted into block proof zone", blockShots.length >= 1, `Found: ${blockShots.length}`);
+
+          // Test 2: Hide Report / Show Report
+          const toggleBtn = block0.querySelector(".eod-block-header button");
+          assert("Maintenance", "Block has Hide Report / Show Report toggle button", !!toggleBtn);
+          assert("Maintenance", "Initial toggle button label is 'Hide Report'", toggleBtn.textContent.trim() === "Hide Report");
+
+          const contentWrap = block0.querySelector(".eod-block-content");
+          assert("Maintenance", "Content is initially visible", contentWrap && contentWrap.style.display !== "none");
+
+          // Click Hide Report
+          toggleBtn.click();
+          await new Promise(r => setTimeout(r, 100));
+
+          assert("Maintenance", "After clicking, button label changed to 'Show Report'", toggleBtn.textContent.trim() === "Show Report");
+          assert("Maintenance", "Content wrapper is hidden (display: none)", contentWrap && contentWrap.style.display === "none");
+
+          // Check summary indicator in header
+          const headerSummary = block0.querySelector(".eod-block-header span[style*='font-size: 11px']");
+          assert("Maintenance", "Collapsed block shows summary indicator in header", !!headerSummary && headerSummary.textContent.includes("screenshot"));
+
+          // Click Show Report again
+          toggleBtn.click();
+          await new Promise(r => setTimeout(r, 100));
+
+          assert("Maintenance", "After re-clicking, button label changed to 'Hide Report'", toggleBtn.textContent.trim() === "Hide Report");
+          assert("Maintenance", "Content wrapper is visible again", contentWrap && contentWrap.style.display !== "none");
+
+          // Test 3: Payload preserves rows even when hidden
+          const testState = {
+            destinationKey: "mabini_a",
+            date: "2026-09-11",
+            blocks: [{
+              lanesText: "09/10/2026 10:00\t09/10/2026\tSarah\tAFP\tMabini\t1A-01\tIssue",
+              screenshots: [samplePng],
+              remarks: ["Coached"],
+              dataHidden: true
+            }]
+          };
+          const payload = maintenance.buildMaintenanceSheetsPayload(testState);
+          assert("Maintenance", "buildMaintenanceSheetsPayload retains rows when dataHidden is true", payload.rows.length === 1);
+
+          // Test 4: Undo / Redo integration
+          assert("Maintenance", "maintenanceService exposes getBlocks method", typeof maintenance.getBlocks === "function");
+          assert("Maintenance", "maintenanceService exposes saveBlocks method", typeof maintenance.saveBlocks === "function");
+
+          const currentBlocks = maintenance.getBlocks();
+          assert("Maintenance", "getBlocks returns array of blocks", Array.isArray(currentBlocks) && currentBlocks.length >= 1);
+
+          // Test 5: Ctrl+A shortcut focuses lanes textarea in Maintenance
+          // Click outside textareas to clear focus
+          doc.body.focus();
+          doc.dispatchEvent(new KeyboardEvent("keydown", { bubbles: true, cancelable: true, key: "a", ctrlKey: true }));
+          await new Promise(r => setTimeout(r, 100));
+
+          const activeEl = doc.activeElement;
+          assert("Maintenance", "Ctrl+A selects Maintenance lanes data", activeEl && activeEl.classList.contains("eod-lanes-textarea"));
+
+          // ===================================================================
+          // PRIORITY 5: MASTERLIST REAL TRACKER CONNECTION
+          // ===================================================================
+          addSection("Priority 5: Masterlist Real Tracker Connection");
+
+          win.switchWorkspace("masterlist");
+          await new Promise(r => setTimeout(r, 200));
+
+          assert("Masterlist", "Switched to Masterlist workspace", doc.getElementById("paneMasterlist") && !doc.getElementById("paneMasterlist").hidden);
+
+          // Test live load from real Google Apps Script
+          const syncDot = doc.getElementById("masterlistSyncDot");
+          const syncTitle = doc.getElementById("masterlistSyncTitle");
+
+          assert("Masterlist", "Sync dot element exists", !!syncDot);
+          assert("Masterlist", "Sync title element exists", !!syncTitle);
+
+          // Trigger live fresh sync against real endpoint
+          const syncRes = await masterlist.loadMasterList(true);
+          assert("Masterlist", "loadMasterList connected successfully to real endpoint", syncRes && syncRes.success === true, syncRes?.error || "");
+
+          const syncState = masterlist.getSyncState();
+          assert("Masterlist", "Sync state kind is 'live'", syncState.kind === "live");
+          assert("Masterlist", "Sync title is 'Google Sheets connected'", syncState.title === "Google Sheets connected");
+
+          // Verify pending tracker counts from real sheet
+          const trackers = masterlist.getTrackers();
+          assert("Masterlist", "Trackers loaded", Array.isArray(trackers) && trackers.length === 5);
+
+          const milesTracker = trackers.find(t => t.key === "miles");
+          const sethTracker = trackers.find(t => t.key === "seth");
+          const kennethTracker = trackers.find(t => t.key === "kenneth");
+          const jrTracker = trackers.find(t => t.key === "jr");
+
+          assert("Masterlist", "Miles pending tracker has real rows", milesTracker && milesTracker.count >= 6, `Count: ${milesTracker?.count}`);
+          assert("Masterlist", "Seth pending tracker has real rows", sethTracker && sethTracker.count >= 13, `Count: ${sethTracker?.count}`);
+          assert("Masterlist", "Kenneth pending tracker has real rows", kennethTracker && kennethTracker.count >= 5, `Count: ${kennethTracker?.count}`);
+          assert("Masterlist", "JR pending tracker has real rows", jrTracker && jrTracker.count >= 1, `Count: ${jrTracker?.count}`);
+
+          // Verify tab badges updated in DOM
+          const badgeMiles = doc.getElementById("badgeMiles");
+          const badgeSeth = doc.getElementById("badgeSeth");
+          assert("Masterlist", "DOM badgeMiles updated with real count", badgeMiles && Number(badgeMiles.textContent) >= 6, `Value: ${badgeMiles?.textContent}`);
+          assert("Masterlist", "DOM badgeSeth updated with real count", badgeSeth && Number(badgeSeth.textContent) >= 13, `Value: ${badgeSeth?.textContent}`);
+
+          // Verify real rows render in table
+          const masterTable = doc.getElementById("masterPendingMilesTable");
+          const masterRows = masterTable?.querySelectorAll("tbody tr");
+          assert("Masterlist", "Masterlist table displays real pending rows", masterRows && masterRows.length >= 6, `Found: ${masterRows?.length}`);
+
+        } catch (err) {
+          assert("Global", "Unexpected test execution error", false, err.message + "\n" + err.stack);
+        }
+
+        // Post summary report
+        const total = testResults.length;
+        const passed = testResults.filter(r => r.pass).length;
+        const failed = total - passed;
+
+        const summary = `RESULTS: ${passed}/${total} PASS, ${failed} FAIL`;
+        addSection(summary);
+
+        fetch("http://localhost:8080/api/test_report", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ summary, total, passed, failed, results: testResults })
+        }).catch(() => {});
+      };
+    });
+  </script>
+</body>
+</html>

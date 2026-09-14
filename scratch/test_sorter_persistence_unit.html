@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>AI Sorter Persistence Unit & Integration Test</title>
+  <style>
+    body { font-family: monospace; background: #0b0f19; color: #e2e8f0; padding: 20px; }
+    .pass { color: #10b981; font-weight: bold; }
+    .fail { color: #ef4444; font-weight: bold; }
+    .info { color: #38bdf8; }
+    #log { white-space: pre-wrap; margin-top: 15px; border: 1px solid #1e293b; padding: 15px; border-radius: 6px; background: #020617; }
+  </style>
+  <script src="/cctv-ops-v2/js/config.js"></script>
+  <script src="/cctv-ops-v2/js/storage.js"></script>
+  <script src="/cctv-ops-v2/js/services/sorter-service.js"></script>
+</head>
+<body>
+  <h2>AI Sorter Persistence Unit & Integration Tests</h2>
+  <div id="status" class="info">Running tests...</div>
+  <div id="log"></div>
+
+  <script>
+    const logEl = document.getElementById("log");
+    const statusEl = document.getElementById("status");
+    let passed = 0;
+    let failed = 0;
+
+    function log(msg, cls = "") {
+      const div = document.createElement("div");
+      if (cls) div.className = cls;
+      div.textContent = msg;
+      logEl.appendChild(div);
+      console.log(msg);
+    }
+
+    function assert(desc, condition, details = "") {
+      if (condition) {
+        passed++;
+        log(`✓ PASS: ${desc}`, "pass");
+      } else {
+        failed++;
+        log(`✗ FAIL: ${desc} ${details ? "(" + details + ")" : ""}`, "fail");
+      }
+    }
+
+    async function runTests() {
+      try {
+        const sorter = window.sorterService;
+        assert("sorterService is loaded", !!sorter);
+        assert("saveDraft method exists", typeof sorter.saveDraft === "function");
+        assert("loadDraft method exists", typeof sorter.loadDraft === "function");
+        assert("clearDraft method exists", typeof sorter.clearDraft === "function");
+        assert("getDraftMeta method exists", typeof sorter.getDraftMeta === "function");
+
+        log("\n--- TEST 1: Initial Empty Draft ---", "info");
+        await sorter.clearDraft();
+        let draft = await sorter.loadDraft();
+        assert("Initial draft is null after clear", draft === null);
+        let meta = sorter.getDraftMeta();
+        assert("Initial meta is null after clear", meta === null);
+
+        log("\n--- TEST 2: Save and Load Draft ---", "info");
+        const sampleText = "TIMESTAMP\tDATE\tTL\tACCOUNT\tSITE\tSTATION NO.\tSTATION ISSUE\n09/10/2026 10:00\t09/10/2026\tAllan Albert Sadili\tMapua\tMabini Site A\t1A-01\tMonitor not turning on";
+        const parsedRows = sorter.parseReport(sampleText);
+        const assignments = sorter.buildAssignments(parsedRows);
+        const assignedRows = sorter.assignRows(parsedRows, assignments);
+
+        // Edit a row cell
+        assignedRows[0].issue = "Unit test edited issue";
+
+        const ok = await sorter.saveDraft({
+          rawText: sampleText,
+          assignedRows: assignedRows,
+          parsedRows: parsedRows,
+          assignments: Array.from(assignments.entries()),
+          selectedRows: [0],
+          searchQuery: "Allan"
+        });
+        assert("saveDraft returned true/truthy", !!ok);
+
+        // Check synchronous metadata in localStorage
+        meta = sorter.getDraftMeta();
+        assert("getDraftMeta returns metadata object", !!meta);
+        assert("meta.hasDraft is true", meta?.hasDraft === true);
+        assert("meta.rowCount is 1", meta?.rowCount === 1);
+        assert("meta.hasRawText is true", meta?.hasRawText === true);
+
+        // Check loadDraft
+        draft = await sorter.loadDraft();
+        assert("loadDraft returns persisted draft", !!draft);
+        assert("draft.rawText matches original", draft?.rawText === sampleText);
+        assert("draft.assignedRows has 1 row", draft?.assignedRows?.length === 1);
+        assert("draft.assignedRows[0].issue retains user edit", draft?.assignedRows?.[0]?.issue === "Unit test edited issue");
+        assert("draft.searchQuery is preserved", draft?.searchQuery === "Allan");
+        assert("draft.selectedRows preserves selection", draft?.selectedRows?.[0] === 0);
+
+        log("\n--- TEST 3: Multi-User / Operator Scoping ---", "info");
+        // Current scope
+        const initialScope = window.CCTV_DATA_SCOPE?.info();
+        log(`Initial scope prefix: "${initialScope?.prefix}"`, "info");
+
+        // Switch to Operator B
+        window.CCTV_DATA_SCOPE.activate("operator_test_user_B", false, { username: "operator_b" });
+        const scopeB = window.CCTV_DATA_SCOPE.info();
+        log(`Switched to Operator B scope prefix: "${scopeB.prefix}"`, "info");
+
+        // Operator B should NOT see Operator A's draft!
+        const draftB = await sorter.loadDraft();
+        assert("Operator B cannot see Operator A's draft (scoped isolation)", draftB === null);
+        const metaB = sorter.getDraftMeta();
+        assert("Operator B metadata is null", metaB === null);
+
+        // Save a separate draft for Operator B
+        await sorter.saveDraft({
+          rawText: "Operator B raw text",
+          assignedRows: [{ timestamp: "1", date: "2", tl: "Bob", account: "Bigo", site: "Site A", station: "2A", issue: "B issue", floor: "2nd Floor" }],
+          parsedRows: [],
+          assignments: [],
+          selectedRows: []
+        });
+
+        const draftB2 = await sorter.loadDraft();
+        assert("Operator B has their own saved draft", draftB2?.rawText === "Operator B raw text");
+
+        // Switch back to Operator A
+        if (initialScope?.userId) {
+          window.CCTV_DATA_SCOPE.activate(initialScope.userId, initialScope.isLegacyOwner);
+        } else {
+          window.CCTV_DATA_SCOPE.deactivate();
+        }
+        log(`Restored scope prefix: "${window.CCTV_DATA_SCOPE.info().prefix}"`, "info");
+
+        // Operator A's original draft should still be intact!
+        const draftA = await sorter.loadDraft();
+        assert("Operator A's draft restored intact after user switch", draftA?.assignedRows?.[0]?.issue === "Unit test edited issue");
+
+        log("\n--- TEST 4: Clear Draft Behavior ---", "info");
+        await sorter.clearDraft();
+        const draftAfterClear = await sorter.loadDraft();
+        assert("Draft is null after clearDraft()", draftAfterClear === null);
+        const metaAfterClear = sorter.getDraftMeta();
+        assert("Metadata is null after clearDraft()", metaAfterClear === null);
+
+        log("\n==========================================", "info");
+        log(`RESULT: ${passed} Passed, ${failed} Failed`, failed === 0 ? "pass" : "fail");
+        statusEl.className = failed === 0 ? "pass" : "fail";
+        statusEl.textContent = `Unit Suite Finished: ${passed} Passed, ${failed} Failed`;
+      } catch (err) {
+        log(`ERROR in runTests: ${err.message}\n${err.stack}`, "fail");
+      }
+    }
+
+    runTests();
+  </script>
+</body>
+</html>

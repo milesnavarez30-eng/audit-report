@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+
+<html class="h-full bg-[#0D1117]" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>CCTV OPS - Operations Hub | EDR Workspace</title>
+<!-- Tailwind CSS v3 with Forms & Container Queries -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Google Fonts: Space Grotesk & JetBrains Mono -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&amp;family=Space+Grotesk:wght@500;600;700&amp;display=swap" rel="stylesheet"/>
+<script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              black: '#0D1117',
+              dark: '#10141A',
+              panel: '#161B22',
+              card: '#1B2129',
+              border: '#30363D',
+              borderLight: '#3D444D',
+              violet: '#6C5CE7',
+              violetHover: '#5B4CD8',
+              violetLight: '#8C7CFF',
+              cyan: '#5CE1E6',
+              lime: '#A8FF78',
+              amber: '#FB923C',
+              danger: '#F87171',
+              textMain: '#E6EDF3',
+              textMuted: '#8B949E'
+            }
+          },
+          fontFamily: {
+            mono: ['"JetBrains Mono"', 'monospace'],
+            display: ['"Space Grotesk"', 'sans-serif']
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="h-full bg-brand-black text-brand-textMain font-mono antialiased overflow-hidden flex flex-col selection:bg-brand-violet selection:text-white">
+<!-- BEGIN: ApplicationLayout -->
+<div class="flex h-screen w-full overflow-hidden">
+<!-- BEGIN: Sidebar -->
+<aside class="w-64 flex-shrink-0 bg-brand-dark border-r border-brand-border flex flex-col justify-between select-none z-20">
+<div class="p-3">
+<!-- Logo Header -->
+<div class="flex items-center gap-2 px-2 py-2 mb-4 bg-brand-panel border border-brand-border rounded-none shadow-[2px_2px_0px_rgba(0,0,0,0.6)]">
+<div class="h-7 w-7 bg-brand-violet text-white font-bold flex items-center justify-center text-xs tracking-wider border border-brand-violetLight shadow-[1px_1px_0px_#000]">
+            V2
+          </div>
+<div class="leading-tight">
+<h1 class="text-xs font-bold tracking-wider text-brand-textMain uppercase">CCTV OPS</h1>
+<p class="text-[9px] tracking-widest text-brand-cyan uppercase font-semibold">OPERATIONS HUB</p>
+</div>
+</div>
+<!-- Navigation Groups -->
+<div class="space-y-4">
+<!-- Workspaces -->
+<div>
+<span class="text-[9px] font-extrabold uppercase tracking-widest text-brand-textMuted px-2 block mb-1.5">
+              WORKSPACES
+            </span>
+<nav class="space-y-1">
+<!-- Active EDR Tab -->
+<a class="flex items-center justify-between px-2.5 py-1.5 bg-brand-violet text-white font-bold text-xs border border-brand-violetLight shadow-[2px_2px_0px_#000]" href="#">
+<div class="flex items-center gap-2">
+<span class="text-white text-xs">🗂</span>
+<span class="tracking-wide">EDR</span>
+</div>
+<span class="bg-brand-black/40 text-brand-lime px-1.5 py-0.2 text-[10px] font-bold border border-brand-lime/30">7</span>
+</a>
+<!-- CCTV Audit Link -->
+<a class="flex items-center justify-between px-2.5 py-1.5 text-brand-textMuted hover:text-brand-textMain hover:bg-brand-panel text-xs transition-colors border border-transparent hover:border-brand-border" href="#">
+<div class="flex items-center gap-2">
+<span class="text-brand-textMuted text-xs">🎥</span>
+<span class="tracking-wide">CCTV Audit</span>
+</div>
+<span class="text-[10px] px-1 text-brand-textMuted font-medium">[0]</span>
+</a>
+<!-- AI Sorter -->
+<a class="flex items-center justify-between px-2.5 py-1.5 text-brand-textMuted hover:text-brand-textMain hover:bg-brand-panel text-xs transition-colors border border-transparent hover:border-brand-border" href="#">
+<div class="flex items-center gap-2">
+<span class="text-brand-textMuted text-xs">⚡</span>
+<span class="tracking-wide">AI Sorter</span>
+</div>
+</a>
+<!-- Maintenance -->
+<a class="flex items-center justify-between px-2.5 py-1.5 text-brand-textMuted hover:text-brand-textMain hover:bg-brand-panel text-xs transition-colors border border-transparent hover:border-brand-border" href="#">
+<div class="flex items-center gap-2">
+<span class="text-brand-textMuted text-xs">⚙</span>
+<span class="tracking-wide">Maintenance</span>
+</div>
+</a>
+<!-- Pending -->
+<a class="flex items-center justify-between px-2.5 py-1.5 text-brand-textMuted hover:text-brand-textMain hover:bg-brand-panel text-xs transition-colors border border-transparent hover:border-brand-border" href="#">
+<div class="flex items-center gap-2">
+<span class="text-brand-textMuted text-xs">⏱</span>
+<span class="tracking-wide">Pending</span>
+</div>
+<span class="text-[10px] px-1 text-brand-amber font-medium">[1]</span>
+</a>
+</nav>
+</div>
+<!-- Management Group -->
+<div>
+<span class="text-[9px] font-extrabold uppercase tracking-widest text-brand-textMuted px-2 block mb-1.5">
+              MANAGEMENT
+            </span>
+<nav class="space-y-1">
+<a class="flex items-center justify-between px-2.5 py-1.5 text-brand-textMuted hover:text-brand-textMain hover:bg-brand-panel text-xs transition-colors border border-transparent hover:border-brand-border" href="#">
+<div class="flex items-center gap-2">
+<span>☰</span>
+<span class="tracking-wide">Masterlist</span>
+</div>
+</a>
+<a class="flex items-center justify-between px-2.5 py-1.5 text-brand-textMuted hover:text-brand-textMain hover:bg-brand-panel text-xs transition-colors border border-transparent hover:border-brand-border" href="#">
+<div class="flex items-center gap-2">
+<span>☑</span>
+<span class="tracking-wide">Follow Up</span>
+</div>
+<span class="text-[10px] px-1 text-brand-textMuted font-medium">[0]</span>
+</a>
+<a class="flex items-center justify-between px-2.5 py-1.5 text-brand-textMuted hover:text-brand-textMain hover:bg-brand-panel text-xs transition-colors border border-transparent hover:border-brand-border" href="#">
+<div class="flex items-center gap-2">
+<span>🕒</span>
+<span class="tracking-wide">History</span>
+</div>
+</a>
+<a class="flex items-center justify-between px-2.5 py-1.5 text-brand-textMuted hover:text-brand-textMain hover:bg-brand-panel text-xs transition-colors border border-transparent hover:border-brand-border" href="#">
+<div class="flex items-center gap-2">
+<span>👥</span>
+<span class="tracking-wide">Accounts</span>
+</div>
+</a>
+</nav>
+</div>
+</div>
+</div>
+<!-- Sidebar Footer Status -->
+<div class="p-2 border-t border-brand-border bg-brand-panel flex items-center justify-between text-[11px] text-brand-textMuted">
+<span class="tracking-tighter font-mono text-[10px] text-brand-textMuted">v2.0.4-prod</span>
+<button class="h-6 w-6 border border-brand-border hover:border-brand-cyan hover:text-brand-cyan flex items-center justify-center bg-brand-dark transition-colors">
+          «
+        </button>
+</div>
+</aside>
+<!-- END: Sidebar -->
+<!-- BEGIN: MainContentArea -->
+<div class="flex-1 flex flex-col h-full overflow-hidden">
+<!-- BEGIN: TopCommandHeader -->
+<header class="h-12 bg-brand-panel border-b border-brand-border px-4 flex items-center justify-between flex-shrink-0 select-none">
+<!-- Title with Badge -->
+<div class="flex items-center gap-3">
+<h2 class="font-extrabold text-sm tracking-wider text-brand-textMain uppercase">
+            END OF THE DAY REPORT
+          </h2>
+<span class="px-2 py-0.5 text-[10px] font-bold bg-brand-dark border border-brand-border text-brand-cyan tracking-wider">
+            [EDR WORKSPACE]
+          </span>
+</div>
+<!-- Action Controls -->
+<div class="flex items-center gap-2">
+<!-- Template Button -->
+<button class="px-2.5 py-1 bg-brand-dark hover:bg-brand-card text-brand-textMain border border-brand-border text-xs flex items-center gap-1.5 transition-colors">
+<span>📄</span>
+<span>Template</span>
+</button>
+<!-- Reload Button -->
+<button class="px-2.5 py-1 bg-brand-dark hover:bg-brand-card text-brand-textMain border border-brand-border text-xs flex items-center gap-1.5 transition-colors">
+<span class="text-brand-cyan">↻</span>
+<span>Reload</span>
+</button>
+<!-- Theme Pill Switcher -->
+<div class="flex items-center bg-brand-black border border-brand-border px-2 py-1 text-[10px] gap-2 tracking-wider">
+<span class="text-brand-lime font-bold flex items-center gap-1">◉ DARK</span>
+<span class="text-brand-border">/</span>
+<span class="text-brand-textMuted">○ LIGHT</span>
+</div>
+<!-- Docs Connected Status -->
+<div class="flex items-center gap-1.5 px-2.5 py-1 bg-brand-black border border-brand-border text-xs">
+<span class="h-2 w-2 rounded-full bg-brand-lime animate-pulse inline-block"></span>
+<span class="text-[11px] text-brand-textMain font-medium">Docs Connected</span>
+<span class="text-brand-textMuted text-[11px] ml-1">⚙</span>
+</div>
+<!-- Live Monospace Clock -->
+<div class="bg-brand-black px-2.5 py-1 border border-brand-border text-xs text-brand-lime font-bold tracking-widest">
+            11:10:57 AM PHT
+          </div>
+<!-- Operator Profile Pill -->
+<div class="flex items-center gap-1.5 bg-brand-black border border-brand-border pl-1.5 pr-2 py-0.5">
+<div class="h-5 w-5 bg-brand-violet text-white text-[10px] font-bold flex items-center justify-center border border-brand-violetLight">
+              M
+            </div>
+<div class="leading-none text-left">
+<span class="block text-[11px] font-bold text-brand-textMain">Miles</span>
+<span class="block text-[8px] text-brand-cyan tracking-wider font-semibold">OPERATOR</span>
+</div>
+</div>
+</div>
+</header>
+<!-- END: TopCommandHeader -->
+<!-- BEGIN: WorkspaceGrid -->
+<main class="flex-1 grid grid-cols-12 gap-3 p-3 overflow-hidden bg-brand-black">
+<!-- BEGIN: LeftFormColumn (Manual EDR Entry) -->
+<section class="col-span-12 lg:col-span-7 flex flex-col h-full bg-brand-panel border border-brand-border overflow-hidden">
+<!-- Form Header -->
+<div class="px-3.5 py-2 bg-brand-dark border-b border-brand-border flex items-center justify-between flex-shrink-0">
+<div class="flex items-center gap-2">
+<span class="text-brand-cyan text-sm">✍</span>
+<h3 class="text-xs font-bold tracking-wider text-brand-textMain uppercase">
+                MANUAL EDR ENTRY
+              </h3>
+<span class="text-[9px] px-1.5 py-0.2 bg-brand-black text-brand-violetLight border border-brand-violet/40 font-mono">
+                [PR-ENTRY]
+              </span>
+</div>
+<button class="text-[11px] text-brand-textMuted hover:text-brand-danger font-medium hover:underline transition-colors">
+              Reset
+            </button>
+</div>
+<!-- Scrollable Form Container -->
+<div class="flex-1 overflow-y-auto p-3.5 space-y-3.5 text-xs">
+<!-- Section 01: Event & Location -->
+<div class="border border-brand-border bg-brand-dark/50 p-2.5 relative">
+<div class="flex items-center justify-between mb-2">
+<span class="text-[10px] font-bold uppercase tracking-wider text-brand-cyan bg-brand-black px-1.5 py-0.5 border border-brand-border">
+                  01 Event &amp; Location
+                </span>
+<span class="text-[9px] text-brand-danger font-mono">* Required Operational Data</span>
+</div>
+<!-- Site Location Dropdown -->
+<div class="mb-2">
+<label class="block text-[10px] font-bold text-brand-textMuted mb-1 tracking-wider">
+                  SITE LOCATION <span class="text-brand-danger">*</span>
+</label>
+<select class="w-full bg-brand-black border border-brand-border text-brand-textMain text-xs px-2.5 py-1.5 focus:border-brand-violet focus:ring-1 focus:ring-brand-violet outline-none transition-colors">
+<option selected="">Mabini Site A</option>
+<option>Shaw Site B</option>
+<option>Cybergate Site C</option>
+<option>Eastwood Site D</option>
+</select>
+</div>
+<!-- Date & Time Row -->
+<div class="grid grid-cols-2 gap-2">
+<div>
+<label class="block text-[10px] font-bold text-brand-textMuted mb-1 tracking-wider">
+                    DATE OBSERVED <span class="text-brand-danger">*</span>
+</label>
+<div class="relative">
+<input class="w-full bg-brand-black border border-brand-border text-brand-textMain text-xs px-2.5 py-1.5 focus:border-brand-violet focus:ring-1 focus:ring-brand-violet outline-none font-mono" type="text" value="09/14/2026"/>
+<span class="absolute right-2 top-1.5 text-brand-textMuted text-xs">📅</span>
+</div>
+</div>
+<div>
+<label class="block text-[10px] font-bold text-brand-textMuted mb-1 tracking-wider">
+                    TIME OBSERVED <span class="text-brand-danger">*</span>
+</label>
+<div class="relative">
+<input class="w-full bg-brand-black border border-brand-border text-brand-textMain placeholder-brand-textMuted/50 text-xs px-2.5 py-1.5 focus:border-brand-violet focus:ring-1 focus:ring-brand-violet outline-none font-mono" placeholder="e.g. 3:10:45 AM-3:18:01 AM" type="text"/>
+<span class="absolute right-2 top-1.5 text-brand-textMuted text-xs">⏱</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Section 02: Parties Involved -->
+<div class="border border-brand-border bg-brand-dark/50 p-2.5 relative">
+<span class="text-[10px] font-bold uppercase tracking-wider text-brand-cyan bg-brand-black px-1.5 py-0.5 border border-brand-border inline-block mb-2.5">
+                02 Parties Involved
+              </span>
+<div class="grid grid-cols-2 gap-2.5">
+<!-- Respondent Column -->
+<div>
+<div class="flex items-center justify-between mb-1">
+<div class="flex items-center gap-1.5">
+<label class="text-[10px] font-bold text-brand-textMuted tracking-wider">RESPONDENT</label>
+<div class="inline-flex border border-brand-border text-[9px]">
+<button class="px-1 bg-brand-dark hover:bg-brand-border text-brand-textMain" type="button">+</button>
+<button class="px-1 bg-brand-dark hover:bg-brand-border text-brand-textMain border-l border-brand-border" type="button">-</button>
+</div>
+</div>
+<!-- Role Toggle -->
+<div class="inline-flex border border-brand-border text-[9px] bg-brand-black font-bold">
+<span class="px-1.5 py-0.5 bg-brand-violet text-white">TL</span>
+<span class="px-1.5 py-0.5 text-brand-textMuted hover:text-brand-textMain cursor-pointer">OM</span>
+</div>
+</div>
+<input class="w-full bg-brand-black border border-brand-border text-brand-textMain placeholder-brand-textMuted/50 text-xs px-2.5 py-1.5 focus:border-brand-violet outline-none" placeholder="Search Team Leader..." type="text"/>
+</div>
+<!-- Dedicated OM Column -->
+<div>
+<div class="flex items-center justify-between mb-1">
+<label class="text-[10px] font-bold text-brand-textMuted tracking-wider">DEDICATED OM</label>
+</div>
+<input class="w-full bg-brand-black border border-brand-border text-brand-textMain placeholder-brand-textMuted/50 text-xs px-2.5 py-1.5 focus:border-brand-violet outline-none" placeholder="Search OM..." type="text"/>
+</div>
+<!-- Violation Subject Column -->
+<div>
+<div class="flex items-center justify-between mb-1">
+<label class="text-[10px] font-bold text-brand-textMuted tracking-wider">VIOLATION SUBJECT</label>
+<div class="inline-flex border border-brand-border text-[9px] bg-brand-black font-bold">
+<span class="px-1.5 py-0.5 bg-brand-violet text-white">Agent/s</span>
+<span class="px-1.5 py-0.5 text-brand-textMuted hover:text-brand-textMain cursor-pointer">TL</span>
+</div>
+</div>
+<input class="w-full bg-brand-black border border-brand-border text-brand-textMain placeholder-brand-textMuted/50 text-xs px-2.5 py-1.5 focus:border-brand-violet outline-none" placeholder="Employee name..." type="text"/>
+</div>
+<!-- Account / Campaign Column -->
+<div>
+<div class="flex items-center justify-between mb-1">
+<label class="text-[10px] font-bold text-brand-textMuted tracking-wider">
+                      ACCOUNT / CAMPAIGN <span class="text-brand-danger">*</span>
+</label>
+<div class="inline-flex border border-brand-border text-[9px]">
+<button class="px-1 bg-brand-dark hover:bg-brand-border text-brand-textMain" type="button">+</button>
+<button class="px-1 bg-brand-dark hover:bg-brand-border text-brand-textMain border-l border-brand-border" type="button">-</button>
+</div>
+</div>
+<input class="w-full bg-brand-black border border-brand-border text-brand-textMain placeholder-brand-textMuted/50 text-xs px-2.5 py-1.5 focus:border-brand-violet outline-none" placeholder="Search campaign..." type="text"/>
+</div>
+</div>
+</div>
+<!-- Section 03: Findings & Action Taken -->
+<div class="border border-brand-border bg-brand-dark/50 p-2.5 relative space-y-2">
+<span class="text-[10px] font-bold uppercase tracking-wider text-brand-cyan bg-brand-black px-1.5 py-0.5 border border-brand-border inline-block">
+                03 Findings &amp; Action Taken
+              </span>
+<div>
+<label class="block text-[10px] font-bold text-brand-textMuted mb-1 tracking-wider">
+                  INCIDENT DESCRIPTION <span class="text-brand-danger">*</span>
+</label>
+<textarea class="w-full bg-brand-black border border-brand-border text-brand-textMain placeholder-brand-textMuted/50 text-xs p-2 focus:border-brand-violet outline-none resize-none leading-relaxed" placeholder="Specific violation observed on camera..." rows="2"></textarea>
+</div>
+<div>
+<label class="block text-[10px] font-bold text-brand-textMuted mb-1 tracking-wider">
+                  ACTION TAKEN / REMARKS <span class="text-brand-danger">*</span>
+</label>
+<textarea class="w-full bg-brand-black border border-brand-border text-brand-textMain placeholder-brand-textMuted/50 text-xs p-2 focus:border-brand-violet outline-none resize-none leading-relaxed" placeholder="Supervisor response, investigation, and remarks..." rows="2"></textarea>
+</div>
+</div>
+<!-- Section 04: Evidence & Footage -->
+<div class="border border-brand-border bg-brand-dark/50 p-2.5 relative space-y-2">
+<span class="text-[10px] font-bold uppercase tracking-wider text-brand-cyan bg-brand-black px-1.5 py-0.5 border border-brand-border inline-block">
+                04 Evidence &amp; Footage
+              </span>
+<div>
+<label class="block text-[10px] font-bold text-brand-textMuted mb-1 tracking-wider">
+                  CCTV SCREENSHOT
+                </label>
+<!-- Upload Dropzone Area -->
+<div class="border-2 border-dashed border-brand-borderLight bg-brand-black/60 p-2 flex items-center justify-between hover:border-brand-cyan transition-colors">
+<div class="flex items-center gap-2">
+<div class="h-8 w-10 bg-brand-card border border-brand-border flex items-center justify-center text-xs">
+                      🖼
+                    </div>
+<span class="text-xs text-brand-textMain font-mono font-bold">image.png</span>
+</div>
+<button class="px-2 py-1 text-[11px] bg-brand-panel hover:bg-brand-border border border-brand-border text-brand-danger hover:text-white transition-colors" type="button">
+                    Remove
+                  </button>
+</div>
+</div>
+<div>
+<label class="block text-[10px] font-bold text-brand-textMuted mb-1 tracking-wider">
+                  CCTV CLIP (GOOGLE DRIVE URL)
+                </label>
+<input class="w-full bg-brand-black border border-brand-border text-brand-cyan placeholder-brand-textMuted/50 text-xs px-2.5 py-1.5 focus:border-brand-violet outline-none font-mono" type="text" value="https://drive.google.com/..."/>
+</div>
+</div>
+</div>
+<!-- Bottom Form Actions Bar -->
+<div class="p-3 bg-brand-dark border-t border-brand-border flex items-center justify-end gap-2 flex-shrink-0">
+<button class="px-4 py-2 bg-brand-violet hover:bg-brand-violetHover text-white text-xs font-bold tracking-wider uppercase border border-brand-violetLight shadow-[2px_2px_0px_#000] active:translate-x-[1px] active:translate-y-[1px] transition-all flex items-center gap-1.5" type="button">
+<span>✓</span>
+<span>Save EDR</span>
+</button>
+<button class="px-3 py-2 bg-brand-card hover:bg-brand-border text-brand-textMain text-xs font-bold tracking-wider uppercase border border-brand-border shadow-[2px_2px_0px_#000] active:translate-x-[1px] active:translate-y-[1px] transition-all" type="button">
+              Send to Google Docs
+            </button>
+<button class="px-3 py-2 bg-brand-card hover:bg-brand-border text-brand-textMain text-xs font-bold tracking-wider uppercase border border-brand-border shadow-[2px_2px_0px_#000] active:translate-x-[1px] active:translate-y-[1px] transition-all" type="button">
+              Send to CCTV Audit
+            </button>
+</div>
+</section>
+<!-- END: LeftFormColumn -->
+<!-- BEGIN: RightColumn (Dispatch & Saved Records) -->
+<section class="col-span-12 lg:col-span-5 flex flex-col h-full gap-3 overflow-hidden">
+<!-- BEGIN: TeamsDispatchPanel -->
+<div class="h-[46%] bg-brand-panel border border-brand-border flex flex-col overflow-hidden">
+<!-- Dispatch Header -->
+<div class="px-3 py-2 bg-brand-dark border-b border-brand-border flex items-center justify-between flex-shrink-0">
+<div class="flex items-center gap-1.5">
+<span class="text-brand-violetLight text-xs">▷</span>
+<h3 class="text-xs font-bold tracking-wider text-brand-textMain uppercase">
+                  TEAMS DISPATCH
+                </h3>
+</div>
+<!-- Top Action Cluster -->
+<div class="flex items-center gap-1.5">
+<button class="px-2 py-1 bg-brand-dark hover:bg-brand-card border border-brand-border text-[10px] text-brand-textMain font-semibold">
+                  Send to Google Docs
+                </button>
+<button class="px-2 py-1 bg-brand-dark hover:bg-brand-card border border-brand-border text-[10px] text-brand-textMain font-semibold">
+                  Send to CCTV Audit
+                </button>
+<button class="px-2.5 py-1 bg-brand-violet hover:bg-brand-violetHover border border-brand-violetLight text-[10px] text-white font-bold flex items-center gap-1 shadow-[1px_1px_0px_#000]">
+<span>📋</span>
+<span>Copy for Teams</span>
+</button>
+</div>
+</div>
+<!-- Dispatch Content Body -->
+<div class="flex-1 p-2.5 overflow-y-auto space-y-2 text-xs">
+<!-- Facebook Shared Link Bar -->
+<div class="space-y-1">
+<div class="flex items-center justify-between">
+<span class="text-[10px] font-bold text-brand-textMuted tracking-wider">Facebook Shared Post</span>
+<span class="text-[9px] font-bold bg-brand-black text-brand-cyan border border-brand-border px-1.5 py-0.2 font-mono">
+                    SEP 14
+                  </span>
+</div>
+<textarea class="w-full bg-brand-black border border-brand-border text-brand-textMain placeholder-brand-textMuted/50 text-[11px] px-2 py-1 outline-none font-mono focus:border-brand-violet resize-none" placeholder="Paste Facebook post links here, one per line..." rows="1"></textarea>
+</div>
+<!-- Formatted Dispatch Card Preview -->
+<div class="bg-brand-dark border border-brand-border p-2.5 font-mono space-y-1.5 text-[11px] select-text">
+<div class="flex flex-col gap-0.5">
+<div class="text-brand-textMain">
+<span class="font-bold text-brand-textMuted">Action Taken/Remarks:</span> Coaching session documented
+                  </div>
+<div class="text-brand-textMain">
+<span class="font-bold text-brand-textMuted">CCTV Clip:</span> <a class="text-brand-cyan hover:underline font-bold" href="#">Click here!</a>
+</div>
+</div>
+<div class="border-t border-dashed border-brand-borderLight my-1.5"></div>
+<!-- Structured Incident Dispatch -->
+<div class="space-y-0.5 leading-relaxed text-[11px]">
+<div class="text-brand-cyan font-bold text-xs pb-0.5">
+                    Shaw Site B <span class="text-brand-textMuted">|</span> CCTV <span class="text-brand-textMuted">|</span> Healthcare
+                  </div>
+<div><span class="text-brand-textMuted font-semibold">Date:</span> Sep 11, 2026</div>
+<div><span class="text-brand-textMuted font-semibold">Time Observed:</span> 11:30</div>
+<div><span class="text-brand-textMuted font-semibold">OM:</span> Dutch Schaefer</div>
+<div><span class="text-brand-textMuted font-semibold">Agent/s:</span> Kyle Reese</div>
+<div><span class="text-brand-textMuted font-semibold">Account/Campaign:</span> Healthcare</div>
+<div><span class="text-brand-textMuted font-semibold">Incident:</span> Unauthorized mobile device usage</div>
+<div><span class="text-brand-textMuted font-semibold">Action Taken/Remarks:</span> Device surrendered to security desk</div>
+<div><span class="text-brand-textMuted font-semibold">CCTV Clip:</span> <a class="text-brand-cyan hover:underline font-bold" href="#">Click here!</a></div>
+</div>
+</div>
+</div>
+</div>
+<!-- END: TeamsDispatchPanel -->
+<!-- BEGIN: SavedEDRsPanel -->
+<div class="h-[54%] bg-brand-panel border border-brand-border flex flex-col overflow-hidden">
+<!-- Saved EDRs Header Bar -->
+<div class="px-3 py-2 bg-brand-dark border-b border-brand-border flex items-center justify-between flex-shrink-0">
+<div class="flex items-center gap-2">
+<h3 class="text-xs font-bold tracking-wider text-brand-textMain uppercase">
+                  SAVED EDRS
+                </h3>
+<span class="bg-brand-black text-brand-cyan border border-brand-border px-1.5 py-0.2 text-[10px] font-bold font-mono">
+                  [7]
+                </span>
+<span class="bg-brand-cyan/15 text-brand-cyan border border-brand-cyan/40 px-1.5 py-0.2 text-[9px] font-bold">
+                  2 SELECTED
+                </span>
+<span class="bg-brand-lime/15 text-brand-lime border border-brand-lime/40 px-1.5 py-0.2 text-[9px] font-bold">
+                  3 DONE
+                </span>
+</div>
+<div class="flex items-center gap-2.5 text-[10px]">
+<button class="text-brand-textMuted hover:text-brand-cyan font-semibold transition-colors">Select All</button>
+<span class="text-brand-border">|</span>
+<button class="text-brand-textMuted hover:text-brand-danger font-semibold transition-colors">Clear</button>
+</div>
+</div>
+<!-- Saved Records List -->
+<div class="flex-1 p-2 space-y-1.5 overflow-y-auto">
+<!-- Record 1 (Checked) -->
+<div class="bg-brand-dark border border-brand-border p-2 flex items-center justify-between hover:border-brand-violet transition-colors">
+<div class="flex items-start gap-2">
+<input checked="" class="mt-0.5 rounded-none bg-brand-black border-brand-border text-brand-violet focus:ring-0" type="checkbox"/>
+<div class="leading-tight">
+<div class="flex items-center gap-1.5">
+<span class="text-xs font-bold text-brand-textMain font-mono">Sep 11, 2026 · Mabini Site A</span>
+<span class="bg-brand-amber/15 text-brand-amber border border-brand-amber/40 text-[9px] font-extrabold px-1 font-mono">SS</span>
+</div>
+<p class="text-[10px] text-brand-textMuted font-mono mt-0.5">
+                      AFP · Team Leader: <span class="text-brand-textMain">Sarah Connor</span> · Subj: <span class="text-brand-textMain">John Matrix</span>
+</p>
+</div>
+</div>
+<!-- Card Actions -->
+<div class="flex items-center gap-1">
+<button class="px-1.5 py-0.5 bg-brand-black hover:bg-brand-card border border-brand-border text-[9px] text-brand-textMain">View SS</button>
+<button class="px-1.5 py-0.5 bg-brand-black hover:bg-brand-card border border-brand-border text-[9px] text-brand-textMain">Send to Audit</button>
+<button class="px-1.5 py-0.5 bg-brand-black hover:bg-brand-card border border-brand-border text-[9px] text-brand-lime font-bold">Done</button>
+<button class="px-1.5 py-0.5 bg-brand-black hover:bg-brand-card border border-brand-border text-[9px] text-brand-textMain">Edit</button>
+<button class="px-1 py-0.5 bg-brand-black hover:bg-brand-card border border-brand-border text-[9px] text-brand-textMuted">···</button>
+</div>
+</div>
+<!-- Record 2 (Checked) -->
+<div class="bg-brand-dark border border-brand-border p-2 flex items-center justify-between hover:border-brand-violet transition-colors">
+<div class="flex items-start gap-2">
+<input checked="" class="mt-0.5 rounded-none bg-brand-black border-brand-border text-brand-violet focus:ring-0" type="checkbox"/>
+<div class="leading-tight">
+<div class="flex items-center gap-1.5">
+<span class="text-xs font-bold text-brand-textMain font-mono">Sep 11, 2026 · Shaw Site B</span>
+<span class="bg-brand-amber/15 text-brand-amber border border-brand-amber/40 text-[9px] font-extrabold px-1 font-mono">SS</span>
+</div>
+<p class="text-[10px] text-brand-textMuted font-mono mt-0.5">
+                      Healthcare · OM: <span class="text-brand-textMain">Dutch Schaefer</span> · Subj: <span class="text-brand-textMain">Kyle Reese</span>
+</p>
+</div>
+</div>
+<div class="flex items-center gap-1">
+<button class="px-1.5 py-0.5 bg-brand-black hover:bg-brand-card border border-brand-border text-[9px] text-brand-textMain">View SS</button>
+<button class="px-1.5 py-0.5 bg-brand-black hover:bg-brand-card border border-brand-border text-[9px] text-brand-textMain">Send to Audit</button>
+<button class="px-1.5 py-0.5 bg-brand-black hover:bg-brand-card border border-brand-border text-[9px] text-brand-lime font-bold">Done</button>
+<button class="px-1.5 py-0.5 bg-brand-black hover:bg-brand-card border border-brand-border text-[9px] text-brand-textMain">Edit</button>
+<button class="px-1 py-0.5 bg-brand-black hover:bg-brand-card border border-brand-border text-[9px] text-brand-textMuted">···</button>
+</div>
+</div>
+<!-- Record 3 (Done State) -->
+<div class="bg-brand-dark/60 border border-brand-border/60 p-2 flex items-center justify-between opacity-80 hover:opacity-100 transition-opacity">
+<div class="flex items-start gap-2">
+<input class="mt-0.5 rounded-none bg-brand-black border-brand-border text-brand-violet focus:ring-0" type="checkbox"/>
+<div class="leading-tight">
+<div class="flex items-center gap-1.5">
+<span class="text-xs font-semibold text-brand-textMuted font-mono line-through">Sep 11, 2026 · Mabini Site A</span>
+<span class="bg-brand-lime/15 text-brand-lime border border-brand-lime/40 text-[9px] font-extrabold px-1 font-mono">DONE</span>
+</div>
+<p class="text-[10px] text-brand-textMuted font-mono mt-0.5">
+                      AFP · Team Leader: Sarah Connor · Subj: John Matrix
+                    </p>
+</div>
+</div>
+<div class="flex items-center gap-1">
+<button class="px-1.5 py-0.5 bg-brand-black hover:bg-brand-card border border-brand-border text-[9px] text-brand-textMuted">Add SS</button>
+<button class="px-1.5 py-0.5 bg-brand-black hover:bg-brand-card border border-brand-border text-[9px] text-brand-textMuted">Send to Audit</button>
+<button class="px-1.5 py-0.5 bg-brand-black hover:bg-brand-card border border-brand-border text-[9px] text-brand-amber font-semibold">Reopen</button>
+<button class="px-1.5 py-0.5 bg-brand-black hover:bg-brand-card border border-brand-border text-[9px] text-brand-textMuted">Edit</button>
+<button class="px-1 py-0.5 bg-brand-black hover:bg-brand-card border border-brand-border text-[9px] text-brand-textMuted">···</button>
+</div>
+</div>
+<!-- Record 4 (Done + SS) -->
+<div class="bg-brand-dark/60 border border-brand-border/60 p-2 flex items-center justify-between opacity-80 hover:opacity-100 transition-opacity">
+<div class="flex items-start gap-2">
+<input class="mt-0.5 rounded-none bg-brand-black border-brand-border text-brand-violet focus:ring-0" type="checkbox"/>
+<div class="leading-tight">
+<div class="flex items-center gap-1.5">
+<span class="text-xs font-semibold text-brand-textMuted font-mono line-through">Sep 11, 2026 · Shaw Site B</span>
+<span class="bg-brand-amber/15 text-brand-amber border border-brand-amber/40 text-[9px] font-extrabold px-1 font-mono">SS</span>
+<span class="bg-brand-lime/15 text-brand-lime border border-brand-lime/40 text-[9px] font-extrabold px-1 font-mono">DONE</span>
+</div>
+<p class="text-[10px] text-brand-textMuted font-mono mt-0.5">
+                      Healthcare · OM: Dutch Schaefer · Subj: Kyle Reese
+                    </p>
+</div>
+</div>
+<div class="flex items-center gap-1">
+<button class="px-1.5 py-0.5 bg-brand-black hover:bg-brand-card border border-brand-border text-[9px] text-brand-textMuted">View SS</button>
+<button class="px-1.5 py-0.5 bg-brand-black hover:bg-brand-card border border-brand-border text-[9px] text-brand-textMuted">Send to Audit</button>
+<button class="px-1.5 py-0.5 bg-brand-black hover:bg-brand-card border border-brand-border text-[9px] text-brand-amber font-semibold">Reopen</button>
+<button class="px-1.5 py-0.5 bg-brand-black hover:bg-brand-card border border-brand-border text-[9px] text-brand-textMuted">Edit</button>
+<button class="px-1 py-0.5 bg-brand-black hover:bg-brand-card border border-brand-border text-[9px] text-brand-textMuted">···</button>
+</div>
+</div>
+<!-- Record 5 (Docs Synced) -->
+<div class="bg-brand-dark border border-brand-border p-2 flex items-center justify-between hover:border-brand-cyan transition-colors">
+<div class="flex items-start gap-2">
+<input class="mt-0.5 rounded-none bg-brand-black border-brand-border text-brand-violet focus:ring-0" type="checkbox"/>
+<div class="leading-tight">
+<div class="flex items-center gap-1.5">
+<span class="text-xs font-bold text-brand-textMain font-mono">Sep 11, 2026 · Mabini Site A</span>
+<span class="bg-brand-amber/15 text-brand-amber border border-brand-amber/40 text-[9px] font-extrabold px-1 font-mono">SS</span>
+<span class="bg-brand-cyan/15 text-brand-cyan border border-brand-cyan/40 text-[9px] font-extrabold px-1 font-mono">DOCS</span>
+</div>
+<p class="text-[10px] text-brand-textMuted font-mono mt-0.5">
+                      AFP · Team Leader: Sarah Connor · Subj: John Matrix
+                    </p>
+</div>
+</div>
+<div class="flex items-center gap-1">
+<button class="px-1.5 py-0.5 bg-brand-black hover:bg-brand-card border border-brand-border text-[9px] text-brand-textMain">View SS</button>
+<button class="px-1.5 py-0.5 bg-brand-black hover:bg-brand-card border border-brand-border text-[9px] text-brand-textMain">Send to Audit</button>
+<button class="px-1.5 py-0.5 bg-brand-black hover:bg-brand-card border border-brand-border text-[9px] text-brand-lime font-bold">Done</button>
+<button class="px-1.5 py-0.5 bg-brand-black hover:bg-brand-card border border-brand-border text-[9px] text-brand-textMain">Edit</button>
+<button class="px-1 py-0.5 bg-brand-black hover:bg-brand-card border border-brand-border text-[9px] text-brand-textMuted">···</button>
+</div>
+</div>
+<!-- Record 6 (Docs Synced) -->
+<div class="bg-brand-dark border border-brand-border p-2 flex items-center justify-between hover:border-brand-cyan transition-colors">
+<div class="flex items-start gap-2">
+<input class="mt-0.5 rounded-none bg-brand-black border-brand-border text-brand-violet focus:ring-0" type="checkbox"/>
+<div class="leading-tight">
+<div class="flex items-center gap-1.5">
+<span class="text-xs font-bold text-brand-textMain font-mono">Sep 11, 2026 · Shaw Site B</span>
+<span class="bg-brand-amber/15 text-brand-amber border border-brand-amber/40 text-[9px] font-extrabold px-1 font-mono">SS</span>
+<span class="bg-brand-cyan/15 text-brand-cyan border border-brand-cyan/40 text-[9px] font-extrabold px-1 font-mono">DOCS</span>
+</div>
+<p class="text-[10px] text-brand-textMuted font-mono mt-0.5">
+                      Healthcare · OM: Dutch Schaefer · Subj: Kyle Reese
+                    </p>
+</div>
+</div>
+<div class="flex items-center gap-1">
+<button class="px-1.5 py-0.5 bg-brand-black hover:bg-brand-card border border-brand-border text-[9px] text-brand-textMain">View SS</button>
+<button class="px-1.5 py-0.5 bg-brand-black hover:bg-brand-card border border-brand-border text-[9px] text-brand-textMain">Send to Audit</button>
+<button class="px-1.5 py-0.5 bg-brand-black hover:bg-brand-card border border-brand-border text-[9px] text-brand-lime font-bold">Done</button>
+<button class="px-1.5 py-0.5 bg-brand-black hover:bg-brand-card border border-brand-border text-[9px] text-brand-textMain">Edit</button>
+<button class="px-1 py-0.5 bg-brand-black hover:bg-brand-card border border-brand-border text-[9px] text-brand-textMuted">···</button>
+</div>
+</div>
+</div>
+</div>
+<!-- END: SavedEDRsPanel -->
+</section>
+<!-- END: RightColumn -->
+</main>
+<!-- END: WorkspaceGrid -->
+</div>
+<!-- END: MainContentArea -->
+</div>
+<!-- END: ApplicationLayout -->
+</body></html>

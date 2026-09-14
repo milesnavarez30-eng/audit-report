@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>CCTV OPS V2 - AI Sorter Interactive Showcase</title>
+  <style>
+    body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #0b0f17; font-family: sans-serif; }
+    iframe { width: 100%; height: 100%; border: none; }
+  </style>
+</head>
+<body>
+  <iframe id="appFrame" src="../cctv-ops-v2/?workspace=sorter"></iframe>
+
+  <script>
+    const sampleReport = [
+      "TIMESTAMP\tDATE\tTL\tACCOUNT\tSITE\tSTATION NO.\tSTATION ISSUE",
+      "09/10/2026 08:30\t09/10/2026\tAllan Albert Sadili\tMapua\tMabini Site A\t1A-01\tDual monitor second screen black",
+      "09/10/2026 09:15\t09/10/2026\tAllan Albert Sadili\tMapua\tMabini Site A\t1A-05\tHeadset microphone no input audio",
+      "09/10/2026 10:00\t09/10/2026\tJovert Monticayan\tHBW Insurance\tMabini Site A\t1F Station 12\tKeyboard spacebar unresponsive",
+      "09/10/2026 10:45\t09/10/2026\tCris Arandilla\tHerb Joy\tMabini Site A\t2B-10\tMouse right button intermittent click",
+      "09/10/2026 11:30\t09/10/2026\tDames Alfred Veloso\tListsimple\tMabini Site A\t2P-11\tLAN cable clip broken / loose connection",
+      "09/10/2026 12:15\t09/10/2026\tNew Agent Team\tSpecial Operations\tMabini Site A\tUnknown Bay\tUnregistered workstation needs floor check"
+    ].join("\n");
+
+    const frame = document.getElementById("appFrame");
+    frame.onload = () => {
+      setTimeout(() => {
+        try {
+          const doc = frame.contentDocument || frame.contentWindow.document;
+          const input = doc.getElementById("maintenanceInput");
+          const sortBtn = doc.getElementById("maintenanceSortBtn");
+
+          if (input && sortBtn) {
+            input.value = sampleReport;
+            sortBtn.click();
+
+            // After sorting, select all rows of same TL to showcase selection
+            setTimeout(() => {
+              const findInput = doc.getElementById("miniSheetFindTlInput");
+              if (findInput) {
+                findInput.value = "Allan";
+                const findBtn = doc.getElementById("miniSheetFindTlBtn");
+                findBtn?.click();
+              }
+              window.__showcaseReady = true;
+            }, 600);
+          }
+        } catch (e) {
+          console.error("Showcase error", e);
+        }
+      }, 800);
+    };
+  </script>
+</body>
+</html>

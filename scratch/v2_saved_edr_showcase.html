@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CCTV OPS V2 - Saved EDR UI Showcase</title>
+
+  <!-- Modern Typography: Inter + JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <!-- Core Design System Stylesheets -->
+  <link rel="stylesheet" href="../cctv-ops-v2/css/variables.css">
+  <link rel="stylesheet" href="../cctv-ops-v2/css/base.css">
+  <link rel="stylesheet" href="../cctv-ops-v2/css/layout.css">
+  <link rel="stylesheet" href="../cctv-ops-v2/css/components.css">
+
+  <style>
+    /* Exact Saved EDR Record Row & Actions Styles from index.html */
+    #edrListContainer {
+      overflow-y: auto !important;
+      overflow-x: hidden !important;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      width: 100%;
+      box-sizing: border-box;
+      padding: 8px 10px;
+    }
+
+    .record-row {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      padding: 7px 9px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-default);
+      border-radius: var(--radius-sm);
+      transition: all var(--trans-fast);
+      user-select: none;
+      box-sizing: border-box;
+      width: 100%;
+      max-width: 100%;
+      overflow: hidden;
+    }
+
+    .record-row:hover {
+      background: var(--bg-surface-elevated);
+      border-color: var(--border-hover);
+    }
+
+    .record-row.is-selected {
+      border-color: rgba(56, 189, 248, 0.4);
+      background: rgba(56, 189, 248, 0.04);
+    }
+
+    .record-row.is-done {
+      opacity: 0.65;
+    }
+
+    /* Main Upper Block: Selector, Thumb, Info */
+    .record-main-block {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+      min-width: 0;
+      box-sizing: border-box;
+    }
+
+    .record-selector-col {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+
+    .record-thumb-wrap {
+      width: 42px;
+      height: 42px;
+      min-width: 42px;
+      min-height: 42px;
+      flex-shrink: 0;
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+      border: 1px solid var(--border-default);
+      background: var(--bg-surface-elevated);
+      cursor: pointer;
+      position: relative;
+      transition: border-color var(--trans-fast), transform var(--trans-fast);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-sizing: border-box;
+    }
+
+    .record-thumb-wrap:hover {
+      border-color: #38bdf8;
+      transform: scale(1.03);
+    }
+
+    .record-thumb {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .record-thumb-placeholder {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 1px;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px dashed var(--border-default);
+      border-radius: var(--radius-sm);
+      color: var(--text-muted);
+      transition: all var(--trans-fast);
+      box-sizing: border-box;
+    }
+
+    .record-thumb-wrap:hover .record-thumb-placeholder {
+      border-color: #38bdf8;
+      color: #38bdf8;
+      background: rgba(56, 189, 248, 0.05);
+    }
+
+    .thumb-ph-icon {
+      width: 14px;
+      height: 14px;
+      stroke: currentColor;
+    }
+
+    .thumb-ph-label {
+      font-size: 8px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+      line-height: 1;
+    }
+
+    .record-info {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      overflow: hidden;
+      min-width: 0;
+    }
+
+    .record-title-line {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 11.5px;
+      color: var(--text-primary);
+      white-space: nowrap;
+      overflow: hidden;
+      min-width: 0;
+    }
+
+    .record-date {
+      font-weight: 700;
+      color: #38bdf8;
+      flex-shrink: 0;
+      letter-spacing: 0.2px;
+    }
+
+    .record-sep {
+      color: var(--text-muted);
+      opacity: 0.6;
+      flex-shrink: 0;
+      font-size: 10px;
+    }
+
+    .record-site {
+      font-weight: 600;
+      color: var(--text-primary);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      flex-shrink: 1;
+    }
+
+    .record-account {
+      font-size: 10.5px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      background: rgba(255, 255, 255, 0.06);
+      padding: 0 4px;
+      border-radius: 3px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      flex-shrink: 2;
+    }
+
+    .record-badges-group {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      margin-left: auto;
+      flex-shrink: 0;
+    }
+
+    .record-status-badge {
+      font-size: 9.5px;
+      padding: 0 5px;
+    }
+
+    .record-link-badge {
+      font-size: 9.5px;
+      padding: 0 5px;
+    }
+
+    .record-sub-line {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 10.5px;
+      color: var(--text-muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      min-width: 0;
+    }
+
+    .record-sub-line .sub-item {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .record-sub-line .sub-label {
+      color: var(--text-muted);
+      font-weight: 400;
+    }
+
+    .record-sub-line strong {
+      color: var(--text-secondary);
+      font-weight: 500;
+    }
+
+    /* Action Buttons Bar: Neat, Wrapping, No Horizontal Scroll */
+    .record-actions-bar {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 4px;
+      padding-top: 4px;
+      margin-top: 1px;
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+      width: 100%;
+      box-sizing: border-box;
+      overflow: hidden;
+    }
+
+    .btn-action {
+      height: 22px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 6px;
+      font-size: 10.5px;
+      font-weight: 500;
+      white-space: nowrap;
+      border-radius: 3px;
+      border: 1px solid var(--border-default);
+      background: var(--bg-surface-elevated);
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all var(--trans-fast);
+      flex-shrink: 0;
+      line-height: 1;
+      font-family: inherit;
+    }
+
+    .btn-action:hover {
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text-primary);
+      border-color: var(--border-hover);
+    }
+
+    .btn-action.btn-audit-send.is-linked {
+      color: #38bdf8;
+      border-color: rgba(56, 189, 248, 0.35);
+      background: rgba(56, 189, 248, 0.06);
+    }
+
+    .btn-action.btn-done-toggle.is-done-btn {
+      color: #34d399;
+      border-color: rgba(52, 211, 153, 0.35);
+      background: rgba(52, 211, 153, 0.06);
+    }
+
+    .btn-action.btn-action-danger {
+      color: #f87171;
+      border-color: rgba(239, 68, 68, 0.25);
+      background: rgba(239, 68, 68, 0.04);
+    }
+
+    .btn-action.btn-action-danger:hover {
+      background: rgba(239, 68, 68, 0.15);
+      color: #fca5a5;
+      border-color: #ef4444;
+    }
+  </style>
+</head>
+<body>
+  <div class="app-root">
+
+    <!-- Slim Left Navigation Rail -->
+    <aside class="nav-rail" id="navRail">
+      <div class="rail-brand">
+        <div class="brand-badge">V2</div>
+        <div class="brand-text">
+          <span class="brand-title">CCTV OPS</span>
+          <span class="brand-subtitle">Operations Hub</span>
+        </div>
+      </div>
+
+      <div class="nav-section-label">WORKSPACES</div>
+      <nav class="nav-links">
+        <button type="button" class="nav-item active" id="tabEdr">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+          <span class="nav-label">EDR</span>
+          <span class="nav-badge" id="railEdrBadge">2</span>
+        </button>
+        <button type="button" class="nav-item" id="tabAudit">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+          <span class="nav-label">CCTV Audit</span>
+          <span class="badge badge-info" style="font-size:9px; margin-left:auto;">Phase 2</span>
+        </button>
+      </nav>
+    </aside>
+
+    <!-- Main Workspace Surface -->
+    <main class="workspace-main">
+      <header class="workspace-topbar">
+        <div class="topbar-left">
+          <h1 class="workspace-main-title">End of the Day Report</h1>
+          <span class="workspace-sub-title">Manual Operations</span>
+        </div>
+        <div class="topbar-right">
+          <span class="badge badge-success" style="font-size:11px;">● Docs Connected</span>
+          <span class="topbar-clock" style="font-size:11px; font-family:var(--font-mono); color:var(--text-muted);">● 12:30:00 PM PHT</span>
+        </div>
+      </header>
+
+      <div class="workspace-content">
+        <section class="workspace-panel active" style="height:100%;">
+          <div class="edr-unified-grid">
+
+            <!-- LEFT COLUMN: Form -->
+            <div class="edr-column-left">
+              <div class="card" style="height:100%;">
+                <div class="card-header">
+                  <span class="card-title">Manual EDR Entry</span>
+                </div>
+                <div class="card-body" style="overflow-y:auto; gap:12px;">
+                  <!-- Event & Location -->
+                  <div class="form-section-header">
+                    <span class="form-section-tag">01</span>
+                    <span class="form-section-title">Event & Location</span>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Site Location</label>
+                    <input type="text" class="form-control" value="Mabini Site A - 1st Floor" readonly>
+                  </div>
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label class="form-label">Date Observed</label>
+                      <input type="text" class="form-control" value="09/10/2026" readonly>
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label">Time Observed</label>
+                      <input type="text" class="form-control" value="14:30" readonly>
+                    </div>
+                  </div>
+
+                  <!-- Parties Involved -->
+                  <div class="form-section-header">
+                    <span class="form-section-tag">02</span>
+                    <span class="form-section-title">Parties Involved</span>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Team Leader</label>
+                    <input type="text" class="form-control" value="Sarah Connor" readonly>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Violation Subject</label>
+                    <input type="text" class="form-control" value="John Matrix (Agent/s)" readonly>
+                  </div>
+
+                  <!-- Findings -->
+                  <div class="form-section-header">
+                    <span class="form-section-tag">03</span>
+                    <span class="form-section-title">Findings & Action Taken</span>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Incident Description</label>
+                    <textarea class="form-control" rows="2" readonly>CCTV observed sleeping at workstation during production shift</textarea>
+                  </div>
+                </div>
+                <div class="card-footer" style="gap:8px;">
+                  <button type="button" class="btn btn-primary btn-sm">✓ Save / Update EDR</button>
+                  <button type="button" class="btn btn-ghost btn-sm">Send to Google Docs</button>
+                  <button type="button" class="btn btn-ghost btn-sm">Send to CCTV Audit</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- RIGHT COLUMN: Output & Saved EDR List -->
+            <div class="edr-column-right">
+
+              <!-- Top Panel: Dispatch Output Preview -->
+              <div class="card" style="flex: 0.95; min-height: 220px;">
+                <div class="card-header">
+                  <div style="display:flex; align-items:center; gap:8px;">
+                    <span class="card-title">Teams Dispatch</span>
+                  </div>
+                  <div class="card-actions">
+                    <button type="button" class="btn btn-primary btn-sm">Copy for Teams</button>
+                  </div>
+                </div>
+                <div class="card-body" style="overflow-y:auto; gap:8px;">
+                  <div style="background:var(--bg-surface-elevated); border:1px solid var(--border-default); border-radius:4px; padding:8px 10px; font-family:var(--font-mono); font-size:11px; line-height:1.5; color:var(--text-secondary);">
+                    <div>Date: Sep 10, 2026</div>
+                    <div>Site: Mabini Site A - 1st Floor</div>
+                    <div>TL: Sarah Connor</div>
+                    <div>Agent/s: John Matrix</div>
+                    <div>Incident: CCTV observed sleeping at workstation</div>
+                    <div>CCTV Clip: <span style="color:#38bdf8; text-decoration:underline;">Click here!</span></div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Bottom Panel: Saved Records List (FOCUS OF THIS TASK) -->
+              <div class="card" style="flex: 1.05; min-height: 250px;">
+                <div class="card-header">
+                  <div style="display:flex; align-items:center; gap:8px;">
+                    <span class="card-title">Saved EDRs</span>
+                    <span class="badge badge-neutral" id="badgeTotalCount">2</span>
+                    <span class="badge badge-info" id="badgeSelectedCount">1 selected</span>
+                    <span class="badge badge-success" id="badgeDoneCount">0 done</span>
+                  </div>
+                  <div class="card-actions">
+                    <button type="button" class="btn btn-ghost btn-sm">Select All</button>
+                    <button type="button" class="btn btn-ghost btn-sm">Clear</button>
+                  </div>
+                </div>
+
+                <!-- Sleek Scrollable List of Records (Zero Horizontal Scroll) -->
+                <div class="card-body" id="edrListContainer" style="overflow-y:auto; overflow-x:hidden; gap:6px;">
+
+                  <!-- ROW 1: WITH CCTV SCREENSHOT -->
+                  <div class="record-row is-selected" data-id="demo_edr_1">
+                    <div class="record-main-block">
+                      <div class="record-selector-col">
+                        <input type="checkbox" class="edr-check" checked style="cursor:pointer;" title="Select for export">
+                        <span class="status-dot active" title="Active"></span>
+                      </div>
+
+                      <!-- 42px Screenshot Thumbnail with Actual Image -->
+                      <div class="record-thumb-wrap has-shot" title="Click to view full CCTV screenshot">
+                        <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAA7SURBVHhe7c4BDQAACAMw9E/tUwwmFvw+yZptWc3MzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMxfmA0G6kFf2u/6fAAAAABJRU5ErkJggg==" class="record-thumb" alt="CCTV Thumbnail">
+                      </div>
+
+                      <!-- Primary & Secondary Metadata: Prominent Date -->
+                      <div class="record-info">
+                        <div class="record-title-line">
+                          <span class="record-date">2026-09-10</span>
+                          <span class="record-sep">·</span>
+                          <span class="record-site" title="Mabini Site A - 1st Floor">Mabini Site A - 1st Floor</span>
+                          <span class="record-sep">·</span>
+                          <span class="record-account" title="AFP">AFP</span>
+                          <div class="record-badges-group">
+                            <span class="badge badge-neutral record-status-badge">Active</span>
+                            <span class="badge badge-info record-link-badge">In Audit</span>
+                          </div>
+                        </div>
+                        <div class="record-sub-line">
+                          <span class="sub-item"><span class="sub-label">TL:</span> <strong>Sarah Connor</strong></span>
+                          <span class="record-sep">·</span>
+                          <span class="sub-item"><span class="sub-label">Subj:</span> <strong>John Matrix</strong></span>
+                          <span class="record-sep">·</span>
+                          <span class="sub-item"><span class="sub-label">Time:</span> 14:30</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Neat Wrapped Action Bar: No Horizontal Scroll, No 'Show' Button -->
+                    <div class="record-actions-bar">
+                      <button type="button" class="btn-action btn-shot-view" title="View CCTV screenshot">View SS</button>
+                      <button type="button" class="btn-action btn-shot-copy" title="Copy screenshot image to clipboard (PNG)">Copy SS</button>
+                      <button type="button" class="btn-action btn-shot-replace" title="Replace screenshot">Replace SS</button>
+                      <button type="button" class="btn-action btn-shot-remove" title="Remove screenshot">Remove SS</button>
+                      <button type="button" class="btn-action btn-audit-send is-linked" title="Present in CCTV Audit">In CCTV Audit</button>
+                      <button type="button" class="btn-action btn-done-toggle" title="Mark as Done">Done</button>
+                      <button type="button" class="btn-action btn-edit" title="Edit EDR">Edit</button>
+                      <button type="button" class="btn-action btn-action-danger btn-delete" title="Delete EDR">Delete</button>
+                    </div>
+                  </div>
+
+                  <!-- ROW 2: WITHOUT SCREENSHOT (COMPACT PLACEHOLDER) -->
+                  <div class="record-row" data-id="demo_edr_2">
+                    <div class="record-main-block">
+                      <div class="record-selector-col">
+                        <input type="checkbox" class="edr-check" style="cursor:pointer;" title="Select for export">
+                        <span class="status-dot active" title="Active"></span>
+                      </div>
+
+                      <!-- 42px Compact Placeholder when NO screenshot -->
+                      <div class="record-thumb-wrap is-empty" title="No screenshot attached · Click to attach">
+                        <div class="record-thumb-placeholder">
+                          <svg class="thumb-ph-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                            <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                            <polyline points="21 15 16 10 5 21"></polyline>
+                          </svg>
+                          <span class="thumb-ph-label">No SS</span>
+                        </div>
+                      </div>
+
+                      <!-- Primary & Secondary Metadata: Prominent Date -->
+                      <div class="record-info">
+                        <div class="record-title-line">
+                          <span class="record-date">2026-09-10</span>
+                          <span class="record-sep">·</span>
+                          <span class="record-site" title="Shaw Site B - 2nd Floor">Shaw Site B - 2nd Floor</span>
+                          <span class="record-sep">·</span>
+                          <span class="record-account" title="Healthcare">Healthcare</span>
+                          <div class="record-badges-group">
+                            <span class="badge badge-neutral record-status-badge">Active</span>
+                          </div>
+                        </div>
+                        <div class="record-sub-line">
+                          <span class="sub-item"><span class="sub-label">OM:</span> <strong>Dutch Schaefer</strong></span>
+                          <span class="record-sep">·</span>
+                          <span class="sub-item"><span class="sub-label">Subj:</span> <strong>Kyle Reese</strong></span>
+                          <span class="record-sep">·</span>
+                          <span class="sub-item"><span class="sub-label">Time:</span> 16:15</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Neat Wrapped Action Bar: 'Add SS' when no screenshot, No 'Show' Button -->
+                    <div class="record-actions-bar">
+                      <button type="button" class="btn-action btn-shot-add" title="Add screenshot">Add SS</button>
+                      <button type="button" class="btn-action btn-audit-send" title="Send to CCTV Audit">Send to CCTV Audit</button>
+                      <button type="button" class="btn-action btn-done-toggle" title="Mark as Done">Done</button>
+                      <button type="button" class="btn-action btn-edit" title="Edit EDR">Edit</button>
+                      <button type="button" class="btn-action btn-action-danger btn-delete" title="Delete EDR">Delete</button>
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+
+            </div>
+
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+</body>
+</html>

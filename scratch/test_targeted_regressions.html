@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Targeted Regressions & PDF Fixes Test Suite</title>
+  <style>
+    body { font-family: monospace; background: #0b0f19; color: #e2e8f0; padding: 20px; }
+    .pass { color: #10b981; font-weight: bold; }
+    .fail { color: #ef4444; font-weight: bold; }
+    .info { color: #38bdf8; font-weight: bold; }
+    #log { white-space: pre-wrap; margin-top: 15px; border: 1px solid #1e293b; padding: 15px; border-radius: 6px; background: #020617; max-height: 500px; overflow-y: auto; }
+    iframe { width: 100%; height: 650px; border: 1px solid #334155; margin-top: 20px; }
+  </style>
+</head>
+<body>
+  <h2>Targeted Regressions & PDF Fixes Test Suite</h2>
+  <div id="status" class="info">Initializing test suite...</div>
+  <div id="log"></div>
+  <iframe id="testFrame"></iframe>
+
+  <script>
+    const logEl = document.getElementById("log");
+    const statusEl = document.getElementById("status");
+    const frame = document.getElementById("testFrame");
+    let passed = 0;
+    let failed = 0;
+
+    function log(msg, cls = "") {
+      const div = document.createElement("div");
+      if (cls) div.className = cls;
+      div.textContent = msg;
+      logEl.appendChild(div);
+      console.log(msg);
+    }
+
+    function assert(desc, condition, details = "") {
+      if (condition) {
+        passed++;
+        log(`✓ PASS: ${desc}`, "pass");
+      } else {
+        failed++;
+        log(`✗ FAIL: ${desc} ${details ? "(" + details + ")" : ""}`, "fail");
+      }
+    }
+
+    function wait(ms) {
+      return new Promise(res => setTimeout(res, ms));
+    }
+
+    frame.onload = async () => {
+      try {
+        await wait(800);
+        const win = frame.contentWindow;
+        const doc = frame.contentDocument;
+        const maint = win.maintenanceService;
+
+        log("=== SUITE 1: Teams Dispatch Toolbar & Copy for Teams Responsiveness ===", "info");
+        
+        // Switch to EDR workspace to inspect Teams Dispatch card
+        const btnEdr = doc.getElementById("tabEdr");
+        if (btnEdr) btnEdr.click();
+        await wait(400);
+
+        const cardTeamsDispatch = doc.getElementById("cardTeamsDispatch");
+        const btnCopyAllTeams = doc.getElementById("btnCopyAllTeams");
+        const btnToggleDispatchExpand = doc.getElementById("btnToggleDispatchExpand");
+        const btnSendSelectedToDocs = doc.getElementById("btnSendSelectedToDocs");
+        const btnSendSelectedToAudit = doc.getElementById("btnSendSelectedToAudit");
+
+        assert("cardTeamsDispatch exists", !!cardTeamsDispatch);
+        assert("btnCopyAllTeams exists", !!btnCopyAllTeams);
+        assert("btnToggleDispatchExpand exists", !!btnToggleDispatchExpand);
+        assert("btnSendSelectedToDocs exists", !!btnSendSelectedToDocs);
+        assert("btnSendSelectedToAudit exists", !!btnSendSelectedToAudit);
+
+        // Test normal layout bounding box containment at 100%
+        const cardRect = cardTeamsDispatch.getBoundingClientRect();
+        const copyRect = btnCopyAllTeams.getBoundingClientRect();
+
+        assert("btnCopyAllTeams is fully visible (width > 0, height > 0)", copyRect.width > 0 && copyRect.height > 0, `width=${copyRect.width}, height=${copyRect.height}`);
+        assert(
+          "btnCopyAllTeams does not clip outside cardTeamsDispatch horizontally",
+          copyRect.right <= cardRect.right + 2,
+          `copyRect.right=${copyRect.right}, cardRect.right=${cardRect.right}`
+        );
+        assert("btnCopyAllTeams contains 'Copy for Teams' text", btnCopyAllTeams.textContent.includes("Copy for Teams"));
+
+        // Test simulated narrow containers (e.g. 125% and 150% zoom equivalent width)
+        const colEdrDispatch = doc.getElementById("colEdrDispatch");
+        const originalWidth = colEdrDispatch.style.width;
+
+        // Narrow to 380px (simulating high zoom)
+        colEdrDispatch.style.width = "380px";
+        await wait(100);
+        const copyRectNarrow = btnCopyAllTeams.getBoundingClientRect();
+        const cardRectNarrow = cardTeamsDispatch.getBoundingClientRect();
+        assert(
+          "At narrow width (high zoom), btnCopyAllTeams wraps and stays within card",
+          copyRectNarrow.right <= cardRectNarrow.right + 3,
+          `copyRect.right=${copyRectNarrow.right}, cardRect.right=${cardRectNarrow.right}`
+        );
+        assert("At narrow width, btnCopyAllTeams remains visible and clickable", copyRectNarrow.width > 50 && copyRectNarrow.height > 20);
+
+        // Reset colEdrDispatch
+        colEdrDispatch.style.width = originalWidth;
+        await wait(100);
+
+        log("\n=== SUITE 2: Maintenance Block Layout & Ordering ===", "info");
+        // Switch to Maintenance workspace
+        const btnMaint = doc.getElementById("tabMaintenance");
+        if (btnMaint) btnMaint.click();
+        await wait(400);
+
+        const blockEl = doc.querySelector(".eod-block-card");
+        assert("Maintenance block card exists", !!blockEl);
+
+        // A. Block header
+        const blockHead = blockEl.querySelector(".eod-block-head");
+        assert("Block header (.eod-block-head) exists", !!blockHead);
+        assert("Block header contains Block # badge", blockHead.textContent.includes("Block #1"));
+        assert("Block header contains Report Section title", blockHead.textContent.includes("Report Section 1"));
+        const toggleReportBtn = blockHead.querySelector("button");
+        assert("Block header contains Show/Hide Report button", !!toggleReportBtn && (toggleReportBtn.textContent.includes("Hide Report") || toggleReportBtn.textContent.includes("Show Report")));
+
+        // B. Main content row
+        const grid = blockEl.querySelector(".maintenance-incident-action-grid");
+        assert("Main content grid exists", !!grid);
+        const labels = grid.querySelectorAll(".form-label");
+        assert("Grid has left label 'Station Issues / Incident (Lanes)'", labels[0] && labels[0].textContent.includes("Station Issues / Incident (Lanes)"));
+        assert("Grid has right label 'Action Taken / Remarks'", labels[1] && labels[1].textContent.includes("Action Taken / Remarks"));
+
+        const lanesArea = grid.querySelector("textarea.eod-lanes-textarea");
+        const remarksArea = grid.querySelector("textarea.eod-remarks-textarea");
+        assert("Left textarea (.eod-lanes-textarea) exists", !!lanesArea);
+        assert("Right textarea (.eod-remarks-textarea) exists", !!remarksArea);
+
+        // Quick Choices container inside right column
+        const presetContainer = grid.querySelector(".maint-preset-container");
+        assert("Quick choices container exists", !!presetContainer);
+        const presetTitle = presetContainer.querySelector(".maint-preset-title");
+        assert("Quick choices title exists", !!presetTitle && presetTitle.textContent.includes("Quick Choices"));
+        const addChoiceBtn = presetContainer.querySelector(".maint-preset-add-btn");
+        assert("+ Add Choice button exists inline", !!addChoiceBtn && addChoiceBtn.textContent.includes("+ Add Choice"));
+        const presetChips = presetContainer.querySelectorAll(".maint-preset-chip");
+        assert("Preset chips are rendered", presetChips.length >= 3);
+
+        // Test + Add Choice inline form trigger
+        const inlineForm = presetContainer.querySelector(".maint-preset-inline-form");
+        assert("Inline add form exists", !!inlineForm);
+        assert("Inline add form initially hidden", inlineForm.style.display === "none");
+        addChoiceBtn.click();
+        assert("Clicking + Add Choice opens inline form", inlineForm.style.display !== "none");
+        const inlineInput = inlineForm.querySelector(".maint-preset-inline-input");
+        assert("Inline input exists", !!inlineInput);
+        // Cancel inline form
+        const cancelBtn = inlineForm.querySelectorAll("button")[1];
+        cancelBtn.click();
+        assert("Cancelling inline form hides it", inlineForm.style.display === "none");
+
+        // C. Proof Screenshots section
+        const proofZone = blockEl.querySelector(".eod-proof-zone");
+        assert("Proof screenshots section (.eod-proof-zone) exists", !!proofZone);
+        const proofHead = proofZone.querySelector(".eod-proof-header");
+        assert("Proof header exists", !!proofHead);
+        assert("Proof header has 'Proof Screenshots' label", proofHead.textContent.includes("Proof Screenshots"));
+        assert("Proof header has image count badge", proofHead.textContent.includes("image(s)"));
+        const addProofBtn = proofHead.querySelector("button");
+        assert("Proof header has 'Add Screenshot' button", !!addProofBtn && addProofBtn.textContent.includes("Add Screenshot"));
+        const dropHint = proofZone.querySelector(".eod-proof-drop-hint");
+        assert("Drop/paste helper text exists", !!dropHint && dropHint.textContent.includes("Browse, drag & drop"));
+        const proofGrid = proofZone.querySelector(".eod-proof-grid");
+        assert("Proof screenshot thumbnail grid container exists", !!proofGrid);
+
+        log("\n=== SUITE 3: Maintenance PDF Structure (Data Table -> Screenshots -> Remarks) ===", "info");
+        
+        // Construct a multi-block mock state to test PDF structure
+        const mockState = {
+          title: "Mabini Site A - 1st & 2nd Floor",
+          date: "2026-09-14",
+          destinationKey: "mabini_a",
+          blocks: [
+            {
+              id: "b1",
+              lanesText: "08:00 AM\t09/14/2026\tTL John\tACCT1\tMabini A\tStation 01\tCamera dirty\n08:30 AM\t09/14/2026\tTL John\tACCT1\tMabini A\tStation 02\tLoose connector",
+              remarks: [""],
+              selectedPreset: "Maintenance observed wiping these lanes.",
+              screenshots: [
+                "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
+              ]
+            },
+            {
+              id: "b2",
+              lanesText: "09:00 AM\t09/14/2026\tTL Jane\tACCT2\tMabini A\tStation 03\tPower flickering",
+              remarks: ["Custom manual inspection done for Station 03."],
+              selectedPreset: "Maintenance observed wiping these lanes.",
+              screenshots: []
+            }
+          ]
+        };
+
+        const pdfHtml = maint.maintenanceReportHtmlForSheets(mockState);
+        assert("maintenanceReportHtmlForSheets returns valid HTML string", typeof pdfHtml === "string" && pdfHtml.length > 100);
+
+        // Parse generated HTML to inspect structure
+        const parser = new DOMParser();
+        const pdfDoc = parser.parseFromString(pdfHtml, "text/html");
+
+        const pdfBlocks = pdfDoc.querySelectorAll(".maintenance-pdf-block");
+        assert("PDF output contains 2 blocks", pdfBlocks.length === 2);
+
+        // Block 1 checks
+        const b1 = pdfBlocks[0];
+        const b1Title = b1.querySelector(".maintenance-pdf-block-title");
+        assert("Block 1 has block header title", !!b1Title && b1Title.textContent.includes("Block #1"));
+
+        // Order check in Block 1:
+        // Children should appear in order: Block Header -> Table -> Screenshots -> Remarks
+        const b1Children = Array.from(b1.children);
+        const b1ChildClasses = b1Children.map(c => c.className || c.tagName.toLowerCase());
+
+        const tableIdx = b1ChildClasses.findIndex(c => c.includes("maintenance-pdf-table"));
+        const screenIdx = b1ChildClasses.findIndex(c => c.includes("maintenance-pdf-screenshots"));
+        const remarksIdx = b1ChildClasses.findIndex(c => c.includes("maintenance-pdf-remarks"));
+
+        assert("Block 1: Table exists", tableIdx !== -1);
+        assert("Block 1: Screenshots exist", screenIdx !== -1);
+        assert("Block 1: Remarks exist", remarksIdx !== -1);
+        assert(
+          "Block 1 order is strictly 1. DATA TABLE -> 2. PROOF SCREENSHOTS -> 3. REMARKS",
+          tableIdx < screenIdx && screenIdx < remarksIdx,
+          `tableIdx=${tableIdx}, screenIdx=${screenIdx}, remarksIdx=${remarksIdx}`
+        );
+
+        // Verify table only contains data rows (no tr.maintenance-pdf-image-row or tr.maintenance-pdf-remarks-row)
+        const table = b1.querySelector("table");
+        assert("Table does NOT contain image row as <tr>", !table.querySelector(".maintenance-pdf-image-row"));
+        assert("Table does NOT contain remarks row as <tr>", !table.querySelector(".maintenance-pdf-remarks-row"));
+
+        // Verify screenshots container properties
+        const screenContainer = b1.querySelector(".maintenance-pdf-screenshots");
+        const screenImg = screenContainer.querySelector("img");
+        assert("Screenshot image has max-width and max-height constraints", screenImg.style.maxWidth !== "" && screenImg.style.maxHeight !== "");
+        assert("Screenshot image has object-fit contain", screenImg.style.objectFit === "contain");
+
+        // Verify remarks in Block 1 use preset (since manual remarks were empty)
+        const b1Remarks = b1.querySelector(".maintenance-pdf-remarks");
+        assert(
+          "Block 1 remarks show selected preset ('Maintenance observed wiping these lanes.')",
+          b1Remarks.textContent.includes("Maintenance observed wiping these lanes.")
+        );
+        assert("Block 1 remarks do NOT show 'tet'", !b1Remarks.textContent.includes("tet"));
+
+        // Block 2 checks
+        const b2 = pdfBlocks[1];
+        const b2Remarks = b2.querySelector(".maintenance-pdf-remarks");
+        assert(
+          "Block 2 remarks show manual remarks ('Custom manual inspection done for Station 03.') overriding preset",
+          b2Remarks.textContent.includes("Custom manual inspection done for Station 03.")
+        );
+        assert(
+          "Block 2 remarks do NOT show preset text ('Maintenance observed wiping these lanes.')",
+          !b2Remarks.textContent.includes("Maintenance observed wiping these lanes.")
+        );
+        assert("Block 2 remarks do NOT show 'tet'", !b2Remarks.textContent.includes("tet"));
+
+        log("\n=== SUITE 4: Effective Remarks Resolution & Stale Value Immunity ===", "info");
+        
+        // Test block isolation and fallback logic directly
+        const testBlock1 = { remarks: [""], selectedPreset: "Maintenance observed wiping these lanes." };
+        const r1 = maint.getEffectiveBlockRemarks(testBlock1);
+        assert("Empty manual + preset returns preset", r1.length === 1 && r1[0] === "Maintenance observed wiping these lanes.");
+
+        const testBlock2 = { remarks: [""], selectedPreset: "No maintenance observed wiping in these stations." };
+        const r2 = maint.getEffectiveBlockRemarks(testBlock2);
+        assert("Block 2 with different preset returns its own preset", r2.length === 1 && r2[0] === "No maintenance observed wiping in these stations.");
+
+        const testBlock3 = { remarks: ["Custom inspection completed."], selectedPreset: "Maintenance observed wiping these lanes." };
+        const r3 = maint.getEffectiveBlockRemarks(testBlock3);
+        assert("Manual text takes priority over preset", r3.length === 1 && r3[0] === "Custom inspection completed.");
+
+        const testBlock4 = { remarks: [""], selectedPreset: "" };
+        const r4 = maint.getEffectiveBlockRemarks(testBlock4);
+        assert("Both empty returns empty array []", Array.isArray(r4) && r4.length === 0);
+
+        // Stale "tet" check: whitespace only or clearing textarea
+        const testBlock5 = { remarks: ["   ", ""], selectedPreset: "Maintenance observed wiping these lanes." };
+        const r5 = maint.getEffectiveBlockRemarks(testBlock5);
+        assert("Whitespace manual text is treated as empty, falling back to preset", r5.length === 1 && r5[0] === "Maintenance observed wiping these lanes.");
+
+        log("\n=== SUITE 5: Live DOM Sync Before Export ===", "info");
+
+        // Set a value directly into the live DOM textarea of Block 1
+        lanesArea.value = "10:00 AM\t09/14/2026\tTL Bob\tACCT\tMabini A\tStation 99\tLive DOM test";
+        remarksArea.value = "Live manual edit from DOM right before export.";
+        
+        // Trigger live DOM sync
+        if (typeof win.syncMaintenanceStateFromDom === "function") {
+          win.syncMaintenanceStateFromDom();
+        } else {
+          lanesArea.dispatchEvent(new Event("input", { bubbles: true }));
+          remarksArea.dispatchEvent(new Event("input", { bubbles: true }));
+        }
+
+        const currentLiveState = (typeof win.getMaintenanceState === "function") ? win.getMaintenanceState() : win.maintenanceState;
+        const liveHtml = maint.maintenanceReportHtmlForSheets(currentLiveState);
+        assert("Live DOM sync captured Station 99 in lanesText", liveHtml.includes("Station 99"));
+        assert("Live DOM sync captured manual remark in remarks", liveHtml.includes("Live manual edit from DOM right before export."));
+        assert("Live DOM sync has 0 instances of unexpected 'tet'", !liveHtml.includes("tet"));
+
+        log("\n==========================================", "info");
+        log(`TEST RESULTS: ${passed} Passed, ${failed} Failed`, failed === 0 ? "pass" : "fail");
+        statusEl.className = failed === 0 ? "pass" : "fail";
+        statusEl.textContent = `Completed: ${passed} Passed, ${failed} Failed`;
+
+        await fetch("http://localhost:8080/api/test_report", {
+          method: "POST",
+          headers: { "Content-Type": "text/plain" },
+          body: logEl.innerText
+        });
+      } catch (err) {
+        log(`CRITICAL ERROR: ${err.message}\n${err.stack}`, "fail");
+        failed++;
+        await fetch("http://localhost:8080/api/test_report", {
+          method: "POST",
+          headers: { "Content-Type": "text/plain" },
+          body: `FAIL: ${err.message}\n${err.stack}`
+        });
+      }
+    };
+
+    frame.src = "http://localhost:8080/cctv-ops-v2/index.html?workspace=maintenance";
+  </script>
+</body>
+</html>

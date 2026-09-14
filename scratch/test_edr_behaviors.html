@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>EDR Behavior Automated Tests</title>
+</head>
+<body>
+  <h1>Running EDR Tests...</h1>
+  <div id="results"></div>
+
+  <iframe id="testFrame" src="http://localhost:8080/cctv-ops-v2/index.html" style="width:1200px; height:800px; border:1px solid #ccc;"></iframe>
+
+  <script>
+    const results = [];
+    function assert(name, condition, detail = "") {
+      results.push({ name, passed: !!condition, detail });
+      console.log((condition ? "PASS: " : "FAIL: ") + name + (detail ? " - " + detail : ""));
+    }
+
+    window.addEventListener("message", (e) => {
+      // handle messages if any
+    });
+
+    const frame = document.getElementById("testFrame");
+    frame.onload = async () => {
+      const win = frame.contentWindow;
+      const doc = frame.contentDocument;
+      const edr = win.CCTV_EDR;
+      const cfg = win.CCTV_V2_CONFIG;
+
+      // Wait a tick for DOMContentLoaded and init
+      await new Promise(r => setTimeout(r, 600));
+
+      try {
+        // TEST 1: TL / OM Data Sources
+        const tls = win.getTeamLeaderNames();
+        const oms = win.getOmNames();
+        assert("TL list has at least 366 names", tls.length >= 366, `Count: ${tls.length}`);
+        assert("OM list has at least 27 names", oms.length >= 27, `Count: ${oms.length}`);
+        assert("OM list has 'Abby'", oms.includes("Abby"));
+        assert("OM list has 'Willy'", oms.includes("Willy"));
+        assert("TL list has 'Abegail Llena'", tls.includes("Abegail Llena"));
+        assert("TL list has 'Zyrie Christian Wasil'", tls.includes("Zyrie Christian Wasil"));
+
+        // TEST 2: Respondent = TL Dropdown
+        const btnTl = doc.getElementById("btnRoleTl");
+        const btnOm = doc.getElementById("btnRoleOm");
+        const respInput = doc.getElementById("edrSupervisorName");
+        const respList = doc.getElementById("listRespondents");
+
+        btnTl.click();
+        await new Promise(r => setTimeout(r, 100));
+
+        const tlOptions = Array.from(respList.querySelectorAll("option")).map(o => o.value);
+        assert("When TL selected, options match TL list", tlOptions.length >= 366);
+        assert("When TL selected, does NOT contain pure OM 'Abby'", !tlOptions.includes("Abby"));
+        assert("When TL selected, placeholder is 'Search Team Leader...'", respInput.placeholder === "Search Team Leader...");
+
+        // TEST 3: Respondent = OM Dropdown
+        btnOm.click();
+        await new Promise(r => setTimeout(r, 100));
+
+        const omOptions = Array.from(respList.querySelectorAll("option")).map(o => o.value);
+        assert("When OM selected, options match OM list", omOptions.length === oms.length, `Count: ${omOptions.length}`);
+        assert("When OM selected, contains 'Abby'", omOptions.includes("Abby"));
+        assert("When OM selected, does NOT contain pure TL 'Abegail Llena'", !omOptions.includes("Abegail Llena"));
+        assert("When OM selected, placeholder is 'Search OM...'", respInput.placeholder === "Search OM...");
+
+        // TEST 4: Dropdown switching clears invalid selection
+        // In OM mode, set input to "Crystal" (valid OM)
+        respInput.value = "Crystal";
+        // Switch to TL mode -> "Crystal" is NOT a valid TL name, so it must be cleared!
+        btnTl.click();
+        await new Promise(r => setTimeout(r, 100));
+        assert("Switching OM -> TL clears invalid TL name", respInput.value === "", `Value was: "${respInput.value}"`);
+
+        // In TL mode, set input to "Abegail Llena" (valid TL)
+        respInput.value = "Abegail Llena";
+        // Switch to OM mode -> "Abegail Llena" is NOT a valid OM name, so it must be cleared!
+        btnOm.click();
+        await new Promise(r => setTimeout(r, 100));
+        assert("Switching TL -> OM clears invalid OM name", respInput.value === "", `Value was: "${respInput.value}"`);
+
+        // Switch back to TL
+        btnTl.click();
+
+        // TEST 5: Dedicated OM Field & Violation Subject Separation
+        const dedicatedOmInput = doc.getElementById("edrOmName");
+        const dedicatedOmList = doc.getElementById("listOms");
+        const dedicatedOmOptions = Array.from(dedicatedOmList.querySelectorAll("option")).map(o => o.value);
+        assert("Dedicated OM list contains OM names only", dedicatedOmOptions.length === oms.length);
+
+        const btnSubjAgent = doc.getElementById("btnSubjAgent");
+        const btnSubjTl = doc.getElementById("btnSubjTl");
+        const subjInput = doc.getElementById("edrSubjectName");
+
+        btnSubjAgent.click();
+        assert("Violation Subject = Agent/s does not change Respondent role", btnTl.classList.contains("active"));
+        assert("Violation Subject = Agent/s placeholder is 'Employee name...'", subjInput.placeholder === "Employee name...");
+
+        btnSubjTl.click();
+        assert("Violation Subject = TL does not change Respondent role", btnTl.classList.contains("active"));
+        assert("Violation Subject = TL placeholder is 'Search Team Leader...'", subjInput.placeholder === "Search Team Leader...");
+        const subjTlOptions = Array.from(doc.getElementById("listSubjectTls").querySelectorAll("option")).map(o => o.value);
+        assert("Violation Subject = TL datalist has TL names", subjTlOptions.length >= 366);
+
+        // TEST 6: CCTV Clip Hyperlink Generation
+        const sampleReport = {
+          id: "test_edr_1",
+          site: "Mabini Site A",
+          date: "2026-09-10",
+          timeObserved: "03:15:00 AM-03:22:00 AM",
+          supervisorRole: "Team Leader",
+          supervisorName: "Abegail Llena",
+          subjectType: "Agent/s",
+          subjectName: "John Doe",
+          account: "Shopee",
+          incident: "Sleeping on workstation",
+          action: "Issued verbal warning",
+          clipLink: "https://drive.google.com/file/d/12345sample/view",
+          screenshotData: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+          selected: true,
+          done: false
+        };
+
+        await edr.createOrUpdate(sampleReport);
+        await edr.loadReports();
+
+        // Check HTML format
+        const html = edr.buildTeamsHtml();
+        assert("HTML contains exact clickable link with 'Click here!'", html.includes('<a href="https://drive.google.com/file/d/12345sample/view">Click here!</a>'));
+        assert("HTML does NOT show raw URL beside 'Click here!'", !html.includes('Click here! (http'));
+        assert("HTML does NOT contain data:image or Base64", !html.includes("data:image") && !html.includes(";base64,"));
+        assert("HTML does NOT contain full webpage DOM", !html.includes("<html") && !html.includes("<body") && !html.includes("nav-rail"));
+        assert("HTML uses clean Arial 10pt container", html.includes("font-family:Arial,sans-serif;font-size:10pt;"));
+
+        // Check Plain Text format
+        const plain = edr.buildTeamsOutput();
+        assert("Plain text fallback format is 'CCTV Clip: ACTUAL_URL'", plain.includes("CCTV Clip: https://drive.google.com/file/d/12345sample/view"));
+        assert("Plain text does NOT have 'Click here! (http...)'", !plain.includes("Click here! (http"));
+
+        // TEST 7: Native PNG Image Blob Conversion
+        const pngBlob = await edr.dataUrlToBlob(sampleReport.screenshotData);
+        assert("dataUrlToBlob produces native Blob", pngBlob instanceof win.Blob || (pngBlob && pngBlob.type === "image/png"));
+        assert("Blob type is image/png", pngBlob.type === "image/png");
+        assert("Blob size is > 0", pngBlob.size > 0);
+
+        // TEST 8: Teams Message Size Protection (< 2KB with 1 EDR + 10 FB links)
+        const fbLinks = [
+          "https://www.facebook.com/groups/123/posts/1001",
+          "https://www.facebook.com/groups/123/posts/1002",
+          "https://www.facebook.com/groups/123/posts/1003",
+          "https://www.facebook.com/groups/123/posts/1004",
+          "https://www.facebook.com/groups/123/posts/1005",
+          "https://www.facebook.com/groups/123/posts/1006",
+          "https://www.facebook.com/groups/123/posts/1007",
+          "https://www.facebook.com/groups/123/posts/1008",
+          "https://www.facebook.com/groups/123/posts/1009",
+          "https://www.facebook.com/groups/123/posts/1010"
+        ].join("\n");
+
+        const largeHtml = edr.buildTeamsHtml(fbLinks);
+        const htmlByteSize = new TextEncoder().encode(largeHtml).length;
+        assert("1 EDR + 10 FB links HTML payload is small (< 3 KB)", htmlByteSize < 3000, `Actual size: ${htmlByteSize} bytes`);
+        assert("Large HTML payload contains no Base64", !largeHtml.includes("base64"));
+
+        // TEST 9: Screenshot Persistence in EDR
+        const reportsAfterReload = await edr.loadReports();
+        const reloaded = reportsAfterReload.find(r => r.id === sampleReport.id);
+        assert("Saved EDR preserves screenshotData", reloaded && reloaded.screenshotData === sampleReport.screenshotData);
+
+        // TEST 10: Copy Screenshot Button in UI
+        const btnCopyShot = doc.getElementById("btnCopyScreenshot");
+        assert("btnCopyScreenshot exists in Teams Dispatch header", !!btnCopyShot);
+
+        const cardRow = doc.querySelector(`.record-row[data-id="${sampleReport.id}"]`);
+        assert("Saved record card displays SS badge", !!cardRow.querySelector('.badge-warning'));
+        assert("Saved record card has Copy SS button", !!cardRow.querySelector('.btn-shot-copy'));
+
+        // TEST 11: EDR Title Check
+        const mainTitle = doc.querySelector(".workspace-main-title");
+        assert("Main title is 'End of the Day Report'", mainTitle && mainTitle.textContent.trim() === "End of the Day Report");
+        const navLabel = doc.querySelector("#tabEdr .nav-label");
+        assert("Sidebar tab label is 'EDR'", navLabel && navLabel.textContent.trim() === "EDR");
+
+      } catch (err) {
+        assert("Execution error", false, err.stack || err.message);
+      }
+
+      // Output results
+      const totalPassed = results.filter(r => r.passed).length;
+      const totalFailed = results.filter(r => !r.passed).length;
+      const summary = `RESULTS: ${totalPassed} passed, ${totalFailed} failed out of ${results.length} assertions`;
+
+      const div = document.getElementById("results");
+      div.innerHTML = `<h2>${summary}</h2><ul>` +
+        results.map(r => `<li style="color:${r.passed ? 'green' : 'red'}">${r.passed ? '✓' : '✗'} <strong>${r.name}</strong> ${r.detail ? '(' + r.detail + ')' : ''}</li>`).join("") +
+        `</ul>`;
+
+      // Send to server report endpoint
+      try {
+        await fetch("http://localhost:8080/api/test_report", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ summary, totalPassed, totalFailed, results })
+        });
+      } catch (_) {}
+    };
+  </script>
+</body>
+</html>

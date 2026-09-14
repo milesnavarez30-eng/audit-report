@@ -45,34 +45,103 @@
     return str;
   };
 
-  // Toast Notification System
-  window.showToast = function (message, type = "info", duration = 3200) {
+  // Toast Notification System with Icons, Progress & Actions
+  window.showToast = function (message, type = "info", durationOrOpts = 3200) {
     const container = document.getElementById("toastContainer");
     if (!container) {
       console.log(`[Toast ${type}] ${message}`);
       return;
     }
+
+    let duration = 3200;
+    let actionText = null;
+    let onAction = null;
+
+    if (typeof durationOrOpts === "number") {
+      duration = durationOrOpts;
+    } else if (typeof durationOrOpts === "object" && durationOrOpts !== null) {
+      duration = durationOrOpts.duration || 3200;
+      actionText = durationOrOpts.actionText || null;
+      onAction = durationOrOpts.onAction || null;
+    }
+
+    // Limit active toasts to prevent viewport clutter
+    while (container.children.length >= 4) {
+      container.removeChild(container.firstChild);
+    }
+
     const toast = document.createElement("div");
-    toast.className = `toast toast-${type}`;
-    toast.textContent = message;
+    const safeType = ["success", "error", "warning", "info", "danger"].includes(type) ? (type === "danger" ? "error" : type) : "info";
+    toast.className = `toast toast-${safeType}`;
+    toast.setAttribute("role", "status");
+    toast.setAttribute("aria-live", "polite");
+
+    // Icons calibrated for dark terminal
+    let iconSvg = "";
+    if (safeType === "success") {
+      iconSvg = `<svg class="toast-icon" viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
+    } else if (safeType === "error") {
+      iconSvg = `<svg class="toast-icon" viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" stroke-width="2.5"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>`;
+    } else if (safeType === "warning") {
+      iconSvg = `<svg class="toast-icon" viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" stroke-width="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>`;
+    } else {
+      iconSvg = `<svg class="toast-icon" viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" stroke-width="2.5"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>`;
+    }
+
+    let actionBtnHtml = "";
+    if (actionText && typeof onAction === "function") {
+      actionBtnHtml = `<button type="button" class="btn btn-xs btn-outline toast-action-btn" style="margin-left:auto; font-size:10.5px; padding:2px 8px;">${escapeHtml(actionText)}</button>`;
+    }
+
+    toast.innerHTML = `
+      <div style="display:flex; align-items:center; gap:8px; width:100%;">
+        ${iconSvg}
+        <span class="toast-msg" style="flex:1; line-height:1.35;">${escapeHtml(message)}</span>
+        ${actionBtnHtml}
+        <button type="button" class="toast-close-btn" aria-label="Dismiss" style="background:none; border:none; color:var(--text-muted); cursor:pointer; padding:0 2px; font-size:12px; margin-left:4px;">✕</button>
+      </div>
+      <div class="toast-progress-bar" style="position:absolute; bottom:0; left:0; height:2px; width:100%; background:currentColor; opacity:0.35; transform-origin:left; animation:toast-shrink ${duration}ms linear forwards;"></div>
+    `;
+
+    // Action button handler
+    if (actionText && typeof onAction === "function") {
+      const actBtn = toast.querySelector(".toast-action-btn");
+      actBtn?.addEventListener("click", (e) => {
+        e.stopPropagation();
+        try { onAction(); } catch (err) { console.error(err); }
+        removeToast();
+      });
+    }
+
+    // Dismiss button handler
+    const closeBtn = toast.querySelector(".toast-close-btn");
+    closeBtn?.addEventListener("click", () => removeToast());
+
     container.appendChild(toast);
 
-    setTimeout(() => {
+    let dismissed = false;
+    function removeToast() {
+      if (dismissed) return;
+      dismissed = true;
       toast.style.opacity = "0";
-      toast.style.transform = "translateY(10px)";
-      toast.style.transition = "all 200ms ease";
-      setTimeout(() => toast.remove(), 220);
-    }, duration);
+      toast.style.transform = "translateY(8px)";
+      toast.style.transition = "all 160ms ease";
+      setTimeout(() => toast.remove(), 180);
+    }
+
+    setTimeout(removeToast, duration);
   };
 
-  // Global App Confirmation Dialog (Promise-based)
+  // Global App Confirmation Dialog (Promise-based with Keyboard Traps & Accessibility)
   let confirmResolve = null;
+  let prevActiveEl = null;
+
   window.appConfirm = function ({ title = "Confirm Action", message = "Are you sure?", confirmText = "Confirm", cancelText = "Cancel", tone = "primary" }) {
     return new Promise((resolve) => {
       confirmResolve = resolve;
+      prevActiveEl = document.activeElement;
       const modal = document.getElementById("modalAppConfirm");
       if (!modal) {
-        // Fallback to native confirm if modal element not found
         resolve(window.confirm(`${title}\n\n${message}`));
         return;
       }
@@ -87,6 +156,15 @@
       cancelBtn.textContent = cancelText;
 
       modal.hidden = false;
+
+      // Safe keyboard focus: if danger action, focus cancel to prevent accidental enter confirmation
+      setTimeout(() => {
+        if (tone === "danger") {
+          cancelBtn.focus();
+        } else {
+          acceptBtn.focus();
+        }
+      }, 50);
     });
   };
 
@@ -98,6 +176,65 @@
       confirmResolve = null;
       res(agreed);
     }
+    if (prevActiveEl && typeof prevActiveEl.focus === "function") {
+      try { prevActiveEl.focus(); } catch (_) {}
+      prevActiveEl = null;
+    }
+  };
+
+  // Global Keyboard listener for confirmation dialog
+  document.addEventListener("keydown", (e) => {
+    const modal = document.getElementById("modalAppConfirm");
+    if (modal && !modal.hidden) {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        window.handleConfirmDialog(false);
+      } else if (e.key === "Enter" && document.activeElement?.id === "btnConfirmDialogAccept") {
+        e.preventDefault();
+        window.handleConfirmDialog(true);
+      }
+    }
+  });
+
+  // Shared Button Busy State Helper
+  window.setButtonBusy = function (btn, isBusy, busyText = "Processing...") {
+    if (!btn) return;
+    if (isBusy) {
+      btn.dataset.prevHtml = btn.innerHTML;
+      btn.dataset.prevDisabled = btn.disabled;
+      btn.disabled = true;
+      btn.classList.add("is-busy");
+      btn.innerHTML = `<span class="btn-spinner"></span><span>${window.escapeHtml(busyText)}</span>`;
+    } else {
+      btn.disabled = btn.dataset.prevDisabled === "true";
+      btn.classList.remove("is-busy");
+      if (btn.dataset.prevHtml) {
+        btn.innerHTML = btn.dataset.prevHtml;
+        delete btn.dataset.prevHtml;
+        delete btn.dataset.prevDisabled;
+      }
+    }
+  };
+
+  // Topbar Background Progress Indicator Helper
+  window.setGlobalProgress = function (isActive) {
+    const line = document.getElementById("topbarProgressLine");
+    if (!line) return;
+    line.classList.toggle("is-active", !!isActive);
+  };
+
+  // Shimmer Skeleton Generator Helper
+  window.renderSkeletonRows = function (containerEl, colCount = 4, rowCount = 3) {
+    if (!containerEl) return;
+    let html = "";
+    for (let i = 0; i < rowCount; i++) {
+      html += `<tr>`;
+      for (let c = 0; c < colCount; c++) {
+        html += `<td><div class="skeleton-shimmer skeleton-row" style="width:${65 + ((c * 19) % 30)}%;"></div></td>`;
+      }
+      html += `</tr>`;
+    }
+    containerEl.innerHTML = html;
   };
 
   // Manila Live Operational Clock (Asia/Manila PHT)

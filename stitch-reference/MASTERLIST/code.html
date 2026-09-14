@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+
+<html class="h-full bg-[#0D1117] text-[#E6EDF3]" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>CCTV OPS Operations Hub - Masterlist</title>
+<!-- Tailwind CSS CDN with Forms and Container Queries -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              charcoal: '#0D1117',
+              surface: '#151B23',
+              panel: '#1C2128',
+              border: '#30363D',
+              borderLight: '#3D444D',
+              violet: '#6C5CE7',
+              violetHover: '#5b4bc4',
+              cyan: '#38BDF8',
+              lime: '#4ADE80',
+              amber: '#FB923C',
+              coral: '#F87171',
+              muted: '#8B949E',
+              lightMuted: '#A0AEC0'
+            }
+          },
+          fontFamily: {
+            mono: ['"JetBrains Mono"', '"SF Mono"', 'Menlo', 'Consolas', 'monospace'],
+            sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif']
+          }
+        }
+      }
+    };
+  </script>
+<!-- BEGIN: Custom Terminal & Neo-Brutalist Styles -->
+<style data-purpose="neo-brutalist-base">
+    /* Custom scrollbar for dark terminal UI */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0D1117;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #30363D;
+      border-radius: 2px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #3D444D;
+    }
+
+    /* Hard offset shadows for neo-brutalist feel */
+    .neo-shadow-sm {
+      box-shadow: 2px 2px 0px #000000;
+    }
+    .neo-shadow {
+      box-shadow: 3px 3px 0px #000000;
+    }
+    .neo-shadow-active:active {
+      transform: translate(1px, 1px);
+      box-shadow: 1px 1px 0px #000000;
+    }
+  </style>
+<!-- END: Custom Terminal & Neo-Brutalist Styles -->
+</head>
+<body class="h-full flex overflow-hidden font-sans text-xs antialiased selection:bg-[#6C5CE7] selection:text-white">
+<!-- BEGIN: Left Sidebar Navigation -->
+<aside class="w-60 flex-shrink-0 bg-[#0D1117] border-r border-[#30363D] flex flex-col justify-between select-none" data-purpose="sidebar-navigation">
+<div class="flex flex-col">
+<!-- Hub Brand Header -->
+<div class="p-3 border-b border-[#30363D] flex items-center space-x-2 bg-[#151B23]">
+<span class="px-1.5 py-0.5 text-[10px] font-mono font-bold bg-[#6C5CE7] text-white rounded border border-[#7C3AED] neo-shadow-sm">V2</span>
+<div>
+<h1 class="text-xs font-mono font-bold tracking-wider text-white">CCTV OPS</h1>
+<p class="text-[9px] font-mono tracking-widest text-[#8B949E] uppercase">OPERATIONS HUB</p>
+</div>
+</div>
+<!-- Navigation Links Container -->
+<nav class="p-2 space-y-4 font-mono">
+<!-- Workspaces Group -->
+<div>
+<div class="px-2 py-1 text-[10px] font-semibold text-[#8B949E] uppercase tracking-wider">Workspaces</div>
+<ul class="space-y-0.5 mt-1">
+<li>
+<a class="flex items-center justify-between px-2.5 py-1.5 rounded text-[#A0AEC0] hover:bg-[#151B23] hover:text-white transition-colors group" href="#">
+<span class="flex items-center gap-2">
+<span class="text-gray-500 group-hover:text-[#38BDF8]">📁</span> EDR
+                </span>
+<span class="text-[10px] px-1.5 py-0.2 bg-[#151B23] text-[#8B949E] border border-[#30363D] rounded">[7]</span>
+</a>
+</li>
+<li>
+<a class="flex items-center justify-between px-2.5 py-1.5 rounded text-[#A0AEC0] hover:bg-[#151B23] hover:text-white transition-colors group" href="#">
+<span class="flex items-center gap-2">
+<span class="text-gray-500 group-hover:text-[#38BDF8]">📹</span> CCTV Audit
+                </span>
+<span class="text-[10px] px-1.5 py-0.2 bg-[#151B23] text-[#8B949E] border border-[#30363D] rounded">[0]</span>
+</a>
+</li>
+<li>
+<a class="flex items-center justify-between px-2.5 py-1.5 rounded text-[#A0AEC0] hover:bg-[#151B23] hover:text-white transition-colors group" href="#">
+<span class="flex items-center gap-2">
+<span class="text-gray-500 group-hover:text-[#38BDF8]">⚡</span> AI Sorter
+                </span>
+</a>
+</li>
+<li>
+<a class="flex items-center justify-between px-2.5 py-1.5 rounded text-[#A0AEC0] hover:bg-[#151B23] hover:text-white transition-colors group" href="#">
+<span class="flex items-center gap-2">
+<span class="text-gray-500 group-hover:text-[#38BDF8]">⚙</span> Maintenance
+                </span>
+</a>
+</li>
+<li>
+<a class="flex items-center justify-between px-2.5 py-1.5 rounded text-[#A0AEC0] hover:bg-[#151B23] hover:text-white transition-colors group" href="#">
+<span class="flex items-center gap-2">
+<span class="text-gray-500 group-hover:text-[#38BDF8]">⏱</span> Pending
+                </span>
+<span class="text-[10px] px-1.5 py-0.2 bg-[#151B23] text-[#FB923C] border border-[#30363D] rounded">[1]</span>
+</a>
+</li>
+</ul>
+</div>
+<!-- Management Group -->
+<div>
+<div class="px-2 py-1 text-[10px] font-semibold text-[#8B949E] uppercase tracking-wider">Management</div>
+<ul class="space-y-1 mt-1">
+<li>
+<!-- Active Masterlist Item -->
+<a class="flex items-center justify-between px-2.5 py-1.5 rounded bg-[#6C5CE7] text-white font-bold border border-[#7C3AED] neo-shadow-sm" href="#">
+<span class="flex items-center gap-2">
+<span>📑</span> Masterlist
+                </span>
+<span class="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span>
+</a>
+</li>
+<li>
+<a class="flex items-center justify-between px-2.5 py-1.5 rounded text-[#A0AEC0] hover:bg-[#151B23] hover:text-white transition-colors group" href="#">
+<span class="flex items-center gap-2">
+<span class="text-gray-500 group-hover:text-[#38BDF8]">📋</span> Follow Up
+                </span>
+<span class="text-[10px] px-1.5 py-0.2 bg-[#151B23] text-[#8B949E] border border-[#30363D] rounded">[0]</span>
+</a>
+</li>
+<li>
+<a class="flex items-center justify-between px-2.5 py-1.5 rounded text-[#A0AEC0] hover:bg-[#151B23] hover:text-white transition-colors group" href="#">
+<span class="flex items-center gap-2">
+<span class="text-gray-500 group-hover:text-[#38BDF8]">🕒</span> History
+                </span>
+</a>
+</li>
+<li>
+<a class="flex items-center justify-between px-2.5 py-1.5 rounded text-[#A0AEC0] hover:bg-[#151B23] hover:text-white transition-colors group" href="#">
+<span class="flex items-center gap-2">
+<span class="text-gray-500 group-hover:text-[#38BDF8]">👥</span> Accounts
+                </span>
+</a>
+</li>
+</ul>
+</div>
+</nav>
+</div>
+<!-- Sidebar Bottom Status Footer -->
+<div class="p-2 border-t border-[#30363D] bg-[#151B23] flex items-center justify-between text-[10px] font-mono text-[#8B949E]">
+<span class="text-[9px]">v2.0.4-prod</span>
+<button class="p-1 hover:bg-[#1C2128] rounded text-gray-400 hover:text-white transition-colors" title="Collapse Menu">
+        «
+      </button>
+</div>
+</aside>
+<!-- END: Left Sidebar Navigation -->
+<!-- BEGIN: Main Workspace Area -->
+<div class="flex-1 flex flex-col min-w-0 bg-[#0D1117] overflow-hidden">
+<!-- BEGIN: Top Command Header -->
+<header class="h-12 border-b border-[#30363D] bg-[#151B23] px-4 flex items-center justify-between flex-shrink-0" data-purpose="top-command-header">
+<!-- Title & Terminal Workspace Tag -->
+<div class="flex items-center space-x-3">
+<h2 class="text-sm font-mono font-bold uppercase tracking-wider text-white">MASTERLIST</h2>
+<span class="text-[10px] font-mono px-2 py-0.5 rounded bg-[#1C2128] text-[#38BDF8] border border-[#30363D]">
+          [REGISTRY &amp; ASSIGNMENTS]
+        </span>
+</div>
+<!-- Quick Action Controls & Telemetry -->
+<div class="flex items-center space-x-2 font-mono text-[11px]">
+<!-- Action Buttons -->
+<button class="px-2.5 py-1 rounded bg-[#1C2128] border border-[#30363D] text-[#E6EDF3] hover:border-[#6C5CE7] hover:text-white neo-shadow-sm neo-shadow-active flex items-center gap-1.5 transition-colors">
+<span>📄</span> Template
+        </button>
+<button class="px-2.5 py-1 rounded bg-[#1C2128] border border-[#30363D] text-[#E6EDF3] hover:border-[#6C5CE7] hover:text-white neo-shadow-sm neo-shadow-active flex items-center gap-1.5 transition-colors">
+<span>↻</span> Reload
+        </button>
+<!-- Theme Mode Switcher -->
+<div class="px-2 py-1 rounded bg-[#1C2128] border border-[#30363D] text-[#8B949E] flex items-center gap-1">
+<span class="text-[#4ADE80]">●</span> <span class="text-white font-semibold">DARK</span>
+<span class="text-[#30363D]">/</span>
+<span>○</span> <span>LIGHT</span>
+</div>
+<!-- Google Docs Connection Status -->
+<div class="px-2.5 py-1 rounded bg-[#1C2128] border border-[#30363D] text-[#E6EDF3] flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-[#4ADE80] shadow-[0_0_6px_#4ADE80]"></span>
+<span>Docs Connected</span>
+<span class="text-gray-400 text-[9px]">⚙</span>
+</div>
+<!-- Live Monospace Clock -->
+<div class="px-2.5 py-1 rounded bg-[#0D1117] border border-[#30363D] font-mono font-semibold text-[#4ADE80]">
+          11:11:28 AM PHT
+        </div>
+<!-- User Identity Badge -->
+<div class="flex items-center bg-[#1C2128] border border-[#30363D] rounded px-1.5 py-1 space-x-1.5">
+<div class="w-5 h-5 bg-[#6C5CE7] text-white flex items-center justify-center font-bold text-[10px] rounded-sm">
+            M
+          </div>
+<div class="leading-none text-left">
+<p class="font-bold text-white text-[10px]">Miles</p>
+<p class="text-[8px] text-[#8B949E] uppercase tracking-tight">OPERATOR</p>
+</div>
+</div>
+</div>
+</header>
+<!-- END: Top Command Header -->
+<!-- BEGIN: Workspace Scrollable Content -->
+<main class="flex-1 overflow-y-auto p-3.5 space-y-3.5" data-purpose="masterlist-content">
+<!-- BEGIN: Telemetry Sync Banner -->
+<section class="bg-[#151B23] border border-[#30363D] rounded px-3.5 py-2.5 flex items-center justify-between neo-shadow" data-purpose="telemetry-sync-banner">
+<div class="flex items-center space-x-2.5">
+<span class="w-2.5 h-2.5 rounded-full bg-[#4ADE80] ring-4 ring-[#4ADE80]/15"></span>
+<div>
+<div class="font-mono font-bold text-white text-xs flex items-center gap-2">
+              Google Sheets connected
+            </div>
+<p class="text-[11px] text-[#8B949E]">12 pending rows • 39 HR assignments loaded.</p>
+</div>
+</div>
+<div class="flex items-center space-x-3 font-mono">
+<span class="text-[#8B949E] text-[11px]">Updated Sep 14, 11:10 AM</span>
+<button class="px-3 py-1 bg-[#1C2128] hover:bg-[#6C5CE7] hover:text-white text-[#E6EDF3] border border-[#30363D] hover:border-[#7C3AED] rounded font-semibold text-xs transition-colors flex items-center gap-1.5 neo-shadow-sm neo-shadow-active">
+<span>↻</span> Refresh
+          </button>
+</div>
+</section>
+<!-- END: Telemetry Sync Banner -->
+<!-- BEGIN: Pending Trackers Section -->
+<section class="bg-[#151B23] border border-[#30363D] rounded neo-shadow overflow-hidden" data-purpose="pending-trackers-card">
+<!-- Section Header -->
+<div class="px-3.5 py-2 bg-[#1C2128] border-b border-[#30363D] flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="font-mono font-bold text-xs uppercase tracking-wider text-[#38BDF8]">[ PENDING TRACKERS ]</span>
+<span class="text-gray-400">/</span>
+<span class="font-bold text-white text-xs">Pending Miles</span>
+</div>
+<span class="font-mono text-[10px] px-2 py-0.5 rounded bg-[#151B23] text-[#38BDF8] border border-[#30363D]">
+            [1]
+          </span>
+</div>
+<!-- Filter Sub-nav Tabs -->
+<div class="px-3.5 pt-2.5 pb-2 border-b border-[#30363D] flex items-center space-x-1.5 bg-[#151B23]/70 font-mono text-[11px] overflow-x-auto">
+<!-- Active Tab -->
+<button class="px-3 py-1 rounded bg-[#6C5CE7] text-white font-bold border border-[#7C3AED] flex items-center gap-1.5 neo-shadow-sm">
+<span>Miles</span>
+<span class="bg-[#151B23] text-[#38BDF8] px-1 rounded text-[9px] font-mono">1</span>
+</button>
+<!-- Other User Tabs -->
+<button class="px-3 py-1 rounded bg-[#1C2128] hover:bg-[#21262d] text-[#8B949E] hover:text-white border border-[#30363D] flex items-center gap-1.5 transition-colors">
+<span>Seth</span> <span class="text-gray-500">0</span>
+</button>
+<button class="px-3 py-1 rounded bg-[#1C2128] hover:bg-[#21262d] text-[#8B949E] hover:text-white border border-[#30363D] flex items-center gap-1.5 transition-colors">
+<span>Wendle</span> <span class="text-gray-500">0</span>
+</button>
+<button class="px-3 py-1 rounded bg-[#1C2128] hover:bg-[#21262d] text-[#8B949E] hover:text-white border border-[#30363D] flex items-center gap-1.5 transition-colors">
+<span>Kenneth</span> <span class="text-[#38BDF8]">3</span>
+</button>
+<button class="px-3 py-1 rounded bg-[#1C2128] hover:bg-[#21262d] text-[#8B949E] hover:text-white border border-[#30363D] flex items-center gap-1.5 transition-colors">
+<span>JR</span> <span class="text-gray-500">0</span>
+</button>
+</div>
+<!-- Pending Tracker Data Table Container -->
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse font-mono text-[11px]">
+<thead>
+<tr class="border-b border-[#30363D] bg-[#151B23] text-[#8B949E] uppercase tracking-wider text-[10px]">
+<th class="py-2 px-3 font-semibold">Year</th>
+<th class="py-2 px-3 font-semibold">Month</th>
+<th class="py-2 px-3 font-semibold">Date</th>
+<th class="py-2 px-3 font-semibold">Name</th>
+<th class="py-2 px-3 font-semibold">OM</th>
+<th class="py-2 px-3 font-semibold">Site</th>
+<th class="py-2 px-3 font-semibold">TL</th>
+<th class="py-2 px-3 font-semibold">Agent Name</th>
+<th class="py-2 px-3 font-semibold">Account</th>
+<th class="py-2 px-3 font-semibold text-center">CCTV Reason Codes</th>
+<th class="py-2 px-3 font-semibold text-center">NOC</th>
+<th class="py-2 px-3 font-semibold">Remarks</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-[#30363D] bg-[#0D1117]">
+<tr class="hover:bg-[#1C2128]/80 transition-colors">
+<td class="py-2.5 px-3 text-[#E6EDF3]">2026</td>
+<td class="py-2.5 px-3 text-[#E6EDF3]">Sep</td>
+<td class="py-2.5 px-3 text-[#E6EDF3]">9/10/2026</td>
+<td class="py-2.5 px-3 font-bold text-white">Miles</td>
+<td class="py-2.5 px-3 text-[#E6EDF3]">Mirah</td>
+<td class="py-2.5 px-3 text-[#38BDF8] font-semibold">Mabini Site A</td>
+<td class="py-2.5 px-3 text-[#E6EDF3]">Kevin Kyle Omiping</td>
+<td class="py-2.5 px-3 text-white font-medium">Charlene Baculio</td>
+<td class="py-2.5 px-3 text-[#E6EDF3]">HBW</td>
+<!-- CCTV Reason Badge -->
+<td class="py-2.5 px-3 text-center">
+<span class="inline-block px-2 py-0.5 rounded text-[10px] font-bold bg-[#FB923C]/10 text-[#FB923C] border border-[#FB923C]/40">
+                    SLEEPING
+                  </span>
+</td>
+<!-- NOC Status Badge -->
+<td class="py-2.5 px-3 text-center">
+<span class="inline-block px-2 py-0.5 rounded text-[10px] font-bold bg-[#4ADE80]/10 text-[#4ADE80] border border-[#4ADE80]/40">
+                    Pending
+                  </span>
+</td>
+<td class="py-2.5 px-3 text-[#A0AEC0] italic font-sans text-xs">TL will file NOC</td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<!-- END: Pending Trackers Section -->
+<!-- BEGIN: Notepad / Pending Notes Section -->
+<section class="bg-[#151B23] border border-[#30363D] rounded neo-shadow overflow-hidden" data-purpose="notepad-card">
+<div class="px-3.5 py-2 bg-[#1C2128] border-b border-[#30363D] flex items-center justify-between font-mono">
+<div class="flex items-center gap-2">
+<span class="font-bold text-xs uppercase tracking-wider text-[#38BDF8]">[ NOTEPAD ]</span>
+<span class="text-gray-400">/</span>
+<span class="font-bold text-white text-xs">Pending Miles Notes</span>
+</div>
+<span class="text-[10px] text-[#8B949E] flex items-center gap-1.5">
+<span class="w-1.5 h-1.5 rounded-full bg-[#4ADE80]"></span> Saved locally
+          </span>
+</div>
+<div class="p-3">
+<textarea class="w-full bg-[#0D1117] border border-[#30363D] rounded p-2.5 text-xs text-[#E6EDF3] placeholder-[#8B949E]/70 focus:outline-none focus:border-[#6C5CE7] focus:ring-1 focus:ring-[#6C5CE7] font-mono transition resize-y" placeholder="Type follow-up notes, reminders, HR responses, NOC status, or anything you need to remember..." rows="3"></textarea>
+<div class="mt-2 flex justify-end">
+<button class="px-3 py-1 bg-[#1C2128] hover:bg-[#21262d] text-[#8B949E] hover:text-[#F87171] border border-[#30363D] rounded font-mono text-[11px] transition neo-shadow-sm neo-shadow-active">
+              Clear Notepad
+            </button>
+</div>
+</div>
+</section>
+<!-- END: Notepad / Pending Notes Section -->
+<!-- BEGIN: HR per OM Registry Section -->
+<section class="bg-[#151B23] border border-[#30363D] rounded neo-shadow overflow-hidden" data-purpose="assigned-hr-registry">
+<!-- Section Header -->
+<div class="px-3.5 py-2 bg-[#1C2128] border-b border-[#30363D] flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="font-mono font-bold text-xs uppercase tracking-wider text-[#38BDF8]">[ GOOGLE SHEETS &amp; OPS ]</span>
+<span class="text-gray-400">/</span>
+<h3 class="font-bold text-white text-xs">Assigned HR per OM</h3>
+</div>
+<span class="font-mono text-[10px] px-2 py-0.5 rounded bg-[#151B23] text-[#38BDF8] border border-[#30363D]">
+            [39]
+          </span>
+</div>
+<!-- Entry & Search Controls Panel -->
+<div class="p-3.5 space-y-3 bg-[#151B23] border-b border-[#30363D]">
+<!-- Add Assignment Form -->
+<form class="grid grid-cols-1 md:grid-cols-12 gap-2.5 items-end" onsubmit="event.preventDefault();">
+<!-- Site Input -->
+<div class="md:col-span-4">
+<label class="block font-mono text-[10px] uppercase font-bold text-[#8B949E] mb-1">SITE</label>
+<input class="w-full h-8 bg-[#0D1117] border border-[#30363D] rounded px-2.5 text-xs text-white placeholder-[#8B949E] focus:outline-none focus:border-[#6C5CE7] focus:ring-1 focus:ring-[#6C5CE7] font-mono" placeholder="Select or type site" type="text"/>
+</div>
+<!-- Team / OM / Campaign Input -->
+<div class="md:col-span-4">
+<label class="block font-mono text-[10px] uppercase font-bold text-[#8B949E] mb-1">TEAM / OM / CAMPAIGN</label>
+<input class="w-full h-8 bg-[#0D1117] border border-[#30363D] rounded px-2.5 text-xs text-white placeholder-[#8B949E] focus:outline-none focus:border-[#6C5CE7] focus:ring-1 focus:ring-[#6C5CE7] font-mono" type="text" value="Team Mirah / OM Jordan"/>
+</div>
+<!-- HR Assigned Input -->
+<div class="md:col-span-3">
+<label class="block font-mono text-[10px] uppercase font-bold text-[#8B949E] mb-1">HR ASSIGNED</label>
+<input class="w-full h-8 bg-[#0D1117] border border-[#30363D] rounded px-2.5 text-xs text-white placeholder-[#8B949E] focus:outline-none focus:border-[#6C5CE7] focus:ring-1 focus:ring-[#6C5CE7] font-mono" placeholder="HR name" type="text"/>
+</div>
+<!-- Add Buttons -->
+<div class="md:col-span-1 flex items-center space-x-1.5">
+<button class="h-8 px-2.5 bg-[#1C2128] hover:bg-[#21262d] text-[#8B949E] hover:text-white border border-[#30363D] rounded font-mono text-[11px] transition" type="reset">
+                Clear
+              </button>
+<button class="h-8 flex-1 px-3 bg-[#6C5CE7] hover:bg-[#5b4bc4] text-white font-mono font-bold text-xs rounded border border-[#7C3AED] neo-shadow-sm neo-shadow-active transition flex items-center justify-center" type="button">
+                + Add
+              </button>
+</div>
+</form>
+<!-- Search Filter Bar -->
+<div class="pt-2 border-t border-[#30363D]/60 flex items-center gap-2">
+<div class="relative flex-1">
+<span class="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-gray-500">
+                🔍
+              </span>
+<input class="w-full h-8 bg-[#0D1117] border border-[#30363D] rounded pl-8 pr-2.5 text-xs text-white placeholder-[#8B949E] focus:outline-none focus:border-[#6C5CE7] font-mono" placeholder="Find site, team, OM, campaign, or HR..." type="text"/>
+</div>
+<button class="h-8 px-3 bg-[#1C2128] hover:bg-[#21262d] text-[#8B949E] hover:text-white border border-[#30363D] rounded font-mono text-[11px] transition">
+              Clear
+            </button>
+</div>
+</div>
+<!-- Assignments Master Table -->
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse font-sans text-xs">
+<thead>
+<tr class="border-b border-[#30363D] bg-[#151B23] font-mono text-[#8B949E] uppercase tracking-wider text-[10px]">
+<th class="py-2.5 px-4 font-semibold w-1/5">Site</th>
+<th class="py-2.5 px-4 font-semibold w-2/5">Team / OM / Campaign</th>
+<th class="py-2.5 px-4 font-semibold w-2/5">HR Assigned</th>
+<th class="py-2.5 px-4 font-semibold text-right w-24">Action</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-[#30363D] bg-[#0D1117] font-mono text-[11px]">
+<!-- Row 1 -->
+<tr class="hover:bg-[#1C2128]/70 transition-colors">
+<td class="py-2.5 px-4 text-[#38BDF8] font-medium">CDO Site</td>
+<td class="py-2.5 px-4 text-white">Support Group</td>
+<td class="py-2.5 px-4 text-[#E6EDF3]">Queen Dibbie Barros</td>
+<td class="py-2.5 px-4 text-right space-x-2">
+<button class="text-[#38BDF8] hover:underline">Edit</button>
+<button class="text-[#F87171] hover:underline">Delete</button>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="hover:bg-[#1C2128]/70 transition-colors">
+<td class="py-2.5 px-4 text-[#38BDF8] font-medium">CDO Site</td>
+<td class="py-2.5 px-4 text-white">Team Daniel</td>
+<td class="py-2.5 px-4 text-[#E6EDF3]">Queen Dibbie Barros</td>
+<td class="py-2.5 px-4 text-right space-x-2">
+<button class="text-[#38BDF8] hover:underline">Edit</button>
+<button class="text-[#F87171] hover:underline">Delete</button>
+</td>
+</tr>
+<!-- Row 3 -->
+<tr class="hover:bg-[#1C2128]/70 transition-colors">
+<td class="py-2.5 px-4 text-[#38BDF8] font-medium">CDO Site</td>
+<td class="py-2.5 px-4 text-white">Team Mirah</td>
+<td class="py-2.5 px-4 text-[#E6EDF3]">Queen Dibbie Barros</td>
+<td class="py-2.5 px-4 text-right space-x-2">
+<button class="text-[#38BDF8] hover:underline">Edit</button>
+<button class="text-[#F87171] hover:underline">Delete</button>
+</td>
+</tr>
+<!-- Row 4 -->
+<tr class="hover:bg-[#1C2128]/70 transition-colors">
+<td class="py-2.5 px-4 text-[#38BDF8] font-medium">CDO Site</td>
+<td class="py-2.5 px-4 text-white">Team Norman</td>
+<td class="py-2.5 px-4 text-[#E6EDF3]">Queen Dibbie Barros</td>
+<td class="py-2.5 px-4 text-right space-x-2">
+<button class="text-[#38BDF8] hover:underline">Edit</button>
+<button class="text-[#F87171] hover:underline">Delete</button>
+</td>
+</tr>
+<!-- Row 5 -->
+<tr class="hover:bg-[#1C2128]/70 transition-colors">
+<td class="py-2.5 px-4 text-[#38BDF8] font-medium">CDO Site</td>
+<td class="py-2.5 px-4 text-white">Team Shey</td>
+<td class="py-2.5 px-4 text-[#E6EDF3]">Johairah Sanggacala</td>
+<td class="py-2.5 px-4 text-right space-x-2">
+<button class="text-[#38BDF8] hover:underline">Edit</button>
+<button class="text-[#F87171] hover:underline">Delete</button>
+</td>
+</tr>
+<!-- Row 6 -->
+<tr class="hover:bg-[#1C2128]/70 transition-colors">
+<td class="py-2.5 px-4 text-[#38BDF8] font-medium">Digos Site</td>
+<td class="py-2.5 px-4 text-white">OM Jordan &amp; OM Cherry</td>
+<td class="py-2.5 px-4 text-[#E6EDF3]">Alliah Alisoso</td>
+<td class="py-2.5 px-4 text-right space-x-2">
+<button class="text-[#38BDF8] hover:underline">Edit</button>
+<button class="text-[#F87171] hover:underline">Delete</button>
+</td>
+</tr>
+<!-- Row 7 -->
+<tr class="hover:bg-[#1C2128]/70 transition-colors">
+<td class="py-2.5 px-4 text-[#38BDF8] font-medium">Digos Site</td>
+<td class="py-2.5 px-4 text-white">OM Mirah &amp; OM Freda</td>
+<td class="py-2.5 px-4 text-[#E6EDF3]">Gleecille Goles</td>
+<td class="py-2.5 px-4 text-right space-x-2">
+<button class="text-[#38BDF8] hover:underline">Edit</button>
+<button class="text-[#F87171] hover:underline">Delete</button>
+</td>
+</tr>
+<!-- Row 8 -->
+<tr class="hover:bg-[#1C2128]/70 transition-colors">
+<td class="py-2.5 px-4 text-[#38BDF8] font-medium">Digos Site</td>
+<td class="py-2.5 px-4 text-white">OM Shayne</td>
+<td class="py-2.5 px-4 text-[#E6EDF3]">Joven Jay Bauden</td>
+<td class="py-2.5 px-4 text-right space-x-2">
+<button class="text-[#38BDF8] hover:underline">Edit</button>
+<button class="text-[#F87171] hover:underline">Delete</button>
+</td>
+</tr>
+<!-- Row 9 -->
+<tr class="hover:bg-[#1C2128]/70 transition-colors">
+<td class="py-2.5 px-4 text-[#38BDF8] font-medium">Ecoland Site</td>
+<td class="py-2.5 px-4 text-white">OM Rhelford - DLPC Norderco</td>
+<td class="py-2.5 px-4 text-[#E6EDF3]">Reena Coralde</td>
+<td class="py-2.5 px-4 text-right space-x-2">
+<button class="text-[#38BDF8] hover:underline">Edit</button>
+<button class="text-[#F87171] hover:underline">Delete</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<!-- END: HR per OM Registry Section -->
+</main>
+<!-- END: Workspace Scrollable Content -->
+</div>
+<!-- END: Main Workspace Area -->
+</body></html>

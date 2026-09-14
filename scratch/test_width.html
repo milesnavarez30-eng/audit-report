@@ -1,0 +1,30 @@
+﻿<!DOCTYPE html>
+<html>
+<head><style>body { margin:0; padding:0; }</style></head>
+<body>
+<iframe id="frame" src="http://localhost:8080/cctv-ops-v2/?demo=1" style="width:1440px; height:900px; border:none;"></iframe>
+<script>
+window.onload = () => {
+  setTimeout(() => {
+    const doc = document.getElementById('frame').contentDocument;
+    const splitCol2 = doc.querySelectorAll('.edr-split-column')[1];
+    const list = doc.getElementById('edrListContainer');
+    const firstRow = doc.querySelector('.record-row');
+    const res = {
+      windowWidth: 1440,
+      col2Width: splitCol2 ? splitCol2.getBoundingClientRect().width : null,
+      listWidth: list ? list.getBoundingClientRect().width : null,
+      listScrollWidth: list ? list.scrollWidth : null,
+      firstRowWidth: firstRow ? firstRow.getBoundingClientRect().width : null,
+      firstRowHeight: firstRow ? firstRow.getBoundingClientRect().height : null
+    };
+    fetch('http://localhost:8080/api/test_report', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(res)
+    });
+  }, 1200);
+};
+</script>
+</body>
+</html>

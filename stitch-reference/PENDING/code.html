@@ -1,0 +1,563 @@
+<!DOCTYPE html><html class="h-full bg-[#0D1117] text-[#E6EDF3]" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Pending Reports - CCTV OPS OPERATIONS HUB</title>
+<!-- Tailwind CSS v3 with Plugins -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Google Fonts: Space Grotesk & JetBrains Mono -->
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&amp;family=Space+Grotesk:wght@500;600;700&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              dark: '#0D1117',
+              panel: '#151B23',
+              card: '#1C2128',
+              border: '#30363D',
+              purple: '#6C5CE7',
+              cyan: '#5CE1E6',
+              amber: '#F59E0B',
+              coral: '#EF4444',
+              lime: '#A8FF78',
+              textPrimary: '#E6EDF3',
+              textMuted: '#8B949E',
+            }
+          },
+          fontFamily: {
+            mono: ['"JetBrains Mono"', 'monospace'],
+            display: ['"Space Grotesk"', 'sans-serif'],
+            sans: ['"Inter"', 'sans-serif'],
+          },
+          boxShadow: {
+            'brutal': '2px 2px 0px #000000',
+            'brutal-lg': '3px 3px 0px #000000',
+          }
+        }
+      }
+    }
+  </script>
+<style data-purpose="custom-scroll-and-neo-brutalism">
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0D1117;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #30363D;
+      border-radius: 0px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #484F58;
+    }
+
+    /* Neo-Brutalist Hard Accent Overrides */
+    .border-hard {
+      border: 1.5px solid #30363D;
+    }
+    .border-hard-thick {
+      border: 2px solid #30363D;
+    }
+    .shadow-hard {
+      box-shadow: 2px 2px 0px #000000;
+    }
+    .shadow-hard-pressed:active {
+      transform: translate(1px, 1px);
+      box-shadow: 1px 1px 0px #000000;
+    }
+  </style>
+</head>
+<body class="h-full font-sans antialiased overflow-hidden flex bg-[#0D1117] text-[#E6EDF3]">
+<!-- BEGIN: LeftSidebar -->
+<aside class="w-[200px] flex-shrink-0 bg-[#0A0E14] border-r border-[#30363D] flex flex-col justify-between select-none z-20" data-purpose="sidebar-navigation">
+<div class="flex flex-col">
+<!-- Hub Brand Header -->
+<div class="p-3.5 border-b border-[#30363D] flex items-center gap-2.5">
+<div class="w-6 h-6 rounded bg-[#6C5CE7] flex items-center justify-center font-display font-bold text-xs text-white shadow-hard">
+          V2
+        </div>
+<div class="leading-tight">
+<div class="font-display font-bold text-[12px] tracking-wider text-white">CCTV OPS</div>
+<div class="font-mono text-[9px] text-[#8B949E] tracking-tight">OPERATIONS HUB</div>
+</div>
+</div>
+<!-- Navigation Section: WORKSPACES -->
+<div class="pt-4 px-2">
+<div class="px-2 mb-1.5 font-mono text-[10px] font-semibold tracking-wider text-[#8B949E] uppercase">Workspaces</div>
+<nav class="space-y-0.5 text-[12px] font-medium">
+<a class="flex items-center justify-between px-2.5 py-1.5 rounded-sm text-[#8B949E] hover:text-[#E6EDF3] hover:bg-[#151B23] transition-colors" href="#">
+<span class="flex items-center gap-2">
+<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.5L19 7.5V19a2 2 0 01-2 2z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+              EDR
+            </span>
+<span class="font-mono text-[10px] bg-[#1C2128] text-[#8B949E] px-1.5 py-0.2 border border-[#30363D]">[7]</span>
+</a>
+<a class="flex items-center justify-between px-2.5 py-1.5 rounded-sm text-[#8B949E] hover:text-[#E6EDF3] hover:bg-[#151B23] transition-colors" href="#">
+<span class="flex items-center gap-2">
+<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+              CCTV Audit
+            </span>
+<span class="font-mono text-[10px] bg-[#1C2128] text-[#8B949E] px-1.5 py-0.2 border border-[#30363D]">[0]</span>
+</a>
+<a class="flex items-center justify-between px-2.5 py-1.5 rounded-sm text-[#8B949E] hover:text-[#E6EDF3] hover:bg-[#151B23] transition-colors" href="#">
+<span class="flex items-center gap-2">
+<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+              AI Sorter
+            </span>
+</a>
+<a class="flex items-center justify-between px-2.5 py-1.5 rounded-sm text-[#8B949E] hover:text-[#E6EDF3] hover:bg-[#151B23] transition-colors" href="#">
+<span class="flex items-center gap-2">
+<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path><circle cx="12" cy="12" r="3"></circle></svg>
+              Maintenance
+            </span>
+</a>
+<!-- Active Route: Pending Reports (Yellow highlighted exact neo-brutalist badge from screenshot) -->
+<a class="flex items-center justify-between px-2.5 py-1.5 rounded-sm bg-[#FACC15] text-[#0A0E14] font-semibold border-2 border-black shadow-hard" href="#">
+<span class="flex items-center gap-2">
+<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"></path></svg>
+              Pending
+            </span>
+<span class="font-mono text-[10px] bg-black text-[#FACC15] font-bold px-1.5 py-0.2 rounded-none">1</span>
+</a>
+</nav>
+</div>
+<!-- Navigation Section: MANAGEMENT -->
+<div class="pt-5 px-2">
+<div class="px-2 mb-1.5 font-mono text-[10px] font-semibold tracking-wider text-[#8B949E] uppercase">Management</div>
+<nav class="space-y-0.5 text-[12px] font-medium">
+<a class="flex items-center gap-2 px-2.5 py-1.5 rounded-sm text-[#8B949E] hover:text-[#E6EDF3] hover:bg-[#151B23] transition-colors" href="#">
+<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 6h16M4 10h16M4 14h16M4 18h16" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+            Masterlist
+          </a>
+<a class="flex items-center justify-between px-2.5 py-1.5 rounded-sm text-[#8B949E] hover:text-[#E6EDF3] hover:bg-[#151B23] transition-colors" href="#">
+<span class="flex items-center gap-2">
+<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+              Follow Up
+            </span>
+<span class="font-mono text-[10px] bg-[#1C2128] text-[#8B949E] px-1.5 py-0.2 border border-[#30363D]">[0]</span>
+</a>
+<a class="flex items-center gap-2 px-2.5 py-1.5 rounded-sm text-[#8B949E] hover:text-[#E6EDF3] hover:bg-[#151B23] transition-colors" href="#">
+<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+            History
+          </a>
+<a class="flex items-center gap-2 px-2.5 py-1.5 rounded-sm text-[#8B949E] hover:text-[#E6EDF3] hover:bg-[#151B23] transition-colors" href="#">
+<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+            Accounts
+          </a>
+</nav>
+</div>
+</div>
+<!-- Sidebar Footer -->
+<div class="p-2.5 border-t border-[#30363D] flex items-center justify-between font-mono text-[10px] text-[#8B949E]">
+<span class="">v2.0.4-prod</span>
+<button class="w-5 h-5 flex items-center justify-center border border-[#30363D] bg-[#151B23] hover:text-white" title="Collapse rail">
+        «
+      </button>
+</div>
+</aside>
+<!-- END: LeftSidebar -->
+<!-- BEGIN: MainContentWrapper -->
+<div class="flex-1 flex flex-col h-full overflow-hidden bg-[#0D1117]" data-purpose="main-layout-viewport">
+<!-- BEGIN: TopHeaderBar -->
+<header class="h-12 border-b border-[#30363D] bg-[#0A0E14] px-4 flex items-center justify-between flex-shrink-0" data-purpose="command-header">
+<!-- Title Area -->
+<div class="flex items-center gap-2.5">
+<h1 class="font-display font-bold text-base tracking-wide text-white uppercase">PENDING REPORTS</h1>
+<span class="font-mono text-[10px] tracking-wide text-[#5CE1E6] bg-[#5CE1E6]/10 border border-[#5CE1E6]/40 px-2 py-0.5 rounded-none uppercase font-semibold">
+          QUEUE MONITOR
+        </span>
+</div>
+<!-- Action & Status Controls -->
+<div class="flex items-center gap-2.5 text-[11px] font-mono flex-shrink-0">
+<!-- Template -->
+<button class="h-7 px-3 bg-[#151B23] hover:bg-[#1C2128] border border-[#30363D] text-[#E6EDF3] flex items-center gap-1.5 shadow-hard shadow-hard-pressed whitespace-nowrap">
+<svg class="w-3 h-3 text-[#8B949E] flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.5L19 7.5V19a2 2 0 01-2 2z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+          Template
+        </button>
+<!-- Reload -->
+<button class="h-7 px-3 bg-[#151B23] hover:bg-[#1C2128] border border-[#30363D] text-[#E6EDF3] flex items-center gap-1.5 shadow-hard shadow-hard-pressed whitespace-nowrap">
+<svg class="w-3 h-3 text-[#8B949E] flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+          Reload
+        </button>
+<!-- Theme Toggle -->
+<div class="h-7 px-2.5 bg-[#151B23] border border-[#30363D] flex items-center gap-1.5 text-[10px] select-none whitespace-nowrap">
+<span class="text-[#A8FF78]">●</span>
+<span class="text-white font-bold">DARK</span>
+<span class="text-[#484F58]">/</span>
+<span class="text-[#8B949E]">○ LIGHT</span>
+</div>
+<!-- Docs Connected Status -->
+<div class="h-7 px-2.5 bg-[#151B23] border border-[#30363D] flex items-center gap-2 text-[#E6EDF3] whitespace-nowrap">
+<span class="w-2 h-2 rounded-full bg-[#A8FF78] animate-pulse flex-shrink-0"></span>
+<span class="">Docs Connected</span>
+<svg class="w-3 h-3 text-[#8B949E] flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path><circle cx="12" cy="12" r="3"></circle></svg>
+</div>
+<!-- Clock Widget -->
+<div class="h-7 px-3 bg-[#151B23] border border-[#30363D] flex items-center gap-1.5 text-white whitespace-nowrap">
+<span class="text-[#A8FF78]">●</span>
+<span class="tracking-wide">11:04:55 AM PHT</span>
+</div>
+<!-- Operator User Badge -->
+<div class="h-7 pl-1.5 pr-3 bg-[#151B23] border border-[#30363D] flex items-center gap-2 whitespace-nowrap flex-shrink-0">
+<div class="w-5 h-5 bg-black text-[#5CE1E6] font-bold font-mono text-xs flex items-center justify-center border border-[#30363D]">
+            M
+          </div>
+<div class="leading-none text-left">
+<span class="block font-bold text-[11px] text-white">Miles</span>
+<span class="block text-[8px] text-[#8B949E] uppercase tracking-tighter font-mono">OPERATOR</span>
+</div>
+</div>
+</div>
+</header>
+<!-- END: TopHeaderBar -->
+<!-- BEGIN: TelemetryBar -->
+<div class="bg-[#151B23] border-b border-[#30363D] px-4 py-2 flex items-center justify-between text-[11px]" data-purpose="telemetry-bar">
+<!-- Left: Counter Pills -->
+<div class="flex items-center gap-2 font-mono">
+<span class="font-sans font-semibold text-white mr-1">Pending Operations</span>
+<div class="px-2 py-0.5 bg-[#0D1117] border border-[#30363D] text-[#E6EDF3] flex items-center gap-1 shadow-hard">
+<span class="text-[#8B949E]">Total:</span>
+<span class="font-bold text-white">3</span>
+</div>
+<div class="px-2 py-0.5 bg-[#F59E0B]/10 border border-[#F59E0B] text-[#FBBF24] flex items-center gap-1 shadow-hard">
+<span class="">1d Follow-up:</span>
+<span class="font-bold">1</span>
+</div>
+<div class="px-2 py-0.5 bg-[#EF4444]/10 border border-[#EF4444] text-[#F87171] flex items-center gap-1 shadow-hard">
+<span class="">4d Send Email:</span>
+<span class="font-bold">1</span>
+</div>
+</div>
+<!-- Right: Alert Trigger Controls -->
+<div class="flex items-center gap-3 font-mono"><div class="flex items-center gap-2 text-[#8B949E] text-[10px] whitespace-nowrap">
+<span class="w-1.5 h-1.5 rounded-full bg-[#A8FF78]"></span>
+<span class="">In-app alerts active</span>
+</div>
+<button class="px-3 py-1 bg-[#1C2128] hover:bg-[#21262D] border-hard text-white font-mono text-[11px] flex items-center gap-1.5 shadow-hard shadow-hard-pressed whitespace-nowrap">
+<svg class="w-3.5 h-3.5 text-[#FACC15] flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+<span class="">Enable Alerts</span>
+</button></div>
+</div>
+<!-- END: TelemetryBar -->
+<!-- BEGIN: WorkspaceLayoutGrid -->
+<main class="flex-1 flex overflow-hidden p-3.5 gap-3.5" data-purpose="workspace-main-area">
+<!-- BEGIN: LeftFormColumn (New Pending Report) -->
+<section class="w-[330px] flex-shrink-0 flex flex-col bg-[#151B23] border-hard shadow-hard" data-purpose="new-pending-form">
+<!-- Form Header -->
+<div class="px-3.5 py-2.5 border-b border-[#30363D] bg-[#1C2128] flex items-center justify-between">
+<div class="flex items-center gap-1.5 font-display font-bold text-xs uppercase tracking-wide text-white">
+<span class="text-[#6C5CE7] text-base leading-none">+</span>
+            New Pending Report
+          </div>
+<span class="text-[9px] font-mono text-[#8B949E] uppercase">FORM [PR-01]</span>
+</div>
+<!-- Form Scrollable Fields Body -->
+<form class="flex-1 overflow-y-auto p-3.5 space-y-3 text-[11px]" onsubmit="event.preventDefault()">
+<!-- Field: Report / Agent Name -->
+<div>
+<label class="block font-mono text-[10px] uppercase font-semibold text-[#8B949E] mb-1">
+              REPORT / AGENT NAME
+            </label>
+<input class="w-full bg-[#0D1117] border border-[#30363D] text-white px-2.5 py-1.5 text-xs focus:border-[#6C5CE7] focus:ring-0 rounded-none shadow-hard font-mono placeholder:text-[#484F58]" placeholder="e.g. Agent John Doe or Case Label" type="text">
+</div>
+<!-- Field: Report Date -->
+<div>
+<label class="block font-mono text-[10px] uppercase font-semibold text-[#8B949E] mb-1">
+              REPORT DATE
+            </label>
+<div class="relative">
+<input class="w-full bg-[#0D1117] border border-[#30363D] text-white px-2.5 py-1.5 text-xs focus:border-[#6C5CE7] focus:ring-0 rounded-none shadow-hard font-mono" type="text" value="09/14/2026">
+<span class="absolute right-2.5 top-2 text-[#8B949E]">
+<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+</span>
+</div>
+</div>
+<!-- Field: Operations Manager (OM) -->
+<div>
+<div class="flex items-center justify-between mb-1">
+<label class="block font-mono text-[10px] uppercase font-semibold text-[#8B949E]">
+                OPERATIONS MANAGER (OM) <span class="text-[#EF4444]">*</span>
+</label>
+</div>
+<div class="relative">
+<input class="w-full bg-[#0D1117] border border-[#30363D] text-white px-2.5 py-1.5 text-xs focus:border-[#6C5CE7] focus:ring-0 rounded-none shadow-hard font-mono placeholder:text-[#484F58]" placeholder="Select or type OM name" type="text">
+<span class="absolute right-2.5 top-2 text-[#8B949E] pointer-events-none text-[10px]">
+                ▼
+              </span>
+</div>
+</div>
+<!-- Field: Microsoft Teams Link -->
+<div>
+<label class="block font-mono text-[10px] uppercase font-semibold text-[#8B949E] mb-1">
+              MICROSOFT TEAMS LINK
+            </label>
+<input class="w-full bg-[#0D1117] border border-[#30363D] text-[#5CE1E6] px-2.5 py-1.5 text-xs focus:border-[#6C5CE7] focus:ring-0 rounded-none shadow-hard font-mono placeholder:text-[#484F58]" placeholder="https://teams.microsoft.com/l/message/..." type="text">
+</div>
+<!-- Field: Proof Screenshot Upload Zone -->
+<div>
+<label class="block font-mono text-[10px] uppercase font-semibold text-[#8B949E] mb-1">
+              PROOF SCREENSHOT (OPTIONAL)
+            </label>
+<div class="border-2 border-dashed border-[#30363D] bg-[#0D1117] hover:border-[#6C5CE7] p-3 text-center transition-colors">
+<div class="text-[10px] text-[#8B949E] leading-normal mb-2">
+                Click to browse, drag &amp; drop image, or Ctrl+V to paste
+              </div>
+<button class="px-3 py-1 bg-[#1C2128] hover:bg-[#21262D] text-white border border-[#30363D] font-mono text-[10px] shadow-hard shadow-hard-pressed" type="button">
+                Choose File
+              </button>
+</div>
+</div>
+<!-- Form Bottom Submission Bar -->
+<div class="pt-2 border-t border-[#30363D] flex items-center justify-between mt-auto"><button class="px-3 py-1.5 text-xs text-[#8B949E] hover:text-white font-mono transition-colors whitespace-nowrap" type="reset">
+              Clear
+            </button>
+<button class="px-4 py-2 bg-[#6C5CE7] hover:bg-[#5848c2] text-white font-display font-bold text-xs uppercase tracking-wider border border-black shadow-hard shadow-hard-pressed whitespace-nowrap min-w-[110px] text-center" type="submit">
+              Add Report
+            </button></div>
+</form>
+</section>
+<!-- END: LeftFormColumn -->
+<!-- BEGIN: RightQueueColumn (Active Queue) -->
+<section class="flex-1 flex flex-col bg-[#151B23] border-hard shadow-hard overflow-hidden" data-purpose="active-queue-container">
+<!-- Queue Header & Filters -->
+<div class="px-4 py-2.5 border-b border-[#30363D] bg-[#1C2128] flex items-center justify-between flex-shrink-0">
+<div class="flex items-center gap-2.5">
+<span class="font-display font-bold text-xs uppercase text-white tracking-wide">Active Queue</span>
+<span class="font-mono text-[10px] bg-[#5CE1E6]/10 text-[#5CE1E6] border border-[#5CE1E6]/40 px-2 py-0.2 font-semibold">
+              3 ITEMS
+            </span>
+</div>
+<div class="flex items-center gap-3">
+<span class="text-[10px] font-mono text-[#8B949E]">Sorted by priority &amp; age</span>
+<!-- Search / Filter Mini Bar -->
+<div class="relative">
+<input class="h-6 w-36 bg-[#0D1117] border border-[#30363D] text-[10px] px-2 text-white placeholder:text-[#484F58] font-mono focus:w-48 transition-all rounded-none focus:border-[#6C5CE7] focus:ring-0" placeholder="Filter queue..." type="text">
+</div>
+<button class="h-7 px-3 bg-[#0D1117] hover:bg-[#21262D] border border-[#30363D] text-[10px] font-mono text-[#8B949E] hover:text-white shadow-hard shadow-hard-pressed whitespace-nowrap flex items-center justify-center">
+              Batch Actions
+            </button>
+</div>
+</div>
+<!-- Scrollable Queue Cards Area -->
+<div class="flex-1 overflow-y-auto p-3.5 space-y-3" data-purpose="queue-cards-list">
+<!-- QUEUE CARD 1: CRITICAL OVERDUE (4D Send Email) -->
+<article class="bg-[#1C2128] border-hard border-l-4 border-l-[#EF4444] p-3 shadow-hard" data-purpose="queue-card-critical"><div class="flex gap-3">
+<!-- Left Preview Thumbnail -->
+<div class="w-24 h-20 flex-shrink-0 bg-[#0A0E14] border border-[#30363D] relative overflow-hidden group cursor-pointer flex flex-col items-center justify-center">
+<div class="w-full h-full p-1 flex flex-col justify-between font-mono text-[8px] text-[#484F58] bg-[#000000]">
+<div class="flex justify-between text-[#EF4444]">
+<span class="">CAM-04B</span>
+<span class="">REC ●</span>
+</div>
+<div class="text-center text-[#30363D] text-[10px] font-bold">UNAUTHORIZED</div>
+<div class="text-[7px] text-[#8B949E]">2026-09-10 14:02:11</div>
+</div>
+<span class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center text-[9px] font-mono text-white transition-opacity">
+                  Zoom SS
+                </span>
+</div>
+<!-- Main Card Info & Editable Grid -->
+<div class="flex-1 flex flex-col justify-between min-w-0">
+<!-- Header Meta Row -->
+<div class="flex items-start sm:items-center justify-between gap-2 pb-1.5 border-b border-[#30363D]/70 mb-2 flex-wrap sm:flex-nowrap">
+<div class="flex items-center gap-2 min-w-0 flex-1">
+<span class="font-display font-bold text-xs text-white truncate">Agent Kyle Reese — Station 4B Unauthorized Device</span>
+<span class="font-mono text-[9px] text-[#8B949E] whitespace-nowrap flex-shrink-0">Reported 2026-09-10 • Age: 96h • Overdue by 24h</span>
+</div>
+<span class="font-mono text-[9px] font-bold px-2 py-1 bg-[#EF4444]/20 text-[#F87171] border border-[#EF4444] text-center leading-tight tracking-tight uppercase whitespace-normal max-w-[180px] flex-shrink-0">
+                    4D SEND EMAIL ESCALATED
+                  </span>
+</div>
+<!-- OM, Link, Remarks Horizontal Row -->
+<div class="grid grid-cols-12 gap-2 text-[10px] font-mono mb-2">
+<!-- OM -->
+<div class="col-span-12 sm:col-span-2">
+<span class="block text-[9px] text-[#8B949E] uppercase mb-0.5">OM</span>
+<input class="w-full bg-[#0D1117] border border-[#30363D] text-white px-2 py-1.5 text-[11px] rounded-none focus:ring-0 focus:border-[#6C5CE7] truncate" type="text" value="Dutch Schaefer">
+</div>
+<!-- Teams Conversation -->
+<div class="col-span-12 sm:col-span-4 min-w-0">
+<span class="block text-[9px] text-[#8B949E] uppercase mb-0.5">Teams Conversation</span>
+<div class="flex w-full">
+<input class="w-full min-w-0 bg-[#0D1117] border border-[#30363D] text-[#5CE1E6] px-2 py-1.5 text-[11px] rounded-none select-all truncate border-r-0" readonly="" type="text" value="https://teams.microsoft.com/l/message/19:b6dc6eb2b985480c9440bad103b...">
+<button class="px-2.5 bg-[#1C2128] hover:bg-[#30363D] border border-[#30363D] text-white flex items-center justify-center flex-shrink-0 text-[10px] whitespace-nowrap">
+                        Open
+                      </button>
+</div>
+</div>
+<!-- Remarks Textarea -->
+<div class="col-span-12 sm:col-span-6 min-w-0">
+<span class="block text-[9px] text-[#8B949E] uppercase mb-0.5">Remarks</span>
+<textarea class="w-full bg-[#0D1117] border border-[#30363D] text-white px-2.5 py-1 text-[11px] leading-snug rounded-none focus:ring-0 focus:border-[#6C5CE7] resize-none h-7 overflow-y-auto" rows="1">No response from OM Dutch Schaefer. 4-day threshold reached. Escalated to Security Director.</textarea>
+</div>
+</div>
+<!-- Actions Footer -->
+<div class="flex items-center justify-end gap-2 pt-1 flex-wrap">
+<button class="px-3 py-1.5 bg-[#151B23] hover:bg-[#21262D] border border-[#30363D] text-white font-mono text-[10px] shadow-hard shadow-hard-pressed whitespace-nowrap">
+                    Replace SS
+                  </button>
+<button class="px-3 py-1.5 bg-[#EF4444]/20 hover:bg-[#EF4444]/30 border border-[#EF4444] text-[#F87171] font-mono text-[10px] font-semibold flex items-center gap-1.5 shadow-hard shadow-hard-pressed whitespace-nowrap">
+<svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+                    Send Escalation Email
+                  </button>
+<button class="px-3 py-1.5 bg-[#0D1117] hover:bg-[#A8FF78]/20 border border-[#A8FF78] text-[#A8FF78] font-mono text-[10px] font-semibold shadow-hard shadow-hard-pressed whitespace-nowrap">
+                    Resolve ✓
+                  </button>
+</div>
+</div>
+</div></article>
+<!-- QUEUE CARD 2: 1-DAY FOLLOW-UP DUE -->
+<article class="bg-[#1C2128] border-hard border-l-4 border-l-[#F59E0B] p-3 shadow-hard" data-purpose="queue-card-followup"><div class="flex gap-3">
+<!-- Left Preview Thumbnail -->
+<div class="w-24 h-20 flex-shrink-0 bg-[#0A0E14] border border-[#30363D] relative overflow-hidden group cursor-pointer flex flex-col items-center justify-center">
+<div class="w-full h-full p-1 flex flex-col justify-between font-mono text-[8px] text-[#484F58] bg-[#000000]">
+<div class="flex justify-between text-[#F59E0B]">
+<span class="">CAM-03</span>
+<span class="">PAUSE ||</span>
+</div>
+<div class="text-center text-[#8B949E] text-[10px]">TIME SYNC</div>
+<div class="text-[7px] text-[#8B949E]">2026-09-13 09:12:44</div>
+</div>
+<span class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center text-[9px] font-mono text-white transition-opacity">
+                  Zoom SS
+                </span>
+</div>
+<!-- Main Card Info & Editable Grid -->
+<div class="flex-1 flex flex-col justify-between min-w-0">
+<!-- Header Meta Row -->
+<div class="flex items-start sm:items-center justify-between gap-2 pb-1.5 border-b border-[#30363D]/70 mb-2 flex-wrap sm:flex-nowrap">
+<div class="flex items-center gap-2 min-w-0 flex-1">
+<span class="font-display font-bold text-xs text-white truncate">Agent Sarah Connor — Shift Log Discrepancy</span>
+<span class="font-mono text-[9px] text-[#8B949E] whitespace-nowrap flex-shrink-0">Reported: 2026-09-13 • Age: 26h • Pending OM review</span>
+</div>
+<span class="font-mono text-[9px] font-bold px-2 py-1 bg-[#F59E0B]/20 text-[#FBBF24] border border-[#F59E0B] text-center leading-tight tracking-tight uppercase whitespace-nowrap flex-shrink-0">
+                    1D FOLLOW-UP
+                  </span>
+</div>
+<!-- OM, Link, Remarks Horizontal Row -->
+<div class="grid grid-cols-12 gap-2 text-[10px] font-mono mb-2">
+<!-- OM -->
+<div class="col-span-12 sm:col-span-2">
+<span class="block text-[9px] text-[#8B949E] uppercase mb-0.5">OM</span>
+<input class="w-full bg-[#0D1117] border border-[#30363D] text-white px-2 py-1.5 text-[11px] rounded-none focus:ring-0 focus:border-[#6C5CE7] truncate" type="text" value="Abby">
+</div>
+<!-- Teams Conversation -->
+<div class="col-span-12 sm:col-span-4 min-w-0">
+<span class="block text-[9px] text-[#8B949E] uppercase mb-0.5">Teams Conversation</span>
+<div class="flex w-full">
+<input class="w-full min-w-0 bg-[#0D1117] border border-[#30363D] text-[#5CE1E6] px-2 py-1.5 text-[11px] rounded-none select-all truncate border-r-0" readonly="" type="text" value="https://teams.microsoft.com/l/message/19:7e45ad990141a4a19c125bb9042...">
+<button class="px-2.5 bg-[#1C2128] hover:bg-[#30363D] border border-[#30363D] text-white flex items-center justify-center flex-shrink-0 text-[10px] whitespace-nowrap">
+                        Open
+                      </button>
+</div>
+</div>
+<!-- Remarks Textarea -->
+<div class="col-span-12 sm:col-span-6 min-w-0">
+<span class="block text-[9px] text-[#8B949E] uppercase mb-0.5">Remarks</span>
+<textarea class="w-full bg-[#0D1117] border border-[#30363D] text-white px-2.5 py-1 text-[11px] leading-snug rounded-none focus:ring-0 focus:border-[#6C5CE7] resize-none h-7 overflow-y-auto" rows="1">Follow-up ping sent to Abby on Teams. Awaiting response regarding camera 03 timestamp sync.</textarea>
+</div>
+</div>
+<!-- Actions Footer -->
+<div class="flex items-center justify-end gap-2 pt-1 flex-wrap">
+<button class="px-3 py-1.5 bg-[#151B23] hover:bg-[#21262D] border border-[#30363D] text-white font-mono text-[10px] shadow-hard shadow-hard-pressed whitespace-nowrap">
+                    Replace SS
+                  </button>
+<button class="px-3 py-1.5 bg-[#F59E0B]/20 hover:bg-[#F59E0B]/30 border border-[#F59E0B] text-[#FBBF24] font-mono text-[10px] font-semibold flex items-center gap-1 shadow-hard shadow-hard-pressed whitespace-nowrap">
+                    Send Follow-up Ping
+                  </button>
+<button class="px-3 py-1.5 text-[#EF4444] hover:bg-[#EF4444]/20 border border-transparent hover:border-[#EF4444] font-mono text-[10px] shadow-hard shadow-hard-pressed whitespace-nowrap">
+                    Delete
+                  </button>
+</div>
+</div>
+</div></article>
+<!-- QUEUE CARD 3: NORMAL WAITING (Preserved from IMAGE_3 screenshot) -->
+<article class="bg-[#1C2128] border-hard border-l-4 border-l-[#5CE1E6] p-3 shadow-hard" data-purpose="queue-card-standard"><div class="flex gap-3">
+<!-- Screenshot preview as shown in image.png with dark placeholder -->
+<div class="w-24 h-20 flex-shrink-0 bg-[#0B0F14] border border-[#30363D] relative overflow-hidden group cursor-pointer flex flex-col items-center justify-center">
+<div class="w-full h-full bg-[#11161d] p-1.5 flex flex-col justify-between">
+<div class="w-4 h-1.5 bg-[#5CE1E6]/40 rounded-none"></div>
+<div class="w-10 h-1 bg-[#30363D] rounded-none"></div>
+<div class="w-6 h-1 bg-[#30363D] rounded-none"></div>
+</div>
+<span class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center text-[9px] font-mono text-white transition-opacity">
+                  View SS
+                </span>
+</div>
+<!-- Main Card Info & Form Inputs -->
+<div class="flex-1 flex flex-col justify-between min-w-0">
+<!-- Header Meta Row -->
+<div class="flex items-start sm:items-center justify-between gap-2 pb-1.5 border-b border-[#30363D]/70 mb-2 flex-wrap sm:flex-nowrap">
+<div class="flex items-center gap-2 min-w-0 flex-1">
+<span class="font-display font-bold text-xs text-white truncate">test</span>
+<span class="font-mono text-[9px] text-[#8B949E] whitespace-nowrap flex-shrink-0">Reported 2026-09-14 • Age 11h • Pending 11h</span>
+</div>
+<span class="font-mono text-[9px] font-bold px-2 py-1 bg-[#5CE1E6]/10 text-[#5CE1E6] border border-[#5CE1E6] text-center leading-tight tracking-tight uppercase whitespace-nowrap flex-shrink-0">
+                    WAITING
+                  </span>
+</div>
+<!-- Three Columns: OM, TEAMS CONVERSATION, REMARKS -->
+<div class="grid grid-cols-12 gap-2 text-[10px] font-mono mb-2">
+<!-- OM -->
+<div class="col-span-12 sm:col-span-2">
+<span class="block text-[9px] text-[#8B949E] uppercase mb-0.5">OM</span>
+<input class="w-full bg-[#0D1117] border border-[#30363D] text-white px-2 py-1.5 text-[11px] rounded-none focus:ring-0 focus:border-[#6C5CE7] truncate" type="text" value="test">
+</div>
+<!-- TEAMS CONVERSATION -->
+<div class="col-span-12 sm:col-span-5 min-w-0">
+<span class="block text-[9px] text-[#8B949E] uppercase mb-0.5">Teams Conversation</span>
+<div class="flex w-full">
+<input class="w-full min-w-0 bg-[#0D1117] border border-[#30363D] text-[#5CE1E6] px-2 py-1.5 text-[11px] rounded-none select-all truncate border-r-0" readonly="" type="text" value="https://teams.microsoft.com/l/message/19:b6dc6eb2b985480c9440bad103b">
+<button class="px-2.5 bg-[#1C2128] hover:bg-[#30363D] border border-[#30363D] text-white flex items-center justify-center flex-shrink-0 text-[10px] whitespace-nowrap">
+                        Open
+                      </button>
+</div>
+</div>
+<!-- REMARKS -->
+<div class="col-span-12 sm:col-span-5 min-w-0">
+<span class="block text-[9px] text-[#8B949E] uppercase mb-0.5">Remarks</span>
+<input class="w-full bg-[#0D1117] border border-[#30363D] text-white px-2.5 py-1.5 text-[11px] rounded-none focus:ring-0 focus:border-[#6C5CE7] placeholder:text-[#484F58] truncate" placeholder="Enter status or remarks..." type="text">
+</div>
+</div>
+<!-- Actions Footer (Matching IMAGE_3: Replace SS and Delete) -->
+<div class="flex items-center justify-end gap-2 pt-1 flex-wrap">
+<button class="px-3 py-1.5 bg-[#151B23] hover:bg-[#21262D] border border-[#30363D] text-white font-mono text-[10px] shadow-hard shadow-hard-pressed whitespace-nowrap">
+                    Replace SS
+                  </button>
+<button class="px-3 py-1.5 bg-[#0D1117] hover:bg-[#EF4444]/20 border border-[#30363D] hover:border-[#EF4444] text-[#EF4444] font-mono text-[10px] shadow-hard shadow-hard-pressed whitespace-nowrap">
+                    Delete
+                  </button>
+</div>
+</div>
+</div></article>
+</div>
+<!-- Queue Status Footer Bar -->
+<div class="px-4 py-2 border-t border-[#30363D] bg-[#0D1117] flex items-center justify-between text-[10px] font-mono text-[#8B949E] flex-shrink-0">
+<div class="flex items-center gap-2">
+<span class="text-[#A8FF78]">●</span>
+<span class="">3 pending cases actively monitored</span>
+<span class="">•</span>
+<span class="">Alerts ping every 30m</span>
+<span class="">•</span>
+<span class="">All entries sync with Masterlist</span>
+</div>
+<div>
+<span class="">AUTOSAVE: <span class="text-white">ENABLED</span></span>
+</div>
+</div>
+</section>
+<!-- END: RightQueueColumn -->
+</main>
+<!-- END: WorkspaceLayoutGrid -->
+</div>
+<!-- END: MainContentWrapper -->
+
+
+</body></html>

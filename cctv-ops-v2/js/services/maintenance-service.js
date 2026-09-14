@@ -1,4 +1,4 @@
-﻿/**
+/**
  * CCTV OPS V2 - Maintenance Service
  * Authoritative 1:1 Functional Parity with V1 Maintenance Report
  * Multi-block incident reports, side-by-side incident/remarks,
@@ -51,8 +51,87 @@
     }
   };
 
+  const DEFAULT_QUICK_REMARKS = [
+    "Maintenance observed wiping these lanes.",
+    "Maintenance observed sweeping in these lanes.",
+    "No maintenance observed wiping in these stations."
+  ];
+  const QUICK_REMARKS_STORAGE_KEY = "cctv_maintenance_quick_remarks_v1";
+
   function uid() {
     return "b_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 8);
+  }
+
+  function getQuickRemarks() {
+    try {
+      const raw = localStorage.getItem(QUICK_REMARKS_STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          const clean = parsed.map(s => String(s || "").trim()).filter(Boolean);
+          if (clean.length > 0) {
+            return clean;
+          }
+        }
+      }
+    } catch (e) {
+      console.warn("Could not load custom quick remarks", e);
+    }
+    return [...DEFAULT_QUICK_REMARKS];
+  }
+
+  function saveQuickRemarks(list) {
+    try {
+      localStorage.setItem(QUICK_REMARKS_STORAGE_KEY, JSON.stringify(list));
+    } catch (e) {
+      console.warn("Could not save quick remarks", e);
+    }
+  }
+
+  function addQuickRemark(text) {
+    const clean = String(text || "").trim();
+    if (!clean) return { ok: false, error: "Choice cannot be empty." };
+    const current = getQuickRemarks();
+    const exists = current.some(item => item.toLowerCase() === clean.toLowerCase());
+    if (exists) {
+      return { ok: false, error: "This choice already exists." };
+    }
+    current.push(clean);
+    saveQuickRemarks(current);
+    return { ok: true, list: current };
+  }
+
+  function deleteQuickRemark(text) {
+    const clean = String(text || "").trim();
+    if (DEFAULT_QUICK_REMARKS.includes(clean)) {
+      return { ok: false, error: "Default choices cannot be deleted." };
+    }
+    const current = getQuickRemarks().filter(item => item !== clean);
+    saveQuickRemarks(current);
+    return { ok: true, list: current };
+  }
+
+  function restoreDefaultQuickRemarks() {
+    saveQuickRemarks([...DEFAULT_QUICK_REMARKS]);
+    return [...DEFAULT_QUICK_REMARKS];
+  }
+
+  function getEffectiveBlockRemarks(block) {
+    if (!block) return [];
+    const manual = Array.isArray(block.remarks)
+      ? block.remarks.map(item => String(item || "").trim()).filter(Boolean)
+      : (String(block.remarks || "").trim() ? [String(block.remarks).trim()] : []);
+
+    if (manual.length > 0) {
+      return manual;
+    }
+
+    const preset = String(block.selectedPreset || "").trim();
+    if (preset) {
+      return [preset];
+    }
+
+    return [];
   }
 
   function makeBlock() {
@@ -61,7 +140,8 @@
       lanesText: "",
       remarks: [""],
       screenshots: [],
-      dataHidden: false
+      dataHidden: false,
+      selectedPreset: ""
     };
   }
 
@@ -170,7 +250,8 @@
             lanesText: block.lanesText || "",
             remarks: existingRemarks.length ? existingRemarks : [""],
             screenshots: Array.isArray(block.screenshots) ? block.screenshots : [],
-            dataHidden: !!block.dataHidden
+            dataHidden: !!block.dataHidden,
+            selectedPreset: String(block.selectedPreset || "").trim()
           };
         });
       }
@@ -385,9 +466,7 @@
       screenshots: Array.isArray(block.screenshots)
         ? block.screenshots.map(maintenanceScreenshotSource).filter(Boolean)
         : [],
-      remarks: Array.isArray(block.remarks)
-        ? block.remarks.map(item => String(item || "").trim()).filter(Boolean)
-        : []
+      remarks: getEffectiveBlockRemarks(block)
     }));
 
     return {
@@ -553,11 +632,13 @@
   }
 
   function maintenanceReportPlainTextForSheets(state) {
-    const cleanTitle = String(state.title || "Mabini Site A - 1st & 2nd Floor")
+    const s = state || {};
+    const cleanTitle = String(s.title || "Mabini Site A - 1st & 2nd Floor")
       .replace(/\s*Maintenance\s+Report\s*$/i, "")
       .trim();
-    const dateText = state.date || todayLocal();
+    const dateText = s.date || todayLocal();
     const titleLine = `${cleanTitle} (${dateText})`;
+    const blocks = Array.isArray(s.blocks) ? s.blocks : [];
 
     const headers = [
       "TIMESTAMP",
@@ -571,15 +652,15 @@
 
     const lines = [titleLine, headers];
 
-    state.blocks.forEach((block, blockIndex) => {
+    blocks.forEach((block, blockIndex) => {
       const rows = maintenanceRowsForSheets(block.lanesText || "");
       rows.forEach(row => lines.push(row.join("\t")));
 
-      const remarks = Array.isArray(block.remarks) ? block.remarks.filter(Boolean) : [];
+      const remarks = getEffectiveBlockRemarks(block);
       if (remarks.length) {
         lines.push(`Remarks:\t${remarks.join(" | ")}`);
       }
-      if (blockIndex < state.blocks.length - 1) {
+      if (blockIndex < blocks.length - 1) {
         lines.push("");
       }
     });
@@ -588,11 +669,13 @@
   }
 
   function maintenanceReportHtmlForSheets(state) {
-    const cleanTitle = String(state.title || "Mabini Site A - 1st & 2nd Floor")
+    const s = state || {};
+    const cleanTitle = String(s.title || "Mabini Site A - 1st & 2nd Floor")
       .replace(/\s*Maintenance\s+Report\s*$/i, "")
       .trim();
-    const dateText = state.date || todayLocal();
+    const dateText = s.date || todayLocal();
     const titleLine = `${cleanTitle} (${dateText})`;
+    const blocks = Array.isArray(s.blocks) ? s.blocks : [];
 
     const headers = [
       "TIMESTAMP",
@@ -616,59 +699,69 @@
       </th>
     `).join("");
 
-    const blockHtml = state.blocks.map((block, blockIndex) => {
+    const blockHtml = blocks.map((block, blockIndex) => {
       const rows = maintenanceRowsForSheets(block.lanesText || "");
       const screenshots = Array.isArray(block.screenshots) ? block.screenshots : [];
-      const remarks = Array.isArray(block.remarks) ? block.remarks.filter(Boolean) : [];
+      const remarks = getEffectiveBlockRemarks(block);
 
-      const imageRow = screenshots.length ? `
-        <tr class="maintenance-pdf-image-row" style="page-break-inside:avoid;">
-          <td colspan="7" style="padding:8px 4px; border:0; background:#ffffff; text-align:left;">
-            <div style="white-space:nowrap;">
-              ${screenshots.map((shot, shotIdx) => `
-                <img src="${esc(maintenanceScreenshotSource(shot))}" alt="CCTV Screenshot ${shotIdx + 1}" style="display:inline-block; width:220px; height:132px; object-fit:contain; vertical-align:top; margin:0 8px 6px 0; background:#ffffff;">
-              `).join("")}
-            </div>
-          </td>
-        </tr>
-      ` : "";
-
-      const remarksRow = remarks.length ? `
-        <tr class="maintenance-pdf-remarks-row" style="page-break-inside:avoid;">
-          <td colspan="7" style="border:0; border-left:4px solid #278914; padding:7px 9px; background:#f5faf3; color:#1f3b24; font-family:Arial,sans-serif; font-size:10px; text-align:left;">
-            <strong style="color:#278914;">Remarks:</strong>
-            ${remarks.map(item => `<div>${esc(item)}</div>`).join("")}
-          </td>
-        </tr>
-      ` : "";
-
-      const blockLabel = state.blocks.length > 1
-        ? `<div style="font-family:Arial,sans-serif; font-size:12px; font-weight:700; color:#31495f; padding:8px 0 4px 0;">Block #${blockIndex + 1}</div>`
+      const blockLabel = blocks.length > 1
+        ? `<div class="maintenance-pdf-block-title" style="font-family:Arial,sans-serif; font-size:13px; font-weight:700; color:#1e293b; padding:10px 0 4px 0; border-bottom:1px solid #cbd5e1; margin-bottom:8px; page-break-after:avoid; break-after:avoid;">Block #${blockIndex + 1}</div>`
         : "";
 
       const dataRows = rows.map(row => `
-          <tr style="page-break-inside:avoid;">
-            ${row.map((cell, idx) => `
-              <td style="border:1px solid #e5e7eb; padding:5px 7px; background:#ffffff; color:#202124; font-family:Arial,sans-serif; font-size:10px; vertical-align:top; ${idx === 6 ? "text-align:left;" : "text-align:center;"}">
-                ${esc(cell)}
-              </td>
+        <tr style="page-break-inside:avoid; break-inside:avoid;">
+          ${row.map((cell, idx) => `
+            <td style="border:1px solid #e5e7eb; padding:5px 7px; background:#ffffff; color:#202124; font-family:Arial,sans-serif; font-size:10px; vertical-align:top; ${idx === 6 ? "text-align:left;" : "text-align:center;"}">
+              ${esc(cell)}
+            </td>
+          `).join("")}
+        </tr>
+      `).join("");
+
+      // 1. DATA TABLE
+      const tableHtml = rows.length ? `
+        <table class="maintenance-pdf-table" style="border-collapse:collapse; width:100%; margin-bottom:8px; background:#ffffff; page-break-inside:auto; break-inside:auto;">
+          <thead style="display:table-header-group;">
+            <tr style="page-break-inside:avoid; break-inside:avoid;">${headerCells}</tr>
+          </thead>
+          <tbody style="display:table-row-group;">
+            ${dataRows}
+          </tbody>
+        </table>
+      ` : `
+        <div style="font-family:Arial,sans-serif; font-size:10.5px; color:#6b7280; font-style:italic; padding:6px 0 8px 0;">No station issues recorded for this section.</div>
+      `;
+
+      // 2. PROOF SCREENSHOTS
+      const screenshotsHtml = screenshots.length ? `
+        <div class="maintenance-pdf-screenshots" style="page-break-inside:avoid; break-inside:avoid; margin:8px 0 10px 0; padding:8px; background:#fafafa; border:1px solid #e5e7eb; border-radius:4px;">
+          <div style="font-family:Arial,sans-serif; font-size:10px; font-weight:700; color:#4b5563; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px;">
+            Proof Screenshots (${screenshots.length})
+          </div>
+          <div style="display:flex; flex-wrap:wrap; gap:8px; align-items:flex-start;">
+            ${screenshots.map((shot, shotIdx) => `
+              <div style="display:inline-block; border:1px solid #d1d5db; border-radius:3px; overflow:hidden; background:#000000; line-height:0;">
+                <img src="${esc(maintenanceScreenshotSource(shot))}" alt="CCTV Screenshot ${shotIdx + 1}" style="max-width:240px; max-height:144px; width:auto; height:auto; object-fit:contain; display:block; background:#ffffff;">
+              </div>
             `).join("")}
-          </tr>
-        `).join("");
+          </div>
+        </div>
+      ` : "";
+
+      // 3. REMARKS
+      const remarksHtml = remarks.length ? `
+        <div class="maintenance-pdf-remarks" style="page-break-inside:avoid; break-inside:avoid; border-left:4px solid #16a34a; padding:8px 12px; background:#f0fdf4; color:#14532d; font-family:Arial,sans-serif; font-size:10.5px; margin:8px 0 14px 0; border-radius:0 4px 4px 0;">
+          <div style="font-weight:700; color:#16a34a; font-size:11px; margin-bottom:3px; page-break-after:avoid; break-after:avoid;">Remarks:</div>
+          ${remarks.map(item => `<div style="line-height:1.45;">${esc(item)}</div>`).join("")}
+        </div>
+      ` : "";
 
       return `
-        <div class="maintenance-pdf-block" style="margin-bottom:16px;">
+        <div class="maintenance-pdf-block" style="margin-bottom:20px; page-break-inside:auto; break-inside:auto;">
           ${blockLabel}
-          <table class="maintenance-pdf-table" style="border-collapse:collapse; width:100%; background:#ffffff; page-break-inside:auto;">
-            <thead style="display:table-header-group;">
-              <tr style="page-break-inside:avoid;">${headerCells}</tr>
-            </thead>
-            <tbody style="display:table-row-group;">
-              ${dataRows}
-              ${imageRow}
-              ${remarksRow}
-            </tbody>
-          </table>
+          ${tableHtml}
+          ${screenshotsHtml}
+          ${remarksHtml}
         </div>
       `;
     }).join("");
@@ -678,26 +771,33 @@
       <html>
         <head>
           <meta charset="utf-8">
+          <title>${esc(titleLine)}</title>
           <style>
             @media print {
+              @page { size: A4 landscape; margin: 15mm; }
+              body { margin: 0; padding: 0; background: #ffffff; }
               thead { display: table-header-group !important; }
               tbody { display: table-row-group !important; }
-              tr { page-break-inside: avoid !important; }
-              .maintenance-pdf-image-row { page-break-inside: avoid !important; }
-              .maintenance-pdf-remarks-row { page-break-inside: avoid !important; }
-              .maintenance-pdf-block { page-break-inside: auto; }
+              tr { page-break-inside: avoid !important; break-inside: avoid !important; }
+              .maintenance-pdf-block { page-break-inside: auto; break-inside: auto; }
+              .maintenance-pdf-block-title { page-break-after: avoid !important; break-after: avoid !important; }
+              .maintenance-pdf-table { page-break-inside: auto; break-inside: auto; margin-bottom: 8px; }
+              .maintenance-pdf-screenshots { page-break-inside: avoid !important; break-inside: avoid !important; }
+              .maintenance-pdf-remarks { page-break-inside: avoid !important; break-inside: avoid !important; }
             }
-            @page { size: A4 landscape; margin: 1in; }
-            body { margin: 0; padding: 0; background: #ffffff; }
+            @page { size: A4 landscape; margin: 15mm; }
+            body { margin: 0; padding: 12px; background: #ffffff; font-family: Arial, sans-serif; color: #111827; }
             table { border-collapse: collapse; width: 100%; }
             thead { display: table-header-group; }
             tbody { display: table-row-group; }
-            tr { page-break-inside: avoid; }
-            .maintenance-pdf-image-row { page-break-inside: avoid; }
-            .maintenance-pdf-remarks-row { page-break-inside: avoid; }
+            tr { page-break-inside: avoid; break-inside: avoid; }
+            .maintenance-pdf-block { page-break-inside: auto; break-inside: auto; }
+            .maintenance-pdf-block-title { page-break-after: avoid; break-after: avoid; }
+            .maintenance-pdf-screenshots { page-break-inside: avoid; break-inside: avoid; }
+            .maintenance-pdf-remarks { page-break-inside: avoid; break-inside: avoid; }
           </style>
         </head>
-        <body style="margin:0; padding:10px; background:#ffffff;">
+        <body>
           <div style="padding:0 0 10px 0; color:#111827; font-family:Arial,sans-serif; font-size:16px; font-weight:700; text-align:left;">
             ${esc(titleLine)}
           </div>
@@ -738,6 +838,13 @@
     sendMaintenanceReportToGoogleSheets,
     maintenanceReportPlainTextForSheets,
     maintenanceReportHtmlForSheets,
+    DEFAULT_QUICK_REMARKS,
+    getQuickRemarks,
+    saveQuickRemarks,
+    addQuickRemark,
+    deleteQuickRemark,
+    restoreDefaultQuickRemarks,
+    getEffectiveBlockRemarks,
     getBlocks() {
       if (Array.isArray(root.maintenanceService?._currentBlocks)) {
         return root.maintenanceService._currentBlocks.map(b => ({ ...b }));

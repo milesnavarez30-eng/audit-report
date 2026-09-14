@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Targeted Fixes Automated Test Suite</title>
+</head>
+<body style="background:#0f172a; color:#f8fafc; font-family:monospace; padding:20px;">
+  <h2>Targeted Fixes Verification Runner</h2>
+  <div id="status">Running tests...</div>
+  <iframe id="testFrame" src="/cctv-ops-v2/" style="width:1440px; height:900px; border:1px solid #334155;"></iframe>
+
+  <script>
+    const frame = document.getElementById("testFrame");
+    const statusDiv = document.getElementById("status");
+
+    frame.onload = async () => {
+      await new Promise(r => setTimeout(r, 1200));
+      const win = frame.contentWindow;
+      const doc = frame.contentDocument;
+
+      const results = [];
+      function assert(name, pass, detail = "") {
+        results.push({ name, pass: !!pass, detail });
+        console.log((pass ? "PASS: " : "FAIL: ") + name + (detail ? " - " + detail : ""));
+      }
+
+      // Collect console errors
+      const consoleErrors = [];
+      const origErr = win.console.error;
+      win.console.error = function(...args) {
+        consoleErrors.push(args.join(" "));
+        origErr.apply(win.console, args);
+      };
+
+      try {
+        const layout = doc.querySelector("#paneEdr .edr-split-layout");
+        const colForm = doc.getElementById("colEdrForm");
+        const colDispatch = doc.getElementById("colEdrDispatch");
+        const cardDispatch = doc.getElementById("cardTeamsDispatch");
+        const cardSaved = doc.getElementById("cardSavedEdrs");
+        const btnExpand = doc.getElementById("btnToggleDispatchExpand");
+        const labelExpand = doc.getElementById("labelDispatchExpand");
+
+        function getEdrSnapshot() {
+          return {
+            hasExpandedClass: layout.classList.contains("dispatch-expanded"),
+            btnLabel: labelExpand ? labelExpand.textContent.trim() : "",
+            layoutGridCols: win.getComputedStyle(layout).gridTemplateColumns,
+            colFormDisplay: win.getComputedStyle(colForm).display,
+            colFormWidth: colForm.offsetWidth,
+            colDispatchDisplay: win.getComputedStyle(colDispatch).display,
+            colDispatchWidth: colDispatch.offsetWidth,
+            colDispatchGridCols: win.getComputedStyle(colDispatch).gridTemplateColumns,
+            cardDispatchOrder: win.getComputedStyle(cardDispatch).order,
+            cardSavedOrder: win.getComputedStyle(cardSaved).order,
+            cardDispatchWidth: cardDispatch.offsetWidth,
+            cardSavedWidth: cardSaved.offsetWidth
+          };
+        }
+
+        // ==========================================
+        // 1. EDR EXPAND / COLLAPSE REPEATED CYCLE
+        // ==========================================
+        const initialSnap = getEdrSnapshot();
+        assert("Initial EDR normal state has form visible", initialSnap.colFormDisplay === "flex" && initialSnap.colFormWidth > 300, `Width: ${initialSnap.colFormWidth}px`);
+        assert("Initial EDR normal state has dispatch visible", initialSnap.colDispatchDisplay === "flex" && initialSnap.colDispatchWidth > 300, `Width: ${initialSnap.colDispatchWidth}px`);
+        assert("Initial button label is Expand Review", initialSnap.btnLabel === "Expand Review", `Label: ${initialSnap.btnLabel}`);
+
+        // Click Expand Review (Cycle 1)
+        btnExpand.click();
+        await new Promise(r => setTimeout(r, 200));
+        const expSnap1 = getEdrSnapshot();
+        assert("Cycle 1 Expand: layout has dispatch-expanded class", expSnap1.hasExpandedClass);
+        assert("Cycle 1 Expand: form is display none", expSnap1.colFormDisplay === "none");
+        assert("Cycle 1 Expand: colDispatch fills full width (grid-column 1 / -1)", expSnap1.colDispatchWidth >= layout.offsetWidth - 40, `colDispatch: ${expSnap1.colDispatchWidth}px, layout: ${layout.offsetWidth}px`);
+        assert("Cycle 1 Expand: Saved EDRs has order 1", expSnap1.cardSavedOrder === "1");
+        assert("Cycle 1 Expand: Teams Dispatch has order 2", expSnap1.cardDispatchOrder === "2");
+        assert("Cycle 1 Expand: button label is Collapse Review", expSnap1.btnLabel === "Collapse Review");
+
+        // Click Collapse Review (Cycle 1)
+        btnExpand.click();
+        await new Promise(r => setTimeout(r, 200));
+        const colSnap1 = getEdrSnapshot();
+        assert("Cycle 1 Collapse: layout does NOT have dispatch-expanded class", !colSnap1.hasExpandedClass);
+        assert("Cycle 1 Collapse: form is restored to flex", colSnap1.colFormDisplay === "flex" && colSnap1.colFormWidth === initialSnap.colFormWidth, `Form width: ${colSnap1.colFormWidth}`);
+        assert("Cycle 1 Collapse: colDispatch restored to flex", colSnap1.colDispatchDisplay === "flex" && colSnap1.colDispatchWidth === initialSnap.colDispatchWidth, `Dispatch width: ${colSnap1.colDispatchWidth}`);
+        assert("Cycle 1 Collapse: Teams Dispatch restored to top (order 1)", colSnap1.cardDispatchOrder === "1");
+        assert("Cycle 1 Collapse: Saved EDRs restored to bottom (order 2)", colSnap1.cardSavedOrder === "2");
+        assert("Cycle 1 Collapse: button label restored to Expand Review", colSnap1.btnLabel === "Expand Review");
+
+        // Repeat Cycle 2: Expand -> Collapse
+        btnExpand.click();
+        await new Promise(r => setTimeout(r, 200));
+        btnExpand.click();
+        await new Promise(r => setTimeout(r, 200));
+        const colSnap2 = getEdrSnapshot();
+        assert("Cycle 2 Collapse: exact identical widths restored", colSnap2.colFormWidth === initialSnap.colFormWidth && colSnap2.colDispatchWidth === initialSnap.colDispatchWidth);
+
+        // Test workspace switching: Expand -> Switch to CCTV Audit -> Switch back to EDR
+        btnExpand.click();
+        await new Promise(r => setTimeout(r, 200));
+        doc.getElementById("tabAudit").click();
+        await new Promise(r => setTimeout(r, 200));
+        doc.getElementById("tabEdr").click();
+        await new Promise(r => setTimeout(r, 200));
+        const switchSnap = getEdrSnapshot();
+        assert("Switch EDR -> Audit -> EDR resets to clean normal layout", !switchSnap.hasExpandedClass && switchSnap.colFormDisplay === "flex" && switchSnap.btnLabel === "Expand Review");
+
+        // ==========================================
+        // 2. COLLAPSED SIDEBAR USABILITY & ALL WORKSPACES
+        // ==========================================
+        const rail = doc.getElementById("navRail");
+        const btnToggleRail = doc.getElementById("btnToggleRail");
+
+        // Collapse the sidebar
+        if (!rail.classList.contains("collapsed")) {
+          btnToggleRail.click();
+          await new Promise(r => setTimeout(r, 200));
+        }
+
+        assert("Sidebar is now collapsed", rail.classList.contains("collapsed"));
+        assert("Collapsed rail toggle aria-label is Expand sidebar", btnToggleRail.getAttribute("aria-label") === "Expand sidebar");
+        assert("Collapsed rail toggle title is Expand sidebar", btnToggleRail.title === "Expand sidebar");
+        assert("Collapsed rail toggle has 40x40 hit target", btnToggleRail.offsetWidth === 40 && btnToggleRail.offsetHeight === 40, `${btnToggleRail.offsetWidth}x${btnToggleRail.offsetHeight}`);
+
+        const workspaces = ["tabEdr", "tabAudit", "tabSorter", "tabMaintenance", "tabFollowup", "tabMasterlist", "tabHistory", "tabAccounts"];
+        for (const wsId of workspaces) {
+          const tab = doc.getElementById(wsId);
+          assert(`Workspace tab ${wsId} exists`, !!tab);
+          const icon = tab.querySelector(".nav-icon");
+          assert(`Tab ${wsId} has icon`, !!icon);
+          const iconDim = icon.getBoundingClientRect();
+          assert(`Tab ${wsId} icon is >= 16px (approx 16-18px)`, iconDim.width >= 16 && iconDim.height >= 16, `Actual: ${iconDim.width.toFixed(1)}x${iconDim.height.toFixed(1)}px`);
+          const tabRect = tab.getBoundingClientRect();
+          assert(`Tab ${wsId} button target is 40x40px centered`, tabRect.width === 40 && tabRect.height === 40, `Actual: ${tabRect.width}x${tabRect.height}`);
+          assert(`Tab ${wsId} has descriptive tooltip`, tab.hasAttribute("data-tooltip") && tab.getAttribute("data-tooltip").length > 0, `Tooltip: ${tab.getAttribute("data-tooltip")}`);
+
+          // Test switching to workspace in collapsed mode
+          tab.click();
+          await new Promise(r => setTimeout(r, 100));
+          assert(`Tab ${wsId} is active after click`, tab.classList.contains("active"));
+        }
+
+        // Return to EDR
+        doc.getElementById("tabEdr").click();
+        await new Promise(r => setTimeout(r, 100));
+
+        // Expand sidebar back
+        btnToggleRail.click();
+        await new Promise(r => setTimeout(r, 200));
+        assert("Sidebar is now expanded", !rail.classList.contains("collapsed"));
+        assert("Expanded rail toggle aria-label is Collapse sidebar", btnToggleRail.getAttribute("aria-label") === "Collapse sidebar");
+        assert("Expanded rail toggle title is Collapse sidebar", btnToggleRail.title === "Collapse sidebar");
+
+        // ==========================================
+        // 3. CONSOLE ERRORS
+        // ==========================================
+        assert("No unhandled console errors during run", consoleErrors.length === 0, consoleErrors.join(" | "));
+
+      } catch (err) {
+        assert("Test execution threw error", false, err.message + "\n" + err.stack);
+      }
+
+      // Output report
+      let passedCount = results.filter(r => r.pass).length;
+      let totalCount = results.length;
+      let summary = `\n==========================================\nTARGETED FIXES VERIFICATION: ${passedCount}/${totalCount} PASSED\n==========================================\n`;
+      results.forEach(r => {
+        summary += `${r.pass ? "[PASS]" : "[FAIL]"} ${r.name}${r.detail ? ` (${r.detail})` : ""}\n`;
+      });
+
+      statusDiv.innerText = summary;
+      console.log(summary);
+
+      fetch("/api/test_report", {
+        method: "POST",
+        headers: { "Content-Type": "text/plain" },
+        body: summary
+      });
+    };
+  </script>
+</body>
+</html>

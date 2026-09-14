@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>CCTV OPS V2 - Core Workspaces Integration Suite (Auth, EDR, Audit, Maintenance)</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #0b0f19;
+      color: #f1f5f9;
+      padding: 24px;
+      margin: 0;
+    }
+    h1 { font-size: 18px; margin: 0 0 12px 0; color: #38bdf8; }
+    .summary-badge {
+      display: inline-block;
+      padding: 6px 14px;
+      border-radius: 4px;
+      font-weight: 700;
+      font-size: 13px;
+      margin-bottom: 16px;
+    }
+    .summary-pass { background: rgba(16, 185, 129, 0.2); border: 1px solid #10b981; color: #34d399; }
+    .summary-fail { background: rgba(239, 68, 68, 0.2); border: 1px solid #ef4444; color: #f87171; }
+    .test-log {
+      font-family: monospace;
+      font-size: 12px;
+      line-height: 1.6;
+      background: #151923;
+      padding: 16px;
+      border: 1px solid #232a3b;
+      border-radius: 6px;
+      max-height: 600px;
+      overflow-y: auto;
+    }
+    .test-pass { color: #34d399; }
+    .test-fail { color: #f87171; font-weight: bold; }
+    .test-section { color: #38bdf8; font-weight: 700; margin-top: 10px; border-bottom: 1px solid #232a3b; padding-bottom: 4px; }
+  </style>
+</head>
+<body>
+  <h1>CCTV OPS V2 - Core Workspaces Integration Suite (Auth, EDR, Audit, Maintenance)</h1>
+  <div id="summary" class="summary-badge" style="background:#232a3b; color:#94a3b8;">Running core operational checks...</div>
+  <div id="log" class="test-log"></div>
+
+  <!-- Shared Runtime & Service Dependencies -->
+  <script src="../auth-config.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <script src="../cctv-ops-v2/js/config.js"></script>
+  <script src="../cctv-ops-v2/js/storage.js"></script>
+  <script src="../cctv-ops-v2/js/shared.js"></script>
+  <script src="../cctv-ops-v2/js/services/auth-service.js"></script>
+  <script src="../cctv-ops-v2/js/services/edr-service.js"></script>
+  <script src="../cctv-ops-v2/js/services/audit-service.js"></script>
+  <script src="../cctv-ops-v2/js/services/sorter-service.js"></script>
+  <script src="../cctv-ops-v2/js/services/maintenance-service.js"></script>
+  <script src="../cctv-ops-v2/js/services/pending-service.js"></script>
+  <script src="../cctv-ops-v2/js/services/followup-service.js"></script>
+
+  <script>
+    let passed = 0;
+    let failed = 0;
+    let failedList = [];
+    const logEl = document.getElementById("log");
+    const summaryEl = document.getElementById("summary");
+
+    function assert(desc, condition) {
+      const line = document.createElement("div");
+      if (condition) {
+        passed++;
+        line.className = "test-pass";
+        line.textContent = `[PASS] ${desc}`;
+      } else {
+        failed++;
+        failedList.push(desc);
+        line.className = "test-fail";
+        line.textContent = `[FAIL] ${desc}`;
+      }
+      logEl.appendChild(line);
+    }
+
+    function section(title) {
+      const sec = document.createElement("div");
+      sec.className = "test-section";
+      sec.textContent = `=== ${title} ===`;
+      logEl.appendChild(sec);
+    }
+
+    const testPng = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAA7SURBVHhe7c4BDQAACAMw9E/tUwwmFvw+yZptWc3MzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMxfmA0G6kFf2u/6fAAAAABJRU5ErkJggg==";
+
+    async function runIntegrationSuite() {
+      try {
+        // ====================================================================
+        // WORKSPACE 1: AUTHENTICATION
+        // ====================================================================
+        section("1. Authentication & Multi-Tenant Scoped Storage");
+        const auth = window.CCTV_AUTH;
+        const storage = window.CCTV_STORAGE;
+        assert("Auth module is initialized", auth !== undefined);
+        assert("Storage module is initialized", storage !== undefined);
+
+        // Scoped storage get/set/remove verification
+        storage.setItem("cctv_test_auth_token", { token: "operator_token_123", valid: true });
+        const retrievedToken = storage.getItem("cctv_test_auth_token");
+        assert("Storage stores and parses JSON object correctly", retrievedToken && retrievedToken.token === "operator_token_123");
+        assert("Storage returns fallback default when key absent", storage.getItem("cctv_absent_key", "default_val") === "default_val");
+        
+        storage.removeItem("cctv_test_auth_token");
+        assert("Storage successfully removes item", storage.getItem("cctv_test_auth_token", null) === null);
+
+        // Role & workspace permission check
+        assert("Default user has operator EDR permissions", auth.canAccessWorkspace("edr") === true);
+        assert("Default user has audit access", auth.canAccessWorkspace("audit") === true);
+        assert("Default user has maintenance access", auth.canAccessWorkspace("maintenance") === true);
+
+        // ====================================================================
+        // WORKSPACE 2: EDR (END OF THE DAY REPORT)
+        // ====================================================================
+        section("2. EDR (End of the Day Report) Core Parity");
+        const edr = window.CCTV_EDR;
+        assert("EDR module is initialized", edr !== undefined);
+        await edr.init();
+
+        // Clear existing test reports to begin cleanly
+        const existingEdrs = edr.getReports();
+        for (const r of existingEdrs) {
+          await edr.deleteReport(r.id);
+        }
+
+        // Create new EDR with proof screenshot and CCTV clip link
+        const newReport = await edr.saveReport({
+          date: "2026-09-10",
+          site: "Mabini Site A - 1st Floor",
+          account: "Shopee - CB-SCS",
+          timeObserved: "14:30",
+          supervisorRole: "Team Leader",
+          supervisorName: "Sarah Connor",
+          dedicatedOm: "Mirah",
+          subjectType: "Agent/s",
+          subjectName: "John Matrix",
+          incident: "CCTV observed sleeping at workstation during production shift.",
+          action: "Notice of Coaching issued; 1-on-1 scheduled.",
+          clipLink: "https://cctv.local/clips/stream101",
+          screenshotData: testPng,
+          selected: true,
+          done: false
+        });
+
+        assert("EDR saved with unique ID", Boolean(newReport && newReport.id));
+        assert("Proof screenshot preserved in saved EDR", newReport.screenshotData === testPng);
+        assert("CCTV clip link preserved", newReport.clipLink === "https://cctv.local/clips/stream101");
+
+        // Toggle Done
+        const doneReport = await edr.toggleDone(newReport.id);
+        assert("EDR marked as Done", doneReport.done === true);
+
+        // Reopen
+        const reopenedReport = await edr.toggleDone(newReport.id);
+        assert("EDR successfully reopened", reopenedReport.done === false);
+
+        // Teams Dispatch & Clipboard Safety Check
+        section("2b. Teams Dispatch & Clipboard Size Check");
+        const teamsHtml = edr.generateTeamsHtml([reopenedReport], "https://facebook.com/post1\nhttps://facebook.com/post2\nhttps://facebook.com/post3\nhttps://facebook.com/post4\nhttps://facebook.com/post5\nhttps://facebook.com/post6\nhttps://facebook.com/post7\nhttps://facebook.com/post8\nhttps://facebook.com/post9\nhttps://facebook.com/post10");
+        
+        assert("Teams output renders 'CCTV Clip: Click here!' with real URL", teamsHtml.includes('href="https://cctv.local/clips/stream101"') && teamsHtml.includes("Click here!"));
+        assert("Teams output does NOT embed huge Base64 image bloat into HTML", !teamsHtml.includes("data:image/png;base64"));
+        assert("Teams output is compact (avoids Teams message length limit)", teamsHtml.length < 5000);
+
+        const teamsText = edr.generateTeamsPlainText([reopenedReport], "https://facebook.com/post1");
+        assert("Teams plain text fallback includes CCTV Clip URL", teamsText.includes("CCTV Clip: https://cctv.local/clips/stream101"));
+
+        // Google Docs Receiver Contract Check
+        section("2c. Google Docs EDR Receiver Contract");
+        assert("Validates valid /exec Google Docs Web App URL", edr.isValidDocsUrl("https://script.google.com/macros/s/AKfycbz_test/exec") === true);
+        assert("Rejects non-/exec URL", edr.isValidDocsUrl("https://script.google.com/macros/s/AKfycbz_test") === false);
+
+        // EDR -> CCTV Audit Bridge Test
+        section("2d. EDR to CCTV Audit Bridge");
+        const audit = window.CCTV_AUDIT;
+        assert("Audit module is initialized", audit !== undefined);
+        await audit.init();
+
+        const bridgedEntry = edr.buildAuditRowFromEdr(reopenedReport);
+        assert("Bridge correctly maps date", bridgedEntry.rawDate === "2026-09-10");
+        assert("Bridge correctly maps site", bridgedEntry.site === "Mabini Site A - 1st Floor");
+        assert("Bridge maps supervisor TL", bridgedEntry.tlName === "Sarah Connor");
+        assert("Bridge maps subject agent", bridgedEntry.agentName === "John Matrix");
+        assert("Bridge maps dedicated OM", bridgedEntry.omName === "Mirah");
+        assert("Bridge maps account/campaign", bridgedEntry.account === "Shopee - CB-SCS");
+        assert("Bridge defaults NOC to Pending", bridgedEntry.noc === "Pending");
+        assert("Bridge links source EDR ID", bridgedEntry.sourceEdrId === reopenedReport.id);
+
+        // Add bridged entry to CCTV Audit
+        const addedAuditEntry = audit.addEntry(bridgedEntry);
+        assert("Bridged entry successfully added to CCTV Audit", Boolean(addedAuditEntry && addedAuditEntry.id));
+
+        // ====================================================================
+        // WORKSPACE 3: CCTV AUDIT & DATA OUTPUT GRID
+        // ====================================================================
+        section("3. CCTV Audit, Data Output Grid & Arial 10pt Copy");
+        const auditEntries = audit.getEntries();
+        assert("CCTV Audit contains at least 1 entry", auditEntries.length >= 1);
+
+        // Update Entry
+        const updatedAudit = audit.updateEntry(addedAuditEntry.id, {
+          noc: "YES",
+          remarks: "NOC signed and received by supervisor."
+        });
+        assert("Audit NOC updated to YES", updatedAudit.noc === "YES");
+        assert("Audit remarks updated", updatedAudit.remarks.includes("NOC signed"));
+
+        // Audit Tracker Copy Formatting (Arial 10pt required)
+        const trackerHtml = audit.formatForTracker([updatedAudit]);
+        assert("Tracker copy formats font-family as Arial", trackerHtml.includes("font-family: Arial") || trackerHtml.includes("font-family:Arial"));
+        assert("Tracker copy formats font-size as 10pt", trackerHtml.includes("font-size: 10pt") || trackerHtml.includes("font-size:10pt"));
+        assert("Tracker copy renders tab-aligned table cells", trackerHtml.includes("<table") && trackerHtml.includes("<td"));
+
+        // Smart Audit Guard verification
+        section("3b. Smart Audit Guard Live Checks");
+        const guardAnalysis = audit.analyzeRows([
+          { date: "2026-09-10", site: "Mabini", tl: "Abegail Llena", agent: "Agent 1", noc: "YES", account: "Shopee", reason: "SLEEPING", sourceRow: 1 },
+          { date: "2026-09-10", site: "Mabini", tl: "Abegail Llena", agent: "Agent 1", noc: "YES", account: "Shopee", reason: "SLEEPING", sourceRow: 2 }
+        ]);
+        assert("Smart Audit Guard detects duplicate row pairs", guardAnalysis.issues.some(i => i.type === "duplicate"));
+
+        // Delete Audit entry
+        audit.deleteEntry(addedAuditEntry.id);
+        const afterDeleteAudit = audit.getEntries();
+        assert("Audit entry successfully deleted", !afterDeleteAudit.some(e => e.id === addedAuditEntry.id));
+
+        // ====================================================================
+        // WORKSPACE 4: MAINTENANCE
+        // ====================================================================
+        section("4. Maintenance Workspace, Proof Screenshots & Drafts");
+        const maint = window.maintenanceService;
+        assert("Maintenance module is initialized", maint !== undefined);
+
+        // Create report state with block
+        const block = maint.makeBlock();
+        assert("makeBlock provides valid report block structure", Boolean(block && block.id));
+
+        // Add Proof Screenshot and incident data to block
+        block.lanesText = "09:30\t2026-09-10\tSarah Connor\tShopee\tMabini\tStation 42\tMonitor flickering intermittently";
+        block.remarks = ["VGA cable swapped and secured; tested ok."];
+        block.screenshots = [testPng];
+
+        // Continuous Autosave / Draft test
+        await maint.saveDraft({
+          title: "Mabini Maintenance Report",
+          date: "2026-09-10",
+          destination: "Miles Tracker",
+          blocks: [block]
+        });
+
+        const autosaved = await maint.loadDraft();
+        assert("Autosave draft reloads from IndexedDB", autosaved !== null);
+        assert("Autosave draft preserves block proof screenshot", autosaved.blocks[0].screenshots[0] === testPng);
+        assert("Autosave draft preserves incident details", autosaved.blocks[0].lanesText.includes("Station 42"));
+
+        // Named Drafts Manager test
+        const draftRecord = await maint.saveNamedDraft("Morning Inspection Shift A", {
+          title: "Mabini Maintenance Report",
+          date: "2026-09-10",
+          destination: "Miles Tracker",
+          blocks: [block]
+        });
+        const draftId = draftRecord.id || draftRecord;
+        assert("Named draft saved with snapshot ID", Boolean(draftId));
+
+        const namedDrafts = await maint.getNamedDrafts();
+        assert("Named drafts list contains saved draft", namedDrafts.some(d => d.id === draftId));
+
+        const loadedDraft = await maint.loadNamedDraft(draftId);
+        assert("Named draft reloads perfectly", loadedDraft.data.blocks[0].remarks[0].includes("VGA cable"));
+
+        // Google Sheets Formatted Full Report Copy test
+        const sheetsHtml = maint.maintenanceReportHtmlForSheets({
+          title: "Mabini Maintenance Report",
+          date: "2026-09-10",
+          destination: "Miles Tracker",
+          blocks: [block]
+        });
+        assert("Sheets report includes green remarks border #278914", sheetsHtml.includes("#278914"));
+        assert("Sheets report includes true in-table screenshot images", sheetsHtml.includes("<img") && sheetsHtml.includes(testPng));
+
+        // Clean up named test draft
+        await maint.deleteNamedDraft(draftId);
+        const draftsAfterClean = await maint.getNamedDrafts();
+        assert("Named draft cleaned up successfully", !draftsAfterClean.some(d => d.id === draftId));
+
+        // ====================================================================
+        // FINAL SUMMARY
+        // ====================================================================
+        section("5. Overall Core Parity Assessment");
+        summaryEl.textContent = `CORE WORKSPACES PARITY: ${passed} PASSED, ${failed} FAILED`;
+        summaryEl.className = `summary-badge ${failed === 0 ? "summary-pass" : "summary-fail"}`;
+
+        fetch("http://localhost:8080/api/test_report", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            summary: `CORE_WORKSPACES_PARITY: ${passed} PASSED, ${failed} FAILED`,
+            passed,
+            failed,
+            failedList
+          })
+        }).catch(() => {});
+
+      } catch (err) {
+        console.error("Integration suite error:", err);
+        const errDiv = document.createElement("div");
+        errDiv.className = "test-fail";
+        errDiv.textContent = `[EXCEPTION] ${err.message} \n ${err.stack}`;
+        logEl.appendChild(errDiv);
+        failed++;
+        fetch("http://localhost:8080/api/test_report", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ summary: `CORE_ERROR: ${err.message}`, error: err.message, stack: err.stack })
+        }).catch(() => {});
+      }
+    }
+
+    window.addEventListener("DOMContentLoaded", runIntegrationSuite);
+  </script>
+</body>
+</html>

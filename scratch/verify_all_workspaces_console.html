@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Console Error Verification Across Workspaces</title>
+  <style>
+    body { font-family: monospace; background: #0f172a; color: #f8fafc; padding: 20px; }
+    .error { color: #f87171; }
+    .success { color: #4ade80; }
+  </style>
+</head>
+<body>
+  <h2>Console Verification Across All Workspaces</h2>
+  <div id="status">Testing workspaces...</div>
+  <iframe id="appFrame" src="/cctv-ops-v2/" style="width:1200px; height:800px; border:1px solid #334155;"></iframe>
+
+  <script>
+    const frame = document.getElementById("appFrame");
+    const capturedErrors = [];
+    const capturedWarnings = [];
+
+    // Intercept console in iframe once accessible
+    frame.onload = async () => {
+      const win = frame.contentWindow;
+      const doc = frame.contentDocument;
+
+      const origError = win.console.error;
+      const origWarn = win.console.warn;
+
+      win.console.error = function(...args) {
+        capturedErrors.push(args.map(a => String(a)).join(" "));
+        origError.apply(win.console, args);
+      };
+
+      win.console.warn = function(...args) {
+        capturedWarnings.push(args.map(a => String(a)).join(" "));
+        origWarn.apply(win.console, args);
+      };
+
+      win.onerror = function(msg, url, line, col, err) {
+        capturedErrors.push(`[UNCAUGHT] ${msg} at ${url}:${line}:${col}`);
+      };
+
+      await new Promise(r => setTimeout(r, 1500));
+
+      const workspaces = ["tabEdr", "tabAudit", "tabSorter", "tabMaintenance", "tabFollowup", "tabMasterlist", "tabHistory", "tabAccounts"];
+      
+      for (const tabId of workspaces) {
+        const tabBtn = doc.getElementById(tabId);
+        if (tabBtn) {
+          tabBtn.click();
+          await new Promise(r => setTimeout(r, 600));
+        }
+      }
+
+      // Return to EDR
+      doc.getElementById("tabEdr").click();
+      await new Promise(r => setTimeout(r, 500));
+
+      // Filter errors into categories
+      const realErrors = capturedErrors.filter(e => {
+        // Exclude benign network errors if remote service mock or Edge renderer fallback
+        if (e.includes("favicon.ico") || e.includes("chrome-extension")) return false;
+        return true;
+      });
+
+      const report = {
+        totalErrors: realErrors.length,
+        errors: realErrors,
+        totalWarnings: capturedWarnings.length,
+        warnings: capturedWarnings
+      };
+
+      let reportText = `=== FINAL CONSOLE VERIFICATION ===\n`;
+      reportText += `TOTAL RED CONSOLE ERRORS: ${realErrors.length}\n`;
+      if (realErrors.length === 0) {
+        reportText += `STATUS: ZERO UNEXPLAINED RED CONSOLE ERRORS DURING NORMAL OPERATION!\n\n`;
+      } else {
+        reportText += `ERRORS DETECTED:\n` + realErrors.map(e => `[ERROR] ${e}`).join("\n") + "\n\n";
+      }
+
+      reportText += `WARNINGS CAPTURED (${capturedWarnings.length}):\n`;
+      capturedWarnings.forEach(w => {
+        reportText += `[WARN] ${w}\n`;
+      });
+
+      try {
+        await fetch("/api/test_report", {
+          method: "POST",
+          headers: { "Content-Type": "text/plain" },
+          body: reportText
+        });
+      } catch (_) {}
+
+      document.getElementById("status").innerHTML = realErrors.length === 0 
+        ? `<h3 class="success">PASSED: Zero console errors during full workspace traversal</h3>` 
+        : `<h3 class="error">FAILED: ${realErrors.length} errors found</h3>`;
+    };
+  </script>
+</body>
+</html>

@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>CCTV Audit Showcase</title>
+  <style>
+    body, html { margin:0; padding:0; width:100%; height:100%; overflow:hidden; background:#0b0f19; }
+    iframe { width:100vw; height:100vh; border:none; }
+  </style>
+</head>
+<body>
+  <iframe id="appFrame" src="http://localhost:8080/cctv-ops-v2/index.html"></iframe>
+  <script>
+    const frame = document.getElementById("appFrame");
+    frame.onload = async () => {
+      await new Promise(r => setTimeout(r, 800));
+      const win = frame.contentWindow;
+      const doc = frame.contentDocument;
+
+      // Switch to Audit tab
+      doc.getElementById("tabAudit")?.click();
+      await new Promise(r => setTimeout(r, 100));
+
+      // Seed 4 realistic audit entries
+      win.CCTV_AUDIT.addEntry({
+        rawDate: "2026-09-10",
+        site: "Mabini Site A - 1st Floor",
+        tlName: "Abegail Llena",
+        agentName: "Juan Dela Cruz",
+        omName: "Abby",
+        account: "Shopee - CB-SCS",
+        cleanAccount: "Shopee - CB-SCS",
+        reasonCode: "SLEEPING",
+        noc: "YES",
+        remarks: "CCTV observed sleeping at workstation. Supervisor coached on shift."
+      });
+
+      win.CCTV_AUDIT.addEntry({
+        rawDate: "2026-09-10",
+        site: "Mabini Site B - 2nd Floor",
+        tlName: "Christian Arcilla",
+        agentName: "Maria Santos",
+        omName: "Renato",
+        account: "AFP",
+        cleanAccount: "AFP",
+        reasonCode: "USING SMARTPHONE",
+        noc: "Pending",
+        remarks: "Device noted in production bay; pending verification with TL."
+      });
+
+      win.CCTV_AUDIT.addEntry({
+        rawDate: "2026-09-09",
+        site: "Ecoland Site",
+        tlName: "Dante Tahuran",
+        agentName: "Pedro Penduko",
+        omName: "Crystal",
+        account: "TEMU - 1404",
+        cleanAccount: "TEMU - 1404",
+        reasonCode: "BROWSING",
+        noc: "YES",
+        remarks: "Non-work streaming detected during call wrap-up.",
+        sourceEdrId: "edr-demo-404"
+      });
+
+      win.CCTV_AUDIT.addEntry({
+        rawDate: "2026-09-09",
+        site: "MAA 5th Floor",
+        tlName: "Francis Alta",
+        agentName: "Carlos Garcia",
+        omName: "Norman",
+        account: "Grab - MY",
+        cleanAccount: "Grab - MY",
+        reasonCode: "DRESS CODE",
+        noc: "Disputed",
+        remarks: "Wearing non-collared hoodie; TL noted exemption pass pending HR."
+      });
+
+      // Also load clean snapshot into Smart Audit Guard
+      await win.CCTV_AUDIT.saveSnapshot([
+        { date: "2026-09-10", om: "Abby", site: "Mabini Site A", tl: "Abegail Llena", agent: "Juan Dela Cruz", account: "Shopee - CB-SCS", reason: "SLEEPING", noc: "yes", remarks: "Tracker row 1" },
+        { date: "2026-09-10", om: "Renato", site: "Mabini Site B", tl: "Christian Arcilla", agent: "Maria Santos", account: "AFP", reason: "USING SMARTPHONE", noc: "pending", remarks: "Tracker row 2" },
+        { date: "2026-09-09", om: "Crystal", site: "Ecoland", tl: "Dante Tahuran", agent: "Pedro Penduko", account: "TEMU - 1404", reason: "BROWSING", noc: "yes", remarks: "Tracker row 3" }
+      ], "September_2026_Live_Tracker.xlsx");
+
+      win.renderAuditTable();
+      win.renderGuardStatus();
+    };
+  </script>
+</body>
+</html>

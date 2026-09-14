@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>CCTV OPS V2 - Follow Up Reports Functional Parity Suite</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #0b0f19;
+      color: #f1f5f9;
+      padding: 24px;
+      margin: 0;
+    }
+    h1 { font-size: 18px; margin: 0 0 12px 0; color: #38bdf8; }
+    .summary-badge {
+      display: inline-block;
+      padding: 6px 14px;
+      border-radius: 4px;
+      font-weight: 700;
+      font-size: 13px;
+      margin-bottom: 16px;
+    }
+    .summary-pass { background: rgba(16, 185, 129, 0.2); border: 1px solid #10b981; color: #34d399; }
+    .summary-fail { background: rgba(239, 68, 68, 0.2); border: 1px solid #ef4444; color: #f87171; }
+    .test-log {
+      font-family: monospace;
+      font-size: 12px;
+      line-height: 1.6;
+      background: #151923;
+      padding: 16px;
+      border: 1px solid #232a3b;
+      border-radius: 6px;
+      max-height: 550px;
+      overflow-y: auto;
+    }
+    .test-pass { color: #34d399; }
+    .test-fail { color: #f87171; font-weight: bold; }
+    .test-section { color: #38bdf8; font-weight: 700; margin-top: 10px; border-bottom: 1px solid #232a3b; padding-bottom: 4px; }
+  </style>
+</head>
+<body>
+  <h1>CCTV OPS V2 - Follow Up Reports Functional Parity Suite</h1>
+  <div id="summary" class="summary-badge" style="background:#232a3b; color:#94a3b8;">Running parity checks...</div>
+  <div id="log" class="test-log"></div>
+
+  <!-- Scripts Required for V2 Shared Runtime & Workspaces -->
+  <script src="../auth-config.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <script src="../cctv-ops-v2/js/config.js"></script>
+  <script src="../cctv-ops-v2/js/storage.js"></script>
+  <script src="../cctv-ops-v2/js/shared.js"></script>
+  <script src="../cctv-ops-v2/js/services/auth-service.js"></script>
+  <script src="../cctv-ops-v2/js/services/edr-service.js"></script>
+  <script src="../cctv-ops-v2/js/services/audit-service.js"></script>
+  <script src="../cctv-ops-v2/js/services/sorter-service.js"></script>
+  <script src="../cctv-ops-v2/js/services/maintenance-service.js"></script>
+  <script src="../cctv-ops-v2/js/services/pending-service.js"></script>
+  <script src="../cctv-ops-v2/js/services/followup-service.js"></script>
+
+  <script>
+    const fu = window.followupService;
+    let passed = 0;
+    let failed = 0;
+    let failedList = [];
+    const logEl = document.getElementById("log");
+    const summaryEl = document.getElementById("summary");
+
+    function assert(desc, condition) {
+      const line = document.createElement("div");
+      if (condition) {
+        passed++;
+        line.className = "test-pass";
+        line.textContent = `[PASS] ${desc}`;
+      } else {
+        failed++;
+        failedList.push(desc);
+        line.className = "test-fail";
+        line.textContent = `[FAIL] ${desc}`;
+      }
+      logEl.appendChild(line);
+    }
+
+    function section(title) {
+      const sec = document.createElement("div");
+      sec.className = "test-section";
+      sec.textContent = `=== ${title} ===`;
+      logEl.appendChild(sec);
+    }
+
+    const testPng = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAA7SURBVHhe7c4BDQAACAMw9E/tUwwmFvw+yZptWc3MzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMxfmA0G6kFf2u/6fAAAAABJRU5ErkJggg==";
+
+    async function runTests() {
+      try {
+        section("1. Constants & DB Contracts (1:1 V1 Parity)");
+        assert("window.followupService is exported", fu !== undefined);
+        assert("window.CCTV_FOLLOWUP is exported", window.CCTV_FOLLOWUP !== undefined);
+        assert("DB_NAME matches authoritative V1 name", fu.DB_NAME === "cctv_followup_reports_v1");
+        assert("STORE_NAME matches authoritative V1 store", fu.STORE_NAME === "workspace");
+        assert("STATE_KEY matches authoritative V1 state key", fu.STATE_KEY === "reports");
+        assert("CLOSED set contains 'Resolved'", fu.CLOSED.has("Resolved") === true);
+        assert("CLOSED set excludes 'Waiting for TL'", fu.CLOSED.has("Waiting for TL") === false);
+        assert("CLOSED set excludes 'TL Replied'", fu.CLOSED.has("TL Replied") === false);
+        assert("CLOSED set excludes 'TL Disputed'", fu.CLOSED.has("TL Disputed") === false);
+        assert("CLOSED set excludes 'Need OM Verification'", fu.CLOSED.has("Need OM Verification") === false);
+        assert("CLOSED set excludes 'Verified by OM'", fu.CLOSED.has("Verified by OM") === false);
+
+        section("2. Statuses & Status Class Mapping");
+        assert("STATUSES has 6 authoritative statuses", Array.isArray(fu.STATUSES) && fu.STATUSES.length === 6);
+        assert("statusClass('Resolved') === 'resolved'", fu.statusClass("Resolved") === "resolved");
+        assert("statusClass('TL Disputed') === 'disputed'", fu.statusClass("TL Disputed") === "disputed");
+        assert("statusClass('Need OM Verification') === 'verify'", fu.statusClass("Need OM Verification") === "verify");
+        assert("statusClass('Verified by OM') === 'verified'", fu.statusClass("Verified by OM") === "verified");
+        assert("statusClass('TL Replied') === 'replied'", fu.statusClass("TL Replied") === "replied");
+        assert("statusClass('Waiting for TL') === 'waiting'", fu.statusClass("Waiting for TL") === "waiting");
+        assert("statusClass(null) === 'waiting'", fu.statusClass(null) === "waiting");
+
+        section("3. URL Safety Validation");
+        assert("Accepts https URL", fu.safeWebUrl("https://teams.microsoft.com/l/message/123") === "https://teams.microsoft.com/l/message/123");
+        assert("Accepts http URL", fu.safeWebUrl("http://teams.microsoft.com/test") === "http://teams.microsoft.com/test");
+        assert("Rejects javascript: URL", fu.safeWebUrl("javascript:alert(1)") === "");
+        assert("Rejects invalid string", fu.safeWebUrl("not-a-valid-url") === "");
+        assert("Rejects empty string", fu.safeWebUrl("") === "");
+
+        section("4. Record Creation & ID Schema");
+        const r1 = fu.createReport({
+          date: "2026-09-08",
+          om: "CCTV OM MIRAH",
+          label: "TL Sarah Connor",
+          cctvLink: "https://teams.microsoft.com/m1",
+          status: "Resolved",
+          remarks: "Case closed by OM",
+          screenshotData: testPng
+        });
+        const r2 = fu.createReport({
+          date: "2026-09-09",
+          om: "CCTV OM JOHN",
+          label: "TL Dutch Schaefer",
+          cctvLink: "https://teams.microsoft.com/m2",
+          status: "Waiting for TL",
+          remarks: "Pending TL response",
+          screenshotData: testPng
+        });
+        const r3 = fu.createReport({
+          date: "2026-09-10",
+          om: "CCTV OM KYLE",
+          label: "TL Reese",
+          cctvLink: "",
+          status: "TL Disputed",
+          remarks: "TL claims device is company-issued",
+          screenshotData: testPng
+        });
+
+        assert("Report ID begins with 'fu_'", r1.id.startsWith("fu_"));
+        assert("Report has date", r1.date === "2026-09-08");
+        assert("Report has OM", r1.om === "CCTV OM MIRAH");
+        assert("Report has label", r1.label === "TL Sarah Connor");
+        assert("Report has cctvLink", r1.cctvLink === "https://teams.microsoft.com/m1");
+        assert("Report has status", r1.status === "Resolved");
+        assert("Report has remarks", r1.remarks === "Case closed by OM");
+        assert("Report has screenshotData", r1.screenshotData === testPng);
+        assert("Report has createdAt ISO string", typeof r1.createdAt === "string" && r1.createdAt.length > 10);
+
+        section("5. Sorting & Open Count Calculation");
+        const sorted = fu.sortReports([r1, r2, r3]);
+        assert("Open newest report r3 is first", sorted[0].id === r3.id);
+        assert("Open older report r2 is second", sorted[1].id === r2.id);
+        assert("Resolved report r1 is placed last", sorted[2].id === r1.id);
+        assert("getOpenCount returns 2", fu.getOpenCount([r1, r2, r3]) === 2);
+        assert("getOpenCount returns 0 for empty list", fu.getOpenCount([]) === 0);
+        assert("getOpenCount returns 0 when all resolved", fu.getOpenCount([r1]) === 0);
+
+        section("6. IndexedDB Direct Read/Write Persistence");
+        await fu.saveReports([r1, r2, r3]);
+        const loadedFromDb = await fu.loadReports();
+        assert("Loaded 3 reports from IndexedDB", loadedFromDb.length === 3);
+        assert("IndexedDB preserved Sarah Connor report", loadedFromDb.some(r => r.label === "TL Sarah Connor"));
+        assert("IndexedDB preserved proof screenshot", loadedFromDb.some(r => r.screenshotData === testPng));
+
+        // Test update
+        const updatedList = loadedFromDb.map(r => r.id === r2.id ? { ...r, status: "Resolved" } : r);
+        await fu.saveReports(updatedList);
+        const reloaded = await fu.loadReports();
+        const r2Updated = reloaded.find(r => r.id === r2.id);
+        assert("Updated status persisted to IndexedDB", r2Updated && r2Updated.status === "Resolved");
+        assert("getOpenCount now returns 1", fu.getOpenCount(reloaded) === 1);
+
+        section("7. History Adapter Registration");
+        assert("window.__workspaceHistoryAdapters is defined", window.__workspaceHistoryAdapters !== undefined);
+        const adapter = window.__workspaceHistoryAdapters.followupReports;
+        assert("followupReports adapter is registered", adapter !== undefined);
+        assert("Adapter has label 'Follow Up Reports'", adapter.label === "Follow Up Reports");
+        const snap = await adapter.snapshot();
+        assert("Adapter snapshot returns 3 items", Array.isArray(snap) && snap.length === 3);
+
+        // Test restore
+        await adapter.restore([r3]);
+        const afterRestore = await fu.loadReports();
+        assert("Adapter restore set database to exactly 1 report", afterRestore.length === 1 && afterRestore[0].id === r3.id);
+
+        // Clean up database
+        await fu.saveReports([]);
+        const cleanCheck = await fu.loadReports();
+        assert("Database successfully cleaned up after tests", cleanCheck.length === 0);
+
+        section("8. Final Verification Summary");
+        summaryEl.textContent = `FOLLOW UP PARITY: ${passed} PASSED, ${failed} FAILED`;
+        summaryEl.className = `summary-badge ${failed === 0 ? "summary-pass" : "summary-fail"}`;
+
+        fetch("http://localhost:8080/api/test_report", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            summary: `FOLLOWUP_PARITY: ${passed} PASSED, ${failed} FAILED`,
+            passed,
+            failed,
+            failedList
+          })
+        }).catch(() => {});
+
+      } catch (err) {
+        console.error("Test error:", err);
+        const errDiv = document.createElement("div");
+        errDiv.className = "test-fail";
+        errDiv.textContent = `[EXCEPTION] ${err.message} \n ${err.stack}`;
+        logEl.appendChild(errDiv);
+        failed++;
+        fetch("http://localhost:8080/api/test_report", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ summary: `FOLLOWUP_ERROR: ${err.message}`, error: err.message, stack: err.stack })
+        }).catch(() => {});
+      }
+    }
+
+    window.addEventListener("DOMContentLoaded", runTests);
+  </script>
+</body>
+</html>

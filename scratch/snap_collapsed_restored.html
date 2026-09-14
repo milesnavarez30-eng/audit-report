@@ -1,0 +1,15 @@
+﻿<!DOCTYPE html>
+<html><body style='margin:0; background:#0D1117;'>
+<iframe id='f' src='http://localhost:8080/cctv-ops-v2/' style='width:1440px; height:900px; border:none;'></iframe>
+<script>
+window.onload = async () => {
+  await new Promise(r => setTimeout(r, 1200));
+  const doc = document.getElementById('f').contentDocument;
+  const btn = doc.getElementById('btnToggleDispatchExpand');
+  btn.click(); // Expand
+  await new Promise(r => setTimeout(r, 300));
+  btn.click(); // Collapse back to normal
+  window.__READY__ = true;
+};
+</script>
+</body></html>

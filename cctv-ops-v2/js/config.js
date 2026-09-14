@@ -18,12 +18,14 @@ window.CCTV_V2_CONFIG = {
     DROPDOWN_ACCOUNT: "cctv_dropdown_account",
     DROPDOWN_REASON: "cctv_dropdown_reasonCode",
     MASTER_HR: "cctv_master_hr_local_crud_v1",
-    EDR_CUSTOM_OPTIONS: "cctv_master_edr_custom_options_v1"
+    EDR_CUSTOM_OPTIONS: "cctv_master_edr_custom_options_v1",
+    AI_SORTER_DRAFT_META: "cctv_ai_sorter_draft_meta_v1"
   },
 
   // IndexedDB Databases
   DATABASES: {
     EDR: "cctv_edr_workspace_v2",
+    AI_SORTER: "cctv_ai_sorter_workspace_v1",
     PENDING_REPORTS: "cctv_pending_reports_v1",
     AUDIT_TRACKER: "cctv_tracker_guard_v1",
     MAINTENANCE: "maintenance_report_db",

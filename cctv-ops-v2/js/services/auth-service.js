@@ -38,9 +38,14 @@ window.CCTV_AUTH = (function () {
 
   function initClient() {
     if (client) return client;
+    if (window._sharedSupabaseClient) {
+      client = window._sharedSupabaseClient;
+      return client;
+    }
     if (window.supabase && typeof window.supabase.createClient === "function") {
       try {
         client = window.supabase.createClient(cfg.SUPABASE_URL, cfg.SUPABASE_PUBLIC_KEY);
+        window._sharedSupabaseClient = client;
       } catch (e) {
         console.error("Supabase client initialization error:", e);
       }
@@ -376,6 +381,11 @@ window.CCTV_AUTH = (function () {
       }
     },
 
+    getClient() {
+      initClient();
+      return client;
+    },
+
     async deleteUser(userId) {
       initClient();
       if (!client) return false;
@@ -383,17 +393,29 @@ window.CCTV_AUTH = (function () {
         throw new Error("You cannot delete your own active administrator account.");
       }
 
-      // Try server-side RPC admin_delete_cctv_user
-      try {
-        const { data, error } = await client.rpc("admin_delete_cctv_user", {
-          p_target: userId
-        });
-        if (!error && data && data.ok) {
-          await this.logSecurityEvent("delete_user", `user:${userId}`);
-          return true;
-        }
-      } catch (rpcErr) {
-        console.warn("RPC admin_delete_cctv_user failed, trying profile delete:", rpcErr);
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(userId || "").trim());
+
+      // Try server-side RPC admin_delete_cctv_user or admin_remove_user if valid UUID
+      if (isUuid) {
+        try {
+          const { data, error } = await client.rpc("admin_delete_cctv_user", {
+            p_target: userId
+          });
+          if (!error && (data?.ok || data === true)) {
+            await this.logSecurityEvent("delete_user", `user:${userId}`, { target_user_id: userId }, userId);
+            return true;
+          }
+        } catch (_) {}
+
+        try {
+          const { data, error } = await client.rpc("admin_remove_user", {
+            p_target: userId
+          });
+          if (!error && (data?.ok || data === true || data === undefined)) {
+            await this.logSecurityEvent("delete_user", `user:${userId}`, { target_user_id: userId }, userId);
+            return true;
+          }
+        } catch (_) {}
       }
 
       // Fallback: delete profile record directly
@@ -403,7 +425,7 @@ window.CCTV_AUTH = (function () {
           .delete()
           .eq("id", userId);
         if (!error) {
-          await this.logSecurityEvent("delete_user_profile", `user:${userId}`);
+          await this.logSecurityEvent("delete_user_profile", `user:${userId}`, { target_user_id: userId }, isUuid ? userId : null);
           return true;
         }
       } catch (e) {
@@ -415,15 +437,35 @@ window.CCTV_AUTH = (function () {
     async logSecurityEvent(action, targetItem = "", details = {}, targetUserId = null) {
       initClient();
       if (!client) return;
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(targetUserId || "").trim());
+      const safeTargetUserId = isUuid ? targetUserId : null;
+      const safeDetails = details && typeof details === "object" ? { ...details } : {};
+      if (targetUserId && !isUuid) {
+        safeDetails.target_user_id = targetUserId;
+      }
+
+      // Only invoke security event RPC if current caller has approved admin role
+      if (currentUser && currentProfile?.role === "admin") {
+        try {
+          await client.rpc("log_cctv_security_event", {
+            p_action: action,
+            p_target_user_id: safeTargetUserId,
+            p_target_item: String(targetItem || ""),
+            p_details: safeDetails
+          });
+          return;
+        } catch (_) {}
+      }
+
       try {
         await client.from("cctv_security_audit_logs").insert({
           actor_id: currentUser?.id || null,
           actor_username: currentProfile?.username || "system",
           actor_role: currentProfile?.role || "admin",
           action: action,
-          target_item: targetItem,
-          target_user_id: targetUserId,
-          details: details
+          target_item: String(targetItem || ""),
+          target_user_id: safeTargetUserId,
+          details: safeDetails
         });
       } catch (_) {}
     },

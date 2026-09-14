@@ -270,6 +270,42 @@
         req.onerror = () => reject(req.error);
         tx.oncomplete = () => db.close();
       });
+    },
+
+    // Stale-While-Revalidate (SWR) Caching Helper
+    // SECURITY NOTE: This helper must NEVER be used for user roles, account status,
+    // or permission checks. Supabase and active session remain strictly authoritative.
+    async getOrFetch({ key, fetchFn, ttlMs = 900000, onBackgroundUpdate = null }) {
+      const cached = this.getItem(key, null);
+      const now = Date.now();
+      if (cached && typeof cached === "object" && cached.__swr_ts) {
+        const isStale = (now - cached.__swr_ts) >= (ttlMs / 2);
+
+        // If stale, trigger background revalidation without blocking caller
+        if (isStale && typeof fetchFn === "function") {
+          Promise.resolve().then(async () => {
+            try {
+              const fresh = await fetchFn();
+              if (fresh != null) {
+                window.CCTV_STORAGE.setItem(key, { __swr_ts: Date.now(), data: fresh });
+                if (typeof onBackgroundUpdate === "function") {
+                  onBackgroundUpdate(fresh);
+                }
+              }
+            } catch (err) {
+              console.warn(`[SWR Revalidation Error for ${key}]:`, err);
+            }
+          });
+        }
+        return cached.data;
+      }
+
+      // No cache: fetch directly
+      const fresh = await fetchFn();
+      if (fresh != null) {
+        this.setItem(key, { __swr_ts: now, data: fresh });
+      }
+      return fresh;
     }
   };
 })();

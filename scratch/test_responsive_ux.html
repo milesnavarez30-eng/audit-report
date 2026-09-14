@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Responsive & UX Verification Runner</title>
+  <link rel="stylesheet" href="../cctv-ops-v2/css/tokens.css">
+  <link rel="stylesheet" href="../cctv-ops-v2/css/base.css">
+  <link rel="stylesheet" href="../cctv-ops-v2/css/layout.css">
+  <link rel="stylesheet" href="../cctv-ops-v2/css/components.css">
+  <link rel="stylesheet" href="../cctv-ops-v2/css/neo-brutalism.css">
+</head>
+<body>
+  <div id="toastContainer" class="toast-container"></div>
+  <div id="navRailBackdrop" class="nav-rail-backdrop"></div>
+  <aside id="navRail" class="nav-rail">
+    <button id="btnToggleRail" class="collapse-btn"></button>
+    <button id="tabEdr" class="nav-item active"></button>
+    <button id="tabAudit" class="nav-item"></button>
+  </aside>
+  <header class="top-appbar">
+    <div id="topbarProgressLine" class="topbar-progress-line"></div>
+    <div class="appbar-left">
+      <button id="btnMobileNavToggle" class="btn-mobile-nav-toggle"></button>
+      <h1 class="workspace-main-title">Test Workspace</h1>
+    </div>
+  </header>
+  <div id="modalAppConfirm" class="modal-backdrop" hidden>
+    <div class="modal-dialog">
+      <div class="modal-header"><h3 id="confirmDialogTitle"></h3></div>
+      <div class="modal-body"><p id="confirmDialogMessage"></p></div>
+      <div class="modal-footer">
+        <button id="btnConfirmDialogCancel"></button>
+        <button id="btnConfirmDialogAccept"></button>
+      </div>
+    </div>
+  </div>
+
+  <table id="testTable">
+    <tbody id="testTableBody"></tbody>
+  </table>
+
+  <script src="../cctv-ops-v2/js/config.js"></script>
+  <script src="../cctv-ops-v2/js/storage.js"></script>
+  <script src="../cctv-ops-v2/js/shared.js"></script>
+
+  <script>
+    const results = [];
+    function assert(name, pass, detail = "") {
+      results.push({ name, pass: !!pass, detail });
+      console.log(`[${pass ? "PASS" : "FAIL"}] ${name} ${detail}`);
+    }
+
+    async function runTests() {
+      try {
+        // Test 1: showToast with types and actions
+        showToast("Operation successful", "success");
+        const toast = document.querySelector(".toast-success");
+        assert("showToast success rendering", !!toast);
+        assert("showToast SVG icon presence", !!toast?.querySelector(".toast-icon"));
+        assert("showToast progress bar presence", !!toast?.querySelector(".toast-progress-bar"));
+
+        // Test 2: setButtonBusy
+        const testBtn = document.createElement("button");
+        testBtn.textContent = "Save Data";
+        document.body.appendChild(testBtn);
+        setButtonBusy(testBtn, true, "Saving...");
+        assert("setButtonBusy active state", testBtn.disabled && testBtn.classList.contains("is-busy") && testBtn.innerHTML.includes("btn-spinner"));
+        setButtonBusy(testBtn, false);
+        assert("setButtonBusy restored state", !testBtn.disabled && !testBtn.classList.contains("is-busy") && testBtn.textContent === "Save Data");
+
+        // Test 3: setGlobalProgress
+        setGlobalProgress(true);
+        const progressLine = document.getElementById("topbarProgressLine");
+        assert("setGlobalProgress active", progressLine?.classList.contains("is-active"));
+        setGlobalProgress(false);
+        assert("setGlobalProgress inactive", !progressLine?.classList.contains("is-active"));
+
+        // Test 4: renderSkeletonRows
+        const tbody = document.getElementById("testTableBody");
+        renderSkeletonRows(tbody, 4, 3);
+        const skeletons = tbody.querySelectorAll(".skeleton-shimmer");
+        assert("renderSkeletonRows count", skeletons.length === 12);
+
+        // Test 5: SWR getOrFetch
+        let fetchCalls = 0;
+        const testFetch = async () => {
+          fetchCalls++;
+          return { data: "swr-payload", count: 42 };
+        };
+        const res1 = await CCTV_STORAGE.getOrFetch({ key: "__test_swr_key__", fetchFn: testFetch, ttlMs: 5000 });
+        assert("SWR initial fetch", res1?.count === 42 && fetchCalls === 1);
+        const res2 = await CCTV_STORAGE.getOrFetch({ key: "__test_swr_key__", fetchFn: testFetch, ttlMs: 5000 });
+        assert("SWR cache hit without extra fetch", res2?.count === 42 && fetchCalls === 1);
+        CCTV_STORAGE.removeItem("__test_swr_key__");
+
+        // Test 6: appConfirm
+        const confirmPromise = appConfirm({
+          title: "Test Delete",
+          message: "Delete record?",
+          confirmText: "Delete",
+          tone: "danger"
+        });
+        const modal = document.getElementById("modalAppConfirm");
+        assert("appConfirm modal visible", !modal.hidden);
+        handleConfirmDialog(true);
+        const agreed = await confirmPromise;
+        assert("appConfirm agreement resolved", agreed === true && modal.hidden);
+
+      } catch (err) {
+        assert("Exception during test execution", false, err.message);
+      }
+
+      // Write result to file via DOM helper or dump
+      window.__TEST_RESULTS__ = results;
+      const resEl = document.createElement("pre");
+      resEl.id = "testOutput";
+      resEl.textContent = JSON.stringify(results, null, 2);
+      document.body.appendChild(resEl);
+    }
+
+    window.addEventListener("DOMContentLoaded", runTests);
+  </script>
+</body>
+</html>

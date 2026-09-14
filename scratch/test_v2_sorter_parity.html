@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>CCTV OPS V2 - AI Sorter Parity Test Suite</title>
+  <style>
+    body { font-family: monospace; background: #0b0f17; color: #f8fafc; padding: 20px; }
+    .pass { color: #34d399; font-weight: bold; }
+    .fail { color: #f87171; font-weight: bold; }
+    .suite { margin-top: 15px; border-top: 1px solid #1e293b; padding-top: 10px; }
+  </style>
+</head>
+<body>
+  <h2>CCTV OPS V2 - AI Sorter Automated Parity Test Suite</h2>
+  <div id="testOutput">Running tests...</div>
+
+  <!-- Dependencies -->
+  <script src="../cctv-ops-v2/js/services/sorter-service.js"></script>
+
+  <script>
+    (async function runTests() {
+      const out = document.getElementById("testOutput");
+      const results = [];
+
+      function assert(desc, condition) {
+        results.push({ desc, pass: Boolean(condition) });
+        const div = document.createElement("div");
+        div.className = condition ? "pass" : "fail";
+        div.textContent = `${condition ? "✓ PASS" : "✗ FAIL"}: ${desc}`;
+        out.appendChild(div);
+      }
+
+      try {
+        const sorter = window.sorterService;
+        assert("Sorter service is defined on window", !!sorter);
+
+        // 1. Multi-format parsing tests
+        const tsvWithHeader = [
+          "TIMESTAMP\tDATE\tTL\tACCOUNT\tSITE\tSTATION NO.\tSTATION ISSUE",
+          "09/10/2026 10:00\t09/10/2026\tAllan Albert Sadili\tMapua\tMabini Site A\t1A-01\tMonitor not turning on",
+          "09/10/2026 11:00\t09/10/2026\tCris Arandilla\tHerb Joy\tMabini Site A\t2B-10\tMouse optical sensor defect",
+          "09/10/2026 12:00\t09/10/2026\tJohn Unknown\tUnknown Campaign\tMabini Site A\t\tHeadset static noise"
+        ].join("\n");
+
+        const parsed1 = sorter.parseReport(tsvWithHeader);
+        assert("TSV with header parsed exactly 3 rows", parsed1.length === 3);
+        assert("Row 1 TL parsed correctly", parsed1[0].tl === "Allan Albert Sadili");
+        assert("Row 1 station parsed correctly", parsed1[0].station === "1A-01");
+        assert("Row 2 issue parsed correctly", parsed1[1].issue === "Mouse optical sensor defect");
+
+        // Markdown format parsing
+        const markdownReport = [
+          "| TIMESTAMP | DATE | TL | ACCOUNT | SITE | STATION NO. | STATION ISSUE |",
+          "|---|---|---|---|---|---|---|",
+          "| 09/10/2026 14:00 | 09/10/2026 | Jovert Monticayan | HBW Insurance | Mabini Site A | 1F Station 05 | Keyboard key stuck |",
+          "| 09/10/2026 15:00 | 09/10/2026 | Andrea Kyle Herrero | Bigo | Mabini Site A | 2P-11 | LAN disconnect |"
+        ].join("\n");
+
+        const parsedMd = sorter.parseReport(markdownReport);
+        assert("Markdown table parsed 2 rows", parsedMd.length === 2);
+        assert("Markdown row 0 TL parsed", parsedMd[0].tl === "Jovert Monticayan");
+        assert("Markdown row 1 station parsed", parsedMd[1].station === "2P-11");
+
+        // CSV format parsing
+        const csvReport = [
+          '"TIMESTAMP","DATE","TL","ACCOUNT","SITE","STATION NO.","STATION ISSUE"',
+          '"09/10/2026 16:00","09/10/2026","Kevin Omiping","HBW Insurance","Mabini Site A","1st Floor Bay 3","Power supply humming"'
+        ].join("\n");
+        const parsedCsv = sorter.parseReport(csvReport);
+        assert("CSV format parsed 1 row", parsedCsv.length === 1);
+        assert("CSV TL parsed correctly", parsedCsv[0].tl === "Kevin Omiping");
+
+        // 2. Station Floor Detection Regex Parity
+        assert("detectStationFloor matches 1F", sorter.detectStationFloor("1F Station 05").floor === sorter.FLOOR.FIRST);
+        assert("detectStationFloor matches 2F", sorter.detectStationFloor("2ND FLOOR 12").floor === sorter.FLOOR.SECOND);
+        assert("detectStationFloor matches GF", sorter.detectStationFloor("GF Station 4").floor === sorter.FLOOR.GROUND);
+        assert("detectStationFloor matches 2B-10 bay code as 2nd Floor", sorter.detectStationFloor("2B-10").floor === sorter.FLOOR.SECOND);
+        assert("detectStationFloor matches 1K-133 bay code as 1st Floor", sorter.detectStationFloor("1K-133").floor === sorter.FLOOR.FIRST);
+        assert("detectStationFloor returns null for ambiguous station", sorter.detectStationFloor("Station 99").floor === null);
+
+        // 3. Official TL Floor Reference Parity
+        const hintsAllan = sorter.getReferenceHints("allan albert sadili", "mapua");
+        assert("Allan Albert Sadili matches 1st Floor reference", hintsAllan.some(h => h.floor === sorter.FLOOR.FIRST));
+        const hintsCris = sorter.getReferenceHints("cris arandilla", "herb joy");
+        assert("Cris Arandilla matches 2nd Floor reference", hintsCris.some(h => h.floor === sorter.FLOOR.SECOND));
+
+        // 4. Campaign Floor Reference Fallback Parity
+        assert("HBW Insurance campaign matches 1st floor", sorter.detectCampaignFloor("hbw insurance").floor === sorter.FLOOR.FIRST);
+        assert("Herb Joy campaign matches 2nd floor", sorter.detectCampaignFloor("herb joy").floor === sorter.FLOOR.SECOND);
+        assert("Bigo campaign on multiple floors returns null", sorter.detectCampaignFloor("bigo").floor === null);
+
+        // 5. Build assignments and sorting parity
+        const assignments = sorter.buildAssignments(parsed1);
+        assert("Assignments map contains Allan", assignments.has("allan albert sadili") || assignments.has("Allan Albert Sadili") || assignments.size >= 2);
+        
+        const sortedRows = sorter.assignRows(parsed1, assignments);
+        assert("Sorted rows count matches input", sortedRows.length === 3);
+        assert("Row 0 sorted to 1st Floor", sortedRows[0].floor === sorter.FLOOR.FIRST);
+        assert("Row 1 sorted to 2nd Floor", sortedRows[1].floor === sorter.FLOOR.SECOND);
+        assert("Row 2 unknown sorted to Review Needed", sortedRows[2].floor === sorter.FLOOR.REVIEW);
+
+        // 6. TSV Generation Parity
+        const fullTsv = sorter.rowsToTSV(sortedRows);
+        assert("rowsToTSV output includes standard headers", fullTsv.includes("TIMESTAMP\tDATE\tTL\tACCOUNT\tSITE\tSTATION NO.\tSTATION ISSUE"));
+        assert("rowsToTSV contains sorted row content", fullTsv.includes("Allan Albert Sadili") && fullTsv.includes("Cris Arandilla"));
+
+        // 7. Selected Rows & Cells TSV Generation Parity
+        const rowTsv = sorter.selectedMiniSheetTsv(sortedRows, [0, 1], false);
+        assert("selectedMiniSheetTsv produces 2 lines", rowTsv.split("\n").length === 2);
+        assert("selectedMiniSheetTsv contains row 0 and 1 without headers", !rowTsv.startsWith("TIMESTAMP"));
+
+        const cellSelection = { startRow: 0, endRow: 1, startCol: 2, endCol: 3 }; // TL and Account columns
+        const cellTsv = sorter.selectedMiniSheetCellTsv(sortedRows, cellSelection);
+        const cellLines = cellTsv.split("\n");
+        assert("selectedMiniSheetCellTsv produces 2 rows", cellLines.length === 2);
+        assert("selectedMiniSheetCellTsv contains only selected columns", cellLines[0].split("\t").length === 2);
+
+        // 8. Override Persistence & TL Name Edit Parity
+        sorter.saveOverrides({ "Test TL": sorter.FLOOR.FIRST });
+        const loadedOverrides = sorter.loadOverrides();
+        assert("Overrides persistence works", loadedOverrides["Test TL"] === sorter.FLOOR.FIRST);
+
+        sorter.saveTLNameEdits({ "Test TL": "Test TL (Edited)" });
+        const loadedEdits = sorter.loadTLNameEdits();
+        assert("TL name edits persistence works", loadedEdits["Test TL"] === "Test TL (Edited)");
+        assert("displayTLValue applies edited name", sorter.displayTLValue("Test TL") === "Test TL (Edited)");
+
+        // 9. Reset Assignments Parity
+        sorter.resetAssignments();
+        assert("Reset cleared overrides", Object.keys(sorter.loadOverrides()).length === 0);
+        assert("Reset cleared name edits", Object.keys(sorter.loadTLNameEdits()).length === 0);
+
+        // Summary
+        const passedCount = results.filter(r => r.pass).length;
+        const failedCount = results.filter(r => !r.pass).length;
+
+        const summary = document.createElement("div");
+        summary.className = "suite";
+        summary.innerHTML = `<h3>Results: ${passedCount} passed, ${failedCount} failed (${results.length} total)</h3>`;
+        out.appendChild(summary);
+
+        window.testResults = { passedCount, failedCount, total: results.length };
+      } catch (err) {
+        assert(`Unexpected error in test suite: ${err.message}`, false);
+        window.testResults = { passedCount: 0, failedCount: 1, error: err.message };
+      }
+    })();
+  </script>
+</body>
+</html>

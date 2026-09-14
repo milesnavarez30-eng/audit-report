@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Global History V2 Parity Test Suite</title>
+</head>
+<body>
+  <h1>Running Global History Parity Tests...</h1>
+  <div id="results"></div>
+
+  <!-- Dependencies -->
+  <script src="../cctv-ops-v2/js/config.js"></script>
+  <script src="../cctv-ops-v2/js/storage.js"></script>
+  <script src="../cctv-ops-v2/js/shared.js"></script>
+  <script src="../cctv-ops-v2/js/services/auth-service.js"></script>
+  <script src="../cctv-ops-v2/js/services/edr-service.js"></script>
+  <script src="../cctv-ops-v2/js/services/audit-service.js"></script>
+  <script src="../cctv-ops-v2/js/services/sorter-service.js"></script>
+  <script src="../cctv-ops-v2/js/services/maintenance-service.js"></script>
+  <script src="../cctv-ops-v2/js/services/pending-service.js"></script>
+  <script src="../cctv-ops-v2/js/services/followup-service.js"></script>
+  <script src="../cctv-ops-v2/js/services/masterlist-service.js"></script>
+  <script src="../cctv-ops-v2/js/services/history-service.js"></script>
+
+  <script>
+    (async function() {
+      const results = [];
+      function assert(desc, condition) {
+        results.push({ desc, passed: !!condition });
+        console.log((condition ? "PASS: " : "FAIL: ") + desc);
+      }
+
+      try {
+        const history = window.historyService;
+        assert("History service exists", !!history);
+
+        // Test 1: Adapters registration
+        assert("Adapters object exists on window", !!window.__workspaceHistoryAdapters);
+        const adapters = window.__workspaceHistoryAdapters;
+        assert("cctv adapter registered", !!adapters.cctv);
+        assert("edr adapter registered", !!adapters.edr);
+        assert("aiSorter adapter registered", !!adapters.aiSorter);
+        assert("maintenanceReport adapter registered", !!adapters.maintenanceReport);
+        assert("pendingReports adapter registered", !!adapters.pendingReports);
+        assert("followupReports adapter registered", !!adapters.followupReports);
+        assert("masterlist adapter registered", !!adapters.masterlist);
+
+        // Test 2: Initial Timeline State
+        await history.init();
+        await history.clearHistory(); // Start fresh
+        let tl = history.getTimeline();
+        assert("Timeline initial total is 0 after clear", tl.total === 0);
+        assert("Timeline initial cursor is -1", tl.cursor === -1);
+        assert("Cannot undo initially", tl.canUndo === false);
+        assert("Cannot redo initially", tl.canRedo === false);
+
+        // Test 3: Capture a change in Masterlist notepad
+        window.masterlistService.saveNotepad("miles", "Baseline Note Initial");
+        await history.initializeBaselines();
+        window.masterlistService.saveNotepad("miles", "History Test Note 1");
+        await history.captureIfChanged("masterlist", "Edited Pending Miles Notes");
+        tl = history.getTimeline();
+        assert("Timeline has 1 entry after capture", tl.total === 1);
+        assert("Cursor is 0 after 1 entry", tl.cursor === 0);
+        assert("Can undo after 1 entry", tl.canUndo === true);
+        assert("Cannot redo after latest entry", tl.canRedo === false);
+        assert("Entry workspace is masterlist", tl.entries[0]?.workspace === "masterlist");
+        assert("Entry action matches", tl.entries[0]?.action === "Edited Pending Miles Notes");
+
+        // Test 4: Capture a second change
+        window.masterlistService.saveNotepad("miles", "History Test Note 2");
+        await history.captureIfChanged("masterlist", "Updated Note 2");
+        tl = history.getTimeline();
+        assert("Timeline has 2 entries", tl.total === 2);
+        assert("Cursor is 1", tl.cursor === 1);
+
+        // Test 5: Undo operation
+        const undoRes = await history.undo();
+        assert("Undo returns true", undoRes === true);
+        tl = history.getTimeline();
+        assert("Cursor decrements to 0 on undo", tl.cursor === 0);
+        assert("Can redo after undo", tl.canRedo === true);
+        assert("Notepad state reverted to Note 1", window.masterlistService.getNotepad("miles") === "History Test Note 1");
+
+        // Test 6: Redo operation
+        const redoRes = await history.redo();
+        assert("Redo returns true", redoRes === true);
+        tl = history.getTimeline();
+        assert("Cursor increments to 1 on redo", tl.cursor === 1);
+        assert("Notepad state restored to Note 2", window.masterlistService.getNotepad("miles") === "History Test Note 2");
+
+        // Test 7: Targeted restore of selected entry
+        history.setSelectedId(tl.entries[0].id);
+        const restoreRes = await history.restoreSelectedEntry();
+        assert("Targeted restore returns true", restoreRes === true);
+        assert("Notepad reverted to selected entry state", window.masterlistService.getNotepad("miles") === "Baseline Note Initial");
+
+        // Test 8: Max history ceiling (caps at 20)
+        for (let i = 0; i < 25; i++) {
+          window.masterlistService.saveNotepad("miles", `Loop Note ${i}`);
+          await history.captureIfChanged("masterlist", `Bulk Change ${i}`);
+        }
+        tl = history.getTimeline();
+        assert("Timeline entries capped at 20", tl.total <= 20);
+
+        // Test 9: Summary generator
+        const sampleEntry = tl.entries[tl.entries.length - 1];
+        const summary = history.historyEntrySummary(sampleEntry);
+        assert("Summary generates string", typeof summary === "string");
+
+        // Test 10: Clear history
+        await history.clearHistory();
+        tl = history.getTimeline();
+        assert("Timeline cleared to 0 entries", tl.total === 0);
+        assert("Cursor reset to -1", tl.cursor === -1);
+
+      } catch (err) {
+        assert("Unexpected exception: " + err.message, false);
+      }
+
+      const total = results.length;
+      const passed = results.filter(r => r.passed).length;
+      const failed = total - passed;
+      const failedList = results.filter(r => !r.passed).map(r => r.desc);
+
+      const output = {
+        summary: `HISTORY_PARITY: ${passed} PASSED, ${failed} FAILED`,
+        total,
+        passed,
+        failed,
+        allPassed: failed === 0,
+        failedList,
+        results
+      };
+
+      document.getElementById("results").textContent = JSON.stringify(output, null, 2);
+
+      fetch("http://localhost:8080/api/test_report", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(output)
+      }).catch(() => {});
+    })();
+  </script>
+</body>
+</html>

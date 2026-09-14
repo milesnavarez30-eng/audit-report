@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head><title>SVG Parser Test</title></head>
+<body>
+<div id="log"></div>
+<script>
+  const errors = [];
+  const origError = console.error;
+  console.error = function(...args) {
+    errors.push(args.join(' '));
+    origError.apply(console, args);
+  };
+  window.addEventListener('error', e => {
+    errors.push(e.message);
+  });
+</script>
+<iframe id="testFrame" src="../cctv-ops-v2/index.html" width="1000" height="800"></iframe>
+<script>
+  const frame = document.getElementById('testFrame');
+  frame.onload = () => {
+    setTimeout(() => {
+      // Check frame document for any svg path errors
+      const paths = frame.contentDocument.querySelectorAll('path');
+      paths.forEach((p, idx) => {
+        try {
+          const d = p.getAttribute('d');
+          const totalLength = p.getTotalLength();
+        } catch(e) {
+          errors.push(`Path #${idx} error: ${e.message} (d="${p.getAttribute('d')}")`);
+        }
+      });
+      document.getElementById('log').textContent = JSON.stringify(errors, null, 2);
+    }, 1000);
+  };
+</script>
+</body>
+</html>

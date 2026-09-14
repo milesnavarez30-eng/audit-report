@@ -1,0 +1,41 @@
+{
+  "success": true,
+  "updatedAt": "2026-09-10T14:30:00.000Z",
+  "pending": {
+    "miles": [
+      {
+        "Year": "2026",
+        "Month": "September",
+        "Date": "2026-09-10",
+        "Name": "Miles",
+        "OM": "OM Mirah",
+        "SITE": "Mabini Site A",
+        "TL": "Abegail Llena",
+        "Agent Name": "Juan Dela Cruz",
+        "Account": "Shopee",
+        "CCTV Reason Codes": "SLEEPING",
+        "NOC": "Pending",
+        "Remarks": "Observed sleeping at bay 3"
+      }
+    ],
+    "seth": [],
+    "wendie": [],
+    "kenneth": [],
+    "jr": []
+  },
+  "webHrAssignments": [
+    {
+      "id": "web_1",
+      "site": "Shaw Site A",
+      "omTeam": "Team Nathan",
+      "hr": "Chloe Frazer"
+    }
+  ],
+  "sources": {
+    "miles": { "ok": true },
+    "seth": { "ok": true },
+    "wendie": { "ok": true },
+    "kenneth": { "ok": true },
+    "jr": { "ok": true }
+  }
+}

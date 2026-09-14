@@ -1,0 +1,72 @@
+﻿=== SUITE 1: Teams Dispatch Toolbar & Copy for Teams Responsiveness ===
+âœ“ PASS: cardTeamsDispatch exists
+âœ“ PASS: btnCopyAllTeams exists
+âœ“ PASS: btnToggleDispatchExpand exists
+âœ“ PASS: btnSendSelectedToDocs exists
+âœ“ PASS: btnSendSelectedToAudit exists
+âœ“ PASS: btnCopyAllTeams is fully visible (width > 0, height > 0)
+âœ“ PASS: btnCopyAllTeams does not clip outside cardTeamsDispatch horizontally
+âœ“ PASS: btnCopyAllTeams contains 'Copy for Teams' text
+âœ“ PASS: At narrow width (high zoom), btnCopyAllTeams wraps and stays within card
+âœ“ PASS: At narrow width, btnCopyAllTeams remains visible and clickable
+
+=== SUITE 2: Maintenance Block Layout & Ordering ===
+âœ“ PASS: Maintenance block card exists
+âœ“ PASS: Block header (.eod-block-head) exists
+âœ“ PASS: Block header contains Block # badge
+âœ“ PASS: Block header contains Report Section title
+âœ“ PASS: Block header contains Show/Hide Report button
+âœ“ PASS: Main content grid exists
+âœ“ PASS: Grid has left label 'Station Issues / Incident (Lanes)'
+âœ“ PASS: Grid has right label 'Action Taken / Remarks'
+âœ“ PASS: Left textarea (.eod-lanes-textarea) exists
+âœ“ PASS: Right textarea (.eod-remarks-textarea) exists
+âœ“ PASS: Quick choices container exists
+âœ“ PASS: Quick choices title exists
+âœ“ PASS: + Add Choice button exists inline
+âœ“ PASS: Preset chips are rendered
+âœ“ PASS: Inline add form exists
+âœ“ PASS: Inline add form initially hidden
+âœ“ PASS: Clicking + Add Choice opens inline form
+âœ“ PASS: Inline input exists
+âœ“ PASS: Cancelling inline form hides it
+âœ“ PASS: Proof screenshots section (.eod-proof-zone) exists
+âœ“ PASS: Proof header exists
+âœ“ PASS: Proof header has 'Proof Screenshots' label
+âœ“ PASS: Proof header has image count badge
+âœ“ PASS: Proof header has 'Add Screenshot' button
+âœ“ PASS: Drop/paste helper text exists
+âœ“ PASS: Proof screenshot thumbnail grid container exists
+
+=== SUITE 3: Maintenance PDF Structure (Data Table -> Screenshots -> Remarks) ===
+âœ“ PASS: maintenanceReportHtmlForSheets returns valid HTML string
+âœ“ PASS: PDF output contains 2 blocks
+âœ“ PASS: Block 1 has block header title
+âœ“ PASS: Block 1: Table exists
+âœ“ PASS: Block 1: Screenshots exist
+âœ“ PASS: Block 1: Remarks exist
+âœ“ PASS: Block 1 order is strictly 1. DATA TABLE -> 2. PROOF SCREENSHOTS -> 3. REMARKS
+âœ“ PASS: Table does NOT contain image row as <tr>
+âœ“ PASS: Table does NOT contain remarks row as <tr>
+âœ“ PASS: Screenshot image has max-width and max-height constraints
+âœ“ PASS: Screenshot image has object-fit contain
+âœ“ PASS: Block 1 remarks show selected preset ('Maintenance observed wiping these lanes.')
+âœ“ PASS: Block 1 remarks do NOT show 'tet'
+âœ“ PASS: Block 2 remarks show manual remarks ('Custom manual inspection done for Station 03.') overriding preset
+âœ“ PASS: Block 2 remarks do NOT show preset text ('Maintenance observed wiping these lanes.')
+âœ“ PASS: Block 2 remarks do NOT show 'tet'
+
+=== SUITE 4: Effective Remarks Resolution & Stale Value Immunity ===
+âœ“ PASS: Empty manual + preset returns preset
+âœ“ PASS: Block 2 with different preset returns its own preset
+âœ“ PASS: Manual text takes priority over preset
+âœ“ PASS: Both empty returns empty array []
+âœ“ PASS: Whitespace manual text is treated as empty, falling back to preset
+
+=== SUITE 5: Live DOM Sync Before Export ===
+âœ“ PASS: Live DOM sync captured Station 99 in lanesText
+âœ“ PASS: Live DOM sync captured manual remark in remarks
+âœ“ PASS: Live DOM sync has 0 instances of unexpected 'tet'
+
+==========================================
+TEST RESULTS: 60 Passed, 0 Failed

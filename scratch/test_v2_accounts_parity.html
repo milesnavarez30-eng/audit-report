@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>V2 Accounts Parity Test</title>
+<style>
+  body { font-family: monospace; background: #0d1117; color: #c9d1d9; padding: 16px; margin: 0; }
+  .pass { color: #4ade80; } .fail { color: #f87171; }
+  h1 { font-size: 15px; color: #38bdf8; margin: 0 0 12px 0; }
+  .summary { margin-top: 16px; padding: 8px; border: 1px solid; border-radius: 4px; }
+  .summary.ok { border-color: #4ade80; color: #4ade80; }
+  .summary.bad { border-color: #f87171; color: #f87171; }
+  div.line { font-size: 12px; line-height: 1.6; }
+</style>
+</head>
+<body>
+<h1>V2 Accounts / Admin Console Parity Test</h1>
+<div id="out"></div>
+<div class="summary" id="summary"></div>
+
+<script>
+// Minimal stubs so service loads cleanly
+window.CCTV_V2_CONFIG = { SUPABASE_URL: '', SUPABASE_PUBLIC_KEY: '' };
+window.supabase = null;
+window.CCTV_AUTH = { getUser: () => null, getProfile: () => null };
+</script>
+<script src="../cctv-ops-v2/js/services/accounts-service.js"></script>
+<script>
+const results = [];
+let pass = 0, fail = 0;
+
+function assert(label, cond, detail = '') {
+  const ok = !!cond;
+  if (ok) pass++; else fail++;
+  const line = document.createElement('div');
+  line.className = 'line';
+  line.innerHTML = `<span class="${ok ? 'pass' : 'fail'}">${ok ? '[PASS]' : '[FAIL]'}</span> ${label}${detail ? ` — ${detail}` : ''}`;
+  document.getElementById('out').appendChild(line);
+  return ok;
+}
+
+(async () => {
+  const svc = window.CCTV_ACCOUNTS;
+
+  // 1. Service availability
+  assert('CCTV_ACCOUNTS is defined', !!svc);
+
+  // 2. Init
+  svc.init();
+  assert('init() succeeds without error', true);
+
+  // 3. System status
+  const sys = svc.getSystemStatus();
+  assert('getSystemStatus() returns object', !!sys);
+  assert('supabase status exists', 'supabase' in sys);
+  assert('docs status exists', 'docs' in sys);
+  assert('sheets status exists', 'sheets' in sys);
+
+  // 4. Metrics
+  const metrics = await svc.getMetrics();
+  assert('getMetrics() returns object', !!metrics);
+  assert('metrics.totalUsers is a number', typeof metrics.totalUsers === 'number');
+  assert('metrics seeds at least 1 user', metrics.totalUsers >= 1, `got ${metrics.totalUsers}`);
+  assert('metrics.edrCount is a number', typeof metrics.edrCount === 'number');
+  assert('metrics.cctvCount is a number', typeof metrics.cctvCount === 'number');
+
+  // 5. Fetch users (local)
+  const users = await svc.fetchUsers(false);
+  assert('fetchUsers() returns array', Array.isArray(users));
+  assert('fetchUsers() has at least 1 user (seed)', users.length >= 1, `got ${users.length}`);
+  const miles = users.find(u => u.username === 'miles');
+  assert('Seed user miles exists', !!miles);
+  assert('miles has role admin', miles?.role === 'admin');
+  assert('miles has status approved', miles?.status === 'approved');
+
+  // 6. getCachedUsers
+  const cached = svc.getCachedUsers();
+  assert('getCachedUsers() returns array', Array.isArray(cached));
+  assert('getCachedUsers() has content', cached.length >= 1);
+
+  // 7. Create account
+  let newAcc;
+  try {
+    newAcc = await svc.createAccount({ name: 'Test Staff', username: 'teststaff_parity_v2', password: 'TestPass1', role: 'user' });
+    assert('createAccount() returns object', !!newAcc);
+    assert('created account has correct username', newAcc.username === 'teststaff_parity_v2');
+    assert('created account has status approved', newAcc.status === 'approved');
+    assert('created account has role user', newAcc.role === 'user');
+  } catch(e) {
+    assert('createAccount() did not throw', false, e.message);
+  }
+
+  // 8. Recent credentials
+  const creds = svc.getRecentCredentials();
+  assert('getRecentCredentials() returns array', Array.isArray(creds));
+  assert('recent credentials has created account', creds.some(c => c.username === 'teststaff_parity_v2'));
+  const credItem = creds.find(c => c.username === 'teststaff_parity_v2');
+  assert('credential has name', credItem?.name === 'Test Staff');
+  assert('credential has password', !!credItem?.password);
+
+  // 9. Format credentials text
+  if (credItem) {
+    const fmt = svc.formatAllCredentialsText(credItem);
+    assert('formatAllCredentialsText() contains username', fmt.includes('teststaff_parity_v2'));
+    assert('formatAllCredentialsText() contains password', fmt.includes(credItem.password));
+  }
+
+  // 10. setStatus
+  if (newAcc) {
+    const after = await svc.setStatus(newAcc.id, 'disabled');
+    assert('setStatus(disabled) updates status', after.status === 'disabled');
+    const reactivated = await svc.setStatus(newAcc.id, 'approved');
+    assert('setStatus(approved) reactivates', reactivated.status === 'approved');
+  }
+
+  // 11. saveUserAccess
+  if (newAcc) {
+    const updated = await svc.saveUserAccess(newAcc.id, {
+      role: 'user',
+      status: 'approved',
+      displayName: 'Test Staff Updated',
+      permissions: { edr: true, cctv: false, maintenance: true }
+    });
+    assert('saveUserAccess() updates display name', updated.display_name === 'Test Staff Updated');
+    assert('saveUserAccess() sets permissions', updated.permissions?.cctv === false);
+    assert('saveUserAccess() enforces no manageOptions for user', updated.permissions?.manageOptions === false);
+  }
+
+  // 12. getInitials
+  assert('getInitials("Miles Navarez") = MN', svc.getInitials('Miles Navarez') === 'MN');
+  assert('getInitials("Seth") = SE', svc.getInitials('Seth') === 'SE');
+  assert('getInitials("") = U', svc.getInitials('') === 'U');
+
+  // 13. Audit log event
+  const logRecord = await svc.logSecurityEvent('test_event', 'parity_test', { test: true }, null);
+  assert('logSecurityEvent() returns record', !!logRecord);
+  assert('logRecord has action', logRecord.action === 'test_event');
+  assert('logRecord has created_at', !!logRecord.created_at);
+
+  // 14. fetchAuditLogs (local)
+  const auditLogs = await svc.fetchAuditLogs(false);
+  assert('fetchAuditLogs() returns array', Array.isArray(auditLogs));
+  assert('fetchAuditLogs() has logged events', auditLogs.length >= 1);
+  assert('audit log contains test_event', auditLogs.some(l => l.action === 'test_event'));
+
+  // 15. getCachedAuditLogs
+  const cachedLogs = svc.getCachedAuditLogs();
+  assert('getCachedAuditLogs() returns array', Array.isArray(cachedLogs));
+
+  // 16. Operational settings
+  const settingsDefault = svc.getOperationalSettings();
+  assert('getOperationalSettings() returns object', !!settingsDefault);
+  assert('default theme is dark', settingsDefault.theme === 'dark');
+  assert('default subtitle present', !!settingsDefault.subtitle);
+
+  const saved = await svc.saveOperationalSettings({ theme: 'light', landing: 'edr', subtitle: 'Test Subtitle', autoTrim: false });
+  assert('saveOperationalSettings() returns updated object', !!saved);
+  assert('saved theme is light', saved.theme === 'light');
+  assert('saved subtitle is correct', saved.subtitle === 'Test Subtitle');
+  assert('saved autoTrim is false', saved.autoTrim === false);
+
+  const reread = svc.getOperationalSettings();
+  assert('getOperationalSettings() reads saved values', reread.theme === 'light');
+
+  // Restore defaults
+  await svc.saveOperationalSettings({ theme: 'dark', landing: 'cctv', subtitle: 'Secure operations workspace', autoTrim: true });
+
+  // 17. Remove recent credential
+  svc.removeRecentCredential(credItem?.id || '');
+  assert('removeRecentCredential() works', !svc.getRecentCredentials().some(c => c.username === 'teststaff_parity_v2'));
+
+  // 18. Add and clear credentials
+  svc.addRecentCredential({ name: 'Temp User', username: 'tempuser_clear_test', password: 'pw123', role: 'User' });
+  const before = svc.getRecentCredentials().length;
+  svc.clearRecentCredentials();
+  assert('clearRecentCredentials() empties list', svc.getRecentCredentials().length === 0, `before:${before}`);
+
+  // 19. deleteAccount
+  if (newAcc) {
+    const deleted = await svc.deleteAccount(newAcc.id);
+    assert('deleteAccount() returns true', deleted === true);
+    const stillThere = svc.getCachedUsers().find(u => u.id === newAcc.id);
+    assert('deleteAccount() removes from cache', !stillThere);
+  }
+
+  // 20. Permission defaults
+  assert('DEFAULT_USER_PERMISSIONS exists', !!svc.DEFAULT_USER_PERMISSIONS);
+  assert('FULL_ADMIN_PERMISSIONS exists', !!svc.FULL_ADMIN_PERMISSIONS);
+  assert('admin permissions has manageOptions=true', svc.FULL_ADMIN_PERMISSIONS.manageOptions === true);
+  assert('user permissions has manageOptions=false', svc.DEFAULT_USER_PERMISSIONS.manageOptions === false);
+
+  // Summary
+  const total = pass + fail;
+  const summary = document.getElementById('summary');
+  summary.textContent = `Results: ${pass}/${total} passed. ${fail > 0 ? fail + ' FAILED.' : 'ALL PASSED!'}`;
+  summary.className = 'summary ' + (fail === 0 ? 'ok' : 'bad');
+
+  // Write report for PowerShell to read
+  try {
+    const report = `Accounts Parity: ${pass}/${total} passed. ${fail > 0 ? fail + ' FAILED' : 'ALL PASSED'}\n${fail === 0 ? 'PASS' : 'FAIL'}`;
+    fetch('/write-report', { method: 'POST', body: report }).catch(() => {});
+    // Also try writing to test_report.txt via a known hack endpoint
+    localStorage.setItem('cctv_v2_accounts_parity_result', JSON.stringify({ pass, fail, total }));
+  } catch(_) {}
+})();
+</script>
+</body>
+</html>

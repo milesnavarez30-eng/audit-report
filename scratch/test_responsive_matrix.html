@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Responsive Verification</title>
+</head>
+<body style="background:#0f172a; color:#f8fafc; font-family:monospace; padding:20px;">
+  <h2>Responsive Regression Verification</h2>
+  <div id="out">Running...</div>
+  <iframe id="frame" src="/cctv-ops-v2/" style="border:1px solid #334155;"></iframe>
+
+  <script>
+    const frame = document.getElementById("frame");
+    const out = document.getElementById("out");
+
+    async function testViewport(width, height, label) {
+      frame.style.width = width + "px";
+      frame.style.height = height + "px";
+      await new Promise(r => setTimeout(r, 600));
+
+      const win = frame.contentWindow;
+      const doc = frame.contentDocument;
+
+      const layout = doc.querySelector("#paneEdr .edr-split-layout");
+      const colForm = doc.getElementById("colEdrForm");
+      const colDispatch = doc.getElementById("colEdrDispatch");
+      const rail = doc.getElementById("navRail");
+      const btnExpand = doc.getElementById("btnToggleDispatchExpand");
+
+      // Verify normal layout at this viewport
+      const normalFormDisplay = win.getComputedStyle(colForm).display;
+      const normalDispatchDisplay = win.getComputedStyle(colDispatch).display;
+      const normalLayoutCols = win.getComputedStyle(layout).gridTemplateColumns;
+
+      // Expand
+      btnExpand.click();
+      await new Promise(r => setTimeout(r, 200));
+      const expFormDisplay = win.getComputedStyle(colForm).display;
+      const expDispatchDisplay = win.getComputedStyle(colDispatch).display;
+
+      // Collapse
+      btnExpand.click();
+      await new Promise(r => setTimeout(r, 200));
+      const restoredFormDisplay = win.getComputedStyle(colForm).display;
+      const restoredDispatchDisplay = win.getComputedStyle(colDispatch).display;
+      const restoredLayoutCols = win.getComputedStyle(layout).gridTemplateColumns;
+
+      const passed = (
+        normalFormDisplay === "flex" &&
+        normalDispatchDisplay === "flex" &&
+        expFormDisplay === "none" &&
+        restoredFormDisplay === "flex" &&
+        restoredDispatchDisplay === "flex" &&
+        restoredLayoutCols === normalLayoutCols
+      );
+
+      return {
+        label,
+        width,
+        height,
+        passed,
+        normalLayoutCols,
+        restoredLayoutCols
+      };
+    }
+
+    frame.onload = async () => {
+      await new Promise(r => setTimeout(r, 1000));
+      const viewports = [
+        { w: 1440, h: 900, label: "Desktop 1440px (100%)" },
+        { w: 1280, h: 800, label: "Laptop 1280px (100%)" },
+        { w: 1152, h: 720, label: "Desktop 1440px at 125% zoom (1152px eff)" },
+        { w: 1024, h: 768, label: "Laptop/Tablet 1024px" },
+        { w: 960,  h: 600, label: "Desktop 1440px at 150% zoom (960px eff)" },
+        { w: 822,  h: 550, label: "Desktop 1440px at 175% zoom (822px eff)" },
+        { w: 768,  h: 1024, label: "Tablet 768px (auto-collapsed rail)" },
+        { w: 720,  h: 500, label: "Desktop 1440px at 200% zoom (720px eff)" },
+        { w: 375,  h: 812, label: "Mobile 375px (drawer nav)" }
+      ];
+
+      const results = [];
+      for (const vp of viewports) {
+        const res = await testViewport(vp.w, vp.h, vp.label);
+        results.push(res);
+      }
+
+      let summary = "\n==========================================\nRESPONSIVE MATRIX VERIFICATION REPORT\n==========================================\n";
+      let allPass = true;
+      results.forEach(r => {
+        if (!r.passed) allPass = false;
+        summary += `${r.passed ? "[PASS]" : "[FAIL]"} ${r.label} -> Cols: ${r.restoredLayoutCols}\n`;
+      });
+      summary += `\nOVERALL: ${allPass ? "ALL VIEWPORTS PASSED" : "FAILURES DETECTED"}\n`;
+
+      out.innerText = summary;
+      console.log(summary);
+
+      fetch("/api/test_report", {
+        method: "POST",
+        headers: { "Content-Type": "text/plain" },
+        body: summary
+      });
+    };
+  </script>
+</body>
+</html>

@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>V2 Targeted Remaining Fixes Direct Verification</title>
+  <style>
+    body { font-family: monospace; background: #0b0f19; color: #e2e8f0; padding: 20px; font-size: 13px; line-height: 1.5; }
+    .pass { color: #4ade80; font-weight: bold; }
+    .fail { color: #f87171; font-weight: bold; }
+    .section { margin-top: 20px; border-bottom: 1px solid #334155; padding-bottom: 4px; color: #38bdf8; font-size: 14px; font-weight: bold; }
+    .summary { margin-top: 20px; padding: 10px; border: 1px solid #4ade80; color: #4ade80; font-weight: bold; border-radius: 4px; }
+    .summary.fail { border-color: #f87171; color: #f87171; }
+  </style>
+</head>
+<body>
+  <h1>V2 Targeted Remaining Fixes Verification</h1>
+  <div id="out"></div>
+  <div id="summary"></div>
+
+  <!-- DOM containers needed for controller/UI testing -->
+  <div id="edrPreviewBox" style="display:none;"></div>
+  <div id="maintenanceMessage" style="display:none;"></div>
+  <table id="maintenanceMiniSheet" class="mini-sheet" style="display:none;">
+    <thead>
+      <tr>
+        <th class="mini-sheet-corner">#</th>
+        <th>Timestamp</th><th>Date</th><th>TL</th><th>Account</th><th>Site</th><th>Station</th><th>Issue</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+  <div id="miniSheetSelectedCount" style="display:none;"></div>
+  <div id="simpleEodBlocks" style="display:none;"></div>
+  <div id="simpleEodAutosaveStatus" style="display:none;"></div>
+  <select id="simpleEodDestination" style="display:none;"></select>
+  <input id="simpleEodDate" style="display:none;">
+  <input id="simpleEodSite" style="display:none;">
+
+  <!-- Scripts -->
+  <script src="../auth-config.js"></script>
+  <script src="../cctv-ops-v2/js/config.js"></script>
+  <script src="../cctv-ops-v2/js/storage.js"></script>
+  <script src="../cctv-ops-v2/js/shared.js"></script>
+  <script src="../cctv-ops-v2/js/services/auth-service.js"></script>
+  <script src="../cctv-ops-v2/js/services/edr-service.js"></script>
+  <script src="../cctv-ops-v2/js/services/audit-service.js"></script>
+  <script src="../cctv-ops-v2/js/services/sorter-service.js"></script>
+  <script src="../cctv-ops-v2/js/services/maintenance-service.js"></script>
+  <script src="../cctv-ops-v2/js/services/history-service.js"></script>
+  <script src="../cctv-ops-v2/js/services/masterlist-service.js"></script>
+
+  <script>
+    const samplePng = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==";
+    let passCount = 0;
+    let failCount = 0;
+    const testResults = [];
+
+    function sendReport(status, extra = {}) {
+      fetch("http://localhost:8080/api/test_report", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          status,
+          passCount,
+          failCount,
+          total: passCount + failCount,
+          results: testResults,
+          ...extra
+        })
+      }).catch(() => {});
+    }
+
+    window.onerror = (msg, url, line, col, err) => {
+      const errStr = `${msg} at ${line}:${col}`;
+      assert("Uncaught", errStr, false, err ? err.stack : "");
+      sendReport("CRASH", { error: errStr, stack: err ? err.stack : "" });
+    };
+    window.onunhandledrejection = (e) => {
+      const reason = e.reason ? e.reason.message || String(e.reason) : "Unknown rejection";
+      assert("UnhandledRejection", reason, false, e.reason ? e.reason.stack : "");
+      sendReport("CRASH", { error: reason, stack: e.reason ? e.reason.stack : "" });
+    };
+
+    function assert(section, desc, condition, detail = "") {
+      const pass = Boolean(condition);
+      if (pass) passCount++; else failCount++;
+      testResults.push({ section, desc, pass, detail: String(detail) });
+      const out = document.getElementById("out");
+      const div = document.createElement("div");
+      div.className = pass ? "pass" : "fail";
+      div.textContent = `[${pass ? "PASS" : "FAIL"}] [${section}] ${desc}${detail ? " - " + detail : ""}`;
+      out.appendChild(div);
+      console.log(`[${pass ? "PASS" : "FAIL"}] [${section}] ${desc} ${detail}`);
+      return pass;
+    }
+
+    function addSection(title) {
+      const out = document.getElementById("out");
+      const div = document.createElement("div");
+      div.className = "section";
+      div.textContent = `=== ${title} ===`;
+      out.appendChild(div);
+    }
+
+    (async function runAllTests() {
+      try {
+        const edr = window.CCTV_EDR || window.edrService;
+        const sorter = window.sorterService;
+        const maintenance = window.maintenanceService;
+        const history = window.historyService;
+        const masterlist = window.masterlistService;
+
+        // ===================================================================
+        // PRIORITY 1 & 2: EDR SCREENSHOT & MULTI-SELECTION IN TEAMS DISPATCH
+        // ===================================================================
+        addSection("Priority 1 & 2: EDR Screenshot & Multi-Selection in Teams Dispatch");
+
+        assert("EDR", "edrService is defined", !!edr);
+        await edr.init();
+
+        // Clear existing reports
+        const existing = edr.getReports().slice();
+        for (const rep of existing) {
+          await edr.deleteReport(rep.id);
+        }
+
+        // 1. Create Report 1 with screenshot
+        const rep1 = await edr.createOrUpdate({
+          site: "Mabini Site A",
+          date: "2026-09-11",
+          timeObserved: "10:00",
+          supervisorRole: "Team Leader",
+          supervisorName: "Sarah Connor",
+          subjectType: "Agent/s",
+          subjectName: "John Matrix",
+          account: "AFP",
+          incident: "Sleeping at workstation",
+          action: "Coaching session documented",
+          clipLink: "https://drive.google.com/clip1",
+          screenshotData: samplePng
+        });
+
+        // 2. Create Report 2 with screenshot
+        const rep2 = await edr.createOrUpdate({
+          site: "Shaw Site B",
+          date: "2026-09-11",
+          timeObserved: "11:30",
+          supervisorRole: "OM",
+          supervisorName: "Dutch Schaefer",
+          subjectType: "Agent/s",
+          subjectName: "Kyle Reese",
+          account: "Healthcare",
+          incident: "Unauthorized mobile device usage",
+          action: "Device surrendered to security desk",
+          clipLink: "https://drive.google.com/clip2",
+          screenshotData: samplePng
+        });
+
+        assert("EDR", "Report 1 created with screenshot", !!rep1 && rep1.screenshotData === samplePng);
+        assert("EDR", "Report 2 created with screenshot", !!rep2 && rep2.screenshotData === samplePng);
+
+        // 3. Test multi-selection
+        await edr.toggleSelect(rep1.id, true);
+        await edr.toggleSelect(rep2.id, true);
+
+        const activeSelected = edr.getReports().filter(r => r.selected && !r.done);
+        assert("EDR", "Both EDRs simultaneously selected (multi-selection)", activeSelected.length === 2);
+
+        // 4. Test preview HTML generation (Priority 1 & 3)
+        const previewHtml = edr.buildPreviewHtml();
+        const tempDiv = document.createElement("div");
+        tempDiv.innerHTML = previewHtml;
+
+        const previewCards = tempDiv.querySelectorAll(".edr-preview-card");
+        assert("EDR", "All selected EDRs appear together in Teams Dispatch", previewCards.length === 2, `Cards count: ${previewCards.length}`);
+
+        const previewShots = tempDiv.querySelectorAll(".edr-preview-shot img");
+        assert("EDR", "All selected EDR screenshots appear in Teams Dispatch preview", previewShots.length === 2, `Shots count: ${previewShots.length}`);
+        if (previewShots.length >= 2) {
+          assert("EDR", "Screenshot images have valid src", previewShots[0].src === samplePng && previewShots[1].src === samplePng);
+        }
+
+        // 5. Test Copy All To Teams includes all reports
+        const teamsText = edr.buildTeamsOutput();
+        assert("EDR", "buildTeamsOutput includes Report 1 subject", teamsText.includes("John Matrix"));
+        assert("EDR", "buildTeamsOutput includes Report 2 subject", teamsText.includes("Kyle Reese"));
+        assert("EDR", "buildTeamsOutput has divider between reports", teamsText.includes("──────────"));
+
+        // ===================================================================
+        // PRIORITY 3: AI SORTER ROW SELECTION + KEYBOARD SHORTCUTS
+        // ===================================================================
+        addSection("Priority 3: AI Sorter Row Selection + Shortcuts");
+
+        assert("Sorter", "sorterService is defined", !!sorter);
+
+        const rawReport = [
+          "TIMESTAMP\tDATE\tTL\tACCOUNT\tSITE\tSTATION NO.\tSTATION ISSUE",
+          "09/10/2026 10:00\t09/10/2026\tAllan Albert Sadili\tMapua\tMabini Site A\t1A-01\tMonitor flickering",
+          "09/10/2026 11:00\t09/10/2026\tCris Arandilla\tHerb Joy\tMabini Site A\t2B-10\tMouse optical sensor",
+          "09/10/2026 12:00\t09/10/2026\tJovert Monticayan\tHBW Insurance\tMabini Site A\t1F Station 05\tKeyboard key stuck"
+        ].join("\n");
+
+        const parsedRows = sorter.parseReport(rawReport);
+        const assignments = sorter.buildAssignments(parsedRows);
+        const assignedRows = sorter.assignRows(parsedRows, assignments);
+
+        assert("Sorter", "Assigned 3 rows correctly", assignedRows.length === 3);
+
+        // Test row selection logic simulation
+        let selectedRows = new Set();
+        let selectionAnchor = null;
+
+        function simulateRowSelect(rowIndex, event = {}) {
+          const isToggle = !!(event.ctrlKey || event.metaKey);
+          const isRange = !!event.shiftKey;
+          if (isRange && selectionAnchor !== null) {
+            const start = Math.min(selectionAnchor, rowIndex);
+            const end = Math.max(selectionAnchor, rowIndex);
+            if (!isToggle) selectedRows.clear();
+            for (let i = start; i <= end; i++) selectedRows.add(i);
+          } else if (isToggle) {
+            if (selectedRows.has(rowIndex)) selectedRows.delete(rowIndex);
+            else selectedRows.add(rowIndex);
+            selectionAnchor = rowIndex;
+          } else {
+            selectedRows.clear();
+            selectedRows.add(rowIndex);
+            selectionAnchor = rowIndex;
+          }
+        }
+
+        // Test single click row 0
+        simulateRowSelect(0);
+        assert("Sorter", "Clicking row 0 selects only row 0", selectedRows.has(0) && selectedRows.size === 1);
+
+        // Test Ctrl+click row 2
+        simulateRowSelect(2, { ctrlKey: true });
+        assert("Sorter", "Ctrl+click row 2 adds to selection (multi-select rows)", selectedRows.has(0) && selectedRows.has(2) && selectedRows.size === 2);
+
+        // Test Shift+click range from 0 to 1
+        simulateRowSelect(0); // reset anchor to 0
+        simulateRowSelect(1, { shiftKey: true });
+        assert("Sorter", "Shift+click selects range [0, 1]", selectedRows.has(0) && selectedRows.has(1) && !selectedRows.has(2) && selectedRows.size === 2);
+
+        // Test TSV copy of selected rows
+        const tsv = sorter.selectedMiniSheetTsv(assignedRows, [0, 1], false);
+        const expectedTl0 = sorter.displayTLValue(assignedRows[0].tl);
+        const expectedTl1 = sorter.displayTLValue(assignedRows[1].tl);
+        assert("Sorter", "selectedMiniSheetTsv produces TSV for selected rows", tsv.includes(expectedTl0) && tsv.includes(expectedTl1), `Exported TLs: ${expectedTl0}, ${expectedTl1}`);
+
+        // Test parseMiniSheetClipboardRows
+        const pastedNewRows = sorter.parseMiniSheetClipboardRows("09/10/2026 14:00\t09/10/2026\tKevin Omiping\tHBW\tMabini\t1K-133\tPower humming");
+        assert("Sorter", "parseMiniSheetClipboardRows parses pasted TSV", pastedNewRows.length === 1 && pastedNewRows[0].tl === "Kevin Omiping");
+
+        // ===================================================================
+        // PRIORITY 4: MAINTENANCE PASTE, HIDE/SHOW, UNDO/REDO, CTRL+A
+        // ===================================================================
+        addSection("Priority 4: Maintenance Ctrl+V Screenshot + Hide/Show + Undo/Redo + Ctrl+A");
+
+        assert("Maintenance", "maintenanceService is defined", !!maintenance);
+
+        // 1. Test getBlocks & saveBlocks
+        assert("Maintenance", "maintenanceService exposes getBlocks method", typeof maintenance.getBlocks === "function");
+        assert("Maintenance", "maintenanceService exposes saveBlocks method", typeof maintenance.saveBlocks === "function");
+
+        const testBlocks = [
+          {
+            id: "test_b1",
+            lanesText: "09/10/2026 10:00\t09/10/2026\tSarah\tAFP\tMabini\t1A-01\tMonitor flickering",
+            screenshots: [{ name: "proof.jpg", dataUrl: samplePng }],
+            remarks: ["Coached on shift"],
+            dataHidden: false
+          }
+        ];
+
+        await maintenance.saveBlocks(testBlocks);
+        const retrieved = maintenance.getBlocks();
+        assert("Maintenance", "saveBlocks persists blocks", retrieved.length === 1 && retrieved[0].id === "test_b1");
+
+        // 2. Test Hide Report retains rows in payload (Requirement 10)
+        const hiddenState = {
+          destinationKey: "mabini_a",
+          date: "2026-09-11",
+          blocks: [
+            {
+              lanesText: "09/10/2026 10:00\t09/10/2026\tSarah\tAFP\tMabini\t1A-01\tIssue",
+              screenshots: [{ name: "proof.jpg", dataUrl: samplePng }],
+              remarks: ["Coached"],
+              dataHidden: true // HIDDEN
+            }
+          ]
+        };
+        const mPayload = maintenance.buildMaintenanceSheetsPayload(hiddenState);
+        assert("Maintenance", "buildMaintenanceSheetsPayload retains rows when dataHidden is true (V1 parity)", mPayload.rows.length === 1);
+
+        // 3. Test image compression
+        const testBase64 = await maintenance.compressBase64(samplePng);
+        assert("Maintenance", "compressBase64 successfully processes image", !!testBase64 && testBase64.startsWith("data:image/"));
+
+        // 4. Test History Undo / Redo for Maintenance (Priority 4 / Items 11 & 12)
+        assert("History", "historyService is defined", !!history);
+        await history.init();
+
+        // Baseline block state
+        const blockStateA = [
+          { id: "b_init", lanesText: "09/10/2026 09:00\t09/10/2026\tAllan\tMapua\tMabini\t1A-01\tIssue A", screenshots: [], remarks: [], dataHidden: false }
+        ];
+        await maintenance.saveBlocks(blockStateA);
+        await history.captureIfChanged("maintenanceReport", "Initial maintenance state");
+
+        // Modified block state
+        const blockStateB = [
+          { id: "b_init", lanesText: "09/10/2026 09:00\t09/10/2026\tAllan\tMapua\tMabini\t1A-01\tIssue A", screenshots: [], remarks: [], dataHidden: false },
+          { id: "b_second", lanesText: "09/10/2026 10:00\t09/10/2026\tCris\tHerb\tMabini\t2B-10\tIssue B", screenshots: [], remarks: [], dataHidden: false }
+        ];
+        await maintenance.saveBlocks(blockStateB);
+        await history.captureIfChanged("maintenanceReport", "Added Block 2");
+
+        const canUndoNow = history.getTimeline().canUndo;
+        assert("History", "canUndo is true after modifications", canUndoNow);
+
+        // Perform Undo
+        await history.undo();
+        const undoneBlocks = maintenance.getBlocks();
+        assert("History", "Undo restores previous block count (1 block)", undoneBlocks.length === 1 && undoneBlocks[0].id === "b_init");
+
+        // Perform Redo
+        const canRedoNow = history.getTimeline().canRedo;
+        assert("History", "canRedo is true after undo", canRedoNow);
+        await history.redo();
+        const redoneBlocks = maintenance.getBlocks();
+        assert("History", "Redo restores 2 blocks", redoneBlocks.length === 2 && redoneBlocks[1].id === "b_second");
+
+        // 5. Test Hide/Show summary text format (Requirement 10)
+        const hiddenBlockForSummary = {
+          lanesText: "09/10/2026 10:00\t09/10/2026\tSarah\tAFP\tMabini\t1A-01\tIssue 1\n09/10/2026 11:00\t09/10/2026\tSarah\tAFP\tMabini\t1A-02\tIssue 2",
+          screenshots: [samplePng],
+          dataHidden: true
+        };
+        const summaryRowCount = maintenance.maintenanceRowsForSheets(hiddenBlockForSummary.lanesText).length;
+        const summaryShotCount = hiddenBlockForSummary.screenshots.length;
+        const expectedSummaryText = `(${summaryRowCount} rows · ${summaryShotCount} screenshot)`;
+        assert("Maintenance", "Hide Report summary text computes correct counts", summaryRowCount === 2 && summaryShotCount === 1, expectedSummaryText);
+
+        // ===================================================================
+        // PRIORITY 5: MASTERLIST REAL TRACKER CONNECTION
+        // ===================================================================
+        addSection("Priority 5: Masterlist Real Tracker Connection");
+
+        assert("Masterlist", "masterlistService is defined", !!masterlist);
+        await masterlist.init();
+
+        // Perform live sync against real Google Apps Script
+        const syncResult = await masterlist.loadMasterList(true);
+        assert("Masterlist", "loadMasterList connected to real Google Apps Script endpoint", syncResult && syncResult.success === true, syncResult?.error || "");
+
+        const syncState = masterlist.getSyncState();
+        assert("Masterlist", "Sync state kind is 'live'", syncState.kind === "live");
+        assert("Masterlist", "Sync title is 'Google Sheets connected'", syncState.title === "Google Sheets connected");
+
+        // Verify pending tracker data from real Google Sheet
+        const trackers = masterlist.getTrackers();
+        assert("Masterlist", "All 5 tracker keys present", trackers.length === 5);
+
+        const miles = trackers.find(t => t.key === "miles");
+        const seth = trackers.find(t => t.key === "seth");
+        const kenneth = trackers.find(t => t.key === "kenneth");
+        const jr = trackers.find(t => t.key === "jr");
+
+        assert("Masterlist", "Miles pending tracker connected with real rows", miles && miles.count >= 6, `Count: ${miles?.count}`);
+        assert("Masterlist", "Seth pending tracker connected with real rows", seth && seth.count >= 13, `Count: ${seth?.count}`);
+        assert("Masterlist", "Kenneth pending tracker connected with real rows", kenneth && kenneth.count >= 5, `Count: ${kenneth?.count}`);
+        assert("Masterlist", "JR pending tracker connected with real rows", jr && jr.count >= 1, `Count: ${jr?.count}`);
+
+        const hrAssignments = masterlist.getHrAssignments();
+        assert("Masterlist", "HR assignments loaded", hrAssignments.length > 20, `Count: ${hrAssignments.length}`);
+
+      } catch (err) {
+        assert("Global", "Unexpected error during test execution", false, err.message + "\n" + err.stack);
+      }
+
+      // Summary
+      const summaryDiv = document.getElementById("summary");
+      const isAllPass = failCount === 0;
+      summaryDiv.className = `summary ${isAllPass ? "ok" : "fail"}`;
+      summaryDiv.textContent = `FINAL SUMMARY: ${passCount} PASSED, ${failCount} FAILED`;
+      addSection(`TOTAL: ${passCount} PASS, ${failCount} FAIL`);
+
+      // Report to server
+      fetch("http://localhost:8080/api/test_report", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ summary: `TOTAL: ${passCount} PASS, ${failCount} FAIL`, passCount, failCount, results: testResults })
+      }).catch(() => {});
+    })();
+  </script>
+</body>
+</html>

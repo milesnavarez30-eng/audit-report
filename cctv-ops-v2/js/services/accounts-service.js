@@ -48,11 +48,22 @@
 
   function initClient() {
     if (client) return client;
+    if (window._sharedSupabaseClient) {
+      client = window._sharedSupabaseClient;
+      return client;
+    }
+    if (window.CCTV_AUTH && typeof window.CCTV_AUTH.getClient === "function") {
+      const c = window.CCTV_AUTH.getClient();
+      if (c) {
+        client = c;
+        window._sharedSupabaseClient = client;
+        return client;
+      }
+    }
     if (window.supabase && typeof window.supabase.createClient === "function" && cfg.SUPABASE_URL && cfg.SUPABASE_PUBLIC_KEY) {
       try {
-        client = window.supabase.createClient(cfg.SUPABASE_URL, cfg.SUPABASE_PUBLIC_KEY, {
-          auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
-        });
+        client = window.supabase.createClient(cfg.SUPABASE_URL, cfg.SUPABASE_PUBLIC_KEY);
+        window._sharedSupabaseClient = client;
       } catch (e) {
         console.warn("[Accounts Service] Could not create Supabase client:", e);
       }
@@ -479,11 +490,23 @@
       // Remove from recent credentials if present
       this.removeRecentCredential(id);
 
-      // Attempt Supabase deletion
-      if (client) {
+      // Attempt Supabase deletion if valid UUID
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(id || "").trim());
+      if (client && isUuid) {
+        let deletedRemote = false;
         try {
-          await client.rpc("admin_delete_cctv_user", { p_target: id });
-        } catch (_) {
+          const res = await client.rpc("admin_delete_cctv_user", { p_target: id });
+          if (!res.error && (res.data?.ok || res.data === true)) deletedRemote = true;
+        } catch (_) {}
+
+        if (!deletedRemote) {
+          try {
+            const res2 = await client.rpc("admin_remove_user", { p_target: id });
+            if (!res2.error && (res2.data?.ok || res2.data === true || res2.data === undefined)) deletedRemote = true;
+          } catch (_) {}
+        }
+
+        if (!deletedRemote) {
           try {
             await client.from("profiles").delete().eq("id", id);
           } catch (_) {}
@@ -603,26 +626,37 @@
       } catch (_) {}
 
       initClient();
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(targetUserId || "").trim());
+      const safeTargetUserId = isUuid ? targetUserId : null;
+      if (targetUserId && !isUuid) {
+        safeDetails.target_user_id = targetUserId;
+      }
+
       if (client) {
-        try {
-          await client.rpc("log_cctv_security_event", {
-            p_action: safeAction,
-            p_target_user_id: targetUserId || null,
-            p_target_item: safeTargetItem,
-            p_details: safeDetails
-          });
-        } catch (_) {
+        const callerProfile = window.CCTV_AUTH?.getProfile?.();
+        const isAdmin = callerProfile?.role === "admin";
+        if (isAdmin) {
           try {
-            await client.from("cctv_security_audit_logs").insert({
-              actor_username: actorUsername,
-              actor_role: actorRole,
-              action: safeAction,
-              target_item: safeTargetItem,
-              target_user_id: targetUserId,
-              details: safeDetails
+            await client.rpc("log_cctv_security_event", {
+              p_action: safeAction,
+              p_target_user_id: safeTargetUserId,
+              p_target_item: safeTargetItem,
+              p_details: safeDetails
             });
+            return record;
           } catch (_) {}
         }
+
+        try {
+          await client.from("cctv_security_audit_logs").insert({
+            actor_username: actorUsername,
+            actor_role: actorRole,
+            action: safeAction,
+            target_item: safeTargetItem,
+            target_user_id: safeTargetUserId,
+            details: safeDetails
+          });
+        } catch (_) {}
       }
 
       return record;

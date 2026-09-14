@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Follow Up Reports Showcase Loader</title>
+</head>
+<body style="margin:0; background:#0b0f19;">
+  <script>
+    const samplePng = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAA7SURBVHhe7c4BDQAACAMw9E/tUwwmFvw+yZptWc3MzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMxfmA0G6kFf2u/6fAAAAABJRU5ErkJggg==";
+
+    async function seedFollowupData() {
+      const DB_NAME = "cctv_followup_reports_v1";
+      const STORE_NAME = "workspace";
+      const STATE_KEY = "reports";
+
+      const testReports = [
+        {
+          id: "fu_demo_1",
+          date: "2026-09-10",
+          om: "CCTV OM MIRAH",
+          label: "TL Sarah Connor (Shopee Team)",
+          cctvLink: "https://teams.microsoft.com/l/message/19%3Ameeting_shopee%40thread.v2/0",
+          status: "Waiting for TL",
+          remarks: "Reported sleeping at workstation. Awaiting supervisor coaching documentation.",
+          screenshotData: samplePng,
+          createdAt: new Date(Date.now() - 3600000).toISOString()
+        },
+        {
+          id: "fu_demo_2",
+          date: "2026-09-10",
+          om: "CCTV OM RENATO",
+          label: "TL Christian Arcilla (AFP)",
+          cctvLink: "https://teams.microsoft.com/l/message/19%3Ameeting_afp%40thread.v2/1",
+          status: "TL Disputed",
+          remarks: "TL claims device was company issued 2FA authenticator. Escalated for CCTV footage re-verification.",
+          screenshotData: samplePng,
+          createdAt: new Date(Date.now() - 7200000).toISOString()
+        },
+        {
+          id: "fu_demo_3",
+          date: "2026-09-09",
+          om: "CCTV OM CRYSTAL",
+          label: "TL Dante Tahuran (TEMU)",
+          cctvLink: "https://teams.microsoft.com/l/message/19%3Ameeting_temu%40thread.v2/2",
+          status: "Need OM Verification",
+          remarks: "TL defending agent; OM confirmation required before closing escalation.",
+          screenshotData: samplePng,
+          createdAt: new Date(Date.now() - 86400000).toISOString()
+        },
+        {
+          id: "fu_demo_4",
+          date: "2026-09-09",
+          om: "CCTV OM MIRAH",
+          label: "TL Abegail Llena (Healthcare)",
+          cctvLink: "https://teams.microsoft.com/l/message/19%3Ameeting_hc%40thread.v2/3",
+          status: "Resolved",
+          remarks: "Coaching session completed. Signed notice of coaching uploaded to master tracker.",
+          screenshotData: samplePng,
+          createdAt: new Date(Date.now() - 172800000).toISOString()
+        }
+      ];
+
+      return new Promise((resolve, reject) => {
+        const req = indexedDB.open(DB_NAME, 1);
+        req.onupgradeneeded = () => {
+          const db = req.result;
+          if (!db.objectStoreNames.contains(STORE_NAME)) {
+            db.createObjectStore(STORE_NAME);
+          }
+        };
+        req.onsuccess = () => {
+          const db = req.result;
+          const tx = db.transaction(STORE_NAME, "readwrite");
+          tx.objectStore(STORE_NAME).put(testReports, STATE_KEY);
+          tx.oncomplete = () => {
+            db.close();
+            resolve();
+          };
+          tx.onerror = () => reject(tx.error);
+        };
+        req.onerror = () => reject(req.error);
+      });
+    }
+
+    seedFollowupData().then(() => {
+      window.location.href = "http://localhost:8080/cctv-ops-v2/index.html?workspace=followup";
+    });
+  </script>
+</body>
+</html>

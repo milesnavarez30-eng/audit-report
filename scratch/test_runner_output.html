@@ -1,0 +1,176 @@
+﻿<!DOCTYPE html>
+<html><head>
+  <meta charset="UTF-8">
+  <title>V2 EDR &amp; CCTV Audit Bridge Test Suite</title>
+</head>
+<body>
+  <h1>V2 EDR &amp; CCTV Audit Bridge Test Suite</h1>
+  <div id="testStatus">Running tests...</div>
+  <pre id="testOutput"></pre>
+
+  <script src="./js/config.js"></script>
+  <script src="./js/storage.js"></script>
+  <script src="./js/services/auth-service.js"></script>
+  <script src="./js/services/edr-service.js"></script>
+
+  <script>
+    (async function() {
+      const logs = [];
+      function log(msg) {
+        logs.push(msg);
+        console.log(msg);
+      }
+      function assert(condition, msg) {
+        if (!condition) {
+          throw new Error("FAILED: " + msg);
+        }
+        log("PASS: " + msg);
+      }
+
+      try {
+        log("=== Starting V2 EDR & CCTV Audit Bridge Test Suite ===");
+
+        // Clear test storage keys first
+        localStorage.removeItem("cctv_entry_list");
+
+        // Initialize EDR service
+        await CCTV_EDR.init();
+
+        // ----------------------------------------------------
+        // TEST 1: Create two V2 EDRs
+        // ----------------------------------------------------
+        log("\n--- TEST 1: Create V2 EDRs ---");
+        const reportA = await CCTV_EDR.createOrUpdate({
+          site: "Mabini Site A",
+          date: "2026-09-10",
+          timeObserved: "10:15:00 AM-10:20:00 AM",
+          timeStart: "10:15:00 AM",
+          supervisorRole: "Team Leader",
+          supervisorName: "John TL",
+          omName: "Freda",
+          subjectType: "Agent/s",
+          subjectName: "Jane Doe",
+          account: "BIGO - Mabini",
+          incident: "Agent was found sleeping at station during call shift",
+          action: "Verbal coaching issued by supervisor",
+          clipLink: "https://drive.google.com/test-clip-a",
+          screenshotData: ""
+        });
+        assert(!!reportA.id, "Report A created with ID: " + reportA.id);
+
+        const reportB = await CCTV_EDR.createOrUpdate({
+          site: "Ecoland Site",
+          date: "2026-09-10",
+          timeObserved: "11:00:00 AM",
+          timeStart: "11:00:00 AM",
+          supervisorRole: "OM",
+          supervisorName: "Freda",
+          omName: "Freda",
+          subjectType: "Team Leader",
+          subjectName: "Bob TL",
+          account: "TEMU - 1404",
+          incident: "Bringing food into production floor",
+          action: "Notice to explain served",
+          clipLink: "https://drive.google.com/test-clip-b",
+          screenshotData: ""
+        });
+        assert(!!reportB.id, "Report B created with ID: " + reportB.id);
+        assert(CCTV_EDR.getReports().length >= 2, "Saved EDR list has at least 2 reports");
+
+        // ----------------------------------------------------
+        // TEST 2: Send ONLY Report A to CCTV Audit
+        // ----------------------------------------------------
+        log("\n--- TEST 2: Click Send to CCTV Audit (Report A) ---");
+        const sendResult1 = CCTV_EDR.sendReportToAudit(reportA);
+        assert(sendResult1.action === "created", "Send result action is 'created'");
+        assert(!!sendResult1.entry, "Send result returned created entry");
+
+        // ----------------------------------------------------
+        // TEST 3: Verify ONLY Report A is in CCTV Audit queue
+        // ----------------------------------------------------
+        log("\n--- TEST 3: Verify single report sent ---");
+        const entryList1 = JSON.parse(localStorage.getItem("cctv_entry_list") || "[]");
+        assert(entryList1.length === 1, "cctv_entry_list has exactly 1 entry");
+        assert(entryList1[0].sourceEdrId === reportA.id, "Entry in cctv_entry_list belongs to Report A");
+        assert(!entryList1.some(e => e.sourceEdrId === reportB.id), "Report B was NOT sent to CCTV Audit");
+
+        // ----------------------------------------------------
+        // TEST 4: Confirm all CCTV Audit fields match V1 contract
+        // ----------------------------------------------------
+        log("\n--- TEST 4: Field mapping & V1 contract verification ---");
+        const entryA = entryList1[0];
+        assert(entryA.site === "Mabini Site A", "Site normalized correctly: " + entryA.site);
+        assert(entryA.rawDate === "2026-09-10", "rawDate correct: " + entryA.rawDate);
+        assert(entryA.year === 2026, "year correct: " + entryA.year);
+        assert(entryA.month === "Sep", "month correct: " + entryA.month);
+        assert(entryA.formattedDate === "9/10/2026", "formattedDate correct: " + entryA.formattedDate);
+        assert(entryA.agentName === "Jane Doe", "agentName mapped correctly: " + entryA.agentName);
+        assert(entryA.tlName === "John TL", "tlName mapped correctly: " + entryA.tlName);
+        assert(entryA.omName === "Freda", "omName mapped correctly: " + entryA.omName);
+        assert(entryA.cleanAccount === "BIGO - Mabini", "cleanAccount mapped correctly: " + entryA.cleanAccount);
+        assert(entryA.reasonCode === "SLEEPING", "reasonCode auto-classified correctly: " + entryA.reasonCode);
+        assert(entryA.noc === "Pending", "noc defaults to 'Pending': " + entryA.noc);
+        assert(entryA.remarks === "Verbal coaching issued by supervisor", "remarks mapped to action/remarks: " + entryA.remarks);
+
+        // ----------------------------------------------------
+        // TEST 5: Duplicate prevention & in-place update
+        // ----------------------------------------------------
+        log("\n--- TEST 5: Duplicate prevention & in-place update ---");
+        // Simulate user editing NOC and Remarks in CCTV Audit
+        entryList1[0].noc = "YES";
+        entryList1[0].remarks = "Sanction served by OM";
+        localStorage.setItem("cctv_entry_list", JSON.stringify(entryList1));
+
+        // Re-send Report A (resend/update)
+        const sendResult2 = CCTV_EDR.sendReportToAudit(reportA);
+        assert(sendResult2.action === "updated", "Re-send action is 'updated'");
+
+        const entryList2 = JSON.parse(localStorage.getItem("cctv_entry_list") || "[]");
+        assert(entryList2.length === 1, "cctv_entry_list STILL has exactly 1 entry (NO DUPLICATE)");
+        assert(entryList2[0].noc === "YES", "User-edited NOC 'YES' was preserved");
+        assert(entryList2[0].remarks === "Sanction served by OM", "User-edited remarks was preserved");
+
+        // ----------------------------------------------------
+        // TEST 6: Saved EDR List remains unchanged & link indicator works
+        // ----------------------------------------------------
+        log("\n--- TEST 6: Saved EDR list remains intact ---");
+        assert(CCTV_EDR.getReports().length >= 2, "Saved EDR list still contains all reports");
+        assert(CCTV_EDR.isReportInAudit(reportA.id) === true, "Report A is reported as In Audit");
+        assert(CCTV_EDR.isReportInAudit(reportB.id) === false, "Report B is reported as NOT In Audit");
+
+        // ----------------------------------------------------
+        // TEST 7: Teams plain-text copy still works
+        // ----------------------------------------------------
+        log("\n--- TEST 7: Microsoft Teams plain-text copy ---");
+        await CCTV_EDR.selectAll(false);
+        await CCTV_EDR.toggleSelect(reportA.id, true);
+        const teamsText = CCTV_EDR.buildTeamsOutput("https://fb.com/sample");
+        assert(teamsText.includes("Mabini Site A | CCTV | BIGO - Mabini"), "Teams output has header line");
+        assert(teamsText.includes("Date: Sep 10, 2026"), "Teams output has date line");
+        assert(teamsText.includes("Agent/s: Jane Doe"), "Teams output has agent line");
+        assert(teamsText.includes("Team Leader: John TL"), "Teams output has TL line");
+        assert(teamsText.includes("Incident: Agent was found sleeping at station during call shift"), "Teams output has incident");
+        assert(!teamsText.includes("data:image"), "Teams output contains NO base64 image (plain-text only)");
+        assert(!teamsText.includes("<div"), "Teams output contains NO HTML tags (plain-text only)");
+
+        // ----------------------------------------------------
+        // TEST 8: Google Docs configuration still works
+        // ----------------------------------------------------
+        log("\n--- TEST 8: Google Docs configuration ---");
+        CCTV_EDR.setDocsUrl("https://script.google.com/macros/s/test/exec");
+        assert(CCTV_EDR.getDocsUrl() === "https://script.google.com/macros/s/test/exec", "Docs URL getter/setter works");
+
+        log("\n=== ALL TESTS COMPLETED SUCCESSFULLY ===");
+        document.getElementById("testStatus").textContent = "ALL TESTS PASSED";
+        document.getElementById("testOutput").textContent = logs.join("\n");
+      } catch (err) {
+        console.error(err);
+        document.getElementById("testStatus").textContent = "TEST SUITE ERROR: " + err.message;
+        logs.push("ERROR: " + err.message);
+        document.getElementById("testOutput").textContent = logs.join("\n");
+      }
+    })();
+  </script>
+
+
+</body></html>

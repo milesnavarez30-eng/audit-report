@@ -1,0 +1,551 @@
+<!DOCTYPE html><html class="h-full" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>CCTV Audit Workspace - Dark Terminal Edition</title>
+<!-- Tailwind CSS v3 with forms and container queries -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Tailwind Configuration -->
+<script data-purpose="tailwind-config">
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              black: '#0A0D12',
+              bg: '#0D1117',
+              panel: '#151B23',
+              panelLight: '#1A222C',
+              border: '#30363D',
+              borderLight: '#444C56',
+              violet: '#7C3AED',
+              violetHover: '#6D28D9',
+              cyan: '#00F0FF',
+              amber: '#F59E0B',
+              lime: '#10B981',
+              crimson: '#EF4444'
+            }
+          },
+          fontFamily: {
+            mono: ['"JetBrains Mono"', '"Space Grotesk"', 'monospace', 'ui-monospace'],
+            sans: ['"Inter"', 'system-ui', '-apple-system', 'sans-serif']
+          },
+          boxShadow: {
+            'brutal': '2px 2px 0px #000000',
+            'brutal-cyan': '2px 2px 0px #00F0FF',
+            'brutal-violet': '2px 2px 0px #7C3AED',
+            'brutal-sm': '1px 1px 0px #000000'
+          }
+        }
+      }
+    };
+  </script>
+<!-- Custom CSS for specialized terminal scrollbars & styles -->
+<style data-purpose="scrollbar-and-neo-brutalism">
+    /* Custom terminal scrollbars */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0D1117;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #30363D;
+      border-radius: 2px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #484F58;
+    }
+
+    /* Crisp borders and tight controls */
+    .neo-border {
+      border: 1px solid #30363D;
+    }
+    .neo-border-bold {
+      border: 2px solid #30363D;
+    }
+    .neo-btn {
+      transition: all 0.1s ease-in-out;
+    }
+    .neo-btn:active {
+      transform: translate(1px, 1px);
+      box-shadow: 0px 0px 0px #000000 !important;
+    }
+  </style>
+</head>
+<body class="bg-brand-bg text-slate-200 font-sans h-full flex overflow-hidden antialiased select-none">
+<!-- BEGIN: MainSidebar -->
+<!-- Left operational sidebar mirroring original layout and structure -->
+<aside class="w-56 flex-shrink-0 bg-brand-panel flex flex-col justify-between border-r border-brand-border h-full z-20" data-purpose="sidebar">
+  <div>
+    <!-- Brand & Hub Header -->
+    <div class="px-4 py-3.5 border-b border-brand-border flex items-center gap-2.5">
+      <span class="inline-flex items-center justify-center font-mono text-[10px] font-bold px-1.5 py-0.5 rounded bg-brand-violet text-white shadow-brutal-sm">
+        v2
+      </span>
+      <div>
+        <div class="text-xs font-black tracking-wider text-white font-mono flex items-center gap-1">
+          CCTV OPS
+        </div>
+        <div class="text-[9px] font-semibold tracking-widest text-slate-400 uppercase font-mono">
+          OPERATIONS HUB
+        </div>
+      </div>
+    </div>
+    <!-- Navigation Workspaces Group -->
+    <div class="px-2 py-3">
+      <div class="px-2 mb-1.5 text-[9px] font-mono font-bold tracking-widest text-slate-500 uppercase">
+        WORKSPACES
+      </div>
+      <nav class="space-y-0.5">
+        <!-- EDR Workspace -->
+        <a class="flex items-center justify-between px-2.5 py-1.5 text-xs font-medium text-slate-300 hover:bg-brand-panelLight hover:text-white rounded transition-colors group" href="#">
+          <span class="flex items-center gap-2">
+            <span class="w-1.5 h-1.5 rounded-full bg-slate-500 group-hover:bg-slate-300"></span>
+            EDR
+          </span>
+          <span class="px-1.5 py-0.2 font-mono text-[10px] bg-slate-800 text-slate-300 border border-slate-700 rounded">7</span>
+        </a>
+        <!-- Active Workspace: CCTV Audit (Approved Solid Violet Pill) -->
+        <a class="flex items-center justify-between px-2.5 py-1.5 text-xs font-bold bg-brand-violet text-white rounded shadow-brutal-sm group" href="#">
+          <span class="flex items-center gap-2">
+            <span class="w-2 h-2 rounded-sm bg-white animate-pulse"></span>
+            CCTV Audit
+          </span>
+          <span class="px-1.5 py-0.2 font-mono text-[10px] bg-brand-black/40 text-white font-bold rounded border border-white/20">0</span>
+        </a>
+        <!-- Other Workspaces -->
+        <a class="flex items-center justify-between px-2.5 py-1.5 text-xs font-medium text-slate-300 hover:bg-brand-panelLight hover:text-white rounded transition-colors group" href="#">
+          <span class="flex items-center gap-2">
+            <span class="w-1.5 h-1.5 rounded-full bg-slate-500 group-hover:bg-slate-300"></span>
+            AI Sorter
+          </span>
+        </a>
+        <a class="flex items-center justify-between px-2.5 py-1.5 text-xs font-medium text-slate-300 hover:bg-brand-panelLight hover:text-white rounded transition-colors group" href="#">
+          <span class="flex items-center gap-2">
+            <span class="w-1.5 h-1.5 rounded-full bg-slate-500 group-hover:bg-slate-300"></span>
+            Maintenance
+          </span>
+        </a>
+        <a class="flex items-center justify-between px-2.5 py-1.5 text-xs font-medium text-slate-300 hover:bg-brand-panelLight hover:text-white rounded transition-colors group" href="#">
+          <span class="flex items-center gap-2">
+            <span class="w-1.5 h-1.5 rounded-full bg-slate-500 group-hover:bg-slate-300"></span>
+            Pending
+          </span>
+          <span class="px-1.5 py-0.2 font-mono text-[10px] bg-slate-800 text-slate-300 border border-slate-700 rounded">7</span>
+        </a>
+      </nav>
+    </div>
+    <!-- Management Group -->
+    <div class="px-2 py-2 border-t border-brand-border/60">
+      <div class="px-2 mb-1.5 text-[9px] font-mono font-bold tracking-widest text-slate-500 uppercase">
+        MANAGEMENT
+      </div>
+      <nav class="space-y-0.5">
+        <a class="flex items-center justify-between px-2.5 py-1.5 text-xs font-medium text-slate-300 hover:bg-brand-panelLight hover:text-white rounded transition-colors group" href="#">
+          <span class="flex items-center gap-2">
+            <span class="w-1.5 h-1.5 rounded-full bg-transparent group-hover:bg-slate-400"></span>
+            Masterlist
+          </span>
+        </a>
+        <a class="flex items-center justify-between px-2.5 py-1.5 text-xs font-medium text-slate-300 hover:bg-brand-panelLight hover:text-white rounded transition-colors group" href="#">
+          <span class="flex items-center gap-2">
+            <span class="w-1.5 h-1.5 rounded-full bg-transparent group-hover:bg-slate-400"></span>
+            Follow Up
+          </span>
+          <span class="px-1.5 py-0.2 font-mono text-[10px] bg-slate-800 text-slate-400 border border-slate-700 rounded">0</span>
+        </a>
+        <a class="flex items-center justify-between px-2.5 py-1.5 text-xs font-medium text-slate-300 hover:bg-brand-panelLight hover:text-white rounded transition-colors group" href="#">
+          <span class="flex items-center gap-2">
+            <span class="w-1.5 h-1.5 rounded-full bg-transparent group-hover:bg-slate-400"></span>
+            History
+          </span>
+        </a>
+        <a class="flex items-center justify-between px-2.5 py-1.5 text-xs font-medium text-slate-300 hover:bg-brand-panelLight hover:text-white rounded transition-colors group" href="#">
+          <span class="flex items-center gap-2">
+            <span class="w-1.5 h-1.5 rounded-full bg-transparent group-hover:bg-slate-400"></span>
+            Accounts
+          </span>
+        </a>
+      </nav>
+    </div>
+  </div>
+  <!-- Sidebar Bottom Telemetry -->
+  <div class="p-2.5 border-t border-brand-border bg-brand-black/40 flex items-center justify-between text-[10px] text-slate-400 font-mono">
+    <span class="">v2.0.4-prod</span>
+    <button class="px-1.5 py-0.5 rounded hover:bg-brand-panelLight text-slate-400 hover:text-white transition-colors" data-purpose="collapse-sidebar-btn" title="Toggle Sidebar">
+      [ &lt; ]
+    </button>
+  </div>
+</aside>
+<!-- END: MainSidebar -->
+<!-- BEGIN: MainContentArea -->
+<main class="flex-1 flex flex-col h-full overflow-hidden bg-brand-bg">
+<!-- Top Application Header Bar -->
+<header class="h-12 border-b border-brand-border px-4 flex items-center justify-between bg-brand-panel flex-shrink-0" data-purpose="app-header">
+  <!-- Title & Live Status Indicator -->
+  <div class="flex items-center gap-3">
+    <h1 class="text-sm font-black tracking-wider text-white uppercase font-mono flex items-center gap-2">
+      CCTV AUDIT
+    </h1>
+    <span class="hidden sm:inline-flex items-center gap-1.5 px-2 py-0.5 text-[10px] font-mono font-semibold bg-brand-violet/20 border border-brand-violet/50 text-brand-violet rounded">
+      <span class="w-1.5 h-1.5 rounded-full bg-brand-cyan animate-ping"></span>
+      LIVE TERMINAL
+    </span>
+  </div>
+  <!-- Right Header Actions & Telemetry Tools -->
+  <div class="flex items-center gap-3 text-xs">
+    <button class="flex items-center gap-1 px-2 py-1 text-slate-300 hover:text-white hover:bg-brand-panelLight border border-transparent hover:border-brand-border rounded text-xs transition-colors">
+      <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+      Template
+    </button>
+    <button class="flex items-center gap-1 px-2 py-1 text-slate-300 hover:text-white hover:bg-brand-panelLight border border-transparent hover:border-brand-border rounded text-xs transition-colors">
+      <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+      Reload
+    </button>
+    <!-- Docs Sync Status Badge -->
+    <div class="flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-mono rounded bg-brand-panelLight border border-brand-border text-slate-300">
+      <span class="w-2 h-2 rounded-full bg-brand-lime"></span>
+      <span class="">Docs Connected</span>
+      <button class="ml-1 text-slate-400 hover:text-slate-200">⚙</button>
+    </div>
+    <!-- Real-Time Monospace Clock -->
+    <div class="px-2.5 py-1 font-mono font-bold text-xs bg-brand-black text-brand-lime border border-brand-border rounded shadow-inner" data-purpose="current-clock">
+      11:37:37 AM PHT
+    </div>
+    <!-- Operator Identification Pill -->
+    <div class="flex items-center gap-2 pl-2 border-l border-brand-border">
+      <div class="w-6 h-6 rounded bg-brand-violet text-white font-mono font-bold text-xs flex items-center justify-center shadow-brutal-sm">
+        M
+      </div>
+      <div class="text-left hidden md:block">
+        <div class="text-[11px] font-bold text-white leading-tight">Miles</div>
+        <div class="text-[9px] font-mono text-slate-400 leading-none">OPERATOR</div>
+      </div>
+    </div>
+  </div>
+</header>
+<!-- Main Scrollable Body Area -->
+<div class="flex-1 overflow-y-auto px-4 py-3 space-y-3">
+<!-- BEGIN: SmartAuditGuardBar -->
+<!-- Telemetry Guard Bar matching screenshot header section -->
+<section class="bg-brand-panel border border-brand-border rounded px-3 py-2 flex flex-wrap items-center justify-between gap-2 shadow-sm" data-purpose="telemetry-bar">
+<div class="flex items-center gap-2.5 text-xs">
+<!-- Shield & Title -->
+<div class="flex items-center gap-1.5 text-slate-200 font-semibold font-mono text-xs">
+<svg class="w-4 h-4 text-brand-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+<span class="">Smart Audit Guard</span>
+</div>
+<!-- Counter Badge -->
+<span class="px-2 py-0.5 font-mono text-[10px] font-bold bg-brand-panelLight text-slate-300 border border-brand-border rounded">
+            0 RECORDS
+          </span>
+<!-- State Badge -->
+<span class="px-2 py-0.5 font-mono text-[10px] font-bold bg-slate-800 text-brand-cyan border border-brand-cyan/30 rounded">
+            IDLE
+          </span>
+<!-- Informational Text -->
+<span class="text-slate-400 text-xs hidden sm:inline">No snapshot loaded</span>
+</div>
+<!-- Telemetry Actions -->
+<div class="flex items-center gap-2">
+<button class="neo-btn px-2.5 py-1 text-xs font-medium text-slate-200 bg-brand-panelLight hover:bg-slate-700 border border-brand-border rounded shadow-brutal-sm flex items-center gap-1" data-purpose="import-tracker-btn">
+<svg class="w-3.5 h-3.5 text-brand-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+            Import Tracker
+          </button>
+<button class="neo-btn px-2.5 py-1 text-xs font-medium text-slate-200 bg-brand-panelLight hover:bg-slate-700 border border-brand-border rounded shadow-brutal-sm flex items-center gap-1" data-purpose="paste-rows-btn">
+<svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+            Paste Rows
+          </button>
+<button class="px-2.5 py-1 text-xs font-medium text-slate-400 hover:text-slate-200 transition-colors" data-purpose="clear-btn">
+            Clear
+          </button>
+</div>
+</section>
+<!-- END: SmartAuditGuardBar -->
+<!-- BEGIN: QuickAuditEntryForm -->
+<!-- Fast-entry form with enhanced contrast and dedicated space for remarks -->
+<section class="bg-brand-panel border border-brand-border rounded p-3 shadow-sm" data-purpose="quick-audit-form">
+<div class="flex items-center justify-between mb-2 pb-1.5 border-b border-brand-border/60">
+<div class="text-[11px] font-mono font-bold tracking-wide text-brand-cyan flex items-center gap-1.5 uppercase">
+<span class="w-1.5 h-1.5 rounded-full bg-brand-cyan"></span>
+            Quick Audit Entry Form
+          </div>
+<span class="text-[10px] font-mono text-slate-500">* Required operational fields</span>
+</div>
+<form class="space-y-2.5" id="auditForm">
+<!-- Row 1: Key Metadata -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-2.5">
+<!-- Date Input -->
+<div>
+<label class="block text-[10px] font-mono font-semibold text-slate-400 uppercase mb-1">
+                Date *
+              </label>
+<div class="relative">
+<input class="w-full bg-brand-black border border-brand-border focus:border-brand-violet focus:ring-1 focus:ring-brand-violet text-xs text-white rounded px-2.5 py-1.5 font-mono shadow-inner" type="text" value="09/14/2026">
+<span class="absolute right-2 top-2 text-slate-500 text-xs pointer-events-none">📅</span>
+</div>
+</div>
+<!-- Site Selection with quick controls -->
+<div>
+<div class="flex justify-between items-center mb-1">
+<label class="text-[10px] font-mono font-semibold text-slate-400 uppercase">
+                  Site *
+                </label>
+<span class="text-[9px] font-mono text-slate-500 cursor-pointer hover:text-slate-300">[+] [-]</span>
+</div>
+<select class="w-full bg-brand-black border border-brand-border focus:border-brand-violet focus:ring-1 focus:ring-brand-violet text-xs text-white rounded px-2 py-1.5 font-sans shadow-inner">
+<option selected="">Mabini Site A</option>
+<option>Shaw Site B</option>
+<option>Ortigas Main</option>
+</select>
+</div>
+<!-- TL Name with Search helper -->
+<div>
+<label class="block text-[10px] font-mono font-semibold text-slate-400 uppercase mb-1">
+                TL Name *
+              </label>
+<input class="w-full bg-brand-black border border-brand-border focus:border-brand-violet focus:ring-1 focus:ring-brand-violet text-xs text-white rounded px-2.5 py-1.5 font-sans placeholder-slate-600 shadow-inner" placeholder="Search TL..." type="text" value="J. Thornton">
+</div>
+<!-- Agent Name -->
+<div>
+<label class="block text-[10px] font-mono font-semibold text-slate-400 uppercase mb-1">
+                Agent Name *
+              </label>
+<input class="w-full bg-brand-black border border-brand-border focus:border-brand-violet focus:ring-1 focus:ring-brand-violet text-xs text-white rounded px-2.5 py-1.5 font-sans placeholder-slate-600 shadow-inner font-medium" placeholder="Agent name..." type="text" value="R. Ramirez">
+</div>
+<!-- OM Name with Controls -->
+<div>
+<div class="flex justify-between items-center mb-1">
+<label class="text-[10px] font-mono font-semibold text-slate-400 uppercase">
+                  OM Name *
+                </label>
+<span class="text-[9px] font-mono text-slate-500 cursor-pointer hover:text-slate-300">[+] [-]</span>
+</div>
+<select class="w-full bg-brand-black border border-brand-border focus:border-brand-violet focus:ring-1 focus:ring-brand-violet text-xs text-white rounded px-2 py-1.5 font-sans shadow-inner">
+<option selected="">Abby</option>
+<option>CCTV OM MIRAH</option>
+<option>Jordan</option>
+</select>
+</div>
+<!-- Account / Campaign with Quick Controls -->
+<div>
+<div class="flex justify-between items-center mb-1">
+<label class="text-[10px] font-mono font-semibold text-slate-400 uppercase">
+                  Account / Campaign *
+                </label>
+<span class="text-[9px] font-mono text-slate-500 cursor-pointer hover:text-slate-300">[+] [-]</span>
+</div>
+<select class="w-full bg-brand-black border border-brand-border focus:border-brand-violet focus:ring-1 focus:ring-brand-violet text-xs text-white rounded px-2 py-1.5 font-sans shadow-inner">
+<option selected="">123 Employee</option>
+<option>AFP Financial</option>
+<option>Healthcare Support</option>
+</select>
+</div>
+</div>
+<!-- Row 2: Audit Category, Compliance & Remarks -->
+<div class="grid grid-cols-1 md:grid-cols-12 gap-2.5 items-end pt-1">
+<!-- CCTV Reason -->
+<div class="md:col-span-3">
+<div class="flex justify-between items-center mb-1">
+<label class="text-[10px] font-mono font-semibold text-slate-400 uppercase">
+                  CCTV Reason *
+                </label>
+<span class="text-[9px] font-mono text-slate-500 cursor-pointer hover:text-slate-300">[+] [-]</span>
+</div>
+<select class="w-full bg-brand-black border border-brand-border focus:border-brand-violet focus:ring-1 focus:ring-brand-violet text-xs text-amber-300 font-mono font-bold rounded px-2.5 py-1.5 shadow-inner">
+<option selected="">SLEEPING</option>
+<option>PHONE USAGE</option>
+<option>UNAUTHORIZED BREAK</option>
+<option>STATION CLUTTER</option>
+<option>ABANDONMENT</option>
+</select>
+</div>
+<!-- NOC Status -->
+<div class="md:col-span-2">
+<label class="block text-[10px] font-mono font-semibold text-slate-400 uppercase mb-1">
+                NOC *
+              </label>
+<select class="w-full bg-brand-black border border-brand-border focus:border-brand-violet focus:ring-1 focus:ring-brand-violet text-xs text-white rounded px-2 py-1.5 font-sans shadow-inner">
+<option selected="">YES</option>
+<option>NO</option>
+<option>PENDING</option>
+</select>
+</div>
+<!-- Remarks / Action Taken (Spacious, prominent input area to ensure full visibility) -->
+<div class="md:col-span-5">
+<label class="block text-[10px] font-mono font-semibold text-slate-400 uppercase mb-1">
+                Remarks / Action Taken *
+              </label>
+<input class="w-full bg-brand-black border border-brand-border focus:border-brand-violet focus:ring-1 focus:ring-brand-violet text-xs text-slate-100 rounded px-3 py-1.5 font-sans placeholder-slate-600 shadow-inner" placeholder="Observations, coaching, supervisor response, actions taken..." type="text" value="Head on desk &gt; 15 mins during active shift. Supervisor notified via Teams.">
+</div>
+<!-- Action Buttons -->
+<div class="md:col-span-2 flex items-center justify-end gap-2">
+<button class="px-2 py-1.5 text-xs text-slate-400 hover:text-white transition-colors" type="button">
+                Clear Form
+              </button>
+<button class="neo-btn px-3 py-1.5 text-xs font-bold font-mono bg-brand-violet hover:bg-brand-violetHover text-white border-2 border-brand-black rounded shadow-brutal flex items-center gap-1" type="button">
+<span class="">+</span> Add Entry
+              </button>
+</div>
+</div>
+</form>
+</section>
+<!-- END: QuickAuditEntryForm -->
+<!-- BEGIN: DataOutputGrid -->
+<!-- Critical element: Table rendered with NO clipped columns, fixed min-width for remarks and actions visible -->
+<section class="bg-brand-panel border border-brand-border rounded shadow-sm flex flex-col" data-purpose="data-output-grid">
+<!-- Grid Header with Badges & Bulk Actions -->
+<div class="px-3 py-2 border-b border-brand-border flex items-center justify-between flex-wrap gap-2">
+<div class="flex items-center gap-2">
+<span class="text-xs font-black font-mono tracking-wider text-white uppercase">
+              Data Output Grid
+            </span>
+<span class="px-2 py-0.5 text-[10px] font-mono font-bold bg-brand-panelLight text-slate-300 border border-brand-border rounded">
+              2 ROWS
+            </span>
+<span class="px-2 py-0.5 text-[10px] font-mono font-bold bg-brand-violet/20 text-brand-violet border border-brand-violet/40 rounded">
+              0 FROM EDR
+            </span>
+</div>
+<div class="flex items-center gap-2">
+<button class="px-2.5 py-1 text-xs text-slate-400 hover:text-rose-400 transition-colors">
+              Clear All
+            </button>
+<button class="neo-btn px-3 py-1 text-xs font-mono font-bold bg-brand-violet hover:bg-brand-violetHover text-white border-2 border-brand-black rounded shadow-brutal flex items-center gap-1.5">
+<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+              Copy for Tracker
+            </button>
+</div>
+</div>
+<!-- Scrollable Table Container (Preserves layout without any clipping) -->
+<div class="w-full overflow-x-auto">
+<table class="w-full text-left border-collapse min-w-[1280px]">
+<!-- Header Row -->
+<thead>
+<tr class="border-b border-brand-border bg-brand-black/70 text-[10px] font-mono font-bold text-slate-400 tracking-wider uppercase">
+<th class="py-2.5 px-3 w-[45px] text-center border-r border-brand-border/40">#</th>
+<th class="py-2.5 px-3 w-[95px] border-r border-brand-border/40">Date</th>
+<th class="py-2.5 px-3 w-[110px] border-r border-brand-border/40">Auditor</th>
+<th class="py-2.5 px-3 w-[115px] border-r border-brand-border/40">Site</th>
+<th class="py-2.5 px-3 w-[120px] border-r border-brand-border/40">TL Name</th>
+<th class="py-2.5 px-3 w-[125px] border-r border-brand-border/40">Agent Name</th>
+<th class="py-2.5 px-3 w-[100px] border-r border-brand-border/40">OM Name</th>
+<th class="py-2.5 px-3 w-[120px] border-r border-brand-border/40">Account</th>
+<th class="py-2.5 px-3 w-[130px] border-r border-brand-border/40">CCTV Reason</th>
+<th class="py-2.5 px-3 w-[70px] text-center border-r border-brand-border/40">NOC</th>
+<!-- Spacious column with ample width for complete unclipped readability -->
+<th class="py-2.5 px-3 min-w-[320px] border-r border-brand-border/40">Remarks / Action Taken</th>
+<th class="py-2.5 px-3 w-[110px] text-center">Actions</th>
+</tr>
+</thead>
+<!-- Table Body with Active Sample Audits -->
+<tbody class="divide-y divide-brand-border/60 text-xs">
+<!-- Row 1 -->
+<tr class="hover:bg-brand-panelLight/60 transition-colors group">
+<td class="py-2 px-3 text-center font-mono text-slate-500 font-bold border-r border-brand-border/30">01</td>
+<td class="py-2 px-3 font-mono text-slate-300 whitespace-nowrap border-r border-brand-border/30">2026-09-14</td>
+<td class="py-2 px-3 text-slate-300 font-medium whitespace-nowrap border-r border-brand-border/30">Miles (OPR)</td>
+<td class="py-2 px-3 text-slate-300 whitespace-nowrap border-r border-brand-border/30">Mabini Site A</td>
+<td class="py-2 px-3 text-slate-300 whitespace-nowrap border-r border-brand-border/30">J. Thornton</td>
+<td class="py-2 px-3 font-bold text-white whitespace-nowrap border-r border-brand-border/30">R. Ramirez</td>
+<td class="py-2 px-3 text-slate-300 whitespace-nowrap border-r border-brand-border/30">Abby</td>
+<td class="py-2 px-3 text-slate-300 whitespace-nowrap border-r border-brand-border/30">123 Employee</td>
+<td class="py-2 px-3 border-r border-brand-border/30">
+<span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-amber-500/15 text-amber-300 border border-amber-500/40">
+                    SLEEPING
+                  </span>
+</td>
+<td class="py-2 px-3 text-center border-r border-brand-border/30">
+<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-emerald-500/15 text-emerald-300 border border-emerald-500/40">
+                    YES
+                  </span>
+</td>
+<td class="py-2 px-3 text-slate-200 border-r border-brand-border/30 leading-relaxed break-words">
+                  Head on desk &gt; 15 mins during active shift window. Supervisor J. Thornton notified via Teams; coaching scheduled for shift debrief.
+                </td>
+<td class="py-2 px-3 text-center whitespace-nowrap">
+<div class="flex items-center justify-center gap-1">
+<button class="px-1.5 py-0.5 text-[10px] font-mono text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 rounded border border-slate-700">
+                      Edit
+                    </button>
+<button class="px-1.5 py-0.5 text-[10px] font-mono text-rose-400 hover:text-rose-200 bg-rose-950/40 hover:bg-rose-900/60 rounded border border-rose-900/60">
+                      Del
+                    </button>
+</div>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="hover:bg-brand-panelLight/60 transition-colors group">
+<td class="py-2 px-3 text-center font-mono text-slate-500 font-bold border-r border-brand-border/30">02</td>
+<td class="py-2 px-3 font-mono text-slate-300 whitespace-nowrap border-r border-brand-border/30">2026-09-14</td>
+<td class="py-2 px-3 text-slate-300 font-medium whitespace-nowrap border-r border-brand-border/30">Miles (OPR)</td>
+<td class="py-2 px-3 text-slate-300 whitespace-nowrap border-r border-brand-border/30">Mabini Site A</td>
+<td class="py-2 px-3 text-slate-300 whitespace-nowrap border-r border-brand-border/30">K. Morales</td>
+<td class="py-2 px-3 font-bold text-white whitespace-nowrap border-r border-brand-border/30">M. Santos</td>
+<td class="py-2 px-3 text-slate-300 whitespace-nowrap border-r border-brand-border/30">Abby</td>
+<td class="py-2 px-3 text-slate-300 whitespace-nowrap border-r border-brand-border/30">AFP Financial</td>
+<td class="py-2 px-3 border-r border-brand-border/30">
+<span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-rose-500/15 text-rose-300 border border-rose-500/40">
+                    PHONE USAGE
+                  </span>
+</td>
+<td class="py-2 px-3 text-center border-r border-brand-border/30">
+<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-emerald-500/15 text-emerald-300 border border-emerald-500/40">
+                    YES
+                  </span>
+</td>
+<td class="py-2 px-3 text-slate-200 border-r border-brand-border/30 leading-relaxed break-words">
+                  Active personal smartphone usage on workstation station floor during call queue. Device surrendered to floor locker per security policy.
+                </td>
+<td class="py-2 px-3 text-center whitespace-nowrap">
+<div class="flex items-center justify-center gap-1">
+<button class="px-1.5 py-0.5 text-[10px] font-mono text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 rounded border border-slate-700">
+                      Edit
+                    </button>
+<button class="px-1.5 py-0.5 text-[10px] font-mono text-rose-400 hover:text-rose-200 bg-rose-950/40 hover:bg-rose-900/60 rounded border border-rose-900/60">
+                      Del
+                    </button>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Table Footer / Empty State Prompt as shown in original design -->
+<div class="px-4 py-3 bg-brand-black/40 border-t border-brand-border text-center text-xs text-slate-500 font-sans flex items-center justify-center gap-2">
+<span class="w-1.5 h-1.5 rounded-full bg-slate-600"></span>
+<span class="">No additional audit entries recorded. Use the form above or "Send to CCTV Audit" from EDR.</span>
+</div>
+</section>
+<!-- END: DataOutputGrid -->
+</div>
+</main>
+<!-- END: MainContentArea -->
+<!-- Live Clock Script -->
+<script data-purpose="live-clock">
+    function updatePhtClock() {
+      const clockElement = document.querySelector('[data-purpose="current-clock"]');
+      if (!clockElement) return;
+
+      const now = new Date();
+      // Format with PHT offset (UTC+8)
+      const options = {
+        timeZone: 'Asia/Manila',
+        hour12: true,
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      };
+      
+      const timeStr = new Intl.DateTimeFormat('en-US', options).format(now);
+      clockElement.textContent = `${timeStr} PHT`;
+    }
+
+    setInterval(updatePhtClock, 1000);
+    updatePhtClock();
+  </script>
+
+
+</body></html>

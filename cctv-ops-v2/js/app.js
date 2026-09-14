@@ -322,10 +322,39 @@
     return str;
   }
 
+  function formatLastEdited(isoStr) {
+    if (!isoStr) return "";
+    try {
+      const d = new Date(isoStr);
+      if (isNaN(d.getTime())) return "";
+      const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+      const month = months[d.getMonth()];
+      const day = d.getDate();
+      const year = d.getFullYear();
+      let hours = d.getHours();
+      const minutes = String(d.getMinutes()).padStart(2, "0");
+      const ampm = hours >= 12 ? "PM" : "AM";
+      hours = hours % 12;
+      hours = hours ? hours : 12;
+      return `Edited: ${month} ${day}, ${year} · ${hours}:${minutes} ${ampm}`;
+    } catch (_) {
+      return "";
+    }
+  }
+
   // Render EDR Cards in Column 2
-  function renderEdrList(reports) {
+  function renderEdrList(rawReports) {
     const listContainer = el("edrListContainer");
     if (!listContainer) return;
+
+    // Consistently sort records by observed/report date ascending (earliest first, oldest at top, newest at bottom)
+    const reports = [...(rawReports || [])].sort((a, b) => {
+      const dateA = a.date || "";
+      const dateB = b.date || "";
+      const cmp = dateA.localeCompare(dateB);
+      if (cmp !== 0) return cmp;
+      return String(a.id || "").localeCompare(String(b.id || ""));
+    });
 
     const total = reports.length;
     const selected = reports.filter(r => r.selected && !r.done).length;
@@ -345,8 +374,16 @@
     const existingCards = listContainer.querySelectorAll(".record-row");
     const existingIds = Array.from(existingCards).map(c => c.dataset.id);
     const newIds = reports.map(r => r.id);
+    // Fast-path: only update selection/done state when IDs are identical AND
+    // no report content has changed (updatedAt fingerprint). If any record was
+    // edited, fall through to the full re-render so event listeners are
+    // re-attached with a fresh reference to the latest report object.
     const isSameStructure = existingIds.length === newIds.length &&
-      existingIds.every((id, i) => id === newIds[i]);
+      existingIds.every((id, i) => {
+        if (id !== newIds[i]) return false;
+        const card = listContainer.querySelector(`.record-row[data-id="${id}"]`);
+        return card && card.dataset.updatedAt === (reports[i].updatedAt || "");
+      });
 
     if (isSameStructure) {
       reports.forEach((r, idx) => {
@@ -374,6 +411,7 @@
       const hasRemoteOnly = !hasRealImage && !!r.screenshotFileId;
       const hasShot = hasRealImage || hasRemoteOnly;
       const formattedDate = formatDisplayDate(r.date);
+      const lastEditedText = r.updatedAt ? formatLastEdited(r.updatedAt) : "";
 
       // Status chips: SS, AUDIT, DONE, DOCS
       const chips = [];
@@ -392,7 +430,7 @@
       const chipsHtml = chips.length ? `<span class="status-chips-wrap">${chips.join('')}</span>` : '';
 
       return `
-        <div class="record-row ${isSelected ? 'is-selected' : ''} ${isDone ? 'is-done' : ''}" data-id="${r.id}">
+        <div class="record-row ${isSelected ? 'is-selected' : ''} ${isDone ? 'is-done' : ''}" data-id="${r.id}" data-updated-at="${r.updatedAt || ''}">
           <label class="record-select-col" style="cursor:pointer;" title="${isDone ? 'Completed (uncheck Done to select)' : 'Select for export'}">
             <input type="checkbox" class="edr-check" data-id="${r.id}" ${isSelected ? 'checked' : ''} ${isDone ? 'disabled' : ''} style="cursor:pointer;">
           </label>
@@ -413,6 +451,10 @@
               ${r.subjectName ? `
                 <span class="record-sep">·</span>
                 <span class="record-subj" title="Subject: ${r.subjectName}"><span class="sub-label">Subj:</span> ${r.subjectName}</span>
+              ` : ''}
+              ${lastEditedText ? `
+                <span class="record-sep">·</span>
+                <span class="record-last-edited" title="${lastEditedText}">${lastEditedText}</span>
               ` : ''}
             </div>
           </div>
@@ -588,19 +630,31 @@
       card.querySelector(".btn-action-remove")?.addEventListener("click", async (e) => {
         e.stopPropagation();
         closeMoreMenu(moreMenu);
-        if (confirm("Remove CCTV screenshot from this saved EDR?")) {
+        const ok = await window.appConfirm({
+          title: "Remove Screenshot",
+          message: "Remove CCTV screenshot evidence from this saved EDR?",
+          confirmText: "Remove Screenshot",
+          tone: "danger"
+        });
+        if (ok) {
           await edr.removeScreenshotFromReport(id);
           showToast("CCTV screenshot removed.", "info");
         }
       });
 
       // Delete EDR (in More menu)
-      card.querySelector(".btn-action-delete")?.addEventListener("click", (e) => {
+      card.querySelector(".btn-action-delete")?.addEventListener("click", async (e) => {
         e.stopPropagation();
         closeMoreMenu(moreMenu);
-        if (confirm(`Delete EDR for ${report.subjectName || 'this record'}?`)) {
+        const ok = await window.appConfirm({
+          title: "Delete EDR Record",
+          message: `Permanently delete EDR record for ${report.subjectName || 'this employee'}?`,
+          confirmText: "Delete Record",
+          tone: "danger"
+        });
+        if (ok) {
           edr.deleteReport(id);
-          showToast("EDR deleted.", "info");
+          showToast("EDR record deleted.", "info");
         }
       });
     });
@@ -1036,19 +1090,55 @@
       }
     });
 
-    // Rail Toggle
-    el("btnToggleRail")?.addEventListener("click", () => {
-      el("navRail")?.classList.toggle("collapsed");
+    // Expand / Collapse Teams Dispatch Review Mode
+    function setDispatchExpanded(expanded) {
+      const layout = document.querySelector("#paneEdr .edr-split-layout");
+      if (!layout) return;
+      if (expanded) {
+        layout.classList.add("dispatch-expanded");
+      } else {
+        layout.classList.remove("dispatch-expanded");
+      }
+      const isExpanded = layout.classList.contains("dispatch-expanded");
+      const btn = el("btnToggleDispatchExpand");
+      const label = el("labelDispatchExpand");
+      const icon = el("iconDispatchExpand");
+      if (label) label.textContent = isExpanded ? "Collapse Review" : "Expand Review";
+      if (btn) {
+        btn.classList.toggle("btn-active", isExpanded);
+        btn.setAttribute("aria-expanded", isExpanded ? "true" : "false");
+        btn.title = isExpanded ? "Restore standard split view" : "Expand review for inspection";
+      }
+      if (icon) {
+        if (isExpanded) {
+          icon.innerHTML = '<polyline points="4 14 10 14 10 20"></polyline><polyline points="20 10 14 10 14 4"></polyline><line x1="14" y1="10" x2="21" y2="3"></line><line x1="3" y1="21" x2="10" y2="14"></line>';
+        } else {
+          icon.innerHTML = '<polyline points="15 3 21 3 21 9"></polyline><polyline points="9 21 3 21 3 15"></polyline><line x1="21" y1="3" x2="14" y2="10"></line><line x1="3" y1="21" x2="10" y2="14"></line>';
+        }
+      }
+    }
+    window.setDispatchExpanded = setDispatchExpanded;
+
+    el("btnToggleDispatchExpand")?.addEventListener("click", () => {
+      const layout = document.querySelector("#paneEdr .edr-split-layout");
+      if (!layout) return;
+      setDispatchExpanded(!layout.classList.contains("dispatch-expanded"));
     });
 
     // Reload Saved EDRs from Google Docs
     el("btnReloadDocs")?.addEventListener("click", async () => {
+      const btn = el("btnReloadDocs");
       try {
+        window.setButtonBusy(btn, true, "Reloading...");
+        window.setGlobalProgress(true);
         showToast("Loading saved EDRs from Google Docs...", "info");
         const res = await edr.loadSavedEdrsFromDocs();
         showToast(`Loaded ${res.count} saved EDR(s) from Google Docs.`, "success");
       } catch (err) {
         showToast(err.message || "Failed to load from Google Docs.", "error");
+      } finally {
+        window.setButtonBusy(btn, false);
+        window.setGlobalProgress(false);
       }
     });
 
@@ -1157,9 +1247,10 @@
       edr.clearDocsUrl();
       el("inputDocsUrl").value = "";
       el("modalDocsSetup").hidden = true;
-      el("edrDocsStatusText").textContent = "Local Storage";
+      if (el("edrDocsStatusText")) el("edrDocsStatusText").textContent = "Local Storage";
       el("edrDocsUrlHint").textContent = "URL must end in /exec.";
       el("edrDocsUrlHint").className = "docs-url-hint";
+      updateIntegrationStatusPills();
       showToast("Google Docs connection disconnected.", "info");
     });
 
@@ -1174,7 +1265,8 @@
         const testRes = await edr.testDocsConnection(url);
         edr.setDocsUrl(url);
         el("modalDocsSetup").hidden = true;
-        el("edrDocsStatusText").textContent = "Docs Connected";
+        if (el("edrDocsStatusText")) el("edrDocsStatusText").textContent = "Docs Connected";
+        updateIntegrationStatusPills();
         showToast(`Connected to "${testRes.documentName || "EDR Doc"}". Loading saved EDRs...`, "success");
         await edr.loadSavedEdrsFromDocs();
       } catch (err) {
@@ -1244,7 +1336,7 @@
       tabId: "tabSorter",
       paneId: "paneSorter",
       title: "AI Sorter",
-      subtitle: "Floor Assignment & Shift Sorting"
+      subtitle: ""
     },
     maintenance: {
       tabId: "tabMaintenance",
@@ -1268,7 +1360,7 @@
       tabId: "tabFollowup",
       paneId: "paneFollowup",
       title: "Follow Up Reports",
-      subtitle: "Resolution Queue"
+      subtitle: ""
     },
     history: {
       tabId: "tabHistory",
@@ -1304,6 +1396,10 @@
       }
     });
 
+    // Close mobile navigation drawer if open
+    el("navRail")?.classList.remove("mobile-open");
+    el("navRailBackdrop")?.classList.remove("is-visible");
+
     // Update topbar titles
     const titleEl = document.querySelector(".workspace-main-title");
     const subBadge = document.querySelector(".workspace-title-wrap .badge");
@@ -1315,6 +1411,14 @@
     }
 
     // Activate hooks
+    if (targetKey === "edr") {
+      // Cleanly ensure EDR is ready in standard view
+    } else {
+      if (typeof window.setDispatchExpanded === "function") {
+        window.setDispatchExpanded(false);
+      }
+    }
+
     if (targetKey === "audit") {
       renderAuditTable();
       renderGuardStatus();
@@ -1345,10 +1449,80 @@
       }
     });
 
-    // Rail collapse toggle
-    el("btnToggleRail")?.addEventListener("click", () => {
-      el("navRail")?.classList.toggle("collapsed");
+    // Mobile nav hamburger toggle
+    el("btnMobileNavToggle")?.addEventListener("click", () => {
+      const rail = el("navRail");
+      const backdrop = el("navRailBackdrop");
+      if (!rail) return;
+      const isOpen = rail.classList.toggle("mobile-open");
+      backdrop?.classList.toggle("is-visible", isOpen);
     });
+
+    // Tap backdrop to close mobile drawer
+    el("navRailBackdrop")?.addEventListener("click", () => {
+      el("navRail")?.classList.remove("mobile-open");
+      el("navRailBackdrop")?.classList.remove("is-visible");
+    });
+
+    function isRailVisuallyCollapsed() {
+      const rail = el("navRail");
+      if (!rail) return false;
+      if (rail.classList.contains("collapsed")) return true;
+      if (window.innerWidth >= 768 && window.innerWidth <= 1023 && !rail.classList.contains("user-expanded")) {
+        return true;
+      }
+      return false;
+    }
+
+    function updateRailToggleState(isCollapsed) {
+      const btn = el("btnToggleRail");
+      if (!btn) return;
+      const labelText = isCollapsed ? "Expand sidebar" : "Collapse sidebar";
+      btn.title = labelText;
+      btn.setAttribute("data-tooltip", labelText);
+      btn.setAttribute("aria-label", labelText);
+      const icon = btn.querySelector(".collapse-btn-icon");
+      if (icon) {
+        icon.innerHTML = isCollapsed
+          ? '<polyline points="9 18 15 12 9 6"></polyline>'
+          : '<polyline points="15 18 9 12 15 6"></polyline>';
+      }
+      const textSpan = btn.querySelector(".collapse-btn-text");
+      if (textSpan) {
+        textSpan.textContent = isCollapsed ? "Expand" : "Collapse";
+      }
+    }
+    window.updateRailToggleState = updateRailToggleState;
+
+    // Keep toggle button label in sync with viewport changes under zoom or resize
+    window.addEventListener("resize", () => {
+      updateRailToggleState(isRailVisuallyCollapsed());
+    });
+
+    // Rail collapse toggle (desktop & tablet)
+    el("btnToggleRail")?.addEventListener("click", () => {
+      const rail = el("navRail");
+      if (rail) {
+        const currentlyCollapsed = isRailVisuallyCollapsed();
+        const willBeCollapsed = !currentlyCollapsed;
+        rail.classList.toggle("collapsed", willBeCollapsed);
+        rail.classList.toggle("user-expanded", !willBeCollapsed);
+        updateRailToggleState(willBeCollapsed);
+      }
+    });
+
+    const initialRail = el("navRail");
+    if (initialRail) {
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get("rail") === "collapsed") {
+        initialRail.classList.add("collapsed");
+        initialRail.classList.remove("user-expanded");
+      }
+      if (urlParams.get("edr") === "expanded" && typeof window.setDispatchExpanded === "function") {
+        window.setDispatchExpanded(true);
+      }
+      updateRailToggleState(isRailVisuallyCollapsed());
+    }
   }
 
   // =========================================================================
@@ -1404,15 +1578,15 @@
     const emptyNotice = el("auditEmptyNotice");
     if (!tableBody) return;
 
-    const entries = audit.getEntries();
+    const rawEntries = audit.getEntries();
 
     // Update Badges
     const totalBadge = el("auditTotalRowsBadge");
     if (totalBadge) {
-      totalBadge.textContent = `${entries.length} ${entries.length === 1 ? "row" : "rows"}`;
+      totalBadge.textContent = `${rawEntries.length} ${rawEntries.length === 1 ? "row" : "rows"}`;
     }
 
-    const linkedCount = entries.filter(e => e.sourceEdrId).length;
+    const linkedCount = rawEntries.filter(e => e.sourceEdrId).length;
     const linkedBadge = el("auditLinkedBadge");
     if (linkedBadge) {
       linkedBadge.textContent = `${linkedCount} from EDR`;
@@ -1420,10 +1594,10 @@
 
     const railBadge = el("railAuditBadge");
     if (railBadge) {
-      railBadge.textContent = entries.length;
+      railBadge.textContent = rawEntries.length;
     }
 
-    if (!entries.length) {
+    if (!rawEntries.length) {
       tableBody.innerHTML = "";
       if (emptyNotice) emptyNotice.style.display = "block";
       return;
@@ -1431,8 +1605,35 @@
 
     if (emptyNotice) emptyNotice.style.display = "none";
 
-    tableBody.innerHTML = entries.map((entry, idx) => {
-      const rowNum = idx + 1;
+    function getAuditSortDate(entry) {
+      if (!entry) return "";
+      const raw = entry.rawDate || entry.auditDate || "";
+      if (/^\d{4}-\d{2}-\d{2}/.test(raw)) return raw;
+      const fmt = entry.formattedDate || "";
+      const parts = fmt.split("/");
+      if (parts.length === 3) {
+        const m = parts[0].padStart(2, "0");
+        const d = parts[1].padStart(2, "0");
+        const y = parts[2].length === 4 ? parts[2] : `20${parts[2]}`;
+        return `${y}-${m}-${d}`;
+      }
+      return raw || fmt;
+    }
+
+    // Consistently sort records by audit date ascending, preserving stable order when equal
+    const sortedItems = rawEntries.map((entry, origIdx) => ({
+      entry,
+      origIdx,
+      sortDate: getAuditSortDate(entry)
+    })).sort((a, b) => {
+      const cmp = a.sortDate.localeCompare(b.sortDate);
+      if (cmp !== 0) return cmp;
+      return a.origIdx - b.origIdx;
+    });
+
+    tableBody.innerHTML = sortedItems.map((item, displayIdx) => {
+      const { entry, origIdx } = item;
+      const rowNum = displayIdx + 1;
       const dateDisplay = entry.formattedDate || entry.rawDate || "—";
       const auditor = entry.name || entry.auditorName || "Miles";
       const nocLower = String(entry.noc || "").toLowerCase();
@@ -1443,10 +1644,10 @@
       else if (nocLower === "disputed") nocBadgeClass = "badge-neutral";
 
       const hasEdr = !!entry.sourceEdrId;
-      const isEditing = auditEditingIndex === idx;
+      const isEditing = auditEditingIndex === origIdx;
 
       return `
-        <tr class="audit-row ${isEditing ? 'is-editing' : ''}" data-idx="${idx}">
+        <tr class="audit-row ${isEditing ? 'is-editing' : ''}" data-idx="${origIdx}" data-id="${entry.id || ''}">
           <td style="text-align:center; font-family:var(--font-mono); font-size:10.5px; color:var(--text-dim);">${rowNum}</td>
           <td style="font-weight:600; color:#38bdf8; white-space:nowrap;">${window.escapeHtml(dateDisplay)}</td>
           <td style="white-space:nowrap; color:var(--text-secondary);">${window.escapeHtml(auditor)}</td>
@@ -1463,10 +1664,10 @@
           <td style="max-width:220px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${window.escapeHtml(entry.remarks || "")}">${window.escapeHtml(entry.remarks || "")}</td>
           <td style="text-align:center; white-space:nowrap;">
             <div style="display:inline-flex; align-items:center; gap:2px;">
-              <button type="button" class="btn btn-ghost btn-sm btn-edit-audit" data-idx="${idx}" title="Edit this entry" style="padding:2px 5px; height:24px;">
+              <button type="button" class="btn btn-ghost btn-sm btn-edit-audit" data-idx="${origIdx}" title="Edit this entry" style="padding:2px 5px; height:24px;">
                 <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
               </button>
-              <button type="button" class="btn btn-ghost btn-sm btn-delete-audit text-danger" data-idx="${idx}" title="Delete this entry" style="padding:2px 5px; height:24px;">
+              <button type="button" class="btn btn-ghost btn-sm btn-delete-audit text-danger" data-idx="${origIdx}" data-id="${entry.id || ''}" title="Delete this entry" style="padding:2px 5px; height:24px;">
                 <svg class="icon icon-sm" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
               </button>
             </div>
@@ -1486,8 +1687,9 @@
     // Wire Delete buttons
     tableBody.querySelectorAll(".btn-delete-audit").forEach(btn => {
       btn.addEventListener("click", async () => {
-        const idx = parseInt(btn.getAttribute("data-idx"), 10);
-        const rep = entries[idx];
+        const origIdx = parseInt(btn.getAttribute("data-idx"), 10);
+        const entryId = btn.getAttribute("data-id");
+        const rep = rawEntries[origIdx] || (entryId ? rawEntries.find(e => e.id === entryId) : null);
         const agreed = await window.appConfirm({
           title: "Delete Audit Entry?",
           message: `Delete audit entry for ${rep?.agentName || rep?.tlName || "entry"} (${rep?.site || ""})?`,
@@ -1495,7 +1697,11 @@
           tone: "danger"
         });
         if (agreed) {
-          audit.deleteEntry(idx);
+          if (entryId) {
+            audit.deleteEntry(entryId);
+          } else {
+            audit.deleteEntry(origIdx);
+          }
           showToast("Audit entry deleted.", "info");
         }
       });
@@ -1863,6 +2069,7 @@
   let miniSheetFindMatches = [];
   let miniSheetFindCursor = -1;
   let miniSheetKeyboardActive = false;
+  let sorterAutosaveTimer = null;
 
   function showSorterMessage(text, type = "info") {
     const msgEl = el("maintenanceMessage");
@@ -1877,6 +2084,127 @@
     if (!msgEl) return;
     msgEl.textContent = "";
     msgEl.style.display = "none";
+  }
+
+  function saveSorterDraftDebounced(delay = 400) {
+    if (sorterAutosaveTimer) {
+      clearTimeout(sorterAutosaveTimer);
+    }
+    if (delay <= 0) {
+      sorterAutosaveTimer = null;
+      persistSorterDraftNow();
+      return;
+    }
+    sorterAutosaveTimer = setTimeout(() => {
+      sorterAutosaveTimer = null;
+      persistSorterDraftNow();
+    }, delay);
+  }
+
+  function persistSorterDraftNow() {
+    if (!sorter || typeof sorter.saveDraft !== "function") return;
+    const rawText = el("maintenanceInput")?.value || "";
+    const hasRows = sorterAssignedRows && sorterAssignedRows.length > 0;
+    const hasRaw = rawText.trim().length > 0;
+
+    // If both rows and raw input are empty, clear any persisted draft
+    if (!hasRows && !hasRaw) {
+      sorter.clearDraft?.().catch(console.error);
+      return;
+    }
+
+    const draft = {
+      rawText,
+      assignedRows: sorterAssignedRows,
+      parsedRows: sorterParsedRows,
+      assignments: Array.from(sorterAssignments.entries()),
+      selectedRows: Array.from(miniSheetSelectedRows),
+      searchQuery: el("miniSheetFindTlInput")?.value || ""
+    };
+
+    sorter.saveDraft(draft).catch(err => {
+      console.warn("Autosave sorter draft failed:", err);
+    });
+  }
+
+  async function clearSorterDraft() {
+    if (sorterAutosaveTimer) {
+      clearTimeout(sorterAutosaveTimer);
+      sorterAutosaveTimer = null;
+    }
+    try {
+      await sorter?.clearDraft?.();
+    } catch (err) {
+      console.warn("Could not clear sorter draft:", err);
+    }
+  }
+
+  async function restoreSorterDraft() {
+    if (!sorter || typeof sorter.loadDraft !== "function") return false;
+    try {
+      const draft = await sorter.loadDraft();
+      if (!draft) return false;
+
+      const hasRaw = typeof draft.rawText === "string" && draft.rawText.trim().length > 0;
+      const hasRows = Array.isArray(draft.assignedRows) && draft.assignedRows.length > 0;
+
+      if (!hasRaw && !hasRows) return false;
+
+      if (hasRaw && el("maintenanceInput")) {
+        el("maintenanceInput").value = draft.rawText;
+      }
+
+      if (hasRows) {
+        sorterAssignedRows = draft.assignedRows.map(r => ({ ...r }));
+        sorterParsedRows = Array.isArray(draft.parsedRows) && draft.parsedRows.length
+          ? draft.parsedRows.map(r => ({ ...r }))
+          : sorterAssignedRows.map(r => ({ ...r }));
+
+        if (Array.isArray(draft.assignments) && draft.assignments.length) {
+          sorterAssignments = new Map(draft.assignments);
+        } else if (typeof sorter.buildAssignments === "function") {
+          sorterAssignments = sorter.buildAssignments(sorterParsedRows);
+        }
+
+        if (Array.isArray(draft.selectedRows) && draft.selectedRows.length > 0) {
+          miniSheetSelectedRows = new Set(draft.selectedRows);
+          miniSheetSelectionAnchor = draft.selectedRows[0];
+        }
+
+        if (draft.searchQuery && el("miniSheetFindTlInput")) {
+          el("miniSheetFindTlInput").value = draft.searchQuery;
+          highlightMiniSheetFindMatchesRealtime(draft.searchQuery);
+        }
+
+        renderSorterRows(sorterAssignedRows);
+        updateMiniSheetSelectionUi();
+
+        const reviewCount = sorterAssignedRows.filter(r => r.floor === sorter.FLOOR.REVIEW).length;
+        const recognizedCount = sorterAssignedRows.length - reviewCount;
+        const gfCount = sorterAssignedRows.filter(r => r.floor === sorter.FLOOR.GROUND).length;
+        const f1Count = sorterAssignedRows.filter(r => r.floor === sorter.FLOOR.FIRST).length;
+        const f2Count = sorterAssignedRows.filter(r => r.floor === sorter.FLOOR.SECOND).length;
+
+        if (el("overallRowCount")) el("overallRowCount").textContent = `${sorterAssignedRows.length} rows`;
+        if (el("miniSheetRowCount")) el("miniSheetRowCount").textContent = `${sorterAssignedRows.length} rows`;
+        if (el("sorterGfCount")) el("sorterGfCount").textContent = `GF: ${gfCount}`;
+        if (el("sorter1fCount")) el("sorter1fCount").textContent = `1F: ${f1Count}`;
+        if (el("sorter2fCount")) el("sorter2fCount").textContent = `2F: ${f2Count}`;
+        if (el("sorterReviewCount")) el("sorterReviewCount").textContent = `Review: ${reviewCount}`;
+
+        const emptyNotice = el("maintenanceEmpty");
+        if (emptyNotice) emptyNotice.style.display = "none";
+
+        showSorterMessage(`Restored working session (${sorterAssignedRows.length} rows) from local draft.`, "info");
+        return true;
+      } else if (hasRaw) {
+        showSorterMessage("Restored pasted report text from local draft.", "info");
+        return true;
+      }
+    } catch (err) {
+      console.warn("Could not restore AI Sorter draft:", err);
+    }
+    return false;
   }
 
   function renderSorterWorkspace() {
@@ -1925,6 +2253,7 @@
 
       const msg = `Reference-aware sort complete: ${assignedRows.length} rows. ${recognizedCount} were assigned to a floor${reviewCount ? `; ${reviewCount} need review.` : "."}`;
       showSorterMessage(msg, reviewCount ? "info" : "success");
+      saveSorterDraftDebounced(0);
 
       if (scrollToResults && el("aiSorterTableWrapper")) {
         el("aiSorterTableWrapper").scrollIntoView({ behavior: "smooth", block: "nearest" });
@@ -2122,6 +2451,7 @@
 
         renderSorterRows(sorterAssignedRows, true);
         window.historyService?.scheduleCapture("aiSorter", `Edited ${field} in AI Sorter`, 400);
+        saveSorterDraftDebounced(400);
       });
     });
 
@@ -2213,6 +2543,7 @@
 
     renderSorterRows(sorterAssignedRows);
     window.historyService?.captureIfChanged("aiSorter", "Pasted into cells in AI Sorter");
+    saveSorterDraftDebounced(300);
     showToast("Pasted into selected cells.", "success");
   }
 
@@ -2236,6 +2567,7 @@
     miniSheetSelectionAnchor = start;
     renderSorterRows(sorterAssignedRows);
     window.historyService?.captureIfChanged("aiSorter", `Pasted ${newRows.length} rows into AI Sorter`);
+    saveSorterDraftDebounced(300);
     setTimeout(() => {
       el("maintenanceMiniSheet")?.querySelector(`tr[data-row-index="${start}"]`)
         ?.scrollIntoView({ behavior: "smooth", block: "center", inline: "nearest" });
@@ -2524,6 +2856,7 @@
       if (window.historyService?.captureIfChanged) {
         await window.historyService.captureIfChanged("aiSorter", `Cut ${count} cell(s) in AI Sorter`);
       }
+      saveSorterDraftDebounced(300);
       showToast(`${count} cell(s) cut to clipboard.`, "success");
       return;
     }
@@ -2551,6 +2884,7 @@
     if (window.historyService?.captureIfChanged) {
       await window.historyService.captureIfChanged("aiSorter", `Cut ${indexes.length} row(s) in AI Sorter`);
     }
+    saveSorterDraftDebounced(300);
     showToast(`${indexes.length} row(s) cut to clipboard and removed from the Mini Sheet.`, "success");
   }
 
@@ -2580,6 +2914,7 @@
     if (window.historyService?.captureIfChanged) {
       await window.historyService.captureIfChanged("aiSorter", `Removed ${indexes.length} row(s) from AI Sorter`);
     }
+    saveSorterDraftDebounced(300);
     showToast("Selected Mini Sheet rows were removed.", "info");
   }
 
@@ -2768,6 +3103,7 @@
   }
 
   function clearMaintenance() {
+    clearSorterDraft();
     const input = el("maintenanceInput");
     if (input) input.value = "";
     sorterParsedRows = [];
@@ -2899,7 +3235,11 @@
         if (this.value) data[originalName] = this.value;
         else delete data[originalName];
         sorter.saveOverrides(data);
-        if (el("maintenanceInput")?.value.trim()) analyzeMaintenance(false);
+        if (el("maintenanceInput")?.value.trim()) {
+          analyzeMaintenance(false);
+        } else {
+          saveSorterDraftDebounced(300);
+        }
       });
     });
 
@@ -2912,6 +3252,7 @@
         else delete data[originalName];
         sorter.saveTLNameEdits(data);
         if (sorterAssignedRows.length) renderSorterRows(sorterAssignedRows);
+        saveSorterDraftDebounced(300);
       };
 
       input.addEventListener("change", saveName);
@@ -2930,7 +3271,7 @@
 
         const approved = await window.appConfirm({
           title: "Remove Team Leader?",
-          message: `Remove "${shownName}" from the Team Leader Floor Assignment list?`,
+          message: `Remove "${shownName}" from the Team Leader Assignment list?`,
           confirmText: "Remove",
           tone: "danger"
         });
@@ -2941,6 +3282,7 @@
         hiddenNames.add(originalName);
         sorter.saveHiddenTLs([...hiddenNames]);
         renderTlSummaryTable();
+        saveSorterDraftDebounced(300);
         showToast(`${shownName} removed from assignment list.`, "info");
       });
     });
@@ -2953,11 +3295,29 @@
       sorterAssignedRows = Array.isArray(rows) ? rows.map(r => ({ ...r })) : [];
       renderSorterRows(sorterAssignedRows);
       updateMiniSheetSelectionUi();
+      saveSorterDraftDebounced(400);
     };
     if (window.sorterService) {
       window.sorterService.getSortedRows = sorter.getSortedRows;
       window.sorterService.setSortedRows = sorter.setSortedRows;
     }
+
+    // Debounced draft autosave on raw textarea input
+    el("maintenanceInput")?.addEventListener("input", () => {
+      saveSorterDraftDebounced(500);
+    });
+
+    // Flush any pending draft save before unload
+    window.addEventListener("beforeunload", () => {
+      if (sorterAutosaveTimer) {
+        clearTimeout(sorterAutosaveTimer);
+        sorterAutosaveTimer = null;
+        persistSorterDraftNow();
+      }
+    });
+
+    // Automatically check and restore unfinished draft on app initialization
+    restoreSorterDraft().catch(console.error);
 
     el("maintenanceSortBtn")?.addEventListener("click", () => {
       miniSheetSelectedRows.clear();
@@ -3000,7 +3360,7 @@
 
       sorter.resetAssignments();
       if (el("maintenanceInput")?.value.trim()) analyzeMaintenance(false);
-      showToast("Team Leader Floor Assignment was reset. Auto-learning will be used again.", "info");
+      showToast("Team Leader Assignment was reset. Auto-learning will be used again.", "info");
     });
 
     el("btnOpenTlAssignments")?.addEventListener("click", () => {
@@ -3197,6 +3557,7 @@
           if (window.historyService?.captureIfChanged) {
             window.historyService.captureIfChanged("aiSorter", "Cleared selected cell(s) in AI Sorter");
           }
+          saveSorterDraftDebounced(300);
           showToast("Selected cells cleared.", "info");
           return;
         }
@@ -3393,7 +3754,7 @@
 
       // Header row
       const headerRow = document.createElement("div");
-      headerRow.className = "eod-block-header";
+      headerRow.className = "eod-block-head";
 
       const titleWrap = document.createElement("div");
       titleWrap.style.display = "flex";
@@ -3405,9 +3766,7 @@
       badge.textContent = `Block #${index + 1}`;
 
       const titleSpan = document.createElement("span");
-      titleSpan.style.fontWeight = "600";
-      titleSpan.style.fontSize = "12px";
-      titleSpan.style.color = "var(--text-primary)";
+      titleSpan.className = "eod-block-title";
       titleSpan.textContent = `Report Section ${index + 1}`;
 
       titleWrap.appendChild(badge);
@@ -3435,11 +3794,9 @@
       }
 
       const actionsWrap = document.createElement("div");
-      actionsWrap.style.display = "flex";
-      actionsWrap.style.alignItems = "center";
-      actionsWrap.style.gap = "8px";
+      actionsWrap.className = "eod-block-actions";
 
-      // ── Hide Report / Show Report toggle button (V1 parity, item 10) ──
+      // ── Hide Report / Show Report toggle button ──
       const toggleBtn = document.createElement("button");
       toggleBtn.type = "button";
       if (block.dataHidden) {
@@ -3454,7 +3811,6 @@
       }
       toggleBtn.addEventListener("click", () => {
         block.dataHidden = !block.dataHidden;
-        // Update active paste target if this block was it
         if (block.dataHidden && activePasteBlockId === block.id) {
           const nextVisible = maintenanceState.blocks.find(b => b.id !== block.id && !b.dataHidden);
           activePasteBlockId = nextVisible ? nextVisible.id : null;
@@ -3498,7 +3854,7 @@
       headerRow.appendChild(actionsWrap);
       blockEl.appendChild(headerRow);
 
-      // Content wrapper — hidden when block.dataHidden is true (item 10)
+      // Content wrapper — hidden when block.dataHidden is true
       const contentWrapper = document.createElement("div");
       contentWrapper.className = "eod-block-content";
       if (block.dataHidden) {
@@ -3513,15 +3869,26 @@
       const leftCol = document.createElement("div");
       leftCol.className = "form-group";
       leftCol.style.marginBottom = "0";
+      leftCol.style.display = "flex";
+      leftCol.style.flexDirection = "column";
+      leftCol.style.gap = "4px";
 
       const leftLabel = document.createElement("label");
       leftLabel.className = "form-label";
+      leftLabel.style.fontSize = "11px";
+      leftLabel.style.fontWeight = "600";
+      leftLabel.style.textTransform = "uppercase";
+      leftLabel.style.letterSpacing = "0.04em";
+      leftLabel.style.color = "var(--text-secondary)";
+      leftLabel.style.marginBottom = "2px";
       leftLabel.textContent = "Station Issues / Incident (Lanes)";
       leftCol.appendChild(leftLabel);
 
       const lanesArea = document.createElement("textarea");
       lanesArea.className = "form-control eod-lanes-textarea";
       lanesArea.rows = 6;
+      lanesArea.style.flex = "1";
+      lanesArea.style.minHeight = "120px";
       lanesArea.placeholder = "Paste station rows or enter incident issues (TSV format from Sorter or manual)...";
       lanesArea.value = block.lanesText || "";
       lanesArea.addEventListener("focus", () => {
@@ -3545,23 +3912,208 @@
       const rightCol = document.createElement("div");
       rightCol.className = "form-group";
       rightCol.style.marginBottom = "0";
+      rightCol.style.display = "flex";
+      rightCol.style.flexDirection = "column";
+      rightCol.style.gap = "4px";
 
       const rightLabel = document.createElement("label");
       rightLabel.className = "form-label";
+      rightLabel.style.fontSize = "11px";
+      rightLabel.style.fontWeight = "600";
+      rightLabel.style.textTransform = "uppercase";
+      rightLabel.style.letterSpacing = "0.04em";
+      rightLabel.style.color = "var(--text-secondary)";
+      rightLabel.style.marginBottom = "2px";
       rightLabel.textContent = "Action Taken / Remarks";
       rightCol.appendChild(rightLabel);
 
+      // --- Quick Choice Presets Container ---
+      const presetContainer = document.createElement("div");
+      presetContainer.className = "maint-preset-container";
+
+      // Chips row with integrated + Add Choice
+      const chipsRow = document.createElement("div");
+      chipsRow.className = "maint-preset-chips";
+      chipsRow.setAttribute("role", "group");
+      chipsRow.setAttribute("aria-label", "Quick Remark Choices");
+
+      const presetTitle = document.createElement("span");
+      presetTitle.className = "maint-preset-title";
+      presetTitle.textContent = "Quick Choices:";
+      chipsRow.appendChild(presetTitle);
+
+      const availableChoices = maintenance.getQuickRemarks ? maintenance.getQuickRemarks() : [];
+      const renderChoices = [...availableChoices];
+      if (block.selectedPreset && !renderChoices.includes(block.selectedPreset)) {
+        renderChoices.push(block.selectedPreset);
+      }
+
+      renderChoices.forEach(choiceText => {
+        const isSelected = block.selectedPreset === choiceText;
+        const isDefault = Array.isArray(maintenance.DEFAULT_QUICK_REMARKS) && maintenance.DEFAULT_QUICK_REMARKS.includes(choiceText);
+
+        const chipBtn = document.createElement("button");
+        chipBtn.type = "button";
+        chipBtn.className = "maint-preset-chip" + (isSelected ? " is-selected" : "");
+        chipBtn.setAttribute("aria-pressed", isSelected ? "true" : "false");
+        chipBtn.title = isSelected ? "Active preset (Click to deselect)" : `Select preset: "${choiceText}"`;
+
+        const indicator = document.createElement("span");
+        indicator.className = "maint-preset-chip-indicator";
+        chipBtn.appendChild(indicator);
+
+        const textSpan = document.createElement("span");
+        textSpan.className = "maint-preset-chip-text";
+        textSpan.textContent = choiceText;
+        chipBtn.appendChild(textSpan);
+
+        // Delete button for custom choices only
+        if (!isDefault) {
+          const delBtn = document.createElement("span");
+          delBtn.className = "maint-preset-chip-del";
+          delBtn.setAttribute("role", "button");
+          delBtn.setAttribute("tabindex", "0");
+          delBtn.setAttribute("aria-label", `Delete choice ${choiceText}`);
+          delBtn.title = "Delete this choice";
+          delBtn.textContent = "✕";
+          delBtn.addEventListener("click", async (e) => {
+            e.stopPropagation();
+            const ok = await window.appConfirm({
+              title: "Delete Choice?",
+              message: `Remove "${choiceText}" from quick remark choices?`,
+              confirmText: "Delete",
+              tone: "danger"
+            });
+            if (!ok) return;
+            maintenance.deleteQuickRemark(choiceText);
+            renderMaintenanceBlocks();
+            showToast("Choice deleted.", "info");
+          });
+          delBtn.addEventListener("keydown", (e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              delBtn.click();
+            }
+          });
+          chipBtn.appendChild(delBtn);
+        }
+
+        chipBtn.addEventListener("click", () => {
+          if (block.selectedPreset === choiceText) {
+            block.selectedPreset = "";
+            showToast("Preset deselected.", "info");
+          } else {
+            block.selectedPreset = choiceText;
+            showToast(`Selected preset: "${choiceText}"`, "info");
+          }
+          renderMaintenanceBlocks();
+          queueMaintenanceAutosave();
+        });
+
+        chipsRow.appendChild(chipBtn);
+      });
+
+      // + Add Choice button seamlessly attached at the end of chips
+      const addChoiceTrigger = document.createElement("button");
+      addChoiceTrigger.type = "button";
+      addChoiceTrigger.className = "maint-preset-add-btn";
+      addChoiceTrigger.textContent = "+ Add Choice";
+      addChoiceTrigger.title = "Add new custom remark choice";
+      chipsRow.appendChild(addChoiceTrigger);
+
+      presetContainer.appendChild(chipsRow);
+
+      // Inline Add Form
+      const inlineForm = document.createElement("div");
+      inlineForm.className = "maint-preset-inline-form";
+      inlineForm.style.display = "none";
+
+      const inlineInput = document.createElement("input");
+      inlineInput.type = "text";
+      inlineInput.className = "maint-preset-inline-input";
+      inlineInput.placeholder = "Type new remark choice...";
+      inlineInput.maxLength = 140;
+
+      const inlineSaveBtn = document.createElement("button");
+      inlineSaveBtn.type = "button";
+      inlineSaveBtn.className = "btn btn-primary btn-sm";
+      inlineSaveBtn.style.padding = "2px 8px";
+      inlineSaveBtn.style.fontSize = "10.5px";
+      inlineSaveBtn.textContent = "Add";
+
+      const inlineCancelBtn = document.createElement("button");
+      inlineCancelBtn.type = "button";
+      inlineCancelBtn.className = "btn btn-ghost btn-sm";
+      inlineCancelBtn.style.padding = "2px 6px";
+      inlineCancelBtn.style.fontSize = "10.5px";
+      inlineCancelBtn.textContent = "Cancel";
+
+      inlineForm.appendChild(inlineInput);
+      inlineForm.appendChild(inlineSaveBtn);
+      inlineForm.appendChild(inlineCancelBtn);
+      presetContainer.appendChild(inlineForm);
+
+      addChoiceTrigger.addEventListener("click", () => {
+        const isHidden = inlineForm.style.display === "none";
+        inlineForm.style.display = isHidden ? "flex" : "none";
+        if (isHidden) {
+          inlineInput.value = "";
+          inlineInput.focus();
+        }
+      });
+
+      const handleAddChoiceSubmit = () => {
+        const text = (inlineInput.value || "").trim();
+        if (!text) {
+          showToast("Choice cannot be empty.", "error");
+          inlineInput.focus();
+          return;
+        }
+        const res = maintenance.addQuickRemark(text);
+        if (!res.ok) {
+          showToast(res.error, "error");
+          inlineInput.focus();
+          return;
+        }
+        block.selectedPreset = text;
+        inlineForm.style.display = "none";
+        renderMaintenanceBlocks();
+        queueMaintenanceAutosave();
+        showToast("Quick choice added.", "success");
+      };
+
+      inlineSaveBtn.addEventListener("click", handleAddChoiceSubmit);
+      inlineInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          handleAddChoiceSubmit();
+        } else if (e.key === "Escape") {
+          inlineForm.style.display = "none";
+        }
+      });
+      inlineCancelBtn.addEventListener("click", () => {
+        inlineForm.style.display = "none";
+      });
+
+      rightCol.appendChild(presetContainer);
+
       const remarksArea = document.createElement("textarea");
       remarksArea.className = "form-control eod-remarks-textarea";
-      remarksArea.rows = 6;
-      remarksArea.placeholder = "Enter action taken or remarks (one per line)...";
-      remarksArea.value = Array.isArray(block.remarks) ? block.remarks.join("\n") : (block.remarks || "");
+      remarksArea.rows = 5;
+      remarksArea.style.flex = "1";
+      remarksArea.style.minHeight = "95px";
+      const manualVal = Array.isArray(block.remarks) ? block.remarks.join("\n") : (block.remarks || "");
+      remarksArea.value = manualVal;
+      remarksArea.placeholder = block.selectedPreset
+        ? `[Active preset: "${block.selectedPreset}"] (Leave empty to use preset, or type to override)...`
+        : "Enter action taken or remarks (one per line)...";
       remarksArea.addEventListener("focus", () => {
         activePasteBlockId = block.id;
       });
       remarksArea.addEventListener("input", () => {
-        block.remarks = remarksArea.value.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
-        if (!block.remarks.length) block.remarks = [""];
+        const raw = remarksArea.value || "";
+        const lines = raw.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+        block.remarks = lines.length ? lines : [""];
         queueMaintenanceAutosave();
       });
       rightCol.appendChild(remarksArea);
@@ -3761,8 +4313,58 @@
     pill.textContent = "Sheets: Ready";
   }
 
+  function syncMaintenanceStateFromDom() {
+    const destSelect = el("simpleEodDestination");
+    if (destSelect && destSelect.value) maintenanceState.destinationKey = destSelect.value;
+    const dateInput = el("simpleEodDate");
+    if (dateInput && dateInput.value) maintenanceState.date = dateInput.value;
+    const siteInput = el("simpleEodSite");
+    if (siteInput && siteInput.value) maintenanceState.title = siteInput.value;
+
+    maintenanceState.blocks.forEach(block => {
+      const blockEl = document.getElementById(`block_${block.id}`);
+      if (!blockEl) return;
+      const lanesArea = blockEl.querySelector("textarea.eod-lanes-textarea");
+      const remarksArea = blockEl.querySelector("textarea.eod-remarks-textarea");
+
+      if (lanesArea) {
+        block.lanesText = lanesArea.value;
+      }
+      if (remarksArea) {
+        const raw = (remarksArea.value || "").trim();
+        if (raw) {
+          block.remarks = raw.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+        } else {
+          block.remarks = [""];
+        }
+      }
+    });
+  }
+
+  function openMaintenancePrintPreview() {
+    syncMaintenanceStateFromDom();
+    const html = maintenance.maintenanceReportHtmlForSheets(maintenanceState);
+    const printWindow = window.open("", "_blank");
+    if (printWindow) {
+      printWindow.document.open();
+      printWindow.document.write(html);
+      printWindow.document.close();
+      printWindow.focus();
+      setTimeout(() => {
+        try {
+          printWindow.print();
+        } catch (e) {
+          console.warn("Print trigger error:", e);
+        }
+      }, 350);
+    } else {
+      window.print();
+    }
+  }
+
   async function copyFullMaintenanceReportToSheets() {
     try {
+      syncMaintenanceStateFromDom();
       const html = maintenance.maintenanceReportHtmlForSheets(maintenanceState);
       const text = maintenance.maintenanceReportPlainTextForSheets(maintenanceState);
 
@@ -3783,6 +4385,7 @@
   }
 
   async function sendMaintenanceReportToSheets() {
+    syncMaintenanceStateFromDom();
     const url = maintenance.getMaintenanceSheetsWebAppUrl();
     if (!url || !maintenance.isValidAppsScriptWebAppUrl(url)) {
       setMaintenanceStatusMessage("Please configure a valid Google Sheets Web App URL in Sheet Setup first.", "error");
@@ -3821,8 +4424,9 @@
 
   async function downloadMaintenancePdf() {
     try {
+      syncMaintenanceStateFromDom();
       if (typeof window.html2pdf !== "function") {
-        window.print();
+        openMaintenancePrintPreview();
         return;
       }
       const element = document.createElement("div");
@@ -3832,12 +4436,15 @@
       element.style.color = "#111827";
 
       const opt = {
-        margin: [25.4, 25.4, 25.4, 25.4],
+        margin: [15, 15, 15, 15],
         filename: `${String(maintenanceState.title || "Maintenance").replace(/[<>:"/\\|?*]+/g, "-").replace(/\s+/g, " ").trim()} - ${maintenanceState.date || "report"}.pdf`,
         image: { type: "jpeg", quality: 0.98 },
         html2canvas: { scale: 2, useCORS: true },
         jsPDF: { unit: "mm", format: "a4", orientation: "landscape" },
-        pagebreak: { mode: ['css', 'legacy'], avoid: ['tr', '.maintenance-pdf-image-row', '.maintenance-pdf-remarks-row'] }
+        pagebreak: {
+          mode: ['css', 'legacy'],
+          avoid: ['tr', '.maintenance-pdf-screenshots', '.maintenance-pdf-remarks', '.maintenance-pdf-block-title']
+        }
       };
 
       showToast("Generating PDF export...", "info");
@@ -3845,7 +4452,7 @@
       showToast("PDF downloaded successfully.", "success");
     } catch (err) {
       console.error("PDF generation failed:", err);
-      window.print();
+      openMaintenancePrintPreview();
     }
   }
 
@@ -4123,7 +4730,7 @@
     });
 
     // Preview / Print
-    el("simpleEodPreviewBtn")?.addEventListener("click", () => window.print());
+    el("simpleEodPreviewBtn")?.addEventListener("click", openMaintenancePrintPreview);
 
     // Download PDF
     el("simpleEodPdfBtn")?.addEventListener("click", downloadMaintenancePdf);
@@ -4174,6 +4781,9 @@
       renderMaintenanceBlocks();
       queueMaintenanceAutosave();
     };
+
+    window.syncMaintenanceStateFromDom = syncMaintenanceStateFromDom;
+    window.getMaintenanceState = () => maintenanceState;
 
     // =========================================================================
     // GLOBAL PASTE HANDLER: Maintenance workspace (item 9)
@@ -6416,6 +7026,10 @@ ${escapeHtml(JSON.stringify(entry.after || entry.before, null, 2))}
     initScreenshotDropzone();
     initEvents();
 
+    if (params.get("edr") === "expanded" && typeof window.setDispatchExpanded === "function") {
+      window.setDispatchExpanded(true);
+    }
+
     // CCTV Audit & Smart Audit Guard Initialization
     initAuditEvents();
     initSmartAuditGuard();
@@ -6592,19 +7206,84 @@ ${escapeHtml(JSON.stringify(entry.after || entry.before, null, 2))}
 
     // Google Docs initial connection check
     const currentDocsUrl = edr.getDocsUrl();
-    if (edr.isValidDocsUrl(currentDocsUrl)) {
-      el("edrDocsStatusText").textContent = "Docs Connected";
-    } else {
-      el("edrDocsStatusText").textContent = "Local Storage";
+    if (el("edrDocsStatusText")) {
+      el("edrDocsStatusText").textContent = edr.isValidDocsUrl(currentDocsUrl) ? "Docs Connected" : "Local Storage";
     }
+
+    // Live Integration Status Controller
+    function updateIntegrationStatusPills() {
+      // 1. Supabase Auth
+      const pillAuth = el("pillSupabaseAuth");
+      if (pillAuth) {
+        const user = window.CCTV_AUTH?.getUser?.() || null;
+        const isAuth = !!user;
+        const val = el("valSupabaseAuth");
+        if (isAuth) {
+          pillAuth.className = "integration-pill is-connected";
+          if (val) val.textContent = "Connected";
+          pillAuth.title = `Supabase Auth: Connected (${user.email || user.id || "Active session"})`;
+        } else {
+          pillAuth.className = "integration-pill is-disconnected";
+          if (val) val.textContent = "Disconnected";
+          pillAuth.title = "Supabase Auth: Disconnected (Sign in to establish active session)";
+        }
+      }
+
+      // 2. Google Docs EDR
+      const pillDocs = el("pillGoogleDocs");
+      if (pillDocs) {
+        const docsUrl = edr?.getDocsUrl?.() || "";
+        const isDocsConfigured = !!(edr?.isValidDocsUrl && edr.isValidDocsUrl(docsUrl));
+        const val = el("valGoogleDocs");
+        if (isDocsConfigured) {
+          pillDocs.className = "integration-pill is-connected";
+          if (val) val.textContent = "Connected";
+          pillDocs.title = "Google Docs EDR: Connected and receiver configured";
+        } else {
+          pillDocs.className = "integration-pill is-disconnected";
+          if (val) val.textContent = "Disconnected";
+          pillDocs.title = "Google Docs EDR: Disconnected (No Web App URL configured)";
+        }
+      }
+
+      // 3. Google Sheets Maintenance
+      const pillSheets = el("pillGoogleSheets");
+      if (pillSheets) {
+        const sheetsUrl = localStorage.getItem("maintenance_google_sheets_web_app_url_v1") || "";
+        const isSheetsConfigured = /^https:\/\/script\.google\.com\/macros\/s\/[^/]+\/exec(?:\?.*)?$/i.test(sheetsUrl.trim());
+        const val = el("valGoogleSheets");
+        if (isSheetsConfigured) {
+          pillSheets.className = "integration-pill is-connected";
+          if (val) val.textContent = "Configured";
+          pillSheets.title = "Google Sheets Maintenance: Configured and ready";
+        } else {
+          pillSheets.className = "integration-pill is-disconnected";
+          if (val) val.textContent = "Disconnected";
+          pillSheets.title = "Google Sheets Maintenance: Disconnected (No Web App URL configured)";
+        }
+      }
+    }
+    window.updateIntegrationStatusPills = updateIntegrationStatusPills;
+    window.renderEdrList = renderEdrList;
+    window.renderAuditTable = renderAuditTable;
 
     // Auth check
     await auth.init();
+    updateIntegrationStatusPills();
+
     auth.onAuthChange(({ user, profile }) => {
       if (user) {
         el("userNameText").textContent = profile?.display_name || profile?.username || "Operator";
         el("userRoleText").textContent = profile?.role || "User";
         el("userAvatarText").textContent = (profile?.username || "U")[0].toUpperCase();
+      }
+      updateIntegrationStatusPills();
+      restoreSorterDraft().catch(console.error);
+    });
+
+    window.addEventListener("storage", (e) => {
+      if (e.key === "maintenance_google_sheets_web_app_url_v1" || e.key === "cctv_edr_docs_url_v1") {
+        updateIntegrationStatusPills();
       }
     });
   });

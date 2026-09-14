@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>AI Sorter End-to-End Persistence Test</title>
+  <style>
+    body { font-family: monospace; background: #0b0f19; color: #e2e8f0; padding: 20px; }
+    .pass { color: #10b981; font-weight: bold; }
+    .fail { color: #ef4444; font-weight: bold; }
+    .info { color: #38bdf8; }
+    #log { white-space: pre-wrap; margin-top: 15px; border: 1px solid #1e293b; padding: 15px; border-radius: 6px; background: #020617; }
+    iframe { width: 100%; height: 500px; border: 1px solid #334155; margin-top: 20px; }
+  </style>
+</head>
+<body>
+  <h2>AI Sorter E2E Persistence Test</h2>
+  <div id="status" class="info">Initializing test...</div>
+  <div id="log"></div>
+  <iframe id="testFrame" src="http://localhost:8080/cctv-ops-v2/index.html?workspace=sorter"></iframe>
+
+  <script>
+    const logEl = document.getElementById("log");
+    const statusEl = document.getElementById("status");
+    const frame = document.getElementById("testFrame");
+    let passed = 0;
+    let failed = 0;
+    let currentPhase = 1;
+    const errors = [];
+
+    function log(msg, cls = "") {
+      const div = document.createElement("div");
+      if (cls) div.className = cls;
+      div.textContent = msg;
+      logEl.appendChild(div);
+      console.log(msg);
+    }
+
+    function assert(desc, condition, details = "") {
+      if (condition) {
+        passed++;
+        log(`✓ PASS: ${desc}`, "pass");
+      } else {
+        failed++;
+        log(`✗ FAIL: ${desc} ${details ? "(" + details + ")" : ""}`, "fail");
+      }
+    }
+
+    function wait(ms) {
+      return new Promise(res => setTimeout(res, ms));
+    }
+
+    async function finishTest() {
+      log("\n==========================================", "info");
+      log(`E2E TEST RESULT: ${passed} Passed, ${failed} Failed`, failed === 0 ? "pass" : "fail");
+      statusEl.className = failed === 0 ? "pass" : "fail";
+      statusEl.textContent = `Completed: ${passed} Passed, ${failed} Failed`;
+
+      try {
+        await fetch("http://localhost:8080/api/test_report", {
+          method: "POST",
+          headers: { "Content-Type": "text/plain" },
+          body: logEl.innerText
+        });
+      } catch (_) {}
+    }
+
+    frame.onload = async () => {
+      const win = frame.contentWindow;
+      const doc = frame.contentDocument;
+
+      // Monitor errors
+      win.console.error = function(...args) {
+        errors.push(args.join(" "));
+      };
+
+      await wait(800);
+
+      try {
+        if (currentPhase === 1) {
+          log("=== PHASE 1: Populate & Edit AI Sorter ===", "info");
+          assert("AI Sorter pane is active", doc.getElementById("paneSorter")?.classList.contains("active"));
+
+          const sampleReport = [
+            "TIMESTAMP\tDATE\tTL\tACCOUNT\tSITE\tSTATION NO.\tSTATION ISSUE",
+            "09/10/2026 10:00\t09/10/2026\tAllan Albert Sadili\tMapua\tMabini Site A\t1A-01\tMonitor not turning on",
+            "09/10/2026 11:00\t09/10/2026\tCris Arandilla\tHerb Joy\tMabini Site A\t2B-10\tMouse optical sensor defect",
+            "09/10/2026 12:00\t09/10/2026\tJohn Unknown\tUnknown Campaign\tMabini Site A\t\tHeadset static noise"
+          ].join("\n");
+
+          const inputEl = doc.getElementById("maintenanceInput");
+          assert("Maintenance textarea input exists", !!inputEl);
+          inputEl.value = sampleReport;
+          inputEl.dispatchEvent(new Event("input", { bubbles: true }));
+
+          const sortBtn = doc.getElementById("maintenanceSortBtn");
+          sortBtn.click();
+          await wait(500);
+
+          const rows = doc.querySelectorAll("#maintenanceMiniSheet tbody tr[data-row-index]");
+          assert("Parsed report rendered 3 rows", rows.length === 3, `got ${rows.length}`);
+
+          // Edit row 0 cell
+          const cell0Issue = doc.querySelector('#maintenanceMiniSheet tr[data-row-index="0"] td[data-col-index="6"]');
+          assert("Cell 0 issue exists", !!cell0Issue);
+          cell0Issue.textContent = "Custom user edit before refresh";
+          cell0Issue.dispatchEvent(new Event("blur", { bubbles: true }));
+
+          // Wait 600ms for debounce
+          await wait(700);
+
+          // Verify saved draft in storage
+          const meta = win.sorterService.getDraftMeta();
+          assert("Draft metadata saved in localStorage", meta && meta.hasDraft === true);
+          assert("Draft metadata reports 3 rows", meta?.rowCount === 3);
+
+          const draft = await win.sorterService.loadDraft();
+          assert("Draft saved in storage", !!draft);
+          assert("Draft holds edited issue", draft?.assignedRows?.[0]?.issue === "Custom user edit before refresh");
+
+          // Advance to Phase 2 and reload iframe
+          log("Triggering browser refresh (window.location.reload)...", "info");
+          currentPhase = 2;
+          win.location.reload();
+          return;
+        }
+
+        if (currentPhase === 2) {
+          log("\n=== PHASE 2: Post-Refresh Restoration Verification ===", "info");
+          assert("AI Sorter pane is active after refresh", doc.getElementById("paneSorter")?.classList.contains("active"));
+
+          const inputEl = doc.getElementById("maintenanceInput");
+          assert("Raw report text restored in textarea", !!inputEl && inputEl.value.includes("Allan Albert Sadili"));
+
+          const rows = doc.querySelectorAll("#maintenanceMiniSheet tbody tr[data-row-index]");
+          assert("Mini sheet restored exactly 3 rows after refresh", rows.length === 3, `got ${rows.length}`);
+
+          const cell0Issue = doc.querySelector('#maintenanceMiniSheet tr[data-row-index="0"] td[data-col-index="6"]');
+          assert("Cell 0 restored user edit correctly", cell0Issue?.textContent.trim() === "Custom user edit before refresh", `got: ${cell0Issue?.textContent.trim()}`);
+
+          const msgEl = doc.getElementById("maintenanceMessage");
+          assert("Restoration feedback message displayed", msgEl?.textContent.includes("Restored working session"));
+
+          const overallCount = doc.getElementById("overallRowCount");
+          assert("Overall row count displays '3 rows'", overallCount?.textContent.includes("3 rows"));
+
+          log("\n=== PHASE 3: Workspace Switching Persistence ===", "info");
+          doc.getElementById("tabAudit")?.click();
+          await wait(300);
+          assert("CCTV Audit workspace active", doc.getElementById("paneAudit")?.classList.contains("active"));
+
+          doc.getElementById("tabSorter")?.click();
+          await wait(300);
+          assert("Returned to AI Sorter workspace", doc.getElementById("paneSorter")?.classList.contains("active"));
+
+          const rowsAfterSwitch = doc.querySelectorAll("#maintenanceMiniSheet tbody tr[data-row-index]");
+          assert("Mini sheet rows intact after switching workspaces", rowsAfterSwitch.length === 3, `got ${rowsAfterSwitch.length}`);
+          const cell0AfterSwitch = doc.querySelector('#maintenanceMiniSheet tr[data-row-index="0"] td[data-col-index="6"]');
+          assert("Edited cell value intact after switching workspaces", cell0AfterSwitch?.textContent.trim() === "Custom user edit before refresh");
+
+          log("\n=== PHASE 4: Clear Report & Refresh Invalidation ===", "info");
+          win.appConfirm = async () => true;
+
+          doc.getElementById("maintenanceClearBtn")?.click();
+          await wait(400);
+
+          const rowsAfterClear = doc.querySelectorAll("#maintenanceMiniSheet tbody tr");
+          assert("Mini sheet empty after Clear Report", rowsAfterClear.length === 0);
+          assert("Textarea input cleared", (doc.getElementById("maintenanceInput")?.value || "") === "");
+
+          log("Triggering browser refresh after Clear to confirm no data resurfaces...", "info");
+          currentPhase = 3;
+          win.location.reload();
+          return;
+        }
+
+        if (currentPhase === 3) {
+          log("\n=== PHASE 5: Post-Clear Refresh Verification ===", "info");
+          const rowsAfterClearReload = doc.querySelectorAll("#maintenanceMiniSheet tbody tr");
+          assert("Mini sheet remains empty after refresh (cleared data did NOT return)", rowsAfterClearReload.length === 0);
+          assert("Textarea remains empty after refresh", (doc.getElementById("maintenanceInput")?.value || "") === "");
+          const emptyNotice = doc.getElementById("maintenanceEmpty");
+          assert("Empty workspace notice displayed", emptyNotice?.style.display !== "none");
+
+          assert("Zero console errors observed throughout lifecycle", errors.length === 0, errors.join("; "));
+
+          await finishTest();
+        }
+      } catch (err) {
+        log(`Unhandled error: ${err.message}\n${err.stack}`, "fail");
+        failed++;
+        await finishTest();
+      }
+    };
+  </script>
+</body>
+</html>

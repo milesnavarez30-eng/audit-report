@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Targeted Refinements Test Suite</title>
+  <style>
+    body { font-family: monospace; background: #0b0f19; color: #e2e8f0; padding: 20px; }
+    .pass { color: #10b981; font-weight: bold; }
+    .fail { color: #ef4444; font-weight: bold; }
+    .info { color: #38bdf8; }
+    #log { white-space: pre-wrap; margin-top: 15px; border: 1px solid #1e293b; padding: 15px; border-radius: 6px; background: #020617; }
+    iframe { width: 100%; height: 600px; border: 1px solid #334155; margin-top: 20px; }
+  </style>
+</head>
+<body>
+  <h2>Targeted Refinements Verification (Zoom + Maintenance Presets)</h2>
+  <div id="status" class="info">Initializing test suite...</div>
+  <div id="log"></div>
+  <iframe id="testFrame"></iframe>
+
+  <script>
+    const logEl = document.getElementById("log");
+    const statusEl = document.getElementById("status");
+    const frame = document.getElementById("testFrame");
+    let passed = 0;
+    let failed = 0;
+
+    function log(msg, cls = "") {
+      const div = document.createElement("div");
+      if (cls) div.className = cls;
+      div.textContent = msg;
+      logEl.appendChild(div);
+      console.log(msg);
+    }
+
+    function assert(desc, condition, details = "") {
+      if (condition) {
+        passed++;
+        log(`✓ PASS: ${desc}`, "pass");
+      } else {
+        failed++;
+        log(`✗ FAIL: ${desc} ${details ? "(" + details + ")" : ""}`, "fail");
+      }
+    }
+
+    function wait(ms) {
+      return new Promise(res => setTimeout(res, ms));
+    }
+
+    frame.onload = async () => {
+      try {
+        await wait(800);
+        const win = frame.contentWindow;
+        const doc = frame.contentDocument;
+        const maint = win.maintenanceService;
+
+        log("=== SUITE 1: Maintenance Quick Remark Choices Defaults & Management ===", "info");
+        
+        // 1. Check default presets
+        const defaults = maint.DEFAULT_QUICK_REMARKS;
+        assert("Default presets count is 3", Array.isArray(defaults) && defaults.length === 3);
+        assert("Default preset 1 matches", defaults[0] === "Maintenance observed wiping these lanes.");
+        assert("Default preset 2 matches", defaults[1] === "Maintenance observed sweeping in these lanes.");
+        assert("Default preset 3 matches", defaults[2] === "No maintenance observed wiping in these stations.");
+
+        // 2. Add custom choice
+        const addRes = maint.addQuickRemark("Maintenance technician cleaned the optical sensors.");
+        assert("Add new custom choice returns ok", addRes.ok === true);
+        const afterAdd = maint.getQuickRemarks();
+        assert("New choice in quick remarks list", afterAdd.includes("Maintenance technician cleaned the optical sensors."));
+
+        // 3. Duplicate rejection
+        const dupRes = maint.addQuickRemark("Maintenance technician cleaned the optical sensors.");
+        assert("Duplicate choice prevented", dupRes.ok === false);
+
+        // 4. Empty choice rejection
+        const emptyRes = maint.addQuickRemark("   ");
+        assert("Empty choice prevented", emptyRes.ok === false);
+
+        // 5. Default preset deletion prevented
+        const delDefRes = maint.deleteQuickRemark("Maintenance observed wiping these lanes.");
+        assert("Default choice deletion prevented", delDefRes.ok === false);
+
+        log("\n=== SUITE 2: Per-Block State & Effective Remarks Resolution ===", "info");
+
+        const block1 = maint.makeBlock();
+        const block2 = maint.makeBlock();
+
+        assert("Block 1 has selectedPreset property initialized", block1.selectedPreset === "");
+        assert("Block 2 has selectedPreset property initialized", block2.selectedPreset === "");
+
+        // Case: select preset -> leave remarks blank -> preset used
+        block1.selectedPreset = "Maintenance observed wiping these lanes.";
+        block1.remarks = [""];
+        const eff1 = maint.getEffectiveBlockRemarks(block1);
+        assert("Empty manual remarks + preset selected uses preset", eff1.length === 1 && eff1[0] === "Maintenance observed wiping these lanes.");
+
+        // Case: select preset -> type manual remarks -> manual remarks take priority
+        block1.remarks = ["Custom manual observation for block 1."];
+        const eff1Manual = maint.getEffectiveBlockRemarks(block1);
+        assert("Manual remarks take priority over selected preset", eff1Manual.length === 1 && eff1Manual[0] === "Custom manual observation for block 1.");
+
+        // Case: multiple blocks remain independent
+        block2.selectedPreset = "No maintenance observed wiping in these stations.";
+        block2.remarks = [""];
+        const eff2 = maint.getEffectiveBlockRemarks(block2);
+        assert("Block 2 preset is independent of Block 1", eff2.length === 1 && eff2[0] === "No maintenance observed wiping in these stations.");
+        assert("Block 1 retains its own state independently", block1.selectedPreset === "Maintenance observed wiping these lanes.");
+
+        // Case: old records without selectedPreset field
+        const legacyBlock = { id: "old_1", lanesText: "Station 1", remarks: ["Legacy note"] };
+        const effLegacy = maint.getEffectiveBlockRemarks(legacyBlock);
+        assert("Legacy block without selectedPreset field works", effLegacy.length === 1 && effLegacy[0] === "Legacy note");
+
+        log("\n=== SUITE 3: Google Sheets, PDF & Copy Output Parity ===", "info");
+
+        const testState = {
+          date: "2026-09-14",
+          destinationKey: "mabini_a",
+          title: "Mabini Site A - 1st & 2nd Floor",
+          blocks: [
+            {
+              id: "b_test_1",
+              lanesText: "10:00\t2026-09-14\tTL Jane\tAcct 1\tSite A\tL-01\tDust",
+              remarks: [""],
+              screenshots: [],
+              dataHidden: false,
+              selectedPreset: "Maintenance observed sweeping in these lanes."
+            }
+          ]
+        };
+
+        // Google Sheets payload
+        const sheetsPayload = maint.buildMaintenanceSheetsPayload(testState);
+        assert("Google Sheets payload resolved remarks from preset", sheetsPayload.blocks[0].remarks.includes("Maintenance observed sweeping in these lanes."));
+
+        // Plain text copy for Sheets
+        const plainText = maint.maintenanceReportPlainTextForSheets(testState);
+        assert("Plain text report includes effective preset remarks", plainText.includes("Remarks:\tMaintenance observed sweeping in these lanes."));
+
+        // HTML report for PDF/print
+        const htmlReport = maint.maintenanceReportHtmlForSheets(testState);
+        assert("HTML/PDF report includes effective preset remarks", htmlReport.includes("Maintenance observed sweeping in these lanes."));
+
+        log("\n=== SUITE 4: Historical Safety on Preset Deletion ===", "info");
+
+        // Custom preset assigned to block
+        block1.selectedPreset = "Maintenance technician cleaned the optical sensors.";
+        block1.remarks = [""];
+        // Delete the custom preset from global list
+        maint.deleteQuickRemark("Maintenance technician cleaned the optical sensors.");
+        assert("Deleted preset removed from global list", !maint.getQuickRemarks().includes("Maintenance technician cleaned the optical sensors."));
+        // Block retains its saved selectedPreset and effective remarks
+        const effHistorical = maint.getEffectiveBlockRemarks(block1);
+        assert("Previously saved block preserves historical remark after preset deletion", effHistorical[0] === "Maintenance technician cleaned the optical sensors.");
+
+        log("\n=== SUITE 5: UI Rendering, Chips & DOM Interaction ===", "info");
+
+        // Switch to maintenance workspace in UI
+        doc.getElementById("tabMaintenance")?.click();
+        await wait(500);
+
+        const blockEl = doc.querySelector(".eod-block-card");
+        assert("Maintenance block rendered in DOM", !!blockEl);
+
+        const presetChips = blockEl.querySelectorAll(".maint-preset-chip");
+        assert("Quick choice chips rendered in block", presetChips.length >= 3);
+
+        const addBtn = blockEl.querySelector(".maint-preset-add-btn");
+        assert("+ Add Choice button rendered", !!addBtn);
+
+        const remarksTextarea = blockEl.querySelector("textarea.eod-remarks-textarea");
+        assert("Action Taken / Remarks textarea preserved", !!remarksTextarea);
+
+        // Click first chip
+        presetChips[0].click();
+        await wait(250);
+        assert("First chip selection toggled", !!doc.querySelector(".eod-block-card .maint-preset-chip.is-selected"));
+
+        // Click active chip again to test deselect
+        const activeChip = doc.querySelector(".eod-block-card .maint-preset-chip.is-selected");
+        if (activeChip) {
+          activeChip.click();
+          await wait(250);
+        }
+        assert("Chip can be deselected", !doc.querySelector(".eod-block-card .maint-preset-chip.is-selected"));
+
+        log("\n=== SUITE 6: Browser Zoom Layout Signals & Resilience (75% to 200%) ===", "info");
+
+        // Natural browser zoom scales the CSS viewport:
+        // 75%  -> 1920px
+        // 80%  -> 1800px
+        // 90%  -> 1600px
+        // 100% -> 1440px
+        // 110% -> 1309px
+        // 125% -> 1152px
+        // 150% -> 960px
+        // 175% -> 823px
+        // 200% -> 720px
+        const zoomLevels = [0.75, 0.80, 0.90, 1.0, 1.10, 1.25, 1.50, 1.75, 2.0];
+        let zoomBreakages = 0;
+
+        for (const z of zoomLevels) {
+          const simWidth = Math.round(1440 / z);
+          frame.style.width = `${simWidth}px`;
+          await wait(80);
+
+          // Check topbar buttons not pushed offscreen
+          const topbar = doc.querySelector(".top-appbar");
+          const rightGroup = doc.querySelector(".appbar-right");
+          if (topbar && rightGroup) {
+            const tbRect = topbar.getBoundingClientRect();
+            const rgRect = rightGroup.getBoundingClientRect();
+            if (rgRect.right > tbRect.right + 2) {
+              zoomBreakages++;
+              log(`Topbar clipped at zoom ${Math.round(z * 100)}% (${simWidth}px): right=${rgRect.right}, tbRight=${tbRect.right}`, "fail");
+            }
+          }
+
+          // Check table responsive wrappers
+          const tableWraps = doc.querySelectorAll(".table-responsive-wrapper");
+          tableWraps.forEach(tw => {
+            if (tw.clientWidth > doc.documentElement.clientWidth + 5) {
+              zoomBreakages++;
+              log(`Table wrapper exceeds client width at zoom ${Math.round(z * 100)}%`, "fail");
+            }
+          });
+        }
+
+        // Reset frame width
+        frame.style.width = "100%";
+        await wait(80);
+        assert("Zero layout clipping or breakage across 75%-200% zoom", zoomBreakages === 0);
+
+        log("\n=== SUITE 7: Sidebar State & Tablet Toggle ===", "info");
+
+        const rail = doc.getElementById("navRail");
+        const toggleBtn = doc.getElementById("btnToggleRail");
+        assert("Sidebar navRail element exists", !!rail);
+        assert("Sidebar toggle button exists", !!toggleBtn);
+
+        const initialCollapsed = rail.classList.contains("collapsed");
+        toggleBtn.click();
+        await wait(150);
+        const afterClick1 = rail.classList.contains("collapsed");
+        assert("Sidebar collapses/expands on click", afterClick1 !== initialCollapsed);
+
+        toggleBtn.click();
+        await wait(150);
+        const afterClick2 = rail.classList.contains("collapsed");
+        assert("Sidebar restores on second click", afterClick2 === initialCollapsed);
+
+        // Finish test
+        log("\n==========================================", "info");
+        log(`TEST RESULTS: ${passed} Passed, ${failed} Failed`, failed === 0 ? "pass" : "fail");
+        statusEl.className = failed === 0 ? "pass" : "fail";
+        statusEl.textContent = `Completed: ${passed} Passed, ${failed} Failed`;
+
+        await fetch("http://localhost:8080/api/test_report", {
+          method: "POST",
+          headers: { "Content-Type": "text/plain" },
+          body: logEl.innerText
+        });
+      } catch (err) {
+        log(`CRITICAL ERROR: ${err.message}\n${err.stack}`, "fail");
+        failed++;
+        await fetch("http://localhost:8080/api/test_report", {
+          method: "POST",
+          headers: { "Content-Type": "text/plain" },
+          body: `FAIL: ${err.message}\n${err.stack}`
+        });
+      }
+    };
+
+    // Load iframe
+    frame.src = "http://localhost:8080/cctv-ops-v2/index.html?workspace=maintenance";
+  </script>
+</body>
+</html>

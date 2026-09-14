@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Collapsed Rail Snap</title>
+  <style>
+    body { margin: 0; background: #0D1117; overflow: hidden; }
+  </style>
+</head>
+<body>
+  <iframe id="f" src="/cctv-ops-v2/" style="width:1440px; height:900px; border:none;"></iframe>
+  <script>
+    const f = document.getElementById("f");
+    f.onload = () => {
+      setTimeout(() => {
+        const doc = f.contentDocument;
+        const btn = doc.getElementById("btnToggleRail");
+        btn.click();
+      }, 500);
+    };
+  </script>
+</body>
+</html>
