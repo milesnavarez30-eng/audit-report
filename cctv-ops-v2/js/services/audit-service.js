@@ -585,6 +585,22 @@ window.CCTV_AUDIT = (function () {
         entryList.push(newEntry);
         sortEntries();
         saveEntries();
+
+        if (window.CCTV_LIVE_TRACKER && typeof window.CCTV_LIVE_TRACKER.insertRowByDate === "function") {
+          window.CCTV_LIVE_TRACKER.insertRowByDate({
+            date: dateStr,
+            auditor,
+            om: omName,
+            site,
+            tl: tlName,
+            agent: agentName,
+            account: report.account || "General",
+            reason: reasonCode,
+            noc: "Pending",
+            remarks: String(report.action || report.incident || "N/A").trim() || "N/A"
+          });
+        }
+
         return { action: "created", entry: newEntry };
       }
 

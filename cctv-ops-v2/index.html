@@ -945,48 +945,75 @@
               </form>
             </div>
 
-            <!-- BOTTOM: Data Output Grid (Fills remaining height) -->
-            <div class="audit-grid-card">
-              <div class="audit-grid-header">
-                <div style="display:flex; align-items:center; gap:8px;">
-                  <span style="font-weight:700; font-size:12px; color:var(--text-primary);">Data Output Grid</span>
-                  <span class="badge badge-neutral" id="auditTotalRowsBadge">0 rows</span>
-                  <span class="badge badge-info" id="auditLinkedBadge">0 from EDR</span>
+            <!-- BOTTOM: Interactive Live Tracker Spreadsheet Grid -->
+            <div class="audit-grid-card live-tracker-card" style="display:flex; flex-direction:column; flex:1; min-height:350px;">
+              <div class="live-tracker-toolbar">
+                <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                  <span style="font-weight:700; font-size:12px; color:var(--text-primary);">Live Tracker Spreadsheet</span>
+                  <span class="badge badge-neutral" id="liveTrackerRowCountBadge">0 rows</span>
+                  <span class="badge badge-live" id="liveTrackerDataStateBadge" title="Dataset origin & status">Live Sheet data</span>
+                  <span class="badge badge-info" id="liveTrackerSyncBadge">Idle</span>
+                  <div style="display:flex; align-items:center; gap:4px;">
+                    <label for="liveTrackerAuditorFilter" style="font-size:11px; color:var(--text-muted); font-weight:600; white-space:nowrap;">View:</label>
+                    <select id="liveTrackerAuditorFilter" class="form-control form-control-sm" style="font-size:11px; height:26px; padding:2px 6px; width:155px; background:var(--bg-input);">
+                      <option value="all">All Records (Shared)</option>
+                      <option value="my">My Records Only</option>
+                    </select>
+                  </div>
+                  <span style="font-size:10.5px; color:var(--text-muted);" id="liveTrackerSyncTime">Connecting...</span>
                 </div>
-                <div style="display:flex; align-items:center; gap:6px;">
-                  <button type="button" class="btn btn-danger-ghost btn-sm" id="btnAuditClearAll" title="Clear all CCTV audit rows">Clear All</button>
-                  <button type="button" class="btn btn-primary btn-sm" id="btnAuditCopyTracker" title="Copy to clipboard formatted for Tracker (Arial 10pt)">
-                    <svg class="icon icon-sm" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
-                    <span>Copy for Tracker</span>
+                <div style="display:flex; align-items:center; gap:5px; flex-wrap:wrap;">
+                  <button type="button" class="btn btn-outline btn-sm" id="btnTrackerFind" title="Find in sheet (Ctrl+F)">
+                    <svg class="icon icon-sm" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                    <span>Find</span>
                   </button>
+                  <button type="button" class="btn btn-outline btn-sm" id="btnTrackerRefresh" title="Fetch latest data from Google Sheets">
+                    <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+                    <span>Refresh</span>
+                  </button>
+                  <button type="button" class="btn btn-primary btn-sm" id="btnTrackerAddRow" title="Add a new row at the bottom">
+                    <svg class="icon icon-sm" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                    <span>Add Row</span>
+                  </button>
+                  <button type="button" class="btn btn-outline btn-sm" id="btnTrackerInsertByDate" title="Insert an entry sorted by its Date">
+                    <svg class="icon icon-sm" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                    <span>Insert by Date</span>
+                  </button>
+                  <button type="button" class="btn btn-outline btn-sm" id="btnTrackerUndo" title="Undo (Ctrl+Z)" disabled>
+                    <svg class="icon icon-sm" viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>
+                    <span>Undo</span>
+                  </button>
+                  <button type="button" class="btn btn-outline btn-sm" id="btnTrackerRedo" title="Redo (Ctrl+Y)" disabled>
+                    <svg class="icon icon-sm" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
+                    <span>Redo</span>
+                  </button>
+                  <button type="button" class="btn btn-outline btn-sm" id="btnTrackerCopyAll" title="Copy entire tracker to clipboard (formatted for Google Sheets)">
+                    <svg class="icon icon-sm" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                    <span>Copy Sheet</span>
+                  </button>
+                  <button type="button" class="btn btn-outline btn-sm" id="btnTrackerSyncNow" title="Commit unsaved edits to Google Sheets immediately">
+                    <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path></svg>
+                    <span>Sync Sheet</span>
+                  </button>
+                  <button type="button" class="btn btn-outline btn-sm" id="btnTrackerSetup" title="Configure Google Sheets Web App URL">
+                    <svg class="icon icon-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l-.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l-.06-.06a2 2 0 0 1 2.83 2.83l-.06-.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                    <span>Setup</span>
+                  </button>
+                  <button type="button" class="btn btn-danger-ghost btn-sm" id="btnTrackerClearAll" title="Clear all tracker rows">Clear</button>
                 </div>
               </div>
 
-              <div class="audit-grid-table-wrap table-responsive-wrapper">
-                <table class="audit-data-table" id="auditOutputTable">
-                  <thead>
-                    <tr>
-                      <th style="width:36px; text-align:center;">#</th>
-                      <th>Date</th>
-                      <th>Auditor</th>
-                      <th>Site</th>
-                      <th>TL Name</th>
-                      <th>Agent Name</th>
-                      <th>OM Name</th>
-                      <th>Account</th>
-                      <th>CCTV Reason</th>
-                      <th>NOC</th>
-                      <th>Remarks</th>
-                      <th style="width:70px; text-align:center;">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody id="auditTableBody">
-                    <!-- Injected rows -->
-                  </tbody>
-                </table>
-                <div id="auditEmptyNotice" style="color:var(--text-muted); font-size:11.5px; text-align:center; padding:40px 10px;">
-                  No audit entries recorded. Use the form above or "Send to CCTV Audit" from EDR.
-                </div>
+              <!-- Interactive Spreadsheet Container -->
+              <div id="liveTrackerSpreadsheetContainer" style="flex:1; min-height:0; display:flex; flex-direction:column; overflow:hidden;"></div>
+
+              <!-- Compatibility hidden elements -->
+              <div style="display:none;" id="auditCompatibilityWrap">
+                <span id="auditTotalRowsBadge">0 rows</span>
+                <span id="auditLinkedBadge">0 from EDR</span>
+                <button id="btnAuditClearAll"></button>
+                <button id="btnAuditCopyTracker"></button>
+                <table id="auditOutputTable"><tbody id="auditTableBody"></tbody></table>
+                <div id="auditEmptyNotice"></div>
               </div>
             </div>
 
@@ -2053,6 +2080,43 @@
     </div>
   </div>
 
+  <!-- Live Tracker Google Sheets Apps Script Setup Modal -->
+  <div class="modal-backdrop" id="modalTrackerSetup" hidden>
+    <div class="modal-dialog" style="max-width:540px;">
+      <div class="modal-header">
+        <h3 class="modal-title">Live Tracker Google Sheets Sync Setup</h3>
+        <button type="button" class="btn btn-ghost btn-sm" id="btnCloseTrackerSetup">✕</button>
+      </div>
+      <div class="modal-body" style="display:flex; flex-direction:column; gap:12px;">
+        <p style="font-size:12px; color:var(--text-secondary); margin:0;">
+          Synchronize the in-app Live Tracker spreadsheet with your shared Google Sheets Live Tracker via Google Apps Script Web App.
+        </p>
+        <div class="form-group" style="margin-bottom:0;">
+          <label class="form-label" for="trackerSheetWebAppUrl">Apps Script Web App URL</label>
+          <input type="url" id="trackerSheetWebAppUrl" class="form-control form-control-sm" placeholder="https://script.google.com/macros/s/.../exec">
+          <small style="color:var(--text-dim); font-size:10.5px; margin-top:4px; display:block;">
+            Deploy your Apps Script as a Web App (Execute as: Me, Access: Anyone).
+          </small>
+        </div>
+
+        <details style="font-size:11.5px; border:1px solid var(--border-subtle); border-radius:var(--radius-xs); padding:6px 10px; background:var(--bg-input);">
+          <summary style="cursor:pointer; font-weight:600; color:var(--accent-primary);">View Google Apps Script Code (Copy &amp; Paste)</summary>
+          <div style="margin-top:8px;">
+            <p style="font-size:10.5px; color:var(--text-muted); margin:0 0 6px 0;">
+              In your shared Google Sheet, go to <strong>Extensions &gt; Apps Script</strong>, paste this code, then click <strong>Deploy &gt; New deployment &gt; Web app</strong>:
+            </p>
+            <textarea id="trackerAppsScriptCode" readonly class="form-control form-control-sm" style="font-family:var(--font-mono); font-size:10px; height:120px; resize:vertical;"></textarea>
+            <button type="button" class="btn btn-outline btn-xs" id="btnCopyTrackerAppsScript" style="margin-top:6px;">Copy Apps Script</button>
+          </div>
+        </details>
+      </div>
+      <div class="modal-footer" style="display:flex; justify-content:flex-end; gap:8px;">
+        <button type="button" class="btn btn-ghost btn-sm" id="btnCancelTrackerSetup">Cancel</button>
+        <button type="button" class="btn btn-primary btn-sm" id="btnSaveTrackerSetup">Save &amp; Connect</button>
+      </div>
+    </div>
+  </div>
+
   <!-- User Account Access Editor Modal -->
   <div class="modal-backdrop" id="adminAccessModal" hidden>
     <div class="modal-dialog" style="max-width:560px;">
@@ -2127,6 +2191,8 @@
   <script src="./js/services/auth-service.js"></script>
   <script src="./js/services/edr-service.js"></script>
   <script src="./js/services/audit-service.js"></script>
+  <script src="./js/services/live-tracker-service.js"></script>
+  <script src="./js/components/spreadsheet-grid.js"></script>
   <script src="./js/services/sorter-service.js"></script>
   <script src="./js/services/maintenance-service.js"></script>
   <script src="./js/services/pending-service.js"></script>

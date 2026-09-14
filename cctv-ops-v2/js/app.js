@@ -1862,7 +1862,21 @@
         showToast("Audit entry updated.", "success");
       } else {
         audit.addEntry(entryData);
-        showToast("Audit entry added to list.", "success");
+        if (window.CCTV_LIVE_TRACKER) {
+          window.CCTV_LIVE_TRACKER.insertRowByDate({
+            date: dateVal,
+            auditor: window.CCTV_AUTH?.getProfile?.()?.display_name || "Miles",
+            om: el("auditOmName")?.value || "",
+            site: el("auditSite")?.value || "",
+            tl: el("auditTlName")?.value.trim() || "N/A",
+            agent: el("auditAgentName")?.value.trim() || "N/A",
+            account: el("auditAccount")?.value || "",
+            reason: el("auditReasonCode")?.value || "SLEEPING",
+            noc: el("auditNoc")?.value || "YES",
+            remarks: el("auditRemarks")?.value.trim() || "N/A"
+          });
+        }
+        showToast("Audit entry added to Live Tracker.", "success");
       }
 
       resetAuditForm();
@@ -1893,6 +1907,344 @@
         showToast("Audit data copied for Tracker (Arial 10pt formatted).", "success");
       } catch (err) {
         showToast(err.message || "Failed to copy audit data.", "error");
+      }
+    });
+  }
+
+  // =========================================================================
+  // LIVE TRACKER SPREADSHEET CONTROLLER
+  // =========================================================================
+  let liveTrackerGrid = null;
+
+  function initLiveTrackerController() {
+    const container = el("liveTrackerSpreadsheetContainer");
+    if (!container || !window.CCTV_LIVE_TRACKER || !window.SpreadsheetGrid) return;
+
+    window.CCTV_LIVE_TRACKER.init();
+    liveTrackerGrid = new window.SpreadsheetGrid(container, window.CCTV_LIVE_TRACKER);
+
+    function populateAuditorFilter() {
+      const select = el("liveTrackerAuditorFilter");
+      if (!select || !window.CCTV_LIVE_TRACKER) return;
+      const current = window.CCTV_LIVE_TRACKER.getAuditorFilter();
+      const auditors = window.CCTV_LIVE_TRACKER.getUniqueAuditors();
+      const totalCount = window.CCTV_LIVE_TRACKER.getTotalRowCount();
+
+      const options = [
+        `<option value="all">All Records (${totalCount} rows)</option>`,
+        `<option value="my">My Records Only</option>`
+      ];
+      auditors.forEach(a => {
+        options.push(`<option value="${a.toLowerCase()}">${a}</option>`);
+      });
+      select.innerHTML = options.join("");
+      select.value = current;
+    }
+
+    // Update status UI
+    function updateTrackerStatus(syncStatus) {
+      const rowCount = window.CCTV_LIVE_TRACKER.getRowCount();
+      const totalCount = window.CCTV_LIVE_TRACKER.getTotalRowCount();
+      const countBadge = el("liveTrackerRowCountBadge");
+      if (countBadge) {
+        countBadge.textContent = rowCount !== totalCount 
+          ? `${rowCount} of ${totalCount} rows` 
+          : `${rowCount} ${rowCount === 1 ? "row" : "rows"}`;
+      }
+
+      // Dataset source status badge
+      const dataState = window.CCTV_LIVE_TRACKER.getDataState?.() || {};
+      const stateBadge = el("liveTrackerDataStateBadge");
+      if (stateBadge) {
+        if (dataState.unsavedCount > 0) {
+          stateBadge.textContent = `Unsynced edits (${dataState.unsavedCount})`;
+          stateBadge.className = "badge badge-local";
+          stateBadge.title = "Local modifications pending sync to Google Sheet";
+        } else if (dataState.source === "live") {
+          stateBadge.textContent = `${totalCount} ROWS • LIVE SHEET • CONNECTED`;
+          stateBadge.className = "badge badge-live";
+          stateBadge.title = `Authoritative dataset loaded from shared ${dataState.sheetName || "AUDIT 2026"} Google Sheet`;
+        } else if (dataState.source === "cached") {
+          stateBadge.textContent = `${totalCount} ROWS • CACHED SNAPSHOT`;
+          stateBadge.className = "badge badge-cached";
+          stateBadge.title = "Local cached snapshot of shared Google Sheet";
+        } else if (dataState.source === "error" || syncStatus.error) {
+          stateBadge.textContent = `API ERROR: ${syncStatus.error || dataState.lastError || "Failed to load"}`;
+          stateBadge.className = "badge badge-danger";
+          stateBadge.title = syncStatus.error || dataState.lastError || "Failed to load Google Sheet";
+        } else if (dataState.source === "connecting") {
+          stateBadge.textContent = "CONNECTING TO GOOGLE SHEET...";
+          stateBadge.className = "badge badge-info";
+          stateBadge.title = "Connecting to shared Google Sheet...";
+        } else {
+          stateBadge.textContent = "Ready";
+          stateBadge.className = "badge badge-neutral";
+          stateBadge.title = "Live Tracker ready";
+        }
+      }
+
+      const syncBadge = el("liveTrackerSyncBadge");
+      if (syncBadge) {
+        if (syncStatus.state === "saving") {
+          syncBadge.textContent = "Saving...";
+          syncBadge.className = "badge badge-info";
+        } else if (syncStatus.state === "unsaved") {
+          syncBadge.textContent = `Unsaved (${syncStatus.unsavedCount})`;
+          syncBadge.className = "badge badge-warning";
+        } else if (syncStatus.state === "conflict") {
+          syncBadge.textContent = "Conflict";
+          syncBadge.className = "badge badge-danger";
+        } else if (syncStatus.state === "saved") {
+          syncBadge.textContent = "Saved";
+          syncBadge.className = "badge badge-success";
+        } else if (dataState.source === "live") {
+          syncBadge.textContent = "Read-Only";
+          syncBadge.className = "badge badge-success";
+          syncBadge.title = "Google Sheet writes disabled (Read-only mode)";
+        } else if (dataState.source === "error" || syncStatus.error) {
+          syncBadge.textContent = "Disconnected";
+          syncBadge.className = "badge badge-danger";
+        } else {
+          syncBadge.textContent = "Idle";
+          syncBadge.className = "badge badge-neutral";
+        }
+      }
+
+      const syncTime = el("liveTrackerSyncTime");
+      if (syncTime) {
+        if (syncStatus.error || dataState.lastError) {
+          syncTime.textContent = `Error: ${syncStatus.error || dataState.lastError}`;
+          syncTime.style.color = "var(--accent-danger)";
+        } else if (dataState.source === "live") {
+          syncTime.textContent = `Live Connected (${new Date(dataState.lastFetchTime || Date.now()).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })})`;
+          syncTime.style.color = "var(--text-muted)";
+        } else if (dataState.source === "connecting") {
+          syncTime.textContent = "Fetching shared Google Sheet...";
+          syncTime.style.color = "var(--text-muted)";
+        } else if (dataState.source === "cached") {
+          syncTime.textContent = "Cached snapshot";
+          syncTime.style.color = "var(--text-muted)";
+        } else {
+          syncTime.textContent = "Idle";
+          syncTime.style.color = "var(--text-muted)";
+        }
+      }
+
+      const railBadge = el("railAuditBadge");
+      if (railBadge) railBadge.textContent = totalCount || rowCount;
+
+      const undoBtn = el("btnTrackerUndo");
+      if (undoBtn) undoBtn.disabled = !window.CCTV_LIVE_TRACKER.canUndo();
+      const redoBtn = el("btnTrackerRedo");
+      if (redoBtn) redoBtn.disabled = !window.CCTV_LIVE_TRACKER.canRedo();
+    }
+
+    window.CCTV_LIVE_TRACKER.subscribeSync(updateTrackerStatus);
+    window.CCTV_LIVE_TRACKER.subscribe(() => {
+      populateAuditorFilter();
+      updateTrackerStatus(window.CCTV_LIVE_TRACKER.getSyncStatus());
+    });
+    populateAuditorFilter();
+    updateTrackerStatus(window.CCTV_LIVE_TRACKER.getSyncStatus());
+
+    // Auditor Filter change
+    el("liveTrackerAuditorFilter")?.addEventListener("change", (e) => {
+      const val = e.target.value;
+      window.CCTV_LIVE_TRACKER.setAuditorFilter(val);
+      const count = window.CCTV_LIVE_TRACKER.getRowCount();
+      showToast(`Filter applied: showing ${count} rows.`, "info");
+    });
+
+    // Find in Sheet button
+    el("btnTrackerFind")?.addEventListener("click", () => {
+      if (liveTrackerGrid) {
+        liveTrackerGrid.openFind();
+      }
+    });
+
+    // Refresh from Google Sheet button
+    el("btnTrackerRefresh")?.addEventListener("click", async () => {
+      showToast("Fetching entire shared AUDIT 2026 sheet...", "info");
+      const res = await window.CCTV_LIVE_TRACKER.fetchSharedSheetData(true);
+      if (res && res.success) {
+        showToast(`Loaded ${res.count} shared records from Google Sheets.`, "success");
+        populateAuditorFilter();
+      } else {
+        showToast("Failed to fetch shared sheet: " + (res?.error || "Network error"), "error");
+      }
+    });
+
+    // Toolbar Buttons
+    el("btnTrackerAddRow")?.addEventListener("click", () => {
+      window.CCTV_LIVE_TRACKER.insertRow();
+      showToast("New row added.", "info");
+    });
+
+    el("btnTrackerInsertByDate")?.addEventListener("click", async () => {
+      const today = new Date().toISOString().split("T")[0];
+      const targetDate = prompt("Enter target date for chronological insertion (YYYY-MM-DD):", today);
+      if (targetDate && targetDate.trim()) {
+        const res = window.CCTV_LIVE_TRACKER.insertRowByDate({ date: targetDate.trim() });
+        showToast(`Row inserted at position #${res.index + 1} based on date ${targetDate.trim()}.`, "success");
+      }
+    });
+
+    el("btnTrackerUndo")?.addEventListener("click", () => {
+      if (window.CCTV_LIVE_TRACKER.undo()) {
+        showToast("Undone.", "info");
+      }
+    });
+
+    el("btnTrackerRedo")?.addEventListener("click", () => {
+      if (window.CCTV_LIVE_TRACKER.redo()) {
+        showToast("Redone.", "info");
+      }
+    });
+
+    el("btnTrackerCopyAll")?.addEventListener("click", async () => {
+      const rows = window.CCTV_LIVE_TRACKER.getRows();
+      const cols = window.CCTV_LIVE_TRACKER.getColumns();
+      if (!rows.length) {
+        showToast("No tracker rows to copy.", "info");
+        return;
+      }
+      const lines = rows.map(r => cols.map(c => r[c.key] || "").join("\t"));
+      const tsv = lines.join("\r\n");
+      try {
+        await navigator.clipboard.writeText(tsv);
+        showToast(`Copied ${rows.length} rows formatted for Google Sheets.`, "success");
+      } catch (err) {
+        showToast("Failed to copy rows: " + err.message, "error");
+      }
+    });
+
+    el("btnTrackerSyncNow")?.addEventListener("click", async () => {
+      const settings = window.CCTV_LIVE_TRACKER.getSettings();
+      if (!settings.webAppUrl) {
+        showToast("Please configure your Google Sheets Apps Script URL in Setup first.", "warning");
+        el("modalTrackerSetup").hidden = false;
+        return;
+      }
+      showToast("Syncing with Google Sheets...", "info");
+      await window.CCTV_LIVE_TRACKER.triggerImmediateSync();
+    });
+
+    el("btnTrackerClearAll")?.addEventListener("click", async () => {
+      const agreed = await window.appConfirm({
+        title: "Clear Live Tracker?",
+        message: "Are you sure you want to clear all rows in the Live Tracker? This cannot be undone.",
+        confirmText: "Clear All",
+        tone: "danger"
+      });
+      if (agreed) {
+        window.CCTV_LIVE_TRACKER.clearAllRows();
+        showToast("Tracker rows cleared.", "info");
+      }
+    });
+
+    // Sheet Setup Modal
+    const TRACKER_APPS_SCRIPT_SAMPLE = `function doGet(e) {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+  var data = sheet.getDataRange().getValues();
+  return ContentService.createTextOutput(JSON.stringify({ status: "success", rows: data }))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+function doPost(e) {
+  try {
+    var payload = JSON.parse(e.postData.contents);
+    var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+    var lastRow = sheet.getLastRow();
+    var conflicts = [];
+
+    if (payload.action === "batch_sync_tracker" && Array.isArray(payload.updates)) {
+      payload.updates.forEach(function(u) {
+        var values = [
+          u.values.year || "",
+          u.values.month || "",
+          u.values.date || "",
+          u.values.auditor || u.values.name || "",
+          u.values.om || "",
+          u.values.site || "",
+          u.values.tl || "",
+          u.values.agent || "",
+          u.values.account || "",
+          u.values.reason || "",
+          u.values.noc || "",
+          u.values.remarks || ""
+        ];
+
+        if (u.isNew) {
+          var targetRow = (typeof u.index === 'number' && u.index >= 0) ? u.index + 2 : lastRow + 1;
+          if (targetRow <= lastRow) {
+            sheet.insertRowBefore(targetRow);
+            sheet.getRange(targetRow, 1, 1, values.length).setValues([values]);
+          } else {
+            sheet.appendRow(values);
+          }
+        } else {
+          var targetRow = u.index + 2;
+          if (targetRow <= sheet.getLastRow()) {
+            var current = sheet.getRange(targetRow, 1, 1, values.length).getValues()[0];
+            var currentFp = current.map(function(c) { return String(c || '').trim(); }).join('||');
+            if (u.fingerprint && currentFp !== u.fingerprint) {
+              conflicts.push({ uid: u.uid, serverValues: current });
+              return;
+            }
+            sheet.getRange(targetRow, 1, 1, values.length).setValues([values]);
+          } else {
+            sheet.appendRow(values);
+          }
+        }
+      });
+    }
+
+    return ContentService.createTextOutput(JSON.stringify({ success: true, conflicts: conflicts }))
+      .setMimeType(ContentService.MimeType.JSON);
+  } catch (err) {
+    return ContentService.createTextOutput(JSON.stringify({ success: false, error: err.toString() }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}`;
+
+    el("btnTrackerSetup")?.addEventListener("click", () => {
+      const settings = window.CCTV_LIVE_TRACKER.getSettings();
+      if (el("trackerSheetWebAppUrl")) {
+        el("trackerSheetWebAppUrl").value = settings.webAppUrl || "";
+      }
+      if (el("trackerAppsScriptCode")) {
+        el("trackerAppsScriptCode").value = TRACKER_APPS_SCRIPT_SAMPLE;
+      }
+      el("modalTrackerSetup").hidden = false;
+    });
+
+    el("btnCopyTrackerAppsScript")?.addEventListener("click", () => {
+      if (el("trackerAppsScriptCode")) {
+        navigator.clipboard.writeText(TRACKER_APPS_SCRIPT_SAMPLE).then(() => {
+          showToast("Apps Script code copied to clipboard.", "success");
+        }).catch(() => {
+          el("trackerAppsScriptCode").select();
+          showToast("Selected code. Press Ctrl+C to copy.", "info");
+        });
+      }
+    });
+
+    el("btnCloseTrackerSetup")?.addEventListener("click", () => {
+      el("modalTrackerSetup").hidden = true;
+    });
+    el("btnCancelTrackerSetup")?.addEventListener("click", () => {
+      el("modalTrackerSetup").hidden = true;
+    });
+
+    el("btnSaveTrackerSetup")?.addEventListener("click", () => {
+      const url = el("trackerSheetWebAppUrl")?.value.trim() || "";
+      window.CCTV_LIVE_TRACKER.saveSettings({ webAppUrl: url });
+      el("modalTrackerSetup").hidden = true;
+      if (url) {
+        showToast("Google Sheets Live Tracker URL saved!", "success");
+        window.CCTV_LIVE_TRACKER.triggerImmediateSync();
+      } else {
+        showToast("Google Sheets sync URL disconnected.", "info");
       }
     });
   }
@@ -7033,6 +7385,12 @@ ${escapeHtml(JSON.stringify(entry.after || entry.before, null, 2))}
     // CCTV Audit & Smart Audit Guard Initialization
     initAuditEvents();
     initSmartAuditGuard();
+    initLiveTrackerController();
+    if (params.get("find") && liveTrackerGrid) {
+      setTimeout(() => {
+        liveTrackerGrid.openFind(params.get("find"));
+      }, 300);
+    }
 
     // AI Sorter Initialization
     initSorterController();

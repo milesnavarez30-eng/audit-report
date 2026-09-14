@@ -3555,6 +3555,382 @@ table.mini-sheet tr.floor-break td {
   white-space: nowrap;
 }
 
+/* ==========================================================================
+   LIVE TRACKER SPREADSHEET GRID
+   High-performance neo-brutalist spreadsheet styles with cell selection & inline editor
+   ========================================================================== */
+
+.live-tracker-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 10px;
+  background: var(--bg-surface);
+  border-bottom: 1.5px solid var(--border-default);
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.sheet-viewport {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  background: var(--bg-app);
+}
+
+.sheet-table-wrapper {
+  flex: 1;
+  overflow: auto;
+  outline: none;
+  background: var(--bg-surface);
+}
+
+.sheet-table {
+  border-collapse: collapse;
+  width: max-content;
+  min-width: 100%;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  user-select: none;
+}
+
+.sheet-header-letters th {
+  background: var(--bg-rail);
+  color: var(--text-dim);
+  font-size: 9.5px;
+  font-weight: 700;
+  text-align: center;
+  border-right: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--border-subtle);
+  padding: 2px 4px;
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+
+.sheet-header-labels th {
+  background: var(--bg-surface-elevated);
+  color: var(--text-secondary);
+  font-size: 10.5px;
+  font-weight: 700;
+  text-align: left;
+  border-right: 1px solid var(--border-default);
+  border-bottom: 1.5px solid var(--border-default);
+  padding: 4px 8px;
+  position: sticky;
+  top: 19px;
+  z-index: 20;
+  white-space: nowrap;
+}
+
+.sheet-corner, .sheet-corner-label {
+  width: 40px;
+  min-width: 40px;
+  position: sticky;
+  left: 0;
+  z-index: 30 !important;
+  background: var(--bg-rail) !important;
+  text-align: center !important;
+}
+
+.sheet-row-num {
+  position: sticky;
+  left: 0;
+  z-index: 10;
+  width: 40px;
+  min-width: 40px;
+  background: var(--bg-rail);
+  border-right: 1.5px solid var(--border-default);
+  border-bottom: 1px solid var(--border-subtle);
+  text-align: center;
+  color: var(--text-dim);
+  font-size: 10px;
+  font-weight: 600;
+  padding: 3px 2px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+}
+
+.sheet-row-num:hover {
+  background: var(--bg-surface-hover);
+  color: var(--text-primary);
+}
+
+.sheet-row-opt-btn {
+  display: none;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 11px;
+  cursor: pointer;
+  padding: 0 2px;
+  line-height: 1;
+  border-radius: 2px;
+}
+
+.sheet-row-num:hover .sheet-row-opt-btn {
+  display: inline-block;
+}
+
+.sheet-row-num:hover .row-num-text {
+  display: none;
+}
+
+.sheet-row-opt-btn:hover {
+  color: var(--text-primary);
+  background: var(--bg-surface-elevated);
+}
+
+.sheet-cell {
+  border-right: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--border-subtle);
+  padding: 4px 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 280px;
+  cursor: cell;
+  color: var(--text-primary);
+  line-height: 1.35;
+  transition: background var(--trans-fast);
+}
+
+.sheet-cell-inner {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sheet-cell.is-selected {
+  background: rgba(108, 92, 231, 0.18) !important;
+}
+
+.sheet-cell.is-active-cell {
+  outline: 2px solid var(--accent-primary) !important;
+  outline-offset: -1px;
+  background: rgba(108, 92, 231, 0.25) !important;
+}
+
+.sheet-cell.field-dirty {
+  border-left: 2px solid var(--accent-warning);
+}
+
+.sheet-cell.is-editing {
+  padding: 0 !important;
+  background: var(--bg-input) !important;
+  outline: 2px solid var(--accent-secondary) !important;
+  outline-offset: -1px;
+}
+
+.sheet-editor-input, .sheet-editor-select {
+  width: 100%;
+  height: 100%;
+  min-height: 24px;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: #fff;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  padding: 3px 6px;
+  box-sizing: border-box;
+}
+
+.sheet-editor-select option {
+  background: var(--bg-surface-elevated);
+  color: var(--text-primary);
+}
+
+.sheet-row.is-dirty .sheet-row-num {
+  border-left: 3px solid var(--accent-warning);
+}
+
+.sheet-row.is-conflict {
+  background: rgba(239, 68, 68, 0.12) !important;
+}
+
+.sheet-row.is-conflict .sheet-row-num {
+  border-left: 3px solid var(--accent-danger);
+}
+
+.dirty-indicator {
+  color: var(--accent-warning);
+  font-size: 8px;
+}
+
+.conflict-indicator {
+  font-size: 9px;
+}
+
+.sheet-empty-cell {
+  text-align: center;
+  padding: 40px 10px;
+  color: var(--text-muted);
+  font-size: 11.5px;
+}
+
+/* Context Menu */
+.sheet-context-menu {
+  position: fixed;
+  z-index: 1000;
+  background: var(--bg-surface-elevated);
+  border: 1.5px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-lg);
+  padding: 4px;
+  min-width: 160px;
+  font-family: var(--font-mono);
+}
+
+.sheet-menu-item {
+  padding: 5px 10px;
+  font-size: 11px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  border-radius: 2px;
+  transition: all var(--trans-fast);
+}
+
+.sheet-menu-item:hover {
+  background: var(--bg-surface-hover);
+  color: var(--text-primary);
+}
+
+.sheet-menu-item.text-danger {
+  color: var(--accent-danger);
+}
+
+.sheet-menu-item.text-danger:hover {
+  background: rgba(239, 68, 68, 0.15);
+  color: #fca5a5;
+}
+
+.sheet-menu-divider {
+  height: 1px;
+  background: var(--border-subtle);
+  margin: 3px 0;
+}
+
+/* In-App Spreadsheet Find Control */
+.sheet-find-bar {
+  position: absolute;
+  top: 8px;
+  right: 18px;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  animation: sheetFindSlideDown 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes sheetFindSlideDown {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.sheet-find-inner {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--bg-surface-elevated, #1a1d24);
+  border: 1.5px solid var(--border-default, #2e3440);
+  border-radius: var(--radius-sm, 4px);
+  padding: 4px 8px;
+}
+
+.sheet-find-input {
+  background: var(--bg-input, #12141a);
+  border: 1px solid var(--border-subtle, #3b4252);
+  border-radius: 3px;
+  color: var(--text-primary, #eceff4);
+  font-family: var(--font-mono, monospace);
+  font-size: 11.5px;
+  padding: 3px 8px;
+  width: 190px;
+  outline: none;
+}
+.sheet-find-input:focus {
+  border-color: var(--accent-primary, #6c5ce7);
+  box-shadow: 0 0 0 2px rgba(108, 92, 231, 0.25);
+}
+
+.sheet-find-counter {
+  font-family: var(--font-mono, monospace);
+  font-size: 11px;
+  color: var(--text-muted, #94a3b8);
+  min-width: 52px;
+  text-align: center;
+  user-select: none;
+}
+
+.sheet-find-btn {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-secondary, #d8dee9);
+  padding: 2px 6px;
+  font-size: 11px;
+  font-family: var(--font-mono, monospace);
+  cursor: pointer;
+  border-radius: 3px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.1s ease;
+}
+.sheet-find-btn:hover {
+  background: var(--bg-surface-hover, #2e3440);
+  color: var(--text-primary, #eceff4);
+  border-color: var(--border-subtle, #3b4252);
+}
+.sheet-find-btn.is-active {
+  background: var(--accent-primary, #6c5ce7);
+  color: #ffffff;
+  border-color: var(--accent-primary, #6c5ce7);
+}
+.sheet-find-close {
+  color: var(--text-muted, #888);
+  font-size: 12px;
+}
+.sheet-find-close:hover {
+  color: var(--accent-danger, #ef4444);
+}
+
+/* Match Highlights */
+.sheet-cell.sheet-cell-match {
+  background: rgba(245, 158, 11, 0.22) !important;
+}
+
+.sheet-cell.sheet-cell-active-match {
+  background: rgba(245, 158, 11, 0.45) !important;
+  outline: 2px solid #f59e0b !important;
+  outline-offset: -1px;
+  z-index: 5;
+}
+
+/* Data state indicator badges */
+.badge-live {
+  background: rgba(16, 185, 129, 0.15) !important;
+  color: #10b981 !important;
+  border: 1px solid rgba(16, 185, 129, 0.3) !important;
+}
+.badge-cached {
+  background: rgba(245, 158, 11, 0.15) !important;
+  color: #f59e0b !important;
+  border: 1px solid rgba(245, 158, 11, 0.3) !important;
+}
+.badge-local {
+  background: rgba(249, 115, 22, 0.15) !important;
+  color: #f97316 !important;
+  border: 1px solid rgba(249, 115, 22, 0.3) !important;
+}
+
+
 
 
 
