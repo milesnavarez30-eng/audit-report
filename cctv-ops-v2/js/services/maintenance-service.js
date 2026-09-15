@@ -704,9 +704,8 @@
       const screenshots = Array.isArray(block.screenshots) ? block.screenshots : [];
       const remarks = getEffectiveBlockRemarks(block);
 
-      const blockLabel = blocks.length > 1
-        ? `<div class="maintenance-pdf-block-title" style="font-family:Arial,sans-serif; font-size:13px; font-weight:700; color:#1e293b; padding:10px 0 4px 0; border-bottom:1px solid #cbd5e1; margin-bottom:8px; page-break-after:avoid; break-after:avoid;">Block #${blockIndex + 1}</div>`
-        : "";
+      const sectionHeading = block.sectionTitle ? esc(block.sectionTitle) : `Report Section ${blockIndex + 1}`;
+      const blockLabel = `<div class="maintenance-pdf-block-title" style="font-family:Arial,sans-serif; font-size:13px; font-weight:700; color:#1e293b; padding:10px 0 4px 0; border-bottom:1px solid #cbd5e1; margin-bottom:8px; page-break-after:avoid; break-after:avoid;">${sectionHeading}</div>`;
 
       const dataRows = rows.map(row => `
         <tr style="page-break-inside:avoid; break-inside:avoid;">

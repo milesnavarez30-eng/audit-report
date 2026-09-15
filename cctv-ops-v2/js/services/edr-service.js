@@ -536,6 +536,10 @@ window.CCTV_EDR = (function () {
       return edrReports;
     },
 
+    getReport(id) {
+      return edrReports.find(r => r.id === id) || null;
+    },
+
     getEditingReport() {
       return editingId ? edrReports.find(r => r.id === editingId) : null;
     },
@@ -744,9 +748,26 @@ window.CCTV_EDR = (function () {
       }
     },
 
+    async deleteSelectedReports() {
+      const toDelete = edrReports.filter(r => r.selected);
+      if (!toDelete.length) return 0;
+      const idsToDelete = toDelete.map(r => r.id);
+      edrReports = edrReports.filter(r => !r.selected);
+      if (idsToDelete.includes(editingId)) editingId = null;
+      await this.saveReports();
+      notify();
+
+      if (this.isValidDocsUrl(this.getDocsUrl())) {
+        for (const id of idsToDelete) {
+          this.deleteReportFromGoogleDocs(id).catch(err => console.warn("Google Docs delete failed:", err));
+        }
+      }
+      return toDelete.length;
+    },
+
     toggleSelect(id, selected) {
       const rep = edrReports.find(r => r.id === id);
-      if (rep && !rep.done) {
+      if (rep) {
         rep.selected = typeof selected === "boolean" ? selected : !rep.selected;
         notify();
         this.saveReportsDebounced(150);
@@ -758,15 +779,13 @@ window.CCTV_EDR = (function () {
 
     selectAll(select = true) {
       for (const r of edrReports) {
-        if (!r.done) {
-          r.selected = select;
-        }
+        r.selected = select;
       }
       notify();
       this.saveReportsDebounced(150);
       if (select) {
         for (const r of edrReports) {
-          if (!r.done && !r.screenshotData && r.screenshotFileId) {
+          if (!r.screenshotData && r.screenshotFileId) {
             this.ensureRemoteScreenshot(r).then(() => notify()).catch(() => {});
           }
         }
@@ -779,7 +798,9 @@ window.CCTV_EDR = (function () {
         rep.done = !rep.done;
         rep.doneAt = rep.done ? new Date().toISOString() : "";
         if (rep.done) rep.selected = false;
+        rep.updatedAt = new Date().toISOString();
         await this.saveReports();
+        notify();
         if (this.isValidDocsUrl(this.getDocsUrl())) {
           this.syncReportToGoogleDocs(rep).catch(() => {});
         }
@@ -1003,8 +1024,17 @@ window.CCTV_EDR = (function () {
         }
       }
 
-      // Preserve selection state so user can continue seeing checked items in Teams Dispatch
-      // (Explicit "Done" button is available on each card if completion is desired)
+      if (wroteSuccessfully) {
+        for (const r of activeSelected) {
+          r.done = true;
+          r.doneAt = new Date().toISOString();
+          r.selected = false;
+          r.updatedAt = new Date().toISOString();
+        }
+        await this.saveReports();
+        notify();
+      }
+
       return {
         count: activeSelected.length,
         hasScreenshot: activeSelected.some(r => !!r.screenshotData),

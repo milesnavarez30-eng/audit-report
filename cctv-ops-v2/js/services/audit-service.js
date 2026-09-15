@@ -21,6 +21,8 @@ window.CCTV_AUDIT = (function () {
   let entryList = [];
   let editingIndex = -1;
   let listeners = [];
+  let lastSubmitTime = 0;
+  let lastSubmitSignature = "";
 
   // Smart Audit Guard state
   let trackerSnapshot = null;
@@ -468,6 +470,15 @@ window.CCTV_AUDIT = (function () {
         entryList[editingIndex] = entry;
         editingIndex = -1;
       } else {
+        // Accidental rapid double-click guard for manual entries
+        const sig = `${entry.rawDate}|${entry.site}|${entry.tlName}|${entry.agentName}|${entry.remarks}`;
+        const now = Date.now();
+        if (!entryData.sourceEdrId && sig === lastSubmitSignature && (now - lastSubmitTime < 800)) {
+          return entryList[entryList.length - 1] || entry;
+        }
+        lastSubmitTime = now;
+        lastSubmitSignature = sig;
+
         entryList.push(entry);
       }
 
@@ -586,21 +597,6 @@ window.CCTV_AUDIT = (function () {
         sortEntries();
         saveEntries();
 
-        if (window.CCTV_LIVE_TRACKER && typeof window.CCTV_LIVE_TRACKER.insertRowByDate === "function") {
-          window.CCTV_LIVE_TRACKER.insertRowByDate({
-            date: dateStr,
-            auditor,
-            om: omName,
-            site,
-            tl: tlName,
-            agent: agentName,
-            account: report.account || "General",
-            reason: reasonCode,
-            noc: "Pending",
-            remarks: String(report.action || report.incident || "N/A").trim() || "N/A"
-          });
-        }
-
         return { action: "created", entry: newEntry };
       }
 
@@ -655,13 +651,14 @@ window.CCTV_AUDIT = (function () {
     },
 
     // Copy for External Google Sheets Tracker (Arial 10pt formatted HTML table + TSV fallback)
-    async copyAuditForTracker() {
-      if (!entryList.length) {
+    async copyAuditForTracker(entriesToCopy = null) {
+      const list = Array.isArray(entriesToCopy) && entriesToCopy.length > 0 ? entriesToCopy : entryList;
+      if (!list.length) {
         throw new Error("No entries to copy in Data Output Grid.");
       }
 
       // Plain Text: TSV
-      const textRows = entryList.map(entry => {
+      const textRows = list.map(entry => {
         const auditor = window.normalizeAuditorName ? window.normalizeAuditorName(entry.name || entry.auditorName || "Miles") : (entry.name || "Miles");
         return [
           entry.year,
@@ -682,7 +679,7 @@ window.CCTV_AUDIT = (function () {
 
       // HTML: Exact Arial 10pt Table Format matching V1
       let tableRowsHTML = "";
-      entryList.forEach(entry => {
+      list.forEach(entry => {
         const auditor = window.normalizeAuditorName ? window.normalizeAuditorName(entry.name || entry.auditorName || "Miles") : (entry.name || "Miles");
         const esc = window.escapeHtml || (s => s);
         const san = window.sanitize || (s => s);
@@ -706,7 +703,7 @@ window.CCTV_AUDIT = (function () {
       const safeHtml = `<div style="font-family: Arial, sans-serif; font-size: 10pt; line-height: normal; white-space: pre-wrap;"><table style="border-collapse: collapse; border: none; background-color: transparent !important; color: #000000 !important; font-family: Arial, sans-serif; font-size: 10pt; line-height: normal;"><tbody>${tableRowsHTML}</tbody></table></div>`;
 
       await window.copyToClipboardHtmlAndText(safeText, safeHtml);
-      return { count: entryList.length };
+      return { count: list.length };
     },
 
     // SMART AUDIT GUARD METHODS

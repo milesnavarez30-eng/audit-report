@@ -1,7 +1,8 @@
 /**
  * CCTV OPS V2 - Interactive Spreadsheet Grid Controller
  * Excel & Google Sheets Parity: Cell selection, keyboard navigation, inline editing,
- * range copy/paste, context menu, and date-aware row insertion.
+ * range copy/paste, context menu, date-aware row insertion, and high-performance
+ * row virtualization for large datasets (~3,584+ rows).
  */
 
 window.SpreadsheetGrid = (function () {
@@ -21,11 +22,16 @@ window.SpreadsheetGrid = (function () {
       this.container = container;
       this.service = service;
 
+      this.rowHeight = 25; // Fixed row height in pixels for virtualization
+      this.virtualSlice = { startIdx: -1, endIdx: -1 };
+      this._scrollRafId = null;
+
       this.selectedCell = { row: 0, col: 0 };
       this.selectionRange = null; // { startRow, startCol, endRow, endCol }
       this.isSelecting = false;
       this.isEditing = false;
       this.activeEditor = null;
+      this.contextMenuRowIdx = -1;
 
       this.findState = {
         isOpen: false,
@@ -79,11 +85,21 @@ window.SpreadsheetGrid = (function () {
                 </tr>
               </thead>
               <tbody class="sheet-body">
-                <!-- Rows injected here -->
+                <!-- Virtualized rows injected here -->
               </tbody>
             </table>
           </div>
-          <div class="sheet-context-menu" style="display:none;"></div>
+          <div class="sheet-context-menu" style="display:none;">
+            <div class="sheet-menu-item" data-action="insert_above">Insert Row Above</div>
+            <div class="sheet-menu-item" data-action="insert_below">Insert Row Below</div>
+            <div class="sheet-menu-item" data-action="insert_by_date">Insert by Date...</div>
+            <div class="sheet-menu-item" data-action="reposition_date">Place Row by Date</div>
+            <div class="sheet-menu-item" data-action="duplicate">Duplicate Row</div>
+            <div class="sheet-menu-divider"></div>
+            <div class="sheet-menu-item" data-action="copy">Copy Row</div>
+            <div class="sheet-menu-divider"></div>
+            <div class="sheet-menu-item text-danger" data-action="delete">Delete Row...</div>
+          </div>
         </div>
       `;
 
@@ -97,7 +113,16 @@ window.SpreadsheetGrid = (function () {
     }
 
     _bindEvents() {
-      // Click selection & inline edit
+      // Scroll listener with requestAnimationFrame for row virtualization
+      this.wrapper.addEventListener("scroll", () => {
+        if (this._scrollRafId) return;
+        this._scrollRafId = requestAnimationFrame(() => {
+          this._scrollRafId = null;
+          this._updateVirtualViewport(false);
+        });
+      }, { passive: true });
+
+      // Click selection & inline edit via event delegation
       this.tbody.addEventListener("mousedown", (e) => {
         const cell = e.target.closest(".sheet-cell");
         if (!cell) return;
@@ -119,7 +144,7 @@ window.SpreadsheetGrid = (function () {
             this._startEditing(row, col);
           }
         } else if (e.button === 2) {
-          // Right click
+          // Right click selection
           this.selectedCell = { row, col };
           this.selectionRange = { startRow: row, startCol: col, endRow: row, endCol: col };
           this._updateSelectionHighlight();
@@ -265,13 +290,68 @@ window.SpreadsheetGrid = (function () {
         this._pasteTabularData(text);
       });
 
-      // Context Menu
+      // Context Menu delegation
       this.container.addEventListener("contextmenu", (e) => {
         const target = e.target.closest(".sheet-cell, .sheet-row-num");
         if (!target) return;
         e.preventDefault();
         const row = parseInt(target.getAttribute("data-row"), 10);
         this._showContextMenu(e.clientX, e.clientY, row);
+      });
+
+      this.contextMenu.addEventListener("click", async (e) => {
+        const item = e.target.closest(".sheet-menu-item");
+        if (!item) return;
+        e.stopPropagation();
+        const action = item.getAttribute("data-action");
+        const rowIdx = this.contextMenuRowIdx;
+        this.contextMenu.style.display = "none";
+
+        switch (action) {
+          case "insert_above":
+            this.service.insertRow(rowIdx);
+            break;
+          case "insert_below":
+            this.service.insertRow(rowIdx + 1);
+            break;
+          case "insert_by_date": {
+            const rows = this.service.getRows();
+            const currentDate = rows[rowIdx]?.date || new Date().toISOString().split("T")[0];
+            this.service.insertRowByDate({ date: currentDate });
+            break;
+          }
+          case "reposition_date": {
+            const newPos = this.service.repositionRowByDate(rowIdx);
+            if (newPos !== false && window.showToast) {
+              window.showToast(`Row moved to chronological slot #${newPos + 1}.`, "info");
+            }
+            break;
+          }
+          case "duplicate":
+            this.service.duplicateRow(rowIdx);
+            break;
+          case "copy": {
+            this.selectionRange = { startRow: rowIdx, startCol: 0, endRow: rowIdx, endCol: this.columns.length - 1 };
+            this._copySelection();
+            break;
+          }
+          case "delete": {
+            const rows = this.service.getRows();
+            const row = rows[rowIdx];
+            const name = row?.agent || row?.tl || `Row #${rowIdx + 1}`;
+            const agreed = await window.appConfirm({
+              title: "Delete Tracker Row?",
+              message: `Are you sure you want to remove ${name} from the Live Tracker? This will synchronize with the shared Google Sheet.`,
+              confirmText: "Delete Row",
+              tone: "danger"
+            });
+            if (agreed) {
+              this.service.deleteRow(rowIdx);
+              if (window.showToast) window.showToast("Row deleted.", "info");
+            }
+            break;
+          }
+        }
       });
 
       document.addEventListener("click", (e) => {
@@ -329,6 +409,10 @@ window.SpreadsheetGrid = (function () {
       }
     }
 
+    _isRowRendered(row) {
+      return row >= this.virtualSlice.startIdx && row < this.virtualSlice.endIdx;
+    }
+
     _moveSelection(rowDelta, colDelta, isRangeSelect = false) {
       const rowCount = this.service.getRowCount();
       const colCount = this.columns.length;
@@ -351,14 +435,50 @@ window.SpreadsheetGrid = (function () {
         this.selectionRange = { startRow: newRow, startCol: newCol, endRow: newRow, endCol: newCol };
       }
 
-      this._updateSelectionHighlight();
       this._scrollCellIntoView(newRow, newCol);
+      this._updateSelectionHighlight();
     }
 
-    _scrollCellIntoView(row, col) {
+    _scrollCellIntoView(row, col, center = false) {
+      const rowCount = this.service.getRowCount();
+      if (row < 0 || row >= rowCount) return;
+
+      const viewportHeight = this.wrapper.clientHeight || 500;
+      const rowTop = row * this.rowHeight;
+      const rowBottom = rowTop + this.rowHeight;
+      const currentScrollTop = this.wrapper.scrollTop;
+
+      let neededVerticalScroll = false;
+      if (center) {
+        this.wrapper.scrollTop = Math.max(0, rowTop - Math.floor(viewportHeight / 2) + Math.floor(this.rowHeight / 2));
+        neededVerticalScroll = true;
+      } else if (rowTop < currentScrollTop) {
+        this.wrapper.scrollTop = rowTop;
+        neededVerticalScroll = true;
+      } else if (rowBottom > currentScrollTop + viewportHeight - 38) {
+        this.wrapper.scrollTop = rowBottom - viewportHeight + 38;
+        neededVerticalScroll = true;
+      }
+
+      // Force synchronous virtual DOM update if scroll moved or row not in DOM
+      if (neededVerticalScroll || !this._isRowRendered(row)) {
+        this._updateVirtualViewport(true);
+      }
+
+      // Horizontal visibility for column
       const cell = this.tbody.querySelector(`.sheet-cell[data-row="${row}"][data-col="${col}"]`);
       if (cell) {
-        cell.scrollIntoView({ block: "nearest", inline: "nearest" });
+        const cellLeft = cell.offsetLeft;
+        const cellRight = cellLeft + cell.offsetWidth;
+        const scrollLeft = this.wrapper.scrollLeft;
+        const viewportWidth = this.wrapper.clientWidth || 800;
+        const cornerOffset = 42;
+
+        if (cellLeft - cornerOffset < scrollLeft) {
+          this.wrapper.scrollLeft = Math.max(0, cellLeft - cornerOffset);
+        } else if (cellRight > scrollLeft + viewportWidth) {
+          this.wrapper.scrollLeft = cellRight - viewportWidth;
+        }
       }
     }
 
@@ -366,6 +486,10 @@ window.SpreadsheetGrid = (function () {
       if (this.isEditing) this._commitEditor();
       const rows = this.service.getRows();
       if (!rows[row]) return;
+
+      if (!this._isRowRendered(row)) {
+        this._scrollCellIntoView(row, col);
+      }
 
       const cellEl = this.tbody.querySelector(`.sheet-cell[data-row="${row}"][data-col="${col}"]`);
       if (!cellEl) return;
@@ -412,24 +536,53 @@ window.SpreadsheetGrid = (function () {
       this.activeEditor = { input, row, col, colDef, originalValue: currentValue };
     }
 
+    _updateRowDom(rIdx) {
+      if (!this._isRowRendered(rIdx)) return;
+      const rows = this.service.getRows();
+      const row = rows[rIdx];
+      if (!row) return;
+
+      const rowEl = this.tbody.querySelector(`.sheet-row[data-row="${rIdx}"]`);
+      if (rowEl) {
+        const temp = document.createElement("tbody");
+        temp.innerHTML = this._renderRowHtml(row, rIdx);
+        const newRowEl = temp.firstElementChild;
+        if (newRowEl) {
+          rowEl.replaceWith(newRowEl);
+          this._updateSelectionHighlight();
+        }
+      }
+    }
+
     _commitEditor() {
       if (!this.isEditing || !this.activeEditor) return;
       const { input, row, colDef } = this.activeEditor;
       const newValue = input.value;
-      this.service.setCellValue(row, colDef.key, newValue);
-
       this.isEditing = false;
       this.activeEditor = null;
-      this._render();
+      this.service.setCellValue(row, colDef.key, newValue);
+
+      this._updateRowDom(row);
       this.wrapper.focus();
     }
 
     _cancelEditor() {
-      if (!this.isEditing) return;
+      if (!this.isEditing || !this.activeEditor) return;
+      const { row } = this.activeEditor;
       this.isEditing = false;
       this.activeEditor = null;
-      this._render();
+      this._updateRowDom(row);
       this.wrapper.focus();
+    }
+
+    selectCell(row, col) {
+      const rowCount = this.service.getRowCount();
+      const colCount = this.columns.length;
+      if (row < 0 || row >= rowCount || col < 0 || col >= colCount) return;
+      this.selectedCell = { row, col };
+      this.selectionRange = { startRow: row, startCol: col, endRow: row, endCol: col };
+      this._scrollCellIntoView(row, col);
+      this._updateSelectionHighlight();
     }
 
     _getNormalizedRange() {
@@ -500,7 +653,6 @@ window.SpreadsheetGrid = (function () {
       lines.forEach((line, rOffset) => {
         const targetRowIdx = startRow + rOffset;
         if (targetRowIdx >= this.service.getRowCount()) {
-          // Auto-expand row if pasting extends beyond current count
           this.service.insertRow(targetRowIdx, {}, false);
         }
 
@@ -562,9 +714,29 @@ window.SpreadsheetGrid = (function () {
         return;
       }
 
-      this.findState.matches = this.service.findMatches(query, {
-        caseSensitive: this.findState.caseSensitive
-      });
+      // Search entire in-memory dataset of ~3,584 rows
+      if (typeof this.service.findMatches === "function") {
+        this.findState.matches = this.service.findMatches(query, {
+          caseSensitive: this.findState.caseSensitive
+        });
+      } else {
+        const q = this.findState.caseSensitive ? query : query.toLowerCase();
+        const rows = this.service.getRows() || [];
+        const cols = this.columns;
+        const matches = [];
+        for (let r = 0; r < rows.length; r++) {
+          const row = rows[r];
+          if (!row) continue;
+          for (let c = 0; c < cols.length; c++) {
+            const val = String(row[cols[c].key] || "");
+            const comp = this.findState.caseSensitive ? val : val.toLowerCase();
+            if (comp.includes(q)) {
+              matches.push({ rowIdx: r, colIdx: c, colKey: cols[c].key, value: val });
+            }
+          }
+        }
+        this.findState.matches = matches;
+      }
 
       if (this.findState.matches.length > 0) {
         const closestIdx = this.findState.matches.findIndex(m => m.rowIdx >= this.selectedCell.row && m.colIdx >= this.selectedCell.col);
@@ -596,8 +768,10 @@ window.SpreadsheetGrid = (function () {
       this.findCounter.textContent = `${this.findState.currentIndex + 1} of ${this.findState.matches.length}`;
       this.selectedCell = { row: match.rowIdx, col: match.colIdx };
       this.selectionRange = { startRow: match.rowIdx, startCol: match.colIdx, endRow: match.rowIdx, endCol: match.colIdx };
+
+      // Centered scroll into view ensures virtual slice renders and match is visible
+      this._scrollCellIntoView(match.rowIdx, match.colIdx, true);
       this._updateSelectionHighlight();
-      this._scrollCellIntoView(match.rowIdx, match.colIdx);
     }
 
     _updateSelectionHighlight() {
@@ -606,110 +780,140 @@ window.SpreadsheetGrid = (function () {
         ? this.findState.matches[this.findState.currentIndex]
         : null;
 
-      // Only clear previously highlighted cells rather than traversing all cells in table
+      // Only clear previously highlighted cells on currently rendered rows
       this.tbody.querySelectorAll(".is-selected, .is-active-cell, .sheet-cell-match, .sheet-cell-active-match").forEach(cell => {
         cell.classList.remove("is-selected", "is-active-cell", "sheet-cell-match", "sheet-cell-active-match");
       });
 
-      // Highlight only cells in current selection range
-      for (let r = range.minRow; r <= range.maxRow; r++) {
-        for (let c = range.minCol; c <= range.maxCol; c++) {
-          const cell = this.tbody.querySelector(`.sheet-cell[data-row="${r}"][data-col="${c}"]`);
-          if (cell) {
-            cell.classList.add("is-selected");
-            if (r === this.selectedCell.row && c === this.selectedCell.col) {
-              cell.classList.add("is-active-cell");
+      // Highlight cells intersecting the current virtual slice
+      const startRow = Math.max(range.minRow, this.virtualSlice.startIdx);
+      const endRow = Math.min(range.maxRow, this.virtualSlice.endIdx - 1);
+
+      if (startRow <= endRow) {
+        for (let r = startRow; r <= endRow; r++) {
+          for (let c = range.minCol; c <= range.maxCol; c++) {
+            const cell = this.tbody.querySelector(`.sheet-cell[data-row="${r}"][data-col="${c}"]`);
+            if (cell) {
+              cell.classList.add("is-selected");
+              if (r === this.selectedCell.row && c === this.selectedCell.col) {
+                cell.classList.add("is-active-cell");
+              }
             }
           }
         }
       }
 
+      // Highlight find matches visible in current slice
       if (this.findState.isOpen && this.findState.matches.length > 0) {
         this.findState.matches.forEach(m => {
-          const cell = this.tbody.querySelector(`.sheet-cell[data-row="${m.rowIdx}"][data-col="${m.colIdx}"]`);
-          if (cell) {
-            const isActiveMatch = activeMatch && activeMatch.rowIdx === m.rowIdx && activeMatch.colIdx === m.colIdx;
-            cell.classList.add(isActiveMatch ? "sheet-cell-active-match" : "sheet-cell-match");
+          if (m.rowIdx >= this.virtualSlice.startIdx && m.rowIdx < this.virtualSlice.endIdx) {
+            const cell = this.tbody.querySelector(`.sheet-cell[data-row="${m.rowIdx}"][data-col="${m.colIdx}"]`);
+            if (cell) {
+              const isActiveMatch = activeMatch && activeMatch.rowIdx === m.rowIdx && activeMatch.colIdx === m.colIdx;
+              cell.classList.add(isActiveMatch ? "sheet-cell-active-match" : "sheet-cell-match");
+            }
           }
         });
       }
     }
 
     _showContextMenu(clientX, clientY, rowIdx) {
-      this.contextMenu.innerHTML = `
-        <div class="sheet-menu-item" data-action="insert_above">Insert Row Above</div>
-        <div class="sheet-menu-item" data-action="insert_below">Insert Row Below</div>
-        <div class="sheet-menu-item" data-action="insert_by_date">Insert by Date...</div>
-        <div class="sheet-menu-item" data-action="reposition_date">Place Row by Date</div>
-        <div class="sheet-menu-item" data-action="duplicate">Duplicate Row</div>
-        <div class="sheet-menu-divider"></div>
-        <div class="sheet-menu-item" data-action="copy">Copy Row</div>
-        <div class="sheet-menu-divider"></div>
-        <div class="sheet-menu-item text-danger" data-action="delete">Delete Row...</div>
-      `;
-
+      this.contextMenuRowIdx = rowIdx;
       this.contextMenu.style.display = "block";
       this.contextMenu.style.left = `${clientX}px`;
       this.contextMenu.style.top = `${clientY}px`;
+    }
 
-      this.contextMenu.querySelectorAll(".sheet-menu-item").forEach(item => {
-        item.addEventListener("click", async (e) => {
-          e.stopPropagation();
-          const action = item.getAttribute("data-action");
-          this.contextMenu.style.display = "none";
+    _renderRowHtml(row, rIdx) {
+      const isDirty = row._status === "unsaved";
+      const isConflict = row._status === "conflict";
+      const statusClass = isConflict ? "is-conflict" : (isDirty ? "is-dirty" : "");
 
-          switch (action) {
-            case "insert_above":
-              this.service.insertRow(rowIdx);
-              break;
-            case "insert_below":
-              this.service.insertRow(rowIdx + 1);
-              break;
-            case "insert_by_date": {
-              const rows = this.service.getRows();
-              const currentDate = rows[rowIdx]?.date || new Date().toISOString().split("T")[0];
-              this.service.insertRowByDate({ date: currentDate });
-              break;
-            }
-            case "reposition_date": {
-              const newPos = this.service.repositionRowByDate(rowIdx);
-              if (newPos !== false && window.showToast) {
-                window.showToast(`Row moved to chronological slot #${newPos + 1}.`, "info");
-              }
-              break;
-            }
-            case "duplicate":
-              this.service.duplicateRow(rowIdx);
-              break;
-            case "copy": {
-              this.selectionRange = { startRow: rowIdx, startCol: 0, endRow: rowIdx, endCol: this.columns.length - 1 };
-              this._copySelection();
-              break;
-            }
-            case "delete": {
-              const rows = this.service.getRows();
-              const row = rows[rowIdx];
-              const name = row?.agent || row?.tl || `Row #${rowIdx + 1}`;
-              const agreed = await window.appConfirm({
-                title: "Delete Tracker Row?",
-                message: `Are you sure you want to remove ${name} from the Live Tracker? This will synchronize with the shared Google Sheet.`,
-                confirmText: "Delete Row",
-                tone: "danger"
-              });
-              if (agreed) {
-                this.service.deleteRow(rowIdx);
-                if (window.showToast) window.showToast("Row deleted.", "info");
-              }
-              break;
-            }
-          }
-        });
-      });
+      const cellsHtml = this.columns.map((col, cIdx) => {
+        const val = row[col.key] || "";
+        const isFieldDirty = row._dirtyFields && row._dirtyFields[col.key];
+        let displayVal = escapeHtml(val);
+        if (col.key === "noc" && val) {
+          const vLower = val.toLowerCase();
+          let nocClass = "badge-neutral";
+          if (vLower === "yes") nocClass = "badge-success";
+          else if (vLower === "no") nocClass = "badge-danger";
+          else if (vLower === "pending") nocClass = "badge-warning";
+          else if (vLower === "disputed") nocClass = "badge-info";
+          displayVal = `<span class="badge ${nocClass}">${displayVal}</span>`;
+        }
+
+        return `
+          <td class="sheet-cell ${isFieldDirty ? 'field-dirty' : ''}" 
+              data-row="${rIdx}" 
+              data-col="${cIdx}" 
+              title="${escapeHtml(val)}">
+            <div class="sheet-cell-inner">${displayVal}</div>
+          </td>
+        `;
+      }).join("");
+
+      return `
+        <tr class="sheet-row ${statusClass}" data-row="${rIdx}" data-uid="${row._uid}" style="height:${this.rowHeight}px;">
+          <td class="sheet-row-num" data-row="${rIdx}">
+            <span class="row-num-text">${rIdx + 1}</span>
+            <button type="button" class="sheet-row-opt-btn" data-row="${rIdx}" title="Row options">⋮</button>
+            ${isDirty ? '<span class="dirty-indicator" title="Unsaved edit">●</span>' : ''}
+            ${isConflict ? '<span class="conflict-indicator" title="Conflict detected with Google Sheets">⚠️</span>' : ''}
+          </td>
+          ${cellsHtml}
+        </tr>
+      `;
+    }
+
+    _updateVirtualViewport(force = false) {
+      const rowCount = this.service.getRowCount();
+      if (!rowCount) return;
+
+      const scrollTop = this.wrapper.scrollTop;
+      const viewportHeight = this.wrapper.clientHeight || 500;
+      const overscan = 20;
+
+      const rawStart = Math.floor(scrollTop / this.rowHeight) - overscan;
+      const startIdx = Math.max(0, rawStart);
+      const rawEnd = Math.ceil((scrollTop + viewportHeight) / this.rowHeight) + overscan;
+      const endIdx = Math.min(rowCount, rawEnd);
+
+      if (!force && startIdx === this.virtualSlice.startIdx && endIdx === this.virtualSlice.endIdx) {
+        return;
+      }
+
+      this.virtualSlice = { startIdx, endIdx };
+
+      const rows = this.service.getRows();
+      const topHeight = startIdx * this.rowHeight;
+      const bottomHeight = Math.max(0, (rowCount - endIdx) * this.rowHeight);
+      const colSpan = this.columns.length + 1;
+
+      const rowsHtml = [];
+      for (let i = startIdx; i < endIdx; i++) {
+        const row = rows[i];
+        if (row) {
+          rowsHtml.push(this._renderRowHtml(row, i));
+        }
+      }
+
+      const topSpacerHtml = topHeight > 0
+        ? `<tr class="sheet-virtual-spacer sheet-virtual-spacer-top" style="height:${topHeight}px;"><td colspan="${colSpan}" style="height:${topHeight}px;padding:0;border:none;background:transparent;"></td></tr>`
+        : "";
+
+      const bottomSpacerHtml = bottomHeight > 0
+        ? `<tr class="sheet-virtual-spacer sheet-virtual-spacer-bottom" style="height:${bottomHeight}px;"><td colspan="${colSpan}" style="height:${bottomHeight}px;padding:0;border:none;background:transparent;"></td></tr>`
+        : "";
+
+      this.tbody.innerHTML = topSpacerHtml + rowsHtml.join("") + bottomSpacerHtml;
+      this._updateSelectionHighlight();
     }
 
     _render() {
-      const rows = this.service.getRows();
-      if (!rows.length) {
+      const rowCount = this.service.getRowCount();
+      if (!rowCount) {
+        this.virtualSlice = { startIdx: -1, endIdx: -1 };
         this.tbody.innerHTML = `
           <tr>
             <td colspan="${this.columns.length + 1}" class="sheet-empty-cell">
@@ -720,49 +924,7 @@ window.SpreadsheetGrid = (function () {
         return;
       }
 
-      this.tbody.innerHTML = rows.map((row, rIdx) => {
-        const isDirty = row._status === "unsaved";
-        const isConflict = row._status === "conflict";
-        const statusClass = isConflict ? "is-conflict" : (isDirty ? "is-dirty" : "");
-
-        const cellsHtml = this.columns.map((col, cIdx) => {
-          const val = row[col.key] || "";
-          const isFieldDirty = row._dirtyFields && row._dirtyFields[col.key];
-          let displayVal = escapeHtml(val);
-          if (col.key === "noc" && val) {
-            const vLower = val.toLowerCase();
-            let nocClass = "badge-neutral";
-            if (vLower === "yes") nocClass = "badge-success";
-            else if (vLower === "no") nocClass = "badge-danger";
-            else if (vLower === "pending") nocClass = "badge-warning";
-            else if (vLower === "disputed") nocClass = "badge-info";
-            displayVal = `<span class="badge ${nocClass}">${displayVal}</span>`;
-          }
-
-          return `
-            <td class="sheet-cell ${isFieldDirty ? 'field-dirty' : ''}" 
-                data-row="${rIdx}" 
-                data-col="${cIdx}" 
-                title="${escapeHtml(val)}">
-              <div class="sheet-cell-inner">${displayVal}</div>
-            </td>
-          `;
-        }).join("");
-
-        return `
-          <tr class="sheet-row ${statusClass}" data-row="${rIdx}" data-uid="${row._uid}">
-            <td class="sheet-row-num" data-row="${rIdx}">
-              <span class="row-num-text">${rIdx + 1}</span>
-              <button type="button" class="sheet-row-opt-btn" data-row="${rIdx}" title="Row options">⋮</button>
-              ${isDirty ? '<span class="dirty-indicator" title="Unsaved edit">●</span>' : ''}
-              ${isConflict ? '<span class="conflict-indicator" title="Conflict detected with Google Sheets">⚠️</span>' : ''}
-            </td>
-            ${cellsHtml}
-          </tr>
-        `;
-      }).join("");
-
-      this._updateSelectionHighlight();
+      this._updateVirtualViewport(true);
     }
   }
 

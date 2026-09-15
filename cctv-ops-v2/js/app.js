@@ -357,13 +357,23 @@
     });
 
     const total = reports.length;
-    const selected = reports.filter(r => r.selected && !r.done).length;
+    const selected = reports.filter(r => r.selected).length;
     const done = reports.filter(r => r.done).length;
 
     el("badgeTotalCount").textContent = total;
     el("badgeSelectedCount").textContent = `${selected} selected`;
     el("badgeDoneCount").textContent = `${done} done`;
     el("railEdrBadge").textContent = total;
+
+    // Update Delete Selected button
+    const btnDel = el("btnDeleteSelectedEdr");
+    const btnDelText = el("btnDeleteSelectedEdrText");
+    if (btnDel) {
+      btnDel.disabled = selected === 0;
+      if (btnDelText) {
+        btnDelText.textContent = selected > 0 ? `Delete Selected (${selected})` : "Delete Selected";
+      }
+    }
 
     if (!reports.length) {
       listContainer.innerHTML = '<div style="color:var(--text-muted); font-size:11.5px; text-align:center; padding:30px 10px;">No EDR records found. Complete the form on the left to save an incident.</div>';
@@ -390,13 +400,30 @@
         const card = listContainer.querySelector(`.record-row[data-id="${r.id}"]`) || existingCards[idx];
         if (!card) return;
         const isDone = !!r.done;
-        const isSelected = !!r.selected && !isDone;
+        const isSelected = !!r.selected;
         card.classList.toggle("is-selected", isSelected);
         card.classList.toggle("is-done", isDone);
         const chk = card.querySelector(".edr-check");
         if (chk) {
           chk.checked = isSelected;
-          chk.disabled = isDone;
+          chk.disabled = false;
+        }
+        const doneBtn = card.querySelector(".btn-done-toggle");
+        if (doneBtn) {
+          doneBtn.textContent = isDone ? "Reopen" : "Done";
+          doneBtn.title = isDone ? "Reopen EDR" : "Mark as Done";
+          doneBtn.classList.toggle("is-done-btn", isDone);
+        }
+        let chipsWrap = card.querySelector(".status-chips-wrap");
+        let doneChip = card.querySelector(".chip-done");
+        if (isDone && !doneChip && chipsWrap) {
+          const chip = document.createElement("span");
+          chip.className = "status-chip chip-done";
+          chip.title = "Completed";
+          chip.textContent = "DONE";
+          chipsWrap.appendChild(chip);
+        } else if (!isDone && doneChip) {
+          doneChip.remove();
         }
       });
       updateLivePreview();
@@ -405,7 +432,7 @@
 
     listContainer.innerHTML = reports.map((r) => {
       const isDone = !!r.done;
-      const isSelected = !!r.selected && !isDone;
+      const isSelected = !!r.selected;
       const isLinked = !!edr.isReportInAudit(r.id);
       const hasRealImage = !!(r.screenshotData && r.screenshotData.trim().length > 10);
       const hasRemoteOnly = !hasRealImage && !!r.screenshotFileId;
@@ -413,13 +440,10 @@
       const formattedDate = formatDisplayDate(r.date);
       const lastEditedText = r.updatedAt ? formatLastEdited(r.updatedAt) : "";
 
-      // Status chips: SS, AUDIT, DONE, DOCS
+      // Status chips: SS, DONE, DOCS (no IN AUDIT status badge)
       const chips = [];
       if (hasShot) {
         chips.push('<span class="status-chip chip-ss" title="Screenshot attached">SS</span>');
-      }
-      if (isLinked) {
-        chips.push('<span class="status-chip chip-audit" title="Present in CCTV Audit">AUDIT</span>');
       }
       if (isDone) {
         chips.push('<span class="status-chip chip-done" title="Completed">DONE</span>');
@@ -431,8 +455,8 @@
 
       return `
         <div class="record-row ${isSelected ? 'is-selected' : ''} ${isDone ? 'is-done' : ''}" data-id="${r.id}" data-updated-at="${r.updatedAt || ''}">
-          <label class="record-select-col" style="cursor:pointer;" title="${isDone ? 'Completed (uncheck Done to select)' : 'Select for export'}">
-            <input type="checkbox" class="edr-check" data-id="${r.id}" ${isSelected ? 'checked' : ''} ${isDone ? 'disabled' : ''} style="cursor:pointer;">
+          <label class="record-select-col" style="cursor:pointer;" title="Select record">
+            <input type="checkbox" class="edr-check" data-id="${r.id}" ${isSelected ? 'checked' : ''} style="cursor:pointer;">
           </label>
 
           <div class="record-info">
@@ -465,9 +489,9 @@
             ` : `
               <button type="button" class="btn-action btn-shot-add" title="Add screenshot">Add SS</button>
             `}
-            <button type="button" class="btn-action btn-audit-send ${isLinked ? 'is-linked' : ''}" title="${isLinked ? 'Update in CCTV Audit' : 'Send to CCTV Audit'}">
-              <span class="label-long">${isLinked ? 'In Audit' : 'Send to Audit'}</span>
-              <span class="label-short">${isLinked ? 'In Audit' : 'Audit'}</span>
+            <button type="button" class="btn-action btn-audit-send" title="Send to CCTV Audit">
+              <span class="label-long">Send to Audit</span>
+              <span class="label-short">Audit</span>
             </button>
             <button type="button" class="btn-action btn-done-toggle ${isDone ? 'is-done-btn' : ''}" title="${isDone ? 'Reopen EDR' : 'Mark as Done'}">
               ${isDone ? 'Reopen' : 'Done'}
@@ -865,16 +889,19 @@
     try {
       const result = edr.sendReportToAudit(report);
       renderEdrList(edr.getReports());
+      if (typeof renderAuditTable === "function") {
+        renderAuditTable();
+      }
 
       if (result.action === "created") {
         showToast(
-          "Added to CCTV Audit. NOC starts as Pending; Remarks can be edited anytime.",
+          "Added to CCTV Audit Data Output Grid. NOC starts as Pending; Remarks can be edited anytime.",
           "success"
         );
       } else {
         showToast(
-          "CCTV Audit updated. Existing NOC and Remarks were kept.",
-          "success"
+          "CCTV Audit Data Output Grid entry updated. Existing NOC and Remarks were kept.",
+          "info"
         );
       }
     } catch (err) {
@@ -1072,6 +1099,27 @@
     // Select all / Clear selection
     el("btnSelectAll")?.addEventListener("click", () => edr.selectAll(true));
     el("btnUnselectAll")?.addEventListener("click", () => edr.selectAll(false));
+
+    // Bulk Delete Selected Saved EDRs
+    el("btnDeleteSelectedEdr")?.addEventListener("click", async () => {
+      const reports = edr.getReports() || [];
+      const selected = reports.filter(r => r.selected);
+      const count = selected.length;
+      if (!count) return;
+
+      const confirmed = await window.appConfirm({
+        title: "Delete Selected Saved EDRs?",
+        message: `Are you sure you want to permanently delete the ${count} selected Saved EDR${count === 1 ? '' : 's'}? This action cannot be undone.`,
+        confirmText: `Delete ${count === 1 ? 'EDR' : count + ' EDRs'}`,
+        cancelText: "Cancel",
+        tone: "danger"
+      });
+
+      if (!confirmed) return;
+
+      const deletedCount = await edr.deleteSelectedReports();
+      showToast(`${deletedCount} Saved EDR${deletedCount === 1 ? '' : 's'} deleted.`, "success");
+    });
 
     // Facebook textarea input
     el("edrFacebookText")?.addEventListener("input", updateLivePreview);
@@ -1320,6 +1368,18 @@
   let currentWorkspace = "edr";
 
   const WORKSPACES = {
+    report: {
+      tabId: "tabCctvReport",
+      paneId: "paneCctvReport",
+      title: "CCTV Report",
+      subtitle: ""
+    },
+    conduct: {
+      tabId: "tabConduct",
+      paneId: "paneConduct",
+      title: "Code of Conduct",
+      subtitle: ""
+    },
     edr: {
       tabId: "tabEdr",
       paneId: "paneEdr",
@@ -1344,6 +1404,12 @@
       title: "Maintenance",
       subtitle: ""
     },
+    followup: {
+      tabId: "tabFollowup",
+      paneId: "paneFollowup",
+      title: "Follow Up Reports",
+      subtitle: ""
+    },
     pending: {
       tabId: "tabPending",
       paneId: "panePending",
@@ -1354,12 +1420,6 @@
       tabId: "tabMasterlist",
       paneId: "paneMasterlist",
       title: "Masterlist",
-      subtitle: ""
-    },
-    followup: {
-      tabId: "tabFollowup",
-      paneId: "paneFollowup",
-      title: "Follow Up Reports",
       subtitle: ""
     },
     history: {
@@ -1430,6 +1490,10 @@
       renderPendingWorkspace();
     } else if (targetKey === "followup") {
       renderFollowupWorkspace();
+    } else if (targetKey === "report") {
+      renderCctvReportWorkspace();
+    } else if (targetKey === "conduct") {
+      renderCodeOfConductWorkspace();
     } else if (targetKey === "masterlist") {
       renderMasterlistWorkspace();
     } else if (targetKey === "history") {
@@ -1440,6 +1504,8 @@
       }
     }
   }
+
+  window.switchWorkspace = switchWorkspace;
 
   function initWorkspaceNavigation() {
     Object.keys(WORKSPACES).forEach(wsKey => {
@@ -1664,6 +1730,9 @@
           <td style="max-width:220px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${window.escapeHtml(entry.remarks || "")}">${window.escapeHtml(entry.remarks || "")}</td>
           <td style="text-align:center; white-space:nowrap;">
             <div style="display:inline-flex; align-items:center; gap:2px;">
+              <button type="button" class="btn btn-ghost btn-sm btn-copy-audit-row" data-idx="${origIdx}" title="Copy this row for Tracker (Arial 10pt / TSV)" style="padding:2px 5px; height:24px;">
+                <svg class="icon icon-sm" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+              </button>
               <button type="button" class="btn btn-ghost btn-sm btn-edit-audit" data-idx="${origIdx}" title="Edit this entry" style="padding:2px 5px; height:24px;">
                 <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
               </button>
@@ -1675,6 +1744,33 @@
         </tr>
       `;
     }).join("");
+
+    // Wire Row Copy buttons
+    tableBody.querySelectorAll(".btn-copy-audit-row").forEach(btn => {
+      btn.addEventListener("click", async (e) => {
+        e.stopPropagation();
+        const origIdx = parseInt(btn.getAttribute("data-idx"), 10);
+        const rep = rawEntries[origIdx];
+        if (!rep) return;
+        try {
+          await audit.copyAuditForTracker([rep]);
+          showToast("Row copied for Tracker (Arial 10pt formatted).", "success");
+        } catch (err) {
+          showToast(err.message || "Failed to copy row.", "error");
+        }
+      });
+    });
+
+    // Wire Row Click Selection
+    tableBody.querySelectorAll(".audit-row").forEach(row => {
+      row.addEventListener("click", (e) => {
+        if (e.target.closest("button") || e.target.closest("a")) return;
+        tableBody.querySelectorAll(".audit-row.is-selected").forEach(r => {
+          if (r !== row) r.classList.remove("is-selected");
+        });
+        row.classList.toggle("is-selected");
+      });
+    });
 
     // Wire Edit buttons
     tableBody.querySelectorAll(".btn-edit-audit").forEach(btn => {
@@ -1862,21 +1958,7 @@
         showToast("Audit entry updated.", "success");
       } else {
         audit.addEntry(entryData);
-        if (window.CCTV_LIVE_TRACKER) {
-          window.CCTV_LIVE_TRACKER.insertRowByDate({
-            date: dateVal,
-            auditor: window.CCTV_AUTH?.getProfile?.()?.display_name || "Miles",
-            om: el("auditOmName")?.value || "",
-            site: el("auditSite")?.value || "",
-            tl: el("auditTlName")?.value.trim() || "N/A",
-            agent: el("auditAgentName")?.value.trim() || "N/A",
-            account: el("auditAccount")?.value || "",
-            reason: el("auditReasonCode")?.value || "SLEEPING",
-            noc: el("auditNoc")?.value || "YES",
-            remarks: el("auditRemarks")?.value.trim() || "N/A"
-          });
-        }
-        showToast("Audit entry added to Live Tracker.", "success");
+        showToast("Audit entry added to Data Output Grid.", "success");
       }
 
       resetAuditForm();
@@ -4113,15 +4195,10 @@ function doPost(e) {
       titleWrap.style.alignItems = "center";
       titleWrap.style.gap = "8px";
 
-      const badge = document.createElement("span");
-      badge.className = "badge badge-neutral";
-      badge.textContent = `Block #${index + 1}`;
-
       const titleSpan = document.createElement("span");
       titleSpan.className = "eod-block-title";
       titleSpan.textContent = `Report Section ${index + 1}`;
 
-      titleWrap.appendChild(badge);
       titleWrap.appendChild(titleSpan);
 
       if (block.dataHidden) {
@@ -4172,7 +4249,7 @@ function doPost(e) {
         renderMaintenanceBlocks();
         queueMaintenanceAutosave();
         if (window.historyService?.captureIfChanged) {
-          window.historyService.captureIfChanged("maintenanceReport", block.dataHidden ? `Hid Block #${index + 1}` : `Showed Block #${index + 1}`);
+          window.historyService.captureIfChanged("maintenanceReport", block.dataHidden ? `Hid Section ${index + 1}` : `Showed Section ${index + 1}`);
         }
       });
       actionsWrap.appendChild(toggleBtn);
@@ -4182,11 +4259,11 @@ function doPost(e) {
         const removeBtn = document.createElement("button");
         removeBtn.type = "button";
         removeBtn.className = "btn btn-danger-ghost btn-sm";
-        removeBtn.textContent = "Remove Block";
+        removeBtn.textContent = "Remove Section";
         removeBtn.addEventListener("click", async () => {
           const ok = await window.appConfirm({
-            title: `Remove Block #${index + 1}?`,
-            message: "Remove this block and its incident issues, remarks, and screenshots?",
+            title: `Remove Report Section ${index + 1}?`,
+            message: "Remove this section and its incident issues, remarks, and screenshots?",
             confirmText: "Remove",
             tone: "danger"
           });
@@ -4195,9 +4272,9 @@ function doPost(e) {
           renderMaintenanceBlocks();
           queueMaintenanceAutosave();
           if (window.historyService?.captureIfChanged) {
-            await window.historyService.captureIfChanged("maintenanceReport", `Removed Block #${index + 1}`);
+            await window.historyService.captureIfChanged("maintenanceReport", `Removed Section ${index + 1}`);
           }
-          showToast(`Block #${index + 1} removed.`, "info");
+          showToast(`Report Section ${index + 1} removed.`, "info");
         });
         actionsWrap.appendChild(removeBtn);
       }
@@ -4289,11 +4366,6 @@ function doPost(e) {
       chipsRow.setAttribute("role", "group");
       chipsRow.setAttribute("aria-label", "Quick Remark Choices");
 
-      const presetTitle = document.createElement("span");
-      presetTitle.className = "maint-preset-title";
-      presetTitle.textContent = "Quick Choices:";
-      chipsRow.appendChild(presetTitle);
-
       const availableChoices = maintenance.getQuickRemarks ? maintenance.getQuickRemarks() : [];
       const renderChoices = [...availableChoices];
       if (block.selectedPreset && !renderChoices.includes(block.selectedPreset)) {
@@ -4353,9 +4425,11 @@ function doPost(e) {
         chipBtn.addEventListener("click", () => {
           if (block.selectedPreset === choiceText) {
             block.selectedPreset = "";
+            block.remarks = [""];
             showToast("Preset deselected.", "info");
           } else {
             block.selectedPreset = choiceText;
+            block.remarks = [choiceText];
             showToast(`Selected preset: "${choiceText}"`, "info");
           }
           renderMaintenanceBlocks();
@@ -4428,6 +4502,7 @@ function doPost(e) {
           return;
         }
         block.selectedPreset = text;
+        block.remarks = [text];
         inlineForm.style.display = "none";
         renderMaintenanceBlocks();
         queueMaintenanceAutosave();
@@ -4466,6 +4541,10 @@ function doPost(e) {
         const raw = remarksArea.value || "";
         const lines = raw.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
         block.remarks = lines.length ? lines : [""];
+        if (block.selectedPreset && (!lines.length || lines.join("\n") !== block.selectedPreset)) {
+          const allChoices = maintenance.getQuickRemarks ? maintenance.getQuickRemarks() : [];
+          block.selectedPreset = allChoices.find(c => c === lines.join("\n")) || "";
+        }
         queueMaintenanceAutosave();
       });
       rightCol.appendChild(remarksArea);
@@ -4686,6 +4765,12 @@ function doPost(e) {
         const raw = (remarksArea.value || "").trim();
         if (raw) {
           block.remarks = raw.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+          if (block.selectedPreset && block.remarks.join("\n") !== block.selectedPreset) {
+            const allChoices = maintenance.getQuickRemarks ? maintenance.getQuickRemarks() : [];
+            block.selectedPreset = allChoices.find(c => c === block.remarks.join("\n")) || "";
+          }
+        } else if (block.selectedPreset) {
+          block.remarks = [block.selectedPreset];
         } else {
           block.remarks = [""];
         }
@@ -6248,6 +6333,664 @@ function doPost(e) {
     });
   };
 
+  // =========================================================================
+  // =========================================================================
+  // WORKSPACE 1: CCTV Report Composer
+  // =========================================================================
+  let cctvReportDraft = null;
+
+  function renderCctvReportWorkspace() {
+    if (!window.CCTV_REPORT_SERVICE) return;
+    if (!cctvReportDraft) {
+      cctvReportDraft = window.CCTV_REPORT_SERVICE.getDraft();
+    }
+    syncCctvReportFormFromDraft();
+    renderCctvReportScreenshots();
+    renderCctvReportPolicyBanner();
+    updateCctvReportPreview();
+  }
+
+  let cctvReportLastGeneratedText = "";
+
+  function syncCctvReportFormFromDraft() {
+    if (!cctvReportDraft) return;
+    if (el("quickComposeText")) el("quickComposeText").value = cctvReportDraft.rawInput || "";
+    if (el("reportGreeting")) el("reportGreeting").value = cctvReportDraft.greeting || "Good morning TLs,";
+    if (el("reportPersonInvolved")) el("reportPersonInvolved").value = cctvReportDraft.personInvolved || "";
+    if (el("reportObservation")) el("reportObservation").value = cctvReportDraft.observation || "";
+    if (el("reportSite")) el("reportSite").value = cctvReportDraft.site || "";
+    if (el("reportDateRange")) el("reportDateRange").value = cctvReportDraft.dateRange || "";
+    if (el("reportClipUrl")) el("reportClipUrl").value = cctvReportDraft.clipUrl || "";
+  }
+
+  function syncCctvReportDraftFromForm() {
+    if (!cctvReportDraft) cctvReportDraft = window.CCTV_REPORT_SERVICE.getDraft();
+    cctvReportDraft.rawInput = el("quickComposeText")?.value || "";
+    cctvReportDraft.greeting = el("reportGreeting")?.value || "Good morning TLs,";
+    cctvReportDraft.personInvolved = el("reportPersonInvolved")?.value || "";
+    cctvReportDraft.observation = el("reportObservation")?.value || "";
+    cctvReportDraft.site = el("reportSite")?.value || "";
+    cctvReportDraft.dateRange = el("reportDateRange")?.value || "";
+    cctvReportDraft.clipUrl = el("reportClipUrl")?.value || "";
+    window.CCTV_REPORT_SERVICE.saveDraft(cctvReportDraft);
+  }
+
+  function renderCctvReportPolicyBanner() {
+    const banner = el("reportPolicyBanner");
+    const badge = el("reportPolicyBadge");
+    const title = el("reportPolicyTitle");
+    if (!banner || !badge || !title) return;
+
+    if (cctvReportDraft && cctvReportDraft.referencedPolicy) {
+      const pol = cctvReportDraft.referencedPolicy;
+      banner.style.display = "flex";
+      badge.textContent = `Internal Reference: Policy ${pol.num}`;
+      title.textContent = `${pol.title} (${pol.severity}) — Internal Context Only (Not in final report)`;
+    } else {
+      banner.style.display = "none";
+    }
+  }
+
+  function updateCctvReportPreview() {
+    const box = el("teamsMessageBox");
+    if (!box || !cctvReportDraft) return;
+
+    const esc = (val) => String(val == null ? "" : val)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;");
+
+    const htmlParts = [];
+
+    if (cctvReportDraft.greeting) {
+      htmlParts.push(`<div class="teams-preview-greeting">${esc(cctvReportDraft.greeting)}</div>`);
+    }
+
+    if (cctvReportDraft.observation) {
+      const formattedBody = esc(cctvReportDraft.observation).replace(/\r?\n/g, "<br>");
+      htmlParts.push(`<div class="teams-preview-body" style="margin: 8px 0;">${formattedBody}</div>`);
+    }
+
+    const metaItems = [];
+    if (cctvReportDraft.personInvolved && cctvReportDraft.personInvolved.trim()) {
+      metaItems.push(`<div class="teams-preview-meta-line"><strong>Person/Agent Involved:</strong> ${esc(cctvReportDraft.personInvolved.trim())}</div>`);
+    }
+    if (cctvReportDraft.site && cctvReportDraft.site.trim()) {
+      metaItems.push(`<div class="teams-preview-meta-line"><strong>Location:</strong> ${esc(cctvReportDraft.site.trim())}</div>`);
+    }
+    if (cctvReportDraft.dateRange && cctvReportDraft.dateRange.trim()) {
+      metaItems.push(`<div class="teams-preview-meta-line"><strong>Date:</strong> ${esc(cctvReportDraft.dateRange.trim())}</div>`);
+    }
+    if (metaItems.length) {
+      htmlParts.push(`<div class="teams-preview-meta" style="margin: 8px 0;">${metaItems.join("")}</div>`);
+    }
+
+    // Code of Conduct is kept strictly as internal supporting context.
+    // By authoritative policy, policy numbers/titles/penalties must NOT appear in CCTV reports.
+
+    if (Array.isArray(cctvReportDraft.screenshots) && cctvReportDraft.screenshots.length > 0) {
+      const shotsHtml = cctvReportDraft.screenshots.map((s, idx) => {
+        const src = typeof s === "string" ? s : (s.data || s.url || "");
+        return `<img src="${src}" class="teams-preview-shot-img" alt="CCTV Screenshot ${idx + 1}" style="max-width: 100%; border-radius: 4px; margin: 4px 0; display: block;">`;
+      }).join("");
+      htmlParts.push(`<div class="teams-preview-shots" style="margin: 8px 0;">${shotsHtml}</div>`);
+    }
+
+    const clips = (cctvReportDraft.clipUrl || "")
+      .split(/[\n,]+/)
+      .map(u => u.trim())
+      .filter(u => !!u);
+
+    if (clips.length === 1) {
+      htmlParts.push(`<div class="teams-preview-clip" style="margin-top: 8px;"><strong>CCTV Clip:</strong> <a href="${esc(clips[0])}" target="_blank" rel="noopener noreferrer" style="color:#6366f1; text-decoration:underline; font-weight:600;">Click here!</a></div>`);
+    } else if (clips.length > 1) {
+      clips.forEach((c, idx) => {
+        htmlParts.push(`<div class="teams-preview-clip" style="margin-top: 4px;"><strong>CCTV Clip ${idx + 1}:</strong> <a href="${esc(c)}" target="_blank" rel="noopener noreferrer" style="color:#6366f1; text-decoration:underline; font-weight:600;">Click here!</a></div>`);
+      });
+    } else {
+      htmlParts.push(`<div class="teams-preview-clip" style="color:var(--text-muted); margin-top: 8px;"><strong>CCTV Clip:</strong> <em>Click here!</em></div>`);
+    }
+
+    box.innerHTML = htmlParts.join("");
+  }
+
+  function renderCctvReportScreenshots() {
+    const gallery = el("reportShotGallery");
+    const countEl = el("reportShotCount");
+    if (!gallery || !cctvReportDraft) return;
+
+    const count = Array.isArray(cctvReportDraft.screenshots) ? cctvReportDraft.screenshots.length : 0;
+    if (countEl) countEl.textContent = String(count);
+
+    if (!count) {
+      gallery.innerHTML = "";
+      return;
+    }
+
+    gallery.innerHTML = cctvReportDraft.screenshots.map((shot, idx) => {
+      const src = typeof shot === "string" ? shot : (shot.data || shot.url || "");
+      return `
+        <div class="report-shot-item" data-index="${idx}" title="Click to view full image">
+          <img src="${src}" alt="Screenshot ${idx + 1}">
+          <button type="button" class="report-shot-remove" data-index="${idx}" title="Remove screenshot">✕</button>
+        </div>
+      `;
+    }).join("");
+
+    gallery.querySelectorAll(".report-shot-item").forEach(item => {
+      const idx = parseInt(item.dataset.index, 10);
+      const shot = cctvReportDraft.screenshots[idx];
+      const src = typeof shot === "string" ? shot : (shot.data || shot.url || "");
+
+      item.addEventListener("click", (e) => {
+        if (e.target.closest(".report-shot-remove")) return;
+        if (window.openFullScreenshotViewer) {
+          window.openFullScreenshotViewer(src, "CCTV Report Evidence", `Screenshot #${idx + 1}`);
+        }
+      });
+
+      item.querySelector(".report-shot-remove")?.addEventListener("click", (e) => {
+        e.stopPropagation();
+        cctvReportDraft.screenshots.splice(idx, 1);
+        window.CCTV_REPORT_SERVICE.saveDraft(cctvReportDraft);
+        renderCctvReportScreenshots();
+        updateCctvReportPreview();
+        showToast("Screenshot removed.", "info");
+      });
+    });
+  }
+
+  function handleReportImageFiles(files) {
+    if (!files || !files.length || !cctvReportDraft) return;
+    Array.from(files).forEach(file => {
+      if (!file.type.startsWith("image/")) return;
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        const dataUrl = evt.target.result;
+        if (!Array.isArray(cctvReportDraft.screenshots)) cctvReportDraft.screenshots = [];
+        cctvReportDraft.screenshots.push(dataUrl);
+        window.CCTV_REPORT_SERVICE.saveDraft(cctvReportDraft);
+        renderCctvReportScreenshots();
+        updateCctvReportPreview();
+        showToast("Screenshot added to report.", "success");
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function initCctvReportController() {
+    if (!window.CCTV_REPORT_SERVICE) return;
+    cctvReportDraft = window.CCTV_REPORT_SERVICE.getDraft();
+
+    // Form field live binding
+    const fieldIds = [
+      "quickComposeText",
+      "reportGreeting",
+      "reportPersonInvolved",
+      "reportObservation",
+      "reportSite",
+      "reportDateRange",
+      "reportClipUrl"
+    ];
+
+    fieldIds.forEach(id => {
+      el(id)?.addEventListener("input", () => {
+        syncCctvReportDraftFromForm();
+        updateCctvReportPreview();
+      });
+    });
+
+    // Generate Report button
+    el("btnGenerateReport")?.addEventListener("click", () => {
+      const rawText = el("quickComposeText")?.value || "";
+      if (!rawText.trim()) {
+        showToast("Please enter incident notes in Quick Compose first.", "warning");
+        return;
+      }
+      syncCctvReportDraftFromForm();
+      const generated = window.CCTV_REPORT_SERVICE.generateReport(rawText, cctvReportDraft);
+      cctvReportDraft = { ...cctvReportDraft, ...generated };
+      cctvReportLastGeneratedText = cctvReportDraft.observation;
+      window.CCTV_REPORT_SERVICE.saveDraft(cctvReportDraft);
+      syncCctvReportFormFromDraft();
+      updateCctvReportPreview();
+      showToast("Report generated in established professional format.", "success");
+    });
+
+    // Regenerate button with manual edit check
+    el("btnRegenerateReport")?.addEventListener("click", async () => {
+      const rawText = el("quickComposeText")?.value || "";
+      if (!rawText.trim()) {
+        showToast("Please enter incident notes in Quick Compose first.", "warning");
+        return;
+      }
+
+      const currentObs = el("reportObservation")?.value || "";
+      if (cctvReportLastGeneratedText && currentObs !== cctvReportLastGeneratedText) {
+        const ok = await window.appConfirm({
+          title: "Overwrite Manual Edits?",
+          message: "You have manually edited the report body. Regenerating will replace your manual edits with a freshly parsed report from Quick Compose. Proceed?",
+          confirmText: "Regenerate",
+          tone: "warning"
+        });
+        if (!ok) return;
+      }
+
+      syncCctvReportDraftFromForm();
+      const generated = window.CCTV_REPORT_SERVICE.generateReport(rawText, cctvReportDraft);
+      cctvReportDraft = { ...cctvReportDraft, ...generated };
+      cctvReportLastGeneratedText = cctvReportDraft.observation;
+      window.CCTV_REPORT_SERVICE.saveDraft(cctvReportDraft);
+      syncCctvReportFormFromDraft();
+      updateCctvReportPreview();
+      showToast("Report regenerated from Quick Compose notes.", "info");
+    });
+
+    // Secondary action: Open Code of Conduct workspace
+    el("btnOpenConductFromReport")?.addEventListener("click", () => {
+      switchWorkspace("conduct");
+    });
+
+    // Remove referenced policy button
+    el("btnRemoveReportPolicy")?.addEventListener("click", () => {
+      if (!cctvReportDraft) return;
+      cctvReportDraft.referencedPolicy = null;
+      window.CCTV_REPORT_SERVICE.saveDraft(cctvReportDraft);
+      renderCctvReportPolicyBanner();
+      updateCctvReportPreview();
+      showToast("Policy reference removed from report.", "info");
+    });
+
+    // Reset button
+    el("btnResetCctvReport")?.addEventListener("click", async () => {
+      const ok = await window.appConfirm({
+        title: "Reset CCTV Report?",
+        message: "Discard current report draft and reset fields to standard template?",
+        confirmText: "Reset Draft",
+        tone: "danger"
+      });
+      if (!ok) return;
+      cctvReportDraft = window.CCTV_REPORT_SERVICE.resetDraft();
+      cctvReportLastGeneratedText = "";
+      syncCctvReportFormFromDraft();
+      renderCctvReportScreenshots();
+      renderCctvReportPolicyBanner();
+      updateCctvReportPreview();
+      showToast("Report composer reset to template.", "info");
+    });
+
+    // Screenshot file input & browse button
+    el("btnBrowseReportShot")?.addEventListener("click", () => el("reportShotInput")?.click());
+    el("reportShotInput")?.addEventListener("change", (e) => {
+      handleReportImageFiles(e.target.files);
+      e.target.value = "";
+    });
+
+    // Dropzone drag & drop
+    const dropzone = el("reportDropzone");
+    if (dropzone) {
+      dropzone.addEventListener("click", () => el("reportShotInput")?.click());
+
+      ["dragenter", "dragover"].forEach(evtName => {
+        dropzone.addEventListener(evtName, (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          dropzone.classList.add("drag-active");
+        });
+      });
+
+      ["dragleave", "drop"].forEach(evtName => {
+        dropzone.addEventListener(evtName, (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          dropzone.classList.remove("drag-active");
+        });
+      });
+
+      dropzone.addEventListener("drop", (e) => {
+        const dt = e.dataTransfer;
+        if (dt && dt.files && dt.files.length) {
+          handleReportImageFiles(dt.files);
+        }
+      });
+    }
+
+    // COPY ALL button
+    el("btnCopyAllReport")?.addEventListener("click", async () => {
+      try {
+        syncCctvReportDraftFromForm();
+        if (!cctvReportDraft.observation && !cctvReportDraft.personInvolved) {
+          showToast("Please enter report details before copying.", "error");
+          return;
+        }
+
+        const res = await window.CCTV_REPORT_SERVICE.copyAll(cctvReportDraft);
+        const shotMsg = res.screenshotCount
+          ? ` with ${res.screenshotCount} screenshot${res.screenshotCount === 1 ? '' : 's'}`
+          : "";
+        const clipMsg = res.hasClipLink
+          ? ` and ${res.clipCount > 1 ? res.clipCount + ' clickable CCTV Clip links' : 'clickable CCTV Clip link'}`
+          : "";
+        showToast(`Copied complete report${shotMsg}${clipMsg} for Microsoft Teams!`, "success");
+      } catch (err) {
+        console.error("Copy report error:", err);
+        showToast(err.message || "Failed to copy report to clipboard.", "error");
+      }
+    });
+
+    // Global document paste handler for CCTV Report workspace
+    document.addEventListener("paste", (e) => {
+      if (currentWorkspace !== "report") return;
+      const activeTag = document.activeElement?.tagName;
+      if (activeTag === "INPUT" || activeTag === "TEXTAREA") {
+        const items = e.clipboardData?.items;
+        if (!items) return;
+        let hasImage = false;
+        let hasText = false;
+        for (let i = 0; i < items.length; i++) {
+          if (items[i].type.startsWith("image/")) hasImage = true;
+          if (items[i].type === "text/plain") hasText = true;
+        }
+        if (hasImage && !hasText) {
+          e.preventDefault();
+          const files = e.clipboardData.files;
+          handleReportImageFiles(files);
+        }
+        return;
+      }
+
+      const files = e.clipboardData?.files;
+      if (files && files.length) {
+        let hasImage = false;
+        for (let i = 0; i < files.length; i++) {
+          if (files[i].type.startsWith("image/")) hasImage = true;
+        }
+        if (hasImage) {
+          e.preventDefault();
+          handleReportImageFiles(files);
+        }
+      }
+    });
+
+    window.renderCctvReportScreenshots = renderCctvReportScreenshots;
+    window.updateCctvReportPreview = updateCctvReportPreview;
+    window.syncCctvReportFormFromDraft = syncCctvReportFormFromDraft;
+    window.syncCctvReportDraftFromForm = syncCctvReportDraftFromForm;
+    window.getCctvReportDraft = () => cctvReportDraft;
+    window.setCctvReportDraft = (d) => { cctvReportDraft = d; };
+  }
+
+  // =========================================================================
+  // WORKSPACE 2: Code of Conduct Policy Reference (Standalone)
+  // =========================================================================
+  let conductFilterCategory = "all";
+  let conductFilterSeverity = "all";
+  let conductFilterMonitored = false;
+  let conductCollapsedCategories = {};
+
+  function renderCodeOfConductWorkspace() {
+    renderCodeOfConductResults();
+  }
+
+  function renderCodeOfConductResults() {
+    const container = el("conductResultsContainer");
+    const countText = el("conductResultsCountText");
+    if (!container || !window.CCTV_REPORT_SERVICE) return;
+
+    const query = el("conductSearchInput")?.value || "";
+    const results = window.CCTV_REPORT_SERVICE.searchCodeOfConduct(query, conductFilterCategory, conductFilterSeverity, conductFilterMonitored);
+
+    let totalMatchingPolicies = 0;
+    results.forEach(g => { totalMatchingPolicies += g.policies.length; });
+
+    if (countText) {
+      if (!query && conductFilterCategory === "all" && conductFilterSeverity === "all" && !conductFilterMonitored) {
+        countText.textContent = `Showing All Policies (${totalMatchingPolicies} rules)`;
+      } else {
+        countText.textContent = `Showing ${totalMatchingPolicies} Matched Polic${totalMatchingPolicies === 1 ? 'y' : 'ies'}`;
+      }
+    }
+
+    if (!results.length) {
+      container.innerHTML = `<div style="padding:28px 16px;text-align:center;color:var(--text-muted);font-size:12px;">No Code of Conduct violations found matching "<strong>${escapeHtml(query)}</strong>". Try searching another term or resetting filters.</div>`;
+      return;
+    }
+
+    const esc = (val) => String(val == null ? "" : val)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;");
+
+    const penaltyMatrix = window.CCTV_REPORT_SERVICE.getPenaltyMatrix();
+
+    container.innerHTML = results.map((group, gIdx) => {
+      const catKey = group.category;
+      const isCollapsed = !!conductCollapsedCategories[catKey];
+
+      const policiesHtml = group.policies.map(pol => {
+        const sevClass = pol.severity === "GRAVE" ? "coc-sev-grave" : (pol.severity === "MAJOR" ? "coc-sev-major" : "coc-sev-minor");
+        const penInfo = penaltyMatrix[pol.severity];
+        const penaltyText = penInfo ? penInfo.schedule.map(s => `${s.offense}: ${s.action}`).join(" | ") : "";
+
+        return `
+          <div class="coc-policy-item" data-num="${esc(pol.num)}" style="background:var(--bg-rail); border:1px solid var(--border-subtle); border-radius:4px; padding:10px 12px; display:flex; flex-direction:column; gap:6px;">
+            <div class="coc-policy-top" style="display:flex; justify-content:space-between; align-items:flex-start; gap:8px;">
+              <div class="coc-policy-title-line" style="display:flex; align-items:center; gap:7px;">
+                <span class="coc-num-badge" style="font-family:var(--font-mono); font-weight:700; font-size:11px; background:rgba(255,255,255,0.08); padding:2px 6px; border-radius:3px; color:var(--text-primary); border:1px solid var(--border-default);">${esc(pol.num)}</span>
+                <strong style="color:var(--text-primary); font-size:12.5px;">${esc(pol.title)}</strong>
+              </div>
+              <div style="display:flex; align-items:center; gap:5px; flex-shrink:0;">
+                ${pol.isCctvMonitored ? `<span class="badge badge-neutral" style="font-size:9.5px; border-color:rgba(56,189,248,0.3); color:#38bdf8; background:rgba(56,189,248,0.1);">CCTV Monitored</span>` : ''}
+                ${pol.remindOnly ? `<span class="badge badge-success" style="font-size:9.5px; background:rgba(52,211,153,0.1); color:#34d399; border-color:rgba(52,211,153,0.3);">Remind Only</span>` : ''}
+                <span class="coc-sev-badge ${sevClass}">${esc(pol.severity)}</span>
+              </div>
+            </div>
+
+            <div class="coc-policy-desc" style="color:var(--text-secondary); font-size:11.5px; line-height:1.45;">${esc(pol.description)}</div>
+
+            <div class="coc-policy-bottom" style="display:flex; justify-content:space-between; align-items:center; gap:8px; border-top:1px solid rgba(255,255,255,0.05); padding-top:6px; margin-top:2px; flex-wrap:wrap;">
+              <span class="coc-penalty-summary" style="font-size:10.5px; color:var(--text-muted); font-family:var(--font-mono);">⚡ Sanction: ${esc(penaltyText)}</span>
+              
+              <div class="coc-policy-item-actions">
+                <button type="button" class="btn-coc-action btn-coc-copy-num" data-num="${esc(pol.num)}" title="Copy policy number">Copy #</button>
+                <button type="button" class="btn-coc-action btn-coc-copy-text" data-num="${esc(pol.num)}" title="Copy full policy text">Copy Text</button>
+                <button type="button" class="btn-coc-action btn-coc-use" data-num="${esc(pol.num)}" title="Transfer this policy reference into CCTV Report composer">
+                  <svg class="icon" viewBox="0 0 24 24" style="width:12px;height:12px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+                  <span>Use in CCTV Report</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join("");
+
+      return `
+        <div class="coc-cat-accordion ${isCollapsed ? 'is-collapsed' : ''}" data-cat-key="${esc(catKey)}">
+          <div class="coc-cat-head" data-cat-key="${esc(catKey)}" style="cursor:pointer; display:flex; justify-content:space-between; align-items:center; padding:9px 12px; background:var(--bg-surface-elevated); border:1px solid var(--border-default); border-radius:4px; user-select:none;">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span class="accordion-arrow" style="font-size:10px; color:var(--text-muted);">${isCollapsed ? '▶' : '▼'}</span>
+              <span style="font-weight:700; color:var(--text-primary); font-size:12px;">${esc(group.category)}</span>
+            </div>
+            <span style="font-size:11px; color:var(--text-muted); font-family:var(--font-mono);">${group.policies.length} rule${group.policies.length === 1 ? '' : 's'}</span>
+          </div>
+          <div class="coc-cat-body" style="padding:8px 0 4px 0; display:${isCollapsed ? 'none' : 'flex'}; flex-direction:column; gap:8px;">
+            ${policiesHtml}
+          </div>
+        </div>
+      `;
+    }).join("");
+
+    // Wire accordion header toggles
+    container.querySelectorAll(".coc-cat-head").forEach(head => {
+      head.addEventListener("click", () => {
+        const catKey = head.dataset.catKey;
+        conductCollapsedCategories[catKey] = !conductCollapsedCategories[catKey];
+        const accordion = head.closest(".coc-cat-accordion");
+        if (accordion) {
+          const body = accordion.querySelector(".coc-cat-body");
+          const arrow = head.querySelector(".accordion-arrow");
+          const collapsed = conductCollapsedCategories[catKey];
+          accordion.classList.toggle("is-collapsed", collapsed);
+          if (body) body.style.display = collapsed ? "none" : "flex";
+          if (arrow) arrow.textContent = collapsed ? "▶" : "▼";
+        }
+      });
+    });
+
+    // Helper to find target policy
+    const findPolicy = (num) => {
+      const allGroups = window.CCTV_REPORT_SERVICE.getCodeOfConduct();
+      for (const g of allGroups) {
+        const found = g.policies.find(p => p.num === num);
+        if (found) return found;
+      }
+      return null;
+    };
+
+    // Wire "Use in CCTV Report" buttons
+    container.querySelectorAll(".btn-coc-use").forEach(btn => {
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const targetPol = findPolicy(btn.dataset.num);
+        if (!targetPol) return;
+
+        if (!cctvReportDraft) {
+          cctvReportDraft = window.CCTV_REPORT_SERVICE.getDraft();
+        }
+        cctvReportDraft.referencedPolicy = targetPol;
+        window.CCTV_REPORT_SERVICE.saveDraft(cctvReportDraft);
+
+        // Switch to CCTV Report workspace
+        switchWorkspace("report");
+        renderCctvReportPolicyBanner();
+        updateCctvReportPreview();
+        showToast(`Policy ${targetPol.num} set as internal context for report guidance.`, "info");
+      });
+    });
+
+    // Wire "Copy #" buttons
+    container.querySelectorAll(".btn-coc-copy-num").forEach(btn => {
+      btn.addEventListener("click", async (e) => {
+        e.stopPropagation();
+        const num = btn.dataset.num;
+        try {
+          if (navigator.clipboard?.writeText) {
+            await navigator.clipboard.writeText(`Policy ${num}`);
+          }
+          showToast(`Copied "Policy ${num}" to clipboard.`, "info");
+        } catch (_) {
+          showToast(`Policy ${num}`, "info");
+        }
+      });
+    });
+
+    // Wire "Copy Text" buttons
+    container.querySelectorAll(".btn-coc-copy-text").forEach(btn => {
+      btn.addEventListener("click", async (e) => {
+        e.stopPropagation();
+        const targetPol = findPolicy(btn.dataset.num);
+        if (!targetPol) return;
+        const textToCopy = `Policy ${targetPol.num}: ${targetPol.title} (${targetPol.severity})\n${targetPol.description}`;
+        try {
+          if (navigator.clipboard?.writeText) {
+            await navigator.clipboard.writeText(textToCopy);
+          }
+          showToast(`Copied Policy ${targetPol.num} wording to clipboard.`, "info");
+        } catch (_) {
+          showToast(`Policy ${targetPol.num} text copied.`, "info");
+        }
+      });
+    });
+  }
+
+  function initCodeOfConductController() {
+    if (!window.CCTV_REPORT_SERVICE) return;
+
+    // Search input
+    const searchInput = el("conductSearchInput");
+    const clearBtn = el("btnConductClearSearch");
+    if (searchInput) {
+      searchInput.addEventListener("input", () => {
+        if (clearBtn) clearBtn.style.display = searchInput.value ? "inline-block" : "none";
+        renderCodeOfConductResults();
+      });
+    }
+    if (clearBtn) {
+      clearBtn.addEventListener("click", () => {
+        if (searchInput) {
+          searchInput.value = "";
+          clearBtn.style.display = "none";
+          searchInput.focus();
+        }
+        renderCodeOfConductResults();
+      });
+    }
+
+    // Category dropdown filter
+    el("conductCategorySelect")?.addEventListener("change", (e) => {
+      conductFilterCategory = e.target.value;
+      renderCodeOfConductResults();
+    });
+
+    // Severity filter pills
+    const pillsWrap = el("conductSeverityFilters");
+    if (pillsWrap) {
+      pillsWrap.addEventListener("click", (e) => {
+        const pill = e.target.closest(".coc-pill");
+        if (!pill) return;
+        pillsWrap.querySelectorAll(".coc-pill").forEach(p => p.classList.remove("active"));
+        pill.classList.add("active");
+        const filter = pill.dataset.filter;
+        if (filter === "cctv") {
+          conductFilterSeverity = "all";
+          conductFilterMonitored = true;
+        } else {
+          conductFilterSeverity = filter;
+          conductFilterMonitored = false;
+        }
+        renderCodeOfConductResults();
+      });
+    }
+
+    // CCTV Monitored Activity Shortcuts
+    document.querySelectorAll(".conduct-cctv-shortcuts .btn-cctv-chip").forEach(chip => {
+      chip.addEventListener("click", () => {
+        const q = chip.dataset.query || "";
+        if (searchInput) {
+          searchInput.value = q;
+          if (clearBtn) clearBtn.style.display = "inline-block";
+        }
+        // Reset category & severity to show direct match
+        conductFilterCategory = "all";
+        conductFilterSeverity = "all";
+        conductFilterMonitored = false;
+        if (el("conductCategorySelect")) el("conductCategorySelect").value = "all";
+        if (pillsWrap) {
+          pillsWrap.querySelectorAll(".coc-pill").forEach(p => p.classList.remove("active"));
+          pillsWrap.querySelector('.coc-pill[data-filter="all"]')?.classList.add("active");
+        }
+        renderCodeOfConductResults();
+      });
+    });
+
+    // Expand All / Collapse All button
+    el("btnConductExpandAll")?.addEventListener("click", () => {
+      const allGroups = window.CCTV_REPORT_SERVICE.getCodeOfConduct();
+      const anyExpanded = Object.keys(conductCollapsedCategories).length < allGroups.length;
+      allGroups.forEach(g => {
+        conductCollapsedCategories[g.category] = anyExpanded;
+      });
+      const btn = el("btnConductExpandAll");
+      if (btn) btn.textContent = anyExpanded ? "Expand All" : "Collapse All";
+      renderCodeOfConductResults();
+    });
+
+    // Back to Report workspace action
+    el("btnBackToReportFromConduct")?.addEventListener("click", () => {
+      switchWorkspace("report");
+    });
+  }
+
   function renderMasterlistWorkspace() {
     if (window._renderMasterlistWorkspaceFn) {
       window._renderMasterlistWorkspaceFn();
@@ -7403,6 +8146,12 @@ ${escapeHtml(JSON.stringify(entry.after || entry.before, null, 2))}
 
     // Follow Up Reports Initialization
     initFollowupController();
+
+    // CCTV Report Workspace Initialization
+    initCctvReportController();
+
+    // Code of Conduct Reference Initialization
+    initCodeOfConductController();
 
     // Masterlist Workspace Initialization
     initMasterlistController();

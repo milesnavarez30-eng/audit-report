@@ -435,14 +435,36 @@
         <div class="brand-badge">V2</div>
         <div class="brand-text">
           <span class="brand-title">CCTV OPS</span>
-          <span class="brand-subtitle">Operations Hub</span>
         </div>
       </div>
 
       <nav class="rail-menu" role="tablist" aria-label="Workspaces">
         <div class="rail-section-label">Workspaces</div>
 
-        <!-- EDR Workspace Tab (Active Prototype) -->
+        <!-- 1. CCTV Report Workspace Tab -->
+        <button type="button" class="nav-item" id="tabCctvReport" role="tab" aria-selected="false" title="CCTV Report" data-tooltip="CCTV Report" data-tooltip-pos="right">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+            <line x1="16" y1="13" x2="8" y2="13"></line>
+            <line x1="16" y1="17" x2="8" y2="17"></line>
+            <polyline points="10 9 9 9 8 9"></polyline>
+          </svg>
+          <span class="nav-label">CCTV Report</span>
+        </button>
+
+        <!-- 2. Code of Conduct Workspace Tab -->
+        <button type="button" class="nav-item" id="tabConduct" role="tab" aria-selected="false" title="Code of Conduct" data-tooltip="Code of Conduct" data-tooltip-pos="right">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+            <line x1="9" y1="7" x2="16" y2="7"></line>
+            <line x1="9" y1="11" x2="16" y2="11"></line>
+          </svg>
+          <span class="nav-label">Code of Conduct</span>
+        </button>
+
+        <!-- 3. EDR Workspace Tab (Active Prototype) -->
         <button type="button" class="nav-item active" id="tabEdr" role="tab" aria-selected="true" title="End of the Day Report" data-tooltip="End of the Day Report" data-tooltip-pos="right">
           <svg class="nav-icon" viewBox="0 0 24 24">
             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
@@ -455,7 +477,7 @@
           <span class="nav-badge" id="railEdrBadge">0</span>
         </button>
 
-        <!-- Workspaces -->
+        <!-- 4. CCTV Audit Workspace Tab -->
         <button type="button" class="nav-item" id="tabAudit" role="tab" aria-selected="false" title="CCTV Audit" data-tooltip="CCTV Audit" data-tooltip-pos="right">
           <svg class="nav-icon" viewBox="0 0 24 24">
             <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
@@ -466,6 +488,7 @@
           <span class="nav-badge" id="railAuditBadge">0</span>
         </button>
 
+        <!-- 5. AI Sorter Workspace Tab -->
         <button type="button" class="nav-item" id="tabSorter" role="tab" aria-selected="false" title="AI Sorter" data-tooltip="AI Sorter" data-tooltip-pos="right">
           <svg class="nav-icon" viewBox="0 0 24 24">
             <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
@@ -473,6 +496,7 @@
           <span class="nav-label">AI Sorter</span>
         </button>
 
+        <!-- 6. Maintenance Workspace Tab -->
         <button type="button" class="nav-item" id="tabMaintenance" role="tab" aria-selected="false" title="Maintenance" data-tooltip="Maintenance" data-tooltip-pos="right">
           <svg class="nav-icon" viewBox="0 0 24 24">
             <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path>
@@ -480,7 +504,7 @@
           <span class="nav-label">Maintenance</span>
         </button>
 
-        <!-- Follow Up moved to main operational group in place of Pending -->
+        <!-- 7. Follow Up Workspace Tab -->
         <button type="button" class="nav-item" id="tabFollowup" role="tab" aria-selected="false" title="Follow Up" data-tooltip="Follow Up" data-tooltip-pos="right">
           <svg class="nav-icon" viewBox="0 0 24 24">
             <circle cx="12" cy="12" r="10"></circle>
@@ -806,6 +830,10 @@
                   <div class="card-actions">
                     <button type="button" class="btn btn-ghost btn-sm" id="btnSelectAll">Select All</button>
                     <button type="button" class="btn btn-ghost btn-sm" id="btnUnselectAll">Clear</button>
+                    <button type="button" class="btn btn-danger-ghost btn-sm" id="btnDeleteSelectedEdr" disabled title="Delete all selected Saved EDRs" style="gap:5px;">
+                      <svg class="icon icon-sm" viewBox="0 0 24 24" style="width:13px;height:13px;"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                      <span id="btnDeleteSelectedEdrText">Delete Selected</span>
+                    </button>
                   </div>
                 </div>
 
@@ -945,6 +973,52 @@
               </form>
             </div>
 
+            <!-- MIDDLE-BOTTOM: CCTV AUDIT DATA OUTPUT GRID (Staging / Copy-Paste Area) -->
+            <div class="audit-grid-card audit-staging-card" id="auditStagingCard">
+              <div class="audit-grid-header">
+                <div class="audit-grid-title-wrap" style="display:flex; align-items:center; gap:8px;">
+                  <span style="font-weight:700; font-size:12px; color:var(--text-primary); letter-spacing:0.04em;">DATA OUTPUT GRID</span>
+                  <span class="badge badge-neutral" id="auditTotalRowsBadge">0 rows</span>
+                  <span class="badge badge-info" id="auditLinkedBadge" style="display:none;">0 from EDR</span>
+                  <span style="font-size:10.5px; color:var(--text-muted); font-style:italic;">(Staging area — Copy row or grid to paste into Tracker)</span>
+                </div>
+                <div class="audit-grid-actions" style="display:flex; align-items:center; gap:6px;">
+                  <button type="button" class="btn btn-ghost btn-sm" id="btnAuditClearAll" title="Clear all staged audit rows">Clear All</button>
+                  <button type="button" class="btn btn-secondary btn-sm" id="btnAuditCopyTracker" title="Copy all staged rows for Tracker (Arial 10pt / TSV formatted)">
+                    <svg class="icon icon-sm" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                    <span>Copy for Tracker</span>
+                  </button>
+                </div>
+              </div>
+
+              <div class="audit-grid-table-wrap table-responsive-wrapper">
+                <table class="audit-data-table" id="auditOutputTable">
+                  <thead>
+                    <tr>
+                      <th style="width:36px; text-align:center;">#</th>
+                      <th>Date</th>
+                      <th>Auditor</th>
+                      <th>Site</th>
+                      <th>TL Name</th>
+                      <th>Agent Name</th>
+                      <th>OM Name</th>
+                      <th>Account</th>
+                      <th>CCTV Reason</th>
+                      <th>NOC</th>
+                      <th>Remarks</th>
+                      <th style="width:85px; text-align:center;">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="auditTableBody">
+                    <!-- Injected rows -->
+                  </tbody>
+                </table>
+                <div id="auditEmptyNotice" style="color:var(--text-muted); font-size:11.5px; text-align:center; padding:32px 10px;">
+                  No staged audit entries. Use "Add Entry to List" above or "Send to Audit" from Saved EDR.
+                </div>
+              </div>
+            </div>
+
             <!-- BOTTOM: Interactive Live Tracker Spreadsheet Grid -->
             <div class="audit-grid-card live-tracker-card" style="display:flex; flex-direction:column; flex:1; min-height:350px;">
               <div class="live-tracker-toolbar">
@@ -996,7 +1070,7 @@
                     <span>Sync Sheet</span>
                   </button>
                   <button type="button" class="btn btn-outline btn-sm" id="btnTrackerSetup" title="Configure Google Sheets Web App URL">
-                    <svg class="icon icon-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l-.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l-.06-.06a2 2 0 0 1 2.83 2.83l-.06-.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                    <svg class="icon icon-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l-.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l-.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06-.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
                     <span>Setup</span>
                   </button>
                   <button type="button" class="btn btn-danger-ghost btn-sm" id="btnTrackerClearAll" title="Clear all tracker rows">Clear</button>
@@ -1005,16 +1079,6 @@
 
               <!-- Interactive Spreadsheet Container -->
               <div id="liveTrackerSpreadsheetContainer" style="flex:1; min-height:0; display:flex; flex-direction:column; overflow:hidden;"></div>
-
-              <!-- Compatibility hidden elements -->
-              <div style="display:none;" id="auditCompatibilityWrap">
-                <span id="auditTotalRowsBadge">0 rows</span>
-                <span id="auditLinkedBadge">0 from EDR</span>
-                <button id="btnAuditClearAll"></button>
-                <button id="btnAuditCopyTracker"></button>
-                <table id="auditOutputTable"><tbody id="auditTableBody"></tbody></table>
-                <div id="auditEmptyNotice"></div>
-              </div>
             </div>
 
           </div>
@@ -1442,6 +1506,250 @@
 
               <div class="followup-report-list" id="followupReportList">
                 <div class="empty-state" style="padding:40px; text-align:center; color:var(--text-muted); font-size:12px;">No follow-up reports yet.</div>
+              </div>
+            </div>
+
+          </div>
+        </section>
+
+        <!-- WORKSPACE: CCTV Report Composer -->
+        <section id="paneCctvReport" class="workspace-pane" role="tabpanel" aria-labelledby="tabCctvReport" hidden>
+          <div class="cctv-report-layout">
+            
+            <!-- LEFT COLUMN: Report Composer & Quick Compose -->
+            <div class="cctv-report-left-col">
+              <!-- Report Composer Card -->
+              <div class="card cctv-report-composer-card" style="height:100%; display:flex; flex-direction:column;">
+                <div class="card-head">
+                  <div class="card-title-wrap">
+                    <h2 class="card-title">CCTV REPORT</h2>
+                  </div>
+                  <div class="card-actions">
+                    <button type="button" class="btn btn-outline btn-sm" id="btnOpenConductFromReport" title="Open full Code of Conduct reference in separate workspace" style="gap:5px;">
+                      <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+                      <span>Open Code of Conduct</span>
+                    </button>
+                    <button type="button" class="btn btn-ghost btn-sm" id="btnResetCctvReport" title="Reset composer to standard template">Reset</button>
+                  </div>
+                </div>
+
+                <div class="card-body" style="flex:1; overflow-y:auto; padding:14px; display:flex; flex-direction:column; gap:12px;">
+                  <!-- Referenced Policy Banner (when transferred from Code of Conduct) -->
+                  <div class="cctv-policy-banner" id="reportPolicyBanner" style="display:none; padding:8px 12px; background:rgba(99,102,241,0.12); border:1px solid rgba(99,102,241,0.3); border-radius:4px; align-items:center; justify-content:space-between; font-size:11.5px;">
+                    <div style="display:flex; align-items:center; gap:8px;">
+                      <span class="badge badge-info" id="reportPolicyBadge">Policy</span>
+                      <span id="reportPolicyTitle" style="color:var(--text-primary); font-weight:600;"></span>
+                    </div>
+                    <button type="button" class="btn btn-ghost btn-xs" id="btnRemoveReportPolicy" title="Remove policy reference" style="padding:2px 6px; font-size:10px; color:var(--text-muted);">✕ Remove</button>
+                  </div>
+
+                  <!-- Quick Compose Section -->
+                  <div class="quick-compose-box" style="background:var(--bg-card); border:1px solid var(--border-default); border-radius:6px; padding:12px; display:flex; flex-direction:column; gap:8px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                      <label class="form-label" for="quickComposeText" style="margin-bottom:0; font-weight:700; color:var(--text-primary);">Quick Compose</label>
+                      <span style="font-size:11px; color:var(--text-muted);">Enter raw notes (violation, timestamps, site, date)</span>
+                    </div>
+                    <textarea class="form-control" id="quickComposeText" rows="3" placeholder="Sleeping&#10;5:34:44 AM to 5:40:20 AM&#10;Mabini Site A Ground Floor&#10;09-10-26" style="font-family:var(--font-mono); font-size:12px; resize:vertical;"></textarea>
+                    <div style="display:flex; gap:8px; align-items:center;">
+                      <button type="button" class="btn btn-primary btn-sm" id="btnGenerateReport" style="gap:6px;">
+                        <svg class="icon icon-sm" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                        <strong>Generate Report</strong>
+                      </button>
+                      <button type="button" class="btn btn-ghost btn-sm" id="btnRegenerateReport" title="Regenerate report from Quick Compose notes">
+                        Regenerate
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- Editable Generated Report Textarea -->
+                  <div class="form-group" style="margin-bottom:0;">
+                    <label class="form-label" for="reportObservation">Observation / Report Body <span class="required-dot">*</span></label>
+                    <textarea class="form-control" id="reportObservation" rows="4" placeholder="Report text will be generated here and remains fully editable..."></textarea>
+                  </div>
+
+                  <!-- Compact Metadata Row: Location & Date -->
+                  <div class="form-row-2col">
+                    <div class="form-group" style="margin-bottom:0;">
+                      <label class="form-label" for="reportSite">Location</label>
+                      <input type="text" class="form-control" id="reportSite" placeholder="e.g. Mabini Site A – Ground Floor">
+                    </div>
+                    <div class="form-group" style="margin-bottom:0;">
+                      <label class="form-label" for="reportDateRange">Date</label>
+                      <input type="text" class="form-control" id="reportDateRange" placeholder="e.g. September 10, 2026">
+                    </div>
+                  </div>
+
+                  <div class="form-group" style="margin-bottom:0;">
+                    <label class="form-label" for="reportPersonInvolved">Person / Agent Involved <span style="color:var(--text-muted); font-size:10.5px; font-weight:normal;">(optional)</span></label>
+                    <input type="text" class="form-control" id="reportPersonInvolved" placeholder="e.g. Agent Name / Employee ID">
+                  </div>
+
+                  <!-- CCTV Clip Section -->
+                  <div class="form-group" style="margin-bottom:0;">
+                    <label class="form-label" for="reportClipUrl">CCTV Clip</label>
+                    <textarea class="form-control" id="reportClipUrl" rows="2" placeholder="https://... (enter one or multiple URLs separated by newline)" style="font-size:11.5px; resize:vertical;"></textarea>
+                  </div>
+
+                  <!-- Screenshots Section -->
+                  <div class="form-group" style="margin-bottom:0;">
+                    <div class="report-section-header">
+                      <label class="form-label" style="margin-bottom:0;">Screenshots (<span id="reportShotCount">0</span>)</label>
+                      <button type="button" class="btn btn-outline btn-xs" id="btnBrowseReportShot" style="gap:4px;">+ Add Screenshot</button>
+                      <input type="file" id="reportShotInput" accept="image/*" multiple hidden>
+                    </div>
+                    <div class="report-dropzone" id="reportDropzone">
+                      <svg class="icon icon-md" viewBox="0 0 24 24" style="color:var(--accent-primary);"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                      <div class="dropzone-text">
+                        <strong>Paste screenshot (Ctrl+V)</strong>, drag & drop image, or click <em>+ Add Screenshot</em>
+                      </div>
+                    </div>
+                    <div class="report-shot-gallery" id="reportShotGallery"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- RIGHT COLUMN: Report Preview & COPY ALL Action -->
+            <div class="cctv-report-right-col">
+              <div class="card cctv-preview-card">
+                <div class="card-head">
+                  <div class="card-title-wrap">
+                    <div style="display:flex; align-items:center; gap:8px;">
+                      <span class="teams-indicator-dot" title="Microsoft Teams format"></span>
+                      <h2 class="card-title">Report Preview</h2>
+                    </div>
+                  </div>
+                  <div class="card-actions">
+                    <button type="button" class="btn btn-primary btn-sm" id="btnCopyAllReport" style="gap:6px;">
+                      <svg class="icon icon-sm" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                      <strong>COPY ALL</strong>
+                    </button>
+                  </div>
+                </div>
+
+                <div class="card-body">
+                  <div class="teams-message-box" id="teamsMessageBox">
+                    <!-- Live Teams formatted preview -->
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </section>
+
+        <!-- WORKSPACE: Code of Conduct Policy Reference (Standalone Workspace) -->
+        <section id="paneConduct" class="workspace-pane" role="tabpanel" aria-labelledby="tabConduct" hidden>
+          <div class="cctv-conduct-layout">
+            
+            <!-- TOP TOOLBAR: Search, Category Filter, Severity Filter, CCTV Shortcuts -->
+            <div class="card conduct-toolbar-card">
+              <div class="card-head">
+                <div class="card-title-wrap">
+                  <h2 class="card-title">CODE OF CONDUCT</h2>
+                </div>
+                <div class="card-actions">
+                  <button type="button" class="btn btn-outline btn-sm" id="btnBackToReportFromConduct" title="Switch back to CCTV Report composer" style="gap:5px;">
+                    <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+                    <span>Back to CCTV Report</span>
+                  </button>
+                  <button type="button" class="btn btn-ghost btn-sm" id="btnConductExpandAll" title="Expand or collapse all categories">Expand All</button>
+                </div>
+              </div>
+
+              <div class="card-body" style="display:flex; flex-direction:column; gap:10px; padding:12px 16px;">
+                <!-- Row 1: Search & Category Dropdown & Severity Filters -->
+                <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                  <div class="coc-search-bar" style="flex:1; min-width:280px; margin-bottom:0;">
+                    <svg class="icon icon-xs" viewBox="0 0 24 24" style="color:var(--text-muted);"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                    <input type="text" class="coc-search-input" id="conductSearchInput" placeholder="Search violation keyword or policy # (e.g. sleeping, 1.28, dress code, internet, 3.01)...">
+                    <button type="button" class="coc-clear-search" id="btnConductClearSearch" title="Clear search" style="display:none;">✕</button>
+                  </div>
+
+                  <div style="min-width:240px;">
+                    <select class="form-control form-control-sm" id="conductCategorySelect" style="height:32px; font-size:11px;">
+                      <option value="all">All Categories (All 6 Sections)</option>
+                      <option value="0">1. Attendance, Hours & Work Assign</option>
+                      <option value="1">2. Office Attire & Dress Code</option>
+                      <option value="2">3. Care of Company Property & Premises</option>
+                      <option value="3">4. Security & Health and Safety</option>
+                      <option value="4">5. Behavior, Decorum & Respect</option>
+                      <option value="5">6. Performance, Diligence & Integrity</option>
+                    </select>
+                  </div>
+
+                  <!-- Severity Pills -->
+                  <div class="coc-filter-pills" id="conductSeverityFilters">
+                    <button type="button" class="coc-pill active" data-filter="all">All</button>
+                    <button type="button" class="coc-pill" data-filter="cctv">CCTV Monitored</button>
+                    <button type="button" class="coc-pill pill-minor" data-filter="MINOR">Minor</button>
+                    <button type="button" class="coc-pill pill-major" data-filter="MAJOR">Major</button>
+                    <button type="button" class="coc-pill pill-grave" data-filter="GRAVE">Grave</button>
+                  </div>
+                </div>
+
+                <!-- Row 2: CCTV Activity Shortcut Chips -->
+                <div class="conduct-cctv-shortcuts" style="display:flex; align-items:center; gap:6px; flex-wrap:wrap; padding-top:4px; border-top:1px solid rgba(255,255,255,0.04);">
+                  <span style="font-size:10px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px; margin-right:2px;">CCTV Shortcuts:</span>
+                  <button type="button" class="btn-cctv-chip" data-query="1.28">Sleeping (1.28)</button>
+                  <button type="button" class="btn-cctv-chip" data-query="2.03">Dress Code (2.03)</button>
+                  <button type="button" class="btn-cctv-chip" data-query="2.02">Hoods/Caps (2.02)</button>
+                  <button type="button" class="btn-cctv-chip" data-query="3.01">Unclean Desks (3.01)</button>
+                  <button type="button" class="btn-cctv-chip" data-query="3.02">Open Drinks (3.02)</button>
+                  <button type="button" class="btn-cctv-chip" data-query="1.10">Leaving Station (1.10)</button>
+                  <button type="button" class="btn-cctv-chip" data-query="4.06">Cellphones (4.06)</button>
+                  <button type="button" class="btn-cctv-chip" data-query="5.04">Horseplay (5.04)</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Main Split: Results List on Left, Penalty Matrix on Right -->
+            <div class="conduct-main-content">
+              <!-- Left / Main: Search Results Accordion List -->
+              <div class="card conduct-results-card">
+                <div class="card-head">
+                  <span class="card-title" id="conductResultsCountText">Showing All Policies</span>
+                  <span class="card-subtitle">Click "Use in CCTV Report" to insert reference into report</span>
+                </div>
+                <div class="card-body" id="conductResultsContainer" style="overflow-y:auto; padding:12px; gap:10px; display:flex; flex-direction:column;">
+                  <!-- Dynamic policy categories injected here -->
+                </div>
+              </div>
+
+              <!-- Right: Disciplinary Matrix Reference Card -->
+              <div class="card conduct-matrix-card">
+                <div class="card-head">
+                  <span class="card-title">Disciplinary Penalty Matrix</span>
+                  <span class="card-subtitle">Official SixEleven sanction guidelines</span>
+                </div>
+                <div class="card-body" style="overflow-y:auto; padding:14px; display:flex; flex-direction:column; gap:12px;">
+                  <div class="matrix-card-section is-minor">
+                    <div class="matrix-head"><span class="badge badge-info" style="font-size:9.5px; padding:2px 6px;">MINOR</span> <strong style="font-size:11.5px; color:var(--text-primary);">Minor Infractions</strong></div>
+                    <ul class="matrix-list">
+                      <li><strong>1st Offense:</strong> Written Warning</li>
+                      <li><strong>2nd Offense:</strong> 1-day suspension</li>
+                      <li><strong>3rd Offense:</strong> 2–3 days suspension</li>
+                      <li><strong>4th Offense:</strong> Termination</li>
+                    </ul>
+                  </div>
+                  <div class="matrix-card-section is-major">
+                    <div class="matrix-head"><span class="badge badge-warning" style="font-size:9.5px; padding:2px 6px; background:rgba(245,158,11,0.2); color:#fbbf24;">MAJOR</span> <strong style="font-size:11.5px; color:var(--text-primary);">Major Infractions</strong></div>
+                    <ul class="matrix-list">
+                      <li><strong>1st Offense:</strong> 1-day suspension</li>
+                      <li><strong>2nd Offense:</strong> 2–3 days suspension</li>
+                      <li><strong>3rd Offense:</strong> Termination</li>
+                    </ul>
+                  </div>
+                  <div class="matrix-card-section is-grave">
+                    <div class="matrix-head"><span class="badge badge-danger" style="font-size:9.5px; padding:2px 6px; background:rgba(239,68,68,0.2); color:#f87171;">GRAVE</span> <strong style="font-size:11.5px; color:var(--text-primary);">Grave Infractions</strong></div>
+                    <ul class="matrix-list">
+                      <li><strong>1st Offense:</strong> Termination of Employment</li>
+                    </ul>
+                  </div>
+                  <div style="font-size:10.5px; color:var(--text-muted); line-height:1.4; border-top:1px solid rgba(255,255,255,0.06); padding-top:8px;">
+                    💡 <em>Policies marked <strong>[Remind Only]</strong> (e.g. casual slippers, open beverages) are issued advisory reminders by Operations prior to formal disciplinary escalations.</em>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -2200,6 +2508,7 @@
   <script src="./js/services/masterlist-service.js"></script>
   <script src="./js/services/history-service.js"></script>
   <script src="./js/services/accounts-service.js"></script>
+  <script src="./js/services/cctv-report-service.js"></script>
   <script src="./js/app.js"></script>
 </body>
 </html>
