@@ -1392,6 +1392,12 @@
       title: "CCTV Audit",
       subtitle: ""
     },
+    trackers: {
+      tabId: "tabTrackers",
+      paneId: "paneTrackers",
+      title: "Trackers",
+      subtitle: ""
+    },
     sorter: {
       tabId: "tabSorter",
       paneId: "paneSorter",
@@ -1482,6 +1488,8 @@
     if (targetKey === "audit") {
       renderAuditTable();
       renderGuardStatus();
+    } else if (targetKey === "trackers") {
+      renderTrackersWorkspace();
     } else if (targetKey === "sorter") {
       renderSorterWorkspace();
     } else if (targetKey === "maintenance") {
@@ -6401,28 +6409,38 @@ function doPost(e) {
       .replace(/>/g, "&gt;");
 
     const htmlParts = [];
+    const greeting = (cctvReportDraft.greeting || "Good morning TLs,").trim();
+    const observation = (cctvReportDraft.observation || "").trim();
+    const person = (cctvReportDraft.personInvolved || "").trim();
+    const site = (cctvReportDraft.site || "").trim();
+    const dateRange = (cctvReportDraft.dateRange || "").trim();
 
-    if (cctvReportDraft.greeting) {
-      htmlParts.push(`<div class="teams-preview-greeting">${esc(cctvReportDraft.greeting)}</div>`);
+    // Check if observation already starts with greeting
+    const startsWithGreeting = /^\s*good\s+(?:morning|afternoon|evening)/i.test(observation);
+    if (!startsWithGreeting && greeting) {
+      htmlParts.push(`<div class="teams-preview-greeting" style="margin-bottom: 6px;">${esc(greeting)}</div>`);
     }
 
-    if (cctvReportDraft.observation) {
-      const formattedBody = esc(cctvReportDraft.observation).replace(/\r?\n/g, "<br>");
-      htmlParts.push(`<div class="teams-preview-body" style="margin: 8px 0;">${formattedBody}</div>`);
+    if (observation) {
+      const formattedBody = esc(observation).replace(/\r?\n/g, "<br>");
+      htmlParts.push(`<div class="teams-preview-body" style="margin: 6px 0;">${formattedBody}</div>`);
     }
+
+    const hasLocationInObs = /\bLocation\s*:/i.test(observation);
+    const hasDateInObs = /\bDate\s*:/i.test(observation);
 
     const metaItems = [];
-    if (cctvReportDraft.personInvolved && cctvReportDraft.personInvolved.trim()) {
-      metaItems.push(`<div class="teams-preview-meta-line"><strong>Person/Agent Involved:</strong> ${esc(cctvReportDraft.personInvolved.trim())}</div>`);
+    if (person && !observation.includes(person)) {
+      metaItems.push(`<div class="teams-preview-meta-line"><strong>Person/Agent Involved:</strong> ${esc(person)}</div>`);
     }
-    if (cctvReportDraft.site && cctvReportDraft.site.trim()) {
-      metaItems.push(`<div class="teams-preview-meta-line"><strong>Location:</strong> ${esc(cctvReportDraft.site.trim())}</div>`);
+    if (site && !hasLocationInObs) {
+      metaItems.push(`<div class="teams-preview-meta-line"><strong>Location:</strong> ${esc(site)}</div>`);
     }
-    if (cctvReportDraft.dateRange && cctvReportDraft.dateRange.trim()) {
-      metaItems.push(`<div class="teams-preview-meta-line"><strong>Date:</strong> ${esc(cctvReportDraft.dateRange.trim())}</div>`);
+    if (dateRange && !hasDateInObs) {
+      metaItems.push(`<div class="teams-preview-meta-line"><strong>Date:</strong> ${esc(dateRange)}</div>`);
     }
     if (metaItems.length) {
-      htmlParts.push(`<div class="teams-preview-meta" style="margin: 8px 0;">${metaItems.join("")}</div>`);
+      htmlParts.push(`<div class="teams-preview-meta" style="margin: 6px 0;">${metaItems.join("")}</div>`);
     }
 
     // Code of Conduct is kept strictly as internal supporting context.
@@ -6431,9 +6449,9 @@ function doPost(e) {
     if (Array.isArray(cctvReportDraft.screenshots) && cctvReportDraft.screenshots.length > 0) {
       const shotsHtml = cctvReportDraft.screenshots.map((s, idx) => {
         const src = typeof s === "string" ? s : (s.data || s.url || "");
-        return `<img src="${src}" class="teams-preview-shot-img" alt="CCTV Screenshot ${idx + 1}" style="max-width: 100%; border-radius: 4px; margin: 4px 0; display: block;">`;
+        return `<img src="${src}" class="teams-preview-shot-img" alt="CCTV Screenshot ${idx + 1}">`;
       }).join("");
-      htmlParts.push(`<div class="teams-preview-shots" style="margin: 8px 0;">${shotsHtml}</div>`);
+      htmlParts.push(`<div class="teams-preview-shots" style="margin: 6px 0;">${shotsHtml}</div>`);
     }
 
     const clips = (cctvReportDraft.clipUrl || "")
@@ -6442,13 +6460,13 @@ function doPost(e) {
       .filter(u => !!u);
 
     if (clips.length === 1) {
-      htmlParts.push(`<div class="teams-preview-clip" style="margin-top: 8px;"><strong>CCTV Clip:</strong> <a href="${esc(clips[0])}" target="_blank" rel="noopener noreferrer" style="color:#6366f1; text-decoration:underline; font-weight:600;">Click here!</a></div>`);
+      htmlParts.push(`<div class="teams-preview-clip" style="margin-top: 6px;"><strong>CCTV Clip:</strong> <a href="${esc(clips[0])}" target="_blank" rel="noopener noreferrer" style="color:#6366f1; text-decoration:underline; font-weight:600;">Click here!</a></div>`);
     } else if (clips.length > 1) {
       clips.forEach((c, idx) => {
         htmlParts.push(`<div class="teams-preview-clip" style="margin-top: 4px;"><strong>CCTV Clip ${idx + 1}:</strong> <a href="${esc(c)}" target="_blank" rel="noopener noreferrer" style="color:#6366f1; text-decoration:underline; font-weight:600;">Click here!</a></div>`);
       });
     } else {
-      htmlParts.push(`<div class="teams-preview-clip" style="color:var(--text-muted); margin-top: 8px;"><strong>CCTV Clip:</strong> <em>Click here!</em></div>`);
+      htmlParts.push(`<div class="teams-preview-clip" style="color:var(--text-muted); margin-top: 6px;"><strong>CCTV Clip:</strong> <em>Click here!</em></div>`);
     }
 
     box.innerHTML = htmlParts.join("");
@@ -6989,6 +7007,113 @@ function doPost(e) {
     el("btnBackToReportFromConduct")?.addEventListener("click", () => {
       switchWorkspace("report");
     });
+  }
+
+  // =========================================================================
+  // WORKSPACE: TRACKERS (Shared Authoritative Google Sheets Integration)
+  // =========================================================================
+  const TRACKER_CONFIGS = {
+    audit: {
+      key: "audit",
+      label: "CCTV Audit",
+      sheetTitle: "CCTV Audit (AUDIT 2026)",
+      spreadsheetId: "1dhQKpRxZUFjQc-00a5SQXRRsIOMCjT_d-b-o36bYWzs",
+      gid: "312942343",
+      url: "https://docs.google.com/spreadsheets/d/1dhQKpRxZUFjQc-00a5SQXRRsIOMCjT_d-b-o36bYWzs/edit?gid=312942343#gid=312942343"
+    },
+    "2026": {
+      key: "2026",
+      label: "2026",
+      sheetTitle: "2026 Tracker (QUERY)",
+      spreadsheetId: "12o3O1u2xb3DbXW41jAen-8HSJhpJRzQLSIb_6o5JRc4",
+      gid: "1589623984",
+      url: "https://docs.google.com/spreadsheets/d/12o3O1u2xb3DbXW41jAen-8HSJhpJRzQLSIb_6o5JRc4/edit?gid=1589623984#gid=1589623984"
+    },
+    itsheet: {
+      key: "itsheet",
+      label: "IT Sheet",
+      sheetTitle: "IT Sheet / Maintenance (MAA 4F/5F)",
+      spreadsheetId: "1PBKIr7cACVcElX9YpAqshhTTsjlJz69dji7TiA0IlrE",
+      gid: "484781158",
+      url: "https://docs.google.com/spreadsheets/d/1PBKIr7cACVcElX9YpAqshhTTsjlJz69dji7TiA0IlrE/edit?gid=484781158#gid=484781158"
+    },
+    seatplan: {
+      key: "seatplan",
+      label: "Seatplan",
+      sheetTitle: "SEAT PLAN 2026",
+      spreadsheetId: "1XanmnE63XiyKyT7EZMahHd8E8uZJftQlwPihy1JF96E",
+      gid: "",
+      url: "https://docs.google.com/spreadsheets/d/1XanmnE63XiyKyT7EZMahHd8E8uZJftQlwPihy1JF96E/edit"
+    }
+  };
+
+  const TRACKER_STORAGE_KEY = "cctv_ops_v2_active_tracker_tab";
+  let activeTrackerKey = "audit";
+
+  function setTrackerWorkbook(key, forceReload = false) {
+    if (!TRACKER_CONFIGS[key]) key = "audit";
+    activeTrackerKey = key;
+    try {
+      localStorage.setItem(TRACKER_STORAGE_KEY, key);
+    } catch (_) {}
+
+    const cfg = TRACKER_CONFIGS[key];
+    const iframe = el("trackerFrame");
+    const labelEl = el("trackersActiveLabel");
+    const openLink = el("linkOpenGoogleSheets");
+
+    if (labelEl) labelEl.textContent = cfg.sheetTitle || cfg.label;
+    if (openLink) openLink.href = cfg.url;
+
+    // Update switcher tab buttons
+    document.querySelectorAll(".tracker-switch-btn").forEach(btn => {
+      const isCurrent = btn.dataset.tracker === key;
+      btn.classList.toggle("active", isCurrent);
+      btn.setAttribute("aria-selected", isCurrent ? "true" : "false");
+    });
+
+    if (iframe) {
+      if (forceReload || iframe.src !== cfg.url) {
+        iframe.src = cfg.url;
+      }
+    }
+  }
+
+  function renderTrackersWorkspace() {
+    let savedKey = "audit";
+    try {
+      savedKey = localStorage.getItem(TRACKER_STORAGE_KEY) || "audit";
+    } catch (_) {}
+    if (!TRACKER_CONFIGS[savedKey]) savedKey = "audit";
+    setTrackerWorkbook(savedKey, false);
+  }
+
+  function initTrackersController() {
+    // Switcher buttons
+    document.querySelectorAll(".tracker-switch-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const key = btn.dataset.tracker;
+        setTrackerWorkbook(key, false);
+      });
+    });
+
+    // Reload button
+    el("btnTrackerReload")?.addEventListener("click", () => {
+      setTrackerWorkbook(activeTrackerKey, true);
+      showToast(`Reloaded ${TRACKER_CONFIGS[activeTrackerKey]?.label || 'tracker'}.`, "info");
+    });
+
+    // Restore saved state
+    let savedKey = "audit";
+    try {
+      savedKey = localStorage.getItem(TRACKER_STORAGE_KEY) || "audit";
+    } catch (_) {}
+    if (!TRACKER_CONFIGS[savedKey]) savedKey = "audit";
+    setTrackerWorkbook(savedKey, false);
+
+    window.setTrackerWorkbook = setTrackerWorkbook;
+    window.renderTrackersWorkspace = renderTrackersWorkspace;
+    window.TRACKER_CONFIGS = TRACKER_CONFIGS;
   }
 
   function renderMasterlistWorkspace() {
@@ -8152,6 +8277,9 @@ ${escapeHtml(JSON.stringify(entry.after || entry.before, null, 2))}
 
     // Code of Conduct Reference Initialization
     initCodeOfConductController();
+
+    // Trackers Workspace Initialization
+    initTrackersController();
 
     // Masterlist Workspace Initialization
     initMasterlistController();

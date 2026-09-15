@@ -716,6 +716,11 @@ window.CCTV_REPORT_SERVICE = (function () {
 
     let text = rawText.trim();
 
+    // 0. Strip greetings and headers to avoid duplicate greetings
+    text = text.replace(/^\s*good\s+(?:morning|afternoon|evening)\s+(?:tls?|team\s*leaders?|all)[\s,:]*/im, " ");
+    text = text.replace(/^(?:CCTV\s+REPORT|INCIDENT\s+REPORT)[\s,:]*/im, " ");
+    text = text.replace(/\b(?:Location|Site|Date|Person(?:\/Agent)?\s*Involved)\s*:\s*/gi, " ");
+
     // 1. Extract CCTV Clip URLs
     const urlRegex = /(https?:\/\/[^\s]+)/gi;
     const detectedUrls = [];
@@ -723,8 +728,9 @@ window.CCTV_REPORT_SERVICE = (function () {
     while ((match = urlRegex.exec(text)) !== null) {
       detectedUrls.push(match[1]);
     }
-    // Remove detected URLs from body text for clean parsing
+    // Remove detected URLs and any leftover clip labels from body text
     text = text.replace(urlRegex, " ").replace(/\s+/g, " ").trim();
+    text = text.replace(/\bCCTV\s*Clip(?:\s*\d+)?\s*:\s*(?:Click\s*here!?)?/gi, " ");
 
     // 2. Extract Location
     let detectedLocation = "";
@@ -879,6 +885,10 @@ window.CCTV_REPORT_SERVICE = (function () {
     }
     // Remove isolated time strings from cleanNotes
     cleanNotes = cleanNotes.replace(timeRegex, " ").replace(/\s+/g, " ").trim();
+    // Strip redundant leading "Observed an agent" / "Observed" so it does not duplicate
+    cleanNotes = cleanNotes.replace(/^observed\s+(?:an?\s+)?(?:agent|person)?\s*/i, "").trim();
+    // Strip trailing action requests if present in raw input
+    cleanNotes = cleanNotes.replace(/\bkindly\s+(?:file\s+an\s+noc|remind\s+the\s+agent)[^.\n]*\.?(?:\s*thank\s+you\.?)?/gi, "").trim();
 
     return {
       cleanNotes,
@@ -1090,25 +1100,36 @@ window.CCTV_REPORT_SERVICE = (function () {
     const d = draft || getDefaultDraft();
     const parts = [];
 
-    if (d.greeting) {
-      parts.push(d.greeting);
+    const greeting = (d.greeting || "Good morning TLs,").trim();
+    const observation = (d.observation || d.body || "").trim();
+    const person = (d.personInvolved || "").trim();
+    const location = (d.site || d.location || "").trim();
+    const date = (d.dateRange || d.date || "").trim();
+    const clipUrl = d.clipUrl || "";
+
+    const startsWithGreeting = /^\s*good\s+(?:morning|afternoon|evening)/i.test(observation);
+    if (!startsWithGreeting && greeting) {
+      parts.push(greeting);
       parts.push("");
     }
 
-    if (d.observation) {
-      parts.push(d.observation);
+    if (observation) {
+      parts.push(observation);
       parts.push("");
     }
+
+    const hasLocationInObs = /\bLocation\s*:/i.test(observation);
+    const hasDateInObs = /\bDate\s*:/i.test(observation);
 
     const metaLines = [];
-    if (d.personInvolved && d.personInvolved.trim()) {
-      metaLines.push(`Person/Agent Involved: ${d.personInvolved.trim()}`);
+    if (person && !observation.includes(person)) {
+      metaLines.push(`Person/Agent Involved: ${person}`);
     }
-    if (d.site && d.site.trim()) {
-      metaLines.push(`Location: ${d.site.trim()}`);
+    if (location && !hasLocationInObs) {
+      metaLines.push(`Location: ${location}`);
     }
-    if (d.dateRange && d.dateRange.trim()) {
-      metaLines.push(`Date: ${d.dateRange.trim()}`);
+    if (date && !hasDateInObs) {
+      metaLines.push(`Date: ${date}`);
     }
 
     if (metaLines.length) {
@@ -1116,12 +1137,12 @@ window.CCTV_REPORT_SERVICE = (function () {
       parts.push("");
     }
 
-    const clips = parseClipUrls(d.clipUrl);
+    const clips = parseClipUrls(clipUrl);
     if (clips.length === 1) {
-      parts.push(`CCTV Clip: Click here! (${clips[0]})`);
+      parts.push(`CCTV Clip: ${clips[0]}`);
     } else if (clips.length > 1) {
       clips.forEach((c, idx) => {
-        parts.push(`CCTV Clip ${idx + 1}: Click here! (${c})`);
+        parts.push(`CCTV Clip ${idx + 1}: ${c}`);
       });
     } else {
       parts.push("CCTV Clip: Click here!");
@@ -1137,55 +1158,59 @@ window.CCTV_REPORT_SERVICE = (function () {
       .replace(/</g, "&lt;")
       .replace(/>/g, "&gt;");
 
+    const greeting = (d.greeting || "Good morning TLs,").trim();
+    const observation = (d.observation || d.body || "").trim();
+    const person = (d.personInvolved || "").trim();
+    const location = (d.site || d.location || "").trim();
+    const date = (d.dateRange || d.date || "").trim();
+    const clipUrl = d.clipUrl || "";
+
     const htmlParts = [];
 
-    // Greeting
-    if (d.greeting) {
-      htmlParts.push(`<div>${esc(d.greeting)}</div><br>`);
+    const startsWithGreeting = /^\s*good\s+(?:morning|afternoon|evening)/i.test(observation);
+    if (!startsWithGreeting && greeting) {
+      htmlParts.push(`<div style="margin:0 0 6px 0;">${esc(greeting)}</div>`);
     }
 
-    // Body / Observation
-    if (d.observation) {
-      const formattedBody = esc(d.observation).replace(/\r?\n/g, "<br>");
-      htmlParts.push(`<div>${formattedBody}</div><br>`);
+    if (observation) {
+      const formattedBody = esc(observation).replace(/\r?\n/g, "<br>");
+      htmlParts.push(`<div style="margin:0 0 6px 0;">${formattedBody}</div>`);
     }
 
-    // Location & Date metadata
-    if (d.personInvolved && d.personInvolved.trim()) {
-      htmlParts.push(`<div><strong>Person/Agent Involved:</strong> ${esc(d.personInvolved.trim())}</div>`);
+    const hasLocationInObs = /\bLocation\s*:/i.test(observation);
+    const hasDateInObs = /\bDate\s*:/i.test(observation);
+
+    if (person && !observation.includes(person)) {
+      htmlParts.push(`<div style="margin:0 0 2px 0;"><strong>Person/Agent Involved:</strong> ${esc(person)}</div>`);
     }
-    if (d.site && d.site.trim()) {
-      htmlParts.push(`<div><strong>Location:</strong> ${esc(d.site.trim())}</div>`);
+    if (location && !hasLocationInObs) {
+      htmlParts.push(`<div style="margin:0 0 2px 0;"><strong>Location:</strong> ${esc(location)}</div>`);
     }
-    if (d.dateRange && d.dateRange.trim()) {
-      htmlParts.push(`<div><strong>Date:</strong> ${esc(d.dateRange.trim())}</div>`);
+    if (date && !hasDateInObs) {
+      htmlParts.push(`<div style="margin:0 0 2px 0;"><strong>Date:</strong> ${esc(date)}</div>`);
     }
 
-    if (d.personInvolved || d.site || d.dateRange) {
-      htmlParts.push("<br>");
-    }
-
-    // Screenshots container
+    // Screenshots container: compact wrapping layout
     if (Array.isArray(d.screenshots) && d.screenshots.length > 0) {
-      d.screenshots.forEach((shot, i) => {
+      const shotsHtml = d.screenshots.map((shot, i) => {
         const src = typeof shot === "string" ? shot : (shot.data || shot.url || "");
-        if (src) {
-          htmlParts.push(`<div style="margin: 8px 0;"><img src="${src}" alt="CCTV Screenshot ${i + 1}" style="max-width: 620px; width: 100%; height: auto; border: 1px solid #cbd5e1; border-radius: 4px; display: block;" /></div>`);
-        }
-      });
-      htmlParts.push("<br>");
+        return src ? `<img src="${src}" alt="CCTV Screenshot ${i + 1}" style="max-width:260px; max-height:180px; width:auto; height:auto; object-fit:contain; border:1px solid #cbd5e1; border-radius:4px; display:inline-block; margin:2px;" />` : "";
+      }).filter(Boolean).join("");
+      if (shotsHtml) {
+        htmlParts.push(`<div style="display:flex; flex-wrap:wrap; gap:6px; margin:6px 0;">${shotsHtml}</div>`);
+      }
     }
 
     // CCTV Clip hyperlinks
-    const clips = parseClipUrls(d.clipUrl);
+    const clips = parseClipUrls(clipUrl);
     if (clips.length === 1) {
-      htmlParts.push(`<div><strong>CCTV Clip:</strong> <a href="${esc(clips[0])}" target="_blank" rel="noopener noreferrer" style="color: #6366f1; text-decoration: underline; font-weight: 600;">Click here!</a></div>`);
+      htmlParts.push(`<div style="margin:6px 0 0 0;"><strong>CCTV Clip:</strong> <a href="${esc(clips[0])}" target="_blank" rel="noopener noreferrer" style="color: #6366f1; text-decoration: underline; font-weight: 600;">Click here!</a></div>`);
     } else if (clips.length > 1) {
       clips.forEach((c, idx) => {
-        htmlParts.push(`<div><strong>CCTV Clip ${idx + 1}:</strong> <a href="${esc(c)}" target="_blank" rel="noopener noreferrer" style="color: #6366f1; text-decoration: underline; font-weight: 600;">Click here!</a></div>`);
+        htmlParts.push(`<div style="margin:4px 0 0 0;"><strong>CCTV Clip ${idx + 1}:</strong> <a href="${esc(c)}" target="_blank" rel="noopener noreferrer" style="color: #6366f1; text-decoration: underline; font-weight: 600;">Click here!</a></div>`);
       });
     } else {
-      htmlParts.push(`<div><strong>CCTV Clip:</strong> <span style="color: #94a3b8; font-style: italic;">Click here!</span></div>`);
+      htmlParts.push(`<div style="margin:6px 0 0 0;"><strong>CCTV Clip:</strong> <span style="color: #94a3b8; font-style: italic;">Click here!</span></div>`);
     }
 
     return htmlParts.join("");
