@@ -8864,3 +8864,54 @@ ${escapeHtml(JSON.stringify(entry.after || entry.before, null, 2))}
     });
   });
 })();
+
+// ============================================================
+// JP_MATRIX_BACKGROUND
+// Animated Katakana login background
+// ============================================================
+(() => {
+  const initJapaneseMatrix = () => {
+    const matrix = document.getElementById("jpMatrix");
+    if (!matrix) return;
+
+    const chars = Array.from(
+      "アイウエオカキクケコサシスセソタチツテト" +
+      "ナニヌネノハヒフヘホマミムメモヤユヨ" +
+      "ラリルレロワヲンガギグゲゴザジズゼゾ" +
+      "ダヂヅデドバビブベボパピプペポ"
+    );
+
+    const render = () => {
+      const width = Math.max(window.innerWidth, 1920);
+      const height = Math.max(window.innerHeight, 1080);
+
+      const columns = Math.ceil(width / 40);
+      const rows = Math.ceil(height / 40);
+      const total = columns * rows;
+
+      const fragment = document.createDocumentFragment();
+
+      for (let i = 0; i < total; i++) {
+        const span = document.createElement("span");
+        span.textContent = chars[i % chars.length];
+        fragment.appendChild(span);
+      }
+
+      matrix.replaceChildren(fragment);
+    };
+
+    render();
+
+    let resizeTimer;
+    window.addEventListener("resize", () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(render, 150);
+    });
+  };
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initJapaneseMatrix);
+  } else {
+    initJapaneseMatrix();
+  }
+})();
