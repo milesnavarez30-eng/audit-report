@@ -22,20 +22,11 @@
   // Elements
   const el = id => document.getElementById(id);
 
-  // Toast notifications
-  function showToast(message, type = "info") {
-    const container = el("toastContainer");
-    if (!container) return;
-    const toast = document.createElement("div");
-    toast.className = `toast toast-${type}`;
-    toast.textContent = message;
-    container.appendChild(toast);
-    setTimeout(() => {
-      toast.style.opacity = "0";
-      toast.style.transform = "translateY(10px)";
-      toast.style.transition = "all 200ms ease";
-      setTimeout(() => toast.remove(), 220);
-    }, 3200);
+  // Centralized Global Toast Manager Delegation
+  function showToast(message, type = "info", opts) {
+    if (typeof window.showToast === "function") {
+      return window.showToast(message, type, opts);
+    }
   }
 
   // Live Manila Clock
@@ -1398,6 +1389,12 @@
       title: "Trackers",
       subtitle: ""
     },
+    hris: {
+      tabId: "tabHris",
+      paneId: "paneHris",
+      title: "HRIS",
+      subtitle: ""
+    },
     sorter: {
       tabId: "tabSorter",
       paneId: "paneSorter",
@@ -1444,6 +1441,10 @@
 
   function switchWorkspace(targetKey) {
     if (!WORKSPACES[targetKey]) return;
+    if (auth && typeof auth.canAccessWorkspace === "function" && !auth.canAccessWorkspace(targetKey)) {
+      showToast("Access restricted: You do not have permission to access this workspace.", "warning");
+      return;
+    }
     currentWorkspace = targetKey;
 
     // Update nav rail buttons
@@ -1669,6 +1670,11 @@
     const railBadge = el("railAuditBadge");
     if (railBadge) {
       railBadge.textContent = rawEntries.length;
+      if (rawEntries.length > 0) {
+        railBadge.style.setProperty("display", "inline-flex", "important");
+      } else {
+        railBadge.style.setProperty("display", "none", "important");
+      }
     }
 
     if (!rawEntries.length) {
@@ -2007,11 +2013,9 @@
   let liveTrackerGrid = null;
 
   function initLiveTrackerController() {
-    const container = el("liveTrackerSpreadsheetContainer");
-    if (!container || !window.CCTV_LIVE_TRACKER || !window.SpreadsheetGrid) return;
-
-    window.CCTV_LIVE_TRACKER.init();
-    liveTrackerGrid = new window.SpreadsheetGrid(container, window.CCTV_LIVE_TRACKER);
+    // Deprecated in favor of authoritative TRACKERS -> CCTV Audit workspace.
+    // Early exit eliminates unnecessary 3,584-row background fetching, rendering, and sync loops.
+    return;
 
     function populateAuditorFilter() {
       const select = el("liveTrackerAuditorFilter");
@@ -2120,8 +2124,7 @@
         }
       }
 
-      const railBadge = el("railAuditBadge");
-      if (railBadge) railBadge.textContent = totalCount || rowCount;
+      // Old live tracker rail badge removed to prevent overriding DATA OUTPUT GRID staged count
 
       const undoBtn = el("btnTrackerUndo");
       if (undoBtn) undoBtn.disabled = !window.CCTV_LIVE_TRACKER.canUndo();
@@ -6753,10 +6756,13 @@ function doPost(e) {
   function renderCodeOfConductResults() {
     const container = el("conductResultsContainer");
     const countText = el("conductResultsCountText");
-    if (!container || !window.CCTV_REPORT_SERVICE) return;
+    const conductSvc = window.CCTV_CONDUCT || window.codeOfConductService || window.CCTV_REPORT_SERVICE;
+    if (!container || !conductSvc) return;
 
     const query = el("conductSearchInput")?.value || "";
-    const results = window.CCTV_REPORT_SERVICE.searchCodeOfConduct(query, conductFilterCategory, conductFilterSeverity, conductFilterMonitored);
+    const results = typeof conductSvc.searchCodeOfConduct === "function"
+      ? conductSvc.searchCodeOfConduct(query, conductFilterCategory, conductFilterSeverity, conductFilterMonitored)
+      : (typeof conductSvc.filterPolicies === "function" ? conductSvc.filterPolicies(conductFilterCategory, query) : []);
 
     let totalMatchingPolicies = 0;
     results.forEach(g => { totalMatchingPolicies += g.policies.length; });
@@ -6779,150 +6785,45 @@ function doPost(e) {
       .replace(/</g, "&lt;")
       .replace(/>/g, "&gt;");
 
-    const penaltyMatrix = window.CCTV_REPORT_SERVICE.getPenaltyMatrix();
+    // Flatten matching policies across groups
+    let flatPolicies = [];
+    results.forEach(g => {
+      g.policies.forEach(p => {
+        flatPolicies.push({
+          ...p,
+          sectionName: p.category || g.category
+        });
+      });
+    });
 
-    container.innerHTML = results.map((group, gIdx) => {
-      const catKey = group.category;
-      const isCollapsed = !!conductCollapsedCategories[catKey];
+    // If there is a search query, sort flatPolicies globally by relevance score
+    if (query) {
+      flatPolicies.sort((a, b) => (b._relevanceScore || 0) - (a._relevanceScore || 0));
+    }
 
-      const policiesHtml = group.policies.map(pol => {
-        const sevClass = pol.severity === "GRAVE" ? "coc-sev-grave" : (pol.severity === "MAJOR" ? "coc-sev-major" : "coc-sev-minor");
-        const penInfo = penaltyMatrix[pol.severity];
-        const penaltyText = penInfo ? penInfo.schedule.map(s => `${s.offense}: ${s.action}`).join(" | ") : "";
-
-        return `
-          <div class="coc-policy-item" data-num="${esc(pol.num)}" style="background:var(--bg-rail); border:1px solid var(--border-subtle); border-radius:4px; padding:10px 12px; display:flex; flex-direction:column; gap:6px;">
-            <div class="coc-policy-top" style="display:flex; justify-content:space-between; align-items:flex-start; gap:8px;">
-              <div class="coc-policy-title-line" style="display:flex; align-items:center; gap:7px;">
-                <span class="coc-num-badge" style="font-family:var(--font-mono); font-weight:700; font-size:11px; background:rgba(255,255,255,0.08); padding:2px 6px; border-radius:3px; color:var(--text-primary); border:1px solid var(--border-default);">${esc(pol.num)}</span>
-                <strong style="color:var(--text-primary); font-size:12.5px;">${esc(pol.title)}</strong>
-              </div>
-              <div style="display:flex; align-items:center; gap:5px; flex-shrink:0;">
-                ${pol.isCctvMonitored ? `<span class="badge badge-neutral" style="font-size:9.5px; border-color:rgba(56,189,248,0.3); color:#38bdf8; background:rgba(56,189,248,0.1);">CCTV Monitored</span>` : ''}
-                ${pol.remindOnly ? `<span class="badge badge-success" style="font-size:9.5px; background:rgba(52,211,153,0.1); color:#34d399; border-color:rgba(52,211,153,0.3);">Remind Only</span>` : ''}
-                <span class="coc-sev-badge ${sevClass}">${esc(pol.severity)}</span>
-              </div>
-            </div>
-
-            <div class="coc-policy-desc" style="color:var(--text-secondary); font-size:11.5px; line-height:1.45;">${esc(pol.description)}</div>
-
-            <div class="coc-policy-bottom" style="display:flex; justify-content:space-between; align-items:center; gap:8px; border-top:1px solid rgba(255,255,255,0.05); padding-top:6px; margin-top:2px; flex-wrap:wrap;">
-              <span class="coc-penalty-summary" style="font-size:10.5px; color:var(--text-muted); font-family:var(--font-mono);">⚡ Sanction: ${esc(penaltyText)}</span>
-              
-              <div class="coc-policy-item-actions">
-                <button type="button" class="btn-coc-action btn-coc-copy-num" data-num="${esc(pol.num)}" title="Copy policy number">Copy #</button>
-                <button type="button" class="btn-coc-action btn-coc-copy-text" data-num="${esc(pol.num)}" title="Copy full policy text">Copy Text</button>
-                <button type="button" class="btn-coc-action btn-coc-use" data-num="${esc(pol.num)}" title="Transfer this policy reference into CCTV Report composer">
-                  <svg class="icon" viewBox="0 0 24 24" style="width:12px;height:12px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
-                  <span>Use in CCTV Report</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        `;
-      }).join("");
+    // Render continuous flat list of policy cards with exact official section name
+    container.innerHTML = flatPolicies.map(pol => {
+      const sevClass = pol.severity === "GRAVE" ? "coc-sev-grave" : (pol.severity === "MAJOR" ? "coc-sev-major" : "coc-sev-minor");
 
       return `
-        <div class="coc-cat-accordion ${isCollapsed ? 'is-collapsed' : ''}" data-cat-key="${esc(catKey)}">
-          <div class="coc-cat-head" data-cat-key="${esc(catKey)}" style="cursor:pointer; display:flex; justify-content:space-between; align-items:center; padding:9px 12px; background:var(--bg-surface-elevated); border:1px solid var(--border-default); border-radius:4px; user-select:none;">
-            <div style="display:flex; align-items:center; gap:8px;">
-              <span class="accordion-arrow" style="font-size:10px; color:var(--text-muted);">${isCollapsed ? '▶' : '▼'}</span>
-              <span style="font-weight:700; color:var(--text-primary); font-size:12px;">${esc(group.category)}</span>
+        <div class="coc-rule-card" data-num="${esc(pol.num)}">
+          <div class="coc-rule-card-top">
+            <div class="coc-rule-title-group">
+              <span class="coc-rule-num">${esc(pol.num)}</span>
+              <strong class="coc-rule-title">${esc(pol.title)}</strong>
             </div>
-            <span style="font-size:11px; color:var(--text-muted); font-family:var(--font-mono);">${group.policies.length} rule${group.policies.length === 1 ? '' : 's'}</span>
+            <span class="coc-sev-badge ${sevClass}">${esc(pol.severity)}</span>
           </div>
-          <div class="coc-cat-body" style="padding:8px 0 4px 0; display:${isCollapsed ? 'none' : 'flex'}; flex-direction:column; gap:8px;">
-            ${policiesHtml}
-          </div>
+          <div class="coc-rule-desc">${esc(pol.description)}</div>
+          <div class="coc-rule-section-tag" title="${esc(pol.sectionName)}">Section: ${esc(pol.sectionName)}</div>
         </div>
       `;
     }).join("");
-
-    // Wire accordion header toggles
-    container.querySelectorAll(".coc-cat-head").forEach(head => {
-      head.addEventListener("click", () => {
-        const catKey = head.dataset.catKey;
-        conductCollapsedCategories[catKey] = !conductCollapsedCategories[catKey];
-        const accordion = head.closest(".coc-cat-accordion");
-        if (accordion) {
-          const body = accordion.querySelector(".coc-cat-body");
-          const arrow = head.querySelector(".accordion-arrow");
-          const collapsed = conductCollapsedCategories[catKey];
-          accordion.classList.toggle("is-collapsed", collapsed);
-          if (body) body.style.display = collapsed ? "none" : "flex";
-          if (arrow) arrow.textContent = collapsed ? "▶" : "▼";
-        }
-      });
-    });
-
-    // Helper to find target policy
-    const findPolicy = (num) => {
-      const allGroups = window.CCTV_REPORT_SERVICE.getCodeOfConduct();
-      for (const g of allGroups) {
-        const found = g.policies.find(p => p.num === num);
-        if (found) return found;
-      }
-      return null;
-    };
-
-    // Wire "Use in CCTV Report" buttons
-    container.querySelectorAll(".btn-coc-use").forEach(btn => {
-      btn.addEventListener("click", (e) => {
-        e.stopPropagation();
-        const targetPol = findPolicy(btn.dataset.num);
-        if (!targetPol) return;
-
-        if (!cctvReportDraft) {
-          cctvReportDraft = window.CCTV_REPORT_SERVICE.getDraft();
-        }
-        cctvReportDraft.referencedPolicy = targetPol;
-        window.CCTV_REPORT_SERVICE.saveDraft(cctvReportDraft);
-
-        // Switch to CCTV Report workspace
-        switchWorkspace("report");
-        renderCctvReportPolicyBanner();
-        updateCctvReportPreview();
-        showToast(`Policy ${targetPol.num} set as internal context for report guidance.`, "info");
-      });
-    });
-
-    // Wire "Copy #" buttons
-    container.querySelectorAll(".btn-coc-copy-num").forEach(btn => {
-      btn.addEventListener("click", async (e) => {
-        e.stopPropagation();
-        const num = btn.dataset.num;
-        try {
-          if (navigator.clipboard?.writeText) {
-            await navigator.clipboard.writeText(`Policy ${num}`);
-          }
-          showToast(`Copied "Policy ${num}" to clipboard.`, "info");
-        } catch (_) {
-          showToast(`Policy ${num}`, "info");
-        }
-      });
-    });
-
-    // Wire "Copy Text" buttons
-    container.querySelectorAll(".btn-coc-copy-text").forEach(btn => {
-      btn.addEventListener("click", async (e) => {
-        e.stopPropagation();
-        const targetPol = findPolicy(btn.dataset.num);
-        if (!targetPol) return;
-        const textToCopy = `Policy ${targetPol.num}: ${targetPol.title} (${targetPol.severity})\n${targetPol.description}`;
-        try {
-          if (navigator.clipboard?.writeText) {
-            await navigator.clipboard.writeText(textToCopy);
-          }
-          showToast(`Copied Policy ${targetPol.num} wording to clipboard.`, "info");
-        } catch (_) {
-          showToast(`Policy ${targetPol.num} text copied.`, "info");
-        }
-      });
-    });
   }
 
   function initCodeOfConductController() {
-    if (!window.CCTV_REPORT_SERVICE) return;
+    const conductSvc = window.CCTV_CONDUCT || window.codeOfConductService || window.CCTV_REPORT_SERVICE;
+    if (!conductSvc) return;
 
     // Search input
     const searchInput = el("conductSearchInput");
@@ -6944,68 +6845,10 @@ function doPost(e) {
       });
     }
 
-    // Category dropdown filter
+    // Category / Section dropdown filter
     el("conductCategorySelect")?.addEventListener("change", (e) => {
       conductFilterCategory = e.target.value;
       renderCodeOfConductResults();
-    });
-
-    // Severity filter pills
-    const pillsWrap = el("conductSeverityFilters");
-    if (pillsWrap) {
-      pillsWrap.addEventListener("click", (e) => {
-        const pill = e.target.closest(".coc-pill");
-        if (!pill) return;
-        pillsWrap.querySelectorAll(".coc-pill").forEach(p => p.classList.remove("active"));
-        pill.classList.add("active");
-        const filter = pill.dataset.filter;
-        if (filter === "cctv") {
-          conductFilterSeverity = "all";
-          conductFilterMonitored = true;
-        } else {
-          conductFilterSeverity = filter;
-          conductFilterMonitored = false;
-        }
-        renderCodeOfConductResults();
-      });
-    }
-
-    // CCTV Monitored Activity Shortcuts
-    document.querySelectorAll(".conduct-cctv-shortcuts .btn-cctv-chip").forEach(chip => {
-      chip.addEventListener("click", () => {
-        const q = chip.dataset.query || "";
-        if (searchInput) {
-          searchInput.value = q;
-          if (clearBtn) clearBtn.style.display = "inline-block";
-        }
-        // Reset category & severity to show direct match
-        conductFilterCategory = "all";
-        conductFilterSeverity = "all";
-        conductFilterMonitored = false;
-        if (el("conductCategorySelect")) el("conductCategorySelect").value = "all";
-        if (pillsWrap) {
-          pillsWrap.querySelectorAll(".coc-pill").forEach(p => p.classList.remove("active"));
-          pillsWrap.querySelector('.coc-pill[data-filter="all"]')?.classList.add("active");
-        }
-        renderCodeOfConductResults();
-      });
-    });
-
-    // Expand All / Collapse All button
-    el("btnConductExpandAll")?.addEventListener("click", () => {
-      const allGroups = window.CCTV_REPORT_SERVICE.getCodeOfConduct();
-      const anyExpanded = Object.keys(conductCollapsedCategories).length < allGroups.length;
-      allGroups.forEach(g => {
-        conductCollapsedCategories[g.category] = anyExpanded;
-      });
-      const btn = el("btnConductExpandAll");
-      if (btn) btn.textContent = anyExpanded ? "Expand All" : "Collapse All";
-      renderCodeOfConductResults();
-    });
-
-    // Back to Report workspace action
-    el("btnBackToReportFromConduct")?.addEventListener("click", () => {
-      switchWorkspace("report");
     });
   }
 
@@ -7048,7 +6891,64 @@ function doPost(e) {
   };
 
   const TRACKER_STORAGE_KEY = "cctv_ops_v2_active_tracker_tab";
+  const TRACKER_DEFAULT_ZOOM = {
+    audit: 80,
+    "2026": 70,
+    itsheet: 90,
+    seatplan: 60
+  };
+  const TRACKER_ZOOM_LEVELS = [50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150];
+
   let activeTrackerKey = "audit";
+
+  function getSavedTrackerZoom(key) {
+    const storageKey = `cctv_ops_v2_tracker_zoom_${key}`;
+    try {
+      const val = parseInt(localStorage.getItem(storageKey), 10);
+      if (!isNaN(val) && val >= 50 && val <= 150) return val;
+    } catch (_) {}
+    return TRACKER_DEFAULT_ZOOM[key] || 100;
+  }
+
+  function saveTrackerZoom(key, zoom) {
+    const storageKey = `cctv_ops_v2_tracker_zoom_${key}`;
+    try {
+      localStorage.setItem(storageKey, String(zoom));
+    } catch (_) {}
+  }
+
+  function applyTrackerZoom(zoomPct) {
+    const iframe = el("trackerFrame");
+    const display = el("trackerZoomDisplay");
+    if (display) display.textContent = `${zoomPct}%`;
+
+    if (iframe) {
+      const scale = zoomPct / 100;
+      iframe.style.width = `${100 / scale}%`;
+      iframe.style.height = `${100 / scale}%`;
+      iframe.style.transform = `scale(${scale})`;
+      iframe.style.transformOrigin = "0 0";
+    }
+  }
+
+  function stepTrackerZoom(delta) {
+    const current = getSavedTrackerZoom(activeTrackerKey);
+    let newIdx = TRACKER_ZOOM_LEVELS.indexOf(current);
+    if (newIdx === -1) {
+      newIdx = TRACKER_ZOOM_LEVELS.findIndex(lvl => lvl >= current);
+      if (newIdx === -1) newIdx = TRACKER_ZOOM_LEVELS.length - 1;
+    }
+    const nextIdx = Math.max(0, Math.min(TRACKER_ZOOM_LEVELS.length - 1, newIdx + delta));
+    const nextZoom = TRACKER_ZOOM_LEVELS[nextIdx];
+    saveTrackerZoom(activeTrackerKey, nextZoom);
+    applyTrackerZoom(nextZoom);
+  }
+
+  function resetTrackerZoom() {
+    const defaultZoom = TRACKER_DEFAULT_ZOOM[activeTrackerKey] || 100;
+    saveTrackerZoom(activeTrackerKey, defaultZoom);
+    applyTrackerZoom(defaultZoom);
+  }
 
   function setTrackerWorkbook(key, forceReload = false) {
     if (!TRACKER_CONFIGS[key]) key = "audit";
@@ -7071,6 +6971,10 @@ function doPost(e) {
       btn.classList.toggle("active", isCurrent);
       btn.setAttribute("aria-selected", isCurrent ? "true" : "false");
     });
+
+    // Apply saved independent zoom for this specific tracker workbook
+    const savedZoom = getSavedTrackerZoom(key);
+    applyTrackerZoom(savedZoom);
 
     if (iframe) {
       if (forceReload || iframe.src !== cfg.url) {
@@ -7103,6 +7007,22 @@ function doPost(e) {
       showToast(`Reloaded ${TRACKER_CONFIGS[activeTrackerKey]?.label || 'tracker'}.`, "info");
     });
 
+    // Independent Tracker Zoom Controls
+    el("btnTrackerZoomOut")?.addEventListener("click", () => stepTrackerZoom(-1));
+    el("btnTrackerZoomIn")?.addEventListener("click", () => stepTrackerZoom(1));
+    el("btnTrackerZoomReset")?.addEventListener("click", () => resetTrackerZoom());
+
+    // Ctrl + Mouse Wheel listener over the tracker viewport container
+    const frameContainer = el("trackersFrameContainer");
+    if (frameContainer) {
+      frameContainer.addEventListener("wheel", (e) => {
+        if (e.ctrlKey) {
+          e.preventDefault();
+          stepTrackerZoom(e.deltaY < 0 ? 1 : -1);
+        }
+      }, { passive: false });
+    }
+
     // Restore saved state
     let savedKey = "audit";
     try {
@@ -7114,6 +7034,35 @@ function doPost(e) {
     window.setTrackerWorkbook = setTrackerWorkbook;
     window.renderTrackersWorkspace = renderTrackersWorkspace;
     window.TRACKER_CONFIGS = TRACKER_CONFIGS;
+    window.applyTrackerZoom = applyTrackerZoom;
+    window.getSavedTrackerZoom = getSavedTrackerZoom;
+  }
+
+  // =========================================================================
+  // WORKSPACE: HRIS (SixEleven HRIS / Employee DTR Integration)
+  // =========================================================================
+  function initHrisController() {
+    const reloadBtn = el("btnHrisReload");
+    const reloadEmbeddedBtn = el("btnReloadEmbeddedHris");
+    const hrisFrame = el("hrisFrame");
+
+    const doReload = () => {
+      if (hrisFrame) {
+        hrisFrame.src = "https://611systems.com/hrsys/employee-dtr";
+        showToast("Reloading HRIS Employee DTR...", "info");
+      }
+    };
+
+    reloadBtn?.addEventListener("click", doReload);
+    reloadEmbeddedBtn?.addEventListener("click", doReload);
+
+    // Detect if iframe loading triggers standard error
+    if (hrisFrame) {
+      hrisFrame.addEventListener("error", () => {
+        const blocked = el("hrisBlockedNotice");
+        if (blocked) blocked.style.display = "flex";
+      });
+    }
   }
 
   function renderMasterlistWorkspace() {
@@ -8281,6 +8230,9 @@ ${escapeHtml(JSON.stringify(entry.after || entry.before, null, 2))}
     // Trackers Workspace Initialization
     initTrackersController();
 
+    // HRIS Workspace Initialization
+    initHrisController();
+
     // Masterlist Workspace Initialization
     initMasterlistController();
 
@@ -8502,19 +8454,149 @@ ${escapeHtml(JSON.stringify(entry.after || entry.before, null, 2))}
     window.renderEdrList = renderEdrList;
     window.renderAuditTable = renderAuditTable;
 
-    // Auth check
-    await auth.init();
-    updateIntegrationStatusPills();
+    // ── Restored Authentication Gate & Session Lifecycle ────────────────────
+    const loginModal = el("loginModal");
+    const loginForm = el("loginForm");
+    const loginBtn = el("loginBtn");
+    const authMessage = el("authMessage");
+    const loginUsername = el("loginUsername");
+    const loginPassword = el("loginPassword");
+    const btnLogoutTop = el("btnLogoutTop");
+
+    function showAuthMessage(msg, isSuccess = false) {
+      if (!authMessage) return;
+      if (!msg) {
+        authMessage.style.display = "none";
+        authMessage.textContent = "";
+        authMessage.className = "auth-message";
+      } else {
+        authMessage.style.display = "block";
+        authMessage.textContent = msg;
+        authMessage.className = isSuccess ? "auth-message success" : "auth-message";
+      }
+    }
+
+    function setAuthBusy(isBusy, busyText = "CONNECTING...") {
+      if (!loginBtn) return;
+      const label = loginBtn.querySelector(".btn-label") || loginBtn;
+      if (isBusy) {
+        loginBtn.dataset.origText = label.textContent;
+        label.textContent = busyText;
+        loginBtn.disabled = true;
+      } else {
+        label.textContent = loginBtn.dataset.origText || "INITIATE_CONNECTION";
+        loginBtn.disabled = false;
+      }
+    }
+
+    function lockApp() {
+      document.body.classList.add("auth-locked");
+      document.body.classList.remove("auth-unlocked");
+      if (loginModal) {
+        loginModal.hidden = false;
+        loginModal.style.display = "flex";
+        loginModal.classList.remove("hidden");
+      }
+    }
+
+    function unlockApp(user, profile) {
+      document.body.classList.remove("auth-locked");
+      document.body.classList.add("auth-unlocked");
+      if (loginModal) {
+        loginModal.hidden = true;
+        loginModal.style.display = "none";
+        loginModal.classList.add("hidden");
+      }
+      showAuthMessage("");
+      if (loginPassword) loginPassword.value = "";
+      if (user) {
+        if (el("userNameText")) el("userNameText").textContent = profile?.display_name || profile?.username || "Operator";
+        if (el("userRoleText")) el("userRoleText").textContent = profile?.role || "User";
+        if (el("userAvatarText")) el("userAvatarText").textContent = (profile?.username || "U")[0].toUpperCase();
+      }
+    }
+
+    // Bind login form submit
+    if (loginForm) {
+      loginForm.addEventListener("submit", async (e) => {
+        if (e) {
+          e.preventDefault();
+          if (typeof e.stopPropagation === "function") e.stopPropagation();
+        }
+        showAuthMessage("");
+        const username = (loginUsername?.value || "").trim();
+        const password = loginPassword?.value || "";
+
+        if (!username) {
+          showAuthMessage("Enter your operator ID, username or email.");
+          loginUsername?.focus();
+          return;
+        }
+        if (!password) {
+          showAuthMessage("Enter your access key / password.");
+          loginPassword?.focus();
+          return;
+        }
+
+        setAuthBusy(true, "CONNECTING...");
+        try {
+          const res = await auth.signIn(username, password);
+          unlockApp(res.user, res.profile);
+          showToast("Authenticated successfully.", "success");
+        } catch (err) {
+          console.error("Sign in error:", err);
+          let userMsg = err.message || "Failed to authenticate.";
+          if (/invalid login credentials/i.test(userMsg)) {
+            userMsg = "Incorrect username or access key.";
+          }
+          showAuthMessage(userMsg);
+        } finally {
+          setAuthBusy(false);
+        }
+      });
+    }
+
+    // Bind topbar logout button
+    if (btnLogoutTop) {
+      btnLogoutTop.addEventListener("click", async () => {
+        try {
+          await auth.signOut();
+        } catch (err) {
+          console.warn("Sign out error:", err);
+        }
+        lockApp();
+        showToast("Signed out safely.", "info");
+      });
+    }
+
+    // User profile menu button
+    el("btnUserMenu")?.addEventListener("click", () => {
+      if (auth && auth.isAdmin && auth.isAdmin()) {
+        switchWorkspace("accounts");
+      } else {
+        const prof = auth?.getProfile();
+        showToast(`Signed in as ${prof?.display_name || prof?.username || "Operator"} (${prof?.role || "User"})`, "info");
+      }
+    });
 
     auth.onAuthChange(({ user, profile }) => {
       if (user) {
-        el("userNameText").textContent = profile?.display_name || profile?.username || "Operator";
-        el("userRoleText").textContent = profile?.role || "User";
-        el("userAvatarText").textContent = (profile?.username || "U")[0].toUpperCase();
+        unlockApp(user, profile);
+      } else {
+        lockApp();
       }
       updateIntegrationStatusPills();
       restoreSorterDraft().catch(console.error);
     });
+
+    // Initial auth check on app startup
+    const initialAuth = await auth.init();
+    if (initialAuth && initialAuth.user) {
+      unlockApp(initialAuth.user, initialAuth.profile);
+    } else {
+      lockApp();
+    }
+    updateIntegrationStatusPills();
 
     window.addEventListener("storage", (e) => {
       if (e.key === "maintenance_google_sheets_web_app_url_v1" || e.key === "cctv_edr_docs_url_v1") {

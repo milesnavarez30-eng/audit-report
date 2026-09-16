@@ -45,36 +45,106 @@
     return str;
   };
 
-  // Toast Notification System with Icons, Progress & Actions
-  window.showToast = function (message, type = "info", durationOrOpts = 3200) {
+  // =========================================================================
+  // SINGLE GLOBAL TOAST / NOTIFICATION MANAGER (SINGLE INSTANCE ONLY)
+  // =========================================================================
+  let activeToastEl = null;
+  let activeToastTimer = null;
+  let activeToastDismissTimer = null;
+  let activeToastMsg = "";
+  let activeToastType = "";
+
+  const TOAST_PRIORITIES = {
+    error: 3,
+    danger: 3,
+    warning: 2,
+    success: 1,
+    info: 1
+  };
+
+  const TOAST_DEFAULT_DURATIONS = {
+    error: 5000,
+    danger: 5000,
+    warning: 4000,
+    success: 2800,
+    info: 2800
+  };
+
+  function dismissActiveToast(immediate = false) {
+    if (activeToastTimer) {
+      clearTimeout(activeToastTimer);
+      activeToastTimer = null;
+    }
+    if (activeToastDismissTimer) {
+      clearTimeout(activeToastDismissTimer);
+      activeToastDismissTimer = null;
+    }
+    if (!activeToastEl) {
+      const container = document.getElementById("toastContainer");
+      if (container && immediate) container.innerHTML = "";
+      return;
+    }
+
+    const elToDismiss = activeToastEl;
+    activeToastEl = null;
+    activeToastMsg = "";
+    activeToastType = "";
+
+    if (immediate) {
+      elToDismiss.remove();
+      const container = document.getElementById("toastContainer");
+      if (container) container.innerHTML = "";
+      return;
+    }
+
+    elToDismiss.style.opacity = "0";
+    elToDismiss.style.transform = "translateY(8px)";
+    elToDismiss.style.transition = "all 160ms ease";
+    activeToastDismissTimer = setTimeout(() => {
+      elToDismiss.remove();
+      const container = document.getElementById("toastContainer");
+      if (container) container.innerHTML = "";
+      activeToastDismissTimer = null;
+    }, 180);
+  }
+
+  window.dismissToast = dismissActiveToast;
+
+  window.showToast = function (message, type = "info", durationOrOpts) {
     const container = document.getElementById("toastContainer");
     if (!container) {
       console.log(`[Toast ${type}] ${message}`);
       return;
     }
 
-    let duration = 3200;
+    const safeType = ["success", "error", "warning", "info", "danger"].includes(type)
+      ? (type === "danger" ? "error" : type)
+      : "info";
+
+    const cleanMsg = String(message == null ? "" : message).trim();
+    if (!cleanMsg) return;
+
+    let duration = TOAST_DEFAULT_DURATIONS[safeType] || 2800;
     let actionText = null;
     let onAction = null;
 
     if (typeof durationOrOpts === "number") {
       duration = durationOrOpts;
     } else if (typeof durationOrOpts === "object" && durationOrOpts !== null) {
-      duration = durationOrOpts.duration || 3200;
+      duration = durationOrOpts.duration || duration;
       actionText = durationOrOpts.actionText || null;
       onAction = durationOrOpts.onAction || null;
     }
 
-    // Limit active toasts to prevent viewport clutter
-    while (container.children.length >= 4) {
-      container.removeChild(container.firstChild);
+    // Cancel existing timers
+    if (activeToastTimer) {
+      clearTimeout(activeToastTimer);
+      activeToastTimer = null;
     }
-
-    const toast = document.createElement("div");
-    const safeType = ["success", "error", "warning", "info", "danger"].includes(type) ? (type === "danger" ? "error" : type) : "info";
-    toast.className = `toast toast-${safeType}`;
-    toast.setAttribute("role", "status");
-    toast.setAttribute("aria-live", "polite");
+    if (activeToastDismissTimer) {
+      clearTimeout(activeToastDismissTimer);
+      activeToastDismissTimer = null;
+    }
 
     // Icons calibrated for dark terminal
     let iconSvg = "";
@@ -93,10 +163,36 @@
       actionBtnHtml = `<button type="button" class="btn btn-xs btn-outline toast-action-btn" style="margin-left:auto; font-size:10.5px; padding:2px 8px;">${escapeHtml(actionText)}</button>`;
     }
 
+    // Reuse existing toast DOM element if present in container, otherwise create one
+    let toast = activeToastEl && container.contains(activeToastEl) ? activeToastEl : null;
+
+    if (!toast) {
+      while (container.firstChild) {
+        container.removeChild(container.firstChild);
+      }
+      toast = document.createElement("div");
+      container.appendChild(toast);
+    } else {
+      // Purge any extra children just in case
+      while (container.firstChild && container.firstChild !== toast) {
+        container.removeChild(container.firstChild);
+      }
+      while (container.lastChild && container.lastChild !== toast) {
+        container.removeChild(container.lastChild);
+      }
+    }
+
+    toast.className = `toast toast-${safeType}`;
+    toast.style.opacity = "1";
+    toast.style.transform = "none";
+    toast.style.transition = "";
+    toast.setAttribute("role", safeType === "error" ? "alert" : "status");
+    toast.setAttribute("aria-live", safeType === "error" ? "assertive" : "polite");
+
     toast.innerHTML = `
       <div style="display:flex; align-items:center; gap:8px; width:100%;">
         ${iconSvg}
-        <span class="toast-msg" style="flex:1; line-height:1.35;">${escapeHtml(message)}</span>
+        <span class="toast-msg" style="flex:1; line-height:1.35;">${escapeHtml(cleanMsg)}</span>
         ${actionBtnHtml}
         <button type="button" class="toast-close-btn" aria-label="Dismiss" style="background:none; border:none; color:var(--text-muted); cursor:pointer; padding:0 2px; font-size:12px; margin-left:4px;">✕</button>
       </div>
@@ -109,27 +205,24 @@
       actBtn?.addEventListener("click", (e) => {
         e.stopPropagation();
         try { onAction(); } catch (err) { console.error(err); }
-        removeToast();
+        dismissActiveToast(true);
       });
     }
 
     // Dismiss button handler
     const closeBtn = toast.querySelector(".toast-close-btn");
-    closeBtn?.addEventListener("click", () => removeToast());
+    closeBtn?.addEventListener("click", (e) => {
+      e.stopPropagation();
+      dismissActiveToast(true);
+    });
 
-    container.appendChild(toast);
+    activeToastEl = toast;
+    activeToastMsg = cleanMsg;
+    activeToastType = safeType;
 
-    let dismissed = false;
-    function removeToast() {
-      if (dismissed) return;
-      dismissed = true;
-      toast.style.opacity = "0";
-      toast.style.transform = "translateY(8px)";
-      toast.style.transition = "all 160ms ease";
-      setTimeout(() => toast.remove(), 180);
-    }
-
-    setTimeout(removeToast, duration);
+    activeToastTimer = setTimeout(() => {
+      dismissActiveToast(false);
+    }, duration);
   };
 
   // Global App Confirmation Dialog (Promise-based with Keyboard Traps & Accessibility)

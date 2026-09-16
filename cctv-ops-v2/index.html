@@ -423,7 +423,80 @@
     }
   </style>
 </head>
-<body>
+<body class="auth-locked">
+  <!-- CYBER-TERMINAL "SECURE_DATA" LOGIN INTERFACE -->
+  <div class="terminal-login-wrapper" id="loginModal">
+    <div class="terminal-frame">
+      <form class="terminal-card" id="loginForm" onsubmit="event.preventDefault(); return false;" autocomplete="off">
+        <div class="terminal-header">
+          <div class="terminal-title">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <circle cx="12" cy="14" r="2"></circle>
+              <line x1="12" y1="16" x2="12" y2="18"></line>
+            </svg>
+            <span>SECURE_DATA</span>
+          </div>
+          <div class="terminal-dots">
+            <span></span><span></span><span></span>
+          </div>
+        </div>
+
+        <div class="terminal-body">
+          <!-- Username / Operator -->
+          <div class="terminal-field">
+            <label for="loginUsername" class="terminal-label" data-text="USERNAME">USERNAME</label>
+            <input
+              type="text"
+              id="loginUsername"
+              name="username"
+              required
+              autocomplete="username"
+              spellcheck="false"
+              placeholder="Operator ID or email..."
+            />
+          </div>
+
+          <!-- Access Key / Password -->
+          <div class="terminal-field">
+            <label for="loginPassword" class="terminal-label" data-text="ACCESS_KEY">ACCESS_KEY</label>
+            <input
+              type="password"
+              id="loginPassword"
+              name="password"
+              required
+              autocomplete="current-password"
+              placeholder="Enter access key..."
+            />
+          </div>
+
+          <div id="authMessage" class="auth-message" style="display:none;"></div>
+
+          <!-- Initiate Connection Button -->
+          <button
+            type="submit"
+            class="terminal-submit-btn"
+            id="loginBtn"
+            data-text="INITIATE_CONNECTION"
+          >
+            <span class="btn-label">INITIATE_CONNECTION</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <div class="app-root">
 
     <!-- Mobile Drawer Backdrop Overlay -->
@@ -456,22 +529,18 @@
         <!-- 2. Code of Conduct Workspace Tab -->
         <button type="button" class="nav-item" id="tabConduct" role="tab" aria-selected="false" title="Code of Conduct" data-tooltip="Code of Conduct" data-tooltip-pos="right">
           <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
-            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
-            <line x1="9" y1="7" x2="16" y2="7"></line>
-            <line x1="9" y1="11" x2="16" y2="11"></line>
+            <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+            <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
           </svg>
           <span class="nav-label">Code of Conduct</span>
         </button>
 
         <!-- 3. EDR Workspace Tab (Active Prototype) -->
         <button type="button" class="nav-item active" id="tabEdr" role="tab" aria-selected="true" title="End of the Day Report" data-tooltip="End of the Day Report" data-tooltip-pos="right">
-          <svg class="nav-icon" viewBox="0 0 24 24">
-            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-            <polyline points="14 2 14 8 20 8"></polyline>
-            <line x1="16" y1="13" x2="8" y2="13"></line>
-            <line x1="16" y1="17" x2="8" y2="17"></line>
-            <polyline points="10 9 9 9 8 9"></polyline>
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+            <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
+            <polyline points="9 14 11 16 15 11"></polyline>
           </svg>
           <span class="nav-label">EDR</span>
           <span class="nav-badge" id="railEdrBadge">0</span>
@@ -479,13 +548,12 @@
 
         <!-- 4. CCTV Audit Workspace Tab -->
         <button type="button" class="nav-item" id="tabAudit" role="tab" aria-selected="false" title="CCTV Audit" data-tooltip="CCTV Audit" data-tooltip-pos="right">
-          <svg class="nav-icon" viewBox="0 0 24 24">
-            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-            <line x1="3" y1="9" x2="21" y2="9"></line>
-            <line x1="9" y1="21" x2="9" y2="9"></line>
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M23 7l-7 5 7 5V7z"></path>
+            <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
           </svg>
           <span class="nav-label">CCTV Audit</span>
-          <span class="nav-badge" id="railAuditBadge">0</span>
+          <span class="nav-badge" id="railAuditBadge" style="display:none;">0</span>
         </button>
 
         <!-- Trackers Workspace Tab -->
@@ -500,17 +568,29 @@
           <span class="nav-label">Trackers</span>
         </button>
 
+        <!-- HRIS Workspace Tab -->
+        <button type="button" class="nav-item" id="tabHris" role="tab" aria-selected="false" title="HRIS" data-tooltip="HRIS" data-tooltip-pos="right">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="4" width="18" height="16" rx="2"></rect>
+            <circle cx="9" cy="10" r="2"></circle>
+            <line x1="15" y1="8" x2="17" y2="8"></line>
+            <line x1="15" y1="12" x2="17" y2="12"></line>
+            <line x1="7" y1="16" x2="17" y2="16"></line>
+          </svg>
+          <span class="nav-label">HRIS</span>
+        </button>
+
         <!-- 5. AI Sorter Workspace Tab -->
         <button type="button" class="nav-item" id="tabSorter" role="tab" aria-selected="false" title="AI Sorter" data-tooltip="AI Sorter" data-tooltip-pos="right">
-          <svg class="nav-icon" viewBox="0 0 24 24">
-            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 3l1.9 5.8a2 2 0 0 0 1.3 1.3L21 12l-5.8 1.9a2 2 0 0 0-1.3 1.3L12 21l-1.9-5.8a2 2 0 0 0-1.3-1.3L3 12l5.8-1.9a2 2 0 0 0 1.3-1.3L12 3z"></path>
           </svg>
           <span class="nav-label">AI Sorter</span>
         </button>
 
         <!-- 6. Maintenance Workspace Tab -->
         <button type="button" class="nav-item" id="tabMaintenance" role="tab" aria-selected="false" title="Maintenance" data-tooltip="Maintenance" data-tooltip-pos="right">
-          <svg class="nav-icon" viewBox="0 0 24 24">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path>
           </svg>
           <span class="nav-label">Maintenance</span>
@@ -518,9 +598,9 @@
 
         <!-- 7. Follow Up Workspace Tab -->
         <button type="button" class="nav-item" id="tabFollowup" role="tab" aria-selected="false" title="Follow Up" data-tooltip="Follow Up" data-tooltip-pos="right">
-          <svg class="nav-icon" viewBox="0 0 24 24">
-            <circle cx="12" cy="12" r="10"></circle>
-            <polyline points="12 6 12 12 16 14"></polyline>
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+            <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
           </svg>
           <span class="nav-label">Follow Up</span>
           <span class="nav-badge" id="railFollowupBadge">0</span>
@@ -538,7 +618,7 @@
         <div class="rail-section-label">Management</div>
 
         <button type="button" class="nav-item" id="tabMasterlist" role="tab" aria-selected="false" title="Masterlist" data-tooltip="Masterlist" data-tooltip-pos="right">
-          <svg class="nav-icon" viewBox="0 0 24 24">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
             <circle cx="9" cy="7" r="4"></circle>
             <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
@@ -548,7 +628,7 @@
         </button>
 
         <button type="button" class="nav-item" id="tabHistory" role="tab" aria-selected="false" title="History" data-tooltip="History" data-tooltip-pos="right">
-          <svg class="nav-icon" viewBox="0 0 24 24">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
             <path d="M3 3v5h5"></path>
             <polyline points="12 7 12 12 15 15"></polyline>
@@ -557,9 +637,10 @@
         </button>
 
         <button type="button" class="nav-item" id="tabAccounts" role="tab" aria-selected="false" title="Accounts" data-tooltip="Accounts" data-tooltip-pos="right">
-          <svg class="nav-icon" viewBox="0 0 24 24">
-            <circle cx="12" cy="12" r="3"></circle>
-            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+            <circle cx="12" cy="10" r="2.5"></circle>
+            <path d="M8 17c0-2 1.8-3 4-3s4 1 4 3"></path>
           </svg>
           <span class="nav-label">Accounts</span>
         </button>
@@ -628,6 +709,12 @@
               <span class="user-role-tag" id="userRoleText">Operator</span>
             </div>
           </div>
+
+          <!-- Topbar Logout Button -->
+          <button type="button" class="btn btn-outline btn-xs" id="btnLogoutTop" title="Sign Out" aria-label="Sign Out" style="display:inline-flex; align-items:center; gap:5px; height:28px; padding:0 10px; font-size:11px; font-weight:600; font-family:var(--font-mono, monospace); letter-spacing:0.04em; margin-left:4px; border-color:var(--border-default);">
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+            <span>LOGOUT</span>
+          </button>
         </div>
       </header>
 
@@ -1031,68 +1118,6 @@
               </div>
             </div>
 
-            <!-- BOTTOM: Interactive Live Tracker Spreadsheet Grid -->
-            <div class="audit-grid-card live-tracker-card" style="display:flex; flex-direction:column; flex:1; min-height:350px;">
-              <div class="live-tracker-toolbar">
-                <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-                  <span style="font-weight:700; font-size:12px; color:var(--text-primary);">Live Tracker Spreadsheet</span>
-                  <span class="badge badge-neutral" id="liveTrackerRowCountBadge">0 rows</span>
-                  <span class="badge badge-live" id="liveTrackerDataStateBadge" title="Dataset origin & status">Live Sheet data</span>
-                  <span class="badge badge-info" id="liveTrackerSyncBadge">Idle</span>
-                  <div style="display:flex; align-items:center; gap:4px;">
-                    <label for="liveTrackerAuditorFilter" style="font-size:11px; color:var(--text-muted); font-weight:600; white-space:nowrap;">View:</label>
-                    <select id="liveTrackerAuditorFilter" class="form-control form-control-sm" style="font-size:11px; height:26px; padding:2px 6px; width:155px; background:var(--bg-input);">
-                      <option value="all">All Records (Shared)</option>
-                      <option value="my">My Records Only</option>
-                    </select>
-                  </div>
-                  <span style="font-size:10.5px; color:var(--text-muted);" id="liveTrackerSyncTime">Connecting...</span>
-                </div>
-                <div style="display:flex; align-items:center; gap:5px; flex-wrap:wrap;">
-                  <button type="button" class="btn btn-outline btn-sm" id="btnTrackerFind" title="Find in sheet (Ctrl+F)">
-                    <svg class="icon icon-sm" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-                    <span>Find</span>
-                  </button>
-                  <button type="button" class="btn btn-outline btn-sm" id="btnTrackerRefresh" title="Fetch latest data from Google Sheets">
-                    <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
-                    <span>Refresh</span>
-                  </button>
-                  <button type="button" class="btn btn-primary btn-sm" id="btnTrackerAddRow" title="Add a new row at the bottom">
-                    <svg class="icon icon-sm" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                    <span>Add Row</span>
-                  </button>
-                  <button type="button" class="btn btn-outline btn-sm" id="btnTrackerInsertByDate" title="Insert an entry sorted by its Date">
-                    <svg class="icon icon-sm" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-                    <span>Insert by Date</span>
-                  </button>
-                  <button type="button" class="btn btn-outline btn-sm" id="btnTrackerUndo" title="Undo (Ctrl+Z)" disabled>
-                    <svg class="icon icon-sm" viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>
-                    <span>Undo</span>
-                  </button>
-                  <button type="button" class="btn btn-outline btn-sm" id="btnTrackerRedo" title="Redo (Ctrl+Y)" disabled>
-                    <svg class="icon icon-sm" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
-                    <span>Redo</span>
-                  </button>
-                  <button type="button" class="btn btn-outline btn-sm" id="btnTrackerCopyAll" title="Copy entire tracker to clipboard (formatted for Google Sheets)">
-                    <svg class="icon icon-sm" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
-                    <span>Copy Sheet</span>
-                  </button>
-                  <button type="button" class="btn btn-outline btn-sm" id="btnTrackerSyncNow" title="Commit unsaved edits to Google Sheets immediately">
-                    <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path></svg>
-                    <span>Sync Sheet</span>
-                  </button>
-                  <button type="button" class="btn btn-outline btn-sm" id="btnTrackerSetup" title="Configure Google Sheets Web App URL">
-                    <svg class="icon icon-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l-.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l-.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06-.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
-                    <span>Setup</span>
-                  </button>
-                  <button type="button" class="btn btn-danger-ghost btn-sm" id="btnTrackerClearAll" title="Clear all tracker rows">Clear</button>
-                </div>
-              </div>
-
-              <!-- Interactive Spreadsheet Container -->
-              <div id="liveTrackerSpreadsheetContainer" style="flex:1; min-height:0; display:flex; flex-direction:column; overflow:hidden;"></div>
-            </div>
-
           </div>
         </section>
 
@@ -1109,6 +1134,17 @@
               </div>
 
               <div class="trackers-actions">
+                <!-- Tracker-Only Zoom Controls (Scales Google Sheet only, NOT the CCTV OPS shell) -->
+                <div class="trackers-zoom-controls" id="trackersZoomControls" role="group" aria-label="Tracker Zoom Controls">
+                  <span class="trackers-zoom-label">Zoom:</span>
+                  <button type="button" class="btn btn-outline btn-xs btn-zoom-step" id="btnTrackerZoomOut" title="Zoom Out (50% to 150%)">−</button>
+                  <span class="trackers-zoom-val" id="trackerZoomDisplay">80%</span>
+                  <button type="button" class="btn btn-outline btn-xs btn-zoom-step" id="btnTrackerZoomIn" title="Zoom In (50% to 150%)">+</button>
+                  <button type="button" class="btn btn-ghost btn-xs btn-zoom-reset" id="btnTrackerZoomReset" title="Reset Zoom to 100%">Reset</button>
+                </div>
+
+                <div class="trackers-topbar-divider"></div>
+
                 <span class="trackers-active-label" id="trackersActiveLabel">CCTV Audit (AUDIT 2026)</span>
                 <button type="button" class="btn btn-outline btn-xs" id="btnTrackerReload" title="Reload current tracker workbook" style="gap:4px;">
                   <svg class="icon icon-xs" viewBox="0 0 24 24"><path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
@@ -1124,6 +1160,62 @@
             <!-- Full Body Shared Tracker Viewport -->
             <div class="trackers-frame-container" id="trackersFrameContainer">
               <iframe id="trackerFrame" class="tracker-iframe" src="https://docs.google.com/spreadsheets/d/1dhQKpRxZUFjQc-00a5SQXRRsIOMCjT_d-b-o36bYWzs/edit?gid=312942343#gid=312942343" allow="clipboard-read; clipboard-write" loading="eager" title="Shared Google Spreadsheet"></iframe>
+            </div>
+          </div>
+        </section>
+
+        <!-- WORKSPACE: Dedicated HRIS (SixEleven HRIS / Employee DTR) -->
+        <!-- WORKSPACE: SixEleven HRIS / Employee DTR -->
+        <section id="paneHris" class="workspace-pane" role="tabpanel" aria-labelledby="tabHris" hidden>
+          <div class="hris-workspace-layout">
+            <!-- Compact HRIS Switcher Topbar -->
+            <div class="hris-topbar">
+              <div class="hris-title-cluster">
+                <span class="hris-title">SixEleven HRIS / Employee DTR</span>
+                <span class="badge badge-neutral" style="font-size:10px;">Authoritative Portal</span>
+              </div>
+              <div class="hris-actions">
+                <button type="button" class="btn btn-outline btn-xs" id="btnHrisReload" title="Reload HRIS application" style="gap:4px;">
+                  <svg class="icon icon-xs" viewBox="0 0 24 24"><path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+                  <span>Reload</span>
+                </button>
+                <a id="linkOpenHris" href="https://611systems.com/hrsys/employee-dtr" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-xs" title="Open HRIS directly in a new browser tab" style="gap:4px; text-decoration:none;">
+                  <svg class="icon icon-xs" viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+                  <span>Open HRIS</span>
+                </a>
+              </div>
+            </div>
+
+            <!-- Full Body HRIS Viewport with Safe Fallback -->
+            <div class="hris-frame-container" id="hrisFrameContainer">
+              <div id="hrisSessionFallbackCard" class="hris-session-fallback-card">
+                <div class="hris-fallback-inner">
+                  <div class="hris-fallback-badge">
+                    <span class="badge badge-warning" style="font-size:10px; padding:3px 8px; font-weight:700; letter-spacing:0.03em;">HRIS SESSION NOT AVAILABLE</span>
+                  </div>
+                  <h3 class="hris-fallback-title">Authentication Required</h3>
+                  <p class="hris-fallback-desc">
+                    The HRIS server did not accept the embedded login session.
+                  </p>
+                  <p class="hris-fallback-lead">
+                    For security, sign in to SixEleven HRIS in a normal browser tab first.
+                  </p>
+                  <div class="hris-fallback-buttons">
+                    <a href="https://611systems.com/hrsys/employee-dtr" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-md" id="btnOpenHrisAction" style="text-decoration:none; gap:6px;">
+                      <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+                      <strong>Open HRIS to Sign In</strong>
+                    </a>
+                    <button type="button" class="btn btn-outline btn-md" id="btnReloadEmbeddedHris" style="gap:6px;">
+                      <svg class="icon icon-sm" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+                      <span>Reload Embedded HRIS</span>
+                    </button>
+                  </div>
+                  <span class="hris-fallback-tip">
+                    Sign in to HRIS in the new tab, then return here and press Reload.
+                  </span>
+                </div>
+              </div>
+              <iframe id="hrisFrame" class="hris-iframe" src="https://611systems.com/hrsys/employee-dtr" allow="clipboard-read; clipboard-write; fullscreen" loading="eager" title="SixEleven HRIS Employee DTR"></iframe>
             </div>
           </div>
         </section>
@@ -1686,115 +1778,73 @@
         <section id="paneConduct" class="workspace-pane" role="tabpanel" aria-labelledby="tabConduct" hidden>
           <div class="cctv-conduct-layout">
             
-            <!-- TOP TOOLBAR: Search, Category Filter, Severity Filter, CCTV Shortcuts -->
-            <div class="card conduct-toolbar-card">
-              <div class="card-head">
-                <div class="card-title-wrap">
-                  <h2 class="card-title">CODE OF CONDUCT</h2>
+            <!-- TOP CONTROLS: Search Bar & All Sections Dropdown ONLY -->
+            <div class="conduct-controls-panel">
+              <div class="conduct-title-row">
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <h2 class="conduct-title">CODE OF CONDUCT</h2>
+                  <span class="badge badge-neutral" id="conductTotalCountBadge">165 Policies</span>
                 </div>
-                <div class="card-actions">
-                  <button type="button" class="btn btn-outline btn-sm" id="btnBackToReportFromConduct" title="Switch back to CCTV Report composer" style="gap:5px;">
-                    <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
-                    <span>Back to CCTV Report</span>
-                  </button>
-                  <button type="button" class="btn btn-ghost btn-sm" id="btnConductExpandAll" title="Expand or collapse all categories">Expand All</button>
-                </div>
+                <span class="conduct-subtitle" id="conductResultsCountText">Showing All Policies (165 rules)</span>
               </div>
 
-              <div class="card-body" style="display:flex; flex-direction:column; gap:10px; padding:12px 16px;">
-                <!-- Row 1: Search & Category Dropdown & Severity Filters -->
-                <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-                  <div class="coc-search-bar" style="flex:1; min-width:280px; margin-bottom:0;">
-                    <svg class="icon icon-xs" viewBox="0 0 24 24" style="color:var(--text-muted);"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-                    <input type="text" class="coc-search-input" id="conductSearchInput" placeholder="Search violation keyword or policy # (e.g. sleeping, 1.28, dress code, internet, 3.01)...">
-                    <button type="button" class="coc-clear-search" id="btnConductClearSearch" title="Clear search" style="display:none;">✕</button>
-                  </div>
-
-                  <div style="min-width:240px;">
-                    <select class="form-control form-control-sm" id="conductCategorySelect" style="height:32px; font-size:11px;">
-                      <option value="all">All Categories (All 6 Sections)</option>
-                      <option value="0">1. Attendance, Hours & Work Assign</option>
-                      <option value="1">2. Office Attire & Dress Code</option>
-                      <option value="2">3. Care of Company Property & Premises</option>
-                      <option value="3">4. Security & Health and Safety</option>
-                      <option value="4">5. Behavior, Decorum & Respect</option>
-                      <option value="5">6. Performance, Diligence & Integrity</option>
-                    </select>
-                  </div>
-
-                  <!-- Severity Pills -->
-                  <div class="coc-filter-pills" id="conductSeverityFilters">
-                    <button type="button" class="coc-pill active" data-filter="all">All</button>
-                    <button type="button" class="coc-pill" data-filter="cctv">CCTV Monitored</button>
-                    <button type="button" class="coc-pill pill-minor" data-filter="MINOR">Minor</button>
-                    <button type="button" class="coc-pill pill-major" data-filter="MAJOR">Major</button>
-                    <button type="button" class="coc-pill pill-grave" data-filter="GRAVE">Grave</button>
-                  </div>
+              <div class="conduct-search-row">
+                <div class="coc-search-bar" style="flex:1; margin-bottom:0;">
+                  <svg class="icon icon-xs" viewBox="0 0 24 24" style="color:var(--text-muted);"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                  <input type="text" class="coc-search-input" id="conductSearchInput" placeholder="Search rules by number, title, description, or keyword...">
+                  <button type="button" class="coc-clear-search" id="btnConductClearSearch" title="Clear search" style="display:none;">✕</button>
                 </div>
 
-                <!-- Row 2: CCTV Activity Shortcut Chips -->
-                <div class="conduct-cctv-shortcuts" style="display:flex; align-items:center; gap:6px; flex-wrap:wrap; padding-top:4px; border-top:1px solid rgba(255,255,255,0.04);">
-                  <span style="font-size:10px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px; margin-right:2px;">CCTV Shortcuts:</span>
-                  <button type="button" class="btn-cctv-chip" data-query="1.28">Sleeping (1.28)</button>
-                  <button type="button" class="btn-cctv-chip" data-query="2.03">Dress Code (2.03)</button>
-                  <button type="button" class="btn-cctv-chip" data-query="2.02">Hoods/Caps (2.02)</button>
-                  <button type="button" class="btn-cctv-chip" data-query="3.01">Unclean Desks (3.01)</button>
-                  <button type="button" class="btn-cctv-chip" data-query="3.02">Open Drinks (3.02)</button>
-                  <button type="button" class="btn-cctv-chip" data-query="1.10">Leaving Station (1.10)</button>
-                  <button type="button" class="btn-cctv-chip" data-query="4.06">Cellphones (4.06)</button>
-                  <button type="button" class="btn-cctv-chip" data-query="5.04">Horseplay (5.04)</button>
+                <div class="coc-select-wrap">
+                  <select class="form-control form-control-sm" id="conductCategorySelect" style="height:34px; font-size:11.5px; min-width:320px;">
+                    <option value="all">All Sections</option>
+                    <option value="0">1. Rules on Attendance, Punctuality, Working Hours and Work Assign</option>
+                    <option value="1">2. Infractions Against Rules on Office Attire</option>
+                    <option value="2">3. Infractions Against Rules on Care of Company Property, Information and Premises</option>
+                    <option value="3">4. Infractions Against Rules on Accurate Reporting of Information</option>
+                    <option value="4">5. Infractions Against Rules on Conflict of Interest</option>
+                    <option value="5">6. Infractions Against Rules on General Behavior</option>
+                  </select>
                 </div>
               </div>
             </div>
 
-            <!-- Main Split: Results List on Left, Penalty Matrix on Right -->
-            <div class="conduct-main-content">
-              <!-- Left / Main: Search Results Accordion List -->
-              <div class="card conduct-results-card">
-                <div class="card-head">
-                  <span class="card-title" id="conductResultsCountText">Showing All Policies</span>
-                  <span class="card-subtitle">Click "Use in CCTV Report" to insert reference into report</span>
+            <!-- DISCIPLINARY PENALTY MATRIX: Always visible in compact panel -->
+            <div class="conduct-penalty-matrix" id="conductPenaltyMatrix">
+              <div class="penalty-matrix-header">
+                <span style="font-weight:700; font-size:10.5px; text-transform:uppercase; letter-spacing:0.04em; color:var(--text-muted);">Disciplinary Penalty Matrix</span>
+                <span style="font-size:10px; color:var(--text-muted); font-style:italic;">SixEleven Sanction Guidelines</span>
+              </div>
+              <div class="penalty-matrix-grid">
+                <div class="penalty-matrix-col is-minor">
+                  <div class="penalty-col-head"><span class="badge badge-info" style="font-size:9.5px; padding:2px 6px;">MINOR</span> <strong>Minor Infractions</strong></div>
+                  <div class="penalty-col-steps">
+                    <span>1st offense — written warning</span>
+                    <span>2nd offense — 1 day suspension</span>
+                    <span>3rd offense — 2–3 days suspension</span>
+                    <span>4th offense — termination</span>
+                  </div>
                 </div>
-                <div class="card-body" id="conductResultsContainer" style="overflow-y:auto; padding:12px; gap:10px; display:flex; flex-direction:column;">
-                  <!-- Dynamic policy categories injected here -->
+                <div class="penalty-matrix-col is-major">
+                  <div class="penalty-col-head"><span class="badge badge-warning" style="font-size:9.5px; padding:2px 6px; background:rgba(245,158,11,0.2); color:#fbbf24;">MAJOR</span> <strong>Major Infractions</strong></div>
+                  <div class="penalty-col-steps">
+                    <span>1st offense — 1 day suspension</span>
+                    <span>2nd offense — 2–3 days suspension</span>
+                    <span>3rd offense — termination</span>
+                  </div>
+                </div>
+                <div class="penalty-matrix-col is-grave">
+                  <div class="penalty-col-head"><span class="badge badge-danger" style="font-size:9.5px; padding:2px 6px; background:rgba(239,68,68,0.2); color:#f87171;">GRAVE</span> <strong>Grave Infractions</strong></div>
+                  <div class="penalty-col-steps">
+                    <span>1st offense — termination</span>
+                  </div>
                 </div>
               </div>
+            </div>
 
-              <!-- Right: Disciplinary Matrix Reference Card -->
-              <div class="card conduct-matrix-card">
-                <div class="card-head">
-                  <span class="card-title">Disciplinary Penalty Matrix</span>
-                  <span class="card-subtitle">Official SixEleven sanction guidelines</span>
-                </div>
-                <div class="card-body" style="overflow-y:auto; padding:14px; display:flex; flex-direction:column; gap:12px;">
-                  <div class="matrix-card-section is-minor">
-                    <div class="matrix-head"><span class="badge badge-info" style="font-size:9.5px; padding:2px 6px;">MINOR</span> <strong style="font-size:11.5px; color:var(--text-primary);">Minor Infractions</strong></div>
-                    <ul class="matrix-list">
-                      <li><strong>1st Offense:</strong> Written Warning</li>
-                      <li><strong>2nd Offense:</strong> 1-day suspension</li>
-                      <li><strong>3rd Offense:</strong> 2–3 days suspension</li>
-                      <li><strong>4th Offense:</strong> Termination</li>
-                    </ul>
-                  </div>
-                  <div class="matrix-card-section is-major">
-                    <div class="matrix-head"><span class="badge badge-warning" style="font-size:9.5px; padding:2px 6px; background:rgba(245,158,11,0.2); color:#fbbf24;">MAJOR</span> <strong style="font-size:11.5px; color:var(--text-primary);">Major Infractions</strong></div>
-                    <ul class="matrix-list">
-                      <li><strong>1st Offense:</strong> 1-day suspension</li>
-                      <li><strong>2nd Offense:</strong> 2–3 days suspension</li>
-                      <li><strong>3rd Offense:</strong> Termination</li>
-                    </ul>
-                  </div>
-                  <div class="matrix-card-section is-grave">
-                    <div class="matrix-head"><span class="badge badge-danger" style="font-size:9.5px; padding:2px 6px; background:rgba(239,68,68,0.2); color:#f87171;">GRAVE</span> <strong style="font-size:11.5px; color:var(--text-primary);">Grave Infractions</strong></div>
-                    <ul class="matrix-list">
-                      <li><strong>1st Offense:</strong> Termination of Employment</li>
-                    </ul>
-                  </div>
-                  <div style="font-size:10.5px; color:var(--text-muted); line-height:1.4; border-top:1px solid rgba(255,255,255,0.06); padding-top:8px;">
-                    💡 <em>Policies marked <strong>[Remind Only]</strong> (e.g. casual slippers, open beverages) are issued advisory reminders by Operations prior to formal disciplinary escalations.</em>
-                  </div>
-                </div>
-              </div>
+            <!-- INDEPENDENTLY SCROLLING POLICY CONTAINER -->
+            <div class="conduct-scroll-viewport" id="conductResultsContainer">
+              <!-- Dynamic policy categories injected here -->
             </div>
 
           </div>
@@ -2552,6 +2602,7 @@
   <script src="./js/services/masterlist-service.js"></script>
   <script src="./js/services/history-service.js"></script>
   <script src="./js/services/accounts-service.js"></script>
+  <script src="./js/services/code-of-conduct-service.js"></script>
   <script src="./js/services/cctv-report-service.js"></script>
   <script src="./js/app.js"></script>
 </body>

@@ -1,4 +1,4 @@
-/**
+﻿/**
  * CCTV OPS V2 - CCTV Report Service
  * Ready-to-send CCTV incident/report message composer for Microsoft Teams
  * Integrated with the complete SixEleven Code of Conduct Policy Reference & Multi-MIME clipboard.
@@ -9,538 +9,18 @@ window.CCTV_REPORT_SERVICE = (function () {
 
   const STORAGE_KEY = "cctv_ops_v2_incident_report_draft_v2";
 
-  // Disciplinary Penalty Matrix
-  const PENALTY_MATRIX = {
-    MINOR: {
-      label: "Minor Infraction",
-      color: "#38bdf8",
-      schedule: [
-        { offense: "1st offense", action: "Written Warning" },
-        { offense: "2nd offense", action: "1 day suspension" },
-        { offense: "3rd offense", action: "2–3 days suspension" },
-        { offense: "4th offense", action: "Termination" }
-      ]
-    },
-    MAJOR: {
-      label: "Major Infraction",
-      color: "#f59e0b",
-      schedule: [
-        { offense: "1st offense", action: "1 day suspension" },
-        { offense: "2nd offense", action: "2–3 days suspension" },
-        { offense: "3rd offense", action: "Termination" }
-      ]
-    },
-    GRAVE: {
-      label: "Grave Infraction",
-      color: "#ef4444",
-      schedule: [
-        { offense: "1st offense", action: "Termination" }
-      ]
-    }
-  };
+  // Code of Conduct dataset & matrix are owned by window.CCTV_CONDUCT (code-of-conduct-service.js)
+  function getCodeOfConduct() {
+    return window.CCTV_CONDUCT ? window.CCTV_CONDUCT.getCodeOfConduct() : [];
+  }
 
-  // SixEleven Authoritative Code of Conduct Reference Database
-  // Faithfully transcribed with authentic policy numbers, titles, descriptions, and intentional gaps.
-  const CODE_OF_CONDUCT = [
-    {
-      category: "1. Rules on Attendance, Punctuality, Working Hours and Work Assign",
-      policies: [
-        {
-          num: "1.01",
-          title: "Habitual Tardiness / Late Arrival",
-          description: "Reporting to work after the scheduled shift start without valid authorization.",
-          severity: "MINOR",
-          isCctvMonitored: false
-        },
-        {
-          num: "1.02",
-          title: "Failure to Clock In/Out (Biometric / Attendance Punch)",
-          description: "Neglecting to log official shift start or end times via biometric or electronic timekeeping systems.",
-          severity: "MINOR",
-          isCctvMonitored: false
-        },
-        {
-          num: "1.03",
-          title: "Leaving Assigned Workstation Without Proper Relief or Permission",
-          description: "Stepping away from production line or queue without supervisor acknowledgment or scheduled relief.",
-          severity: "MINOR",
-          isCctvMonitored: true,
-          cctvTag: "Station Abandonment"
-        },
-        {
-          num: "1.04",
-          title: "Failure to Notify Immediate Supervisor of Inability to Report for Work",
-          description: "Failing to notify TL/OM within the prescribed notification window before shift start.",
-          severity: "MINOR",
-          isCctvMonitored: false
-        },
-        {
-          num: "1.05",
-          title: "Unauthorized Absence / Abandonment of Post (AWOL)",
-          description: "Absence from scheduled shift without filing an approved leave or informing immediate supervisor.",
-          severity: "MAJOR",
-          isCctvMonitored: false
-        },
-        {
-          num: "1.07",
-          title: "Over-break / Exceeding Allotted Meal or Rest Break Duration",
-          description: "Taking more than allotted 15-minute bio breaks or 1-hour lunch break without supervisor consent.",
-          severity: "MINOR",
-          isCctvMonitored: true,
-          cctvTag: "Overbreak"
-        },
-        {
-          num: "1.08",
-          title: "Taking Breaks at Unscheduled Times Without Prior Approval",
-          description: "Taking breaks outside assigned WFM interval schedule without TL concurrence.",
-          severity: "MINOR",
-          isCctvMonitored: true,
-          cctvTag: "Unscheduled Break"
-        },
-        {
-          num: "1.10",
-          title: "Leaving Assigned Work Station without Authorization",
-          description: "Leaving workstation or operations floor without prior notice or TL approval during production hours.",
-          severity: "MINOR",
-          isCctvMonitored: true,
-          cctvTag: "Loitering"
-        },
-        {
-          num: "1.13",
-          title: "Sleeping or Idling in Training Rooms, Sleeping Quarters, or Lounges During Working Hours",
-          description: "Using company rest quarters, vacant training rooms, or couches during scheduled work hours.",
-          severity: "MAJOR",
-          isCctvMonitored: true,
-          cctvTag: "Sleeping / Lounge"
-        },
-        {
-          num: "1.18",
-          title: "Logging In as Available While Not at Workstation (Ghost Log)",
-          description: "Setting station as Available or Working while physically away from workstation.",
-          severity: "MAJOR",
-          isCctvMonitored: true,
-          cctvTag: "Ghost Logging"
-        },
-        {
-          num: "1.23",
-          title: "Leaving Company Premises During Shift Without Pass Slip or Gate Authorization",
-          description: "Exiting company building during work hours without security gate pass or supervisor slip.",
-          severity: "MAJOR",
-          isCctvMonitored: true,
-          cctvTag: "Unauthorized Exit"
-        },
-        {
-          num: "1.28",
-          title: "Sleeping While on Duty or During Work Hours",
-          description: "Sleeping, dozing off, or assuming a reclining posture indicative of sleeping during work hours, shift schedule, or while on assigned station.",
-          severity: "MAJOR",
-          isCctvMonitored: true,
-          cctvTag: "Sleeping"
-        },
-        {
-          num: "1.34",
-          title: "Unscheduled Stepping Out to Smoking or Vaping Areas Outside Permitted Windows",
-          description: "Leaving production area to smoke or vape outside designated official break periods.",
-          severity: "MINOR",
-          isCctvMonitored: true,
-          cctvTag: "Smoking Break"
-        },
-        {
-          num: "1.42",
-          title: "Prolonged Congregating at Time Clocks or Entrances Prior to Shift End",
-          description: "Crowding at biometric terminals or exit turnstiles well before shift end to clock out early.",
-          severity: "MINOR",
-          isCctvMonitored: true,
-          cctvTag: "Loitering at Exit"
-        },
-        {
-          num: "1.57",
-          title: "Refusal of Lawful Work Assignment, Shift Schedule, or Rotation from Management",
-          description: "Declining assigned campaign, seat allocation, or shift rotation mandated by operations leadership.",
-          severity: "MAJOR",
-          isCctvMonitored: false
-        }
-      ]
-    },
-    {
-      category: "2. Infractions Against Rules on Office Attire",
-      policies: [
-        {
-          num: "2.01",
-          title: "Wearing Prohibited Footwear or Slippers",
-          description: "Wearing beach slippers, flip-flops, or prohibited casual slippers inside company production facilities.",
-          severity: "MINOR",
-          isCctvMonitored: true,
-          cctvTag: "Dress Code",
-          remindOnly: true
-        },
-        {
-          num: "2.02",
-          title: "Unauthorized Usage of Hoods, Caps, or Headwear",
-          description: "Wearing hoods, caps, beanies, or head coverings on the production floor (Hijabs, Turbans, and verified religious headwear strictly excluded).",
-          severity: "MINOR",
-          isCctvMonitored: true,
-          cctvTag: "Hoods/Caps",
-          remindOnly: true
-        },
-        {
-          num: "2.03",
-          title: "Failure or Refusal to Comply with Prescribed Office Attire or Dress Code",
-          description: "Failure to follow the company dress code policy, including sleeveless shirts, short pants, ripped garments, or missing company ID badge.",
-          severity: "MINOR",
-          isCctvMonitored: true,
-          cctvTag: "Dress Code",
-          remindOnly: true
-        },
-        {
-          num: "2.04",
-          title: "Bringing Prohibited Personal Grooming & Gadget Items to Operations Floor",
-          description: "Bringing in mirrors, cosmetic/makeup products, nail cutters, personal cables, or unauthorized chargers to production desks.",
-          severity: "MINOR",
-          isCctvMonitored: true,
-          cctvTag: "Personal Items",
-          remindOnly: true
-        },
-        {
-          num: "2.05",
-          title: "Failure to Display or Wear Company Identification Badge (No ID)",
-          description: "Entering or remaining on company production floors without visibly displaying company issued ID badge.",
-          severity: "MINOR",
-          isCctvMonitored: true,
-          cctvTag: "No ID",
-          remindOnly: true
-        },
-        {
-          num: "2.06",
-          title: "Wearing Sleeveless Attire, Tank Tops, Spaghetti Straps, or Revealing Clothes",
-          description: "Wearing clothing items that violate professional business casual expectations.",
-          severity: "MINOR",
-          isCctvMonitored: true,
-          cctvTag: "Dress Code",
-          remindOnly: true
-        },
-        {
-          num: "2.07",
-          title: "Wearing Athletic Jerseys, Gym Shorts, or Pajama Pants on Operations Floor",
-          description: "Wearing sports gym wear, basketball jerseys, or sleepwear inside company work premises.",
-          severity: "MINOR",
-          isCctvMonitored: true,
-          cctvTag: "Dress Code",
-          remindOnly: true
-        },
-        {
-          num: "2.08",
-          title: "Wearing Torn, Ripped, or Distressed Clothing",
-          description: "Wearing pants or shirts with excessive fraying, intentional tears, or unkempt appearance.",
-          severity: "MINOR",
-          isCctvMonitored: true,
-          cctvTag: "Dress Code",
-          remindOnly: true
-        }
-      ]
-    },
-    {
-      category: "3. Infractions Against Rules on Care of Company Property, Information and Premises",
-      policies: [
-        {
-          num: "3.01",
-          title: "Creating or Contributing to Unclean or Unsanitary Conditions",
-          description: "Leaving trash, wrappers, clutter, or messy conditions in workstations, production aisles, or common areas.",
-          severity: "MINOR",
-          isCctvMonitored: true,
-          cctvTag: "Unclean Conditions"
-        },
-        {
-          num: "3.02",
-          title: "Bringing Beverages Not in Spill-Preventive Containers",
-          description: "Bringing cups, open glasses, or drinks without secure, spill-proof lids/tumblers into workstation areas.",
-          severity: "MINOR",
-          isCctvMonitored: true,
-          cctvTag: "Open Beverages",
-          remindOnly: true
-        },
-        {
-          num: "3.03",
-          title: "Eating in No-Eating Areas / Production Floor",
-          description: "Consuming meals, snacks, or food in production lanes, computer desks, or unauthorized office areas.",
-          severity: "MINOR",
-          isCctvMonitored: true,
-          cctvTag: "Eating in No-Eating Area"
-        },
-        {
-          num: "3.04",
-          title: "Unauthorized Entry to Specified or Restricted Areas",
-          description: "Entering server rooms, comms cabinets, executive suites, or restricted operations sections without security clearance.",
-          severity: "MAJOR",
-          isCctvMonitored: true,
-          cctvTag: "Unauthorized Entry"
-        },
-        {
-          num: "3.05",
-          title: "Unauthorized Bringing Out of Company Equipment",
-          description: "Taking company-owned hardware, monitors, keyboards, headsets, or office assets outside company premises without gate pass.",
-          severity: "GRAVE",
-          isCctvMonitored: true,
-          cctvTag: "Equipment Removal"
-        },
-        {
-          num: "3.08",
-          title: "Unauthorized Use of the Internet for Non-Business Related Activities",
-          description: "Browsing social media, video streaming platforms, gaming sites, or personal websites during work hours on company workstations.",
-          severity: "MAJOR",
-          isCctvMonitored: true,
-          cctvTag: "Internet Misuse"
-        },
-        {
-          num: "3.14",
-          title: "Leaving Confidential Documents, Customer Records, or Paper Slips Unattended on Desk (Clean Desk Policy)",
-          description: "Violating clean-desk protocol by leaving client details, account numbers, or passwords written on paper.",
-          severity: "MAJOR",
-          isCctvMonitored: true,
-          cctvTag: "Clean Desk Policy"
-        },
-        {
-          num: "3.19",
-          title: "Unauthorized Swapping of Computer Hardware or Peripherals",
-          description: "Swapping keyboards, mice, cables, or company equipment without formal IT clearance or authorization.",
-          severity: "MAJOR",
-          isCctvMonitored: true,
-          cctvTag: "Peripheral Swapping"
-        },
-        {
-          num: "3.25",
-          title: "Vandalizing Company Property or Defacing Equipment",
-          description: "Writing on walls, scratching desks, tampering with security tags, or intentionally defacing company property.",
-          severity: "MAJOR",
-          isCctvMonitored: true,
-          cctvTag: "Vandalism"
-        },
-        {
-          num: "3.33",
-          title: "Careless Handling or Negligent Damage to Company Property",
-          description: "Dropping, pulling cables forcefully, slamming equipment, or damaging company peripherals through negligence.",
-          severity: "MINOR",
-          isCctvMonitored: true,
-          cctvTag: "Negligent Handling"
-        }
-      ]
-    },
-    {
-      category: "4. Infractions Against Rules on Accurate Reporting of Information",
-      policies: [
-        {
-          num: "4.02",
-          title: "Concealing Errors or Misrepresenting Operational Information",
-          description: "Falsifying tracker entries, withholding critical incident details, or altering operational metrics.",
-          severity: "MAJOR",
-          isCctvMonitored: false
-        },
-        {
-          num: "4.05",
-          title: "Providing Misleading or False Statements During Company Investigation or Incident Audit",
-          description: "Misleading CCTV investigators, HR representatives, or leadership during official inquiries.",
-          severity: "GRAVE",
-          isCctvMonitored: false
-        },
-        {
-          num: "4.07",
-          title: "Forging Manager or Supervisor Signature on Leave, Gate Pass, or Shift Authorizations",
-          description: "Signing another leader's name on physical or digital clearance documents.",
-          severity: "GRAVE",
-          isCctvMonitored: false
-        },
-        {
-          num: "4.09",
-          title: "Clocking In or Swiping for Another Employee (Buddy Punching)",
-          description: "Using another employee's biometric credentials, RFID badge, or PIN to register attendance.",
-          severity: "GRAVE",
-          isCctvMonitored: true,
-          cctvTag: "Buddy Punching"
-        },
-        {
-          num: "4.11",
-          title: "Falsification of Time Records, Biometric Entries, or Shift Logs",
-          description: "Clocking in or out dishonestly or intentionally misrepresenting shift attendance and break logs.",
-          severity: "GRAVE",
-          isCctvMonitored: true,
-          cctvTag: "Attendance Falsification"
-        },
-        {
-          num: "4.14",
-          title: "Deliberate Failure to Report Known Operational Violations or Equipment Damage",
-          description: "Concealing known damage to company property or shielding ongoing serious policy breaches.",
-          severity: "MINOR",
-          isCctvMonitored: false
-        }
-      ]
-    },
-    {
-      category: "5. Infractions Against Rules on Conflict of Interest",
-      policies: [
-        {
-          num: "5.01",
-          title: "Unauthorized Use of Company Resources for Personal Business",
-          description: "Using company PCs, internet, or facilities for personal commercial enterprise, freelancing, or secondary employment.",
-          severity: "MAJOR",
-          isCctvMonitored: true,
-          cctvTag: "Personal Business"
-        },
-        {
-          num: "5.03",
-          title: "Soliciting Personal Loans, Commercial Sales, or Lending Business Inside Operations",
-          description: "Promoting lending businesses, selling merchandise, or soliciting money among agents on company floor.",
-          severity: "MAJOR",
-          isCctvMonitored: true,
-          cctvTag: "Commercial Solicitation"
-        },
-        {
-          num: "5.07",
-          title: "Conducting Unauthorized Financial or Commercial Transactions on Office Floor",
-          description: "Trading currency, engaging in unregistered moneylending, or collecting bets inside office premises.",
-          severity: "MAJOR",
-          isCctvMonitored: true,
-          cctvTag: "Financial Transactions"
-        },
-        {
-          num: "5.12",
-          title: "Engaging in Competing Business or Moonlighting During Shift",
-          description: "Performing work for outside competing clients or entities during company working hours.",
-          severity: "GRAVE",
-          isCctvMonitored: false
-        },
-        {
-          num: "5.18",
-          title: "Utilizing Proprietary Customer Contact Lists for Private or External Use",
-          description: "Extracting client contact databases or leads for personal marketing or external exploitation.",
-          severity: "GRAVE",
-          isCctvMonitored: false
-        },
-        {
-          num: "5.27",
-          title: "Undisclosed Secondary Employment Disrupting Scheduled Shift",
-          description: "Holding conflicting jobs that cause fatigue, sleepiness on duty, or chronic scheduling issues.",
-          severity: "MAJOR",
-          isCctvMonitored: false
-        }
-      ]
-    },
-    {
-      category: "6. Infractions Against Rules on General Behavior",
-      policies: [
-        {
-          num: "6.01",
-          title: "Disorderly Conduct, Roughness, or Horseplaying",
-          description: "Engaging in physical roughness, wrestling, horseplaying, or disruptive pranks in operations or office corridors.",
-          severity: "MAJOR",
-          isCctvMonitored: true,
-          cctvTag: "Horseplaying"
-        },
-        {
-          num: "6.02",
-          title: "Excessive Noise Levels Disrupting Operations",
-          description: "Shouting, screaming, using speakerphones loudly, or making excessive noise that disrupts call center operations.",
-          severity: "MINOR",
-          isCctvMonitored: true,
-          cctvTag: "Noise Levels"
-        },
-        {
-          num: "6.03",
-          title: "Non-Business Related Chitchatting During Shift",
-          description: "Engaging in prolonged personal conversations or idle group chatter while active queues or tickets require handling.",
-          severity: "MINOR",
-          isCctvMonitored: true,
-          cctvTag: "Chitchatting"
-        },
-        {
-          num: "6.04",
-          title: "Insubordination or Refusal to Comply with Lawful Instructions",
-          description: "Direct refusal to follow reasonable directives from Team Leaders, Operations Managers, or Security personnel.",
-          severity: "GRAVE",
-          isCctvMonitored: false
-        },
-        {
-          num: "6.05",
-          title: "Bringing, Possessing, or Consuming Intoxicating Alcohol on Premises",
-          description: "Possessing alcoholic drinks or consuming liquor anywhere inside company buildings or parking lots.",
-          severity: "GRAVE",
-          isCctvMonitored: true,
-          cctvTag: "Alcohol"
-        },
-        {
-          num: "6.07",
-          title: "Physical Assault, Fighting, or Attempting to Inflict Bodily Harm",
-          description: "Initiating or participating in fistfights, battery, or violent physical altercations on premises.",
-          severity: "GRAVE",
-          isCctvMonitored: true,
-          cctvTag: "Physical Altercation"
-        },
-        {
-          num: "6.09",
-          title: "Sexual Harassment, Lewd Behavior, or Inappropriate Physical Contact",
-          description: "Engaging in unwelcome advances, suggestive comments, or inappropriate touching in workplace.",
-          severity: "GRAVE",
-          isCctvMonitored: true,
-          cctvTag: "Lewd Conduct"
-        },
-        {
-          num: "6.10",
-          title: "Gambling, Betting, or Playing Games of Chance on Company Premises",
-          description: "Participating in card games for money, dice games, or sports betting pools inside the facility.",
-          severity: "MAJOR",
-          isCctvMonitored: true,
-          cctvTag: "Gambling"
-        },
-        {
-          num: "6.11",
-          title: "Possessing Prohibited Weapons, Firearms, or Explosives on Premises",
-          description: "Carrying blades, knives, firearms, or incendiary devices inside company buildings.",
-          severity: "GRAVE",
-          isCctvMonitored: true,
-          cctvTag: "Weapons"
-        },
-        {
-          num: "6.12",
-          title: "Theft, Pilferage, or Unauthorized Possession of Property",
-          description: "Taking personal belongings, headsets, wallets, or company assets without consent.",
-          severity: "GRAVE",
-          isCctvMonitored: true,
-          cctvTag: "Theft"
-        },
-        {
-          num: "6.13",
-          title: "Smoking or Vaping in Non-Designated or Prohibited Areas",
-          description: "Smoking cigarettes or using electronic vapes in stairwells, restrooms, or production floors.",
-          severity: "MINOR",
-          isCctvMonitored: true,
-          cctvTag: "Smoking / Vaping"
-        },
-        {
-          num: "6.17",
-          title: "Using Mobile Phones or Personal Recording Devices on Operations Floor",
-          description: "Bringing or actively using personal cellular phones, smartwatches with cameras, or cameras on the production floor.",
-          severity: "MAJOR",
-          isCctvMonitored: true,
-          cctvTag: "Mobile Phone"
-        },
-        {
-          num: "6.22",
-          title: "Loitering or Idling Away from Assigned Station During Shift",
-          description: "Wandering away from assigned station, gathering in hallways, locker areas, or unassigned production rows during work hours.",
-          severity: "MINOR",
-          isCctvMonitored: true,
-          cctvTag: "Loitering"
-        },
-        {
-          num: "6.28",
-          title: "Instigating, Inciting, or Participating in Work Stoppage, Walkout, or Boycott",
-          description: "Attempting to halt company customer support operations through concerted work stoppages.",
-          severity: "GRAVE",
-          isCctvMonitored: false
-        }
-      ]
-    }
-  ];
+  function getCodeOfConductCount() {
+    return window.CCTV_CONDUCT ? window.CCTV_CONDUCT.getCodeOfConductCount() : 0;
+  }
 
+  function getPenaltyMatrix() {
+    return window.CCTV_CONDUCT ? window.CCTV_CONDUCT.getPenaltyMatrix() : {};
+  }
   // Raw Bisaya-English dictionary substitutions
   const BISAYA_ENGLISH_MAP = [
     { regex: /\bhantod\s+nakatulog\b/gi, replacement: "dozing off and eventually falling asleep" },
@@ -559,7 +39,7 @@ window.CCTV_REPORT_SERVICE = (function () {
       greeting: "Good morning TLs,",
       observation: "Observed an agent sleeping from 5:34:44 AM to 5:40:20 AM, with a total duration of approximately 5 minutes. Kindly file an NOC in accordance with the company COD. Thank you.",
       personInvolved: "",
-      site: "Mabini Site A – Ground Floor",
+      site: "Mabini Site A â€“ Ground Floor",
       dateRange: "September 10, 2026",
       clipUrl: "",
       screenshots: [],
@@ -596,61 +76,19 @@ window.CCTV_REPORT_SERVICE = (function () {
     return getDefaultDraft();
   }
 
-  function getCodeOfConduct() {
-    return CODE_OF_CONDUCT;
+  function computePolicyRelevance(pol, catCategory, rawQuery) {
+    if (window.CCTV_CONDUCT && typeof window.CCTV_CONDUCT.computePolicyRelevance === "function") {
+      return window.CCTV_CONDUCT.computePolicyRelevance(pol, catCategory, rawQuery);
+    }
+    return 1;
   }
 
-  function getCodeOfConductCount() {
-    let total = 0;
-    CODE_OF_CONDUCT.forEach(cat => {
-      total += cat.policies ? cat.policies.length : 0;
-    });
-    return total;
+  function searchCodeOfConduct(query, filterCategory, filterSeverity, monitoredOnly) {
+    if (window.CCTV_CONDUCT && typeof window.CCTV_CONDUCT.searchCodeOfConduct === "function") {
+      return window.CCTV_CONDUCT.searchCodeOfConduct(query, filterCategory, filterSeverity, monitoredOnly);
+    }
+    return [];
   }
-
-  function getPenaltyMatrix() {
-    return PENALTY_MATRIX;
-  }
-
-  function searchCodeOfConduct(query = "", filterCategory = "all", filterSeverity = "all", monitoredOnly = false) {
-    const q = String(query || "").trim().toLowerCase();
-    const results = [];
-
-    CODE_OF_CONDUCT.forEach((catGroup, catIdx) => {
-      if (filterCategory !== "all" && String(catIdx) !== String(filterCategory)) {
-        return;
-      }
-
-      const matchingPolicies = catGroup.policies.filter(pol => {
-        if (filterSeverity !== "all" && pol.severity !== filterSeverity) {
-          return false;
-        }
-        if (monitoredOnly && !pol.isCctvMonitored) {
-          return false;
-        }
-        if (!q) return true;
-
-        return (
-          pol.num.toLowerCase().includes(q) ||
-          pol.title.toLowerCase().includes(q) ||
-          pol.description.toLowerCase().includes(q) ||
-          pol.severity.toLowerCase().includes(q) ||
-          (pol.cctvTag && pol.cctvTag.toLowerCase().includes(q))
-        );
-      });
-
-      if (matchingPolicies.length > 0) {
-        results.push({
-          category: catGroup.category,
-          categoryIndex: catIdx,
-          policies: matchingPolicies
-        });
-      }
-    });
-
-    return results;
-  }
-
   // --- TIME & DURATION UTILITIES ---
 
   function parseTimeSeconds(timeStr) {
@@ -735,8 +173,8 @@ window.CCTV_REPORT_SERVICE = (function () {
     // 2. Extract Location
     let detectedLocation = "";
     const sitePatterns = [
-      /\b(Mabini\s+Site\s+[AB])(?:\s*[–-]\s*|\s+)(Ground|1st|2nd|3rd|4th|5th|6th)?\s*(Floor)?\b/i,
-      /\b(MAA)(?:\s*[–-]\s*|\s+)(5th|6th)?\s*(Floor)?\b/i,
+      /\b(Mabini\s+Site\s+[AB])(?:\s*[â€“-]\s*|\s+)(Ground|1st|2nd|3rd|4th|5th|6th)?\s*(Floor)?\b/i,
+      /\b(MAA)(?:\s*[â€“-]\s*|\s+)(5th|6th)?\s*(Floor)?\b/i,
       /\b(Ecoland(?:\s+Site)?)\b/i,
       /\b(Gensan(?:\s+Site)?)\b/i
     ];
@@ -768,7 +206,7 @@ window.CCTV_REPORT_SERVICE = (function () {
 
     // Special Pattern 0: Time + Date until Time + Date
     // e.g. "2:39:12 PM Sept 12 until 7:47:17 AM Sept 13"
-    const overnightDateTimePattern = /(\d{1,2}:\d{2}(?::\d{2})?\s*(?:AM|PM))\s+(?:on\s+)?(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Sept|October|November|December)[a-z]*\.?\s+(\d{1,2})(?:st|nd|rd|th)?\s*(?:until|to|-|–)\s*(\d{1,2}:\d{2}(?::\d{2})?\s*(?:AM|PM))\s+(?:on\s+)?(?:(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Sept|October|November|December)[a-z]*\.?\s+)?(\d{1,2})(?:st|nd|rd|th)?(?!\s*:),?\s*(\d{4})?/i;
+    const overnightDateTimePattern = /(\d{1,2}:\d{2}(?::\d{2})?\s*(?:AM|PM))\s+(?:on\s+)?(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Sept|October|November|December)[a-z]*\.?\s+(\d{1,2})(?:st|nd|rd|th)?\s*(?:until|to|-|â€“)\s*(\d{1,2}:\d{2}(?::\d{2})?\s*(?:AM|PM))\s+(?:on\s+)?(?:(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Sept|October|November|December)[a-z]*\.?\s+)?(\d{1,2})(?:st|nd|rd|th)?(?!\s*:),?\s*(\d{4})?/i;
     const odtMatch = text.match(overnightDateTimePattern);
     if (odtMatch) {
       const startTime = odtMatch[1].trim();
@@ -802,7 +240,7 @@ window.CCTV_REPORT_SERVICE = (function () {
 
     // Pattern A: Overnight Sept 12-13, 2026 or Sept 12 until Sept 13
     if (!detectedDate) {
-      const overnightPattern = /\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Sept|October|November|December)[a-z]*\.?\s+(\d{1,2})(?:st|nd|rd|th)?\s*(?:-|–|to|until)\s*(?:(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Sept|October|November|December)[a-z]*\.?\s+)?(\d{1,2})(?:st|nd|rd|th)?(?!\s*:),?\s*(\d{4})?\b/i;
+      const overnightPattern = /\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Sept|October|November|December)[a-z]*\.?\s+(\d{1,2})(?:st|nd|rd|th)?\s*(?:-|â€“|to|until)\s*(?:(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Sept|October|November|December)[a-z]*\.?\s+)?(\d{1,2})(?:st|nd|rd|th)?(?!\s*:),?\s*(\d{4})?\b/i;
       const overMatch = text.match(overnightPattern);
       if (overMatch) {
         const m1 = overMatch[1];
@@ -860,7 +298,7 @@ window.CCTV_REPORT_SERVICE = (function () {
 
     // Check for intervals (pairs of start & end) if not already found
     if (intervals.length === 0) {
-      const intervalPattern = /(\d{1,2}:\d{2}(?::\d{2})?\s*(?:AM|PM))\s*(?:to|until|-|–)\s*(\d{1,2}:\d{2}(?::\d{2})?\s*(?:AM|PM))/gi;
+      const intervalPattern = /(\d{1,2}:\d{2}(?::\d{2})?\s*(?:AM|PM))\s*(?:to|until|-|â€“)\s*(\d{1,2}:\d{2}(?::\d{2})?\s*(?:AM|PM))/gi;
       let iMatch;
       while ((iMatch = intervalPattern.exec(rawText)) !== null) {
         intervals.push({
@@ -1062,7 +500,7 @@ window.CCTV_REPORT_SERVICE = (function () {
     const fullObservation = `${incidentNarrative} ${actionRequest}`.trim();
 
     // Final Location
-    const finalLocation = parsed.detectedLocation || existingDraft.site || "Mabini Site A – Ground Floor";
+    const finalLocation = parsed.detectedLocation || existingDraft.site || "Mabini Site A â€“ Ground Floor";
 
     // Final Date
     const finalDate = parsed.detectedDate || existingDraft.dateRange || "September 10, 2026";
