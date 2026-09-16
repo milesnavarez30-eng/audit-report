@@ -21,6 +21,41 @@
     return String(value == null ? "" : value).replace(/[\t\r\n]+/g, " ").trim();
   };
 
+  // Strict Safe URL Validator (Blocks javascript:, data:, vbscript:, file:, and invalid schemes)
+  window.safeUrl = function (value) {
+    const raw = String(value == null ? "" : value).trim();
+    if (!raw) return "";
+    // If input specifies any scheme (anything preceding a colon)
+    if (/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(raw)) {
+      try {
+        const parsed = new URL(raw);
+        if (/^https?:$/i.test(parsed.protocol)) return parsed.href;
+      } catch (_) {}
+      return "";
+    }
+    // If no scheme was provided, only allow if it resembles a valid web host/domain
+    try {
+      const parsed = new URL("https://" + raw);
+      if (/^https?:$/i.test(parsed.protocol) && parsed.hostname.includes(".")) {
+        return parsed.href;
+      }
+    } catch (_) {}
+    return "";
+  };
+
+  // Safe Error Formatter (Prevents leaking SQL / Stack traces / Internals)
+  window.safeErrorMessage = function (err, fallback = "Operation could not be completed.") {
+    if (!err) return fallback;
+    const msg = String(typeof err === "string" ? err : (err.message || fallback));
+    if (/relation ".*" does not exist/i.test(msg) || /syntax error at or near/i.test(msg) || /JWT/i.test(msg) || /apikey/i.test(msg)) {
+      return "A server configuration or database error occurred. Please contact an administrator.";
+    }
+    if (/fetch failed/i.test(msg) || /network error/i.test(msg)) {
+      return "Network connection failed. Please check your connectivity.";
+    }
+    return window.escapeHtml(msg.slice(0, 160));
+  };
+
   // ISO Date Helper (YYYY-MM-DD in Asia/Manila / local time)
   window.todayIso = function () {
     const d = new Date();

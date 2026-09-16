@@ -421,6 +421,8 @@
       return;
     }
 
+    const esc = window.escapeHtml || (s => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g, '&#39;'));
+
     listContainer.innerHTML = reports.map((r) => {
       const isDone = !!r.done;
       const isSelected = !!r.selected;
@@ -445,31 +447,31 @@
       const chipsHtml = chips.length ? `<span class="status-chips-wrap">${chips.join('')}</span>` : '';
 
       return `
-        <div class="record-row ${isSelected ? 'is-selected' : ''} ${isDone ? 'is-done' : ''}" data-id="${r.id}" data-updated-at="${r.updatedAt || ''}">
+        <div class="record-row ${isSelected ? 'is-selected' : ''} ${isDone ? 'is-done' : ''}" data-id="${esc(r.id)}" data-updated-at="${esc(r.updatedAt || '')}">
           <label class="record-select-col" style="cursor:pointer;" title="Select record">
-            <input type="checkbox" class="edr-check" data-id="${r.id}" ${isSelected ? 'checked' : ''} style="cursor:pointer;">
+            <input type="checkbox" class="edr-check" data-id="${esc(r.id)}" ${isSelected ? 'checked' : ''} style="cursor:pointer;">
           </label>
 
           <div class="record-info">
             <div class="record-main-line">
-              <span class="record-date">${formattedDate}</span>
+              <span class="record-date">${esc(formattedDate)}</span>
               <span class="record-sep">·</span>
-              <span class="record-site" title="${r.site || 'Site'}">${r.site || 'Site'}</span>
+              <span class="record-site" title="${esc(r.site || 'Site')}">${esc(r.site || 'Site')}</span>
               ${chipsHtml}
             </div>
             <div class="record-sub-line">
-              <span class="record-campaign" title="${r.account || 'General'}">${r.account || 'General'}</span>
+              <span class="record-campaign" title="${esc(r.account || 'General')}">${esc(r.account || 'General')}</span>
               <span class="record-sep">·</span>
-              <span class="record-resp" title="${r.supervisorRole || 'TL'}: ${r.supervisorName || 'N/A'}">
-                <span class="sub-label">${r.supervisorRole || 'TL'}:</span> <strong>${r.supervisorName || 'N/A'}</strong>
+              <span class="record-resp" title="${esc(r.supervisorRole || 'TL')}: ${esc(r.supervisorName || 'N/A')}">
+                <span class="sub-label">${esc(r.supervisorRole || 'TL')}:</span> <strong>${esc(r.supervisorName || 'N/A')}</strong>
               </span>
               ${r.subjectName ? `
                 <span class="record-sep">·</span>
-                <span class="record-subj" title="Subject: ${r.subjectName}"><span class="sub-label">Subj:</span> ${r.subjectName}</span>
+                <span class="record-subj" title="Subject: ${esc(r.subjectName)}"><span class="sub-label">Subj:</span> ${esc(r.subjectName)}</span>
               ` : ''}
               ${lastEditedText ? `
                 <span class="record-sep">·</span>
-                <span class="record-last-edited" title="${lastEditedText}">${lastEditedText}</span>
+                <span class="record-last-edited" title="${esc(lastEditedText)}">${esc(lastEditedText)}</span>
               ` : ''}
             </div>
           </div>
@@ -6452,14 +6454,17 @@ function doPost(e) {
     if (Array.isArray(cctvReportDraft.screenshots) && cctvReportDraft.screenshots.length > 0) {
       const shotsHtml = cctvReportDraft.screenshots.map((s, idx) => {
         const src = typeof s === "string" ? s : (s.data || s.url || "");
-        return `<img src="${src}" class="teams-preview-shot-img" alt="CCTV Screenshot ${idx + 1}">`;
-      }).join("");
+        if (!src || !/^(data:image\/|https?:\/\/)/i.test(String(src).trim())) return "";
+        return `<img src="${esc(String(src).trim())}" class="teams-preview-shot-img" alt="CCTV Screenshot ${idx + 1}">`;
+      }).filter(Boolean).join("");
       htmlParts.push(`<div class="teams-preview-shots" style="margin: 6px 0;">${shotsHtml}</div>`);
     }
 
+    const safeUrlFn = typeof window.safeUrl === "function" ? window.safeUrl : (u => /^https?:\/\//i.test(String(u||'').trim()) ? String(u).trim() : "");
     const clips = (cctvReportDraft.clipUrl || "")
       .split(/[\n,]+/)
       .map(u => u.trim())
+      .map(u => safeUrlFn(u))
       .filter(u => !!u);
 
     if (clips.length === 1) {
@@ -7623,15 +7628,28 @@ ${escapeHtml(JSON.stringify(entry.after || entry.before, null, 2))}
     };
 
     const permSummary = item => {
-      if (item?.role === 'admin') return 'Full Admin Access';
+      if (item?.role === 'super_admin') return 'Super Admin (All Workspaces & Capabilities)';
       const p = item?.permissions || {};
+      if (item?.role === 'admin') {
+        const privs = [];
+        if (p.accounts) privs.push('Accounts');
+        if (p.manage_users) privs.push('Users');
+        if (p.manage_permissions) privs.push('Perms');
+        if (p.view_security_logs) privs.push('Audit');
+        return `Admin (${privs.join(', ') || 'Custom'})`;
+      }
       const list = [];
+      if (p.report !== false && p.cctv !== false) list.push('Report');
+      if (p.conduct !== false) list.push('Conduct');
       if (p.edr !== false) list.push('EDR');
-      if (p.cctv !== false) list.push('CCTV');
-      if (p.aiSorter !== false || p.sorter !== false) list.push('AI');
+      if (p.audit !== false && p.cctv !== false) list.push('Audit');
+      if (p.trackers !== false) list.push('Trackers');
+      if (p.hris === true) list.push('HRIS');
+      if (p.sorter !== false && p.aiSorter !== false) list.push('Sorter');
       if (p.maintenance !== false) list.push('Maint');
-      if (p.masterlist !== false) list.push('Master');
+      if (p.pending !== false) list.push('Pending');
       if (p.followup !== false) list.push('Followup');
+      if (p.masterlist !== false) list.push('Master');
       if (p.history !== false) list.push('History');
       return list.join(', ') || 'No workspaces';
     };
@@ -7788,17 +7806,25 @@ ${escapeHtml(JSON.stringify(entry.after || entry.before, null, 2))}
       }
       const recentCreds = svc.getRecentCredentials();
       const activeUser = window.CCTV_AUTH?.getUser?.();
+      const isCallerSuper = !!(window.CCTV_AUTH && typeof window.CCTV_AUTH.isSuperAdmin === "function" && window.CCTV_AUTH.isSuperAdmin());
+      const approvedSuperCount = rows.filter(x => x.role === 'super_admin' && (x.status === 'approved' || !x.status)).length;
 
       body.innerHTML = rows.map(item => {
         const self = item.id === activeUser?.id;
         const search = ((item.display_name||'') + ' ' + (item.username||'') + ' ' + (item.email||'')).toLowerCase();
-        const roleLabel = item.role === 'admin' ? 'Admin' : 'User';
+        const isSuperTarget = item.role === 'super_admin';
+        const roleLabel = isSuperTarget ? 'Super Admin' : (item.role === 'admin' ? 'Admin' : 'User');
         const isApproved = item.status === 'approved';
         const isDisabled = item.status === 'disabled' || item.status === 'suspended';
         const isPending = item.status === 'pending';
-        const permsText = permSummary(item);
+        const permsText = isSuperTarget ? '⚡ Unrestricted Full Access' : permSummary(item);
         const uKey = cleanUsername(item.username).toLowerCase();
         const cred = recentCreds.find(c => cleanUsername(c.username).toLowerCase() === uKey);
+
+        const isLastSuper = isSuperTarget && approvedSuperCount <= 1;
+        const isAdminTarget = item.role === 'admin';
+        const isPrivilegedTarget = isSuperTarget || isAdminTarget;
+        const canManageTarget = isCallerSuper || (!isPrivilegedTarget && (window.CCTV_AUTH?.hasPermission?.('manage_users') || window.CCTV_AUTH?.hasPermission?.('manage_permissions')));
 
         const pwRowHtml = cred?.password ? `
           <div class="admin-user-card-pw-row">
@@ -7848,12 +7874,13 @@ ${escapeHtml(JSON.stringify(entry.after || entry.before, null, 2))}
           </div>
           <div class="admin-user-card-footer">
             <div class="admin-user-card-actions">
-              ${isPending ? `<button type="button" class="admin-action-btn auth-approve-btn" data-id="${esc(item.id)}">Approve</button>` : ''}
-              ${isPending ? `<button type="button" class="admin-action-btn auth-reject-btn" data-id="${esc(item.id)}">Reject</button>` : ''}
-              <button type="button" class="admin-action-btn auth-access-btn" data-id="${esc(item.id)}">Access</button>
-              ${!self && isApproved ? `<button type="button" class="admin-action-btn auth-disable-btn" data-id="${esc(item.id)}">Disable</button>` : ''}
-              ${!self && isDisabled ? `<button type="button" class="admin-action-btn auth-reactivate-btn" data-id="${esc(item.id)}">Reactivate</button>` : ''}
-              ${!self ? `<button type="button" class="admin-action-btn auth-delete-danger auth-remove-user-btn" data-id="${esc(item.id)}">Delete</button>` : '<span class="auth-self-label">You</span>'}
+              ${isPending && canManageTarget ? `<button type="button" class="admin-action-btn auth-approve-btn" data-id="${esc(item.id)}">Approve</button>` : ''}
+              ${isPending && canManageTarget ? `<button type="button" class="admin-action-btn auth-reject-btn" data-id="${esc(item.id)}">Reject</button>` : ''}
+              ${canManageTarget ? `<button type="button" class="admin-action-btn auth-access-btn" data-id="${esc(item.id)}">Access</button>` : ''}
+              ${!self && isApproved && canManageTarget && !isLastSuper ? `<button type="button" class="admin-action-btn auth-disable-btn" data-id="${esc(item.id)}">Disable</button>` : ''}
+              ${!self && isDisabled && canManageTarget ? `<button type="button" class="admin-action-btn auth-reactivate-btn" data-id="${esc(item.id)}">Reactivate</button>` : ''}
+              ${!self && canManageTarget && !isLastSuper ? `<button type="button" class="admin-action-btn auth-delete-danger auth-remove-user-btn" data-id="${esc(item.id)}">Delete</button>` : ''}
+              ${self ? '<span class="auth-self-label">You</span>' : (!canManageTarget ? '<span class="auth-self-label" style="opacity:0.75;">Protected</span>' : (isLastSuper ? '<span class="auth-self-label" title="Final Super Admin cannot be removed">Protected</span>' : ''))}
             </div>
           </div>
         </div>`;
@@ -7955,7 +7982,7 @@ ${escapeHtml(JSON.stringify(entry.after || entry.before, null, 2))}
         return `<tr data-search="${esc(search)}">
           <td>${esc(dt(item.created_at))}</td>
           <td><strong>${esc(item.actor_username||'admin')}</strong></td>
-          <td><span class="admin-badge badge-${item.actor_role==='admin'?'admin':'user'}">${esc(item.actor_role||'admin')}</span></td>
+          <td><span class="admin-badge badge-${esc(String(item.actor_role||'user').toLowerCase())}">${esc(item.actor_role||'admin')}</span></td>
           <td><strong>${esc(item.action||'event')}</strong></td>
           <td>${esc(item.target_item||'—')}</td>
           <td><code>${esc(detailsStr||'—')}</code></td>
@@ -7975,7 +8002,7 @@ ${escapeHtml(JSON.stringify(entry.after || entry.before, null, 2))}
       const name = String($('adminCreateName')?.value||'').trim();
       const username = String($('adminCreateUsername')?.value||'').trim().replace(/^@+/,'');
       const password = $('adminCreatePassword')?.value || '';
-      const role = $('adminCreateRole')?.value === 'admin' ? 'admin' : 'user';
+      const role = $('adminCreateRole')?.value || 'user';
       const btn = $('adminCreateAccountBtn');
 
       if (!name) { setStatus('Enter the staff member\'s name.', 'error'); $('adminCreateName')?.focus(); return; }
@@ -7987,7 +8014,8 @@ ${escapeHtml(JSON.stringify(entry.after || entry.before, null, 2))}
 
       try {
         const newAcc = await svc.createAccount({ name, username, password, role });
-        setStatus(`${newAcc.display_name} created and approved · @${newAcc.username} · Role: ${role === 'admin' ? 'Admin' : 'User'}`, 'success');
+        const roleLabel = role === 'super_admin' ? 'Super Admin' : (role === 'admin' ? 'Admin' : 'User');
+        setStatus(`${newAcc.display_name} created and approved · @${newAcc.username} · Role: ${roleLabel}`, 'success');
         showToast(`${newAcc.display_name} account created.`);
         if ($('adminCreateName')) $('adminCreateName').value = '';
         if ($('adminCreateUsername')) $('adminCreateUsername').value = '';
@@ -8007,20 +8035,69 @@ ${escapeHtml(JSON.stringify(entry.after || entry.before, null, 2))}
     function openAccessEditor(id) {
       const item = svc.getCachedUsers().find(x => x.id === id);
       if (!item) return;
+
+      const isCallerSuper = !!(window.CCTV_AUTH && typeof window.CCTV_AUTH.isSuperAdmin === "function" && window.CCTV_AUTH.isSuperAdmin());
+      const isSuper = item.role === 'super_admin';
+      const isAdmin = item.role === 'admin';
+
+      // Non-Super Admins cannot edit Super Admin or Admin accounts
+      if ((isSuper || isAdmin) && !isCallerSuper) {
+        showToast("Access Denied: Only a Super Administrator can modify an Administrator account.", "warning");
+        return;
+      }
+
       accessEditingUser = item;
       if ($('adminAccessTargetId')) $('adminAccessTargetId').value = item.id;
       if ($('adminAccessDisplayName')) $('adminAccessDisplayName').value = item.display_name || '';
       if ($('adminAccessUserLabel')) $('adminAccessUserLabel').textContent = `${item.display_name||item.username||'User'} · ${usernameLabel(item.username)}`;
-      if ($('adminAccessRole')) $('adminAccessRole').value = item.role === 'admin' ? 'admin' : 'user';
+
+      const roleSelect = $('adminAccessRole');
+      const superBadge = $('superAdminActiveBadge');
+      const promoBox = $('superAdminPromotionBox');
+      const demoteBox = $('superAdminDemoteBox');
+      const optAdmin = $('optAccessAdmin');
+
+      const approvedSuperCount = svc.getCachedUsers().filter(x => x.role === 'super_admin' && (x.status === 'approved' || !x.status)).length;
+
+      if (isSuper) {
+        if (superBadge) superBadge.style.display = 'block';
+        if (roleSelect) roleSelect.style.display = 'none';
+        if (promoBox) promoBox.style.display = 'none';
+        if (demoteBox) demoteBox.style.display = (isCallerSuper && approvedSuperCount > 1) ? 'block' : 'none';
+      } else {
+        if (superBadge) superBadge.style.display = 'none';
+        if (roleSelect) {
+          roleSelect.style.display = 'block';
+          roleSelect.value = item.role || 'user';
+        }
+        if (demoteBox) demoteBox.style.display = 'none';
+        if (optAdmin) {
+          optAdmin.hidden = !isCallerSuper;
+          optAdmin.disabled = !isCallerSuper;
+        }
+        if (promoBox) promoBox.style.display = isCallerSuper ? 'block' : 'none';
+      }
+
       if ($('adminAccessStatus')) $('adminAccessStatus').value = (item.status === 'disabled'||item.status === 'suspended') ? 'disabled' : 'active';
 
-      const perms = item.role === 'admin'
-        ? svc.FULL_ADMIN_PERMISSIONS
-        : { ...svc.DEFAULT_USER_PERMISSIONS, ...(item.permissions||{}) };
+      const perms = item.permissions || {};
 
       $('adminAccessGrid')?.querySelectorAll('[data-permission]').forEach(input => {
-        input.checked = !!perms[input.dataset.permission];
+        const k = input.dataset.permission;
+        if (isSuper) {
+          input.checked = true;
+        } else if (item.role === 'admin') {
+          input.checked = perms[k] === true || (perms[k] !== false && (k === 'edr' || k === 'report' || k === 'cctv' || k === 'audit' || k === 'sorter' || k === 'maintenance' || k === 'followup' || k === 'pending' || k === 'masterlist' || k === 'history'));
+        } else {
+          input.checked = perms[k] !== false && k !== 'accounts' && k !== 'hris';
+        }
       });
+
+      $('adminPrivilegesGrid')?.querySelectorAll('[data-permission]').forEach(input => {
+        const k = input.dataset.permission;
+        input.checked = isSuper ? true : !!perms[k];
+      });
+
       refreshAccessRoleUi();
       const modal = $('adminAccessModal');
       if (modal) { modal.hidden = false; document.body.classList.add('modal-open'); }
@@ -8033,35 +8110,83 @@ ${escapeHtml(JSON.stringify(entry.after || entry.before, null, 2))}
     }
 
     function refreshAccessRoleUi() {
-      const isAdmin = $('adminAccessRole')?.value === 'admin';
+      const isSuper = accessEditingUser?.role === 'super_admin';
+      const role = isSuper ? 'super_admin' : ($('adminAccessRole')?.value || 'user');
+      const isAdmin = role === 'admin';
+      const isUser = role === 'user';
+
+      const notice = $('superAdminUnrestrictedNotice');
+      if (notice) notice.style.display = isSuper ? 'inline-block' : 'none';
+
+      // Workspace permissions checkboxes
       $('adminAccessGrid')?.querySelectorAll('[data-permission]').forEach(input => {
-        const isManage = input.dataset.permission === 'manageOptions';
-        if (isAdmin) input.checked = true;
-        if (!isAdmin && isManage) input.checked = false;
-        input.disabled = isAdmin || isManage;
-        input.closest('label')?.toggleAttribute('hidden', isManage);
+        if (isSuper) {
+          input.checked = true;
+          input.disabled = true;
+        } else if (isAdmin) {
+          input.disabled = false;
+        } else {
+          // Normal user cannot have accounts workspace
+          input.disabled = false;
+          if (input.dataset.permission === 'accounts') {
+            input.checked = false;
+            input.disabled = true;
+          }
+        }
+      });
+
+      // Privileged administrative capabilities
+      $('adminPrivilegesGrid')?.querySelectorAll('[data-permission]').forEach(input => {
+        if (isSuper) {
+          input.checked = true;
+          input.disabled = true;
+        } else if (isAdmin) {
+          input.disabled = false;
+        } else {
+          input.checked = false;
+          input.disabled = true;
+        }
+        input.closest('label')?.toggleAttribute('hidden', isUser);
       });
     }
 
     async function saveAccessEditor() {
       const id = $('adminAccessTargetId')?.value;
       if (!id) return;
-      const role = $('adminAccessRole')?.value === 'admin' ? 'admin' : 'user';
+      const isTargetSuper = accessEditingUser?.role === 'super_admin';
+      const isCallerSuper = !!(window.CCTV_AUTH && typeof window.CCTV_AUTH.isSuperAdmin === "function" && window.CCTV_AUTH.isSuperAdmin());
+
+      let role = isTargetSuper ? 'super_admin' : ($('adminAccessRole')?.value || 'user');
+      if (role === 'admin' && !isCallerSuper) role = 'user';
+
       const status = $('adminAccessStatus')?.value === 'disabled' ? 'disabled' : 'approved';
       const displayName = String($('adminAccessDisplayName')?.value||'').trim();
 
       const permissions = {};
-      $('adminAccessGrid')?.querySelectorAll('[data-permission]').forEach(input => {
-        permissions[input.dataset.permission] = input.dataset.permission === 'manageOptions'
-          ? role === 'admin' : (role === 'admin' ? true : !!input.checked);
-      });
-      if (role !== 'admin') permissions.manageOptions = false;
+      if (role === 'super_admin') {
+        permissions.all = true;
+        permissions.super_admin = true;
+      } else {
+        $('adminAccessGrid')?.querySelectorAll('[data-permission]').forEach(input => {
+          permissions[input.dataset.permission] = !!input.checked;
+        });
+        $('adminPrivilegesGrid')?.querySelectorAll('[data-permission]').forEach(input => {
+          permissions[input.dataset.permission] = role === 'admin' ? !!input.checked : false;
+        });
+        if (role === 'user') {
+          permissions.accounts = false;
+          permissions.manage_users = false;
+          permissions.manage_roles = false;
+          permissions.manage_permissions = false;
+          permissions.view_security_logs = false;
+        }
+      }
 
       const saveBtn = $('adminAccessSave');
       if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = 'Saving...'; }
       try {
         await svc.saveUserAccess(id, { role, status, displayName, permissions });
-        showToast(role === 'admin' ? 'Admin access saved.' : 'User access updated.');
+        showToast(role === 'super_admin' ? 'Super Admin access saved.' : (role === 'admin' ? 'Admin access saved.' : 'User access updated.'));
         closeAccessEditor();
         await loadAdmin();
       } catch(e) { showToast(e.message||'Could not update access.'); }
@@ -8151,11 +8276,68 @@ ${escapeHtml(JSON.stringify(entry.after || entry.before, null, 2))}
     $('adminAccessClose')?.addEventListener('click', closeAccessEditor);
     $('adminAccessModal')?.addEventListener('click', e => { if (e.target === $('adminAccessModal')) closeAccessEditor(); });
 
+    $('btnPromoteSuperAdmin')?.addEventListener('click', async () => {
+      if (!accessEditingUser) return;
+      const name = accessEditingUser.display_name || accessEditingUser.username || 'this user';
+      const ok = await (window.appConfirm ? window.appConfirm({
+        title: 'Promote to Super Administrator?',
+        message: `Are you sure you want to promote ${name} to Super Administrator?\n\nThis grants universal unrestricted access to all CCTV OPS workspaces and privileged administrative capabilities.`,
+        confirmText: 'Promote to Super Admin',
+        tone: 'danger'
+      }) : window.confirm(`Promote ${name} to Super Administrator?\n\nThis grants universal unrestricted access.`));
+
+      if (!ok) return;
+      const btn = $('btnPromoteSuperAdmin');
+      if (btn) { btn.disabled = true; btn.textContent = 'Promoting...'; }
+      try {
+        await svc.promoteToSuperAdmin(accessEditingUser.id);
+        showToast(`${name} promoted to Super Administrator.`);
+        closeAccessEditor();
+        await loadAdmin();
+      } catch (err) {
+        showToast(err.message || 'Could not promote to Super Admin.', 'error');
+      } finally {
+        if (btn) { btn.disabled = false; btn.textContent = '⚡ Promote to Super Admin'; }
+      }
+    });
+
+    $('btnDemoteSuperAdmin')?.addEventListener('click', async () => {
+      if (!accessEditingUser) return;
+      const name = accessEditingUser.display_name || accessEditingUser.username || 'this user';
+      const ok = await (window.appConfirm ? window.appConfirm({
+        title: 'Demote Super Administrator?',
+        message: `Are you sure you want to revoke Super Administrator status for ${name} and reassign them as Administrator?`,
+        confirmText: 'Demote to Admin',
+        tone: 'danger'
+      }) : window.confirm(`Demote ${name} from Super Administrator to Admin?`));
+
+      if (!ok) return;
+      const btn = $('btnDemoteSuperAdmin');
+      if (btn) { btn.disabled = true; btn.textContent = 'Demoting...'; }
+      try {
+        await svc.demoteSuperAdmin(accessEditingUser.id);
+        showToast(`${name} demoted to Administrator.`);
+        closeAccessEditor();
+        await loadAdmin();
+      } catch (err) {
+        showToast(err.message || 'Could not demote Super Admin.', 'error');
+      } finally {
+        if (btn) { btn.disabled = false; btn.textContent = 'Demote to Admin'; }
+      }
+    });
+
     initAdminSubnav();
     initPasswordToggles();
     loadOperationalSettings();
 
     window._renderAccountsWorkspaceFn = async function() {
+      const isCallerSuper = !!(window.CCTV_AUTH && typeof window.CCTV_AUTH.isSuperAdmin === "function" && window.CCTV_AUTH.isSuperAdmin());
+      const optCreateAdmin = $('optCreateAdmin');
+      if (optCreateAdmin) {
+        optCreateAdmin.hidden = !isCallerSuper;
+        optCreateAdmin.disabled = !isCallerSuper;
+        if (!isCallerSuper && $('adminCreateRole')) $('adminCreateRole').value = 'user';
+      }
       renderUsers(svc.getCachedUsers());
       renderRecentCredentials();
       await updateKpiDisplay();
@@ -8463,6 +8645,31 @@ ${escapeHtml(JSON.stringify(entry.after || entry.before, null, 2))}
     const loginPassword = el("loginPassword");
     const btnLogoutTop = el("btnLogoutTop");
 
+    // Rate-limiting & Anti-Abuse state (defense-in-depth)
+    let failedLoginAttempts = 0;
+    let lockoutUntil = 0;
+    let lockoutTimer = null;
+
+    function startLockoutCountdown() {
+      if (lockoutTimer) clearInterval(lockoutTimer);
+      const updateMessage = () => {
+        const remainingMs = lockoutUntil - Date.now();
+        if (remainingMs <= 0) {
+          clearInterval(lockoutTimer);
+          lockoutTimer = null;
+          lockoutUntil = 0;
+          showAuthMessage("");
+          if (loginBtn) loginBtn.disabled = false;
+          return;
+        }
+        const remainingSec = Math.ceil(remainingMs / 1000);
+        showAuthMessage(`Too many failed attempts. Cooldown active: please wait ${remainingSec}s before retrying.`);
+        if (loginBtn) loginBtn.disabled = true;
+      };
+      updateMessage();
+      lockoutTimer = setInterval(updateMessage, 1000);
+    }
+
     function showAuthMessage(msg, isSuccess = false) {
       if (!authMessage) return;
       if (!msg) {
@@ -8485,7 +8692,9 @@ ${escapeHtml(JSON.stringify(entry.after || entry.before, null, 2))}
         loginBtn.disabled = true;
       } else {
         label.textContent = loginBtn.dataset.origText || "INITIATE_CONNECTION";
-        loginBtn.disabled = false;
+        if (Date.now() >= lockoutUntil) {
+          loginBtn.disabled = false;
+        }
       }
     }
 
@@ -8496,6 +8705,11 @@ ${escapeHtml(JSON.stringify(entry.after || entry.before, null, 2))}
         loginModal.hidden = false;
         loginModal.style.display = "flex";
         loginModal.classList.remove("hidden");
+      }
+      const tabAccounts = el("tabAccounts");
+      if (tabAccounts) tabAccounts.style.display = "none";
+      if (currentWorkspace === "accounts") {
+        currentWorkspace = "edr";
       }
     }
 
@@ -8509,10 +8723,38 @@ ${escapeHtml(JSON.stringify(entry.after || entry.before, null, 2))}
       }
       showAuthMessage("");
       if (loginPassword) loginPassword.value = "";
+
+      failedLoginAttempts = 0;
+      lockoutUntil = 0;
+      if (lockoutTimer) {
+        clearInterval(lockoutTimer);
+        lockoutTimer = null;
+      }
+
+      const isSuper = !!(auth && typeof auth.isSuperAdmin === "function" && auth.isSuperAdmin());
+      const isAdmin = !!(auth && typeof auth.isAdmin === "function" && auth.isAdmin());
+      const canAccessAccounts = !!(auth && typeof auth.canAccessWorkspace === "function" && auth.canAccessWorkspace("accounts"));
+
+      const tabAccounts = el("tabAccounts");
+      if (tabAccounts) {
+        tabAccounts.style.display = canAccessAccounts ? "" : "none";
+      }
+      if (!canAccessAccounts && currentWorkspace === "accounts") {
+        switchWorkspace("edr");
+      }
+
       if (user) {
         if (el("userNameText")) el("userNameText").textContent = profile?.display_name || profile?.username || "Operator";
-        if (el("userRoleText")) el("userRoleText").textContent = profile?.role || "User";
+        const roleLabel = profile?.role === "super_admin" ? "Super Admin" : (profile?.role === "admin" ? "Admin" : "User");
+        if (el("userRoleText")) el("userRoleText").textContent = roleLabel;
         if (el("userAvatarText")) el("userAvatarText").textContent = (profile?.username || "U")[0].toUpperCase();
+      }
+
+      // Dynamically toggle admin creation option for logged-in super admins only
+      const optCreateAdmin = el("optCreateAdmin");
+      if (optCreateAdmin) {
+        optCreateAdmin.hidden = !isSuper;
+        optCreateAdmin.disabled = !isSuper;
       }
     }
 
@@ -8523,6 +8765,12 @@ ${escapeHtml(JSON.stringify(entry.after || entry.before, null, 2))}
           e.preventDefault();
           if (typeof e.stopPropagation === "function") e.stopPropagation();
         }
+
+        if (Date.now() < lockoutUntil) {
+          startLockoutCountdown();
+          return;
+        }
+
         showAuthMessage("");
         const username = (loginUsername?.value || "").trim();
         const password = loginPassword?.value || "";
@@ -8545,11 +8793,21 @@ ${escapeHtml(JSON.stringify(entry.after || entry.before, null, 2))}
           showToast("Authenticated successfully.", "success");
         } catch (err) {
           console.error("Sign in error:", err);
-          let userMsg = err.message || "Failed to authenticate.";
-          if (/invalid login credentials/i.test(userMsg)) {
-            userMsg = "Incorrect username or access key.";
+          failedLoginAttempts++;
+          if (failedLoginAttempts >= 5) {
+            lockoutUntil = Date.now() + 30000;
+            failedLoginAttempts = 0;
+            startLockoutCountdown();
+            try {
+              if (window.CCTV_ACCOUNTS && typeof window.CCTV_ACCOUNTS.logSecurityEvent === "function") {
+                window.CCTV_ACCOUNTS.logSecurityEvent("login_rate_limit_triggered", username, { attempts: 5, cooldown_seconds: 30 });
+              }
+            } catch (_) {}
+            return;
           }
-          showAuthMessage(userMsg);
+
+          // Anti-enumeration generic error message
+          showAuthMessage("Incorrect username or access key.");
         } finally {
           setAuthBusy(false);
         }
@@ -8571,11 +8829,12 @@ ${escapeHtml(JSON.stringify(entry.after || entry.before, null, 2))}
 
     // User profile menu button
     el("btnUserMenu")?.addEventListener("click", () => {
-      if (auth && auth.isAdmin && auth.isAdmin()) {
+      if (auth && typeof auth.canAccessWorkspace === "function" && auth.canAccessWorkspace("accounts")) {
         switchWorkspace("accounts");
       } else {
         const prof = auth?.getProfile();
-        showToast(`Signed in as ${prof?.display_name || prof?.username || "Operator"} (${prof?.role || "User"})`, "info");
+        const roleLabel = prof?.role === "super_admin" ? "Super Admin" : (prof?.role === "admin" ? "Admin" : "User");
+        showToast(`Signed in as ${prof?.display_name || prof?.username || "Operator"} (${roleLabel})`, "info");
       }
     });
 

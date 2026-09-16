@@ -5,6 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>CCTV OPS V2 - Operations Platform</title>
 
+  <!-- Client-Side Security Meta Policies (Note: X-Content-Type-Options, HSTS, frame-ancestors, and Permissions-Policy must be set via HTTP response headers on the hosting server/CDN) -->
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://afxgfyuudqujueeooplj.supabase.co https://cdn.jsdelivr.net https://script.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; frame-src 'self' https://docs.google.com https://*.google.com https://611systems.com https://10.10.10.20:8081; connect-src 'self' https://afxgfyuudqujueeooplj.supabase.co wss://afxgfyuudqujueeooplj.supabase.co https://docs.google.com https://script.google.com https://611systems.com https://10.10.10.20:8081; object-src 'none'; base-uri 'self';">
+
   <!-- Google Fonts: Space Grotesk (display) + Inter (body) + JetBrains Mono (mono/labels) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -2147,7 +2151,7 @@
                     <span>Role</span>
                     <select id="adminCreateRole" class="form-control form-control-sm">
                       <option value="user" selected>User</option>
-                      <option value="admin">Admin</option>
+                      <option value="admin" id="optCreateAdmin">Admin</option>
                     </select>
                   </label>
                   <div style="display:flex; align-items:flex-end;">
@@ -2535,14 +2539,15 @@
           <span style="font-weight:600; color:var(--text-secondary);">Display Name</span>
           <input type="text" id="adminAccessDisplayName" class="form-control form-control-sm" placeholder="Staff full name" autocomplete="off" data-lpignore="true">
         </label>
-        <div style="display:flex; gap:12px;">
-          <label style="flex:1; display:flex; flex-direction:column; gap:4px; font-size:12px;">
+        <div style="display:flex; gap:12px; align-items:flex-start;">
+          <div style="flex:1; display:flex; flex-direction:column; gap:4px; font-size:12px;">
             <span style="font-weight:600; color:var(--text-secondary);">Role</span>
+            <div id="superAdminActiveBadge" class="admin-badge badge-super_admin" style="display:none; padding:6px 10px; font-size:12px; font-weight:700; border-radius:var(--radius-xs); text-align:center;">⚡ Super Administrator</div>
             <select id="adminAccessRole" class="form-control form-control-sm">
               <option value="user">User</option>
-              <option value="admin">Admin</option>
+              <option value="admin" id="optAccessAdmin">Admin</option>
             </select>
-          </label>
+          </div>
           <label style="flex:1; display:flex; flex-direction:column; gap:4px; font-size:12px;">
             <span style="font-weight:600; color:var(--text-secondary);">Status</span>
             <select id="adminAccessStatus" class="form-control form-control-sm">
@@ -2551,21 +2556,59 @@
             </select>
           </label>
         </div>
+
+        <!-- Dedicated Super Admin Actions (Restricted to Super Admin Caller) -->
+        <div id="superAdminPromotionBox" style="display:none; padding:10px 12px; background:rgba(245, 158, 11, 0.08); border:1px solid rgba(245, 158, 11, 0.25); border-radius:var(--radius-xs);">
+          <div style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
+            <div>
+              <strong style="font-size:12px; color:var(--accent-warning, #f59e0b); display:block;">Super Administrator Elevation</strong>
+              <span style="font-size:11px; color:var(--text-muted);">Grant universal unrestricted authority over all workspaces and security controls.</span>
+            </div>
+            <button type="button" class="btn btn-warning btn-sm" id="btnPromoteSuperAdmin" style="white-space:nowrap;">⚡ Promote to Super Admin</button>
+          </div>
+        </div>
+
+        <div id="superAdminDemoteBox" style="display:none; padding:10px 12px; background:rgba(239, 68, 68, 0.08); border:1px solid rgba(239, 68, 68, 0.25); border-radius:var(--radius-xs);">
+          <div style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
+            <div>
+              <strong style="font-size:12px; color:var(--accent-danger, #ef4444); display:block;">Demote Super Administrator</strong>
+              <span style="font-size:11px; color:var(--text-muted);">Revoke universal authority and reassign this account to Administrator.</span>
+            </div>
+            <button type="button" class="btn btn-danger btn-sm" id="btnDemoteSuperAdmin" style="white-space:nowrap;">Demote to Admin</button>
+          </div>
+        </div>
         <div>
-          <span style="font-size:12px; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:6px;">Workspace Access Permissions</span>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+            <span style="font-size:12px; font-weight:600; color:var(--text-secondary);">Workspace Access Permissions</span>
+            <span id="superAdminUnrestrictedNotice" style="font-size:11px; font-weight:600; color:var(--accent-primary, #fbbf24); display:none;">⚡ Super Admin: Unrestricted Full Access</span>
+          </div>
           <div class="auth-access-grid" id="adminAccessGrid">
+            <label><input type="checkbox" data-permission="report"> CCTV Report</label>
+            <label><input type="checkbox" data-permission="conduct"> Code of Conduct</label>
             <label><input type="checkbox" data-permission="edr"> EDR</label>
-            <label><input type="checkbox" data-permission="cctv"> CCTV Audit</label>
+            <label><input type="checkbox" data-permission="audit"> CCTV Audit</label>
+            <label><input type="checkbox" data-permission="trackers"> Trackers</label>
+            <label><input type="checkbox" data-permission="hris"> HRIS</label>
             <label><input type="checkbox" data-permission="sorter"> AI Sorter</label>
             <label><input type="checkbox" data-permission="maintenance"> Maintenance</label>
-            <label><input type="checkbox" data-permission="masterlist"> Master List</label>
+            <label><input type="checkbox" data-permission="pending"> Pending Reports</label>
             <label><input type="checkbox" data-permission="followup"> Follow Up Reports</label>
+            <label><input type="checkbox" data-permission="masterlist"> Masterlist</label>
             <label><input type="checkbox" data-permission="history"> History</label>
-            <label class="auth-access-manage" hidden><input type="checkbox" data-permission="manageOptions" disabled> Manage site / OM / campaign options</label>
+            <label><input type="checkbox" data-permission="accounts"> Accounts Workspace</label>
+          </div>
+          <div style="margin-top:10px;">
+            <span style="font-size:12px; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:6px;">Administrative Capabilities (Admin Only)</span>
+            <div class="auth-access-grid" id="adminPrivilegesGrid">
+              <label><input type="checkbox" data-permission="manage_users"> Manage Users & Accounts</label>
+              <label><input type="checkbox" data-permission="manage_roles"> Assign User / Admin Roles</label>
+              <label><input type="checkbox" data-permission="manage_permissions"> Modify Permissions</label>
+              <label><input type="checkbox" data-permission="view_security_logs"> View Security Audit Logs</label>
+            </div>
           </div>
         </div>
         <div class="auth-access-note" style="font-size:11px; color:var(--text-muted); background:var(--bg-input); padding:8px 10px; border-radius:var(--radius-xs); border:1px solid var(--border-default);">
-          Admin = full access. Normal user cannot manage options. User access can be changed anytime.
+          Super Admin = universal unrestricted access. Admin = selective administrative access based on granted permissions.
         </div>
       </div>
       <div class="modal-footer" style="justify-content:flex-end; gap:8px;">

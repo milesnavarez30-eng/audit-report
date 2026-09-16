@@ -1,4 +1,4 @@
-﻿/**
+/**
  * CCTV OPS V2 - CCTV Report Service
  * Ready-to-send CCTV incident/report message composer for Microsoft Teams
  * Integrated with the complete SixEleven Code of Conduct Policy Reference & Multi-MIME clipboard.
@@ -531,6 +531,15 @@ window.CCTV_REPORT_SERVICE = (function () {
     return String(clipUrlInput)
       .split(/[\n,]+/)
       .map(u => u.trim())
+      .map(u => {
+        if (!u) return "";
+        if (typeof window.safeUrl === "function") return window.safeUrl(u);
+        try {
+          const parsed = new URL(u, window.location.origin);
+          if (parsed.protocol === "http:" || parsed.protocol === "https:") return parsed.href;
+        } catch (_) {}
+        return "";
+      })
       .filter(u => !!u);
   }
 

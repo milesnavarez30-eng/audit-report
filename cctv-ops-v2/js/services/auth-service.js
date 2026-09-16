@@ -12,29 +12,68 @@ window.CCTV_AUTH = (function () {
   let currentProfile = null;
   let authListeners = [];
 
-  const DEFAULT_USER_PERMISSIONS = {
+  const DEFAULT_USER_PERMISSIONS = Object.freeze({
+    report: true,
+    conduct: true,
     edr: true,
-    cctv: true,
-    aiSorter: true,
+    audit: true,
+    trackers: true,
+    hris: false,
+    sorter: true,
     maintenance: true,
     pending: true,
-    masterlist: true,
     followup: true,
+    masterlist: true,
     history: true,
-    manageOptions: false
-  };
+    accounts: false,
+    manage_users: false,
+    manage_roles: false,
+    manage_permissions: false,
+    view_security_logs: false
+  });
 
-  const FULL_ADMIN_PERMISSIONS = {
+  const FULL_ADMIN_PERMISSIONS = Object.freeze({
+    report: true,
+    conduct: true,
     edr: true,
-    cctv: true,
-    aiSorter: true,
+    audit: true,
+    trackers: true,
+    hris: false,
+    sorter: true,
     maintenance: true,
     pending: true,
-    masterlist: true,
     followup: true,
+    masterlist: true,
     history: true,
-    manageOptions: true
-  };
+    accounts: true,
+    manage_users: true,
+    manage_roles: false,
+    manage_permissions: false,
+    view_security_logs: false
+  });
+
+  function normalizePermissions(perms) {
+    if (!perms || typeof perms !== "object") return { ...DEFAULT_USER_PERMISSIONS };
+    return {
+      report: perms.report !== undefined ? !!perms.report : (perms.cctv !== undefined ? !!perms.cctv : true),
+      conduct: perms.conduct !== undefined ? !!perms.conduct : true,
+      edr: perms.edr !== undefined ? !!perms.edr : true,
+      audit: perms.audit !== undefined ? !!perms.audit : (perms.cctv !== undefined ? !!perms.cctv : true),
+      trackers: perms.trackers !== undefined ? !!perms.trackers : true,
+      hris: perms.hris !== undefined ? !!perms.hris : false,
+      sorter: perms.sorter !== undefined ? !!perms.sorter : (perms.aiSorter !== undefined ? !!perms.aiSorter : true),
+      maintenance: perms.maintenance !== undefined ? !!perms.maintenance : true,
+      pending: perms.pending !== undefined ? !!perms.pending : true,
+      followup: perms.followup !== undefined ? !!perms.followup : true,
+      masterlist: perms.masterlist !== undefined ? !!perms.masterlist : true,
+      history: perms.history !== undefined ? !!perms.history : true,
+      accounts: !!perms.accounts,
+      manage_users: perms.manage_users !== undefined ? !!perms.manage_users : (perms.manageOptions !== undefined ? !!perms.manageOptions : false),
+      manage_roles: !!perms.manage_roles,
+      manage_permissions: !!perms.manage_permissions,
+      view_security_logs: !!perms.view_security_logs
+    };
+  }
 
   function initClient() {
     if (client) return client;
@@ -85,18 +124,30 @@ window.CCTV_AUTH = (function () {
     return null;
   }
 
-  async function notifyAuthChange(user, profile) {
-    currentUser = user;
-    currentProfile = profile;
+  let currentRole = "guest";
 
-    const isAdmin = profile?.role === "admin" || (profile?.username || "").toLowerCase() === "miles";
+  async function notifyAuthChange(user, profile) {
+    currentUser = user ? Object.freeze({ ...user }) : null;
+    currentProfile = profile ? Object.freeze({ ...profile }) : null;
+    if (!profile) {
+      currentRole = "guest";
+    } else if (profile.role === "super_admin") {
+      currentRole = "super_admin";
+    } else if (profile.role === "admin") {
+      currentRole = "admin";
+    } else {
+      currentRole = "user";
+    }
+
+    const isSuperAdmin = currentRole === "super_admin";
+    const isAdmin = isSuperAdmin || currentRole === "admin";
     if (user && window.CCTV_DATA_SCOPE) {
-      window.CCTV_DATA_SCOPE.activate(user.id, isAdmin, profile);
+      window.CCTV_DATA_SCOPE.activate(user.id, isAdmin, currentProfile);
     }
 
     authListeners.forEach(listener => {
       try {
-        listener({ user, profile, isAdmin });
+        listener({ user: currentUser, profile: currentProfile, isAdmin, isSuperAdmin });
       } catch (err) {
         console.error("Auth listener error:", err);
       }
@@ -114,19 +165,20 @@ window.CCTV_AUTH = (function () {
       try {
         const { data: { session } } = await client.auth.getSession();
         if (session && session.user) {
-          currentUser = session.user;
+          currentUser = Object.freeze({ ...session.user });
           currentProfile = await fetchProfile(session.user.id);
           await notifyAuthChange(currentUser, currentProfile);
         }
 
         client.auth.onAuthStateChange(async (event, session) => {
           if (session && session.user) {
-            currentUser = session.user;
+            currentUser = Object.freeze({ ...session.user });
             currentProfile = await fetchProfile(session.user.id);
             await notifyAuthChange(currentUser, currentProfile);
           } else {
             currentUser = null;
             currentProfile = null;
+            currentRole = "guest";
             if (window.CCTV_DATA_SCOPE) {
               window.CCTV_DATA_SCOPE.deactivate();
             }
@@ -144,45 +196,103 @@ window.CCTV_AUTH = (function () {
       if (typeof callback === "function") {
         authListeners.push(callback);
         if (currentUser) {
-          const isAdmin = currentProfile?.role === "admin" || (currentProfile?.username || "").toLowerCase() === "miles";
-          callback({ user: currentUser, profile: currentProfile, isAdmin });
+          const isSuperAdmin = currentRole === "super_admin";
+          const isAdmin = isSuperAdmin || currentRole === "admin";
+          callback({ user: currentUser, profile: currentProfile, isAdmin, isSuperAdmin });
         }
       }
     },
 
     getUser() {
-      return currentUser;
+      return currentUser ? Object.freeze({ ...currentUser }) : null;
     },
 
     getProfile() {
-      return currentProfile;
+      return currentProfile ? Object.freeze({ ...currentProfile }) : null;
+    },
+
+    getRole() {
+      return currentRole;
+    },
+
+    isSuperAdmin() {
+      if (!currentUser || !currentProfile) return false;
+      return currentRole === "super_admin";
     },
 
     isAdmin() {
-      if (!currentProfile) {
-        // Fallback for local testing / guest operator
-        return true;
-      }
-      return currentProfile.role === "admin" || (currentProfile.username || "").toLowerCase() === "miles";
+      if (!currentUser || !currentProfile) return false;
+      return currentRole === "super_admin" || currentRole === "admin";
     },
 
     getPermissions() {
-      if (this.isAdmin()) return { ...FULL_ADMIN_PERMISSIONS };
+      if (this.isSuperAdmin()) {
+        return {
+          ...FULL_ADMIN_PERMISSIONS,
+          accounts: true,
+          hris: true,
+          manage_users: true,
+          manage_roles: true,
+          manage_permissions: true,
+          view_security_logs: true
+        };
+      }
       return {
         ...DEFAULT_USER_PERMISSIONS,
         ...(currentProfile?.permissions || {})
       };
     },
 
+    hasPermission(permKey) {
+      if (!currentUser || !currentProfile) return false;
+      if (this.isSuperAdmin()) return true;
+      if (this.isAdmin()) {
+        const perms = currentProfile?.permissions || {};
+        if (perms[permKey] === true) return true;
+        // Legacy aliases
+        if (permKey === "manage_users" && (perms.manage_users === true || perms.manageOptions === true)) return true;
+        if (permKey === "manage_options" && perms.manageOptions === true) return true;
+        return false;
+      }
+      return false;
+    },
+
     canManageOptions() {
-      return this.isAdmin();
+      return this.hasPermission("manage_users") || this.hasPermission("manageOptions") || this.hasPermission("manage_options");
     },
 
     canAccessWorkspace(wsKey) {
-      if (this.isAdmin()) return true;
-      const perms = this.getPermissions();
-      if (wsKey === "accounts") return false;
+      if (!currentUser || !currentProfile) return false;
+      // Super Admin has universal workspace access
+      if (this.isSuperAdmin()) return true;
+
+      const perms = currentProfile?.permissions || {};
+
+      // Accounts workspace requires explicit grant or Super Admin
+      if (wsKey === "accounts") {
+        return this.isAdmin() && perms.accounts === true;
+      }
+
+      // HRIS workspace requires explicit grant or Super Admin
+      if (wsKey === "hris") {
+        return perms.hris === true;
+      }
+
+      // Workspaces with legacy aliases
+      if (wsKey === "report") return perms.report !== false && perms.cctv !== false;
+      if (wsKey === "audit") return perms.audit !== false && perms.cctv !== false;
+      if (wsKey === "sorter") return perms.sorter !== false && perms.aiSorter !== false;
+
+      // Regular operational workspaces
       return perms[wsKey] !== false;
+    },
+
+    hasWorkspaceAccess(wsKey) {
+      return this.canAccessWorkspace(wsKey);
+    },
+
+    getClient() {
+      return initClient();
     },
 
     async signIn(usernameOrEmail, password) {
@@ -249,6 +359,7 @@ window.CCTV_AUTH = (function () {
       }
       currentUser = null;
       currentProfile = null;
+      currentRole = "guest";
       await notifyAuthChange(null, null);
     },
 
@@ -283,10 +394,10 @@ window.CCTV_AUTH = (function () {
       initClient();
       if (!client) return false;
       try {
-        const { error } = await client
-          .from("profiles")
-          .update({ status: "approved" })
-          .eq("id", userId);
+        const { error } = await client.rpc("admin_set_user_status", {
+          p_target: userId,
+          p_status: "approved"
+        });
         if (!error) {
           await this.logSecurityEvent("approve_user", `user:${userId}`);
           return true;
@@ -301,10 +412,10 @@ window.CCTV_AUTH = (function () {
       initClient();
       if (!client) return false;
       try {
-        const { error } = await client
-          .from("profiles")
-          .update({ status: "rejected" })
-          .eq("id", userId);
+        const { error } = await client.rpc("admin_set_user_status", {
+          p_target: userId,
+          p_status: "rejected"
+        });
         if (!error) {
           await this.logSecurityEvent("reject_user", `user:${userId}`);
           return true;
@@ -319,10 +430,10 @@ window.CCTV_AUTH = (function () {
       initClient();
       if (!client) return false;
       try {
-        const { error } = await client
-          .from("profiles")
-          .update({ status: "disabled" })
-          .eq("id", userId);
+        const { error } = await client.rpc("admin_set_user_status", {
+          p_target: userId,
+          p_status: "disabled"
+        });
         if (!error) {
           await this.logSecurityEvent("disable_user", `user:${userId}`);
           return true;
@@ -352,10 +463,13 @@ window.CCTV_AUTH = (function () {
       initClient();
       if (!client) return false;
       try {
-        const { error } = await client
-          .from("profiles")
-          .update({ role: newRole })
-          .eq("id", userId);
+        // Fetch current permissions to preserve them
+        const profile = await fetchProfile(userId);
+        const { error } = await client.rpc("admin_set_user_access", {
+          p_target: userId,
+          p_role: newRole,
+          p_permissions: profile?.permissions || {}
+        });
         if (!error) {
           await this.logSecurityEvent("change_role", `user:${userId}`, { newRole });
           return true;
@@ -370,10 +484,12 @@ window.CCTV_AUTH = (function () {
       initClient();
       if (!client) return false;
       try {
-        const { error } = await client
-          .from("profiles")
-          .update({ permissions })
-          .eq("id", userId);
+        const profile = await fetchProfile(userId);
+        const { error } = await client.rpc("admin_set_user_access", {
+          p_target: userId,
+          p_role: profile?.role || "user",
+          p_permissions: permissions
+        });
         return !error;
       } catch (e) {
         console.error("Update permissions error:", e);
@@ -395,7 +511,6 @@ window.CCTV_AUTH = (function () {
 
       const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(userId || "").trim());
 
-      // Try server-side RPC admin_delete_cctv_user or admin_remove_user if valid UUID
       if (isUuid) {
         try {
           const { data, error } = await client.rpc("admin_delete_cctv_user", {
@@ -418,19 +533,6 @@ window.CCTV_AUTH = (function () {
         } catch (_) {}
       }
 
-      // Fallback: delete profile record directly
-      try {
-        const { error } = await client
-          .from("profiles")
-          .delete()
-          .eq("id", userId);
-        if (!error) {
-          await this.logSecurityEvent("delete_user_profile", `user:${userId}`, { target_user_id: userId }, isUuid ? userId : null);
-          return true;
-        }
-      } catch (e) {
-        console.error("Delete user error:", e);
-      }
       return false;
     },
 
@@ -444,8 +546,8 @@ window.CCTV_AUTH = (function () {
         safeDetails.target_user_id = targetUserId;
       }
 
-      // Only invoke security event RPC if current caller has approved admin role
-      if (currentUser && currentProfile?.role === "admin") {
+      // Invoke server-side security event RPC for authoritative audit trail
+      if (client && currentUser) {
         try {
           await client.rpc("log_cctv_security_event", {
             p_action: action,
@@ -453,21 +555,10 @@ window.CCTV_AUTH = (function () {
             p_target_item: String(targetItem || ""),
             p_details: safeDetails
           });
-          return;
-        } catch (_) {}
+        } catch (err) {
+          console.warn("[Auth Service] Security event log RPC error:", err);
+        }
       }
-
-      try {
-        await client.from("cctv_security_audit_logs").insert({
-          actor_id: currentUser?.id || null,
-          actor_username: currentProfile?.username || "system",
-          actor_role: currentProfile?.role || "admin",
-          action: action,
-          target_item: String(targetItem || ""),
-          target_user_id: safeTargetUserId,
-          details: safeDetails
-        });
-      } catch (_) {}
     },
 
     async fetchAuditLogs(limit = 100) {

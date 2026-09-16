@@ -67,11 +67,6 @@
   let legacyOwner = rawGet(LEGACY_OWNER_KEY) || "";
   let currentUserId = detectedAuth?.id || rawGet(ACTIVE_USER_KEY) || "";
 
-  if (!legacyOwner && detectedAuth && (detectedAuth.username === "miles" || detectedAuth.email.startsWith("miles@"))) {
-    legacyOwner = detectedAuth.id;
-    rawSet(LEGACY_OWNER_KEY, detectedAuth.id);
-  }
-
   function prefixFor(userId) {
     if (!userId) return "__cctv_guest__::";
     if (legacyOwner && legacyOwner === userId) return "";
@@ -141,13 +136,9 @@
       if (!id) return false;
 
       let claimedLegacy = false;
-      const isMiles =
-        userProfile?.username?.toLowerCase?.() === "miles" ||
-        userProfile?.email?.toLowerCase?.()?.startsWith?.("miles@") ||
-        detectedAuth?.username === "miles" ||
-        detectedAuth?.email?.startsWith?.("miles@");
+      const isSuperAdmin = userProfile?.role === "super_admin";
 
-      if ((isAdmin && !legacyOwner) || (isMiles && (!legacyOwner || legacyOwner !== id))) {
+      if ((isAdmin && !legacyOwner) || (isSuperAdmin && (!legacyOwner || legacyOwner !== id))) {
         legacyOwner = id;
         rawSet(LEGACY_OWNER_KEY, id);
         claimedLegacy = true;

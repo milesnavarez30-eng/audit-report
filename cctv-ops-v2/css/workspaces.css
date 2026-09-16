@@ -1316,6 +1316,15 @@ table.mini-sheet tr.floor-break td {
   letter-spacing: 0.3px;
 }
 
+.admin-badge.badge-super_admin,
+.admin-badge.badge-super-admin {
+  background: rgba(245, 158, 11, 0.2);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.45);
+  box-shadow: 0 0 8px rgba(245, 158, 11, 0.25);
+  font-weight: 700;
+}
+
 .admin-badge.badge-admin {
   background: rgba(168, 85, 247, 0.15);
   color: #c084fc;

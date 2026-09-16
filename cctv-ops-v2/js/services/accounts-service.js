@@ -18,29 +18,45 @@
   const OPERATIONAL_SETTINGS_KEY = "cctv_admin_settings_v1";
   const RECENT_CREDS_STORAGE_KEY = "cctv_admin_recent_creds_v1";
 
-  const DEFAULT_USER_PERMISSIONS = {
+  const DEFAULT_USER_PERMISSIONS = Object.freeze({
+    report: true,
+    conduct: true,
     edr: true,
-    cctv: true,
-    aiSorter: true,
+    audit: true,
+    trackers: true,
+    hris: false,
+    sorter: true,
     maintenance: true,
     pending: true,
-    masterlist: true,
     followup: true,
+    masterlist: true,
     history: true,
-    manageOptions: false
-  };
+    accounts: false,
+    manage_users: false,
+    manage_roles: false,
+    manage_permissions: false,
+    view_security_logs: false
+  });
 
-  const FULL_ADMIN_PERMISSIONS = {
+  const FULL_ADMIN_PERMISSIONS = Object.freeze({
+    report: true,
+    conduct: true,
     edr: true,
-    cctv: true,
-    aiSorter: true,
+    audit: true,
+    trackers: true,
+    hris: false,
+    sorter: true,
     maintenance: true,
     pending: true,
-    masterlist: true,
     followup: true,
+    masterlist: true,
     history: true,
-    manageOptions: true
-  };
+    accounts: true,
+    manage_users: true,
+    manage_roles: false,
+    manage_permissions: false,
+    view_security_logs: false
+  });
 
   let client = null;
   let accountsCache = [];
@@ -94,7 +110,7 @@
         const parsed = JSON.parse(raw);
         if (Array.isArray(parsed) && parsed.length > 0) return parsed;
       }
-    } catch (_) {}
+    } catch (_) { }
 
     // Seed default accounts if empty
     const seed = [
@@ -128,7 +144,7 @@
   function saveLocalAccounts(list) {
     try {
       localStorage.setItem(LOCAL_ACCOUNTS_KEY, JSON.stringify(list || []));
-    } catch (_) {}
+    } catch (_) { }
   }
 
   function getInitials(name) {
@@ -136,6 +152,35 @@
     if (!parts.length) return "U";
     if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
     return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  }
+
+  function assertAdmin(actionName = "action", requiredPermission = null) {
+    const isAuthed = !!(window.CCTV_AUTH?.getUser?.() && window.CCTV_AUTH?.getProfile?.());
+    const isSuper = !!(window.CCTV_AUTH && typeof window.CCTV_AUTH.isSuperAdmin === "function" && window.CCTV_AUTH.isSuperAdmin());
+    const isAdmin = !!(window.CCTV_AUTH && typeof window.CCTV_AUTH.isAdmin === "function" && window.CCTV_AUTH.isAdmin());
+
+    if (!isAuthed || (!isAdmin && !isSuper)) {
+      try {
+        if (window.CCTV_ACCOUNTS && typeof window.CCTV_ACCOUNTS.logSecurityEvent === "function") {
+          window.CCTV_ACCOUNTS.logSecurityEvent("unauthorized_admin_call", actionName, {
+            attempted_action: actionName,
+            status: "denied"
+          });
+        }
+      } catch (_) { }
+      throw new Error(`Access Denied: Administrative role required for ${actionName}.`);
+    }
+
+    // Super Admin has universal access
+    if (isSuper) return true;
+
+    // Normal Admin: Check specific capability if required
+    if (requiredPermission && window.CCTV_AUTH && typeof window.CCTV_AUTH.hasPermission === "function") {
+      if (!window.CCTV_AUTH.hasPermission(requiredPermission)) {
+        throw new Error(`Access Denied: You do not have permission (${requiredPermission}) to perform ${actionName}.`);
+      }
+    }
+    return true;
   }
 
   const CCTV_ACCOUNTS = {
@@ -147,6 +192,8 @@
       accountsCache = loadLocalAccounts();
       return this;
     },
+
+    assertAdmin,
 
     getInitials,
 
@@ -184,8 +231,8 @@
     async getMetrics() {
       const users = accountsCache.length > 0 ? accountsCache : loadLocalAccounts();
       const total = users.length;
-      const admins = users.filter(x => x.role === "admin").length;
-      const staffUsers = users.filter(x => x.role !== "admin").length;
+      const admins = users.filter(x => x.role === "admin" || x.role === "super_admin").length;
+      const staffUsers = users.filter(x => x.role !== "admin" && x.role !== "super_admin").length;
       const pending = users.filter(x => x.status === "pending").length;
       const disabled = users.filter(x => x.status === "disabled" || x.status === "suspended").length;
       const cutoff = Date.now() - 86400000;
@@ -229,6 +276,7 @@
     // User Accounts Management
     // -------------------------------------------------------------------------
     async fetchUsers(forceRemote = false) {
+      assertAdmin("fetchUsers");
       initClient();
       if (client && forceRemote) {
         try {
@@ -252,6 +300,7 @@
     },
 
     getCachedUsers() {
+      if (!window.CCTV_AUTH?.isAdmin?.() && !window.CCTV_AUTH?.isSuperAdmin?.()) return [];
       if (!accountsCache || accountsCache.length === 0) {
         accountsCache = loadLocalAccounts();
       }
@@ -259,10 +308,24 @@
     },
 
     async createAccount({ name, username, password, role = "user" }) {
+      assertAdmin("createAccount", "manage_users");
       const cleanN = clean(name);
       const cleanU = cleanUsername(username);
       const cleanP = String(password || "");
-      const cleanR = role === "admin" ? "admin" : "user";
+
+      const isCallerSuper = !!(window.CCTV_AUTH && typeof window.CCTV_AUTH.isSuperAdmin === "function" && window.CCTV_AUTH.isSuperAdmin());
+      let cleanR = "user";
+      if (role === "super_admin") {
+        if (!isCallerSuper) {
+          throw new Error("Access Denied: Only a Super Administrator can create a Super Admin account.");
+        }
+        cleanR = "super_admin";
+      } else if (role === "admin") {
+        if (!isCallerSuper) {
+          throw new Error("Access Denied: Only a Super Administrator can create an Administrator account.");
+        }
+        cleanR = "admin";
+      }
 
       if (!cleanN) throw new Error("Enter the staff member's name.");
       if (!cleanU || cleanU.length < 2) throw new Error("Enter a valid username.");
@@ -278,60 +341,72 @@
 
       let createdUserId = "usr_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 7);
       const email = resolveLoginEmail(cleanU);
-      const defaultPerms = cleanR === "admin" ? { ...FULL_ADMIN_PERMISSIONS } : { ...DEFAULT_USER_PERMISSIONS };
 
-      // Attempt Supabase Signup if online
-      if (client && cfg.SUPABASE_URL && cfg.SUPABASE_PUBLIC_KEY) {
+      let defaultPerms;
+      if (cleanR === "super_admin") {
+        defaultPerms = { all: true, super_admin: true };
+      } else if (cleanR === "admin") {
+        defaultPerms = {
+          ...FULL_ADMIN_PERMISSIONS,
+          accounts: false,
+          hris: false,
+          manage_users: false,
+          manage_roles: false,
+          manage_permissions: false,
+          view_security_logs: false
+        };
+      } else {
+        defaultPerms = { ...DEFAULT_USER_PERMISSIONS };
+      }
+
+      // Server-side administrative account creation via Supabase Edge Function
+      if (client && cfg.SUPABASE_URL) {
+        let edgeCreated = false;
         try {
-          const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 10000);
+          const { data: sessionData, error: sessionError } = await client.auth.getSession();
+          const token = sessionData?.session?.access_token;
+          if (sessionError || !token) {
+            throw new Error("Unauthorized: No valid signed-in session token.");
+          }
 
-          const signupResponse = await fetch(
-            `${String(cfg.SUPABASE_URL).replace(/\/+$/, "")}/auth/v1/signup`,
-            {
-              method: "POST",
-              signal: controller.signal,
-              headers: {
-                "Content-Type": "application/json",
-                "apikey": cfg.SUPABASE_PUBLIC_KEY,
-                "Authorization": `Bearer ${cfg.SUPABASE_PUBLIC_KEY}`
-              },
-              body: JSON.stringify({
-                email,
-                password: cleanP,
-                data: { display_name: cleanN, username: cleanU }
-              })
-            }
-          );
+          const fnUrl = `${String(cfg.SUPABASE_URL).replace(/\/+$/, "")}/functions/v1/cctv-admin-create-user`;
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 12000);
+
+          const resp = await fetch(fnUrl, {
+            method: "POST",
+            signal: controller.signal,
+            headers: {
+              "Content-Type": "application/json",
+              "apikey": cfg.SUPABASE_PUBLIC_KEY,
+              "Authorization": `Bearer ${token}`
+            },
+            body: JSON.stringify({
+              name: cleanN,
+              username: cleanU,
+              password: cleanP,
+              role: cleanR,
+              permissions: defaultPerms
+            })
+          });
           clearTimeout(timeoutId);
 
-          if (signupResponse.ok) {
-            const signupData = await signupResponse.json();
-            if (signupData?.user?.id || signupData?.id) {
-              createdUserId = signupData.user?.id || signupData.id;
-            }
+          const result = await resp.json();
+          if (!resp.ok) {
+            throw new Error(result?.error || "Edge function account creation failed.");
           }
-        } catch (netErr) {
-          console.warn("[Accounts Service] Supabase signup fetch warning:", netErr);
+
+          if (result?.user?.id) {
+            createdUserId = result.user.id;
+            edgeCreated = true;
+          }
+        } catch (edgeErr) {
+          console.warn("[Accounts Service] Edge function cctv-admin-create-user notice:", edgeErr);
+          // If server returned an explicit error (e.g. 403 Forbidden or 409 Conflict), surface it to the user
+          if (edgeErr?.message && !edgeErr.message.includes("Failed to fetch") && !edgeErr.message.includes("NetworkError") && !edgeErr.message.includes("aborted")) {
+            throw edgeErr;
+          }
         }
-
-        // Attempt profiles upsert & RPC
-        try {
-          await client.from("profiles").upsert({
-            id: createdUserId,
-            email,
-            username: cleanU,
-            display_name: cleanN,
-            role: cleanR,
-            status: "approved",
-            permissions: defaultPerms
-          });
-        } catch (_) {}
-
-        try {
-          await client.rpc("admin_set_user_status", { p_target: createdUserId, p_status: "approved" });
-          await client.rpc("admin_set_user_access", { p_target: createdUserId, p_role: cleanR, p_permissions: defaultPerms });
-        } catch (_) {}
       }
 
       const newAccount = {
@@ -356,7 +431,7 @@
         name: cleanN,
         username: cleanU,
         password: cleanP,
-        role: cleanR === "admin" ? "Admin" : "User",
+        role: cleanR === "super_admin" ? "Super Admin" : (cleanR === "admin" ? "Admin" : "User"),
         createdAt: new Date().toISOString()
       });
 
@@ -372,10 +447,26 @@
     },
 
     async setStatus(id, newStatus) {
+      assertAdmin("setStatus", "manage_users");
       initClient();
       const currentList = this.getCachedUsers();
       const target = currentList.find(x => x.id === id);
       if (!target) throw new Error("Account not found.");
+
+      const isCallerSuper = !!(window.CCTV_AUTH && typeof window.CCTV_AUTH.isSuperAdmin === "function" && window.CCTV_AUTH.isSuperAdmin());
+
+      // Only Super Admin can change status of Admin or Super Admin
+      if ((target.role === "super_admin" || target.role === "admin") && !isCallerSuper) {
+        throw new Error("Access Denied: Only a Super Administrator can change the status of an Administrator.");
+      }
+
+      // Last Super Admin Guard
+      if (target.role === "super_admin" && newStatus !== "approved") {
+        const superCount = currentList.filter(x => x.role === "super_admin" && (x.status === "approved" || !x.status) && x.id !== id).length;
+        if (superCount === 0) {
+          throw new Error("Safety Lockout: Cannot deactivate or reject the final remaining Super Administrator.");
+        }
+      }
 
       const prevStatus = target.status;
       target.status = newStatus;
@@ -384,10 +475,9 @@
       if (client) {
         try {
           await client.rpc("admin_set_user_status", { p_target: id, p_status: newStatus });
-        } catch (_) {
-          try {
-            await client.from("profiles").update({ status: newStatus }).eq("id", id);
-          } catch (_) {}
+        } catch (err) {
+          console.error("[Accounts Service] Remote status update error:", err);
+          throw new Error(err.message || "Failed to update account status on Supabase.");
         }
       }
 
@@ -411,26 +501,50 @@
     },
 
     async saveUserAccess(id, { role, status, displayName, permissions }) {
+      assertAdmin("saveUserAccess", "manage_permissions");
       initClient();
       const currentList = this.getCachedUsers();
       const target = currentList.find(x => x.id === id);
       if (!target) throw new Error("Account not found.");
 
+      const isCallerSuper = !!(window.CCTV_AUTH && typeof window.CCTV_AUTH.isSuperAdmin === "function" && window.CCTV_AUTH.isSuperAdmin());
       const prevRole = target.role;
-      const prevPerms = target.permissions || {};
 
-      target.role = role === "admin" ? "admin" : "user";
+      // Privilege Escalation Prevention: Only Super Admin can grant, modify, or revoke Admin or Super Admin roles
+      if ((role === "super_admin" || role === "admin" || prevRole === "admin" || prevRole === "super_admin") && !isCallerSuper) {
+        throw new Error("Access Denied: Only a Super Administrator can grant, modify, or revoke Administrator roles.");
+      }
+
+      // Existing Super Admin protection
+      if (target.role === "super_admin") {
+        if (!isCallerSuper) {
+          throw new Error("Access Denied: Only a Super Administrator can modify a Super Admin profile.");
+        }
+        // Last Super Admin Demotion Guard
+        if (role !== "super_admin") {
+          const superCount = currentList.filter(x => x.role === "super_admin" && (x.status === "approved" || !x.status) && x.id !== id).length;
+          if (superCount === 0) {
+            throw new Error("Safety Lockout: Cannot demote the final remaining Super Administrator.");
+          }
+        }
+      }
+
+      target.role = role === "super_admin" ? "super_admin" : (role === "admin" ? "admin" : "user");
       if (status) target.status = status;
       if (displayName) target.display_name = clean(displayName);
 
-      // Normal user can never have manageOptions
+      // Permissions assignment
       const sanitizedPerms = { ...(permissions || {}) };
-      if (target.role !== "admin") {
+      if (target.role === "super_admin") {
+        sanitizedPerms.all = true;
+        sanitizedPerms.super_admin = true;
+      } else if (target.role === "user") {
+        sanitizedPerms.accounts = false;
+        sanitizedPerms.manage_users = false;
+        sanitizedPerms.manage_roles = false;
+        sanitizedPerms.manage_permissions = false;
+        sanitizedPerms.view_security_logs = false;
         sanitizedPerms.manageOptions = false;
-      } else {
-        Object.keys(FULL_ADMIN_PERMISSIONS).forEach(k => {
-          sanitizedPerms[k] = true;
-        });
       }
       target.permissions = sanitizedPerms;
 
@@ -443,16 +557,10 @@
             p_role: target.role,
             p_permissions: sanitizedPerms
           });
-        } catch (_) {}
-
-        try {
-          await client.from("profiles").update({
-            role: target.role,
-            status: target.status,
-            display_name: target.display_name,
-            permissions: sanitizedPerms
-          }).eq("id", id);
-        } catch (_) {}
+        } catch (err) {
+          console.error("[Accounts Service] Remote access save error:", err);
+          throw new Error(err.message || "Failed to update account permissions on Supabase.");
+        }
       }
 
       if (prevRole !== target.role) {
@@ -472,6 +580,7 @@
     },
 
     async deleteAccount(id) {
+      assertAdmin("deleteAccount", "manage_users");
       initClient();
       const currentList = this.getCachedUsers();
       const target = currentList.find(x => x.id === id);
@@ -482,6 +591,21 @@
         throw new Error("You cannot delete your own logged-in administrator account.");
       }
 
+      const isCallerSuper = !!(window.CCTV_AUTH && typeof window.CCTV_AUTH.isSuperAdmin === "function" && window.CCTV_AUTH.isSuperAdmin());
+
+      // Only Super Admin can delete Admin or Super Admin
+      if ((target.role === "super_admin" || target.role === "admin") && !isCallerSuper) {
+        throw new Error("Access Denied: Only a Super Administrator can delete an Administrator account.");
+      }
+
+      if (target.role === "super_admin") {
+        // Last Super Admin Guard
+        const superCount = currentList.filter(x => x.role === "super_admin" && (x.status === "approved" || !x.status) && x.id !== id).length;
+        if (superCount === 0) {
+          throw new Error("Safety Lockout: Cannot delete the final remaining Super Administrator.");
+        }
+      }
+
       // Remove from local cache
       const updatedList = currentList.filter(x => x.id !== id);
       saveLocalAccounts(updatedList);
@@ -490,26 +614,20 @@
       // Remove from recent credentials if present
       this.removeRecentCredential(id);
 
-      // Attempt Supabase deletion if valid UUID
+      // Attempt Supabase deletion via authoritative RPC
       const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(id || "").trim());
       if (client && isUuid) {
         let deletedRemote = false;
         try {
           const res = await client.rpc("admin_delete_cctv_user", { p_target: id });
           if (!res.error && (res.data?.ok || res.data === true)) deletedRemote = true;
-        } catch (_) {}
+        } catch (_) { }
 
         if (!deletedRemote) {
           try {
             const res2 = await client.rpc("admin_remove_user", { p_target: id });
             if (!res2.error && (res2.data?.ok || res2.data === true || res2.data === undefined)) deletedRemote = true;
-          } catch (_) {}
-        }
-
-        if (!deletedRemote) {
-          try {
-            await client.from("profiles").delete().eq("id", id);
-          } catch (_) {}
+          } catch (_) { }
         }
       }
 
@@ -529,6 +647,92 @@
       return true;
     },
 
+    async promoteToSuperAdmin(id) {
+      assertAdmin("promoteToSuperAdmin");
+      const isCallerSuper = !!(window.CCTV_AUTH && typeof window.CCTV_AUTH.isSuperAdmin === "function" && window.CCTV_AUTH.isSuperAdmin());
+      if (!isCallerSuper) {
+        throw new Error("Access Denied: Only a Super Administrator can promote another Super Administrator.");
+      }
+
+      initClient();
+      const currentList = this.getCachedUsers();
+      const target = currentList.find(x => x.id === id);
+      if (!target) throw new Error("Account not found.");
+      if (target.role === "super_admin") return target;
+
+      const prevRole = target.role;
+      target.role = "super_admin";
+      target.permissions = { all: true, super_admin: true };
+      saveLocalAccounts(currentList);
+
+      if (client) {
+        try {
+          await client.rpc("admin_set_user_access", {
+            p_target: id,
+            p_role: "super_admin",
+            p_permissions: { all: true, super_admin: true }
+          });
+        } catch (err) {
+          console.error("[Accounts Service] Remote promotion error:", err);
+          throw new Error(err.message || "Failed to promote account on Supabase.");
+        }
+      }
+
+      await this.logSecurityEvent("super_admin_promoted", target.username || id, {
+        target_id: id,
+        previous_role: prevRole,
+        new_role: "super_admin"
+      }, id);
+
+      return target;
+    },
+
+    async demoteSuperAdmin(id) {
+      assertAdmin("demoteSuperAdmin");
+      const isCallerSuper = !!(window.CCTV_AUTH && typeof window.CCTV_AUTH.isSuperAdmin === "function" && window.CCTV_AUTH.isSuperAdmin());
+      if (!isCallerSuper) {
+        throw new Error("Access Denied: Only a Super Administrator can demote a Super Administrator.");
+      }
+
+      initClient();
+      const currentList = this.getCachedUsers();
+      const target = currentList.find(x => x.id === id);
+      if (!target) throw new Error("Account not found.");
+      if (target.role !== "super_admin") return target;
+
+      // Last Super Admin Guard
+      const superCount = currentList.filter(x => x.role === "super_admin" && (x.status === "approved" || !x.status) && x.id !== id).length;
+      if (superCount === 0) {
+        throw new Error("Safety Lockout: Cannot demote the final remaining Super Administrator.");
+      }
+
+      const prevRole = target.role;
+      target.role = "admin";
+      target.permissions = { ...FULL_ADMIN_PERMISSIONS };
+      saveLocalAccounts(currentList);
+
+      if (client) {
+        try {
+          await client.rpc("admin_set_user_access", {
+            p_target: id,
+            p_role: "admin",
+            p_permissions: { ...FULL_ADMIN_PERMISSIONS }
+          });
+        } catch (err) {
+          console.error("[Accounts Service] Remote demotion error:", err);
+          throw new Error(err.message || "Failed to demote account on Supabase.");
+        }
+      }
+
+      await this.logSecurityEvent("super_admin_demoted", target.username || id, {
+        target_id: id,
+        previous_role: prevRole,
+        new_role: "admin"
+      }, id);
+
+      return target;
+    },
+
     // -------------------------------------------------------------------------
     // Recent Credentials
     // -------------------------------------------------------------------------
@@ -546,7 +750,7 @@
     saveRecentCredentials(list) {
       try {
         sessionStorage.setItem(RECENT_CREDS_STORAGE_KEY, JSON.stringify(list || []));
-      } catch (_) {}
+      } catch (_) { }
     },
 
     addRecentCredential(cred) {
@@ -573,7 +777,7 @@
     clearRecentCredentials() {
       try {
         sessionStorage.removeItem(RECENT_CREDS_STORAGE_KEY);
-      } catch (_) {}
+      } catch (_) { }
     },
 
     formatAllCredentialsText(item) {
@@ -623,7 +827,7 @@
         const raw = JSON.parse(localStorage.getItem(LOCAL_AUDIT_KEY) || "[]");
         raw.unshift(record);
         localStorage.setItem(LOCAL_AUDIT_KEY, JSON.stringify(raw.slice(0, 200)));
-      } catch (_) {}
+      } catch (_) { }
 
       initClient();
       const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(targetUserId || "").trim());
@@ -633,36 +837,23 @@
       }
 
       if (client) {
-        const callerProfile = window.CCTV_AUTH?.getProfile?.();
-        const isAdmin = callerProfile?.role === "admin";
-        if (isAdmin) {
-          try {
-            await client.rpc("log_cctv_security_event", {
-              p_action: safeAction,
-              p_target_user_id: safeTargetUserId,
-              p_target_item: safeTargetItem,
-              p_details: safeDetails
-            });
-            return record;
-          } catch (_) {}
-        }
-
         try {
-          await client.from("cctv_security_audit_logs").insert({
-            actor_username: actorUsername,
-            actor_role: actorRole,
-            action: safeAction,
-            target_item: safeTargetItem,
-            target_user_id: safeTargetUserId,
-            details: safeDetails
+          await client.rpc("log_cctv_security_event", {
+            p_action: safeAction,
+            p_target_user_id: safeTargetUserId,
+            p_target_item: safeTargetItem,
+            p_details: safeDetails
           });
-        } catch (_) {}
+        } catch (err) {
+          console.warn("[Accounts Service] Remote audit log RPC error:", err);
+        }
       }
 
       return record;
     },
 
     async fetchAuditLogs(forceRemote = false) {
+      assertAdmin("fetchAuditLogs", "view_security_logs");
       initClient();
       if (client && forceRemote) {
         try {
@@ -676,7 +867,7 @@
             auditLogsCache = data;
             return data;
           }
-        } catch (_) {}
+        } catch (_) { }
       }
 
       try {
@@ -689,10 +880,12 @@
     },
 
     getCachedAuditLogs() {
+      if (!window.CCTV_AUTH?.isAdmin?.()) return [];
       return auditLogsCache;
     },
 
     exportAuditLogs() {
+      assertAdmin("exportAuditLogs");
       const logs = auditLogsCache.length > 0 ? auditLogsCache : JSON.parse(localStorage.getItem(LOCAL_AUDIT_KEY) || "[]");
       const json = JSON.stringify(logs, null, 2);
       const blob = new Blob([json], { type: "application/json" });
@@ -729,6 +922,7 @@
     },
 
     async saveOperationalSettings(settings) {
+      assertAdmin("saveOperationalSettings");
       const prev = this.getOperationalSettings();
       const updated = {
         theme: settings.theme || "dark",
