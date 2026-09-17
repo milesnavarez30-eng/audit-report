@@ -535,7 +535,7 @@
     if (!isValidAppsScriptWebAppUrl(url)) {
       throw new Error("Invalid Apps Script Web App URL ending in /exec.");
     }
-    const data = await maintenanceJsonp(url, { action: "health", destinationKey: destKey }, 30000);
+    const data = await maintenanceJsonp(url, { action: "health", destinationKey: destKey }, 90000);
     if (!data || data.ok !== true) {
       throw new Error(data?.error || "Receiver health check failed.");
     }
@@ -568,7 +568,7 @@
           index,
           total: chunks.length,
           data: chunks[index]
-        }, 30000);
+        }, 90000);
 
         if (!response?.ok) {
           throw new Error(response?.error || `Chunk ${index + 1} upload failed.`);
