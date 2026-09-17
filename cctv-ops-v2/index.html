@@ -7,7 +7,7 @@
 
   <!-- Client-Side Security Meta Policies (Note: X-Content-Type-Options, HSTS, frame-ancestors, and Permissions-Policy must be set via HTTP response headers on the hosting server/CDN) -->
   <meta name="referrer" content="strict-origin-when-cross-origin">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://afxgfyuudqujueeooplj.supabase.co https://cdn.jsdelivr.net https://script.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; frame-src 'self' https://docs.google.com https://*.google.com https://611systems.com https://10.10.10.20:8081; connect-src 'self' https://afxgfyuudqujueeooplj.supabase.co wss://afxgfyuudqujueeooplj.supabase.co https://docs.google.com https://script.google.com https://script.googleusercontent.com https://611systems.com https://10.10.10.20:8081; object-src 'none'; base-uri 'self';">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://afxgfyuudqujueeooplj.supabase.co https://cdn.jsdelivr.net https://script.google.com https://script.googleusercontent.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; frame-src 'self' https://docs.google.com https://*.google.com https://611systems.com https://10.10.10.20:8081; connect-src 'self' https://afxgfyuudqujueeooplj.supabase.co wss://afxgfyuudqujueeooplj.supabase.co https://docs.google.com https://script.google.com https://script.googleusercontent.com https://611systems.com https://10.10.10.20:8081; object-src 'none'; base-uri 'self';">
 
   <!-- Google Fonts: Space Grotesk (display) + Inter (body) + JetBrains Mono (mono/labels) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -2628,7 +2628,9 @@
   <script src="../auth-config.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.4/dist/jspdf.plugin.autotable.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.1/dist/html2pdf.bundle.min.js"></script>
 
   <!-- Internal V2 Modules -->
   <script src="./js/config.js"></script>

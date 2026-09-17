@@ -1456,3 +1456,168 @@ tbody td {
     0 16px 45px rgba(0, 0, 0, 0.78) !important;
 }
 
+
+/* ==========================================================================
+   WORKSPACE ACTIVE NAV COLORS — APPROVED
+   ========================================================================== */
+
+#tabCctvReport.active {
+  background: #60A5FA !important;
+  color: #0D1117 !important;
+  border-color: #60A5FA !important;
+}
+
+#tabConduct.active {
+  background: #FBBF24 !important;
+  color: #0D1117 !important;
+  border-color: #FBBF24 !important;
+}
+
+#tabEdr.active {
+  background: #6C5CE7 !important;
+  color: #FFFFFF !important;
+  border-color: #7C3AED !important;
+}
+
+#tabTrackers.active {
+  background: #2DD4BF !important;
+  color: #0D1117 !important;
+  border-color: #2DD4BF !important;
+}
+
+#tabHris.active {
+  background: #818CF8 !important;
+  color: #0D1117 !important;
+  border-color: #818CF8 !important;
+}
+
+/* =========================================================
+   SAVED EDRS HEADER FIX
+   Prevent overlapping at 100% zoom
+   ========================================================= */
+
+.saved-edrs-header,
+.edr-saved-header,
+.saved-edrs-toolbar,
+.edr-list-header {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 8px 10px !important;
+  row-gap: 8px !important;
+  min-width: 0 !important;
+}
+
+.saved-edrs-header > *,
+.edr-saved-header > *,
+.saved-edrs-toolbar > *,
+.edr-list-header > * {
+  min-width: 0 !important;
+}
+
+.saved-edrs-header .count,
+.saved-edrs-header .badge,
+.saved-edrs-header .pill,
+.edr-saved-header .count,
+.edr-saved-header .badge,
+.edr-saved-header .pill,
+.saved-edrs-toolbar .count,
+.saved-edrs-toolbar .badge,
+.saved-edrs-toolbar .pill,
+.edr-list-header .count,
+.edr-list-header .badge,
+.edr-list-header .pill {
+  white-space: nowrap !important;
+  flex: 0 0 auto !important;
+  font-size: 10px !important;
+  line-height: 1.1 !important;
+  padding: 3px 6px !important;
+}
+
+.saved-edrs-header button,
+.saved-edrs-header .btn,
+.edr-saved-header button,
+.edr-saved-header .btn,
+.saved-edrs-toolbar button,
+.saved-edrs-toolbar .btn,
+.edr-list-header button,
+.edr-list-header .btn {
+  white-space: nowrap !important;
+  font-size: 10px !important;
+  line-height: 1.1 !important;
+  padding: 5px 8px !important;
+  min-height: 28px !important;
+}
+
+.saved-edrs-header h3,
+.saved-edrs-header h4,
+.edr-saved-header h3,
+.edr-saved-header h4,
+.saved-edrs-toolbar h3,
+.saved-edrs-toolbar h4,
+.edr-list-header h3,
+.edr-list-header h4 {
+  font-size: 12px !important;
+  line-height: 1.1 !important;
+  margin: 0 !important;
+  white-space: nowrap !important;
+}
+
+.saved-edrs-actions,
+.edr-header-actions,
+.saved-edrs-controls {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  gap: 6px !important;
+  min-width: 0 !important;
+}
+
+.saved-edrs-stats,
+.edr-header-stats,
+.saved-edrs-meta {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  align-items: center !important;
+  gap: 6px !important;
+  min-width: 0 !important;
+}
+
+@media (max-width: 1400px) {
+  .saved-edrs-header,
+  .edr-saved-header,
+  .saved-edrs-toolbar,
+  .edr-list-header {
+    gap: 6px 8px !important;
+  }
+
+  .saved-edrs-header button,
+  .saved-edrs-header .btn,
+  .edr-saved-header button,
+  .edr-saved-header .btn,
+  .saved-edrs-toolbar button,
+  .saved-edrs-toolbar .btn,
+  .edr-list-header button,
+  .edr-list-header .btn {
+    font-size: 9px !important;
+    padding: 4px 7px !important;
+  }
+
+  .saved-edrs-header .count,
+  .saved-edrs-header .badge,
+  .saved-edrs-header .pill,
+  .edr-saved-header .count,
+  .edr-saved-header .badge,
+  .edr-saved-header .pill,
+  .saved-edrs-toolbar .count,
+  .saved-edrs-toolbar .badge,
+  .saved-edrs-toolbar .pill,
+  .edr-list-header .count,
+  .edr-list-header .badge,
+  .edr-list-header .pill {
+    font-size: 9px !important;
+    padding: 3px 5px !important;
+  }
+}

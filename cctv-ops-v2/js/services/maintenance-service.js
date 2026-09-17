@@ -703,9 +703,7 @@
       const rows = maintenanceRowsForSheets(block.lanesText || "");
       const screenshots = Array.isArray(block.screenshots) ? block.screenshots : [];
       const remarks = getEffectiveBlockRemarks(block);
-
-      const sectionHeading = block.sectionTitle ? esc(block.sectionTitle) : `Report Section ${blockIndex + 1}`;
-      const blockLabel = `<div class="maintenance-pdf-block-title" style="font-family:Arial,sans-serif; font-size:13px; font-weight:700; color:#1e293b; padding:10px 0 4px 0; border-bottom:1px solid #cbd5e1; margin-bottom:8px; page-break-after:avoid; break-after:avoid;">${sectionHeading}</div>`;
+      const blockLabel = "";
 
       const dataRows = rows.map(row => `
         <tr style="page-break-inside:avoid; break-inside:avoid;">
@@ -734,9 +732,7 @@
       // 2. PROOF SCREENSHOTS
       const screenshotsHtml = screenshots.length ? `
         <div class="maintenance-pdf-screenshots" style="page-break-inside:avoid; break-inside:avoid; margin:8px 0 10px 0; padding:8px; background:#fafafa; border:1px solid #e5e7eb; border-radius:4px;">
-          <div style="font-family:Arial,sans-serif; font-size:10px; font-weight:700; color:#4b5563; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px;">
-            Proof Screenshots (${screenshots.length})
-          </div>
+          
           <div style="display:flex; flex-wrap:wrap; gap:8px; align-items:flex-start;">
             ${screenshots.map((shot, shotIdx) => `
               <div style="display:inline-block; border:1px solid #d1d5db; border-radius:3px; overflow:hidden; background:#000000; line-height:0;">

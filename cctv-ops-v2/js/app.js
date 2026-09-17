@@ -4873,39 +4873,373 @@ function doPost(e) {
   }
 
   async function downloadMaintenancePdf() {
+    const pdfBtn = el("simpleEodPdfBtn");
+    const originalText = pdfBtn?.textContent || "Download PDF";
+
     try {
       syncMaintenanceStateFromDom();
-      if (typeof window.html2pdf !== "function") {
-        openMaintenancePrintPreview();
-        return;
+
+      const JsPdf = window.jspdf?.jsPDF;
+
+      if (!JsPdf) {
+        throw new Error("jsPDF library is unavailable.");
       }
-      const element = document.createElement("div");
-      element.innerHTML = maintenance.maintenanceReportHtmlForSheets(maintenanceState);
-      element.style.padding = "0";
-      element.style.background = "#ffffff";
-      element.style.color = "#111827";
 
-      const opt = {
-        margin: [15, 15, 15, 15],
-        filename: `${String(maintenanceState.title || "Maintenance").replace(/[<>:"/\\|?*]+/g, "-").replace(/\s+/g, " ").trim()} - ${maintenanceState.date || "report"}.pdf`,
-        image: { type: "jpeg", quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true },
-        jsPDF: { unit: "mm", format: "a4", orientation: "landscape" },
-        pagebreak: {
-          mode: ['css', 'legacy'],
-          avoid: ['tr', '.maintenance-pdf-screenshots', '.maintenance-pdf-remarks', '.maintenance-pdf-block-title']
+      if (!maintenance?.maintenanceRowsForSheets) {
+        throw new Error("Maintenance PDF helpers are unavailable.");
+      }
+
+      if (pdfBtn) {
+        pdfBtn.disabled = true;
+        pdfBtn.textContent = "Generating...";
+      }
+
+      showToast("Generating PDF...", "info");
+
+      // Allow button state to paint before PDF work starts.
+      await new Promise(resolve =>
+        requestAnimationFrame(() => requestAnimationFrame(resolve))
+      );
+
+      const doc = new JsPdf({
+        orientation: "portrait",
+        unit: "mm",
+        format: "a4",
+        compress: true
+      });
+
+      if (typeof doc.autoTable !== "function") {
+        throw new Error("jsPDF AutoTable is unavailable.");
+      }
+
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const pageHeight = doc.internal.pageSize.getHeight();
+
+      const marginX = 8;
+      const marginBottom = 10;
+
+      const state = maintenanceState || {};
+      const blocks = Array.isArray(state.blocks) ? state.blocks : [];
+
+      const cleanTitle = String(
+        state.title || "Maintenance Report"
+      )
+        .replace(/\s*Maintenance\s+Report\s*$/i, "")
+        .trim();
+
+      const reportDate = state.date || "";
+      const titleText = reportDate
+        ? `${cleanTitle} (${reportDate})`
+        : cleanTitle;
+
+      const headers = [
+        "TIMESTAMP",
+        "DATE",
+        "TL",
+        "ACCOUNT",
+        "SITE",
+        "STATION NO.",
+        "STATION ISSUE"
+      ];
+
+      let y = 12;
+
+      function addPageIfNeeded(requiredHeight = 15) {
+        if (y + requiredHeight > pageHeight - marginBottom) {
+          doc.addPage();
+          y = 12;
         }
-      };
+      }
 
-      showToast("Generating PDF export...", "info");
-      await window.html2pdf().from(element).set(opt).save();
-      showToast("PDF downloaded successfully.", "success");
+      function addDocumentTitle() {
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(11);
+        doc.setTextColor(17, 24, 39);
+
+        doc.text(titleText, marginX, y);
+
+        y += 8;
+      }
+
+      addDocumentTitle();
+
+      for (let blockIndex = 0; blockIndex < blocks.length; blockIndex++) {
+        const block = blocks[blockIndex] || {};
+
+        const rows = maintenance.maintenanceRowsForSheets(
+          block.lanesText || ""
+        );
+        addPageIfNeeded(10);
+
+        if (rows.length) {
+          doc.autoTable({
+            startY: y,
+
+            head: [headers],
+            body: rows,
+
+            theme: "grid",
+
+            margin: {
+              left: marginX,
+              right: marginX,
+              bottom: 10
+            },
+
+            styles: {
+              font: "helvetica",
+              fontSize: 5.6,
+              cellPadding: 0.8,
+              overflow: "linebreak",
+              valign: "middle",
+
+              textColor: [31, 41, 55],
+
+              lineColor: [203, 213, 225],
+              lineWidth: 0.15
+            },
+
+            headStyles: {
+              fillColor: [49, 73, 95],
+              textColor: [255, 255, 255],
+
+              fontStyle: "bold",
+              fontSize: 5.5,
+
+              halign: "center",
+              valign: "middle",
+
+              cellPadding: 0.9
+            },
+
+            columnStyles: {
+              0: { cellWidth: 19, halign: "center" },
+              1: { cellWidth: 15, halign: "center" },
+              2: { cellWidth: 31 },
+              3: { cellWidth: 21, halign: "center" },
+              4: { cellWidth: 24, halign: "center" },
+              5: { cellWidth: 22, halign: "center" },
+              6: { cellWidth: "auto" }
+            },
+
+            rowPageBreak: "avoid",
+
+            didDrawPage: function () {
+              doc.setFont("helvetica", "normal");
+              doc.setFontSize(6);
+              doc.setTextColor(100, 116, 139);
+
+              const pageNumber =
+                doc.internal.getNumberOfPages();
+
+              doc.text(
+                String(pageNumber),
+                pageWidth - marginX,
+                pageHeight - 5,
+                { align: "right" }
+              );
+            }
+          });
+
+          y = (doc.lastAutoTable?.finalY || y) + 5;
+        }
+        else {
+          doc.setFont("helvetica", "italic");
+          doc.setFontSize(7);
+          doc.setTextColor(100, 116, 139);
+
+          doc.text(
+            "No station issues recorded for this section.",
+            marginX,
+            y + 3
+          );
+
+          y += 9;
+        }
+
+
+        // ====================================================
+        // SCREENSHOTS
+        // ====================================================
+
+        const screenshots = Array.isArray(block.screenshots)
+          ? block.screenshots
+          : [];
+
+        const imageSources = screenshots
+          .map(shot =>
+            maintenance.maintenanceScreenshotSource?.(shot) || ""
+          )
+          .filter(src => /^data:image\//i.test(src));
+
+        if (imageSources.length) {
+          addPageIfNeeded(12);
+
+          const gap = 4;
+          const maxImageWidth = 82;
+          const maxImageHeight = 46;
+
+          let x = marginX;
+
+          for (const src of imageSources) {
+            let imageWidth = maxImageWidth;
+            let imageHeight = maxImageHeight;
+
+            try {
+              const props = doc.getImageProperties(src);
+
+              if (props?.width && props?.height) {
+                const ratio = props.width / props.height;
+
+                imageWidth = Math.min(
+                  maxImageWidth,
+                  maxImageHeight * ratio
+                );
+
+                imageHeight = imageWidth / ratio;
+              }
+            } catch (_) {}
+
+            if (x + imageWidth > pageWidth - marginX) {
+              x = marginX;
+              y += maxImageHeight + gap;
+            }
+
+            if (y + imageHeight > pageHeight - 12) {
+              doc.addPage();
+              y = 12;
+              x = marginX;
+            }
+
+            try {
+              doc.addImage(
+                src,
+                "JPEG",
+                x,
+                y,
+                imageWidth,
+                imageHeight,
+                undefined,
+                "FAST"
+              );
+            }
+            catch (_) {
+              try {
+                doc.addImage(
+                  src,
+                  x,
+                  y,
+                  imageWidth,
+                  imageHeight
+                );
+              } catch (_) {}
+            }
+
+            x += imageWidth + gap;
+          }
+
+          y += maxImageHeight + 7;
+        }
+
+
+        // ====================================================
+        // REMARKS
+        // ====================================================
+
+        const remarks =
+          maintenance.getEffectiveBlockRemarks?.(block) || [];
+
+        if (remarks.length) {
+          const remarkText = remarks.join(" | ");
+
+          const wrapped = doc.splitTextToSize(
+            remarkText,
+            pageWidth - (marginX * 2) - 8
+          );
+
+          const boxHeight = Math.max(
+            12,
+            7 + (wrapped.length * 3.5)
+          );
+
+          addPageIfNeeded(boxHeight + 5);
+
+          doc.setFillColor(240, 253, 244);
+          doc.setDrawColor(34, 197, 94);
+
+          doc.roundedRect(
+            marginX,
+            y,
+            pageWidth - (marginX * 2),
+            boxHeight,
+            1,
+            1,
+            "FD"
+          );
+
+          doc.setFont("helvetica", "bold");
+          doc.setFontSize(7);
+          doc.setTextColor(22, 101, 52);
+
+          doc.text("Remarks:", marginX + 3, y + 4);
+
+          doc.setFont("helvetica", "normal");
+          doc.setFontSize(7);
+
+          doc.text(
+            wrapped,
+            marginX + 3,
+            y + 8
+          );
+
+          y += boxHeight + 6;
+        }
+
+
+        // Space between report sections.
+        y += 3;
+      }
+
+
+      // ======================================================
+      // SAVE
+      // ======================================================
+
+      const safeTitle = String(
+        state.title || "Maintenance"
+      )
+        .replace(/[<>:"/\\|?*]+/g, "-")
+        .replace(/\s+/g, " ")
+        .trim();
+
+      const fileName =
+        `${safeTitle} - ${state.date || "report"}.pdf`;
+
+      doc.save(fileName);
+
+      showToast(
+        "PDF downloaded successfully.",
+        "success"
+      );
+
     } catch (err) {
-      console.error("PDF generation failed:", err);
-      openMaintenancePrintPreview();
+      console.error(
+        "Direct Maintenance PDF generation failed:",
+        err
+      );
+
+      showToast(
+        err?.message || "Could not generate PDF.",
+        "error"
+      );
+
+    } finally {
+      if (pdfBtn) {
+        pdfBtn.disabled = false;
+        pdfBtn.textContent = originalText;
+      }
     }
   }
-
   async function renderMaintenanceDraftsList() {
     const listEl = el("maintenanceDraftList");
     if (!listEl) return;
@@ -8110,6 +8444,20 @@ ${escapeHtml(JSON.stringify(entry.after || entry.before, null, 2))}
     }
 
     function refreshAccessRoleUi() {
+      const authApi = window.CCTV_AUTH;
+
+      const isCallerSuper = !!(
+        authApi &&
+        typeof authApi.isSuperAdmin === "function" &&
+        authApi.isSuperAdmin()
+      );
+
+      const canManagePermissions = isCallerSuper || !!(
+        authApi &&
+        typeof authApi.hasPermission === "function" &&
+        authApi.hasPermission("manage_permissions")
+      );
+
       const isSuper = accessEditingUser?.role === 'super_admin';
       const role = isSuper ? 'super_admin' : ($('adminAccessRole')?.value || 'user');
       const isAdmin = role === 'admin';
@@ -8118,38 +8466,66 @@ ${escapeHtml(JSON.stringify(entry.after || entry.before, null, 2))}
       const notice = $('superAdminUnrestrictedNotice');
       if (notice) notice.style.display = isSuper ? 'inline-block' : 'none';
 
-      // Workspace permissions checkboxes
+      // Only Super Admin may change account roles.
+      const roleSelect = $('adminAccessRole');
+      if (roleSelect) {
+        roleSelect.disabled = !isCallerSuper;
+      }
+
+      // Access-editor fields are read-only without manage_permissions.
+      const displayNameInput = $('adminAccessDisplayName');
+      if (displayNameInput) {
+        displayNameInput.disabled = !canManagePermissions;
+      }
+
+      const statusSelect = $('adminAccessStatus');
+      if (statusSelect) {
+        statusSelect.disabled = !canManagePermissions;
+      }
+
+      // Workspace permissions
       $('adminAccessGrid')?.querySelectorAll('[data-permission]').forEach(input => {
         if (isSuper) {
           input.checked = true;
           input.disabled = true;
-        } else if (isAdmin) {
-          input.disabled = false;
-        } else {
-          // Normal user cannot have accounts workspace
-          input.disabled = false;
-          if (input.dataset.permission === 'accounts') {
-            input.checked = false;
-            input.disabled = true;
-          }
+          return;
         }
+
+        // Normal users can never receive the Accounts workspace.
+        if (isUser && input.dataset.permission === 'accounts') {
+          input.checked = false;
+          input.disabled = true;
+          return;
+        }
+
+        input.disabled = !canManagePermissions;
       });
 
-      // Privileged administrative capabilities
+      // Administrative capabilities
       $('adminPrivilegesGrid')?.querySelectorAll('[data-permission]').forEach(input => {
         if (isSuper) {
           input.checked = true;
           input.disabled = true;
         } else if (isAdmin) {
-          input.disabled = false;
+          input.disabled = !canManagePermissions;
         } else {
           input.checked = false;
           input.disabled = true;
         }
+
         input.closest('label')?.toggleAttribute('hidden', isUser);
       });
-    }
 
+      // Prevent misleading Save attempts when the caller only has manage_users.
+      const saveBtn = $('adminAccessSave');
+      if (saveBtn) {
+        saveBtn.disabled = !canManagePermissions;
+        saveBtn.textContent = canManagePermissions ? 'Save Access' : 'Read Only';
+        saveBtn.title = canManagePermissions
+          ? ''
+          : 'Modify Permissions permission is required to edit account access.';
+      }
+    }
     async function saveAccessEditor() {
       const id = $('adminAccessTargetId')?.value;
       if (!id) return;
@@ -8914,4 +9290,129 @@ ${escapeHtml(JSON.stringify(entry.after || entry.before, null, 2))}
   } else {
     initJapaneseMatrix();
   }
+})();
+/* =========================================================
+   REPORT HEADER POLISH V1
+   Auto-detect CCTV REPORT / REPORT PREVIEW headers and
+   turn header buttons into aligned text actions
+   ========================================================= */
+(function () {
+  if (window.__reportHeaderPolishInit) return;
+  window.__reportHeaderPolishInit = true;
+
+  function normalize(value) {
+    return String(value || "")
+      .replace(/\s+/g, " ")
+      .trim()
+      .toLowerCase();
+  }
+
+  function findTitleNode(label) {
+    const selector = [
+      "h1","h2","h3","h4","h5",
+      ".section-title",".panel-title",".card-title",
+      "[class*='title']"
+    ].join(",");
+
+    return Array.from(document.querySelectorAll(selector)).find(el => {
+      return normalize(el.textContent) === normalize(label);
+    });
+  }
+
+  function findHeaderContainer(titleEl, actionLabels) {
+    let node = titleEl ? titleEl.parentElement : null;
+
+    while (node && node !== document.body) {
+      const actionTexts = Array.from(node.querySelectorAll("button,a"))
+        .map(el => normalize(el.textContent))
+        .filter(Boolean);
+
+      const hasExpectedAction = actionLabels.some(label =>
+        actionTexts.includes(normalize(label))
+      );
+
+      const hasFormControl = !!node.querySelector("input, textarea, select");
+
+      if (hasExpectedAction && !hasFormControl) {
+        return node;
+      }
+
+      node = node.parentElement;
+    }
+
+    return titleEl ? titleEl.parentElement : null;
+  }
+
+  function findCardContainer(headerEl) {
+    let node = headerEl ? headerEl.parentElement : null;
+
+    while (node && node !== document.body) {
+      if (node.querySelector("textarea, input, select, [contenteditable='true']")) {
+        return node;
+      }
+      node = node.parentElement;
+    }
+
+    return headerEl ? headerEl.parentElement : null;
+  }
+
+  function decorateOne(config) {
+    const titleEl = findTitleNode(config.title);
+    if (!titleEl) return;
+
+    const header = findHeaderContainer(titleEl, config.actions);
+    if (!header) return;
+
+    titleEl.classList.add("report-clean-title");
+    header.classList.add("report-clean-header");
+
+    let actionsWrap = header.querySelector(".report-clean-actions");
+    if (!actionsWrap) {
+      actionsWrap = document.createElement("div");
+      actionsWrap.className = "report-clean-actions";
+      header.appendChild(actionsWrap);
+    }
+
+    Array.from(header.querySelectorAll("button,a")).forEach(el => {
+      const txt = normalize(el.textContent);
+      if (config.actions.some(action => normalize(action) === txt)) {
+        el.classList.add("report-clean-action");
+        actionsWrap.appendChild(el);
+      }
+    });
+
+    const card = findCardContainer(header);
+    if (card) {
+      card.classList.add("report-clean-card");
+      card.classList.add(config.cardClass);
+    }
+  }
+
+  function applyReportHeaderPolish() {
+    decorateOne({
+      title: "CCTV REPORT",
+      actions: ["Open Code of Conduct", "Reset"],
+      cardClass: "report-clean-card--compose"
+    });
+
+    decorateOne({
+      title: "REPORT PREVIEW",
+      actions: ["Copy All"],
+      cardClass: "report-clean-card--preview"
+    });
+  }
+
+  let timer = null;
+  function scheduleApply() {
+    clearTimeout(timer);
+    timer = setTimeout(applyReportHeaderPolish, 40);
+  }
+
+  document.addEventListener("DOMContentLoaded", scheduleApply);
+  window.addEventListener("load", scheduleApply);
+  document.addEventListener("click", scheduleApply, true);
+
+  setTimeout(applyReportHeaderPolish, 200);
+  setTimeout(applyReportHeaderPolish, 700);
+  setTimeout(applyReportHeaderPolish, 1200);
 })();
