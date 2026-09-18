@@ -1,4 +1,4 @@
-/**
+﻿/**
  * CCTV OPS V2 - CCTV Report Service
  * Ready-to-send CCTV incident/report message composer for Microsoft Teams
  * Integrated with the complete SixEleven Code of Conduct Policy Reference & Multi-MIME clipboard.
@@ -39,7 +39,7 @@ window.CCTV_REPORT_SERVICE = (function () {
       greeting: "Good morning TLs,",
       observation: "Observed an agent sleeping from 5:34:44 AM to 5:40:20 AM, with a total duration of approximately 5 minutes. Kindly file an NOC in accordance with the company COD. Thank you.",
       personInvolved: "",
-      site: "Mabini Site A â€“ Ground Floor",
+      site: "Mabini Site A Ã¢â‚¬â€œ Ground Floor",
       dateRange: "September 10, 2026",
       clipUrl: "",
       screenshots: [],
@@ -173,8 +173,8 @@ window.CCTV_REPORT_SERVICE = (function () {
     // 2. Extract Location
     let detectedLocation = "";
     const sitePatterns = [
-      /\b(Mabini\s+Site\s+[AB])(?:\s*[â€“-]\s*|\s+)(Ground|1st|2nd|3rd|4th|5th|6th)?\s*(Floor)?\b/i,
-      /\b(MAA)(?:\s*[â€“-]\s*|\s+)(5th|6th)?\s*(Floor)?\b/i,
+      /\b(Mabini\s+Site\s+[AB])(?:\s*[Ã¢â‚¬â€œ-]\s*|\s+)(Ground|1st|2nd|3rd|4th|5th|6th)?\s*(Floor)?\b/i,
+      /\b(MAA)(?:\s*[Ã¢â‚¬â€œ-]\s*|\s+)(5th|6th)?\s*(Floor)?\b/i,
       /\b(Ecoland(?:\s+Site)?)\b/i,
       /\b(Gensan(?:\s+Site)?)\b/i
     ];
@@ -206,7 +206,7 @@ window.CCTV_REPORT_SERVICE = (function () {
 
     // Special Pattern 0: Time + Date until Time + Date
     // e.g. "2:39:12 PM Sept 12 until 7:47:17 AM Sept 13"
-    const overnightDateTimePattern = /(\d{1,2}:\d{2}(?::\d{2})?\s*(?:AM|PM))\s+(?:on\s+)?(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Sept|October|November|December)[a-z]*\.?\s+(\d{1,2})(?:st|nd|rd|th)?\s*(?:until|to|-|â€“)\s*(\d{1,2}:\d{2}(?::\d{2})?\s*(?:AM|PM))\s+(?:on\s+)?(?:(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Sept|October|November|December)[a-z]*\.?\s+)?(\d{1,2})(?:st|nd|rd|th)?(?!\s*:),?\s*(\d{4})?/i;
+    const overnightDateTimePattern = /(\d{1,2}:\d{2}(?::\d{2})?\s*(?:AM|PM))\s+(?:on\s+)?(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Sept|October|November|December)[a-z]*\.?\s+(\d{1,2})(?:st|nd|rd|th)?\s*(?:until|to|-|Ã¢â‚¬â€œ)\s*(\d{1,2}:\d{2}(?::\d{2})?\s*(?:AM|PM))\s+(?:on\s+)?(?:(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Sept|October|November|December)[a-z]*\.?\s+)?(\d{1,2})(?:st|nd|rd|th)?(?!\s*:),?\s*(\d{4})?/i;
     const odtMatch = text.match(overnightDateTimePattern);
     if (odtMatch) {
       const startTime = odtMatch[1].trim();
@@ -240,7 +240,7 @@ window.CCTV_REPORT_SERVICE = (function () {
 
     // Pattern A: Overnight Sept 12-13, 2026 or Sept 12 until Sept 13
     if (!detectedDate) {
-      const overnightPattern = /\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Sept|October|November|December)[a-z]*\.?\s+(\d{1,2})(?:st|nd|rd|th)?\s*(?:-|â€“|to|until)\s*(?:(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Sept|October|November|December)[a-z]*\.?\s+)?(\d{1,2})(?:st|nd|rd|th)?(?!\s*:),?\s*(\d{4})?\b/i;
+      const overnightPattern = /\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Sept|October|November|December)[a-z]*\.?\s+(\d{1,2})(?:st|nd|rd|th)?\s*(?:-|Ã¢â‚¬â€œ|to|until)\s*(?:(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Sept|October|November|December)[a-z]*\.?\s+)?(\d{1,2})(?:st|nd|rd|th)?(?!\s*:),?\s*(\d{4})?\b/i;
       const overMatch = text.match(overnightPattern);
       if (overMatch) {
         const m1 = overMatch[1];
@@ -298,7 +298,7 @@ window.CCTV_REPORT_SERVICE = (function () {
 
     // Check for intervals (pairs of start & end) if not already found
     if (intervals.length === 0) {
-      const intervalPattern = /(\d{1,2}:\d{2}(?::\d{2})?\s*(?:AM|PM))\s*(?:to|until|-|â€“)\s*(\d{1,2}:\d{2}(?::\d{2})?\s*(?:AM|PM))/gi;
+      const intervalPattern = /(\d{1,2}:\d{2}(?::\d{2})?\s*(?:AM|PM))\s*(?:to|until|-|Ã¢â‚¬â€œ)\s*(\d{1,2}:\d{2}(?::\d{2})?\s*(?:AM|PM))/gi;
       let iMatch;
       while ((iMatch = intervalPattern.exec(rawText)) !== null) {
         intervals.push({
@@ -451,7 +451,7 @@ window.CCTV_REPORT_SERVICE = (function () {
       } else {
         incidentNarrative = `Observed an agent browsing non-work-related websites/video ${timePhrase}.`;
       }
-      actionRequest = `Kindly verify and file an NOC accordingly. Thank you.`;
+      actionRequest = `Kindly file an NOC in accordance with the company COD. Thank you.`;
 
     } else if (isLoitering) {
       const pcOff = /(?:pc|computer)\s+(?:was\s+|is\s+|already\s+)*(?:turned\s+off|shutdown|off)|(?:turned\s+off|shutdown|off|power(?:ed)?\s+off)/i.test(notesLower);
@@ -468,7 +468,7 @@ window.CCTV_REPORT_SERVICE = (function () {
 
     } else if (isFoodDrink) {
       incidentNarrative = `Observed an agent who appeared to consume an item/food on the operations floor ${timePhrase}.`;
-      actionRequest = `Kindly verify and remind the agent to consume food only in designated dining areas in accordance with company COD. Thank you.`;
+      actionRequest = `Kindly file an NOC in accordance with the company COD. Thank you.`;
 
     } else if (isCleanliness) {
       let detail = "an improperly arranged workstation";
@@ -483,7 +483,7 @@ window.CCTV_REPORT_SERVICE = (function () {
 
     } else if (isCameraAdjust) {
       incidentNarrative = `Observed an incident involving camera visibility/angle near the workstation ${timePhrase}.`;
-      actionRequest = `Kindly verify and inspect the workstation visibility accordingly. Thank you.`;
+      actionRequest = `Kindly inspect the workstation visibility accordingly. Thank you.`;
 
     } else {
       // General Objective Fallback
@@ -493,14 +493,14 @@ window.CCTV_REPORT_SERVICE = (function () {
       } else {
         incidentNarrative = `Observed an agent ${desc} ${timePhrase}.`.replace(/\.\.+$/, ".");
       }
-      actionRequest = `Kindly verify and take appropriate action in accordance with company COD. Thank you.`;
+      actionRequest = `Kindly take appropriate action in accordance with the company COD. Thank you.`;
     }
 
     // Combine incident narrative and action request
     const fullObservation = `${incidentNarrative} ${actionRequest}`.trim();
 
     // Final Location
-    const finalLocation = parsed.detectedLocation || existingDraft.site || "Mabini Site A â€“ Ground Floor";
+    const finalLocation = parsed.detectedLocation || existingDraft.site || "Mabini Site A Ã¢â‚¬â€œ Ground Floor";
 
     // Final Date
     const finalDate = parsed.detectedDate || existingDraft.dateRange || "September 10, 2026";
@@ -737,6 +737,180 @@ window.CCTV_REPORT_SERVICE = (function () {
     };
   }
 
+
+  function getAiQuickComposeApiUrl() {
+    try {
+      return String(
+        (
+          window.CCTV_V2_CONFIG &&
+          window.CCTV_V2_CONFIG.MASTERLIST_API_URL
+        ) ||
+        localStorage.getItem("cctv_masterlist_api_url") ||
+        ""
+      ).trim();
+    } catch (_) {
+      return "";
+    }
+  }
+
+
+  function splitQuickComposeObservation(fullObservation) {
+    const text = String(fullObservation || "").trim();
+
+    if (!text) {
+      return {
+        narrative: "",
+        actionRequest: ""
+      };
+    }
+
+    const marker = " Kindly ";
+    const index = text.lastIndexOf(marker);
+
+    if (index < 0) {
+      return {
+        narrative: text,
+        actionRequest: ""
+      };
+    }
+
+    return {
+      narrative: text.slice(0, index).trim(),
+      actionRequest: text.slice(index + 1).trim()
+    };
+  }
+
+
+  async function generateReportAI(rawInput, existingDraft = {}) {
+    // Always generate the existing rule-based report first.
+    // This remains the fallback and keeps COD action wording controlled
+    // by CCTV OPS rather than by AI.
+    const fallback =
+      generateReport(
+        rawInput,
+        existingDraft
+      );
+
+    const parts =
+      splitQuickComposeObservation(
+        fallback.observation
+      );
+
+    const apiUrl =
+      getAiQuickComposeApiUrl();
+
+    if (!apiUrl) {
+      return {
+        ...fallback,
+        aiUsed: false,
+        aiError: "Masterlist API URL is not configured."
+      };
+    }
+
+    try {
+      const response =
+        await fetch(
+          apiUrl,
+          {
+            method: "POST",
+
+            headers: {
+              "Content-Type":
+                "text/plain;charset=utf-8"
+            },
+
+            body:
+              JSON.stringify({
+                action:
+                  "aiQuickCompose",
+
+                rawNotes:
+                  String(rawInput || ""),
+
+                fallbackNarrative:
+                  parts.narrative,
+
+                classification:
+                  ""
+              })
+          }
+        );
+
+      if (!response.ok) {
+        throw new Error(
+          `AI request failed (${response.status}).`
+        );
+      }
+
+      const result =
+        await response.json();
+
+      if (
+        !result ||
+        result.success !== true ||
+        !String(result.observation || "").trim()
+      ) {
+        throw new Error(
+          result?.error ||
+          "AI returned no observation."
+        );
+      }
+
+      const aiNarrative =
+        String(
+          result.observation
+        ).trim();
+
+      // IMPORTANT:
+      // Gemini rewrites ONLY the factual observation.
+      // NOC/reminder wording still comes from the existing
+      // CCTV OPS rule-based generator.
+      const finalObservation =
+        [
+          aiNarrative,
+          parts.actionRequest
+        ]
+          .filter(Boolean)
+          .join(" ")
+          .trim();
+
+      return {
+        ...fallback,
+
+        observation:
+          finalObservation,
+
+        aiUsed:
+          true,
+
+        aiProvider:
+          result.provider ||
+          "gemini",
+
+        aiModel:
+          result.model ||
+          ""
+      };
+
+    } catch (error) {
+      console.warn(
+        "[CCTV Quick Compose AI] Falling back to standard composer:",
+        error
+      );
+
+      return {
+        ...fallback,
+
+        aiUsed:
+          false,
+
+        aiError:
+          error?.message ||
+          String(error)
+      };
+    }
+  }
+
   return {
     getDraft,
     saveDraft,
@@ -747,6 +921,7 @@ window.CCTV_REPORT_SERVICE = (function () {
     searchCodeOfConduct,
     parseQuickCompose,
     generateReport,
+    generateReportAI,
     buildReportPlainText,
     buildReportHtml,
     copyAll
