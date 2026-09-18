@@ -742,6 +742,10 @@ window.CCTV_REPORT_SERVICE = (function () {
     try {
       return String(
         (
+          window.masterlistService &&
+          window.masterlistService.apiUrl
+        ) ||
+        (
           window.CCTV_V2_CONFIG &&
           window.CCTV_V2_CONFIG.MASTERLIST_API_URL
         ) ||
@@ -929,3 +933,4 @@ window.CCTV_REPORT_SERVICE = (function () {
 })();
 
 window.CctvReportService = window.CCTV_REPORT_SERVICE;
+
