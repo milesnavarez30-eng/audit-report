@@ -493,7 +493,7 @@
 
             <!-- Compact More Menu for Screenshot & Deletion Actions -->
             <div class="record-more-menu-wrap">
-              <button type="button" class="btn-action btn-more-trigger" title="More options">â‹¯</button>
+              <button type="button" class="btn-action btn-more-trigger" title="More options">...</button>
               <div class="record-dropdown-menu">
                 ${hasShot ? `
                   <button type="button" class="dropdown-item btn-action-copy btn-shot-copy">
