@@ -1,4 +1,4 @@
-﻿/**
+/**
  * CCTV OPS V2 - Main Application Orchestrator & Prototype Controller
  */
 
@@ -327,7 +327,7 @@
       const ampm = hours >= 12 ? "PM" : "AM";
       hours = hours % 12;
       hours = hours ? hours : 12;
-      return `Edited: ${month} ${day}, ${year} Â· ${hours}:${minutes} ${ampm}`;
+      return `Edited: ${month} ${day}, ${year}  -  ${hours}:${minutes} ${ampm}`;
     } catch (_) {
       return "";
     }
@@ -455,22 +455,22 @@
           <div class="record-info">
             <div class="record-main-line">
               <span class="record-date">${esc(formattedDate)}</span>
-              <span class="record-sep">Â·</span>
+              <span class="record-sep"> - </span>
               <span class="record-site" title="${esc(r.site || 'Site')}">${esc(r.site || 'Site')}</span>
               ${chipsHtml}
             </div>
             <div class="record-sub-line">
               <span class="record-campaign" title="${esc(r.account || 'General')}">${esc(r.account || 'General')}</span>
-              <span class="record-sep">Â·</span>
+              <span class="record-sep"> - </span>
               <span class="record-resp" title="${esc(r.supervisorRole || 'TL')}: ${esc(r.supervisorName || 'N/A')}">
                 <span class="sub-label">${esc(r.supervisorRole || 'TL')}:</span> <strong>${esc(r.supervisorName || 'N/A')}</strong>
               </span>
               ${r.subjectName ? `
-                <span class="record-sep">Â·</span>
+                <span class="record-sep"> - </span>
                 <span class="record-subj" title="Subject: ${esc(r.subjectName)}"><span class="sub-label">Subj:</span> ${esc(r.subjectName)}</span>
               ` : ''}
               ${lastEditedText ? `
-                <span class="record-sep">Â·</span>
+                <span class="record-sep"> - </span>
                 <span class="record-last-edited" title="${esc(lastEditedText)}">${esc(lastEditedText)}</span>
               ` : ''}
             </div>
@@ -562,14 +562,14 @@
         if (window.openFullScreenshotViewer) {
           window.openFullScreenshotViewer(
             report.screenshotData,
-            `${report.site || 'Site'} Â· ${report.account || 'EDR'}`,
-            `Observed: ${report.date || ''} ${report.timeObserved || ''} Â· Supervisor: ${report.supervisorName || 'N/A'}`
+            `${report.site || 'Site'}  -  ${report.account || 'EDR'}`,
+            `Observed: ${report.date || ''} ${report.timeObserved || ''}  -  Supervisor: ${report.supervisorName || 'N/A'}`
           );
         } else {
           openScreenshotViewer(
             report.screenshotData,
-            `${report.site || 'Site'} Â· ${report.account || 'EDR'}`,
-            `Observed: ${report.date || ''} ${report.timeObserved || ''} Â· Supervisor: ${report.supervisorName || 'N/A'}`
+            `${report.site || 'Site'}  -  ${report.account || 'EDR'}`,
+            `Observed: ${report.date || ''} ${report.timeObserved || ''}  -  Supervisor: ${report.supervisorName || 'N/A'}`
           );
         }
       };
@@ -813,7 +813,7 @@
     }
   }
 
-  // Update Live Preview in Column 3 â€” uses rich HTML so screenshots are visible
+  // Update Live Preview in Column 3 - uses rich HTML so screenshots are visible
   function updateLivePreview() {
     const previewBox = el("edrPreviewBox");
     if (!previewBox) return;
@@ -1716,7 +1716,7 @@
     tableBody.innerHTML = sortedItems.map((item, displayIdx) => {
       const { entry, origIdx } = item;
       const rowNum = displayIdx + 1;
-      const dateDisplay = entry.formattedDate || entry.rawDate || "â€”";
+      const dateDisplay = entry.formattedDate || entry.rawDate || "-";
       const auditor = entry.name || entry.auditorName || "Miles";
       const nocLower = String(entry.noc || "").toLowerCase();
       let nocBadgeClass = "badge-info";
@@ -3657,7 +3657,7 @@ function doPost(e) {
               class="form-control form-control-sm tl-floor-editor"
               data-original-tl="${encodeURIComponent(name)}"
               aria-label="Floor assignment for ${window.escapeHtml(shownName)}">
-              <option value="" ${manual === "" ? "selected" : ""}>Auto â€” ${window.escapeHtml(detected)}</option>
+              <option value="" ${manual === "" ? "selected" : ""}>Auto - ${window.escapeHtml(detected)}</option>
               <option value="${sorter.FLOOR.GROUND}" ${manual === sorter.FLOOR.GROUND ? "selected" : ""}>Ground Floor</option>
               <option value="${sorter.FLOOR.FIRST}" ${manual === sorter.FLOOR.FIRST ? "selected" : ""}>1st Floor</option>
               <option value="${sorter.FLOOR.SECOND}" ${manual === sorter.FLOOR.SECOND ? "selected" : ""}>2nd Floor</option>
@@ -4231,7 +4231,7 @@ function doPost(e) {
         const summarySpan = document.createElement("span");
         summarySpan.style.fontSize = "11.5px";
         summarySpan.style.color = "var(--text-muted)";
-        summarySpan.textContent = `(${rowsCount} row${rowsCount === 1 ? "" : "s"} Â· ${shotCount} screenshot${shotCount === 1 ? "" : "s"})`;
+        summarySpan.textContent = `(${rowsCount} row${rowsCount === 1 ? "" : "s"}  -  ${shotCount} screenshot${shotCount === 1 ? "" : "s"})`;
         titleWrap.appendChild(summarySpan);
       }
 
@@ -4296,7 +4296,7 @@ function doPost(e) {
       headerRow.appendChild(actionsWrap);
       blockEl.appendChild(headerRow);
 
-      // Content wrapper â€” hidden when block.dataHidden is true
+      // Content wrapper - hidden when block.dataHidden is true
       const contentWrapper = document.createElement("div");
       contentWrapper.className = "eod-block-content";
       if (block.dataHidden) {
@@ -4412,7 +4412,7 @@ function doPost(e) {
           delBtn.setAttribute("tabindex", "0");
           delBtn.setAttribute("aria-label", `Delete choice ${choiceText}`);
           delBtn.title = "Delete this choice";
-          delBtn.textContent = "âœ•";
+          delBtn.textContent = "x";
           delBtn.addEventListener("click", async (e) => {
             e.stopPropagation();
             const ok = await window.appConfirm({
@@ -4661,7 +4661,7 @@ function doPost(e) {
         removeBtn.type = "button";
         removeBtn.className = "eod-proof-remove";
         removeBtn.title = "Remove screenshot";
-        removeBtn.innerHTML = "âœ•";
+        removeBtn.innerHTML = "x";
         removeBtn.addEventListener("click", (e) => {
           e.stopPropagation();
           block.screenshots.splice(shotIdx, 1);
@@ -5277,7 +5277,7 @@ function doPost(e) {
         meta.style.color = "var(--text-muted)";
         const dDate = d.data?.date || "No date";
         const blocksCount = d.data?.blocks?.length || 0;
-        meta.textContent = `${d.savedAt || ""} Â· ${dDate} Â· ${blocksCount} block(s)`;
+        meta.textContent = `${d.savedAt || ""}  -  ${dDate}  -  ${blocksCount} block(s)`;
 
         info.appendChild(name);
         info.appendChild(meta);
@@ -5781,9 +5781,9 @@ function doPost(e) {
           pieces.push(`<strong>${followup}</strong> report${followup === 1 ? "" : "s"} need follow-up (1+ day)`);
         }
         if (email) {
-          pieces.push(`<strong>${email}</strong> report${email === 1 ? "" : "s"} reached 4 days â€” send email`);
+          pieces.push(`<strong>${email}</strong> report${email === 1 ? "" : "s"} reached 4 days - send email`);
         }
-        banner.innerHTML = `<svg class="icon icon-sm" viewBox="0 0 24 24" style="stroke:currentColor; flex-shrink:0;"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg> <span>${pieces.join(" Â· ")}</span>`;
+        banner.innerHTML = `<svg class="icon icon-sm" viewBox="0 0 24 24" style="stroke:currentColor; flex-shrink:0;"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg> <span>${pieces.join("  -  ")}</span>`;
       }
     }
 
@@ -5849,7 +5849,7 @@ function doPost(e) {
         img.alt = "Pending proof";
         thumbBtn.appendChild(img);
         thumbBtn.addEventListener("click", () => {
-          openScreenshotViewer(report.screenshotData, "Pending Incident Evidence", `${report.label || "Report"} Â· OM: ${report.om || "N/A"}`);
+          openScreenshotViewer(report.screenshotData, "Pending Incident Evidence", `${report.label || "Report"}  -  OM: ${report.om || "N/A"}`);
         });
       } else {
         thumbBtn.disabled = true;
@@ -5904,7 +5904,7 @@ function doPost(e) {
       const metaRow = document.createElement("div");
       metaRow.className = "pending-card-meta";
       const ageStr = pending.ageText(pending.reportAgeMs(report));
-      metaRow.textContent = `Reported ${report.reportDate || "N/A"} Â· Age ${ageStr} Â· Pending ${ageStr}`;
+      metaRow.textContent = `Reported ${report.reportDate || "N/A"}  -  Age ${ageStr}  -  Pending ${ageStr}`;
       body.appendChild(metaRow);
 
       const grid = document.createElement("div");
@@ -6343,7 +6343,7 @@ function doPost(e) {
           <div class="followup-card-head">
             <div style="display:flex; align-items:center; gap:8px;">
               <span class="followup-card-title">${window.escapeHtml(report.label || report.om || "Follow Up Report")}</span>
-              <span class="followup-card-meta">${window.escapeHtml(followup.formatDate(report.date))} Â· ${window.escapeHtml(report.om || "OM not set")}</span>
+              <span class="followup-card-meta">${window.escapeHtml(followup.formatDate(report.date))}  -  ${window.escapeHtml(report.om || "OM not set")}</span>
             </div>
             <span class="followup-status-pill ${statusClass}">${window.escapeHtml(report.status || "Waiting for TL")}</span>
           </div>
@@ -6732,7 +6732,7 @@ function doPost(e) {
       const pol = cctvReportDraft.referencedPolicy;
       banner.style.display = "flex";
       badge.textContent = `Internal Reference: Policy ${pol.num}`;
-      title.textContent = `${pol.title} (${pol.severity}) â€” Internal Context Only (Not in final report)`;
+      title.textContent = `${pol.title} (${pol.severity}) - Internal Context Only (Not in final report)`;
     } else {
       banner.style.display = "none";
     }
@@ -6832,7 +6832,7 @@ function doPost(e) {
       return `
         <div class="report-shot-item" data-index="${idx}" title="Click to view full image">
           <img src="${src}" alt="Screenshot ${idx + 1}">
-          <button type="button" class="report-shot-remove" data-index="${idx}" title="Remove screenshot">âœ•</button>
+          <button type="button" class="report-shot-remove" data-index="${idx}" title="Remove screenshot">x</button>
         </div>
       `;
     }).join("");
@@ -7566,7 +7566,7 @@ function doPost(e) {
           if (hrAssignedInput) hrAssignedInput.value = item.hr || "";
           if (hrSaveBtn) hrSaveBtn.textContent = "Update";
           hrSiteInput?.focus();
-          setHrStatus(`Editing assignment for ${item.site} Â· ${item.omTeam}`, "local");
+          setHrStatus(`Editing assignment for ${item.site}  -  ${item.omTeam}`, "local");
         });
       });
 
@@ -7579,10 +7579,10 @@ function doPost(e) {
 
           const approved = await (window.appConfirm ? window.appConfirm({
             title: "Delete HR Assignment?",
-            message: `Remove assignment for ${item.site} Â· ${item.omTeam} Â· ${item.hr}?`,
+            message: `Remove assignment for ${item.site}  -  ${item.omTeam}  -  ${item.hr}?`,
             confirmText: "Delete Assignment",
             tone: "danger"
-          }) : window.confirm(`Delete assignment for ${item.site} Â· ${item.omTeam}?`));
+          }) : window.confirm(`Delete assignment for ${item.site}  -  ${item.omTeam}?`));
 
           if (!approved) return;
 
@@ -7754,7 +7754,7 @@ function doPost(e) {
     function renderHistoryPreview(entry) {
       if (!previewContainer) return;
       if (!entry) {
-        if (selectedWsBadge) selectedWsBadge.textContent = "â€”";
+        if (selectedWsBadge) selectedWsBadge.textContent = "-";
         previewContainer.innerHTML = '<div class="history-preview-empty">Select a history item to inspect affected reports or data.</div>';
         return;
       }
@@ -7861,7 +7861,7 @@ ${escapeHtml(JSON.stringify(entry.after || entry.before, null, 2))}
 
     // =========================================================================
     // GLOBAL KEYBOARD SHORTCUTS: Undo (Ctrl+Z) and Redo (Ctrl+Y / Ctrl+Shift+Z)
-    // Items 11 and 12 â€” works from any workspace when not typing in an input field
+    // Items 11 and 12 - works from any workspace when not typing in an input field
     // =========================================================================
     document.addEventListener("keydown", async (event) => {
       if (!(event.ctrlKey || event.metaKey)) return;
@@ -7948,7 +7948,7 @@ ${escapeHtml(JSON.stringify(entry.after || entry.before, null, 2))}
     // â”€â”€ Utility helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const $ = id => document.getElementById(id);
     const esc = t => String(t ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-    const dt = v => { if (!v) return 'â€”'; const d = new Date(v); if (isNaN(d)) return 'â€”'; return d.toLocaleString([],{month:'short',day:'numeric',year:'numeric',hour:'2-digit',minute:'2-digit'}); };
+    const dt = v => { if (!v) return '-'; const d = new Date(v); if (isNaN(d)) return '-'; return d.toLocaleString([],{month:'short',day:'numeric',year:'numeric',hour:'2-digit',minute:'2-digit'}); };
     const cleanUsername = u => String(u||'').trim().replace(/^@+/,'');
     const usernameLabel = u => { const c = cleanUsername(u); return c ? `@${c}` : ''; };
 
@@ -8009,7 +8009,7 @@ ${escapeHtml(JSON.stringify(entry.after || entry.before, null, 2))}
           const oldHtml = btn.innerHTML;
           btn.classList.add('is-copied');
           const span = btn.querySelector('span');
-          if (span) span.textContent = label; else btn.textContent = `âœ“ ${label}`;
+          if (span) span.textContent = label; else btn.textContent = `OK ${label}`;
           setTimeout(() => { btn.classList.remove('is-copied'); btn.innerHTML = oldHtml; }, 1800);
         }
         showToast('Copied to clipboard.');
@@ -8318,8 +8318,8 @@ ${escapeHtml(JSON.stringify(entry.after || entry.before, null, 2))}
           <td><strong>${esc(item.actor_username||'admin')}</strong></td>
           <td><span class="admin-badge badge-${esc(String(item.actor_role||'user').toLowerCase())}">${esc(item.actor_role||'admin')}</span></td>
           <td><strong>${esc(item.action||'event')}</strong></td>
-          <td>${esc(item.target_item||'â€”')}</td>
-          <td><code>${esc(detailsStr||'â€”')}</code></td>
+          <td>${esc(item.target_item||'-')}</td>
+          <td><code>${esc(detailsStr||'-')}</code></td>
         </tr>`;
       }).join('');
     }
@@ -8349,7 +8349,7 @@ ${escapeHtml(JSON.stringify(entry.after || entry.before, null, 2))}
       try {
         const newAcc = await svc.createAccount({ name, username, password, role });
         const roleLabel = role === 'super_admin' ? 'Super Admin' : (role === 'admin' ? 'Admin' : 'User');
-        setStatus(`${newAcc.display_name} created and approved Â· @${newAcc.username} Â· Role: ${roleLabel}`, 'success');
+        setStatus(`${newAcc.display_name} created and approved  -  @${newAcc.username}  -  Role: ${roleLabel}`, 'success');
         showToast(`${newAcc.display_name} account created.`);
         if ($('adminCreateName')) $('adminCreateName').value = '';
         if ($('adminCreateUsername')) $('adminCreateUsername').value = '';
@@ -8383,7 +8383,7 @@ ${escapeHtml(JSON.stringify(entry.after || entry.before, null, 2))}
       accessEditingUser = item;
       if ($('adminAccessTargetId')) $('adminAccessTargetId').value = item.id;
       if ($('adminAccessDisplayName')) $('adminAccessDisplayName').value = item.display_name || '';
-      if ($('adminAccessUserLabel')) $('adminAccessUserLabel').textContent = `${item.display_name||item.username||'User'} Â· ${usernameLabel(item.username)}`;
+      if ($('adminAccessUserLabel')) $('adminAccessUserLabel').textContent = `${item.display_name||item.username||'User'}  -  ${usernameLabel(item.username)}`;
 
       const roleSelect = $('adminAccessRole');
       const superBadge = $('superAdminActiveBadge');
@@ -8587,7 +8587,7 @@ ${escapeHtml(JSON.stringify(entry.after || entry.before, null, 2))}
       };
       await svc.saveOperationalSettings(settings);
       const notice = $('adminSaveSettingsNotice');
-      if (notice) { notice.textContent = 'âœ“ Settings saved successfully.'; setTimeout(() => { notice.textContent = ''; }, 3500); }
+      if (notice) { notice.textContent = 'OK Settings saved successfully.'; setTimeout(() => { notice.textContent = ''; }, 3500); }
       showToast('Operational settings saved.');
     }
 

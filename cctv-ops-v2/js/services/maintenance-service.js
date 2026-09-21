@@ -1,4 +1,4 @@
-/**
+﻿/**
  * CCTV OPS V2 - Maintenance Service
  * Authoritative 1:1 Functional Parity with V1 Maintenance Report
  * Multi-block incident reports, side-by-side incident/remarks,
@@ -552,8 +552,44 @@
     return btoa(binary);
   }
 
+  async function maintenanceJsonpWithRetry(
+    url,
+    params,
+    timeoutMs = 60000,
+    attempts = 3
+  ) {
+    let lastError = null;
+
+    for (let attempt = 1; attempt <= attempts; attempt++) {
+      try {
+        return await maintenanceJsonp(
+          url,
+          params,
+          timeoutMs
+        );
+      } catch (error) {
+        lastError = error;
+
+        if (attempt >= attempts) {
+          throw error;
+        }
+
+        const delay =
+          attempt === 1
+            ? 1500
+            : 3000;
+
+        await new Promise(resolve =>
+          setTimeout(resolve, delay)
+        );
+      }
+    }
+
+    throw lastError || new Error("Upload failed.");
+  }
+
   async function uploadMaintenanceChunks(url, submissionId, chunks, onProgress) {
-    const concurrency = 4;
+    const concurrency = 2;
     let nextIndex = 0;
     let completed = 0;
 
@@ -562,13 +598,13 @@
         const index = nextIndex++;
         if (index >= chunks.length) return;
 
-        const response = await maintenanceJsonp(url, {
+        const response = await maintenanceJsonpWithRetry(url, {
           action: "uploadChunk",
           submissionId,
           index,
           total: chunks.length,
           data: chunks[index]
-        }, 30000);
+        }, 60000, 3);
 
         if (!response?.ok) {
           throw new Error(response?.error || `Chunk ${index + 1} upload failed.`);
@@ -586,49 +622,336 @@
     );
   }
 
-  async function sendMaintenanceReportToGoogleSheets(url, state, onProgress) {
-    if (!isValidAppsScriptWebAppUrl(url)) {
-      throw new Error("Invalid Google Sheets Apps Script Web App URL.");
-    }
+  async function uploadEncodedMaintenancePayload(
+    url,
+    transportId,
+    payload,
+    onProgress,
+    commitTimeout = 240000
+  ) {
+    const encoded = utf8ToBase64(
+      JSON.stringify(payload)
+    );
 
-    const payload = buildMaintenanceSheetsPayload(state);
-    const rowCount = payload.blocks.reduce((sum, b) => sum + b.rows.length, 0);
-    if (!rowCount) {
-      throw new Error("No maintenance data to send. Paste lanes/data first.");
-    }
-
-    // Compress screenshots in payload
-    for (const block of payload.blocks) {
-      if (Array.isArray(block.screenshots)) {
-        for (let i = 0; i < block.screenshots.length; i++) {
-          block.screenshots[i] = await compressBase64(block.screenshots[i]);
-        }
-      }
-    }
-
-    const encoded = utf8ToBase64(JSON.stringify(payload));
     const chunkSize = 4200;
     const chunks = [];
 
-    for (let i = 0; i < encoded.length; i += chunkSize) {
-      chunks.push(encoded.slice(i, i + chunkSize));
+    for (
+      let i = 0;
+      i < encoded.length;
+      i += chunkSize
+    ) {
+      chunks.push(
+        encoded.slice(
+          i,
+          i + chunkSize
+        )
+      );
     }
 
-    if (!chunks.length) throw new Error("Nothing to send.");
-
-    await uploadMaintenanceChunks(url, payload.submissionId, chunks, onProgress);
-
-    const committed = await maintenanceJsonp(url, {
-      action: "commit",
-      submissionId: payload.submissionId,
-      total: chunks.length
-    }, 90000);
-
-    if (!committed?.ok || committed?.state !== "success") {
-      throw new Error(committed?.error || `Receiver state: ${committed?.state || "unknown"}.`);
+    if (!chunks.length) {
+      throw new Error(
+        "Nothing to send."
+      );
     }
 
-    return committed;
+    await uploadMaintenanceChunks(
+      url,
+      transportId,
+      chunks,
+      onProgress
+    );
+
+    return maintenanceJsonp(
+      url,
+      {
+        action: "commit",
+        submissionId: transportId,
+        total: chunks.length
+      },
+      commitTimeout
+    );
+  }
+
+
+  async function buildMaintenanceEvidencePayload(
+    sourcePayload
+  ) {
+    const evidenceBlocks = [];
+
+    for (
+      const block of sourcePayload.blocks || []
+    ) {
+      const screenshots =
+        Array.isArray(block.screenshots)
+          ? block.screenshots
+          : [];
+
+      const compressed = [];
+
+      for (
+        let i = 0;
+        i < screenshots.length;
+        i++
+      ) {
+        compressed.push(
+          await compressBase64(
+            screenshots[i]
+          )
+        );
+      }
+
+      evidenceBlocks.push({
+        blockNumber:
+          block.blockNumber,
+        screenshots:
+          compressed
+      });
+    }
+
+    return {
+      action:
+        "attachMaintenanceEvidence",
+
+      submissionId:
+        sourcePayload.submissionId,
+
+      destinationKey:
+        sourcePayload.destinationKey,
+
+      blocks:
+        evidenceBlocks
+    };
+  }
+
+
+  async function sendMaintenanceReportToGoogleSheets(
+    url,
+    state,
+    onProgress
+  ) {
+    if (
+      !isValidAppsScriptWebAppUrl(url)
+    ) {
+      throw new Error(
+        "Invalid Google Sheets Apps Script Web App URL."
+      );
+    }
+
+    const payload =
+      buildMaintenanceSheetsPayload(
+        state
+      );
+
+    const rowCount =
+      payload.blocks.reduce(
+        (sum, block) =>
+          sum +
+          block.rows.length,
+        0
+      );
+
+    if (!rowCount) {
+      throw new Error(
+        "No maintenance data to send. Paste lanes/data first."
+      );
+    }
+
+
+    // ========================================================
+    // PHASE 1
+    // FAST REPORT COMMIT
+    //
+    // Do NOT send image data yet.
+    // Only rows, remarks, and screenshot counts are sent.
+    // ========================================================
+
+    const fastPayload = {
+      action:
+        "appendMaintenanceReportFast",
+
+      submissionId:
+        payload.submissionId,
+
+      destinationKey:
+        payload.destinationKey,
+
+      sheetId:
+        payload.sheetId,
+
+      reportTitle:
+        payload.reportTitle,
+
+      reportDate:
+        payload.reportDate,
+
+      date:
+        payload.date,
+
+      sentAt:
+        payload.sentAt,
+
+      blocks:
+        payload.blocks.map(
+          block => ({
+            blockNumber:
+              block.blockNumber,
+
+            rows:
+              block.rows,
+
+            remarks:
+              block.remarks,
+
+            screenshotCount:
+              Array.isArray(
+                block.screenshots
+              )
+                ? block.screenshots.length
+                : 0
+          })
+        )
+    };
+
+
+    const fastTransportId =
+      payload.submissionId +
+      "_fast";
+
+
+    const committed =
+      await uploadEncodedMaintenancePayload(
+        url,
+        fastTransportId,
+        fastPayload,
+        onProgress,
+        120000
+      );
+
+
+    if (
+      !committed?.ok ||
+      committed?.state !==
+        "success"
+    ) {
+      throw new Error(
+        committed?.error ||
+        `Receiver state: ${
+          committed?.state ||
+          "unknown"
+        }.`
+      );
+    }
+
+
+    const screenshotCount =
+      payload.blocks.reduce(
+        (total, block) =>
+          total +
+          (
+            Array.isArray(
+              block.screenshots
+            )
+              ? block.screenshots.length
+              : 0
+          ),
+        0
+      );
+
+
+    // ========================================================
+    // PHASE 2
+    // BACKGROUND SCREENSHOT UPLOAD
+    //
+    // Do NOT await this.
+    // The report is already visible in Google Sheets.
+    // ========================================================
+
+    if (screenshotCount > 0) {
+      Promise.resolve()
+        .then(async () => {
+
+          const evidencePayload =
+            await buildMaintenanceEvidencePayload(
+              payload
+            );
+
+          const evidenceTransportId =
+            payload.submissionId +
+            "_evidence";
+
+          const evidenceResult =
+            await uploadEncodedMaintenancePayload(
+              url,
+              evidenceTransportId,
+              evidencePayload,
+              null,
+              240000
+            );
+
+          if (
+            !evidenceResult?.ok ||
+            evidenceResult?.state !==
+              "success"
+          ) {
+            throw new Error(
+              evidenceResult?.error ||
+              "Background screenshot upload failed."
+            );
+          }
+
+          console.info(
+            "[Maintenance Fast Send] Screenshot evidence upload complete.",
+            evidenceResult
+          );
+
+          if (
+            typeof window.showToast ===
+            "function"
+          ) {
+            window.showToast(
+              `Maintenance evidence upload complete (${screenshotCount} screenshot${screenshotCount === 1 ? "" : "s"}).`,
+              "success"
+            );
+          }
+
+        })
+        .catch(error => {
+
+          console.error(
+            "[Maintenance Fast Send] Background evidence upload failed:",
+            error
+          );
+
+          if (
+            typeof window.showToast ===
+            "function"
+          ) {
+            window.showToast(
+              "Maintenance report was sent, but screenshot evidence is still pending. Please keep this page open and retry if needed.",
+              "warning"
+            );
+          }
+
+        });
+    }
+
+
+    return {
+      ...committed,
+
+      fastSend:
+        true,
+
+      submissionId:
+        payload.submissionId,
+
+      screenshotCount:
+        screenshotCount,
+
+      evidencePending:
+        screenshotCount > 0
+    };
   }
 
   function maintenanceReportPlainTextForSheets(state) {
@@ -859,4 +1182,7 @@
 
   root.maintenanceService = maintenanceService;
 })(window);
+
+
+
 

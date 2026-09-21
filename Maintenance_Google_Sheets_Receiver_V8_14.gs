@@ -231,11 +231,17 @@ function doGet(e) {
 
       const payload = JSON.parse(decodeBase64Utf8_(parts.join('')));
 
-      if (payload.action !== 'appendMaintenanceReport') {
+      let result;
+
+      if (payload.action === 'appendMaintenanceReport') {
+        result = appendMaintenanceReport_(payload);
+      } else if (payload.action === 'appendMaintenanceReportFast') {
+        result = appendMaintenanceReportFast_(payload);
+      } else if (payload.action === 'attachMaintenanceEvidence') {
+        result = attachMaintenanceEvidence_(payload);
+      } else {
         throw new Error('Unsupported payload action: ' + payload.action);
       }
-
-      const result = appendMaintenanceReport_(payload);
 
       for (let i = 0; i < total; i++) {
         cache.remove(chunkKey_(submissionId, i));
@@ -715,6 +721,713 @@ function appendMaintenanceReport_(payload) {
   }
 }
 
+
+/**
+ * FAST SEND PHASE 1
+ *
+ * Writes the Maintenance report rows, remarks, and screenshot slots first.
+ * Screenshot image data is intentionally NOT processed here.
+ *
+ * This keeps the visible Google Sheets report fast while preserving the
+ * existing final rows > screenshots > remarks layout.
+ */
+function appendMaintenanceReportFast_(payload) {
+  const lock = LockService.getScriptLock();
+  lock.waitLock(30000);
+
+  try {
+    const submissionId = String(payload.submissionId || '').trim();
+    const destinationKey = String(payload.destinationKey || '').trim();
+
+    if (!submissionId) {
+      throw new Error('Missing submissionId.');
+    }
+
+    if (!destinationKey) {
+      throw new Error(
+        'Missing required destinationKey in Maintenance report submission.'
+      );
+    }
+
+    const cache = CacheService.getScriptCache();
+    const resultKey = 'maintenance_fast_result_' + submissionId;
+    const manifestKey = 'maintenance_fast_manifest_' + submissionId;
+
+    // Idempotency protection:
+    // if the browser repeats the same fast commit, do NOT duplicate the report.
+    const existingResult = cache.get(resultKey);
+
+    if (existingResult) {
+      try {
+        return JSON.parse(existingResult);
+      } catch (_) {}
+    }
+
+    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    const resolved = getMaintenanceDestinationSheet_(ss, destinationKey);
+    const sheet = resolved.sheet;
+    const destination = resolved.destination;
+
+    ensureColumns_(sheet);
+
+    const reportTitle = String(
+      payload.reportTitle ||
+      destination.label ||
+      'Maintenance Report'
+    ).trim();
+
+    const reportDate = formatDateForDisplay_(payload.reportDate);
+    const fullTitle = reportDate
+      ? reportTitle + ' (' + reportDate + ')'
+      : reportTitle;
+
+    const oldLastRow = sheet.getLastRow();
+    const startingRow = Math.max(oldLastRow + 1, 1);
+
+    let row = startingRow;
+
+    ensureRowsAvailable_(sheet, row + 2);
+
+    // Main title
+    safelyUnmergeRowArea_(sheet, row, 1);
+
+    sheet.getRange(row, 1, 1, 7).merge();
+
+    sheet.getRange(row, 1)
+      .setValue(fullTitle)
+      .setFontWeight('bold')
+      .setFontSize(11)
+      .setBackground('#ffffff')
+      .setFontColor('#111111')
+      .setHorizontalAlignment('left')
+      .setVerticalAlignment('middle');
+
+    sheet.setRowHeight(row, 24);
+    row += 1;
+
+    // Spacing after title
+    ensureRowsAvailable_(sheet, row);
+    safelyUnmergeRowArea_(sheet, row, 1);
+
+    sheet.getRange(row, 1, 1, 7)
+      .clearContent()
+      .setBackground('#ffffff');
+
+    sheet.setRowHeight(row, 10);
+    row += 1;
+
+    const blocks = Array.isArray(payload.blocks)
+      ? payload.blocks
+      : [];
+
+    let totalRows = 0;
+    let totalExpectedImages = 0;
+    let totalRemarks = 0;
+
+    const blockResults = [];
+
+    blocks.forEach(function(block, blockIndex) {
+      const rows = Array.isArray(block.rows)
+        ? block.rows
+        : [];
+
+      const screenshotCount = Math.max(
+        0,
+        Number(block.screenshotCount || 0)
+      );
+
+      const remarks = Array.isArray(block.remarks)
+        ? block.remarks
+        : [];
+
+      if (
+        !rows.length &&
+        !screenshotCount &&
+        !remarks.length
+      ) {
+        return;
+      }
+
+      const blockNumber = Number(
+        block.blockNumber ||
+        blockIndex + 1
+      );
+
+      const blockStartRow = row;
+      const screenshotAnchorRows = [];
+
+      // ------------------------------------------------------
+      // 1. DATA TABLE
+      // ------------------------------------------------------
+
+      ensureRowsAvailable_(sheet, row);
+      safelyUnmergeRowArea_(sheet, row, 1);
+
+      sheet.getRange(row, 1, 1, 7)
+        .setValues([HEADERS])
+        .setBackground('#202124')
+        .setFontColor('#ffffff')
+        .setFontWeight('bold')
+        .setFontSize(9)
+        .setHorizontalAlignment('center')
+        .setVerticalAlignment('middle');
+
+      sheet.setRowHeight(row, 22);
+      row += 1;
+
+      if (rows.length) {
+        const normalizedRows = rows.map(normalizeSevenColumns_);
+
+        ensureRowsAvailable_(
+          sheet,
+          row + normalizedRows.length - 1
+        );
+
+        safelyUnmergeRowArea_(
+          sheet,
+          row,
+          normalizedRows.length
+        );
+
+        sheet.getRange(
+          row,
+          1,
+          normalizedRows.length,
+          7
+        )
+          .setValues(normalizedRows)
+          .setBackground('#ffffff')
+          .setFontColor('#111111')
+          .setFontSize(9)
+          .setVerticalAlignment('middle')
+          .setWrap(true);
+
+        sheet.getRange(
+          row,
+          1,
+          normalizedRows.length,
+          6
+        ).setHorizontalAlignment('center');
+
+        sheet.getRange(
+          row,
+          7,
+          normalizedRows.length,
+          1
+        ).setHorizontalAlignment('left');
+
+        for (
+          let r = 0;
+          r < normalizedRows.length;
+          r++
+        ) {
+          sheet.setRowHeight(row + r, 20);
+        }
+
+        totalRows += normalizedRows.length;
+        row += normalizedRows.length;
+      }
+
+      // ------------------------------------------------------
+      // 2. RESERVE SCREENSHOT ROWS
+      // ------------------------------------------------------
+
+      if (screenshotCount > 0) {
+        totalExpectedImages += screenshotCount;
+
+        ensureRowsAvailable_(sheet, row);
+        safelyUnmergeRowArea_(sheet, row, 1);
+
+        sheet.getRange(row, 1, 1, 7).merge();
+
+        sheet.getRange(row, 1)
+          .setValue(
+            'CCTV SCREENSHOT PROOF — BLOCK ' +
+            blockNumber +
+            ' (' +
+            screenshotCount +
+            ')'
+          )
+          .setFontWeight('bold')
+          .setFontSize(9)
+          .setFontColor('#111111')
+          .setBackground('#eef4ff')
+          .setHorizontalAlignment('left')
+          .setVerticalAlignment('middle');
+
+        sheet.setRowHeight(row, 22);
+        row += 1;
+
+        for (
+          let imageIndex = 0;
+          imageIndex < screenshotCount;
+          imageIndex++
+        ) {
+          const imageRow = row;
+
+          ensureRowsAvailable_(sheet, imageRow);
+          safelyUnmergeRowArea_(sheet, imageRow, 1);
+
+          sheet.getRange(imageRow, 1, 1, 7)
+            .clearContent()
+            .setBackground('#ffffff');
+
+          const imageRange =
+            sheet.getRange(
+              imageRow,
+              2,
+              1,
+              5
+            );
+
+          imageRange.merge();
+
+          imageRange
+            .setBackground('#ffffff')
+            .setHorizontalAlignment('center')
+            .setVerticalAlignment('middle');
+
+          sheet.setRowHeight(
+            imageRow,
+            235
+          );
+
+          screenshotAnchorRows.push(
+            imageRow
+          );
+
+          row += 1;
+        }
+      }
+
+      // ------------------------------------------------------
+      // 3. REMARKS
+      // ------------------------------------------------------
+
+      if (remarks.length) {
+        const remarksText =
+          remarks.join('\n');
+
+        ensureRowsAvailable_(sheet, row);
+        safelyUnmergeRowArea_(sheet, row, 1);
+
+        sheet.getRange(row, 1, 1, 7).merge();
+
+        sheet.getRange(row, 1)
+          .setValue(
+            'Remarks: ' +
+            remarksText
+          )
+          .setBackground('#f5faf3')
+          .setFontColor('#111111')
+          .setFontSize(9)
+          .setWrap(true)
+          .setHorizontalAlignment('left')
+          .setVerticalAlignment('middle');
+
+        totalRemarks += remarks.length;
+
+        sheet.setRowHeight(
+          row,
+          Math.max(
+            26,
+            18 + remarks.length * 12
+          )
+        );
+
+        row += 1;
+      }
+
+      blockResults.push({
+        blockNumber: blockNumber,
+        blockStartRow: blockStartRow,
+        blockEndRow: row,
+        dataRowCount: rows.length,
+        expectedImages: screenshotCount,
+        insertedImages: 0,
+        imageAnchorRows: screenshotAnchorRows,
+        remarksCount: remarks.length
+      });
+
+      // Space before next block
+      ensureRowsAvailable_(sheet, row);
+      safelyUnmergeRowArea_(sheet, row, 1);
+
+      sheet.getRange(row, 1, 1, 7)
+        .clearContent()
+        .setBackground('#ffffff');
+
+      sheet.setRowHeight(row, 12);
+      row += 1;
+    });
+
+    SpreadsheetApp.flush();
+
+    const result = {
+      submissionId: submissionId,
+      destinationKey: destinationKey,
+      destinationLabel: destination.label,
+      spreadsheetName: ss.getName(),
+      sheetName: sheet.getName(),
+      sheetId: sheet.getSheetId(),
+      previousLastRow: oldLastRow,
+      startingRow: startingRow,
+      endingRow: Math.max(
+        startingRow,
+        row - 1
+      ),
+      actualLastRow: sheet.getLastRow(),
+      rowCount: totalRows,
+      screenshotCount: totalExpectedImages,
+      insertedImageCount: 0,
+      remarksCount: totalRemarks,
+      evidenceState:
+        totalExpectedImages > 0
+          ? 'pending'
+          : 'complete',
+      blockResults: blockResults
+    };
+
+    const manifest = {
+      submissionId: submissionId,
+      destinationKey: destinationKey,
+      sheetId: sheet.getSheetId(),
+      expectedImages: totalExpectedImages,
+      blocks: blockResults.map(function(item) {
+        return {
+          blockNumber: item.blockNumber,
+          expectedImages: item.expectedImages,
+          imageAnchorRows:
+            item.imageAnchorRows
+        };
+      })
+    };
+
+    // Keep retry/idempotency information for 6 hours.
+    cache.put(
+      resultKey,
+      JSON.stringify(result),
+      21600
+    );
+
+    cache.put(
+      manifestKey,
+      JSON.stringify(manifest),
+      21600
+    );
+
+    return result;
+
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+
+/**
+ * FAST SEND PHASE 2
+ *
+ * Adds the actual screenshot images into the rows reserved by
+ * appendMaintenanceReportFast_().
+ */
+function attachMaintenanceEvidence_(payload) {
+  const lock = LockService.getScriptLock();
+  lock.waitLock(30000);
+
+  try {
+    const submissionId =
+      String(
+        payload.submissionId || ''
+      ).trim();
+
+    if (!submissionId) {
+      throw new Error(
+        'Missing submissionId for evidence upload.'
+      );
+    }
+
+    const cache =
+      CacheService.getScriptCache();
+
+    const manifestKey =
+      'maintenance_fast_manifest_' +
+      submissionId;
+
+    const completedKey =
+      'maintenance_evidence_complete_' +
+      submissionId;
+
+    const completed =
+      cache.get(completedKey);
+
+    // Safe duplicate protection.
+    if (completed) {
+      try {
+        return JSON.parse(completed);
+      } catch (_) {}
+    }
+
+    const manifestText =
+      cache.get(manifestKey);
+
+    if (!manifestText) {
+      throw new Error(
+        'Fast-send screenshot manifest expired or was not found.'
+      );
+    }
+
+    const manifest =
+      JSON.parse(manifestText);
+
+    const ss =
+      SpreadsheetApp.openById(
+        SPREADSHEET_ID
+      );
+
+    const resolved =
+      getMaintenanceDestinationSheet_(
+        ss,
+        manifest.destinationKey
+      );
+
+    const sheet = resolved.sheet;
+
+    if (
+      Number(sheet.getSheetId()) !==
+      Number(manifest.sheetId)
+    ) {
+      throw new Error(
+        'Maintenance destination sheet changed before evidence upload.'
+      );
+    }
+
+    const evidenceBlocks =
+      Array.isArray(payload.blocks)
+        ? payload.blocks
+        : [];
+
+    const insertedCells = [];
+    let expectedImages = 0;
+
+    evidenceBlocks.forEach(
+      function(block) {
+        const blockNumber =
+          Number(block.blockNumber || 0);
+
+        const manifestBlock =
+          (manifest.blocks || []).find(
+            function(item) {
+              return Number(
+                item.blockNumber
+              ) === blockNumber;
+            }
+          );
+
+        if (!manifestBlock) {
+          throw new Error(
+            'Screenshot manifest not found for Block ' +
+            blockNumber +
+            '.'
+          );
+        }
+
+        const screenshots =
+          Array.isArray(block.screenshots)
+            ? block.screenshots.filter(
+                function(value) {
+                  return /^data:image\//i.test(
+                    String(value || '')
+                  );
+                }
+              )
+            : [];
+
+        const anchorRows =
+          Array.isArray(
+            manifestBlock.imageAnchorRows
+          )
+            ? manifestBlock.imageAnchorRows
+            : [];
+
+        if (
+          screenshots.length !==
+          anchorRows.length
+        ) {
+          throw new Error(
+            'Block ' +
+            blockNumber +
+            ' screenshot count mismatch. Expected ' +
+            anchorRows.length +
+            ', received ' +
+            screenshots.length +
+            '.'
+          );
+        }
+
+        expectedImages +=
+          screenshots.length;
+
+        screenshots.forEach(
+          function(
+            dataUrl,
+            imageIndex
+          ) {
+            const imageRow =
+              Number(
+                anchorRows[imageIndex]
+              );
+
+            ensureRowsAvailable_(
+              sheet,
+              imageRow
+            );
+
+            safelyUnmergeRowArea_(
+              sheet,
+              imageRow,
+              1
+            );
+
+            sheet.getRange(
+              imageRow,
+              1,
+              1,
+              7
+            )
+              .clearContent()
+              .setBackground(
+                '#ffffff'
+              );
+
+            const imageRange =
+              sheet.getRange(
+                imageRow,
+                2,
+                1,
+                5
+              );
+
+            imageRange.merge();
+
+            imageRange
+              .setBackground(
+                '#ffffff'
+              )
+              .setHorizontalAlignment(
+                'center'
+              )
+              .setVerticalAlignment(
+                'middle'
+              );
+
+            sheet.setRowHeight(
+              imageRow,
+              235
+            );
+
+            const cellImage =
+              SpreadsheetApp
+                .newCellImage()
+                .setSourceUrl(
+                  String(dataUrl)
+                )
+                .setAltTextTitle(
+                  'CCTV Screenshot Proof ' +
+                  (imageIndex + 1) +
+                  ' — Block ' +
+                  blockNumber
+                )
+                .setAltTextDescription(
+                  'Maintenance block ' +
+                  blockNumber +
+                  ' screenshot.'
+                )
+                .build();
+
+            imageRange
+              .getCell(1, 1)
+              .setValue(cellImage);
+
+            insertedCells.push({
+              blockNumber:
+                blockNumber,
+              imageIndex:
+                imageIndex,
+              cell:
+                imageRange.getCell(
+                  1,
+                  1
+                )
+            });
+          }
+        );
+      }
+    );
+
+    SpreadsheetApp.flush();
+
+    insertedCells.forEach(
+      function(item) {
+        if (
+          !isVerifiedCellImage_(
+            item.cell
+          )
+        ) {
+          throw new Error(
+            'Block ' +
+            item.blockNumber +
+            ' screenshot ' +
+            (item.imageIndex + 1) +
+            ' was not stored as an in-cell image.'
+          );
+        }
+      }
+    );
+
+    if (
+      expectedImages !==
+      Number(
+        manifest.expectedImages || 0
+      )
+    ) {
+      throw new Error(
+        'Final screenshot count mismatch. Expected ' +
+        manifest.expectedImages +
+        ', received ' +
+        expectedImages +
+        '.'
+      );
+    }
+
+    const result = {
+      submissionId: submissionId,
+      destinationKey:
+        manifest.destinationKey,
+      sheetName:
+        sheet.getName(),
+      sheetId:
+        sheet.getSheetId(),
+      screenshotCount:
+        expectedImages,
+      insertedImageCount:
+        insertedCells.length,
+      evidenceState:
+        'complete'
+    };
+
+    cache.put(
+      completedKey,
+      JSON.stringify(result),
+      21600
+    );
+
+    return result;
+
+  } finally {
+    lock.releaseLock();
+  }
+}
+
 function normalizeSevenColumns_(source) {
   const row = Array.isArray(source) ? source.slice() : [];
 
@@ -816,3 +1529,4 @@ function testSheetConnection() {
 
   return results;
 }
+
