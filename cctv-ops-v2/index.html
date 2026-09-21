@@ -7,12 +7,12 @@
 
   <!-- Client-Side Security Meta Policies (Note: X-Content-Type-Options, HSTS, frame-ancestors, and Permissions-Policy must be set via HTTP response headers on the hosting server/CDN) -->
   <meta name="referrer" content="strict-origin-when-cross-origin">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://afxgfyuudqujueeooplj.supabase.co https://cdn.jsdelivr.net https://script.google.com https://script.googleusercontent.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; frame-src 'self' https://docs.google.com https://*.google.com https://611systems.com https://10.10.10.20:8081; connect-src 'self' https://afxgfyuudqujueeooplj.supabase.co wss://afxgfyuudqujueeooplj.supabase.co https://docs.google.com https://script.google.com https://script.googleusercontent.com https://611systems.com https://10.10.10.20:8081; object-src 'none'; base-uri 'self';">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://afxgfyuudqujueeooplj.supabase.co https://cdn.jsdelivr.net https://alcdn.msauth.net https://script.google.com https://script.googleusercontent.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; frame-src 'self' https://docs.google.com https://*.google.com https://611systems.com https://10.10.10.20:8081 https://login.microsoftonline.com; connect-src 'self' https://afxgfyuudqujueeooplj.supabase.co wss://afxgfyuudqujueeooplj.supabase.co https://docs.google.com https://script.google.com https://script.googleusercontent.com https://611systems.com https://10.10.10.20:8081 https://login.microsoftonline.com https://graph.microsoft.com; object-src 'none'; base-uri 'self';">
 
-  <!-- Google Fonts: Space Grotesk (display) + Inter (body) + JetBrains Mono (mono/labels) -->
+  <!-- Google Fonts: Inter (UI primary) + JetBrains Mono (data/code) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 
   <!-- Modular Design System -->
   <link rel="stylesheet" href="./css/tokens.css">
@@ -20,11 +20,20 @@
   <link rel="stylesheet" href="./css/layout.css">
   <link rel="stylesheet" href="./css/components.css">
   <link rel="stylesheet" href="./css/workspaces.css">
-  <!-- Neo-Brutalist Design System Override — loaded last to win specificity -->
+  <!-- Design System Override -->
   <link rel="stylesheet" href="./css/neo-brutalism.css">
+  <!-- Professional UI Refinement -- loaded LAST to win all specificity -->
+  <link rel="stylesheet" href="./css/ui-refinement.css">
+  <!-- Native Microsoft Integration (Outlook & Teams) -->
+  <link rel="stylesheet" href="./css/ms-integration.css">
 
   <style>
     /* Premium Split-View EDR Styling */
+    #colEdrForm {
+      container-type: inline-size;
+      container-name: edrform;
+    }
+
     .edr-form-scroll {
       flex: 1;
       overflow-y: auto;
@@ -34,13 +43,47 @@
       gap: 12px;
     }
 
+    .edr-field-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 24px;
+      margin-bottom: 2px;
+      gap: 4px;
+    }
+
+    .edr-field-header .form-label {
+      margin: 0;
+      line-height: 1.2;
+    }
+
+    .edr-label-group {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      min-width: 0;
+    }
+
+    .btn-opt-mgmt-wrap {
+      display: inline-flex;
+      align-items: center;
+      gap: 2px;
+      flex-shrink: 0;
+    }
+
     .form-row-2 {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 8px;
     }
 
-    @media (max-width: 500px) {
+    @container edrform (max-width: 440px) {
+      .form-row-2 {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 900px) {
       .form-row-2 {
         grid-template-columns: 1fr;
       }
@@ -425,6 +468,159 @@
       flex-shrink: 0;
       stroke: currentColor;
     }
+
+    /* Standardized EDR Button System (No physical translate jitter, clean Inter font) */
+    .btn, .btn-action, .choice-btn, .btn-opt-mgmt {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+    }
+
+    .btn:hover, .btn:active,
+    .btn-action:hover, .btn-action:active,
+    .choice-btn:hover, .choice-btn:active,
+    .btn-opt-mgmt:hover, .btn-opt-mgmt:active {
+      transform: none !important;
+    }
+
+    /* Option Management (+ / -) in Form Headers */
+    .btn-opt-mgmt {
+      width: 18px;
+      height: 18px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-mono, monospace) !important;
+      font-size: 13px;
+      font-weight: 600;
+      line-height: 1;
+      padding: 0;
+      border: 1px solid var(--border-default);
+      border-radius: var(--radius-xs, 3px);
+      background: var(--bg-surface-elevated, #1e2433);
+      color: var(--text-muted, #94a3b8);
+      cursor: pointer;
+      transition: background var(--trans-fast), color var(--trans-fast), border-color var(--trans-fast);
+      box-sizing: border-box;
+    }
+
+    .btn-opt-mgmt:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: var(--text-primary, #f8fafc);
+      border-color: var(--border-hover, #475569);
+    }
+
+    /* Role & Violation Subject Choice Segments */
+    .choice-segment {
+      display: inline-flex;
+      align-items: center;
+      background: var(--bg-input, #0f131c);
+      border: 1px solid var(--border-default, #252d3d);
+      border-radius: var(--radius-sm, 4px);
+      padding: 1px;
+      gap: 1px;
+      height: 22px;
+      box-sizing: border-box;
+      flex-shrink: 0;
+    }
+
+    .choice-btn {
+      height: 18px;
+      padding: 0 6px;
+      font-size: 9.5px;
+      font-weight: 600;
+      border-radius: var(--radius-xs, 3px);
+      border: none;
+      background: transparent;
+      color: var(--text-secondary, #94a3b8);
+      cursor: pointer;
+      transition: background var(--trans-fast), color var(--trans-fast);
+      line-height: 18px;
+      box-sizing: border-box;
+    }
+
+    .choice-btn:hover {
+      color: var(--text-primary, #f8fafc);
+    }
+
+    .choice-btn.active {
+      background: var(--bg-surface-elevated, #242c3d);
+      color: #38bdf8;
+      font-weight: 700;
+      border: 1px solid rgba(56, 189, 248, 0.25);
+    }
+
+    /* Section Headers */
+    .form-section-header {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin: 8px 0 2px 0;
+      padding-bottom: 3px;
+      border-bottom: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
+    }
+
+    .form-section-tag {
+      font-family: var(--font-mono, monospace);
+      font-size: 9px;
+      font-weight: 700;
+      color: #38bdf8;
+      background: rgba(56, 189, 248, 0.1);
+      border: 1px solid rgba(56, 189, 248, 0.25);
+      padding: 1px 4px;
+      border-radius: 3px;
+      letter-spacing: 0.04em;
+      line-height: 1.1;
+      flex-shrink: 0;
+    }
+
+    .form-section-title {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-secondary, #94a3b8);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    /* Dropzone Compact Evidence Area */
+    .dropzone-compact {
+      border: 1px dashed var(--border-default, #2a3346);
+      border-radius: var(--radius-sm, 4px);
+      padding: 6px 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      background: var(--bg-input, #0f131c);
+      transition: border-color var(--trans-fast), background var(--trans-fast);
+      min-height: 38px;
+      box-sizing: border-box;
+      overflow: hidden;
+    }
+
+    .dropzone-compact:hover,
+    .dropzone-compact.drag-over {
+      border-color: #38bdf8;
+      background: rgba(56, 189, 248, 0.04);
+    }
+
+    .dropzone-compact .drop-thumb {
+      width: 30px;
+      height: 30px;
+      object-fit: cover;
+      border-radius: var(--radius-xs, 3px);
+      border: 1px solid var(--border-default);
+      flex-shrink: 0;
+    }
+
+    .dropzone-compact .drop-text {
+      font-size: 11px;
+      color: var(--text-dim, #64748b);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      flex: 1;
+      min-width: 0;
+    }
   </style>
 </head>
 <body class="auth-locked">
@@ -620,6 +816,30 @@
           <span class="nav-badge" id="railPendingBadge">0</span>
         </button>
 
+        <div class="rail-section-label">Communications</div>
+
+        <!-- Outlook Workspace Tab -->
+        <button type="button" class="nav-item" id="tabOutlook" role="tab" aria-selected="false" title="Outlook" data-tooltip="Outlook" data-tooltip-pos="right">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+            <polyline points="22,6 12,13 2,6"></polyline>
+          </svg>
+          <span class="nav-label">Outlook</span>
+          <span class="nav-badge" id="railOutlookBadge" style="display:none;">0</span>
+        </button>
+
+        <!-- Microsoft Teams Workspace Tab -->
+        <button type="button" class="nav-item" id="tabTeams" role="tab" aria-selected="false" title="Microsoft Teams" data-tooltip="Microsoft Teams" data-tooltip-pos="right">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+            <circle cx="9" cy="7" r="4"></circle>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+          </svg>
+          <span class="nav-label">Microsoft Teams</span>
+          <span class="nav-badge" id="railTeamsBadge" style="display:none;">0</span>
+        </button>
+
         <div class="rail-section-label">Management</div>
 
         <button type="button" class="nav-item" id="tabMasterlist" role="tab" aria-selected="false" title="Masterlist" data-tooltip="Masterlist" data-tooltip-pos="right">
@@ -752,17 +972,23 @@
                     </div>
 
                     <div class="form-group">
-                      <label class="form-label" for="edrSite">Site Location <span class="required-dot">*</span></label>
+                      <div class="edr-field-header">
+                        <label class="form-label" for="edrSite">Site Location <span class="required-dot">*</span></label>
+                      </div>
                       <select id="edrSite" class="form-control"></select>
                     </div>
 
                     <div class="form-row-2">
                       <div class="form-group">
-                        <label class="form-label" for="edrDate">Date Observed <span class="required-dot">*</span></label>
+                        <div class="edr-field-header">
+                          <label class="form-label" for="edrDate">Date Observed <span class="required-dot">*</span></label>
+                        </div>
                         <input type="date" id="edrDate" class="form-control" required>
                       </div>
                       <div class="form-group">
-                        <label class="form-label" for="edrTimeObserved">Time Observed <span class="required-dot">*</span></label>
+                        <div class="edr-field-header">
+                          <label class="form-label" for="edrTimeObserved">Time Observed <span class="required-dot">*</span></label>
+                        </div>
                         <input type="text" id="edrTimeObserved" class="form-control" placeholder="e.g. 3:10:45 AM-3:18:01 AM" required>
                       </div>
                     </div>
@@ -775,11 +1001,13 @@
 
                     <div class="form-row-2">
                       <div class="form-group">
-                        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:2px;">
-                          <div style="display:flex; align-items:center; gap:2px;">
-                            <label class="form-label" style="margin:0;">Respondent</label>
-                            <button type="button" class="btn-opt-mgmt" id="btnAddSupervisorOption" title="Add custom Team Leader/OM to masterlist">+</button>
-                            <button type="button" class="btn-opt-mgmt" id="btnRemoveSupervisorOption" title="Remove custom Team Leader/OM from masterlist">−</button>
+                        <div class="edr-field-header">
+                          <div class="edr-label-group">
+                            <label class="form-label" for="edrSupervisorName">Respondent</label>
+                            <span class="btn-opt-mgmt-wrap">
+                              <button type="button" class="btn-opt-mgmt" id="btnAddSupervisorOption" title="Add custom Team Leader/OM to masterlist">+</button>
+                              <button type="button" class="btn-opt-mgmt" id="btnRemoveSupervisorOption" title="Remove custom Team Leader/OM from masterlist">-</button>
+                            </span>
                           </div>
                           <div class="choice-segment">
                             <button type="button" class="choice-btn active" id="btnRoleTl">TL</button>
@@ -791,7 +1019,9 @@
                       </div>
 
                       <div class="form-group">
-                        <label class="form-label" for="edrOmName">Dedicated OM</label>
+                        <div class="edr-field-header">
+                          <label class="form-label" for="edrOmName">Dedicated OM</label>
+                        </div>
                         <input type="text" id="edrOmName" class="form-control" list="listOms" placeholder="Search OM...">
                         <datalist id="listOms"></datalist>
                       </div>
@@ -799,8 +1029,8 @@
 
                     <div class="form-row-2">
                       <div class="form-group">
-                        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:2px;">
-                          <label class="form-label" style="margin:0;">Violation Subject</label>
+                        <div class="edr-field-header">
+                          <label class="form-label" for="edrSubjectName">Violation Subject</label>
                           <div class="choice-segment">
                             <button type="button" class="choice-btn active" id="btnSubjAgent">Agent/s</button>
                             <button type="button" class="choice-btn" id="btnSubjTl">TL</button>
@@ -811,11 +1041,13 @@
                       </div>
 
                       <div class="form-group">
-                        <div style="display:flex; align-items:center; justify-content:space-between;">
-                          <label class="form-label" for="edrAccount" style="margin:0;">Account / Campaign <span class="required-dot">*</span></label>
-                          <div style="display:flex; align-items:center; gap:2px;">
-                            <button type="button" class="btn-opt-mgmt" id="btnAddAccountOption" title="Add custom Account/Campaign to masterlist">+</button>
-                            <button type="button" class="btn-opt-mgmt" id="btnRemoveAccountOption" title="Remove custom Account/Campaign from masterlist">−</button>
+                        <div class="edr-field-header">
+                          <div class="edr-label-group">
+                            <label class="form-label" for="edrAccount">Account / Campaign <span class="required-dot">*</span></label>
+                            <span class="btn-opt-mgmt-wrap">
+                              <button type="button" class="btn-opt-mgmt" id="btnAddAccountOption" title="Add custom Account/Campaign to masterlist">+</button>
+                              <button type="button" class="btn-opt-mgmt" id="btnRemoveAccountOption" title="Remove custom Account/Campaign from masterlist">-</button>
+                            </span>
                           </div>
                         </div>
                         <input type="text" id="edrAccount" class="form-control" list="listAccounts" placeholder="Search campaign..." required>
@@ -830,12 +1062,16 @@
                     </div>
 
                     <div class="form-group">
-                      <label class="form-label" for="edrIncident">Incident Description <span class="required-dot">*</span></label>
+                      <div class="edr-field-header">
+                        <label class="form-label" for="edrIncident">Incident Description <span class="required-dot">*</span></label>
+                      </div>
                       <textarea id="edrIncident" class="form-control" rows="2" placeholder="Specific violation observed on camera..." required></textarea>
                     </div>
 
                     <div class="form-group">
-                      <label class="form-label" for="edrActionRemarks">Action Taken / Remarks <span class="required-dot">*</span></label>
+                      <div class="edr-field-header">
+                        <label class="form-label" for="edrActionRemarks">Action Taken / Remarks <span class="required-dot">*</span></label>
+                      </div>
                       <textarea id="edrActionRemarks" class="form-control" rows="2" placeholder="Supervisor response, investigation, and remarks..." required></textarea>
                     </div>
 
@@ -846,7 +1082,9 @@
                     </div>
 
                     <div class="form-group">
-                      <label class="form-label">CCTV Screenshot</label>
+                      <div class="edr-field-header">
+                        <label class="form-label" for="dropzoneScreenshot">CCTV Screenshot</label>
+                      </div>
                       <div class="dropzone-compact" id="dropzoneScreenshot" tabindex="0">
                         <input type="file" id="fileScreenshot" accept="image/*" style="display:none;">
                         <img id="shotThumb" class="drop-thumb" style="display:none;" alt="Screenshot">
@@ -856,7 +1094,9 @@
                     </div>
 
                     <div class="form-group">
-                      <label class="form-label" for="edrClipLink">CCTV Clip (Google Drive URL)</label>
+                      <div class="edr-field-header">
+                        <label class="form-label" for="edrClipLink">CCTV Clip (Google Drive URL)</label>
+                      </div>
                       <input type="url" id="edrClipLink" class="form-control" placeholder="https://drive.google.com/...">
                     </div>
                   </form>
@@ -892,12 +1132,9 @@
                     <span class="card-title">Teams Dispatch</span>
                   </div>
                   <div class="card-actions">
-                    <button type="button" class="btn btn-outline btn-sm" id="btnToggleDispatchExpand" title="Toggle expanded dispatch review layout" style="gap:4px;">
+                    <button type="button" class="btn btn-outline btn-sm" id="btnToggleDispatchExpand" title="Toggle expanded dispatch preview layout" style="gap:4px;">
                       <svg class="icon icon-sm" id="iconDispatchExpand" viewBox="0 0 24 24"><polyline points="15 3 21 3 21 9"></polyline><polyline points="9 21 3 21 3 15"></polyline><line x1="21" y1="3" x2="14" y2="10"></line><line x1="3" y1="21" x2="10" y2="14"></line></svg>
-                      <span id="labelDispatchExpand">Expand Review</span>
-                    </button>
-                    <button type="button" class="btn btn-outline btn-sm" id="btnSendSelectedToDocs" title="Send selected EDR to Google Docs">
-                      Send to Google Docs
+                      <span id="labelDispatchExpand">Expand Preview</span>
                     </button>
                     <button type="button" class="btn btn-outline btn-sm" id="btnSendSelectedToAudit" title="Send selected EDR to CCTV Audit">
                       Send to CCTV Audit
@@ -1177,11 +1414,15 @@
             <div class="hris-topbar">
               <div class="hris-title-cluster">
                 <span class="hris-title">SixEleven HRIS / Employee DTR</span>
-                <span class="badge badge-neutral" style="font-size:10px;">Authoritative Portal</span>
+                <span class="badge badge-neutral" style="font-size:10px;">Embedded Portal</span>
               </div>
               <div class="hris-actions">
+                <button type="button" class="btn btn-ghost btn-xs" id="btnHrisSessionHelp" title="Why do I see 419 Page Expired?" style="gap:4px; color:var(--text-muted); font-size:11px;">
+                  <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                  <span>419 / Session Info</span>
+                </button>
                 <button type="button" class="btn btn-outline btn-xs" id="btnHrisReload" title="Reload HRIS application" style="gap:4px;">
-                  <svg class="icon icon-xs" viewBox="0 0 24 24"><path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+                  <svg class="icon icon-xs" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
                   <span>Reload</span>
                 </button>
                 <a id="linkOpenHris" href="https://611systems.com/hrsys/employee-dtr" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-xs" title="Open HRIS directly in a new browser tab" style="gap:4px; text-decoration:none;">
@@ -1191,36 +1432,42 @@
               </div>
             </div>
 
-            <!-- Full Body HRIS Viewport with Safe Fallback -->
+            <!-- Full Body HRIS Viewport -->
             <div class="hris-frame-container" id="hrisFrameContainer">
-              <div id="hrisSessionFallbackCard" class="hris-session-fallback-card">
-                <div class="hris-fallback-inner">
-                  <div class="hris-fallback-badge">
-                    <span class="badge badge-warning" style="font-size:10px; padding:3px 8px; font-weight:700; letter-spacing:0.03em;">HRIS SESSION NOT AVAILABLE</span>
+              <!-- Loading State -->
+              <div id="hrisLoadingState" class="hris-state-overlay">
+                <div class="hris-state-card">
+                  <div class="hris-spinner"></div>
+                  <div class="hris-state-text">
+                    <h3 class="hris-state-title">HRIS</h3>
+                    <p class="hris-state-desc">Loading HRIS...</p>
                   </div>
-                  <h3 class="hris-fallback-title">Authentication Required</h3>
-                  <p class="hris-fallback-desc">
-                    The HRIS server did not accept the embedded login session.
-                  </p>
-                  <p class="hris-fallback-lead">
-                    For security, sign in to SixEleven HRIS in a normal browser tab first.
-                  </p>
-                  <div class="hris-fallback-buttons">
-                    <a href="https://611systems.com/hrsys/employee-dtr" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-md" id="btnOpenHrisAction" style="text-decoration:none; gap:6px;">
-                      <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
-                      <strong>Open HRIS to Sign In</strong>
-                    </a>
-                    <button type="button" class="btn btn-outline btn-md" id="btnReloadEmbeddedHris" style="gap:6px;">
-                      <svg class="icon icon-sm" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
-                      <span>Reload Embedded HRIS</span>
-                    </button>
-                  </div>
-                  <span class="hris-fallback-tip">
-                    Sign in to HRIS in the new tab, then return here and press Reload.
-                  </span>
                 </div>
               </div>
-              <iframe id="hrisFrame" class="hris-iframe" src="https://611systems.com/hrsys/employee-dtr" allow="clipboard-read; clipboard-write; fullscreen" loading="eager" title="SixEleven HRIS Employee DTR"></iframe>
+
+              <!-- Error Diagnostic State (Hidden by default) -->
+              <div id="hrisErrorState" class="hris-state-overlay" style="display:none;">
+                <div class="hris-state-card hris-state-card-error">
+                  <div class="hris-error-icon">
+                    <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="#f87171" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                  </div>
+                  <h3 class="hris-state-title">HRIS session could not be established inside the embedded portal</h3>
+                  <div class="hris-state-reason-box">
+                    <span class="hris-reason-label">Reason:</span>
+                    <span class="hris-reason-val" id="hrisErrorReason">The HRIS server rejected the embedded session (419 Page Expired). Cross-site browser cookie restrictions block the required session cookies.</span>
+                  </div>
+                  <div class="hris-state-actions">
+                    <button type="button" class="btn btn-primary btn-sm" id="btnHrisRetry">Retry</button>
+                    <button type="button" class="btn btn-outline btn-sm" id="btnHrisReloadCard">Reload HRIS</button>
+                    <a href="https://611systems.com/hrsys/employee-dtr" target="_blank" rel="noopener noreferrer" class="btn btn-outline btn-sm" id="btnOpenHrisExternalFallback" style="gap:4px; text-decoration:none;">
+                      <span>Open HRIS</span>
+                      <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+                    </a>
+                  </div>
+                </div>
+              </div>
+
+              <iframe id="hrisFrame" class="hris-iframe" src="https://611systems.com/hrsys/employee-dtr" allow="clipboard-read; clipboard-write; fullscreen" title="HRIS"></iframe>
             </div>
           </div>
         </section>
@@ -2293,6 +2540,220 @@
 
           </div>
         </section>
+
+        <!-- ================================================================= -->
+        <!-- OUTLOOK WORKSPACE PANE -->
+        <!-- ================================================================= -->
+        <section id="paneOutlook" class="workspace-pane" role="tabpanel" aria-labelledby="tabOutlook" hidden>
+          <div class="outlook-container">
+            <!-- Workspace Header / Toolbar -->
+            <div class="ms-workspace-header">
+              <div class="ms-header-left">
+                <div class="ms-header-title">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                    <polyline points="22,6 12,13 2,6"></polyline>
+                  </svg>
+                  <span>Microsoft Outlook</span>
+                </div>
+                <span class="ms-mode-indicator">Mode: Native Microsoft Graph Integration</span>
+              </div>
+              <div class="ms-header-actions">
+                <button type="button" class="btn btn-primary btn-sm" id="btnOutlookCompose" style="gap:6px;">
+                  <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                  <span>Compose</span>
+                </button>
+                <button type="button" class="btn btn-outline btn-sm" id="btnOutlookRefresh" title="Refresh Inbox">
+                  <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+                  <span>Refresh</span>
+                </button>
+                <div class="ms-account-pill is-anonymous" id="outlookAccountPill" title="Microsoft Account Settings">
+                  <div class="ms-account-avatar" id="outlookAccountAvatar">?</div>
+                  <span id="outlookAccountName">Sign In</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- State View: Setup / Disconnected / Error / Ready to sign in -->
+            <div class="ms-state-view" id="outlookStateView"></div>
+
+            <!-- Desktop & Mobile Split Layout -->
+            <div class="outlook-split-layout" id="outlookMainLayout" style="display:none;">
+              <!-- Left Column: Inbox List -->
+              <div class="outlook-inbox-col">
+                <div class="outlook-inbox-toolbar">
+                  <div class="outlook-search-wrap">
+                    <svg class="outlook-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                    <input type="search" class="outlook-search-input" id="outlookSearchInput" placeholder="Search emails..." autocomplete="off">
+                  </div>
+                </div>
+                <div class="outlook-filter-chips">
+                  <button type="button" class="outlook-filter-chip active" data-filter="all">All</button>
+                  <button type="button" class="outlook-filter-chip" data-filter="unread">Unread</button>
+                </div>
+                <div class="outlook-message-list" id="outlookMessageList">
+                  <div style="padding:24px 16px; text-align:center; color:var(--text-muted); font-size:12px;">Connecting to Microsoft mailbox...</div>
+                </div>
+              </div>
+
+              <!-- Right Column: Reading Pane -->
+              <div class="outlook-reading-col" id="outlookReadingCol">
+                <div class="outlook-empty-pane" id="outlookEmptyState">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+                  <span>Select an email from the list to read</span>
+                </div>
+
+                <div id="outlookMessageContent" style="display:none; flex-direction:column; height:100%; min-height:0;">
+                  <div class="outlook-reading-header">
+                    <div class="outlook-reading-actions">
+                      <button type="button" class="btn btn-outline btn-xs" id="btnOutlookMobileBack" style="gap:4px;">
+                        <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                        <span>Back to Inbox</span>
+                      </button>
+                      <div class="outlook-btn-group">
+                        <button type="button" class="btn btn-outline btn-xs" id="btnOutlookReply" style="gap:4px;">
+                          <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 17 4 12 9 7"></polyline><path d="M20 18v-2a4 4 0 0 0-4-4H4"></path></svg>
+                          <span>Reply</span>
+                        </button>
+                        <button type="button" class="btn btn-outline btn-xs" id="btnOutlookReplyAll" style="gap:4px;">
+                          <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><polyline points="7 17 2 12 7 7"></polyline><polyline points="12 17 7 12 12 7"></polyline><path d="M22 18v-2a4 4 0 0 0-4-4H7"></path></svg>
+                          <span>Reply All</span>
+                        </button>
+                      </div>
+                    </div>
+                    <div class="outlook-reading-meta">
+                      <div class="outlook-reading-subject" id="outlookReadingSubject"></div>
+                      <div class="outlook-reading-from" id="outlookReadingFrom"></div>
+                      <div class="outlook-reading-to" id="outlookReadingTo"></div>
+                    </div>
+                  </div>
+
+                  <div class="outlook-reading-body" id="outlookReadingBody"></div>
+
+                  <div class="outlook-reading-attachments" id="outlookAttachmentsContainer" style="display:none;">
+                    <div class="outlook-att-title">Attachments</div>
+                    <div class="outlook-att-items" id="outlookAttachmentsList"></div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Right Column Overlay: Composer -->
+              <div class="outlook-composer-col" id="outlookComposerCol" style="display:none;">
+                <div class="outlook-composer-header">
+                  <span class="outlook-composer-title" id="outlookComposerTitle">New Message</span>
+                  <button type="button" class="btn btn-ghost btn-sm" id="btnComposerCancel">✕</button>
+                </div>
+                <div class="outlook-composer-form">
+                  <div class="outlook-composer-row">
+                    <label class="outlook-composer-label" for="composerTo">To</label>
+                    <input type="email" class="outlook-composer-input" id="composerTo" placeholder="Recipient emails (comma separated)" multiple>
+                  </div>
+                  <div class="outlook-composer-row">
+                    <label class="outlook-composer-label" for="composerCc">CC</label>
+                    <input type="email" class="outlook-composer-input" id="composerCc" placeholder="CC recipients" multiple>
+                  </div>
+                  <div class="outlook-composer-row">
+                    <label class="outlook-composer-label" for="composerSubject">Subject</label>
+                    <input type="text" class="outlook-composer-input" id="composerSubject" placeholder="Email subject">
+                  </div>
+                  <div class="outlook-composer-body-area">
+                    <textarea class="outlook-composer-textarea" id="composerBody" placeholder="Type your email message..."></textarea>
+                  </div>
+                </div>
+                <div class="outlook-composer-actions">
+                  <button type="button" class="btn btn-outline btn-sm" id="btnComposerCancel">Cancel</button>
+                  <button type="button" class="btn btn-primary btn-sm" id="btnComposerSend" style="gap:6px;">
+                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                    <span>Send</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ================================================================= -->
+        <!-- MICROSOFT TEAMS WORKSPACE PANE -->
+        <!-- ================================================================= -->
+        <section id="paneTeams" class="workspace-pane" role="tabpanel" aria-labelledby="tabTeams" hidden>
+          <div class="teams-container">
+            <!-- Workspace Header / Toolbar -->
+            <div class="ms-workspace-header">
+              <div class="ms-header-left">
+                <div class="ms-header-title">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="#6264a7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="9" cy="7" r="4"></circle>
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                  </svg>
+                  <span>Microsoft Teams</span>
+                </div>
+                <span class="ms-mode-indicator">Mode: Native Microsoft Graph Integration</span>
+              </div>
+              <div class="ms-header-actions">
+                <div class="ms-account-pill is-anonymous" id="teamsAccountPill" title="Microsoft Account Settings">
+                  <div class="ms-account-avatar" id="teamsAccountAvatar">?</div>
+                  <span id="teamsAccountName">Sign In</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Diagnostics / Notice Banner -->
+            <div class="ms-notice-banner" id="teamsNoticeBanner" style="display:none;"></div>
+
+            <!-- State View: Setup / Disconnected / Error / Ready to sign in -->
+            <div class="ms-state-view" id="teamsStateView"></div>
+
+            <!-- Split Layout -->
+            <div class="teams-split-layout" id="teamsMainLayout" style="display:none;">
+              <!-- Left Column: Chats / Teams & Channels list -->
+              <div class="teams-nav-col">
+                <div class="teams-nav-tabs">
+                  <button type="button" class="teams-nav-tab-btn active" id="btnTeamsTabChats">Chats</button>
+                  <button type="button" class="teams-nav-tab-btn" id="btnTeamsTabTeams">Teams &amp; Channels</button>
+                </div>
+                <div class="teams-list-scroll" id="teamsNavList">
+                  <div style="padding:24px 16px; text-align:center; color:var(--text-muted); font-size:12px;">Loading Teams...</div>
+                </div>
+              </div>
+
+              <!-- Right Column: Conversation Stream & Composer -->
+              <div class="teams-main-col">
+                <div class="teams-main-header">
+                  <div class="teams-active-info">
+                    <button type="button" class="btn btn-outline btn-xs" id="btnTeamsMobileBack" style="gap:4px;">
+                      <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                      <span>Back</span>
+                    </button>
+                    <div id="teamsActiveWrap" style="display:none; flex-direction:column; gap:2px;">
+                      <span class="teams-active-title" id="teamsActiveTitle"></span>
+                      <small style="color:var(--text-muted); font-size:10.5px;" id="teamsActiveSubtitle"></small>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Empty state when no chat selected -->
+                <div class="outlook-empty-pane" id="teamsEmptyState">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                  <span>Select a chat or channel to start messaging</span>
+                </div>
+
+                <!-- Active Thread View -->
+                <div class="teams-thread-container" id="teamsThreadContainer"></div>
+
+                <!-- Bottom Message Composer -->
+                <div class="teams-composer-bar">
+                  <textarea class="teams-composer-input" id="teamsMessageInput" placeholder="Type a message (Enter to send, Shift+Enter for newline)..." rows="1"></textarea>
+                  <button type="button" class="teams-btn-send" id="btnTeamsSend" title="Send message">
+                    <span>Send</span>
+                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
       </div>
     </main>
   </div>
@@ -2619,6 +3080,121 @@
     </div>
   </div>
 
+  <!-- Send to Microsoft Teams Dialog -->
+  <div class="modal-backdrop" id="modalMsTeamsShare" hidden>
+    <div class="modal-dialog" style="max-width:540px;">
+      <div class="modal-header">
+        <h3 class="modal-title" id="teamsShareModalTitle" style="display:flex; align-items:center; gap:8px;">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#6264a7" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+          <span>Send to Microsoft Teams</span>
+        </h3>
+        <button type="button" class="btn btn-ghost btn-sm" id="btnTeamsShareClose">✕</button>
+      </div>
+      <div class="modal-body" style="display:flex; flex-direction:column; gap:12px;">
+        <!-- Destination Type Selector -->
+        <div class="form-group">
+          <label class="form-label">Send Destination</label>
+          <div style="display:flex; gap:16px; margin-top:4px;">
+            <label style="display:inline-flex; align-items:center; gap:6px; font-size:12px; cursor:pointer;">
+              <input type="radio" name="teamsShareDestType" value="chat" checked> Direct or Group Chat
+            </label>
+            <label style="display:inline-flex; align-items:center; gap:6px; font-size:12px; cursor:pointer;">
+              <input type="radio" name="teamsShareDestType" value="channel"> Team Channel
+            </label>
+          </div>
+        </div>
+
+        <!-- Chat Picker -->
+        <div class="form-group" id="teamsShareChatGroup">
+          <label class="form-label" for="teamsShareChatSelect">Select Chat</label>
+          <select id="teamsShareChatSelect" class="form-control form-control-sm"></select>
+        </div>
+
+        <!-- Team & Channel Picker -->
+        <div id="teamsShareChannelGroup" style="display:none; flex-direction:column; gap:10px;">
+          <div class="form-group">
+            <label class="form-label" for="teamsShareTeamSelect">Select Team</label>
+            <select id="teamsShareTeamSelect" class="form-control form-control-sm"></select>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="teamsShareChannelSelect">Select Channel</label>
+            <select id="teamsShareChannelSelect" class="form-control form-control-sm"></select>
+          </div>
+        </div>
+
+        <!-- Message / Report Preview -->
+        <div class="form-group">
+          <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:4px;">
+            <label class="form-label" for="teamsShareMessagePreview" style="margin-bottom:0;">Message / Report Preview (Editable)</label>
+            <small style="font-size:10.5px; color:var(--text-muted);">Review before sending</small>
+          </div>
+          <textarea id="teamsShareMessagePreview" class="form-control" style="min-height:140px; font-size:11.5px; font-family:var(--font-mono, monospace); line-height:1.4; resize:vertical;"></textarea>
+          <div id="teamsShareSizeWarning" style="display:none; color:#fbbf24; font-size:11px; margin-top:4px; padding:6px 8px; background:rgba(245, 158, 11, 0.1); border-radius:4px; border:1px solid rgba(245, 158, 11, 0.25);"></div>
+        </div>
+      </div>
+      <div class="modal-footer" style="justify-content:flex-end; gap:8px;">
+        <button type="button" class="btn btn-outline btn-sm" id="btnTeamsShareCancel">Cancel</button>
+        <button type="button" class="btn btn-primary btn-sm" id="btnTeamsShareSend" style="background:#6264a7; border-color:#6264a7;">Send to Teams</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Microsoft Entra App Registration Settings Dialog -->
+  <div class="modal-backdrop" id="modalMsEntraConfig" hidden>
+    <div class="modal-dialog" style="max-width:560px;">
+      <div class="modal-header">
+        <h3 class="modal-title" style="display:flex; align-items:center; gap:8px;">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#0078d4" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>
+          <span>Microsoft 365 / Entra ID Settings</span>
+        </h3>
+        <button type="button" class="btn btn-ghost btn-sm" id="btnMsConfigClose">✕</button>
+      </div>
+      <div class="modal-body" style="display:flex; flex-direction:column; gap:14px;">
+        <!-- Account status -->
+        <div id="msConfigAccountStatus"></div>
+
+        <div style="font-size:11.5px; color:var(--text-secondary); line-height:1.5;">
+          Connect your official Microsoft account to use native <strong>Outlook</strong> and <strong>Microsoft Teams</strong> directly inside CCTV OPS without external tabs or passwords.
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="inputMsClientId">Application (Client) ID <span class="required-dot">*</span></label>
+          <input type="text" id="inputMsClientId" class="form-control form-control-sm" placeholder="e.g. 00000000-0000-0000-0000-000000000000" autocomplete="off">
+          <small style="color:var(--text-muted); font-size:10.5px;">From Azure Portal &gt; Entra ID &gt; App Registrations &gt; Application (client) ID</small>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="inputMsTenantId">Directory (Tenant) ID</label>
+          <input type="text" id="inputMsTenantId" class="form-control form-control-sm" placeholder="common (or specific tenant GUID)" autocomplete="off">
+          <small style="color:var(--text-muted); font-size:10.5px;">Use <code>common</code> for multi-tenant / personal accounts, or your organization tenant GUID</small>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="inputMsRedirectUri">Redirect URI (Configure as SPA in Entra)</label>
+          <div style="display:flex; gap:6px;">
+            <input type="text" id="inputMsRedirectUri" class="form-control form-control-sm" readonly style="background:var(--bg-input);">
+            <button type="button" class="btn btn-outline btn-xs" id="btnCopyRedirectUri">Copy</button>
+          </div>
+          <small style="color:var(--text-muted); font-size:10.5px;">Add this as a <strong>Single-page application (SPA)</strong> platform redirect URI in your Entra App Registration</small>
+        </div>
+
+        <div style="background:rgba(255,255,255,0.03); border:1px solid var(--border-default); border-radius:6px; padding:10px 12px; font-size:11px; line-height:1.4; color:var(--text-secondary);">
+          <strong style="color:var(--text-primary); display:block; margin-bottom:4px;">Delegated Permissions to grant:</strong>
+          • Outlook: <code>User.Read</code>, <code>Mail.Read</code>, <code>Mail.Send</code><br>
+          • Teams: <code>Chat.Read</code>, <code>ChatMessage.Send</code>, <code>Team.ReadBasic.All</code>, <code>Channel.ReadBasic.All</code>, <code>ChannelMessage.Send</code>, <code>ChannelMessage.Read.All</code>
+        </div>
+      </div>
+      <div class="modal-footer" style="justify-content:space-between;">
+        <button type="button" class="btn btn-danger-ghost btn-sm" id="btnMsConfigSignOut" style="display:none;">Sign Out</button>
+        <button type="button" class="btn btn-primary btn-sm" id="btnMsConfigSignIn" style="background:#0078d4; border-color:#0078d4;">Sign In to Microsoft</button>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <button type="button" class="btn btn-outline btn-sm" id="btnMsConfigCancel">Cancel</button>
+          <button type="button" class="btn btn-primary btn-sm" id="btnMsConfigSave">Save Settings</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <input type="file" id="followupReplaceInput" accept="image/*" hidden>
 
   <!-- Toast Notification Container -->
@@ -2631,6 +3207,8 @@
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.4/dist/jspdf.plugin.autotable.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.1/dist/html2pdf.bundle.min.js"></script>
+  <!-- MSAL Browser Library -->
+  <script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@2.38.3/lib/msal-browser.min.js"></script>
 
   <!-- Internal V2 Modules -->
   <script src="./js/config.js"></script>
@@ -2650,6 +3228,13 @@
   <script src="./js/services/accounts-service.js"></script>
   <script src="./js/services/code-of-conduct-service.js"></script>
   <script src="./js/services/cctv-report-service.js"></script>
+  <!-- Microsoft 365 Services & Components -->
+  <script src="./js/services/ms-auth-service.js"></script>
+  <script src="./js/services/ms-graph-service.js"></script>
+  <script src="./js/services/outlook-service.js"></script>
+  <script src="./js/services/teams-service.js"></script>
+  <script src="./js/components/ms-teams-share-dialog.js"></script>
+  <script src="./js/components/ms-config-dialog.js"></script>
   <script src="./js/app.js"></script>
 </body>
 </html>

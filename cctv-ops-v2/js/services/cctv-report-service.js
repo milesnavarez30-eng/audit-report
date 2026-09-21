@@ -1,4 +1,4 @@
-﻿/**
+/**
  * CCTV OPS V2 - CCTV Report Service
  * Ready-to-send CCTV incident/report message composer for Microsoft Teams
  * Integrated with the complete SixEleven Code of Conduct Policy Reference & Multi-MIME clipboard.
@@ -39,7 +39,7 @@ window.CCTV_REPORT_SERVICE = (function () {
       greeting: "Good morning TLs,",
       observation: "Observed an agent sleeping from 5:34:44 AM to 5:40:20 AM, with a total duration of approximately 5 minutes. Kindly file an NOC in accordance with the company COD. Thank you.",
       personInvolved: "",
-      site: "Mabini Site A Ã¢â‚¬â€œ Ground Floor",
+      site: "Mabini Site A \u2013 Ground Floor",
       dateRange: "September 10, 2026",
       clipUrl: "",
       screenshots: [],
@@ -112,11 +112,13 @@ window.CCTV_REPORT_SERVICE = (function () {
     if (sSec === null || eSec === null) return null;
 
     let diffSec = eSec - sSec;
-    if (diffSec < 0 || isOvernight) {
+    if (diffSec < 0) {
+      diffSec += 24 * 3600;
+    } else if (isOvernight && diffSec === 0) {
       diffSec += 24 * 3600;
     }
 
-    // Round to whole minutes only (integer division, e.g. 5m 36s -> approximately 5 minutes)
+    // Truncate fractional minutes to completed whole minutes (e.g. 5m 36s -> approximately 5 minutes)
     let mins = Math.floor(diffSec / 60);
     if (mins < 1 && diffSec > 0) mins = 1;
     return mins;
@@ -173,8 +175,8 @@ window.CCTV_REPORT_SERVICE = (function () {
     // 2. Extract Location
     let detectedLocation = "";
     const sitePatterns = [
-      /\b(Mabini\s+Site\s+[AB])(?:\s*[Ã¢â‚¬â€œ-]\s*|\s+)(Ground|1st|2nd|3rd|4th|5th|6th)?\s*(Floor)?\b/i,
-      /\b(MAA)(?:\s*[Ã¢â‚¬â€œ-]\s*|\s+)(5th|6th)?\s*(Floor)?\b/i,
+      /\b(Mabini\s+Site\s+[AB])(?:\s*[\u2013\u2014-]\s*|\s+)(Ground|1st|2nd|3rd|4th|5th|6th)?\s*(Floor)?\b/i,
+      /\b(MAA)(?:\s*[\u2013\u2014-]\s*|\s+)(4th|5th|6th)?\s*(Floor)?\b/i,
       /\b(Ecoland(?:\s+Site)?)\b/i,
       /\b(Gensan(?:\s+Site)?)\b/i
     ];
@@ -206,7 +208,7 @@ window.CCTV_REPORT_SERVICE = (function () {
 
     // Special Pattern 0: Time + Date until Time + Date
     // e.g. "2:39:12 PM Sept 12 until 7:47:17 AM Sept 13"
-    const overnightDateTimePattern = /(\d{1,2}:\d{2}(?::\d{2})?\s*(?:AM|PM))\s+(?:on\s+)?(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Sept|October|November|December)[a-z]*\.?\s+(\d{1,2})(?:st|nd|rd|th)?\s*(?:until|to|-|Ã¢â‚¬â€œ)\s*(\d{1,2}:\d{2}(?::\d{2})?\s*(?:AM|PM))\s+(?:on\s+)?(?:(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Sept|October|November|December)[a-z]*\.?\s+)?(\d{1,2})(?:st|nd|rd|th)?(?!\s*:),?\s*(\d{4})?/i;
+    const overnightDateTimePattern = /(\d{1,2}:\d{2}(?::\d{2})?\s*(?:AM|PM))\s+(?:on\s+)?(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Sept|October|November|December)[a-z]*\.?\s+(\d{1,2})(?:st|nd|rd|th)?\s*(?:until|to|[\u2013\u2014-])\s*(\d{1,2}:\d{2}(?::\d{2})?\s*(?:AM|PM))\s+(?:on\s+)?(?:(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Sept|October|November|December)[a-z]*\.?\s+)?(\d{1,2})(?:st|nd|rd|th)?(?!\s*:),?\s*(\d{4})?/i;
     const odtMatch = text.match(overnightDateTimePattern);
     if (odtMatch) {
       const startTime = odtMatch[1].trim();
@@ -240,7 +242,7 @@ window.CCTV_REPORT_SERVICE = (function () {
 
     // Pattern A: Overnight Sept 12-13, 2026 or Sept 12 until Sept 13
     if (!detectedDate) {
-      const overnightPattern = /\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Sept|October|November|December)[a-z]*\.?\s+(\d{1,2})(?:st|nd|rd|th)?\s*(?:-|Ã¢â‚¬â€œ|to|until)\s*(?:(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Sept|October|November|December)[a-z]*\.?\s+)?(\d{1,2})(?:st|nd|rd|th)?(?!\s*:),?\s*(\d{4})?\b/i;
+      const overnightPattern = /\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Sept|October|November|December)[a-z]*\.?\s+(\d{1,2})(?:st|nd|rd|th)?\s*(?:[\u2013\u2014-]|to|until)\s*(?:(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Sept|October|November|December)[a-z]*\.?\s+)?(\d{1,2})(?:st|nd|rd|th)?(?!\s*:),?\s*(\d{4})?\b/i;
       const overMatch = text.match(overnightPattern);
       if (overMatch) {
         const m1 = overMatch[1];
@@ -298,7 +300,7 @@ window.CCTV_REPORT_SERVICE = (function () {
 
     // Check for intervals (pairs of start & end) if not already found
     if (intervals.length === 0) {
-      const intervalPattern = /(\d{1,2}:\d{2}(?::\d{2})?\s*(?:AM|PM))\s*(?:to|until|-|Ã¢â‚¬â€œ)\s*(\d{1,2}:\d{2}(?::\d{2})?\s*(?:AM|PM))/gi;
+      const intervalPattern = /(\d{1,2}:\d{2}(?::\d{2})?\s*(?:AM|PM))\s*(?:to|until|[\u2013\u2014-])\s*(\d{1,2}:\d{2}(?::\d{2})?\s*(?:AM|PM))/gi;
       let iMatch;
       while ((iMatch = intervalPattern.exec(rawText)) !== null) {
         intervals.push({
@@ -499,11 +501,23 @@ window.CCTV_REPORT_SERVICE = (function () {
     // Combine incident narrative and action request
     const fullObservation = `${incidentNarrative} ${actionRequest}`.trim();
 
-    // Final Location
-    const finalLocation = parsed.detectedLocation || existingDraft.site || "Mabini Site A Ã¢â‚¬â€œ Ground Floor";
+    // Final Location: Keep existing operator-entered location if already provided.
+    // If empty, populate from detected Location. Never invent fictitious locations.
+    let finalLocation = "";
+    if (parsed.detectedLocation) {
+      finalLocation = parsed.detectedLocation;
+    } else if (existingDraft.site && String(existingDraft.site).trim()) {
+      finalLocation = String(existingDraft.site).trim();
+    }
 
-    // Final Date
-    const finalDate = parsed.detectedDate || existingDraft.dateRange || "September 10, 2026";
+    // Final Date: Keep existing operator-entered date if already provided.
+    // If empty, populate from detected Date. Never invent fictitious dates.
+    let finalDate = "";
+    if (parsed.detectedDate) {
+      finalDate = parsed.detectedDate;
+    } else if (existingDraft.dateRange && String(existingDraft.dateRange).trim()) {
+      finalDate = String(existingDraft.dateRange).trim();
+    }
 
     // Final Clip URLs
     let finalClip = existingDraft.clipUrl || "";
@@ -512,7 +526,7 @@ window.CCTV_REPORT_SERVICE = (function () {
     }
 
     return {
-      greeting: "Good morning TLs,",
+      greeting: existingDraft.greeting || "Good morning TLs,",
       observation: fullObservation,
       personInvolved: existingDraft.personInvolved || "",
       site: finalLocation,
@@ -520,7 +534,10 @@ window.CCTV_REPORT_SERVICE = (function () {
       clipUrl: finalClip,
       screenshots: existingDraft.screenshots || [],
       referencedPolicy: existingDraft.referencedPolicy || null,
-      rawInput: rawInput
+      rawInput: rawInput,
+      durationText: durationText,
+      totalMinutes: totalMinutes,
+      classification: isSleeping ? "SLEEPING" : (isInternetVideo ? "BROWSING" : (isDressCode ? "DRESS CODE" : ""))
     };
   }
 
@@ -750,10 +767,10 @@ window.CCTV_REPORT_SERVICE = (function () {
           window.CCTV_V2_CONFIG.MASTERLIST_API_URL
         ) ||
         localStorage.getItem("cctv_masterlist_api_url") ||
-        ""
+        "https://script.google.com/macros/s/AKfycbw2-7ERz3psAaUfsceoFHV6leNmqFf5HxgasRYORMHU8bbnte7DLbDIfX_YzjRrzMZh/exec"
       ).trim();
     } catch (_) {
-      return "";
+      return "https://script.google.com/macros/s/AKfycbw2-7ERz3psAaUfsceoFHV6leNmqFf5HxgasRYORMHU8bbnte7DLbDIfX_YzjRrzMZh/exec";
     }
   }
 
@@ -787,22 +804,12 @@ window.CCTV_REPORT_SERVICE = (function () {
 
   async function generateReportAI(rawInput, existingDraft = {}) {
     // Always generate the existing rule-based report first.
-    // This remains the fallback and keeps COD action wording controlled
-    // by CCTV OPS rather than by AI.
-    const fallback =
-      generateReport(
-        rawInput,
-        existingDraft
-      );
+    // This remains the authoritative fallback and keeps COD action wording controlled
+    // by CCTV OPS rather than by AI hallucination.
+    const fallback = generateReport(rawInput, existingDraft);
+    const parts = splitQuickComposeObservation(fallback.observation);
 
-    const parts =
-      splitQuickComposeObservation(
-        fallback.observation
-      );
-
-    const apiUrl =
-      getAiQuickComposeApiUrl();
-
+    const apiUrl = getAiQuickComposeApiUrl();
     if (!apiUrl) {
       return {
         ...fallback,
@@ -811,106 +818,106 @@ window.CCTV_REPORT_SERVICE = (function () {
       };
     }
 
+    const durationDirective = fallback.durationText
+      ? `4. State the duration using the phrase: ', with a total duration of ${fallback.durationText}.'`
+      : "4. If a duration is calculated or present in the notes, preserve it accurately.";
+
+    const aiPrompt = [
+      "You are a professional CCTV operations reporting assistant. Generate only the objective factual observation narrative for a CCTV incident report.",
+      "Requirements:",
+      "1. Start with 'Observed an agent' (or 'Observed' if referring to an unattended PC or hardware condition).",
+      "2. State the observed activity concisely, objectively, and professionally.",
+      "3. Preserve exact timestamps if provided in the notes.",
+      durationDirective,
+      "5. Do NOT include Location, Date, or action requests (such as NOC or reminder requests) in this observation body.",
+      "6. Do NOT invent facts, names, violations, or timestamps not present in the notes.",
+      "",
+      "Raw Notes:",
+      String(rawInput || "").trim()
+    ].filter(Boolean).join("\n");
+
+    const controller = typeof AbortController !== "undefined" ? new AbortController() : null;
+    const timeoutId = controller ? setTimeout(() => controller.abort(), 12000) : null;
+
     try {
-      const response =
-        await fetch(
-          apiUrl,
-          {
-            method: "POST",
+      const fetchOptions = {
+        method: "POST",
+        headers: {
+          "Content-Type": "text/plain;charset=utf-8"
+        },
+        body: JSON.stringify({
+          action: "aiQuickCompose",
+          rawNotes: aiPrompt,
+          fallbackNarrative: parts.narrative,
+          classification: fallback.classification || ""
+        })
+      };
+      if (controller) {
+        fetchOptions.signal = controller.signal;
+      }
 
-            headers: {
-              "Content-Type":
-                "text/plain;charset=utf-8"
-            },
-
-            body:
-              JSON.stringify({
-                action:
-                  "aiQuickCompose",
-
-                rawNotes:
-                  String(rawInput || ""),
-
-                fallbackNarrative:
-                  parts.narrative,
-
-                classification:
-                  ""
-              })
-          }
-        );
+      const response = await fetch(apiUrl, fetchOptions);
+      if (timeoutId) clearTimeout(timeoutId);
 
       if (!response.ok) {
-        throw new Error(
-          `AI request failed (${response.status}).`
-        );
+        throw new Error(`AI request failed (${response.status}).`);
       }
 
-      const result =
-        await response.json();
+      const result = await response.json();
 
-      if (
-        !result ||
-        result.success !== true ||
-        !String(result.observation || "").trim()
-      ) {
-        throw new Error(
-          result?.error ||
-          "AI returned no observation."
-        );
+      if (!result || result.success !== true || !String(result.observation || "").trim()) {
+        throw new Error(result?.error || "AI returned no observation.");
       }
 
-      const aiNarrative =
-        String(
-          result.observation
-        ).trim();
+      let aiNarrative = String(result.observation).trim();
 
-      // IMPORTANT:
-      // Gemini rewrites ONLY the factual observation.
-      // NOC/reminder wording still comes from the existing
-      // CCTV OPS rule-based generator.
-      const finalObservation =
-        [
-          aiNarrative,
-          parts.actionRequest
-        ]
-          .filter(Boolean)
-          .join(" ")
-          .trim();
+      // Sanitize AI observation: strip markdown formatting, quotes, or markdown headers
+      aiNarrative = aiNarrative.replace(/^\s*["']|["']\s*$/g, "");
+      aiNarrative = aiNarrative.replace(/\*\*/g, "");
+      aiNarrative = aiNarrative.replace(/^\s*#+\s*/gm, "");
+
+      // Remove accidental greetings or action requests emitted by AI
+      aiNarrative = aiNarrative.replace(/^\s*good\s+(?:morning|afternoon|evening)[^.\n]*[.,]?\s*/i, "");
+      aiNarrative = aiNarrative.replace(/\bkindly\s+(?:file\s+an\s+noc|remind\s+the\s+agent)[^.\n]*\.?(?:\s*thank\s+you\.?)?/gi, "").trim();
+
+      // Ensure proper standard starter
+      if (!/^observed\b/i.test(aiNarrative)) {
+        aiNarrative = `Observed an agent ${aiNarrative}`;
+      }
+
+      // Verify duration preservation: if fallback computed a duration and AI dropped it, attach it cleanly
+      if (fallback.durationText && !/\b(?:duration|approximately|lasting|spanning)\b/i.test(aiNarrative)) {
+        aiNarrative = aiNarrative.replace(/\.+$/, "");
+        aiNarrative += `, with a total duration of ${fallback.durationText}.`;
+      }
+
+      // Ensure single trailing period
+      aiNarrative = aiNarrative.replace(/\.+$/, ".");
+
+      // Combine factual AI narrative with the standard COD action request
+      const finalObservation = [aiNarrative, parts.actionRequest].filter(Boolean).join(" ").trim();
 
       return {
         ...fallback,
-
-        observation:
-          finalObservation,
-
-        aiUsed:
-          true,
-
-        aiProvider:
-          result.provider ||
-          "gemini",
-
-        aiModel:
-          result.model ||
-          ""
+        observation: finalObservation,
+        aiUsed: true,
+        aiProvider: result.provider || "gemini",
+        aiModel: result.model || "gemini-3.5-flash-lite"
       };
 
     } catch (error) {
-      console.warn(
-        "[CCTV Quick Compose AI] Falling back to standard composer:",
-        error
-      );
+      if (timeoutId) clearTimeout(timeoutId);
+      const isTimeout = error?.name === "AbortError" || /abort|timeout|timed out/i.test(error?.message || "");
+      const errorMsg = isTimeout
+        ? "AI request timed out. Standard report generation was used."
+        : (error?.message || "AI generation unavailable.");
+
+      console.warn("[CCTV Quick Compose AI] Falling back to standard composer:", errorMsg);
 
       return {
         ...fallback,
-
-        aiUsed:
-          false,
-
-        aiError:
-          error?.message ||
-          String(error)
+        aiUsed: false,
+        aiError: errorMsg
       };
     }
   }

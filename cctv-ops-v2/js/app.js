@@ -366,6 +366,19 @@
       }
     }
 
+    // Clean up any detached or open more-menus in document.body
+    document.querySelectorAll("body > .record-dropdown-menu").forEach(menu => {
+      closeMoreMenu(menu);
+      menu.remove();
+    });
+
+    if (!listContainer._scrollBound) {
+      listContainer.addEventListener("scroll", () => {
+        document.querySelectorAll(".record-dropdown-menu.is-open").forEach(closeMoreMenu);
+      }, { passive: true });
+      listContainer._scrollBound = true;
+    }
+
     if (!reports.length) {
       listContainer.innerHTML = '<div style="color:var(--text-muted); font-size:11.5px; text-align:center; padding:30px 10px;">No EDR records found. Complete the form on the left to save an incident.</div>';
       updateLivePreview();
@@ -844,10 +857,10 @@
     const menuRect = menu.getBoundingClientRect();
     const gap = 4;
     const openUpward = triggerRect.bottom + gap + menuRect.height > window.innerHeight;
-    const left = Math.max(4, Math.min(triggerRect.right - menuRect.width, window.innerWidth - menuRect.width - 4));
+    const left = Math.max(8, Math.min(triggerRect.right - menuRect.width, window.innerWidth - menuRect.width - 8));
     const top = openUpward
-      ? Math.max(4, triggerRect.top - menuRect.height - gap)
-      : Math.min(window.innerHeight - menuRect.height - 4, triggerRect.bottom + gap);
+      ? Math.max(8, triggerRect.top - menuRect.height - gap)
+      : Math.min(window.innerHeight - menuRect.height - 8, triggerRect.bottom + gap);
     menu.style.position = "fixed";
     menu.style.left = `${left}px`;
     menu.style.top = `${top}px`;
@@ -1131,6 +1144,50 @@
       }
     });
 
+    // Send EDR directly to Microsoft Teams Dialog
+    el("btnSendEdrToTeams")?.addEventListener("click", async () => {
+      try {
+        const previewBox = el("edrPreviewBox");
+        const text = previewBox ? (previewBox.innerText || previewBox.textContent || "") : "";
+        if (!text.trim() || text.includes("Select active EDRs in the list")) {
+          showToast("Please select active EDRs before sending to Teams.", "warning");
+          return;
+        }
+        if (window.CCTV_TEAMS_SHARE) {
+          window.CCTV_TEAMS_SHARE.open({
+            reportType: "End of the Day Report (EDR)",
+            plainContent: text,
+            htmlContent: previewBox.innerHTML
+          });
+        }
+      } catch (err) {
+        showToast(`Error preparing EDR for Teams: ${err.message}`, "error");
+      }
+    });
+
+    // Send EDR by Outlook
+    el("btnSendEdrToOutlook")?.addEventListener("click", () => {
+      try {
+        const previewBox = el("edrPreviewBox");
+        const text = previewBox ? (previewBox.innerText || previewBox.textContent || "") : "";
+        if (!text.trim() || text.includes("Select active EDRs in the list")) {
+          showToast("Please select active EDRs before sending by Outlook.", "warning");
+          return;
+        }
+        const dateStr = new Date().toLocaleDateString([], { month: "short", day: "numeric", year: "numeric" });
+        switchWorkspace("outlook");
+        if (window.CCTV_OUTLOOK) {
+          window.CCTV_OUTLOOK.openComposer({
+            mode: "new",
+            subject: `[CCTV OPS] End of the Day Report - ${dateStr}`,
+            body: text
+          });
+        }
+      } catch (err) {
+        showToast(`Error opening Outlook composer: ${err.message}`, "error");
+      }
+    });
+
     // Expand / Collapse Teams Dispatch Review Mode
     function setDispatchExpanded(expanded) {
       const layout = document.querySelector("#paneEdr .edr-split-layout");
@@ -1144,11 +1201,11 @@
       const btn = el("btnToggleDispatchExpand");
       const label = el("labelDispatchExpand");
       const icon = el("iconDispatchExpand");
-      if (label) label.textContent = isExpanded ? "Collapse Review" : "Expand Review";
+      if (label) label.textContent = isExpanded ? "Collapse Preview" : "Expand Preview";
       if (btn) {
         btn.classList.toggle("btn-active", isExpanded);
         btn.setAttribute("aria-expanded", isExpanded ? "true" : "false");
-        btn.title = isExpanded ? "Restore standard split view" : "Expand review for inspection";
+        btn.title = isExpanded ? "Restore standard split view" : "Expand preview for inspection";
       }
       if (icon) {
         if (isExpanded) {
@@ -1438,6 +1495,18 @@
       paneId: "paneAccounts",
       title: "Account Management",
       subtitle: ""
+    },
+    outlook: {
+      tabId: "tabOutlook",
+      paneId: "paneOutlook",
+      title: "Microsoft Outlook",
+      subtitle: ""
+    },
+    teams: {
+      tabId: "tabTeams",
+      paneId: "paneTeams",
+      title: "Microsoft Teams",
+      subtitle: ""
     }
   };
 
@@ -1512,6 +1581,22 @@
     } else if (targetKey === "accounts") {
       if (typeof window._renderAccountsWorkspaceFn === 'function') {
         window._renderAccountsWorkspaceFn();
+      }
+    } else if (targetKey === "outlook") {
+      if (window.CCTV_OUTLOOK) {
+        if (typeof window.CCTV_OUTLOOK.render === 'function') {
+          window.CCTV_OUTLOOK.render();
+        } else {
+          window.CCTV_OUTLOOK.loadInbox();
+        }
+      }
+    } else if (targetKey === "teams") {
+      if (window.CCTV_TEAMS) {
+        if (typeof window.CCTV_TEAMS.render === 'function') {
+          window.CCTV_TEAMS.render();
+        } else {
+          window.CCTV_TEAMS.loadNavList();
+        }
       }
     }
   }
@@ -6900,25 +6985,7 @@ function doPost(e) {
       });
     });
 
-    // Generate Report button
-    el("btnGenerateReport")?.addEventListener("click", async () => {
-      const rawText = el("quickComposeText")?.value || "";
-      if (!rawText.trim()) {
-        showToast("Please enter incident notes in Quick Compose first.", "warning");
-        return;
-      }
-      syncCctvReportDraftFromForm();
-      const generated = await window.CCTV_REPORT_SERVICE.generateReportAI(rawText, cctvReportDraft);
-      cctvReportDraft = { ...cctvReportDraft, ...generated };
-      cctvReportLastGeneratedText = cctvReportDraft.observation;
-      window.CCTV_REPORT_SERVICE.saveDraft(cctvReportDraft);
-      syncCctvReportFormFromDraft();
-      updateCctvReportPreview();
-      showToast("Report generated in established professional format.", "success");
-    });
-
-    // Regenerate button with manual edit check
-    el("btnRegenerateReport")?.addEventListener("click", async () => {
+    async function handleCctvReportCompose(isRegen = false) {
       const rawText = el("quickComposeText")?.value || "";
       if (!rawText.trim()) {
         showToast("Please enter incident notes in Quick Compose first.", "warning");
@@ -6926,7 +6993,7 @@ function doPost(e) {
       }
 
       const currentObs = el("reportObservation")?.value || "";
-      if (cctvReportLastGeneratedText && currentObs !== cctvReportLastGeneratedText) {
+      if (isRegen && cctvReportLastGeneratedText && currentObs !== cctvReportLastGeneratedText) {
         const ok = await window.appConfirm({
           title: "Overwrite Manual Edits?",
           message: "You have manually edited the report body. Regenerating will replace your manual edits with a freshly parsed report from Quick Compose. Proceed?",
@@ -6936,15 +7003,53 @@ function doPost(e) {
         if (!ok) return;
       }
 
-      syncCctvReportDraftFromForm();
-      const generated = await window.CCTV_REPORT_SERVICE.generateReportAI(rawText, cctvReportDraft);
-      cctvReportDraft = { ...cctvReportDraft, ...generated };
-      cctvReportLastGeneratedText = cctvReportDraft.observation;
-      window.CCTV_REPORT_SERVICE.saveDraft(cctvReportDraft);
-      syncCctvReportFormFromDraft();
-      updateCctvReportPreview();
-      showToast(generated.aiUsed ? "AI Quick Compose regenerated the report." : "AI unavailable; standard Quick Compose was used.", generated.aiUsed ? "success" : "warning");
-    });
+      const btnGen = el("btnGenerateReport");
+      const btnRegen = el("btnRegenerateReport");
+      const origGenHtml = btnGen ? btnGen.innerHTML : "";
+      const origRegenHtml = btnRegen ? btnRegen.innerHTML : "";
+
+      if (btnGen) btnGen.disabled = true;
+      if (btnRegen) btnRegen.disabled = true;
+
+      const activeBtn = isRegen ? (btnRegen || btnGen) : (btnGen || btnRegen);
+      if (activeBtn) {
+        activeBtn.innerHTML = '<span style="display:inline-block; margin-right:4px;">⏳</span> Generating...';
+      }
+
+      try {
+        syncCctvReportDraftFromForm();
+        const generated = await window.CCTV_REPORT_SERVICE.generateReportAI(rawText, cctvReportDraft);
+        cctvReportDraft = { ...cctvReportDraft, ...generated };
+        cctvReportLastGeneratedText = cctvReportDraft.observation;
+        window.CCTV_REPORT_SERVICE.saveDraft(cctvReportDraft);
+        syncCctvReportFormFromDraft();
+        updateCctvReportPreview();
+
+        if (generated.aiUsed) {
+          showToast(isRegen ? "Report regenerated with AI." : "Report generated with AI.", "success");
+        } else {
+          showToast("AI generation unavailable. Standard report generation was used.", "warning");
+        }
+      } catch (err) {
+        console.error("Report generation error:", err);
+        showToast("Error generating report. Please check input.", "error");
+      } finally {
+        if (btnGen) {
+          btnGen.disabled = false;
+          btnGen.innerHTML = origGenHtml;
+        }
+        if (btnRegen) {
+          btnRegen.disabled = false;
+          btnRegen.innerHTML = origRegenHtml;
+        }
+      }
+    }
+
+    // Generate Report button
+    el("btnGenerateReport")?.addEventListener("click", () => handleCctvReportCompose(false));
+
+    // Regenerate button with manual edit check
+    el("btnRegenerateReport")?.addEventListener("click", () => handleCctvReportCompose(true));
 
     // Secondary action: Open Code of Conduct workspace
     el("btnOpenConductFromReport")?.addEventListener("click", () => {
@@ -7035,6 +7140,53 @@ function doPost(e) {
       } catch (err) {
         console.error("Copy report error:", err);
         showToast(err.message || "Failed to copy report to clipboard.", "error");
+      }
+    });
+
+    // Send CCTV Report directly to Teams Dialog
+    el("btnSendReportTeams")?.addEventListener("click", async () => {
+      try {
+        syncCctvReportDraftFromForm();
+        if (!cctvReportDraft.observation && !cctvReportDraft.personInvolved) {
+          showToast("Please enter report details before sending to Teams.", "error");
+          return;
+        }
+        const previewBox = el("teamsMessageBox");
+        const plainText = previewBox ? (previewBox.innerText || previewBox.textContent || "") : "";
+        if (window.CCTV_TEAMS_SHARE) {
+          window.CCTV_TEAMS_SHARE.open({
+            reportType: "CCTV Incident Report",
+            plainContent: plainText,
+            htmlContent: previewBox ? previewBox.innerHTML : plainText
+          });
+        }
+      } catch (err) {
+        showToast(`Error sending report to Teams: ${err.message}`, "error");
+      }
+    });
+
+    // Send CCTV Report by Outlook
+    el("btnSendReportOutlook")?.addEventListener("click", () => {
+      try {
+        syncCctvReportDraftFromForm();
+        if (!cctvReportDraft.observation && !cctvReportDraft.personInvolved) {
+          showToast("Please enter report details before sending by Outlook.", "error");
+          return;
+        }
+        const previewBox = el("teamsMessageBox");
+        const plainText = previewBox ? (previewBox.innerText || previewBox.textContent || "") : "";
+        const dateStr = cctvReportDraft.date || new Date().toISOString().slice(0, 10);
+        const agent = cctvReportDraft.personInvolved || "Incident";
+        switchWorkspace("outlook");
+        if (window.CCTV_OUTLOOK) {
+          window.CCTV_OUTLOOK.openComposer({
+            mode: "new",
+            subject: `[CCTV Report] ${cctvReportDraft.site || "Site"} - ${agent} (${dateStr})`,
+            body: plainText
+          });
+        }
+      } catch (err) {
+        showToast(`Error opening Outlook: ${err.message}`, "error");
       }
     });
 
@@ -7382,25 +7534,77 @@ function doPost(e) {
   // =========================================================================
   function initHrisController() {
     const reloadBtn = el("btnHrisReload");
-    const reloadEmbeddedBtn = el("btnReloadEmbeddedHris");
+    const retryBtn = el("btnHrisRetry");
+    const reloadCardBtn = el("btnHrisReloadCard");
     const hrisFrame = el("hrisFrame");
+    const loadingState = el("hrisLoadingState");
+    const errorState = el("hrisErrorState");
+    const errorReason = el("hrisErrorReason");
+
+    let loadTimeout = null;
+    let isLoadedOnce = false;
+
+    function showLoading() {
+      if (loadingState) loadingState.style.display = "flex";
+      if (errorState) errorState.style.display = "none";
+    }
+
+    function hideLoading() {
+      if (loadingState) loadingState.style.display = "none";
+      if (errorState) errorState.style.display = "none";
+    }
+
+    function showError(reason) {
+      if (loadingState) loadingState.style.display = "none";
+      if (errorState) errorState.style.display = "flex";
+      if (errorReason && reason) errorReason.textContent = reason;
+    }
 
     const doReload = () => {
-      if (hrisFrame) {
-        hrisFrame.src = "https://611systems.com/hrsys/employee-dtr";
+      if (!hrisFrame) return;
+      showLoading();
+      if (loadTimeout) clearTimeout(loadTimeout);
+
+      loadTimeout = setTimeout(() => {
+        if (loadingState && loadingState.style.display !== "none") {
+          showError("Connection timed out. Check your network or open HRIS externally.");
+        }
+      }, 15000);
+
+      hrisFrame.src = "https://611systems.com/hrsys/employee-dtr";
+      if (typeof showToast === "function") {
         showToast("Reloading HRIS Employee DTR...", "info");
       }
     };
 
     reloadBtn?.addEventListener("click", doReload);
-    reloadEmbeddedBtn?.addEventListener("click", doReload);
+    retryBtn?.addEventListener("click", doReload);
+    reloadCardBtn?.addEventListener("click", doReload);
 
-    // Detect if iframe loading triggers standard error
+    el("btnHrisSessionHelp")?.addEventListener("click", () => {
+      if (typeof showToast === "function") {
+        showToast("HRIS Session Notice: If the embedded login returns '419 Page Expired', your browser is omitting cross-site session cookies. Click 'Open HRIS' to log in directly, or deploy CCTV OPS under 611systems.com.", "warning", 8000);
+      }
+    });
+
     if (hrisFrame) {
-      hrisFrame.addEventListener("error", () => {
-        const blocked = el("hrisBlockedNotice");
-        if (blocked) blocked.style.display = "flex";
+      hrisFrame.addEventListener("load", () => {
+        if (loadTimeout) clearTimeout(loadTimeout);
+        hideLoading();
+        isLoadedOnce = true;
       });
+
+      hrisFrame.addEventListener("error", () => {
+        if (loadTimeout) clearTimeout(loadTimeout);
+        showError("The browser blocked loading HRIS or the server is unreachable.");
+      });
+
+      // Initial load timeout guard
+      loadTimeout = setTimeout(() => {
+        if (!isLoadedOnce && loadingState && loadingState.style.display !== "none") {
+          showError("Connection timed out. The HRIS portal may be slow to respond or unreachable.");
+        }
+      }, 15000);
     }
   }
 
@@ -8799,6 +9003,20 @@ ${escapeHtml(JSON.stringify(entry.after || entry.before, null, 2))}
 
     // Accounts / Admin Console Initialization
     initAccountsController();
+
+    // Microsoft 365 Services & Modals
+    if (window.CCTV_MS_CONFIG_DIALOG) {
+      window.CCTV_MS_CONFIG_DIALOG.init();
+    }
+    if (window.CCTV_TEAMS_SHARE) {
+      window.CCTV_TEAMS_SHARE.init();
+    }
+    if (window.CCTV_OUTLOOK) {
+      window.CCTV_OUTLOOK.init();
+    }
+    if (window.CCTV_TEAMS) {
+      window.CCTV_TEAMS.init();
+    }
 
     // Manila clock ticker
     updateManilaClock();
