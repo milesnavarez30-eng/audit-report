@@ -34,12 +34,38 @@ window.CCTV_REPORT_SERVICE = (function () {
     { regex: /\bchitchatting\b/gi, replacement: "engaging in non-work-related conversation" }
   ];
 
+  // --- NORMALIZATION & MIGRATION UTILITIES ---
+  function normalizeCctvReportText(value) {
+    if (typeof value !== "string") return value;
+    let text = value;
+    // Safely replace known broken dash sequences (mojibake) and Unicode dashes with standard ASCII hyphen:
+    // Handles Windows-1252/ISO-8859-1 en-dash/em-dash mojibake, double mojibake, and Unicode dashes
+    text = text.replace(/(?:\u00c3\u00a2\u00e2\u201a\u00ac\u00e2\u20ac[\u0153\u009d]|\u00e2\u20ac[\u201c\u201d\u02dc\u2122\u0093\u0094]|\u00e2\u0080[\u0093\u0094]|\u00c2[\u0096\u0097\u2013\u2014]|[\u2013\u2014\u2015\u2212])/g, "-");
+    // Normalize spacing around hyphens: "Site A   -   Ground Floor" -> "Site A - Ground Floor"
+    text = text.replace(/[ \t]+-[ \t]+/g, " - ");
+    // Clean up multiple spaces/tabs without disrupting newlines
+    text = text.replace(/[ \t]{2,}/g, " ");
+    return text.trim();
+  }
+
+  function normalizeCctvReportDraft(draft) {
+    if (!draft || typeof draft !== "object") return draft;
+    const normalized = { ...draft };
+    const textFields = ["site", "location", "dateRange", "date", "observation", "body", "greeting", "personInvolved", "rawInput"];
+    for (const field of textFields) {
+      if (typeof normalized[field] === "string") {
+        normalized[field] = normalizeCctvReportText(normalized[field]);
+      }
+    }
+    return normalized;
+  }
+
   function getDefaultDraft() {
     return {
       greeting: "Good morning TLs,",
       observation: "Observed an agent sleeping from 5:34:44 AM to 5:40:20 AM, with a total duration of approximately 5 minutes. Kindly file an NOC in accordance with the company COD. Thank you.",
       personInvolved: "",
-      site: "Mabini Site A \u2013 Ground Floor",
+      site: "Mabini Site A - Ground Floor",
       dateRange: "September 10, 2026",
       clipUrl: "",
       screenshots: [],
@@ -53,7 +79,17 @@ window.CCTV_REPORT_SERVICE = (function () {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) {
         const parsed = JSON.parse(raw);
-        return { ...getDefaultDraft(), ...parsed };
+        const merged = { ...getDefaultDraft(), ...parsed };
+        const normalized = normalizeCctvReportDraft(merged);
+        const normalizedJson = JSON.stringify(normalized);
+        if (raw !== normalizedJson) {
+          try {
+            localStorage.setItem(STORAGE_KEY, normalizedJson);
+          } catch (persistErr) {
+            console.warn("Could not persist migrated CCTV report draft:", persistErr);
+          }
+        }
+        return normalized;
       }
     } catch (e) {
       console.warn("Could not load CCTV report draft:", e);
@@ -63,7 +99,8 @@ window.CCTV_REPORT_SERVICE = (function () {
 
   function saveDraft(draft) {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(draft));
+      const normalized = normalizeCctvReportDraft(draft);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(normalized));
     } catch (e) {
       console.warn("Could not save CCTV report draft:", e);
     }
@@ -187,10 +224,10 @@ window.CCTV_REPORT_SERVICE = (function () {
         if (sMatch[1].toLowerCase().includes("mabini")) {
           const site = sMatch[1].replace(/\s+/g, " ");
           const floor = sMatch[2] ? `${sMatch[2]} Floor` : "Ground Floor";
-          detectedLocation = `${site} \u2013 ${floor}`;
+          detectedLocation = `${site} - ${floor}`;
         } else if (sMatch[1].toUpperCase() === "MAA") {
           const floor = sMatch[2] ? `${sMatch[2]} Floor` : "5th Floor";
-          detectedLocation = `MAA \u2013 ${floor}`;
+          detectedLocation = `MAA - ${floor}`;
         } else if (sMatch[1].toLowerCase().includes("ecoland")) {
           detectedLocation = "Ecoland Site";
         } else if (sMatch[1].toLowerCase().includes("gensan")) {
@@ -225,9 +262,9 @@ window.CCTV_REPORT_SERVICE = (function () {
       const monthFullName2 = mIdx2 !== undefined ? MONTH_NAMES[mIdx2] : m2;
 
       if (monthFullName1 === monthFullName2) {
-        detectedDate = `${monthFullName1} ${d1}\u2013${d2}, ${year}`;
+        detectedDate = `${monthFullName1} ${d1}-${d2}, ${year}`;
       } else {
-        detectedDate = `${monthFullName1} ${d1} \u2013 ${monthFullName2} ${d2}, ${year}`;
+        detectedDate = `${monthFullName1} ${d1} - ${monthFullName2} ${d2}, ${year}`;
       }
       isOvernightDate = true;
 
@@ -251,7 +288,7 @@ window.CCTV_REPORT_SERVICE = (function () {
         const year = overMatch[5] || "2026";
         const mIdx = MONTH_ABBR[m1.toLowerCase().replace(".", "")];
         const monthFullName = mIdx !== undefined ? MONTH_NAMES[mIdx] : m1;
-        detectedDate = `${monthFullName} ${d1}\u2013${d2}, ${year}`;
+        detectedDate = `${monthFullName} ${d1}-${d2}, ${year}`;
         isOvernightDate = true;
         text = text.replace(overMatch[0], " ");
       }
@@ -505,18 +542,18 @@ window.CCTV_REPORT_SERVICE = (function () {
     // If empty, populate from detected Location. Never invent fictitious locations.
     let finalLocation = "";
     if (parsed.detectedLocation) {
-      finalLocation = parsed.detectedLocation;
+      finalLocation = normalizeCctvReportText(parsed.detectedLocation);
     } else if (existingDraft.site && String(existingDraft.site).trim()) {
-      finalLocation = String(existingDraft.site).trim();
+      finalLocation = normalizeCctvReportText(String(existingDraft.site).trim());
     }
 
     // Final Date: Keep existing operator-entered date if already provided.
     // If empty, populate from detected Date. Never invent fictitious dates.
     let finalDate = "";
     if (parsed.detectedDate) {
-      finalDate = parsed.detectedDate;
+      finalDate = normalizeCctvReportText(parsed.detectedDate);
     } else if (existingDraft.dateRange && String(existingDraft.dateRange).trim()) {
-      finalDate = String(existingDraft.dateRange).trim();
+      finalDate = normalizeCctvReportText(String(existingDraft.dateRange).trim());
     }
 
     // Final Clip URLs
@@ -525,7 +562,7 @@ window.CCTV_REPORT_SERVICE = (function () {
       finalClip = parsed.detectedUrls.join("\n");
     }
 
-    return {
+    return normalizeCctvReportDraft({
       greeting: existingDraft.greeting || "Good morning TLs,",
       observation: fullObservation,
       personInvolved: existingDraft.personInvolved || "",
@@ -538,15 +575,16 @@ window.CCTV_REPORT_SERVICE = (function () {
       durationText: durationText,
       totalMinutes: totalMinutes,
       classification: isSleeping ? "SLEEPING" : (isInternetVideo ? "BROWSING" : (isDressCode ? "DRESS CODE" : ""))
-    };
+    });
   }
 
   // --- REPORT TEXT BUILDERS ---
 
   function parseClipUrls(clipUrlInput) {
     if (!clipUrlInput) return [];
+    const seen = new Set();
     return String(clipUrlInput)
-      .split(/[\n,]+/)
+      .split(/[\r\n,]+/)
       .map(u => u.trim())
       .map(u => {
         if (!u) return "";
@@ -557,7 +595,12 @@ window.CCTV_REPORT_SERVICE = (function () {
         } catch (_) {}
         return "";
       })
-      .filter(u => !!u);
+      .filter(u => {
+        if (!u) return false;
+        if (seen.has(u)) return false;
+        seen.add(u);
+        return true;
+      });
   }
 
   function buildReportPlainText(draft) {
@@ -608,8 +651,6 @@ window.CCTV_REPORT_SERVICE = (function () {
       clips.forEach((c, idx) => {
         parts.push(`CCTV Clip ${idx + 1}: ${c}`);
       });
-    } else {
-      parts.push("CCTV Clip: Click here!");
     }
 
     return parts.join("\n").trim();
@@ -673,8 +714,6 @@ window.CCTV_REPORT_SERVICE = (function () {
       clips.forEach((c, idx) => {
         htmlParts.push(`<div style="margin:4px 0 0 0;"><strong>CCTV Clip ${idx + 1}:</strong> <a href="${esc(c)}" target="_blank" rel="noopener noreferrer" style="color: #6366f1; text-decoration: underline; font-weight: 600;">Click here!</a></div>`);
       });
-    } else {
-      htmlParts.push(`<div style="margin:6px 0 0 0;"><strong>CCTV Clip:</strong> <span style="color: #94a3b8; font-style: italic;">Click here!</span></div>`);
     }
 
     return htmlParts.join("");
@@ -926,11 +965,14 @@ window.CCTV_REPORT_SERVICE = (function () {
     getDraft,
     saveDraft,
     resetDraft,
+    normalizeCctvReportText,
+    normalizeCctvReportDraft,
     getCodeOfConduct,
     getCodeOfConductCount,
     getPenaltyMatrix,
     searchCodeOfConduct,
     parseQuickCompose,
+    parseClipUrls,
     generateReport,
     generateReportAI,
     buildReportPlainText,
@@ -940,4 +982,3 @@ window.CCTV_REPORT_SERVICE = (function () {
 })();
 
 window.CctvReportService = window.CCTV_REPORT_SERVICE;
-

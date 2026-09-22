@@ -28,39 +28,49 @@
   <link rel="stylesheet" href="./css/ms-integration.css">
 
   <style>
-    /* Premium Split-View EDR Styling */
+    /* ==========================================================================
+       EDR Premium Split-View — Inline Overrides
+       ========================================================================== */
+
+    /* Container query anchor for left form column */
     #colEdrForm {
       container-type: inline-size;
       container-name: edrform;
     }
 
+    /* Scrollable form body */
     .edr-form-scroll {
       flex: 1;
       overflow-y: auto;
-      padding: 12px 14px;
+      padding: 10px 12px;
       display: flex;
       flex-direction: column;
-      gap: 12px;
+      gap: 10px;
     }
 
+    /* ---- Field Header: label row above each input ---- */
     .edr-field-header {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      min-height: 24px;
-      margin-bottom: 2px;
-      gap: 4px;
+      min-height: 22px;
+      margin-bottom: 3px;
+      gap: 6px;
+      flex-wrap: nowrap;
     }
 
     .edr-field-header .form-label {
       margin: 0;
       line-height: 1.2;
+      flex-shrink: 0;
     }
 
+    /* Label + (+/-) buttons grouped left */
     .edr-label-group {
       display: flex;
       align-items: center;
       gap: 4px;
+      flex: 1 1 auto;
       min-width: 0;
     }
 
@@ -71,36 +81,54 @@
       flex-shrink: 0;
     }
 
+    /* Choice segments always anchor to the right of the header row */
+    .edr-field-header > .choice-segment,
+    .edr-field-header .choice-segment {
+      flex-shrink: 0;
+      margin-left: auto;
+    }
+
+    /* ---- Two-column grid for paired fields ---- */
     .form-row-2 {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 8px;
     }
 
-    @container edrform (max-width: 440px) {
+    /* Container query: collapse to 1 col when column itself is narrow */
+    @container edrform (max-width: 480px) {
       .form-row-2 {
         grid-template-columns: 1fr;
       }
     }
 
-    @media (max-width: 900px) {
+    /* Global stacked-layout breakpoint */
+    @media (max-width: 1100px) {
       .form-row-2 {
         grid-template-columns: 1fr;
       }
     }
 
-    /* Output Preview Area */
+    /* ---- Textareas: Incident and Action need room to read ---- */
+    #edrIncident,
+    #edrActionRemarks {
+      min-height: 72px;
+      resize: vertical;
+    }
+
+    /* ---- Output Preview Area ---- */
     .dispatch-preview-box {
       flex: 1;
       background: var(--bg-input);
-      border: 1px solid var(--border-default);
+      border: 1px solid var(--border-subtle);
       border-radius: var(--radius-sm);
       padding: 10px 12px;
       font-size: 11.5px;
-      line-height: 1.5;
+      line-height: 1.6;
       overflow-y: auto;
       color: var(--text-secondary);
       user-select: text;
+      min-height: 80px;
     }
 
     .edr-preview-card {
@@ -108,16 +136,11 @@
       background: var(--bg-surface);
       border: 1px solid var(--border-subtle);
       margin-bottom: 4px;
+      padding: 8px 10px;
     }
-    .edr-preview-line {
-      margin-bottom: 2px;
-    }
-    .edr-preview-line strong {
-      color: var(--text-primary);
-    }
-    .edr-preview-shot {
-      margin: 8px 0 6px 0;
-    }
+    .edr-preview-line { margin-bottom: 2px; }
+    .edr-preview-line strong { color: var(--text-primary); }
+    .edr-preview-shot { margin: 8px 0 6px 0; }
     .edr-preview-shot img {
       max-width: 100%;
       max-height: 260px;
@@ -125,10 +148,7 @@
       border: 1px solid var(--border-default);
       display: block;
     }
-    .edr-preview-clip a {
-      color: var(--accent-primary);
-      text-decoration: underline;
-    }
+    .edr-preview-clip a { color: var(--accent-primary); text-decoration: underline; }
     .edr-preview-divider {
       text-align: center;
       color: var(--text-muted);
@@ -137,7 +157,9 @@
       margin: 6px 0;
     }
 
-    /* Refined Saved EDR Record Row & Actions */
+    /* =========================================================================
+       SAVED EDR LIST
+       ========================================================================= */
     #edrListContainer {
       overflow-y: auto !important;
       overflow-x: hidden !important;
@@ -153,12 +175,12 @@
       display: flex;
       align-items: center;
       gap: 8px;
-      min-height: 42px;
-      padding: 4px 8px;
+      min-height: 44px;
+      padding: 5px 8px;
       background: var(--bg-surface);
-      border: 1px solid var(--border-default);
+      border: 1px solid var(--border-subtle);
       border-radius: var(--radius-sm);
-      transition: all var(--trans-fast);
+      transition: background var(--trans-fast), border-color var(--trans-fast), box-shadow var(--trans-fast);
       user-select: none;
       box-sizing: border-box;
       width: 100%;
@@ -168,32 +190,32 @@
 
     .record-row:hover {
       background: var(--bg-surface-elevated);
-      border-color: var(--border-hover);
+      border-color: var(--border-default);
+      box-shadow: var(--shadow-xs);
     }
 
     .record-row.is-selected {
-      border-color: rgba(56, 189, 248, 0.45);
-      background: rgba(56, 189, 248, 0.05);
+      background: rgba(108, 92, 231, 0.07) !important;
+      border-left: 3px solid var(--accent-primary) !important;
+      border-color: rgba(108, 92, 231, 0.40) !important;
     }
 
-    .record-row.is-done {
-      opacity: 0.65;
-    }
+    .record-row.is-done { opacity: 0.55; }
 
     .record-select-col {
       display: flex;
       align-items: center;
       justify-content: center;
       flex-shrink: 0;
+      min-width: 24px;
     }
 
-    /* Report Info: Main line (Date · Site [Status Chips]), Sub line (Campaign · TL: ... · Subj: ...) */
     .record-info {
       flex: 1 1 auto;
       display: flex;
       flex-direction: column;
       justify-content: center;
-      gap: 3px;
+      gap: 2px;
       min-width: 0;
       overflow: hidden;
     }
@@ -201,122 +223,125 @@
     .record-main-line {
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 5px;
       min-width: 0;
-      white-space: nowrap;
       overflow: hidden;
     }
 
     .record-date {
-      font-size: 12px;
+      font-size: 11.5px;
       font-weight: 700;
-      color: #38bdf8;
+      color: var(--accent-secondary, #5CE1E6);
       letter-spacing: 0.2px;
       flex-shrink: 0;
+      white-space: nowrap;
     }
 
     .record-sep {
-      color: var(--text-muted);
-      opacity: 0.5;
+      color: var(--text-dim);
       flex-shrink: 0;
       font-size: 10px;
     }
 
     .record-site {
-      font-size: 12px;
+      font-size: 11.5px;
       font-weight: 600;
       color: var(--text-primary);
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
       flex-shrink: 1;
+      min-width: 0;
     }
 
-    /* Small compact status chips */
     .status-chips-wrap {
       display: inline-flex;
       align-items: center;
-      gap: 4px;
-      margin-left: 2px;
+      gap: 3px;
       flex-shrink: 0;
     }
 
     .status-chip {
-      font-size: 8.5px;
+      font-size: 8px;
       font-weight: 700;
-      padding: 1px 4.5px;
+      padding: 1px 4px;
       border-radius: 3px;
       letter-spacing: 0.4px;
       text-transform: uppercase;
-      line-height: 1.1;
+      line-height: 1.15;
       user-select: none;
       flex-shrink: 0;
+      border: 1px solid transparent;
     }
 
     .status-chip.chip-ss {
-      background: rgba(245, 158, 11, 0.12);
-      color: #fbbf24;
-      border: 1px solid rgba(245, 158, 11, 0.28);
+      background: var(--accent-warning-soft);
+      color: var(--accent-warning);
+      border-color: rgba(251, 146, 60, 0.30);
     }
-
     .status-chip.chip-audit {
-      background: rgba(56, 189, 248, 0.12);
-      color: #38bdf8;
-      border: 1px solid rgba(56, 189, 248, 0.28);
+      background: var(--accent-primary-soft);
+      color: #A78BFA;
+      border-color: rgba(108, 92, 231, 0.30);
     }
-
     .status-chip.chip-done {
-      background: rgba(52, 211, 153, 0.12);
-      color: #34d399;
-      border: 1px solid rgba(52, 211, 153, 0.28);
+      background: var(--accent-success-soft);
+      color: var(--accent-success);
+      border-color: rgba(74, 222, 128, 0.30);
     }
-
     .status-chip.chip-docs {
-      background: rgba(168, 85, 247, 0.12);
-      color: #c084fc;
-      border: 1px solid rgba(168, 85, 247, 0.28);
+      background: var(--accent-secondary-soft);
+      color: var(--accent-secondary);
+      border-color: rgba(92, 225, 230, 0.30);
     }
 
     .record-sub-line {
       display: flex;
       align-items: center;
-      gap: 5px;
-      font-size: 11px;
+      gap: 4px;
+      font-size: 10.5px;
       color: var(--text-muted);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
       min-width: 0;
+      overflow: hidden;
     }
 
     .record-sub-line .record-campaign {
       color: var(--text-secondary);
       font-weight: 500;
       flex-shrink: 0;
-    }
-
-    .record-sub-line .record-resp {
-      color: var(--text-muted);
+      white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      white-space: nowrap;
-      flex-shrink: 1;
+      max-width: 110px;
     }
-
+    .record-sub-line .record-resp {
+      color: var(--text-muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      flex-shrink: 1;
+      min-width: 0;
+    }
     .record-sub-line .record-resp strong {
       color: var(--text-secondary);
       font-weight: 500;
     }
-
     .record-sub-line .record-subj {
       color: var(--text-muted);
+      white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      white-space: nowrap;
       flex-shrink: 2;
+      min-width: 0;
     }
 
-    /* Actions: Right-aligned, Clean, Non-scrolling */
+    .record-last-edited {
+      font-size: 10px;
+      color: var(--text-dim);
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
     .record-actions {
       display: flex;
       align-items: center;
@@ -334,70 +359,71 @@
       font-size: 10.5px;
       font-weight: 500;
       white-space: nowrap;
-      border-radius: 4px;
+      border-radius: var(--radius-xs);
       border: 1px solid var(--border-default);
       background: var(--bg-surface-elevated);
       color: var(--text-secondary);
       cursor: pointer;
-      transition: all var(--trans-fast);
+      transition: background var(--trans-fast), border-color var(--trans-fast), color var(--trans-fast);
       flex-shrink: 0;
       line-height: 1;
       font-family: inherit;
     }
 
     .btn-action:hover {
-      background: rgba(255, 255, 255, 0.08);
+      background: var(--bg-surface-hover);
       color: var(--text-primary);
       border-color: var(--border-hover);
     }
+    .btn-action:active { transform: none !important; }
 
     .btn-action.btn-audit-send.is-linked {
-      color: #38bdf8;
-      border-color: rgba(56, 189, 248, 0.35);
-      background: rgba(56, 189, 248, 0.06);
+      color: var(--accent-secondary);
+      border-color: rgba(92, 225, 230, 0.35);
+      background: var(--accent-secondary-soft);
     }
-
     .btn-action.btn-done-toggle.is-done-btn {
-      color: #34d399;
-      border-color: rgba(52, 211, 153, 0.35);
-      background: rgba(52, 211, 153, 0.06);
+      color: var(--accent-success);
+      border-color: rgba(74, 222, 128, 0.35);
+      background: var(--accent-success-soft);
     }
 
+    /* More options [...] trigger — monospace ASCII dots */
     .btn-action.btn-more-trigger {
-      min-width: 22px;
-      padding: 0 4px;
-      font-size: 14px;
+      min-width: 24px;
+      padding: 0 5px;
+      font-size: 12px;
       font-weight: 700;
-      letter-spacing: -0.5px;
+      letter-spacing: 1px;
+      font-family: var(--font-mono) !important;
     }
 
-    .btn-audit-send .label-short {
-      display: none;
+    .btn-audit-send .label-short { display: none; }
+
+    @media (max-width: 480px) {
+      .btn-audit-send .label-long { display: none; }
+      .btn-audit-send .label-short { display: inline; }
     }
 
-    @media (max-width: 520px) {
-      .btn-audit-send .label-long {
-        display: none;
-      }
-      .btn-audit-send .label-short {
-        display: inline;
-      }
-    }
-
-    @media (max-width: 1100px) {
+    /* At mid-tablet, wrap actions below record info */
+    @media (max-width: 768px) {
       .record-row {
         flex-wrap: wrap;
         min-height: auto;
+        align-items: flex-start;
       }
       .record-actions {
         width: 100%;
         justify-content: flex-end;
         padding-top: 4px;
-        border-top: 1px solid rgba(255, 255, 255, 0.04);
+        border-top: 1px solid var(--border-subtle);
+        margin-left: 0;
       }
     }
 
-    /* More Dropdown Menu */
+    /* =========================================================================
+       MORE DROPDOWN MENU
+       ========================================================================= */
     .record-more-menu-wrap {
       position: relative;
       display: inline-flex;
@@ -407,21 +433,18 @@
       position: absolute;
       top: calc(100% + 4px);
       right: 0;
-      z-index: 1050;
-      min-width: 125px;
-      background: #151923;
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      border-radius: 6px;
+      z-index: var(--z-dropdown, 1050);
+      min-width: 130px;
+      background: var(--bg-surface-elevated);
+      border: 1px solid var(--border-hover);
+      border-radius: var(--radius-sm);
       box-shadow: 0 8px 24px rgba(0, 0, 0, 0.55), 0 2px 6px rgba(0, 0, 0, 0.3);
       padding: 4px;
       display: none;
       flex-direction: column;
       gap: 1px;
     }
-
-    .record-dropdown-menu.is-open {
-      display: flex;
-    }
+    .record-dropdown-menu.is-open { display: flex; }
 
     .dropdown-item {
       display: flex;
@@ -435,45 +458,40 @@
       font-size: 11px;
       font-weight: 500;
       text-align: left;
-      border-radius: 4px;
+      border-radius: var(--radius-xs);
       cursor: pointer;
-      transition: all var(--trans-fast);
+      transition: background var(--trans-fast), color var(--trans-fast);
       font-family: inherit;
       white-space: nowrap;
     }
-
     .dropdown-item:hover {
-      background: rgba(255, 255, 255, 0.08);
+      background: rgba(255, 255, 255, 0.07);
       color: var(--text-primary);
     }
-
-    .dropdown-item.text-danger {
-      color: #f87171;
-    }
-
+    .dropdown-item.text-danger { color: var(--accent-danger); }
     .dropdown-item.text-danger:hover {
-      background: rgba(239, 68, 68, 0.15);
-      color: #fca5a5;
+      background: var(--accent-danger-soft);
+      color: var(--accent-danger);
     }
-
     .dropdown-divider {
       height: 1px;
-      background: rgba(255, 255, 255, 0.08);
+      background: var(--border-subtle);
       margin: 3px 0;
     }
-
     .dropdown-icon {
       width: 13px;
       height: 13px;
       flex-shrink: 0;
       stroke: currentColor;
+      fill: none;
     }
 
-    /* Standardized EDR Button System (No physical translate jitter, clean Inter font) */
+    /* =========================================================================
+       BUTTON SYSTEM — No transform, consistent font
+       ========================================================================= */
     .btn, .btn-action, .choice-btn, .btn-opt-mgmt {
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+      font-family: var(--font-ui, 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif) !important;
     }
-
     .btn:hover, .btn:active,
     .btn-action:hover, .btn-action:active,
     .choice-btn:hover, .choice-btn:active,
@@ -481,140 +499,140 @@
       transform: none !important;
     }
 
-    /* Option Management (+ / -) in Form Headers */
+    /* =========================================================================
+       + / - OPTION MANAGEMENT BUTTONS
+       ========================================================================= */
     .btn-opt-mgmt {
       width: 18px;
       height: 18px;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      font-family: var(--font-mono, monospace) !important;
       font-size: 13px;
       font-weight: 600;
       line-height: 1;
       padding: 0;
       border: 1px solid var(--border-default);
-      border-radius: var(--radius-xs, 3px);
-      background: var(--bg-surface-elevated, #1e2433);
-      color: var(--text-muted, #94a3b8);
+      border-radius: var(--radius-xs);
+      background: var(--bg-surface-elevated);
+      color: var(--text-muted);
       cursor: pointer;
       transition: background var(--trans-fast), color var(--trans-fast), border-color var(--trans-fast);
       box-sizing: border-box;
+      flex-shrink: 0;
     }
-
     .btn-opt-mgmt:hover {
-      background: rgba(255, 255, 255, 0.1);
-      color: var(--text-primary, #f8fafc);
-      border-color: var(--border-hover, #475569);
+      background: var(--bg-surface-hover);
+      color: var(--text-primary);
+      border-color: var(--border-hover);
     }
 
-    /* Role & Violation Subject Choice Segments */
+    /* =========================================================================
+       CHOICE SEGMENTS — TL/OM and Agent/TL toggles
+       ========================================================================= */
     .choice-segment {
       display: inline-flex;
       align-items: center;
-      background: var(--bg-input, #0f131c);
-      border: 1px solid var(--border-default, #252d3d);
-      border-radius: var(--radius-sm, 4px);
+      background: var(--bg-input);
+      border: 1px solid var(--border-default);
+      border-radius: var(--radius-sm);
       padding: 1px;
       gap: 1px;
       height: 22px;
       box-sizing: border-box;
       flex-shrink: 0;
     }
-
     .choice-btn {
       height: 18px;
-      padding: 0 6px;
+      padding: 0 7px;
       font-size: 9.5px;
       font-weight: 600;
-      border-radius: var(--radius-xs, 3px);
+      border-radius: var(--radius-xs);
       border: none;
       background: transparent;
-      color: var(--text-secondary, #94a3b8);
+      color: var(--text-muted);
       cursor: pointer;
       transition: background var(--trans-fast), color var(--trans-fast);
       line-height: 18px;
       box-sizing: border-box;
+      white-space: nowrap;
     }
-
     .choice-btn:hover {
-      color: var(--text-primary, #f8fafc);
+      color: var(--text-primary);
+      background: rgba(255, 255, 255, 0.06);
     }
-
     .choice-btn.active {
-      background: var(--bg-surface-elevated, #242c3d);
-      color: #38bdf8;
+      background: var(--accent-primary);
+      color: #fff;
       font-weight: 700;
-      border: 1px solid rgba(56, 189, 248, 0.25);
+      border: 1px solid rgba(108, 92, 231, 0.5);
     }
 
-    /* Section Headers */
+    /* =========================================================================
+       SECTION HEADERS (01 / 02 / 03 / 04)
+       ========================================================================= */
     .form-section-header {
       display: flex;
       align-items: center;
       gap: 6px;
-      margin: 8px 0 2px 0;
+      margin: 6px 0 2px 0;
       padding-bottom: 3px;
-      border-bottom: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
+      border-bottom: 1px solid var(--border-subtle);
     }
-
     .form-section-tag {
-      font-family: var(--font-mono, monospace);
+      font-family: var(--font-mono);
       font-size: 9px;
       font-weight: 700;
-      color: #38bdf8;
-      background: rgba(56, 189, 248, 0.1);
-      border: 1px solid rgba(56, 189, 248, 0.25);
+      color: var(--accent-secondary);
+      background: var(--accent-secondary-soft);
+      border: 1px solid rgba(92, 225, 230, 0.25);
       padding: 1px 4px;
       border-radius: 3px;
       letter-spacing: 0.04em;
       line-height: 1.1;
       flex-shrink: 0;
     }
-
     .form-section-title {
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      font-size: 11px;
+      font-size: 10.5px;
       font-weight: 600;
-      color: var(--text-secondary, #94a3b8);
+      color: var(--text-muted);
       text-transform: uppercase;
-      letter-spacing: 0.04em;
+      letter-spacing: 0.05em;
     }
 
-    /* Dropzone Compact Evidence Area */
+    /* =========================================================================
+       EVIDENCE DROPZONE
+       ========================================================================= */
     .dropzone-compact {
-      border: 1px dashed var(--border-default, #2a3346);
-      border-radius: var(--radius-sm, 4px);
+      border: 1px dashed var(--border-hover);
+      border-radius: var(--radius-sm);
       padding: 6px 10px;
       display: flex;
       align-items: center;
       gap: 8px;
       cursor: pointer;
-      background: var(--bg-input, #0f131c);
+      background: var(--bg-input);
       transition: border-color var(--trans-fast), background var(--trans-fast);
-      min-height: 38px;
+      min-height: 40px;
       box-sizing: border-box;
       overflow: hidden;
     }
-
     .dropzone-compact:hover,
     .dropzone-compact.drag-over {
-      border-color: #38bdf8;
-      background: rgba(56, 189, 248, 0.04);
+      border-color: var(--accent-primary);
+      background: var(--accent-primary-soft);
     }
-
     .dropzone-compact .drop-thumb {
       width: 30px;
       height: 30px;
       object-fit: cover;
-      border-radius: var(--radius-xs, 3px);
+      border-radius: var(--radius-xs);
       border: 1px solid var(--border-default);
       flex-shrink: 0;
     }
-
     .dropzone-compact .drop-text {
       font-size: 11px;
-      color: var(--text-dim, #64748b);
+      color: var(--text-dim);
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
@@ -889,7 +907,7 @@
           <button type="button" class="btn-mobile-nav-toggle" id="btnMobileNavToggle" aria-label="Toggle Navigation Menu" data-tooltip="Menu" data-tooltip-pos="bottom">
             <svg class="icon icon-sm" viewBox="0 0 24 24"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
           </button>
-          <div class="workspace-title-wrap">
+          <div class="workspace-title-wrap" hidden style="display:none;">
             <h1 class="workspace-main-title">End of the Day Report</h1>
             <span class="badge badge-info" style="display:none;"></span>
           </div>
@@ -1109,9 +1127,6 @@
                     <button type="submit" form="edrForm" class="btn btn-primary btn-sm" id="btnEdrSubmit">
                       <svg class="icon icon-sm" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
                       <span id="btnEdrSubmitText">Save EDR</span>
-                    </button>
-                    <button type="button" class="btn btn-outline btn-sm" id="btnSendFormToDocs" title="Send current EDR to Google Docs">
-                      Send to Google Docs
                     </button>
                     <button type="button" class="btn btn-outline btn-sm" id="btnSendFormToAudit" title="Send current EDR to CCTV Audit">
                       Send to CCTV Audit
@@ -1379,13 +1394,18 @@
                 <!-- Tracker-Only Zoom Controls (Scales Google Sheet only, NOT the CCTV OPS shell) -->
                 <div class="trackers-zoom-controls" id="trackersZoomControls" role="group" aria-label="Tracker Zoom Controls">
                   <span class="trackers-zoom-label">Zoom:</span>
-                  <button type="button" class="btn btn-outline btn-xs btn-zoom-step" id="btnTrackerZoomOut" title="Zoom Out (50% to 150%)">−</button>
+                  <button type="button" class="btn btn-outline btn-xs btn-zoom-step" id="btnTrackerZoomOut" title="Zoom Out (50% to 150%)">-</button>
                   <span class="trackers-zoom-val" id="trackerZoomDisplay">80%</span>
                   <button type="button" class="btn btn-outline btn-xs btn-zoom-step" id="btnTrackerZoomIn" title="Zoom In (50% to 150%)">+</button>
                   <button type="button" class="btn btn-ghost btn-xs btn-zoom-reset" id="btnTrackerZoomReset" title="Reset Zoom to 100%">Reset</button>
                 </div>
 
                 <div class="trackers-topbar-divider"></div>
+
+                <div class="tracker-status-pill status-ready" id="trackerStatusPill" title="Tracker workbook live status">
+                  <span class="tracker-status-dot"></span>
+                  <span id="trackerStatusText">Live Ready</span>
+                </div>
 
                 <span class="trackers-active-label" id="trackersActiveLabel">CCTV Audit (AUDIT 2026)</span>
                 <button type="button" class="btn btn-outline btn-xs" id="btnTrackerReload" title="Reload current tracker workbook" style="gap:4px;">
@@ -1401,6 +1421,34 @@
 
             <!-- Full Body Shared Tracker Viewport -->
             <div class="trackers-frame-container" id="trackersFrameContainer">
+              <!-- Loading State Overlay -->
+              <div id="trackersLoadingState" class="trackers-state-overlay" style="display:none;" aria-live="polite">
+                <div class="trackers-state-card">
+                  <div class="trackers-spinner"></div>
+                  <div class="trackers-state-text">
+                    <div class="trackers-state-title" id="trackersLoadingTitle">Loading CCTV Audit...</div>
+                    <div class="trackers-state-desc">Connecting to authoritative Google Spreadsheet</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Diagnostic / Error State Overlay (Hidden by default) -->
+              <div id="trackersErrorState" class="trackers-state-overlay trackers-state-error" style="display:none;" aria-live="assertive">
+                <div class="trackers-state-card trackers-state-card-error">
+                  <div class="trackers-error-icon-box">
+                    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#f87171" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                  </div>
+                  <div class="trackers-state-text">
+                    <div class="trackers-state-title" id="trackersErrorTitle">Embed Restricted or Taking Too Long</div>
+                    <div class="trackers-state-desc" id="trackersErrorDesc">Browser third-party cookie restrictions or cross-site policies may prevent inline preview. Use the direct link to open the sheet.</div>
+                  </div>
+                  <div class="trackers-state-actions">
+                    <button type="button" class="btn btn-outline btn-xs" id="btnTrackerRetry">Retry</button>
+                    <a id="linkTrackerErrorOpen" href="https://docs.google.com/spreadsheets/d/1dhQKpRxZUFjQc-00a5SQXRRsIOMCjT_d-b-o36bYWzs/edit?gid=312942343#gid=312942343" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-xs" style="text-decoration:none;">Open in Google Sheets</a>
+                  </div>
+                </div>
+              </div>
+
               <iframe id="trackerFrame" class="tracker-iframe" src="https://docs.google.com/spreadsheets/d/1dhQKpRxZUFjQc-00a5SQXRRsIOMCjT_d-b-o36bYWzs/edit?gid=312942343#gid=312942343" allow="clipboard-read; clipboard-write" loading="eager" title="Shared Google Spreadsheet"></iframe>
             </div>
           </div>
@@ -1618,7 +1666,7 @@
                 </div>
 
                 <div class="maintenance-status-cluster">
-                  <span id="simpleEodAutosaveStatus" class="maintenance-autosave-status saved">● Auto-save active</span>
+                  <span id="simpleEodAutosaveStatus" class="maintenance-autosave-status saved">Auto-save active</span>
                 </div>
               </div>
 
@@ -1787,35 +1835,49 @@
         <section id="paneFollowup" class="workspace-pane" role="tabpanel" aria-labelledby="tabFollowup" hidden>
           <div class="followup-workspace-layout">
 
-            <!-- TOP: Summary KPI -->
+            <!-- TOP: Summary KPI & Toolbar -->
             <div class="followup-top-card">
               <div class="followup-stats-row">
                 <div class="followup-stats-cluster">
-                  <span style="font-weight:700; font-size:12px; color:var(--text-primary);">Follow Up Operations</span>
-                  <div class="followup-stat-pill stat-open">
+                  <div class="followup-header-title-wrap">
+                    <svg class="icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="#f43f5e" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:15px; height:15px; flex-shrink:0;">
+                      <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                      <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                    </svg>
+                    <span class="followup-top-title">FOLLOW UP OPERATIONS</span>
+                  </div>
+                  <div class="followup-stat-pill stat-open" id="followupPillOpen" title="Unresolved Follow Up reports">
                     <span>Open:</span>
                     <strong id="followupOpenCount">0</strong>
                   </div>
-                  <div class="followup-stat-pill stat-resolved">
+                  <div class="followup-stat-pill stat-resolved" id="followupPillResolved" title="Completed / Resolved reports">
                     <span>Resolved:</span>
                     <strong id="followupResolvedCount">0</strong>
                   </div>
-                  <div class="followup-stat-pill">
+                  <div class="followup-stat-pill" id="followupPillTotal" title="Total reports tracked">
                     <span>Total Tracked:</span>
                     <strong id="followupTotalCount">0</strong>
                   </div>
                 </div>
 
-                <div style="font-size:11px; color:var(--text-dim);">
-                  TL conversation screenshot required for audit evidence
+                <div class="followup-top-actions">
+                  <button type="button" class="btn btn-outline btn-xs" id="btnToggleFollowupAdd" title="Toggle New Follow Up entry form" style="gap:4px;">
+                    <svg class="icon icon-xs" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                    <span id="btnToggleFollowupAddText">New Report</span>
+                  </button>
+                  <button type="button" class="btn btn-outline btn-xs" id="btnFollowupRefresh" title="Refresh reports list from storage" style="gap:4px;">
+                    <svg class="icon icon-xs" viewBox="0 0 24 24"><path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+                    <span>Refresh</span>
+                  </button>
+                  <span class="followup-hint-text">TL conversation proof required for audit evidence</span>
                 </div>
               </div>
             </div>
 
             <!-- New Follow Up Form -->
-            <div class="followup-add-card">
+            <div class="followup-add-card" id="followupAddCard">
               <div class="followup-add-header">
-                <span style="font-weight:700; font-size:11.5px; color:var(--text-primary); text-transform:uppercase; letter-spacing:0.5px;">Add Follow Up Report</span>
+                <span class="followup-section-heading">Add Follow Up Report</span>
                 <span id="followupMessage" class="followup-form-message" style="font-size:11px;" aria-live="polite"></span>
               </div>
 
@@ -1886,14 +1948,26 @@
             <!-- Follow Up Reports Queue -->
             <div class="followup-queue-card">
               <div class="followup-queue-header">
-                <div style="display:flex; align-items:center; gap:8px;">
+                <div class="followup-queue-left">
+                  <span class="followup-section-heading">REPORT QUEUE</span>
                   <span class="badge badge-neutral" id="followupQueueBadge">0 items</span>
+                  <div class="followup-filter-group" role="tablist" aria-label="Filter reports">
+                    <button type="button" class="followup-filter-btn active" data-filter="all" id="btnFilterFollowupAll">All</button>
+                    <button type="button" class="followup-filter-btn" data-filter="open" id="btnFilterFollowupOpen">Open</button>
+                    <button type="button" class="followup-filter-btn" data-filter="resolved" id="btnFilterFollowupResolved">Resolved</button>
+                  </div>
                 </div>
-                <span style="font-size:11px; color:var(--text-dim);">Open reports prioritized first</span>
+                <div class="followup-queue-right">
+                  <div class="followup-search-wrap">
+                    <svg class="icon icon-xs followup-search-icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                    <input type="search" id="followupSearchInput" class="form-control form-control-xs followup-search-input" placeholder="Search TL, OM, notes...">
+                  </div>
+                  <span class="followup-queue-hint">Open reports prioritized</span>
+                </div>
               </div>
 
               <div class="followup-report-list" id="followupReportList">
-                <div class="empty-state" style="padding:40px; text-align:center; color:var(--text-muted); font-size:12px;">No follow-up reports yet.</div>
+                <div class="empty-state" style="padding:40px; text-align:center; color:var(--text-muted); font-size:12px;">No pending follow-up records.</div>
               </div>
             </div>
 
@@ -1908,9 +1982,10 @@
             <div class="cctv-report-left-col">
               <!-- Report Composer Card -->
               <div class="card cctv-report-composer-card" style="height:100%; display:flex; flex-direction:column;">
-                <div class="card-head">
+                <div class="card-header cctv-card-header cctv-composer-header">
                   <div class="card-title-wrap">
-                    <h2 class="card-title">CCTV REPORT</h2>
+                    <svg class="icon icon-sm cctv-header-icon" viewBox="0 0 24 24" style="color:#22c3ff; width:15px; height:15px; flex-shrink:0;"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+                    <span class="card-title">CCTV REPORT</span>
                   </div>
                   <div class="card-actions">
                     <button type="button" class="btn btn-outline btn-sm" id="btnOpenConductFromReport" title="Open full Code of Conduct reference in separate workspace" style="gap:5px;">
@@ -2000,11 +2075,11 @@
             <!-- RIGHT COLUMN: Report Preview & COPY ALL Action -->
             <div class="cctv-report-right-col">
               <div class="card cctv-preview-card">
-                <div class="card-head">
+                <div class="card-header cctv-card-header cctv-preview-header">
                   <div class="card-title-wrap">
                     <div style="display:flex; align-items:center; gap:8px;">
-                      <span class="teams-indicator-dot" title="Microsoft Teams format"></span>
-                      <h2 class="card-title">Report Preview</h2>
+                      <span class="cctv-preview-accent-dot" style="width:8px; height:8px; border-radius:50%; background:#14b8a6; box-shadow:0 0 6px rgba(20,184,166,0.6); flex-shrink:0;"></span>
+                      <span class="card-title">Report Preview</span>
                     </div>
                   </div>
                   <div class="card-actions">
@@ -2315,8 +2390,11 @@
             <!-- Admin Head Card -->
             <div class="accounts-head-card">
               <div class="accounts-head-info">
-                <h2 class="accounts-head-title">Admin Operations Console</h2>
-                <p class="accounts-head-desc">System status monitoring, staff account management, centralized security audit log, and operational workspace preferences.</p>
+                <div class="accounts-head-title-row">
+                  <span class="accounts-head-badge">MANAGEMENT</span>
+                  <h2 class="accounts-head-title">Staff Accounts &amp; Admin Console</h2>
+                </div>
+                <p class="accounts-head-desc">System health monitoring, staff account management, centralized security audit log, and operational workspace preferences.</p>
               </div>
               <div class="accounts-head-actions">
                 <button type="button" class="btn btn-outline btn-sm" id="adminRefreshBtn" style="gap:5px;">
@@ -2360,9 +2438,18 @@
 
             <!-- macOS Segmented Subnav Switcher -->
             <div class="admin-subnav-bar" role="tablist" aria-label="Admin Sub-Sections">
-              <button type="button" class="admin-subnav-btn active" data-admin-tab="users" role="tab" aria-selected="true">Staff Accounts</button>
-              <button type="button" class="admin-subnav-btn" data-admin-tab="audit" role="tab" aria-selected="false">Security Audit Log</button>
-              <button type="button" class="admin-subnav-btn" data-admin-tab="settings" role="tab" aria-selected="false">Operational Settings</button>
+              <button type="button" class="admin-subnav-btn active" data-admin-tab="users" role="tab" aria-selected="true">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:5px; vertical-align:text-bottom; pointer-events:none;"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                Staff Accounts
+              </button>
+              <button type="button" class="admin-subnav-btn" data-admin-tab="audit" role="tab" aria-selected="false">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:5px; vertical-align:text-bottom; pointer-events:none;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                Security Audit Log
+              </button>
+              <button type="button" class="admin-subnav-btn" data-admin-tab="settings" role="tab" aria-selected="false">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:5px; vertical-align:text-bottom; pointer-events:none;"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                Operational Settings
+              </button>
             </div>
 
             <!-- SECTION 1: STAFF ACCOUNTS -->

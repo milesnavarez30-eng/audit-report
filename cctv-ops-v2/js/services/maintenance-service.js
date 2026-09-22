@@ -1,4 +1,4 @@
-﻿/**
+/**
  * CCTV OPS V2 - Maintenance Service
  * Authoritative 1:1 Functional Parity with V1 Maintenance Report
  * Multi-block incident reports, side-by-side incident/remarks,
@@ -915,6 +915,13 @@
             );
           }
 
+          if (
+            typeof window.onMaintenanceEvidenceComplete ===
+            "function"
+          ) {
+            window.onMaintenanceEvidenceComplete(screenshotCount);
+          }
+
         })
         .catch(error => {
 
@@ -931,6 +938,13 @@
               "Maintenance report was sent, but screenshot evidence is still pending. Please keep this page open and retry if needed.",
               "warning"
             );
+          }
+
+          if (
+            typeof window.onMaintenanceEvidenceError ===
+            "function"
+          ) {
+            window.onMaintenanceEvidenceError(error);
           }
 
         });

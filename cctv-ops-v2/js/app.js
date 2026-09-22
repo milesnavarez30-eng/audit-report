@@ -990,45 +990,6 @@
     el("btnEdrClear")?.addEventListener("click", resetForm);
     el("btnEdrCancelEdit")?.addEventListener("click", resetForm);
 
-    // Send to Google Docs (From Left Column Form Footer)
-    el("btnSendFormToDocs")?.addEventListener("click", async () => {
-      const editing = edr.getEditingReport();
-      if (editing) {
-        const data = getFormData();
-        const updated = await edr.createOrUpdate(data);
-        resetForm();
-        await sendSingleReportToDocs(updated || editing);
-        return;
-      }
-
-      const form = el("edrForm");
-      if (el("edrIncident")?.value || el("edrSubjectName")?.value || el("edrSupervisorName")?.value) {
-        if (!form.checkValidity()) {
-          form.reportValidity();
-          return;
-        }
-        const data = getFormData();
-        const saved = await edr.createOrUpdate(data);
-        resetForm();
-        if (saved) {
-          await sendSingleReportToDocs(saved);
-        }
-        return;
-      }
-
-      const selected = edr.getReports().filter(r => r.selected && !r.done);
-      if (selected.length === 1) {
-        await sendSingleReportToDocs(selected[0]);
-        return;
-      }
-      if (selected.length > 1) {
-        showToast("Please select only ONE EDR to send to Google Docs.", "warning");
-        return;
-      }
-
-      showToast("Complete the EDR form or select a saved record from the list.", "info");
-    });
-
     // Send to CCTV Audit (From Left Column Form Footer)
     el("btnSendFormToAudit")?.addEventListener("click", async () => {
       const editing = edr.getEditingReport();
@@ -1062,27 +1023,6 @@
       }
 
       showToast("Complete the EDR form or select at least one saved record from the list.", "info");
-    });
-
-    // Send to Google Docs (From Right Column Teams Dispatch Header)
-    el("btnSendSelectedToDocs")?.addEventListener("click", async () => {
-      const selected = edr.getReports().filter(r => r.selected && !r.done);
-      if (selected.length === 1) {
-        await sendSingleReportToDocs(selected[0]);
-        return;
-      }
-      if (selected.length > 1) {
-        showToast("Please select only ONE EDR to send to Google Docs.", "warning");
-        return;
-      }
-
-      const editing = edr.getEditingReport();
-      if (editing) {
-        await sendSingleReportToDocs(editing);
-        return;
-      }
-
-      showToast("Select one EDR from the saved list to send to Google Docs.", "info");
     });
 
     // Send to CCTV Audit (From Right Column Teams Dispatch Header)
@@ -1597,6 +1537,12 @@
         } else {
           window.CCTV_TEAMS.loadNavList();
         }
+      }
+    }
+
+    if (targetKey !== "accounts") {
+      if (typeof window._clearTransientCredential === "function") {
+        window._clearTransientCredential();
       }
     }
   }
@@ -2142,11 +2088,11 @@
           stateBadge.className = "badge badge-local";
           stateBadge.title = "Local modifications pending sync to Google Sheet";
         } else if (dataState.source === "live") {
-          stateBadge.textContent = `${totalCount} ROWS â€¢ LIVE SHEET â€¢ CONNECTED`;
+          stateBadge.textContent = `${totalCount} ROWS • LIVE SHEET • CONNECTED`;
           stateBadge.className = "badge badge-live";
           stateBadge.title = `Authoritative dataset loaded from shared ${dataState.sheetName || "AUDIT 2026"} Google Sheet`;
         } else if (dataState.source === "cached") {
-          stateBadge.textContent = `${totalCount} ROWS â€¢ CACHED SNAPSHOT`;
+          stateBadge.textContent = `${totalCount} ROWS • CACHED SNAPSHOT`;
           stateBadge.className = "badge badge-cached";
           stateBadge.title = "Local cached snapshot of shared Google Sheet";
         } else if (dataState.source === "error" || syncStatus.error) {
@@ -2488,7 +2434,7 @@ function doPost(e) {
             <strong style="color:var(--text-primary); font-size:11.5px;">${window.escapeHtml(iss.title)}</strong>
           </div>
           <div style="color:var(--text-secondary);">${window.escapeHtml(iss.detail)}</div>
-          ${iss.suggestion ? `<div style="color:#38bdf8; font-weight:600; margin-top:2px;">â†³ ${window.escapeHtml(iss.suggestion)}</div>` : ''}
+          ${iss.suggestion ? `<div style="color:#38bdf8; font-weight:600; margin-top:2px;">&rarr; ${window.escapeHtml(iss.suggestion)}</div>` : ''}
         </div>
       `;
     }).join("");
@@ -4184,7 +4130,7 @@ function doPost(e) {
   }
 
   function queueMaintenanceAutosave() {
-    updateMaintenanceAutosaveIndicator("â— Saving...", "saving");
+    updateMaintenanceAutosaveIndicator("Saving...", "saving");
     if (window.historyService?.scheduleCapture) {
       window.historyService.scheduleCapture("maintenanceReport", "Updated maintenance report", 800);
     }
@@ -4194,10 +4140,10 @@ function doPost(e) {
         await maintenance.saveDraft(maintenanceState);
         const now = new Date();
         const timeStr = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
-        updateMaintenanceAutosaveIndicator(`â— Auto-saved (${timeStr})`, "saved");
+        updateMaintenanceAutosaveIndicator(`Auto-saved (${timeStr})`, "saved");
       } catch (err) {
         console.error("Autosave draft error:", err);
-        updateMaintenanceAutosaveIndicator("â— Autosave error", "error");
+        updateMaintenanceAutosaveIndicator("Autosave error", "error");
       }
     }, 600);
   }
@@ -4400,22 +4346,27 @@ function doPost(e) {
       leftCol.style.flexDirection = "column";
       leftCol.style.gap = "4px";
 
+      const leftHead = document.createElement("div");
+      leftHead.className = "maintenance-col-head";
+
       const leftLabel = document.createElement("label");
       leftLabel.className = "form-label";
-      leftLabel.style.fontSize = "11px";
-      leftLabel.style.fontWeight = "600";
-      leftLabel.style.textTransform = "uppercase";
-      leftLabel.style.letterSpacing = "0.04em";
-      leftLabel.style.color = "var(--text-secondary)";
-      leftLabel.style.marginBottom = "2px";
       leftLabel.textContent = "Station Issues / Incident (Lanes)";
-      leftCol.appendChild(leftLabel);
+      leftHead.appendChild(leftLabel);
+
+      const parsedRows = maintenance.maintenanceRowsForSheets(block.lanesText || "");
+      const rowsBadge = document.createElement("span");
+      rowsBadge.className = "maintenance-count-badge";
+      rowsBadge.textContent = `${parsedRows.length} ${parsedRows.length === 1 ? "row" : "rows"}`;
+      leftHead.appendChild(rowsBadge);
+
+      leftCol.appendChild(leftHead);
 
       const lanesArea = document.createElement("textarea");
       lanesArea.className = "form-control eod-lanes-textarea";
-      lanesArea.rows = 6;
+      lanesArea.rows = 5;
       lanesArea.style.flex = "1";
-      lanesArea.style.minHeight = "120px";
+      lanesArea.style.minHeight = "125px";
       lanesArea.placeholder = "Paste station rows or enter incident issues (TSV format from Sorter or manual)...";
       lanesArea.value = block.lanesText || "";
       lanesArea.addEventListener("focus", () => {
@@ -4423,6 +4374,8 @@ function doPost(e) {
       });
       lanesArea.addEventListener("input", () => {
         block.lanesText = lanesArea.value;
+        const count = maintenance.maintenanceRowsForSheets(block.lanesText || "").length;
+        rowsBadge.textContent = `${count} ${count === 1 ? "row" : "rows"}`;
         const detected = maintenance.detectMaintenanceDestinationFromRows(block.lanesText);
         if (detected && detected !== maintenanceState.destinationKey && maintenance.MAINTENANCE_DESTINATIONS[detected]) {
           maintenanceState.destinationKey = detected;
@@ -4433,6 +4386,12 @@ function doPost(e) {
         queueMaintenanceAutosave();
       });
       leftCol.appendChild(lanesArea);
+
+      const lanesHint = document.createElement("div");
+      lanesHint.className = "maintenance-lanes-hint";
+      lanesHint.textContent = "TSV Format: Timestamp, Date, TL, Account, Site, Station No., Station Issue";
+      leftCol.appendChild(lanesHint);
+
       grid.appendChild(leftCol);
 
       // Right column: Action Taken / Remarks
@@ -4443,16 +4402,46 @@ function doPost(e) {
       rightCol.style.flexDirection = "column";
       rightCol.style.gap = "4px";
 
+      const rightHead = document.createElement("div");
+      rightHead.className = "maintenance-col-head";
+
       const rightLabel = document.createElement("label");
       rightLabel.className = "form-label";
-      rightLabel.style.fontSize = "11px";
-      rightLabel.style.fontWeight = "600";
-      rightLabel.style.textTransform = "uppercase";
-      rightLabel.style.letterSpacing = "0.04em";
-      rightLabel.style.color = "var(--text-secondary)";
-      rightLabel.style.marginBottom = "2px";
       rightLabel.textContent = "Action Taken / Remarks";
-      rightCol.appendChild(rightLabel);
+      rightHead.appendChild(rightLabel);
+
+      if (block.selectedPreset) {
+        const presetBadge = document.createElement("span");
+        presetBadge.className = "maintenance-preset-active-badge";
+        presetBadge.textContent = "Preset Active";
+        rightHead.appendChild(presetBadge);
+      }
+      rightCol.appendChild(rightHead);
+
+      const remarksArea = document.createElement("textarea");
+      remarksArea.className = "form-control eod-remarks-textarea";
+      remarksArea.rows = 5;
+      remarksArea.style.flex = "1";
+      remarksArea.style.minHeight = "125px";
+      const manualVal = Array.isArray(block.remarks) ? block.remarks.join("\n") : (block.remarks || "");
+      remarksArea.value = manualVal;
+      remarksArea.placeholder = block.selectedPreset
+        ? `[Active preset: "${block.selectedPreset}"] (Leave empty to use preset, or type to override)...`
+        : "Enter action taken or remarks (one per line)...";
+      remarksArea.addEventListener("focus", () => {
+        activePasteBlockId = block.id;
+      });
+      remarksArea.addEventListener("input", () => {
+        const raw = remarksArea.value || "";
+        const lines = raw.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+        block.remarks = lines.length ? lines : [""];
+        if (block.selectedPreset && (!lines.length || lines.join("\n") !== block.selectedPreset)) {
+          const allChoices = maintenance.getQuickRemarks ? maintenance.getQuickRemarks() : [];
+          block.selectedPreset = allChoices.find(c => c === lines.join("\n")) || "";
+        }
+        queueMaintenanceAutosave();
+      });
+      rightCol.appendChild(remarksArea);
 
       // --- Quick Choice Presets Container ---
       const presetContainer = document.createElement("div");
@@ -4621,31 +4610,6 @@ function doPost(e) {
       });
 
       rightCol.appendChild(presetContainer);
-
-      const remarksArea = document.createElement("textarea");
-      remarksArea.className = "form-control eod-remarks-textarea";
-      remarksArea.rows = 5;
-      remarksArea.style.flex = "1";
-      remarksArea.style.minHeight = "95px";
-      const manualVal = Array.isArray(block.remarks) ? block.remarks.join("\n") : (block.remarks || "");
-      remarksArea.value = manualVal;
-      remarksArea.placeholder = block.selectedPreset
-        ? `[Active preset: "${block.selectedPreset}"] (Leave empty to use preset, or type to override)...`
-        : "Enter action taken or remarks (one per line)...";
-      remarksArea.addEventListener("focus", () => {
-        activePasteBlockId = block.id;
-      });
-      remarksArea.addEventListener("input", () => {
-        const raw = remarksArea.value || "";
-        const lines = raw.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
-        block.remarks = lines.length ? lines : [""];
-        if (block.selectedPreset && (!lines.length || lines.join("\n") !== block.selectedPreset)) {
-          const allChoices = maintenance.getQuickRemarks ? maintenance.getQuickRemarks() : [];
-          block.selectedPreset = allChoices.find(c => c === lines.join("\n")) || "";
-        }
-        queueMaintenanceAutosave();
-      });
-      rightCol.appendChild(remarksArea);
       grid.appendChild(rightCol);
 
       contentWrapper.appendChild(grid);
@@ -4669,9 +4633,10 @@ function doPost(e) {
       proofTitle.style.color = "var(--text-secondary)";
       proofTitle.textContent = "Proof Screenshots";
 
+      const proofCount = (block.screenshots || []).length;
       const proofBadge = document.createElement("span");
       proofBadge.className = "badge badge-neutral";
-      proofBadge.textContent = `${(block.screenshots || []).length} image(s)`;
+      proofBadge.textContent = `${proofCount} ${proofCount === 1 ? "Screenshot" : "Screenshots"}`;
 
       proofTitleWrap.appendChild(proofTitle);
       proofTitleWrap.appendChild(proofBadge);
@@ -4688,7 +4653,7 @@ function doPost(e) {
       fileInput.style.display = "none";
       fileInput.addEventListener("change", async () => {
         if (!fileInput.files || !fileInput.files.length) return;
-        updateMaintenanceAutosaveIndicator("â— Processing images...", "saving");
+        updateMaintenanceAutosaveIndicator("Processing images...", "saving");
         for (let i = 0; i < fileInput.files.length; i++) {
           try {
             const compressed = await maintenance.compressImage(fileInput.files[i]);
@@ -4773,7 +4738,7 @@ function doPost(e) {
         e.preventDefault();
         proofZone.classList.remove("drag-over");
         if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length) {
-          updateMaintenanceAutosaveIndicator("â— Processing images...", "saving");
+          updateMaintenanceAutosaveIndicator("Processing images...", "saving");
           for (let i = 0; i < e.dataTransfer.files.length; i++) {
             const file = e.dataTransfer.files[i];
             if (file.type.startsWith("image/")) {
@@ -4806,7 +4771,7 @@ function doPost(e) {
             const file = items[i].getAsFile();
             if (file) {
               activePasteBlockId = block.id;
-              updateMaintenanceAutosaveIndicator("â— Processing pasted image...", "saving");
+              updateMaintenanceAutosaveIndicator("Processing pasted image...", "saving");
               try {
                 const compressed = await maintenance.compressImage(file);
                 if (!Array.isArray(block.screenshots)) block.screenshots = [];
@@ -4929,22 +4894,45 @@ function doPost(e) {
     }
 
     const sendBtn = el("simpleEodSendSheetsBtn");
-    if (sendBtn) sendBtn.disabled = true;
+    const origBtnHtml = sendBtn ? sendBtn.innerHTML : "";
+    if (sendBtn) {
+      sendBtn.disabled = true;
+      sendBtn.classList.add("is-busy");
+      sendBtn.innerHTML = `<span class="btn-spinner" aria-hidden="true"></span><span>Sending...</span>`;
+    }
 
-    setMaintenanceStatusMessage("Preparing chunked upload for Google Sheets...", "info");
+    setMaintenanceStatusMessage("Submitting report to Google Sheets...", "info");
+
+    const totalScreenshots = (maintenanceState.blocks || []).reduce(
+      (sum, b) => sum + (Array.isArray(b.screenshots) ? b.screenshots.length : 0),
+      0
+    );
+
+    // Register hooks for background evidence upload
+    window.onMaintenanceEvidenceComplete = (count) => {
+      setMaintenanceStatusMessage(`Report and all ${count} screenshot evidence successfully attached in Google Sheets!`, "success");
+    };
+    window.onMaintenanceEvidenceError = (err) => {
+      setMaintenanceStatusMessage(`Report was logged to Sheets, but screenshot evidence failed to attach: ${err.message || err}. You may retry sending.`, "warning");
+    };
 
     try {
       const result = await maintenance.sendMaintenanceReportToGoogleSheets(url, maintenanceState, (p) => {
         if (p.stage === "chunks") {
-          setMaintenanceStatusMessage(`Uploading image data chunk ${p.index} of ${p.total}...`, "info");
+          setMaintenanceStatusMessage(`Uploading report chunk ${p.index} of ${p.total}...`, "info");
         } else if (p.stage === "committing") {
           setMaintenanceStatusMessage("Committing report to Google Sheets...", "info");
         }
       });
 
       if (result && (result.ok === true || result.success === true)) {
-        setMaintenanceStatusMessage(`Report successfully logged to Google Sheets! (${result.rowsLogged || "OK"})`, "success");
-        showToast("Maintenance Report uploaded to Google Sheets!", "success");
+        if (totalScreenshots > 0) {
+          setMaintenanceStatusMessage(`Report logged to Google Sheets! Uploading ${totalScreenshots} screenshot evidence in background...`, "info");
+          showToast(`Report logged to Google Sheets! Attaching ${totalScreenshots} screenshot(s)...`, "info");
+        } else {
+          setMaintenanceStatusMessage(`Report successfully logged to Google Sheets! (${result.rowsLogged || "OK"})`, "success");
+          showToast("Maintenance Report uploaded to Google Sheets!", "success");
+        }
       } else {
         throw new Error(result?.error || "Apps Script returned failure");
       }
@@ -4953,7 +4941,11 @@ function doPost(e) {
       setMaintenanceStatusMessage(`Google Sheets upload failed: ${err.message}`, "error");
       showToast(`Upload failed: ${err.message}`, "error");
     } finally {
-      if (sendBtn) sendBtn.disabled = false;
+      if (sendBtn) {
+        sendBtn.disabled = false;
+        sendBtn.classList.remove("is-busy");
+        if (origBtnHtml) sendBtn.innerHTML = origBtnHtml;
+      }
     }
   }
 
@@ -6325,6 +6317,10 @@ function doPost(e) {
   let followupAddScreenshotData = "";
   let followupReplaceTargetId = "";
   let followupSaveTimer = null;
+  let followupFilter = "all";
+  let followupSearchQuery = "";
+  let followupSelectedId = "";
+  let followupExpandedIds = new Set();
 
   function refreshFollowupOmOptions() {
     const list = el("followupOmOptions");
@@ -6345,11 +6341,17 @@ function doPost(e) {
     if (el("followupResolvedCount")) el("followupResolvedCount").textContent = String(resolvedCount);
     if (el("followupTotalCount")) el("followupTotalCount").textContent = String(totalCount);
     if (el("followupQueueBadge")) el("followupQueueBadge").textContent = `${totalCount} item${totalCount === 1 ? "" : "s"}`;
-    if (el("railFollowupBadge")) el("railFollowupBadge").textContent = String(openCount);
+
+    const railBadge = el("railFollowupBadge");
+    if (railBadge) {
+      railBadge.textContent = String(openCount);
+      railBadge.style.display = openCount > 0 ? "inline-flex" : "none";
+    }
 
     const legacySidebarBadge = el("followupSidebarBadge");
     if (legacySidebarBadge) {
       legacySidebarBadge.textContent = String(openCount);
+      legacySidebarBadge.style.display = openCount > 0 ? "inline-flex" : "none";
       legacySidebarBadge.title = `${openCount} open follow-up report${openCount === 1 ? "" : "s"}`;
     }
   }
@@ -6412,69 +6414,136 @@ function doPost(e) {
     if (!listEl) return;
 
     if (!followupReportsList.length) {
-      listEl.innerHTML = '<div class="empty-state" style="padding:40px; text-align:center; color:var(--text-muted); font-size:12px;">No follow-up reports yet.</div>';
+      listEl.innerHTML = '<div class="empty-state" style="padding:40px; text-align:center; color:var(--text-muted); font-size:12px;">No pending follow-up records.</div>';
       return;
     }
 
     const sorted = followup.sortReports(followupReportsList);
 
-    listEl.innerHTML = sorted.map(report => {
+    // Apply Filter Tab
+    let filtered = sorted;
+    if (followupFilter === "open") {
+      filtered = filtered.filter(r => r.status !== "Resolved");
+    } else if (followupFilter === "resolved") {
+      filtered = filtered.filter(r => r.status === "Resolved");
+    }
+
+    // Apply Search Query
+    if (followupSearchQuery) {
+      const q = followupSearchQuery.toLowerCase();
+      filtered = filtered.filter(r => {
+        const text = [r.label, r.om, r.status, r.date, r.remarks, r.cctvLink].filter(Boolean).join(" ").toLowerCase();
+        return text.includes(q);
+      });
+    }
+
+    if (!filtered.length) {
+      listEl.innerHTML = '<div class="empty-state" style="padding:40px; text-align:center; color:var(--text-muted); font-size:12px;">No pending follow-up records.</div>';
+      return;
+    }
+
+    listEl.innerHTML = filtered.map(report => {
       const hasImage = Boolean(report.screenshotData);
       const safeLink = followup.safeWebUrl(report.cctvLink);
       const statusClass = followup.statusClass(report.status);
+      const isSelected = report.id === followupSelectedId;
+      const isExpanded = followupExpandedIds.has(report.id);
+      const isResolved = report.status === "Resolved";
 
       return `
-        <article class="followup-report-card" data-id="${window.escapeHtml(report.id)}">
-          <div class="followup-card-head">
-            <div style="display:flex; align-items:center; gap:8px;">
-              <span class="followup-card-title">${window.escapeHtml(report.label || report.om || "Follow Up Report")}</span>
-              <span class="followup-card-meta">${window.escapeHtml(followup.formatDate(report.date))}  -  ${window.escapeHtml(report.om || "OM not set")}</span>
-            </div>
-            <span class="followup-status-pill ${statusClass}">${window.escapeHtml(report.status || "Waiting for TL")}</span>
-          </div>
-
-          <div class="followup-card-layout">
-            <button type="button" class="followup-large-shot ${hasImage ? "has-image" : "no-image"}" ${hasImage ? "" : "disabled"} title="${hasImage ? "Click to view full screenshot evidence" : "No screenshot attached"}">
-              ${hasImage ? `<img src="${window.escapeHtml(report.screenshotData)}" alt="Evidence">` : `<span>No conversation proof</span>`}
+        <article class="followup-report-card ${isSelected ? "is-selected" : ""} ${isResolved ? "is-resolved" : ""}" data-id="${window.escapeHtml(report.id)}" tabindex="0">
+          <div class="followup-card-primary-row">
+            <button type="button" class="followup-thumb-btn ${hasImage ? "has-image" : "no-image"}" ${hasImage ? "" : "disabled"} title="${hasImage ? "Click to view full screenshot evidence" : "No screenshot attached"}">
+              ${hasImage ? `<img src="${window.escapeHtml(report.screenshotData)}" alt="Evidence">` : `<svg class="icon icon-xs" viewBox="0 0 24 24" style="color:var(--text-dim); opacity:0.6;"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>`}
             </button>
 
-            <div class="followup-card-fields">
-              <div class="followup-card-fields-row">
-                <div class="form-group" style="margin:0;">
-                  <label class="form-label" style="font-size:10px;">Date</label>
-                  <input type="date" class="form-control form-control-sm followup-edit-date" value="${window.escapeHtml(report.date || "")}">
-                </div>
-                <div class="form-group" style="margin:0;">
-                  <label class="form-label" style="font-size:10px;">OM / Group Chat</label>
-                  <input type="text" list="followupOmOptions" class="form-control form-control-sm followup-edit-om" value="${window.escapeHtml(report.om || "")}">
-                </div>
-                <div class="form-group" style="margin:0;">
-                  <label class="form-label" style="font-size:10px;">TL / Report Label</label>
-                  <input type="text" class="form-control form-control-sm followup-edit-label" value="${window.escapeHtml(report.label || "")}" placeholder="Optional label">
-                </div>
-                <div class="form-group" style="margin:0;">
-                  <label class="form-label" style="font-size:10px;">Teams Link</label>
-                  <div class="followup-link-row">
-                    <input type="url" class="form-control form-control-sm followup-edit-link" value="${window.escapeHtml(report.cctvLink || "")}" placeholder="Paste URL">
-                    <button type="button" class="btn btn-outline btn-sm followup-open-link-btn" ${safeLink ? "" : "disabled"} style="padding:2px 8px; font-size:10px;">Open</button>
-                  </div>
-                </div>
-                <div class="form-group" style="margin:0;">
-                  <label class="form-label" style="font-size:10px;">Status</label>
-                  <select class="form-control form-control-sm followup-edit-status">
-                    ${followup.STATUSES.map(st => `<option value="${st}" ${st === report.status ? "selected" : ""}>${st}</option>`).join("")}
-                  </select>
-                </div>
+            <div class="followup-card-main-info">
+              <div class="followup-card-title-row">
+                <span class="followup-card-title" title="${window.escapeHtml(report.label || report.om || "Follow Up Report")}">${window.escapeHtml(report.label || report.om || "Follow Up Report")}</span>
+                <span class="followup-chip followup-chip-om" title="OM / Group Chat">${window.escapeHtml(report.om || "OM not set")}</span>
+                <span class="followup-chip followup-chip-date" title="Report Date">${window.escapeHtml(followup.formatDate(report.date))}</span>
+                <span class="followup-status-pill ${statusClass}">${window.escapeHtml(report.status || "Waiting for TL")}</span>
               </div>
 
-              <div class="form-group" style="margin:4px 0 0 0;">
-                <label class="form-label" style="font-size:10px;">Remarks / TL Reply</label>
-                <textarea class="form-control form-control-sm followup-edit-remarks" rows="2" placeholder="Record TL reply and OM verification notes...">${window.escapeHtml(report.remarks || "")}</textarea>
-              </div>
+              ${report.remarks ? `
+                <div class="followup-card-remarks-snippet" title="${window.escapeHtml(report.remarks)}">
+                  <span class="followup-remarks-text">${window.escapeHtml(report.remarks)}</span>
+                </div>
+              ` : `
+                <div class="followup-card-remarks-snippet empty">No remarks recorded yet.</div>
+              `}
+            </div>
 
-              <div style="display:flex; align-items:center; justify-content:flex-end; gap:6px; margin-top:4px;">
-                <button type="button" class="btn btn-outline btn-sm followup-replace-btn" style="padding:2px 8px; font-size:10px;">Replace Screenshot</button>
-                <button type="button" class="btn btn-danger-ghost btn-sm followup-delete-btn" style="padding:2px 8px; font-size:10px;">Delete</button>
+            <div class="followup-card-quick-actions">
+              ${safeLink ? `
+                <a href="${safeLink}" target="_blank" rel="noopener noreferrer" class="btn btn-outline btn-xs followup-quick-link-btn" title="Open Teams Conversation">
+                  <svg class="icon icon-xs" viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+                  <span>Teams</span>
+                </a>
+              ` : ""}
+
+              ${isResolved ? `
+                <button type="button" class="btn btn-outline btn-xs followup-quick-reopen-btn" title="Reopen this report">
+                  <svg class="icon icon-xs" viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>
+                  <span>Reopen</span>
+                </button>
+              ` : `
+                <button type="button" class="btn btn-outline btn-xs followup-quick-resolve-btn" title="Mark this report as Resolved">
+                  <svg class="icon icon-xs" viewBox="0 0 24 24" style="color:#34d399;"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                  <span>Mark Done</span>
+                </button>
+              `}
+
+              <button type="button" class="btn btn-ghost btn-xs followup-toggle-drawer-btn" title="${isExpanded ? "Collapse editing drawer" : "Expand editing drawer"}">
+                <span>${isExpanded ? "Close" : "Edit"}</span>
+                <svg class="icon icon-xs" viewBox="0 0 24 24" style="transform:${isExpanded ? "rotate(180deg)" : "none"}; transition:transform 0.15s ease;"><polyline points="6 9 12 15 18 9"></polyline></svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="followup-card-drawer" ${isExpanded ? "" : "hidden"}>
+            <div class="followup-drawer-divider"></div>
+            <div class="followup-card-fields-row">
+              <div class="form-group" style="margin:0;">
+                <label class="form-label" style="font-size:10px;">Date</label>
+                <input type="date" class="form-control form-control-sm followup-edit-date" value="${window.escapeHtml(report.date || "")}">
+              </div>
+              <div class="form-group" style="margin:0;">
+                <label class="form-label" style="font-size:10px;">OM / Group Chat</label>
+                <input type="text" list="followupOmOptions" class="form-control form-control-sm followup-edit-om" value="${window.escapeHtml(report.om || "")}">
+              </div>
+              <div class="form-group" style="margin:0;">
+                <label class="form-label" style="font-size:10px;">TL / Report Label</label>
+                <input type="text" class="form-control form-control-sm followup-edit-label" value="${window.escapeHtml(report.label || "")}" placeholder="Optional label">
+              </div>
+              <div class="form-group" style="margin:0;">
+                <label class="form-label" style="font-size:10px;">Teams Link</label>
+                <div class="followup-link-row">
+                  <input type="url" class="form-control form-control-sm followup-edit-link" value="${window.escapeHtml(report.cctvLink || "")}" placeholder="Paste URL">
+                  <button type="button" class="btn btn-outline btn-sm followup-open-link-btn" ${safeLink ? "" : "disabled"} style="padding:2px 8px; font-size:10px;">Open</button>
+                </div>
+              </div>
+              <div class="form-group" style="margin:0;">
+                <label class="form-label" style="font-size:10px;">Status</label>
+                <select class="form-control form-control-sm followup-edit-status">
+                  ${followup.STATUSES.map(st => `<option value="${st}" ${st === report.status ? "selected" : ""}>${st}</option>`).join("")}
+                </select>
+              </div>
+            </div>
+
+            <div class="form-group" style="margin:6px 0 0 0;">
+              <label class="form-label" style="font-size:10px;">Remarks / TL Reply</label>
+              <textarea class="form-control form-control-sm followup-edit-remarks" rows="2" placeholder="Record TL reply and OM verification notes...">${window.escapeHtml(report.remarks || "")}</textarea>
+            </div>
+
+            <div class="followup-drawer-footer">
+              <div class="followup-drawer-meta">
+                <span>ID: <code style="font-size:9.5px; opacity:0.8;">${window.escapeHtml(report.id)}</code></span>
+                ${report.createdAt ? `<span> - Created: ${new Date(report.createdAt).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>` : ""}
+              </div>
+              <div style="display:flex; align-items:center; gap:6px;">
+                <button type="button" class="btn btn-outline btn-xs followup-replace-btn">Replace Screenshot</button>
+                <button type="button" class="btn btn-danger-ghost btn-xs followup-delete-btn">Delete</button>
               </div>
             </div>
           </div>
@@ -6488,8 +6557,47 @@ function doPost(e) {
       const report = followupReportsList.find(r => r.id === cardId);
       if (!report) return;
 
+      // Selection on card click (unless clicking inside an interactive element)
+      card.addEventListener("click", (e) => {
+        if (e.target.closest("button, a, input, textarea, select, label")) return;
+        followupSelectedId = (followupSelectedId === report.id) ? "" : report.id;
+        listEl.querySelectorAll(".followup-report-card").forEach(c => {
+          c.classList.toggle("is-selected", c.dataset.id === followupSelectedId);
+        });
+      });
+
+      // Quick resolve button
+      card.querySelector(".followup-quick-resolve-btn")?.addEventListener("click", async (e) => {
+        e.stopPropagation();
+        report.status = "Resolved";
+        await followup.saveReports(followupReportsList);
+        renderFollowupList();
+        showToast("Report marked as Resolved.", "success");
+      });
+
+      // Quick reopen button
+      card.querySelector(".followup-quick-reopen-btn")?.addEventListener("click", async (e) => {
+        e.stopPropagation();
+        report.status = "Waiting for TL";
+        await followup.saveReports(followupReportsList);
+        renderFollowupList();
+        showToast("Follow Up report reopened.", "info");
+      });
+
+      // Toggle drawer button
+      card.querySelector(".followup-toggle-drawer-btn")?.addEventListener("click", (e) => {
+        e.stopPropagation();
+        if (followupExpandedIds.has(report.id)) {
+          followupExpandedIds.delete(report.id);
+        } else {
+          followupExpandedIds.add(report.id);
+        }
+        renderFollowupList();
+      });
+
       // Screenshot preview click
-      card.querySelector(".followup-large-shot")?.addEventListener("click", () => {
+      card.querySelector(".followup-thumb-btn")?.addEventListener("click", (e) => {
+        e.stopPropagation();
         if (report.screenshotData) {
           openFullScreenshotViewer(report.screenshotData, `Evidence - ${report.label || report.om || "Follow Up"}`);
         }
@@ -6522,20 +6630,23 @@ function doPost(e) {
           openBtn.disabled = !followup.safeWebUrl(linkInput.value);
           scheduleFollowupSave();
         });
-        openBtn.addEventListener("click", () => {
+        openBtn.addEventListener("click", (e) => {
+          e.stopPropagation();
           const url = followup.safeWebUrl(report.cctvLink);
           if (url) window.open(url, "_blank", "noopener,noreferrer");
         });
       }
 
       // Replace screenshot
-      card.querySelector(".followup-replace-btn")?.addEventListener("click", () => {
+      card.querySelector(".followup-replace-btn")?.addEventListener("click", (e) => {
+        e.stopPropagation();
         followupReplaceTargetId = report.id;
         el("followupReplaceInput")?.click();
       });
 
       // Delete
-      card.querySelector(".followup-delete-btn")?.addEventListener("click", async () => {
+      card.querySelector(".followup-delete-btn")?.addEventListener("click", async (e) => {
+        e.stopPropagation();
         const ok = window.appConfirm
           ? await window.appConfirm({
               title: "Delete follow-up report?",
@@ -6547,6 +6658,8 @@ function doPost(e) {
         if (!ok) return;
 
         followupReportsList = followupReportsList.filter(r => r.id !== report.id);
+        followupExpandedIds.delete(report.id);
+        if (followupSelectedId === report.id) followupSelectedId = "";
         await followup.saveReports(followupReportsList);
         renderFollowupList();
         showToast("Follow-up report deleted.", "info");
@@ -6614,6 +6727,45 @@ function doPost(e) {
     loadFollowupReportsInitial();
 
     el("tabFollowup")?.addEventListener("click", refreshFollowupOmOptions);
+
+    // Toggle New Follow Up form card
+    const addCard = el("followupAddCard");
+    const toggleBtn = el("btnToggleFollowupAdd");
+    const toggleText = el("btnToggleFollowupAddText");
+    if (toggleBtn && addCard) {
+      toggleBtn.addEventListener("click", () => {
+        const isHidden = addCard.style.display === "none";
+        addCard.style.display = isHidden ? "block" : "none";
+        toggleBtn.classList.toggle("active", isHidden);
+        if (toggleText) toggleText.textContent = isHidden ? "Close Form" : "New Report";
+      });
+    }
+
+    // Refresh button
+    el("btnFollowupRefresh")?.addEventListener("click", async () => {
+      await loadFollowupReportsInitial();
+      showToast("Follow Up reports refreshed.", "info");
+    });
+
+    // Filter tabs
+    const filterBtns = [
+      { id: "btnFilterFollowupAll", filter: "all" },
+      { id: "btnFilterFollowupOpen", filter: "open" },
+      { id: "btnFilterFollowupResolved", filter: "resolved" }
+    ];
+    filterBtns.forEach(({ id, filter }) => {
+      el(id)?.addEventListener("click", () => {
+        followupFilter = filter;
+        filterBtns.forEach(b => el(b.id)?.classList.toggle("active", b.filter === filter));
+        renderFollowupList();
+      });
+    });
+
+    // Search input
+    el("followupSearchInput")?.addEventListener("input", (e) => {
+      followupSearchQuery = (e.target.value || "").trim().toLowerCase();
+      renderFollowupList();
+    });
 
     el("followupChooseShotBtn")?.addEventListener("click", () => el("followupAddShotInput")?.click());
     el("followupReplaceAddShotBtn")?.addEventListener("click", () => el("followupAddShotInput")?.click());
@@ -6879,12 +7031,13 @@ function doPost(e) {
       htmlParts.push(`<div class="teams-preview-shots" style="margin: 6px 0;">${shotsHtml}</div>`);
     }
 
-    const safeUrlFn = typeof window.safeUrl === "function" ? window.safeUrl : (u => /^https?:\/\//i.test(String(u||'').trim()) ? String(u).trim() : "");
-    const clips = (cctvReportDraft.clipUrl || "")
-      .split(/[\n,]+/)
-      .map(u => u.trim())
-      .map(u => safeUrlFn(u))
-      .filter(u => !!u);
+    const clips = window.CCTV_REPORT_SERVICE?.parseClipUrls
+      ? window.CCTV_REPORT_SERVICE.parseClipUrls(cctvReportDraft.clipUrl)
+      : (cctvReportDraft.clipUrl || "")
+          .split(/[\r\n,]+/)
+          .map(u => u.trim())
+          .map(u => (typeof window.safeUrl === "function" ? window.safeUrl(u) : (/^https?:\/\//i.test(u) ? u : "")))
+          .filter(Boolean);
 
     if (clips.length === 1) {
       htmlParts.push(`<div class="teams-preview-clip" style="margin-top: 6px;"><strong>CCTV Clip:</strong> <a href="${esc(clips[0])}" target="_blank" rel="noopener noreferrer" style="color:#6366f1; text-decoration:underline; font-weight:600;">Click here!</a></div>`);
@@ -6892,8 +7045,6 @@ function doPost(e) {
       clips.forEach((c, idx) => {
         htmlParts.push(`<div class="teams-preview-clip" style="margin-top: 4px;"><strong>CCTV Clip ${idx + 1}:</strong> <a href="${esc(c)}" target="_blank" rel="noopener noreferrer" style="color:#6366f1; text-decoration:underline; font-weight:600;">Click here!</a></div>`);
       });
-    } else {
-      htmlParts.push(`<div class="teams-preview-clip" style="color:var(--text-muted); margin-top: 6px;"><strong>CCTV Clip:</strong> <em>Click here!</em></div>`);
     }
 
     box.innerHTML = htmlParts.join("");
@@ -6902,7 +7053,11 @@ function doPost(e) {
   function renderCctvReportScreenshots() {
     const gallery = el("reportShotGallery");
     const countEl = el("reportShotCount");
-    if (!gallery || !cctvReportDraft) return;
+    if (!gallery) return;
+    if (window.CCTV_REPORT_SERVICE) {
+      cctvReportDraft = window.CCTV_REPORT_SERVICE.getDraft();
+    }
+    if (!cctvReportDraft) return;
 
     const count = Array.isArray(cctvReportDraft.screenshots) ? cctvReportDraft.screenshots.length : 0;
     if (countEl) countEl.textContent = String(count);
@@ -6914,26 +7069,177 @@ function doPost(e) {
 
     gallery.innerHTML = cctvReportDraft.screenshots.map((shot, idx) => {
       const src = typeof shot === "string" ? shot : (shot.data || shot.url || "");
+      const isFirst = idx === 0;
+      const isLast = idx === count - 1;
       return `
-        <div class="report-shot-item" data-index="${idx}" title="Click to view full image">
-          <img src="${src}" alt="Screenshot ${idx + 1}">
-          <button type="button" class="report-shot-remove" data-index="${idx}" title="Remove screenshot">x</button>
+        <div class="report-shot-item" data-index="${idx}" draggable="true" title="Drag to reorder or click to preview">
+          <span class="report-shot-badge">${idx + 1}</span>
+          <img src="${src}" alt="Screenshot ${idx + 1}" draggable="false">
+          <div class="report-shot-actions" onclick="event.stopPropagation();">
+            <button type="button" class="report-shot-move-btn btn-move-first" data-index="${idx}" ${isFirst ? 'disabled' : ''} title="Move to first position">|‹</button>
+            <button type="button" class="report-shot-move-btn btn-move-left" data-index="${idx}" ${isFirst ? 'disabled' : ''} title="Move left">‹</button>
+            <button type="button" class="report-shot-move-btn btn-move-right" data-index="${idx}" ${isLast ? 'disabled' : ''} title="Move right">›</button>
+            <button type="button" class="report-shot-move-btn btn-move-last" data-index="${idx}" ${isLast ? 'disabled' : ''} title="Move to last position">›|</button>
+            <button type="button" class="report-shot-remove" data-index="${idx}" title="Remove screenshot">×</button>
+          </div>
         </div>
       `;
     }).join("");
+
+    let dragSrcIdx = null;
+
+    // Gallery-level dropzone for dragging to the end
+    gallery.ondragover = (e) => {
+      if (dragSrcIdx === null) return;
+      if (!e.target.closest(".report-shot-item")) {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = "move";
+      }
+    };
+
+    gallery.ondrop = (e) => {
+      if (dragSrcIdx === null) return;
+      if (!e.target.closest(".report-shot-item")) {
+        e.preventDefault();
+        if (dragSrcIdx < cctvReportDraft.screenshots.length - 1) {
+          const [moved] = cctvReportDraft.screenshots.splice(dragSrcIdx, 1);
+          cctvReportDraft.screenshots.push(moved);
+          window.CCTV_REPORT_SERVICE.saveDraft(cctvReportDraft);
+          renderCctvReportScreenshots();
+          updateCctvReportPreview();
+          showToast(`Screenshot moved to last position (${cctvReportDraft.screenshots.length}).`, "info");
+        }
+        dragSrcIdx = null;
+      }
+    };
 
     gallery.querySelectorAll(".report-shot-item").forEach(item => {
       const idx = parseInt(item.dataset.index, 10);
       const shot = cctvReportDraft.screenshots[idx];
       const src = typeof shot === "string" ? shot : (shot.data || shot.url || "");
 
+      // Click thumbnail to view full image
       item.addEventListener("click", (e) => {
-        if (e.target.closest(".report-shot-remove")) return;
+        if (e.target.closest("button") || e.target.closest(".report-shot-actions")) return;
         if (window.openFullScreenshotViewer) {
           window.openFullScreenshotViewer(src, "CCTV Report Evidence", `Screenshot #${idx + 1}`);
         }
       });
 
+      // Drag and Drop reordering with true insertion
+      item.addEventListener("dragstart", (e) => {
+        dragSrcIdx = idx;
+        item.classList.add("dragging");
+        e.dataTransfer.effectAllowed = "move";
+        e.dataTransfer.setData("application/x-cctv-report-shot", String(idx));
+      });
+
+      item.addEventListener("dragover", (e) => {
+        if (dragSrcIdx === null) return;
+        e.preventDefault();
+        e.dataTransfer.dropEffect = "move";
+
+        const rect = item.getBoundingClientRect();
+        const relX = e.clientX - rect.left;
+        const isAfter = relX > (rect.width / 2);
+
+        item.classList.remove("drop-before", "drop-after");
+        if (isAfter) {
+          item.classList.add("drop-after");
+        } else {
+          item.classList.add("drop-before");
+        }
+      });
+
+      item.addEventListener("dragleave", () => {
+        item.classList.remove("drop-before", "drop-after");
+      });
+
+      item.addEventListener("dragend", () => {
+        item.classList.remove("dragging");
+        gallery.querySelectorAll(".report-shot-item").forEach(i => i.classList.remove("drop-before", "drop-after", "dragging"));
+        dragSrcIdx = null;
+      });
+
+      item.addEventListener("drop", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const rect = item.getBoundingClientRect();
+        const relX = e.clientX - rect.left;
+        const isAfter = relX > (rect.width / 2);
+        item.classList.remove("drop-before", "drop-after");
+
+        const targetIdx = parseInt(item.dataset.index, 10);
+        if (dragSrcIdx !== null && !isNaN(dragSrcIdx) && !isNaN(targetIdx)) {
+          let targetInsert = isAfter ? targetIdx + 1 : targetIdx;
+          if (dragSrcIdx !== targetInsert && !(dragSrcIdx === targetInsert - 1 && isAfter)) {
+            const [moved] = cctvReportDraft.screenshots.splice(dragSrcIdx, 1);
+            if (dragSrcIdx < targetInsert) {
+              targetInsert--;
+            }
+            cctvReportDraft.screenshots.splice(targetInsert, 0, moved);
+            window.CCTV_REPORT_SERVICE.saveDraft(cctvReportDraft);
+            renderCctvReportScreenshots();
+            updateCctvReportPreview();
+            showToast(`Screenshot inserted at position ${targetInsert + 1}.`, "info");
+          }
+        }
+        dragSrcIdx = null;
+      });
+
+      // Accessible Move to First
+      item.querySelector(".btn-move-first")?.addEventListener("click", (e) => {
+        e.stopPropagation();
+        if (idx > 0) {
+          const [moved] = cctvReportDraft.screenshots.splice(idx, 1);
+          cctvReportDraft.screenshots.unshift(moved);
+          window.CCTV_REPORT_SERVICE.saveDraft(cctvReportDraft);
+          renderCctvReportScreenshots();
+          updateCctvReportPreview();
+          showToast("Screenshot moved to first position.", "info");
+        }
+      });
+
+      // Accessible Move Left
+      item.querySelector(".btn-move-left")?.addEventListener("click", (e) => {
+        e.stopPropagation();
+        if (idx > 0) {
+          const [moved] = cctvReportDraft.screenshots.splice(idx, 1);
+          cctvReportDraft.screenshots.splice(idx - 1, 0, moved);
+          window.CCTV_REPORT_SERVICE.saveDraft(cctvReportDraft);
+          renderCctvReportScreenshots();
+          updateCctvReportPreview();
+          showToast(`Screenshot moved to position ${idx}.`, "info");
+        }
+      });
+
+      // Accessible Move Right
+      item.querySelector(".btn-move-right")?.addEventListener("click", (e) => {
+        e.stopPropagation();
+        if (idx < cctvReportDraft.screenshots.length - 1) {
+          const [moved] = cctvReportDraft.screenshots.splice(idx, 1);
+          cctvReportDraft.screenshots.splice(idx + 1, 0, moved);
+          window.CCTV_REPORT_SERVICE.saveDraft(cctvReportDraft);
+          renderCctvReportScreenshots();
+          updateCctvReportPreview();
+          showToast(`Screenshot moved to position ${idx + 2}.`, "info");
+        }
+      });
+
+      // Accessible Move to Last
+      item.querySelector(".btn-move-last")?.addEventListener("click", (e) => {
+        e.stopPropagation();
+        if (idx < cctvReportDraft.screenshots.length - 1) {
+          const [moved] = cctvReportDraft.screenshots.splice(idx, 1);
+          cctvReportDraft.screenshots.push(moved);
+          window.CCTV_REPORT_SERVICE.saveDraft(cctvReportDraft);
+          renderCctvReportScreenshots();
+          updateCctvReportPreview();
+          showToast(`Screenshot moved to last position (${cctvReportDraft.screenshots.length}).`, "info");
+        }
+      });
+
+      // Remove button
       item.querySelector(".report-shot-remove")?.addEventListener("click", (e) => {
         e.stopPropagation();
         cctvReportDraft.screenshots.splice(idx, 1);
@@ -7098,6 +7404,9 @@ function doPost(e) {
 
       ["dragenter", "dragover"].forEach(evtName => {
         dropzone.addEventListener(evtName, (e) => {
+          if (e.dataTransfer && e.dataTransfer.types && !Array.from(e.dataTransfer.types).includes("Files")) {
+            return;
+          }
           e.preventDefault();
           e.stopPropagation();
           dropzone.classList.add("drag-active");
@@ -7415,10 +7724,13 @@ function doPost(e) {
 
     if (iframe) {
       const scale = zoomPct / 100;
-      iframe.style.width = `${100 / scale}%`;
-      iframe.style.height = `${100 / scale}%`;
-      iframe.style.transform = `scale(${scale})`;
-      iframe.style.transformOrigin = "0 0";
+      const logicalDim = `${(100 / scale).toFixed(4)}%`;
+      iframe.style.setProperty("width", logicalDim, "important");
+      iframe.style.setProperty("height", logicalDim, "important");
+      iframe.style.setProperty("max-width", "none", "important");
+      iframe.style.setProperty("max-height", "none", "important");
+      iframe.style.setProperty("transform", `scale(${scale})`, "important");
+      iframe.style.setProperty("transform-origin", "top left", "important");
     }
   }
 
@@ -7441,9 +7753,70 @@ function doPost(e) {
     applyTrackerZoom(defaultZoom);
   }
 
+  let trackerLoadTimeout = null;
+
+  function updateTrackerStatus(state, customLabel = null) {
+    const pill = el("trackerStatusPill");
+    const textEl = el("trackerStatusText");
+    if (!pill || !textEl) return;
+
+    pill.classList.remove("status-ready", "status-loading", "status-error");
+    if (state === "loading") {
+      pill.classList.add("status-loading");
+      textEl.textContent = customLabel || "Connecting...";
+      pill.title = "Connecting to Google Spreadsheet...";
+    } else if (state === "error") {
+      pill.classList.add("status-error");
+      textEl.textContent = customLabel || "Embed Restricted";
+      pill.title = "Iframe embed unavailable or offline. Use external link.";
+    } else {
+      pill.classList.add("status-ready");
+      textEl.textContent = customLabel || "Live Ready";
+      pill.title = "Authoritative Google Spreadsheet ready.";
+    }
+  }
+
+  let lastTrackerSwitchTime = 0;
+
+  function showTrackerLoading(label) {
+    const overlay = el("trackersLoadingState");
+    const title = el("trackersLoadingTitle");
+    const errOverlay = el("trackersErrorState");
+    if (errOverlay) errOverlay.style.display = "none";
+
+    if (title) title.textContent = `Loading ${label || 'Tracker'}...`;
+    if (overlay) {
+      overlay.style.display = "flex";
+      overlay.style.opacity = "1";
+    }
+    updateTrackerStatus("loading", "Connecting...");
+  }
+
+  function hideTrackerLoading(success = true) {
+    if (trackerLoadTimeout) {
+      clearTimeout(trackerLoadTimeout);
+      trackerLoadTimeout = null;
+    }
+    const overlay = el("trackersLoadingState");
+    if (overlay) {
+      overlay.style.opacity = "0";
+      setTimeout(() => {
+        if (overlay.style.opacity === "0") {
+          overlay.style.display = "none";
+        }
+      }, 200);
+    }
+    if (success) {
+      const errOverlay = el("trackersErrorState");
+      if (errOverlay) errOverlay.style.display = "none";
+      updateTrackerStatus("ready", "Live Ready");
+    }
+  }
+
   function setTrackerWorkbook(key, forceReload = false) {
     if (!TRACKER_CONFIGS[key]) key = "audit";
     activeTrackerKey = key;
+    lastTrackerSwitchTime = Date.now();
     try {
       localStorage.setItem(TRACKER_STORAGE_KEY, key);
     } catch (_) {}
@@ -7452,9 +7825,13 @@ function doPost(e) {
     const iframe = el("trackerFrame");
     const labelEl = el("trackersActiveLabel");
     const openLink = el("linkOpenGoogleSheets");
+    const errorOpenLink = el("linkTrackerErrorOpen");
+    const errOverlay = el("trackersErrorState");
+    if (errOverlay) errOverlay.style.display = "none";
 
     if (labelEl) labelEl.textContent = cfg.sheetTitle || cfg.label;
     if (openLink) openLink.href = cfg.url;
+    if (errorOpenLink) errorOpenLink.href = cfg.url;
 
     // Update switcher tab buttons
     document.querySelectorAll(".tracker-switch-btn").forEach(btn => {
@@ -7468,8 +7845,18 @@ function doPost(e) {
     applyTrackerZoom(savedZoom);
 
     if (iframe) {
-      if (forceReload || iframe.src !== cfg.url) {
+      const needsReload = forceReload || iframe.src !== cfg.url;
+      if (needsReload) {
+        showTrackerLoading(cfg.label);
         iframe.src = cfg.url;
+
+        // Safety fallback: Google Docs iframe sometimes takes a while or suppresses cross-origin onload
+        if (trackerLoadTimeout) clearTimeout(trackerLoadTimeout);
+        trackerLoadTimeout = setTimeout(() => {
+          hideTrackerLoading(true);
+        }, 3200);
+      } else {
+        updateTrackerStatus("ready", "Live Ready");
       }
     }
   }
@@ -7484,6 +7871,29 @@ function doPost(e) {
   }
 
   function initTrackersController() {
+    const iframe = el("trackerFrame");
+
+    // Iframe load & error handling
+    if (iframe) {
+      iframe.addEventListener("load", () => {
+        hideTrackerLoading(true);
+        const errOverlay = el("trackersErrorState");
+        if (errOverlay) errOverlay.style.display = "none";
+        const savedZoom = getSavedTrackerZoom(activeTrackerKey);
+        applyTrackerZoom(savedZoom);
+      });
+      iframe.addEventListener("error", () => {
+        // Ignore aborted navigations caused by rapid switcher clicks
+        if (Date.now() - lastTrackerSwitchTime < 1500) {
+          return;
+        }
+        hideTrackerLoading(false);
+        updateTrackerStatus("error", "Embed Restricted");
+        const errOverlay = el("trackersErrorState");
+        if (errOverlay) errOverlay.style.display = "flex";
+      });
+    }
+
     // Switcher buttons
     document.querySelectorAll(".tracker-switch-btn").forEach(btn => {
       btn.addEventListener("click", () => {
@@ -7496,6 +7906,13 @@ function doPost(e) {
     el("btnTrackerReload")?.addEventListener("click", () => {
       setTrackerWorkbook(activeTrackerKey, true);
       showToast(`Reloaded ${TRACKER_CONFIGS[activeTrackerKey]?.label || 'tracker'}.`, "info");
+    });
+
+    // Retry button in error overlay
+    el("btnTrackerRetry")?.addEventListener("click", () => {
+      const errOverlay = el("trackersErrorState");
+      if (errOverlay) errOverlay.style.display = "none";
+      setTrackerWorkbook(activeTrackerKey, true);
     });
 
     // Independent Tracker Zoom Controls
@@ -7514,6 +7931,10 @@ function doPost(e) {
       }, { passive: false });
     }
 
+    // Network status awareness
+    window.addEventListener("online", () => updateTrackerStatus("ready", "Live Ready"));
+    window.addEventListener("offline", () => updateTrackerStatus("error", "Offline"));
+
     // Restore saved state
     let savedKey = "audit";
     try {
@@ -7527,6 +7948,7 @@ function doPost(e) {
     window.TRACKER_CONFIGS = TRACKER_CONFIGS;
     window.applyTrackerZoom = applyTrackerZoom;
     window.getSavedTrackerZoom = getSavedTrackerZoom;
+    window.updateTrackerStatus = updateTrackerStatus;
   }
 
   // =========================================================================
@@ -8149,7 +8571,7 @@ ${escapeHtml(JSON.stringify(entry.after || entry.before, null, 2))}
 
     let accessEditingUser = null;
 
-    // â”€â”€ Utility helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // --- Utility helpers ----------------------------------------------------
     const $ = id => document.getElementById(id);
     const esc = t => String(t ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
     const dt = v => { if (!v) return '-'; const d = new Date(v); if (isNaN(d)) return '-'; return d.toLocaleString([],{month:'short',day:'numeric',year:'numeric',hour:'2-digit',minute:'2-digit'}); };
@@ -8220,7 +8642,7 @@ ${escapeHtml(JSON.stringify(entry.after || entry.before, null, 2))}
       } catch (_) { showToast('Could not copy.'); }
     }
 
-    // â”€â”€ KPI + System Status update â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // --- KPI + System Status update -----------------------------------------
     async function updateKpiDisplay() {
       const metrics = await svc.getMetrics();
       if ($('adminTotalUsers')) $('adminTotalUsers').textContent = metrics.totalUsers;
@@ -8251,22 +8673,52 @@ ${escapeHtml(JSON.stringify(entry.after || entry.before, null, 2))}
       }
     }
 
-    // â”€â”€ Render Recent Credentials â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // --- Transient One-Time Creation Credentials (In-Memory Only) ----------
+    let _transientCred = null;
+    let _transientCredTimer = null;
+    const TRANSIENT_CRED_TTL_MS = 90000; // 90 seconds auto-clear
+
+    // Aggressively purge any legacy web storage keys on init
+    try {
+      sessionStorage.removeItem("cctv_admin_recent_creds_v1");
+      localStorage.removeItem("cctv_admin_recent_creds_v1");
+    } catch (_) { }
+
+    function clearTransientCredential() {
+      _transientCred = null;
+      if (_transientCredTimer) {
+        clearTimeout(_transientCredTimer);
+        _transientCredTimer = null;
+      }
+      try {
+        sessionStorage.removeItem("cctv_admin_recent_creds_v1");
+        localStorage.removeItem("cctv_admin_recent_creds_v1");
+        if (svc?.clearRecentCredentials) svc.clearRecentCredentials();
+      } catch (_) { }
+      renderRecentCredentials();
+    }
+    window._clearTransientCredential = clearTransientCredential;
+
+    // --- Render Recent Credentials ------------------------------------------
     function renderRecentCredentials() {
       const section = $('adminRecentCredsSection');
       const listEl = $('adminRecentCredsList');
       if (!section || !listEl) return;
-      const list = svc.getRecentCredentials();
-      if (!list.length) { section.hidden = true; listEl.innerHTML = ''; return; }
+      if (!_transientCred || !_transientCred.password) {
+        section.hidden = true;
+        listEl.innerHTML = '';
+        return;
+      }
       section.hidden = false;
-      listEl.innerHTML = list.map(item => `
-        <div class="recent-cred-card" data-cred-id="${esc(item.id)}">
+      const item = _transientCred;
+      listEl.innerHTML = `
+        <div class="recent-cred-card">
           <div class="recent-cred-top">
             <div class="recent-cred-identity">
-              <span class="admin-badge badge-${esc(String(item.role||'user').toLowerCase())}">${esc(item.role||'User')}</span>
+              <span class="admin-badge badge-${esc(String(item.role||'user').toLowerCase())}">${esc(item.role === 'admin' ? 'Admin' : 'User')}</span>
               <span class="recent-cred-name" title="${esc(item.name)}">${esc(item.name)}</span>
             </div>
-            <button type="button" class="recent-cred-btn cred-remove-btn" data-id="${esc(item.id)}" title="Remove" aria-label="Remove">
+            <button type="button" class="recent-cred-btn cred-remove-btn" title="Dismiss" aria-label="Dismiss">
               <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
             </button>
           </div>
@@ -8275,7 +8727,7 @@ ${escapeHtml(JSON.stringify(entry.after || entry.before, null, 2))}
               <span class="recent-cred-label">Username</span>
               <div class="recent-cred-val-wrap">
                 <span class="recent-cred-val">${esc(cleanUsername(item.username))}</span>
-                <button type="button" class="recent-cred-btn cred-copy-user-btn" data-username="${esc(cleanUsername(item.username))}" title="Copy Username">
+                <button type="button" class="recent-cred-btn cred-copy-user-btn" title="Copy Username">
                   <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
                   <span>Copy</span>
                 </button>
@@ -8284,12 +8736,12 @@ ${escapeHtml(JSON.stringify(entry.after || entry.before, null, 2))}
             <div class="recent-cred-row">
               <span class="recent-cred-label">Temp Password</span>
               <div class="recent-cred-val-wrap">
-                <span class="recent-cred-val recent-cred-pw-val is-masked" data-pw="${esc(item.password)}">â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢</span>
+                <span class="recent-cred-val recent-cred-pw-val is-masked">••••••••</span>
                 <button type="button" class="recent-cred-btn cred-toggle-pw-btn" aria-label="Show password" title="Show password">
                   <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                   <span>Show</span>
                 </button>
-                <button type="button" class="recent-cred-btn cred-copy-pw-btn" data-password="${esc(item.password)}" title="Copy Password">
+                <button type="button" class="recent-cred-btn cred-copy-pw-btn" title="Copy Password">
                   <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
                   <span>Copy</span>
                 </button>
@@ -8297,44 +8749,59 @@ ${escapeHtml(JSON.stringify(entry.after || entry.before, null, 2))}
             </div>
           </div>
           <div class="recent-cred-footer">
-            <button type="button" class="recent-cred-copy-all-btn cred-copy-all-btn" data-id="${esc(item.id)}" title="Copy all credentials">
+            <button type="button" class="recent-cred-copy-all-btn cred-copy-all-btn" title="Copy all credentials">
               <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
               <span>Copy All Credentials</span>
             </button>
-            <button type="button" class="recent-cred-btn-danger cred-remove-btn" data-id="${esc(item.id)}">Remove</button>
+            <button type="button" class="recent-cred-btn-danger cred-remove-btn">Dismiss</button>
           </div>
         </div>
-      `).join('');
+      `;
 
       listEl.querySelectorAll('.cred-remove-btn').forEach(btn =>
-        btn.addEventListener('click', () => { svc.removeRecentCredential(btn.dataset.id); renderRecentCredentials(); showToast('Credential removed.'); })
+        btn.addEventListener('click', () => { clearTransientCredential(); showToast('Credential banner dismissed.'); })
       );
-      listEl.querySelectorAll('.cred-copy-user-btn').forEach(btn =>
-        btn.addEventListener('click', () => copyText(btn.dataset.username || '', btn, 'Copied!'))
-      );
-      listEl.querySelectorAll('.cred-copy-pw-btn').forEach(btn =>
-        btn.addEventListener('click', () => copyText(btn.dataset.password || '', btn, 'Copied!'))
-      );
-      listEl.querySelectorAll('.cred-toggle-pw-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-          const card = btn.closest('.recent-cred-card');
-          const pw = card?.querySelector('.recent-cred-pw-val');
-          if (!pw) return;
-          const masked = pw.classList.contains('is-masked');
-          if (masked) { pw.classList.remove('is-masked'); pw.textContent = pw.dataset.pw || ''; btn.querySelector('span').textContent = 'Hide'; }
-          else { pw.classList.add('is-masked'); pw.textContent = 'â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢'; btn.querySelector('span').textContent = 'Show'; }
-        });
+      listEl.querySelector('.cred-copy-user-btn')?.addEventListener('click', function() {
+        if (!_transientCred?.username) { showToast('Credential has expired.', 'warning'); return; }
+        copyText(cleanUsername(_transientCred.username), this, 'Copied!');
       });
-      listEl.querySelectorAll('.cred-copy-all-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-          const item = list.find(x => x.id === btn.dataset.id);
-          if (!item) return;
-          copyText(svc.formatAllCredentialsText(item), btn, 'Copied All!');
-        });
+      listEl.querySelector('.cred-copy-pw-btn')?.addEventListener('click', function() {
+        if (!_transientCred?.password) { showToast('Credential has expired.', 'warning'); return; }
+        copyText(_transientCred.password, this, 'Copied!');
+      });
+      listEl.querySelector('.cred-toggle-pw-btn')?.addEventListener('click', function() {
+        const pw = listEl.querySelector('.recent-cred-pw-val');
+        if (!pw) return;
+        if (!_transientCred?.password) {
+          pw.textContent = '••••••••';
+          pw.classList.add('is-masked');
+          showToast('Credential has expired.', 'warning');
+          return;
+        }
+        const masked = pw.classList.contains('is-masked');
+        if (masked) {
+          pw.classList.remove('is-masked');
+          pw.textContent = _transientCred.password;
+          this.querySelector('span').textContent = 'Hide';
+        } else {
+          pw.classList.add('is-masked');
+          pw.textContent = '••••••••';
+          this.querySelector('span').textContent = 'Show';
+        }
+      });
+      listEl.querySelector('.cred-copy-all-btn')?.addEventListener('click', function() {
+        if (!_transientCred?.password) { showToast('Credential has expired.', 'warning'); return; }
+        const text = [
+          `Name: ${_transientCred.name}`,
+          `Username: ${cleanUsername(_transientCred.username)}`,
+          `Temporary Password: ${_transientCred.password}`,
+          `Role: ${_transientCred.role}`
+        ].join('\n');
+        copyText(text, this, 'Copied All!');
       });
     }
 
-    // â”€â”€ Render User Accounts â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // --- Render User Accounts -----------------------------------------------
     function renderUsers(rows) {
       const body = $('adminUsersBody');
       if (!body) return;
@@ -8355,7 +8822,7 @@ ${escapeHtml(JSON.stringify(entry.after || entry.before, null, 2))}
         const isApproved = item.status === 'approved';
         const isDisabled = item.status === 'disabled' || item.status === 'suspended';
         const isPending = item.status === 'pending';
-        const permsText = isSuperTarget ? 'âš¡ Unrestricted Full Access' : permSummary(item);
+        const permsText = isSuperTarget ? '⚡ Unrestricted Full Access' : permSummary(item);
         const uKey = cleanUsername(item.username).toLowerCase();
         const cred = recentCreds.find(c => cleanUsername(c.username).toLowerCase() === uKey);
 
@@ -8364,24 +8831,10 @@ ${escapeHtml(JSON.stringify(entry.after || entry.before, null, 2))}
         const isPrivilegedTarget = isSuperTarget || isAdminTarget;
         const canManageTarget = isCallerSuper || (!isPrivilegedTarget && (window.CCTV_AUTH?.hasPermission?.('manage_users') || window.CCTV_AUTH?.hasPermission?.('manage_permissions')));
 
-        const pwRowHtml = cred?.password ? `
-          <div class="admin-user-card-pw-row">
-            <span class="admin-user-meta-label">Temp Password</span>
-            <div class="recent-cred-val-wrap">
-              <span class="recent-cred-val recent-cred-pw-val is-masked" data-pw="${esc(cred.password)}">â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢</span>
-              <button type="button" class="recent-cred-btn user-card-toggle-pw-btn" aria-label="Show password" title="Show password">
-                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                <span>Show</span>
-              </button>
-              <button type="button" class="recent-cred-btn user-card-copy-pw-btn" data-password="${esc(cred.password)}" title="Copy">
-                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-                <span>Copy</span>
-              </button>
-            </div>
-          </div>` : `
+        const pwRowHtml = `
           <div class="admin-user-card-pw-row">
             <span class="admin-user-meta-label">Password</span>
-            <span style="font-size:11px; color:var(--text-dim);">Not available</span>
+            <span style="font-size:11px; color:var(--text-dim);">Protected</span>
           </div>`;
 
         return `
@@ -8455,20 +8908,6 @@ ${escapeHtml(JSON.stringify(entry.after || entry.before, null, 2))}
           try { await svc.deleteAccount(btn.dataset.id); showToast('Account deleted.'); await loadAdmin(); } catch(e) { showToast(e.message || 'Could not delete.'); }
         })
       );
-      body.querySelectorAll('.user-card-toggle-pw-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-          const row = btn.closest('.admin-user-card-pw-row');
-          const pw = row?.querySelector('.recent-cred-pw-val');
-          if (!pw) return;
-          const masked = pw.classList.contains('is-masked');
-          if (masked) { pw.classList.remove('is-masked'); pw.textContent = pw.dataset.pw||''; btn.querySelector('span').textContent = 'Hide'; }
-          else { pw.classList.add('is-masked'); pw.textContent = 'â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢'; btn.querySelector('span').textContent = 'Show'; }
-        });
-      });
-      body.querySelectorAll('.user-card-copy-pw-btn').forEach(btn =>
-        btn.addEventListener('click', () => copyText(btn.dataset.password||'', btn, 'Copied!'))
-      );
-
       filterUsers();
     }
 
@@ -8535,7 +8974,7 @@ ${escapeHtml(JSON.stringify(entry.after || entry.before, null, 2))}
       });
     }
 
-    // â”€â”€ Account Creation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // --- Account Creation ---------------------------------------------------
     async function createStaffAccount() {
       const name = String($('adminCreateName')?.value||'').trim();
       const username = String($('adminCreateUsername')?.value||'').trim().replace(/^@+/,'');
@@ -8551,6 +8990,7 @@ ${escapeHtml(JSON.stringify(entry.after || entry.before, null, 2))}
       setStatus('Creating account...', 'info');
 
       try {
+        clearTransientCredential();
         const newAcc = await svc.createAccount({ name, username, password, role });
         const roleLabel = role === 'super_admin' ? 'Super Admin' : (role === 'admin' ? 'Admin' : 'User');
         setStatus(`${newAcc.display_name} created and approved  -  @${newAcc.username}  -  Role: ${roleLabel}`, 'success');
@@ -8559,6 +8999,25 @@ ${escapeHtml(JSON.stringify(entry.after || entry.before, null, 2))}
         if ($('adminCreateUsername')) $('adminCreateUsername').value = '';
         if ($('adminCreatePassword')) { $('adminCreatePassword').value = ''; $('adminCreatePassword').type = 'password'; }
         if ($('adminCreateRole')) $('adminCreateRole').value = 'user';
+
+        // Keep transient credentials only in memory for 90 seconds
+        _transientCred = {
+          id: newAcc.id || ("tc_" + Date.now()),
+          name: newAcc.display_name || name,
+          username: cleanUsername(newAcc.username || username),
+          password: password,
+          role: role
+        };
+        if (_transientCredTimer) clearTimeout(_transientCredTimer);
+        _transientCredTimer = setTimeout(() => {
+          clearTransientCredential();
+        }, TRANSIENT_CRED_TTL_MS);
+
+        try {
+          sessionStorage.removeItem("cctv_admin_recent_creds_v1");
+          localStorage.removeItem("cctv_admin_recent_creds_v1");
+        } catch (_) { }
+
         renderRecentCredentials();
         await loadAdmin();
       } catch(e) {
@@ -8569,7 +9028,7 @@ ${escapeHtml(JSON.stringify(entry.after || entry.before, null, 2))}
       }
     }
 
-    // â”€â”€ Access Editor Modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // --- Access Editor Modal ------------------------------------------------
     function openAccessEditor(id) {
       const item = svc.getCachedUsers().find(x => x.id === id);
       if (!item) return;
@@ -8773,29 +9232,59 @@ ${escapeHtml(JSON.stringify(entry.after || entry.before, null, 2))}
       finally { if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = 'Save Access'; } }
     }
 
-    // â”€â”€ Operational Settings â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-    function loadOperationalSettings() {
+    // --- Operational Settings -----------------------------------------------
+    function populateOperationalSettingsUI(s) {
+      if (!s) return;
+      if ($('adminSettingTheme')) $('adminSettingTheme').value = s.theme || 'dark';
+      if ($('adminSettingLanding')) $('adminSettingLanding').value = s.landing || 'cctv';
+      if ($('adminSettingSubtitle')) $('adminSettingSubtitle').value = s.subtitle || 'Secure operations workspace';
+      if ($('adminSettingAutoTrim')) $('adminSettingAutoTrim').checked = s.autoTrim !== false;
+    }
+
+    async function loadOperationalSettings() {
       const s = svc.getOperationalSettings();
-      if ($('adminSettingTheme')) $('adminSettingTheme').value = s.theme;
-      if ($('adminSettingLanding')) $('adminSettingLanding').value = s.landing;
-      if ($('adminSettingSubtitle')) $('adminSettingSubtitle').value = s.subtitle;
-      if ($('adminSettingAutoTrim')) $('adminSettingAutoTrim').checked = s.autoTrim;
+      populateOperationalSettingsUI(s);
+
+      try {
+        const remote = await svc.fetchOperationalSettings(true);
+        if (remote) {
+          populateOperationalSettingsUI(remote);
+        }
+      } catch (_) { }
     }
 
     async function saveOperationalSettings() {
-      const settings = {
-        theme: $('adminSettingTheme')?.value || 'dark',
-        landing: $('adminSettingLanding')?.value || 'cctv',
-        subtitle: String($('adminSettingSubtitle')?.value||'').trim() || 'Secure operations workspace',
-        autoTrim: !!$('adminSettingAutoTrim')?.checked
-      };
-      await svc.saveOperationalSettings(settings);
-      const notice = $('adminSaveSettingsNotice');
-      if (notice) { notice.textContent = 'OK Settings saved successfully.'; setTimeout(() => { notice.textContent = ''; }, 3500); }
-      showToast('Operational settings saved.');
+      const saveBtn = $('adminSaveSettingsBtn');
+      if (saveBtn && saveBtn.disabled) return;
+      if (saveBtn) {
+        saveBtn.disabled = true;
+        saveBtn.textContent = 'Saving...';
+      }
+
+      try {
+        const settings = {
+          theme: $('adminSettingTheme')?.value || 'dark',
+          landing: $('adminSettingLanding')?.value || 'cctv',
+          subtitle: String($('adminSettingSubtitle')?.value||'').trim() || 'Secure operations workspace',
+          autoTrim: !!$('adminSettingAutoTrim')?.checked
+        };
+        const updated = await svc.saveOperationalSettings(settings);
+        populateOperationalSettingsUI(updated);
+        const notice = $('adminSaveSettingsNotice');
+        if (notice) { notice.textContent = 'OK Settings saved successfully.'; setTimeout(() => { notice.textContent = ''; }, 3500); }
+        showToast('Operational settings saved.');
+      } catch(err) {
+        console.error('[Accounts Console] Save operational settings error:', err);
+        showToast(err.message || 'Failed to save operational settings.');
+      } finally {
+        if (saveBtn) {
+          saveBtn.disabled = false;
+          saveBtn.textContent = 'Save Settings';
+        }
+      }
     }
 
-    // â”€â”€ Subnav Tab Switching â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // --- Subnav Tab Switching -----------------------------------------------
     function initAdminSubnav() {
       document.querySelectorAll('.admin-subnav-btn').forEach(btn => {
         btn.addEventListener('click', () => {
@@ -8816,7 +9305,7 @@ ${escapeHtml(JSON.stringify(entry.after || entry.before, null, 2))}
       });
     }
 
-    // â”€â”€ Password toggle for create form â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // --- Password toggle for create form ------------------------------------
     function initPasswordToggles() {
       document.querySelectorAll('.auth-password-toggle').forEach(btn => {
         btn.addEventListener('click', e => {
@@ -8832,7 +9321,7 @@ ${escapeHtml(JSON.stringify(entry.after || entry.before, null, 2))}
       });
     }
 
-    // â”€â”€ Wire Events â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // --- Wire Events --------------------------------------------------------
     $('adminCreateAccountBtn')?.addEventListener('click', createStaffAccount);
     $('adminCreateAccountForm')?.addEventListener('submit', e => { e.preventDefault(); createStaffAccount(); });
     $('adminRefreshBtn')?.addEventListener('click', () => loadAdmin());
@@ -8877,7 +9366,7 @@ ${escapeHtml(JSON.stringify(entry.after || entry.before, null, 2))}
       } catch (err) {
         showToast(err.message || 'Could not promote to Super Admin.', 'error');
       } finally {
-        if (btn) { btn.disabled = false; btn.textContent = 'âš¡ Promote to Super Admin'; }
+        if (btn) { btn.disabled = false; btn.textContent = '⚡ Promote to Super Admin'; }
       }
     });
 
@@ -9003,6 +9492,17 @@ ${escapeHtml(JSON.stringify(entry.after || entry.before, null, 2))}
 
     // Accounts / Admin Console Initialization
     initAccountsController();
+
+    // Centralized Operational Settings initialization
+    if (window.CCTV_ACCOUNTS && typeof window.CCTV_ACCOUNTS.fetchOperationalSettings === "function") {
+      window.CCTV_ACCOUNTS.fetchOperationalSettings().then(s => {
+        if (s && s.subtitle) {
+          document.querySelectorAll(".workspace-subtitle, .auth-brand span").forEach(el => {
+            el.textContent = s.subtitle;
+          });
+        }
+      }).catch(() => {});
+    }
 
     // Microsoft 365 Services & Modals
     if (window.CCTV_MS_CONFIG_DIALOG) {
@@ -9416,6 +9916,9 @@ ${escapeHtml(JSON.stringify(entry.after || entry.before, null, 2))}
         } catch (err) {
           console.warn("Sign out error:", err);
         }
+        if (typeof window._clearTransientCredential === "function") {
+          window._clearTransientCredential();
+        }
         lockApp();
         showToast("Signed out safely.", "info");
       });
@@ -9562,16 +10065,22 @@ ${escapeHtml(JSON.stringify(entry.after || entry.before, null, 2))}
   }
 
   function findCardContainer(headerEl) {
-    let node = headerEl ? headerEl.parentElement : null;
+    if (!headerEl) return null;
+    const directCard = headerEl.closest ? headerEl.closest(".card") : null;
+    if (directCard) return directCard;
 
+    let node = headerEl.parentElement;
     while (node && node !== document.body) {
+      if (node.classList && node.classList.contains("card")) {
+        return node;
+      }
       if (node.querySelector("textarea, input, select, [contenteditable='true']")) {
         return node;
       }
       node = node.parentElement;
     }
 
-    return headerEl ? headerEl.parentElement : null;
+    return headerEl.parentElement || null;
   }
 
   function decorateOne(config) {

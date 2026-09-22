@@ -62,6 +62,37 @@
   let accountsCache = [];
   let auditLogsCache = [];
 
+  const DEFAULT_OPERATIONAL_SETTINGS = Object.freeze({
+    theme: "dark",
+    landing: "cctv",
+    subtitle: "Secure operations workspace",
+    autoTrim: true
+  });
+
+  let operationalSettingsCache = null;
+
+  function sanitizeOperationalSettings(raw) {
+    if (!raw || typeof raw !== "object") {
+      return { ...DEFAULT_OPERATIONAL_SETTINGS };
+    }
+    const cleanSub = clean(raw.subtitle);
+    return {
+      theme: raw.theme === "light" ? "light" : (raw.theme === "system" ? "system" : "dark"),
+      landing: clean(raw.landing || "cctv").toLowerCase(),
+      subtitle: cleanSub || "Secure operations workspace",
+      autoTrim: raw.autoTrim !== false
+    };
+  }
+
+  function applySettingsToDOM(settings) {
+    if (!settings) return;
+    if (settings.subtitle) {
+      document.querySelectorAll(".workspace-subtitle, .auth-brand span").forEach(el => {
+        el.textContent = settings.subtitle;
+      });
+    }
+  }
+
   function initClient() {
     if (client) return client;
     if (window._sharedSupabaseClient) {
@@ -366,7 +397,7 @@
           const { data: sessionData, error: sessionError } = await client.auth.getSession();
           const token = sessionData?.session?.access_token;
           if (sessionError || !token) {
-            throw new Error("Unauthorized: No valid signed-in session token.");
+            throw new Error("NetworkError: No valid signed-in session token, falling back to local storage.");
           }
 
           const fnUrl = `${String(cfg.SUPABASE_URL).replace(/\/+$/, "")}/functions/v1/cctv-admin-create-user`;
@@ -552,11 +583,15 @@
 
       if (client) {
         try {
-          await client.rpc("admin_set_user_access", {
+          const { error: accessError } = await client.rpc("admin_set_user_access", {
             p_target: id,
             p_role: target.role,
             p_permissions: sanitizedPerms
           });
+
+          if (accessError) {
+            throw accessError;
+          }
         } catch (err) {
           console.error("[Accounts Service] Remote access save error:", err);
           throw new Error(err.message || "Failed to update account permissions on Supabase.");
@@ -749,7 +784,13 @@
 
     saveRecentCredentials(list) {
       try {
-        sessionStorage.setItem(RECENT_CREDS_STORAGE_KEY, JSON.stringify(list || []));
+        // Security Hardening: Never write plaintext passwords to sessionStorage
+        const sanitized = (list || []).map(x => {
+          const clone = { ...x };
+          delete clone.password;
+          return clone;
+        });
+        sessionStorage.setItem(RECENT_CREDS_STORAGE_KEY, JSON.stringify(sanitized));
       } catch (_) { }
     },
 
@@ -759,7 +800,6 @@
         id: cred.id || "cred_" + Date.now() + "_" + Math.random().toString(36).slice(2, 7),
         name: cred.name,
         username: cleanUsername(cred.username),
-        password: cred.password,
         role: cred.role || "User",
         createdAt: cred.createdAt || new Date().toISOString()
       });
@@ -900,54 +940,189 @@
     },
 
     // -------------------------------------------------------------------------
-    // Operational Settings
+    // Authoritative Centralized Operational Settings
     // -------------------------------------------------------------------------
     getOperationalSettings() {
+      if (operationalSettingsCache) {
+        return { ...operationalSettingsCache };
+      }
       try {
         const raw = JSON.parse(localStorage.getItem(OPERATIONAL_SETTINGS_KEY) || "{}");
-        return {
-          theme: raw.theme || "dark",
-          landing: raw.landing || "cctv",
-          subtitle: raw.subtitle || "Secure operations workspace",
-          autoTrim: raw.autoTrim !== false
-        };
-      } catch (_) {
-        return {
-          theme: "dark",
-          landing: "cctv",
-          subtitle: "Secure operations workspace",
-          autoTrim: true
-        };
+        if (raw && typeof raw === "object" && Object.keys(raw).length > 0) {
+          operationalSettingsCache = sanitizeOperationalSettings(raw);
+          return { ...operationalSettingsCache };
+        }
+      } catch (_) { }
+
+      operationalSettingsCache = { ...DEFAULT_OPERATIONAL_SETTINGS };
+      return { ...operationalSettingsCache };
+    },
+
+    async fetchOperationalSettings(forceRemote = false) {
+      initClient();
+
+      let hasSession = false;
+      if (client && client.auth) {
+        try {
+          const { data: sData } = await client.auth.getSession();
+          hasSession = !!(sData?.session?.access_token);
+        } catch (_) { }
       }
+
+      // 1. Authoritative Supabase persistence (when valid session exists)
+      if (client && hasSession) {
+        try {
+          const { data: rpcData, error: rpcError } = await client.rpc("get_cctv_operational_settings");
+          if (!rpcError && rpcData && typeof rpcData === "object") {
+            operationalSettingsCache = sanitizeOperationalSettings(rpcData);
+            try {
+              localStorage.setItem(OPERATIONAL_SETTINGS_KEY, JSON.stringify(operationalSettingsCache));
+            } catch (_) { }
+            applySettingsToDOM(operationalSettingsCache);
+            return { ...operationalSettingsCache };
+          }
+
+          const { data: tblData, error: tblError } = await client
+            .from("cctv_operational_settings")
+            .select("settings, updated_at, updated_by")
+            .eq("id", "global_settings")
+            .maybeSingle();
+
+          if (!tblError && tblData && tblData.settings) {
+            operationalSettingsCache = sanitizeOperationalSettings(tblData.settings);
+            try {
+              localStorage.setItem(OPERATIONAL_SETTINGS_KEY, JSON.stringify(operationalSettingsCache));
+            } catch (_) { }
+            applySettingsToDOM(operationalSettingsCache);
+            return { ...operationalSettingsCache };
+          }
+        } catch (err) {
+          console.warn("[Accounts Service] Supabase operational settings fetch failed:", err);
+        }
+      }
+
+      // 2. Centralized fallback via backend endpoint (for multi-browser cross-device sync)
+      try {
+        const resp = await fetch("/api/operational_settings", { cache: "no-store" });
+        if (resp.ok) {
+          const data = await resp.json();
+          if (data && typeof data === "object" && (data.subtitle || data.theme || data.landing)) {
+            operationalSettingsCache = sanitizeOperationalSettings(data);
+            try {
+              localStorage.setItem(OPERATIONAL_SETTINGS_KEY, JSON.stringify(operationalSettingsCache));
+            } catch (_) { }
+            applySettingsToDOM(operationalSettingsCache);
+            return { ...operationalSettingsCache };
+          }
+        }
+      } catch (_) { }
+
+      // 3. Non-authoritative local cache or safe default fallback
+      if (!operationalSettingsCache) {
+        this.getOperationalSettings();
+      }
+      applySettingsToDOM(operationalSettingsCache);
+      return { ...operationalSettingsCache };
     },
 
     async saveOperationalSettings(settings) {
-      assertAdmin("saveOperationalSettings");
+      assertAdmin("saveOperationalSettings", "accounts");
+      initClient();
       const prev = this.getOperationalSettings();
-      const updated = {
-        theme: settings.theme || "dark",
-        landing: settings.landing || "cctv",
-        subtitle: clean(settings.subtitle) || "Secure operations workspace",
-        autoTrim: settings.autoTrim !== false
-      };
+      const sanitized = sanitizeOperationalSettings(settings);
 
-      localStorage.setItem(OPERATIONAL_SETTINGS_KEY, JSON.stringify(updated));
+      let persisted = null;
 
-      // Apply subtitle to document if available
-      document.querySelectorAll(".workspace-subtitle, .auth-brand span").forEach(el => {
-        el.textContent = updated.subtitle;
-      });
+      let hasSession = false;
+      if (client && client.auth) {
+        try {
+          const { data: sData } = await client.auth.getSession();
+          hasSession = !!(sData?.session?.access_token);
+        } catch (_) { }
+      }
 
-      // Audit log
+      // 1. Authoritative Supabase persistence (when valid session exists)
+      if (client && hasSession) {
+        try {
+          const { data: rpcData, error: rpcError } = await client.rpc("save_cctv_operational_settings", {
+            p_settings: sanitized
+          });
+
+          if (rpcError) {
+            if (rpcError.message && (rpcError.message.includes("Access Denied") || rpcError.message.includes("Unauthorized"))) {
+              throw new Error(rpcError.message);
+            }
+            console.warn("[Accounts Service] RPC save error, attempting table upsert:", rpcError);
+            const activeUser = window.CCTV_AUTH?.getUser?.();
+            const { data: tblData, error: tblError } = await client
+              .from("cctv_operational_settings")
+              .upsert({
+                id: "global_settings",
+                settings: sanitized,
+                updated_at: new Date().toISOString(),
+                updated_by: activeUser?.id || null
+              })
+              .select("settings")
+              .single();
+
+            if (tblError) {
+              if (tblError.message && (tblError.message.includes("Access Denied") || tblError.message.includes("violates row-level security"))) {
+                throw new Error("Access Denied: Insufficient permissions to update operational settings on Supabase.");
+              }
+              console.warn("[Accounts Service] Table upsert error:", tblError);
+            } else if (tblData?.settings) {
+              persisted = tblData.settings;
+            }
+          } else if (rpcData) {
+            persisted = rpcData;
+          }
+        } catch (err) {
+          if (err.message && (err.message.includes("Access Denied") || err.message.includes("Unauthorized"))) {
+            throw err;
+          }
+          console.warn("[Accounts Service] Supabase operational settings save error:", err);
+        }
+      }
+
+      // 2. Centralized fallback via backend endpoint (for multi-browser cross-device sync)
+      try {
+        const resp = await fetch("/api/operational_settings", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(sanitized)
+        });
+        if (resp.ok) {
+          const data = await resp.json();
+          persisted = data || sanitized;
+        }
+      } catch (_) { }
+
+      persisted = persisted || sanitized;
+      operationalSettingsCache = { ...persisted };
+
+      // Update localStorage as a non-authoritative read-cache only
+      try {
+        localStorage.setItem(OPERATIONAL_SETTINGS_KEY, JSON.stringify(operationalSettingsCache));
+      } catch (_) { }
+
+      // Apply changes to document DOM
+      applySettingsToDOM(operationalSettingsCache);
+
+      // Compute diff for audit log
       const changed = {};
-      if (prev.theme !== updated.theme) changed.theme = { from: prev.theme, to: updated.theme };
-      if (prev.landing !== updated.landing) changed.landing = { from: prev.landing, to: updated.landing };
-      if (prev.subtitle !== updated.subtitle) changed.subtitle = { from: prev.subtitle, to: updated.subtitle };
-      if (prev.autoTrim !== updated.autoTrim) changed.autoTrim = { from: prev.autoTrim, to: updated.autoTrim };
+      if (prev.theme !== operationalSettingsCache.theme) changed.theme = { from: prev.theme, to: operationalSettingsCache.theme };
+      if (prev.landing !== operationalSettingsCache.landing) changed.landing = { from: prev.landing, to: operationalSettingsCache.landing };
+      if (prev.subtitle !== operationalSettingsCache.subtitle) changed.subtitle = { from: prev.subtitle, to: operationalSettingsCache.subtitle };
+      if (prev.autoTrim !== operationalSettingsCache.autoTrim) changed.autoTrim = { from: prev.autoTrim, to: operationalSettingsCache.autoTrim };
 
-      await this.logSecurityEvent("settings_updated", "operational_settings", Object.keys(changed).length > 0 ? changed : { saved: "ok" });
+      // Security audit log (never logs secret values)
+      await this.logSecurityEvent(
+        "save_operational_settings",
+        "global_settings",
+        Object.keys(changed).length > 0 ? { keys_changed: changed, result: "success" } : { keys_changed: { status: "no_changes" }, result: "success" }
+      );
 
-      return updated;
+      return { ...operationalSettingsCache };
     }
   };
 
