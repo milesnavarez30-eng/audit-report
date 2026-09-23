@@ -110,6 +110,15 @@
       const now = new Date();
       fbTag.textContent = now.toLocaleDateString("en-US", { month: "short", day: "numeric" });
     }
+
+    // Ensure EDR datalists stay synchronized with Masterlist
+    if (window.masterlistService && !window.__edrMasterlistSubscribed) {
+      window.__edrMasterlistSubscribed = true;
+      window.masterlistService.subscribe(() => {
+        initFormDropdowns();
+        populateRespondentList(supervisorRole);
+      });
+    }
   }
 
   // Segmented Choice Buttons
@@ -1443,11 +1452,16 @@
       const curr = el("edrSupervisorName")?.value.trim();
       const val = prompt(`Add new ${supervisorRole} to masterlist:`, curr);
       if (val && val.trim()) {
-        const added = edr.addSupervisorOption(supervisorRole, val.trim());
+        const site = el("edrSite")?.value;
+        const account = el("edrAccount")?.value;
+        const om = el("edrOmName")?.value;
+        const res = window.masterlistService
+          ? window.masterlistService.addRespondent(val.trim(), supervisorRole, { site, account, om })
+          : { added: edr.addSupervisorOption(supervisorRole, val.trim(), { site, account, om }), canonical: val.trim() };
         initFormDropdowns();
         populateRespondentList(supervisorRole);
-        el("edrSupervisorName").value = val.trim();
-        showToast(added ? `Added "${val.trim()}" to ${supervisorRole} list.` : `"${val.trim()}" is already in list.`, added ? "success" : "info");
+        el("edrSupervisorName").value = res.canonical || val.trim();
+        showToast(res.added ? `Added "${res.canonical || val.trim()}" to ${supervisorRole} masterlist.` : `"${res.canonical || val.trim()}" is already in list.`, res.added ? "success" : "info");
       }
     });
 
@@ -1457,12 +1471,49 @@
         showToast(`Select or type a ${supervisorRole} name to remove.`, "info");
         return;
       }
-      if (confirm(`Remove "${curr}" from the ${supervisorRole} masterlist?`)) {
-        edr.removeSupervisorOption(supervisorRole, curr);
+      if (confirm(`Remove "${curr}" from the ${supervisorRole} masterlist options?`)) {
+        if (window.masterlistService) {
+          window.masterlistService.removeRespondent(curr, supervisorRole);
+        } else {
+          edr.removeSupervisorOption(supervisorRole, curr);
+        }
         initFormDropdowns();
         populateRespondentList(supervisorRole);
         el("edrSupervisorName").value = "";
-        showToast(`Removed "${curr}" from ${supervisorRole} list.`, "info");
+        showToast(`Removed "${curr}" from active ${supervisorRole} options. Historical records remain safe.`, "info");
+      }
+    });
+
+    // Option Management - Dedicated OM
+    el("btnAddDedicatedOmOption")?.addEventListener("click", () => {
+      const curr = el("edrOmName")?.value.trim();
+      const val = prompt("Add new Dedicated OM to masterlist:", curr);
+      if (val && val.trim()) {
+        const site = el("edrSite")?.value;
+        const res = window.masterlistService
+          ? window.masterlistService.addDedicatedOm(val.trim(), { site })
+          : { added: edr.addDedicatedOmOption(val.trim(), { site }), canonical: val.trim() };
+        initFormDropdowns();
+        el("edrOmName").value = res.canonical || val.trim();
+        showToast(res.added ? `Added "${res.canonical || val.trim()}" to Dedicated OM masterlist.` : `"${res.canonical || val.trim()}" is already in list.`, res.added ? "success" : "info");
+      }
+    });
+
+    el("btnRemoveDedicatedOmOption")?.addEventListener("click", () => {
+      const curr = el("edrOmName")?.value.trim();
+      if (!curr) {
+        showToast("Select or type a Dedicated OM name to remove.", "info");
+        return;
+      }
+      if (confirm(`Remove "${curr}" from the Dedicated OM masterlist options?`)) {
+        if (window.masterlistService) {
+          window.masterlistService.removeDedicatedOm(curr);
+        } else {
+          edr.removeDedicatedOmOption(curr);
+        }
+        initFormDropdowns();
+        el("edrOmName").value = "";
+        showToast(`Removed "${curr}" from active Dedicated OM options. Historical records remain safe.`, "info");
       }
     });
 
@@ -1471,10 +1522,13 @@
       const curr = el("edrAccount")?.value.trim();
       const val = prompt("Add new Account / Campaign to masterlist:", curr);
       if (val && val.trim()) {
-        const added = edr.addAccountOption(val.trim());
+        const site = el("edrSite")?.value;
+        const res = window.masterlistService
+          ? window.masterlistService.addAccount(val.trim(), { site })
+          : { added: edr.addAccountOption(val.trim(), { site }), canonical: val.trim() };
         initFormDropdowns();
-        el("edrAccount").value = val.trim();
-        showToast(added ? `Added "${val.trim()}" to Campaign list.` : `"${val.trim()}" is already in list.`, added ? "success" : "info");
+        el("edrAccount").value = res.canonical || val.trim();
+        showToast(res.added ? `Added "${res.canonical || val.trim()}" to Campaign masterlist.` : `"${res.canonical || val.trim()}" is already in list.`, res.added ? "success" : "info");
       }
     });
 
@@ -1484,13 +1538,76 @@
         showToast("Select or type an Account / Campaign to remove.", "info");
         return;
       }
-      if (confirm(`Remove "${curr}" from the Campaign masterlist?`)) {
-        edr.removeAccountOption(curr);
+      if (confirm(`Remove "${curr}" from the Campaign masterlist options?`)) {
+        if (window.masterlistService) {
+          window.masterlistService.removeAccount(curr);
+        } else {
+          edr.removeAccountOption(curr);
+        }
         initFormDropdowns();
         el("edrAccount").value = "";
-        showToast(`Removed "${curr}" from Campaign list.`, "info");
+        showToast(`Removed "${curr}" from active Campaign options. Historical records remain safe.`, "info");
       }
     });
+
+    // Auto-persist new values typed into EDR inputs
+    const handleSupervisorInputChange = () => {
+      const input = el("edrSupervisorName");
+      const rawVal = input?.value?.trim();
+      if (!rawVal || !window.masterlistService) return;
+      const roleType = supervisorRole === "OM" ? "oms" : "tls";
+      const canonical = window.masterlistService.findCanonical(roleType, rawVal);
+      if (canonical) {
+        if (canonical !== input.value) input.value = canonical;
+      } else {
+        const site = el("edrSite")?.value;
+        const account = el("edrAccount")?.value;
+        const om = el("edrOmName")?.value;
+        const res = window.masterlistService.addRespondent(rawVal, supervisorRole, { site, account, om });
+        if (res && res.added) {
+          initFormDropdowns();
+          populateRespondentList(supervisorRole);
+          input.value = res.canonical || rawVal;
+        }
+      }
+    };
+    el("edrSupervisorName")?.addEventListener("change", handleSupervisorInputChange);
+
+    const handleOmInputChange = () => {
+      const input = el("edrOmName");
+      const rawVal = input?.value?.trim();
+      if (!rawVal || !window.masterlistService) return;
+      const canonical = window.masterlistService.findCanonical("oms", rawVal);
+      if (canonical) {
+        if (canonical !== input.value) input.value = canonical;
+      } else {
+        const site = el("edrSite")?.value;
+        const res = window.masterlistService.addDedicatedOm(rawVal, { site });
+        if (res && res.added) {
+          initFormDropdowns();
+          input.value = res.canonical || rawVal;
+        }
+      }
+    };
+    el("edrOmName")?.addEventListener("change", handleOmInputChange);
+
+    const handleAccountInputChange = () => {
+      const input = el("edrAccount");
+      const rawVal = input?.value?.trim();
+      if (!rawVal || !window.masterlistService) return;
+      const canonical = window.masterlistService.findCanonical("accounts", rawVal);
+      if (canonical) {
+        if (canonical !== input.value) input.value = canonical;
+      } else {
+        const site = el("edrSite")?.value;
+        const res = window.masterlistService.addAccount(rawVal, { site });
+        if (res && res.added) {
+          initFormDropdowns();
+          input.value = res.canonical || rawVal;
+        }
+      }
+    };
+    el("edrAccount")?.addEventListener("change", handleAccountInputChange);
 
     // Modal Screenshot Viewer Events
     el("btnCloseScreenshotViewer")?.addEventListener("click", closeScreenshotViewer);
@@ -8585,23 +8702,191 @@ function doPost(e) {
       }
     });
 
+    // Saved Options Elements
+    const optCard = el("masterSavedOptionsCard");
+    const optCount = el("masterSavedOptionsCount");
+    const optTabs = el("masterOptionsTabs");
+    const optNewInput = el("masterOptionNewInput");
+    const optAddBtn = el("masterOptionAddBtn");
+    const optSearch = el("masterOptionSearch");
+    const optSearchClear = el("masterOptionSearchClear");
+    const optTableBody = el("masterSavedOptionsBody");
+    const badgeOptTls = el("badgeOptionsTls");
+    const badgeOptOms = el("badgeOptionsOms");
+    const badgeOptAccounts = el("badgeOptionsAccounts");
+
+    let currentOptionCat = "tls";
+
+    const OPTION_CAT_CONFIG = {
+      tls: {
+        label: "Team / TL",
+        plural: "Teams / TLs",
+        placeholder: "Add new Team / TL to Masterlist...",
+        getItems: () => masterlist.getTeamLeaders(),
+        add: name => masterlist.addTeam(name),
+        remove: name => masterlist.removeTeam(name)
+      },
+      oms: {
+        label: "Dedicated OM",
+        plural: "Dedicated OMs",
+        placeholder: "Add new Dedicated OM to Masterlist...",
+        getItems: () => masterlist.getOms(),
+        add: name => masterlist.addDedicatedOm(name),
+        remove: name => masterlist.removeDedicatedOm(name)
+      },
+      accounts: {
+        label: "Account / Campaign",
+        plural: "Accounts / Campaigns",
+        placeholder: "Add new Account / Campaign to Masterlist...",
+        getItems: () => masterlist.getAccounts(),
+        add: name => masterlist.addAccount(name),
+        remove: name => masterlist.removeAccount(name)
+      }
+    };
+
+    function renderSavedOptions() {
+      if (!optCard) return;
+
+      const tlsList = masterlist.getTeamLeaders();
+      const omsList = masterlist.getOms();
+      const accList = masterlist.getAccounts();
+
+      if (badgeOptTls) badgeOptTls.textContent = String(tlsList.length);
+      if (badgeOptOms) badgeOptOms.textContent = String(omsList.length);
+      if (badgeOptAccounts) badgeOptAccounts.textContent = String(accList.length);
+
+      optTabs?.querySelectorAll("[data-option-cat]").forEach(btn => {
+        btn.classList.toggle("active", btn.dataset.optionCat === currentOptionCat);
+      });
+
+      const catCfg = OPTION_CAT_CONFIG[currentOptionCat] || OPTION_CAT_CONFIG.tls;
+      if (optNewInput) {
+        optNewInput.placeholder = catCfg.placeholder;
+      }
+
+      const allItems = catCfg.getItems();
+      if (optCount) optCount.textContent = `${allItems.length} active`;
+
+      const q = (optSearch?.value || "").trim().toLowerCase();
+      const filtered = q ? allItems.filter(item => item.toLowerCase().includes(q)) : allItems;
+
+      if (!optTableBody) return;
+
+      if (!filtered.length) {
+        optTableBody.innerHTML = `<tr><td colspan="4" class="masterlist-empty-cell">${q ? 'No matching options found.' : 'No active options in this list.'}</td></tr>`;
+        return;
+      }
+
+      optTableBody.innerHTML = filtered.map((name, idx) => {
+        const isCustom = typeof masterlist.isCustomOption === "function"
+          ? masterlist.isCustomOption(currentOptionCat, name)
+          : false;
+        const sourceBadge = isCustom
+          ? `<span class="badge badge-success" style="font-size:9.5px; padding:2px 6px;">Custom / EDR</span>`
+          : `<span class="badge badge-neutral" style="font-size:9.5px; padding:2px 6px;">System / Sheets</span>`;
+
+        return `
+          <tr>
+            <td style="color:var(--text-muted); font-size:11px;">${idx + 1}</td>
+            <td style="font-weight:500;">${escapeHtml(name)}</td>
+            <td>${sourceBadge}</td>
+            <td style="text-align:right;">
+              <button type="button" class="btn btn-danger-ghost btn-sm btn-opt-deactivate" data-name="${escapeHtml(name)}" style="padding:2px 6px; font-size:10px;">Deactivate</button>
+            </td>
+          </tr>
+        `;
+      }).join("");
+
+      optTableBody.querySelectorAll(".btn-opt-deactivate").forEach(btn => {
+        btn.addEventListener("click", async () => {
+          const name = btn.dataset.name;
+          if (!name) return;
+
+          const approved = await (window.appConfirm ? window.appConfirm({
+            title: `Deactivate ${catCfg.label}?`,
+            message: `Remove "${name}" from active ${catCfg.plural.toLowerCase()}? Historical EDR records and HR assignments will remain intact.`,
+            confirmText: "Deactivate Option",
+            tone: "danger"
+          }) : window.confirm(`Deactivate "${name}" from active ${catCfg.plural.toLowerCase()}?`));
+
+          if (!approved) return;
+
+          catCfg.remove(name);
+          showToast(`Deactivated "${name}" from active choices.`, "info");
+          renderSavedOptions();
+        });
+      });
+    }
+
+    // Saved options category tabs
+    optTabs?.querySelectorAll("[data-option-cat]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        currentOptionCat = btn.dataset.optionCat || "tls";
+        if (optSearch) optSearch.value = "";
+        renderSavedOptions();
+      });
+    });
+
+    // Saved options add button & enter key
+    async function handleAddOption() {
+      const val = optNewInput?.value?.trim();
+      if (!val) {
+        showToast("Please enter an option name.", "info");
+        optNewInput?.focus();
+        return;
+      }
+      const catCfg = OPTION_CAT_CONFIG[currentOptionCat] || OPTION_CAT_CONFIG.tls;
+      const res = catCfg.add(val);
+      if (optNewInput) optNewInput.value = "";
+      if (res && res.added) {
+        showToast(`Added "${val}" to ${catCfg.plural}.`, "success");
+      } else {
+        showToast(`"${val}" is already in active ${catCfg.plural}.`, "info");
+      }
+      renderSavedOptions();
+    }
+
+    optAddBtn?.addEventListener("click", handleAddOption);
+    optNewInput?.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        handleAddOption();
+      }
+    });
+
+    // Saved options search
+    optSearch?.addEventListener("input", () => {
+      renderSavedOptions();
+    });
+
+    optSearchClear?.addEventListener("click", () => {
+      if (optSearch) {
+        optSearch.value = "";
+        optSearch.focus();
+        renderSavedOptions();
+      }
+    });
+
     // Masterlist service subscription
     masterlist.subscribe(() => {
       renderSyncStatus();
       renderPendingTrackers();
       renderHrAssignments();
+      renderSavedOptions();
     });
 
     window._renderMasterlistWorkspaceFn = function() {
       renderSyncStatus();
       renderPendingTrackers();
       renderHrAssignments();
+      renderSavedOptions();
     };
 
     // Initial render & boot
     renderSyncStatus();
     renderPendingTrackers();
     renderHrAssignments();
+    renderSavedOptions();
     masterlist.init();
   }
 

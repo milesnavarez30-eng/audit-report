@@ -94,11 +94,18 @@ function saveCustomEdrOptions(custom) {
   } catch (_) {}
 }
 
-window.addCustomOption = function(field, value) {
+window.addCustomOption = function(field, value, meta = {}) {
   const v = String(value || "").replace(/\s+/g, " ").trim();
   if (!v) return false;
+  if (window.masterlistService) {
+    const isOm = field === "OM" || field === "oms";
+    const isTl = field === "TL" || field === "tls";
+    if (isOm) return window.masterlistService.addDedicatedOm(v, meta).added;
+    if (isTl) return window.masterlistService.addTeam(v, meta).added;
+    return window.masterlistService.addAccount(v, meta).added;
+  }
   const custom = loadCustomEdrOptions();
-  const list = field === "OM" ? custom.oms : (field === "TL" ? custom.tls : custom.accounts);
+  const list = (field === "OM" || field === "oms") ? custom.oms : ((field === "TL" || field === "tls") ? custom.tls : custom.accounts);
   if (!list.some(item => item.localeCompare(v, undefined, { sensitivity: "base" }) === 0)) {
     list.push(v);
     list.sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base", numeric: true }));
@@ -111,13 +118,20 @@ window.addCustomOption = function(field, value) {
 window.removeCustomOption = function(field, value) {
   const v = String(value || "").replace(/\s+/g, " ").trim();
   if (!v) return false;
+  if (window.masterlistService) {
+    const isOm = field === "OM" || field === "oms";
+    const isTl = field === "TL" || field === "tls";
+    if (isOm) return window.masterlistService.removeDedicatedOm(v);
+    if (isTl) return window.masterlistService.removeTeam(v);
+    return window.masterlistService.removeAccount(v);
+  }
   const custom = loadCustomEdrOptions();
-  let list = field === "OM" ? custom.oms : (field === "TL" ? custom.tls : custom.accounts);
+  let list = (field === "OM" || field === "oms") ? custom.oms : ((field === "TL" || field === "tls") ? custom.tls : custom.accounts);
   const beforeLen = list.length;
   list = list.filter(item => item.localeCompare(v, undefined, { sensitivity: "base" }) !== 0);
   if (list.length !== beforeLen) {
-    if (field === "OM") custom.oms = list;
-    else if (field === "TL") custom.tls = list;
+    if (field === "OM" || field === "oms") custom.oms = list;
+    else if (field === "TL" || field === "tls") custom.tls = list;
     else custom.accounts = list;
     saveCustomEdrOptions(custom);
     return true;
@@ -134,6 +148,9 @@ if (!localStorage.getItem("edr_google_docs_receiver_font_fix_v1")) {
 }
 
 window.getTeamLeaderNames = function() {
+  if (window.masterlistService && typeof window.masterlistService.getTeamLeaders === "function") {
+    return window.masterlistService.getTeamLeaders();
+  }
   const custom = loadCustomEdrOptions().tls;
   const base = (window.CCTV_AUDIT_MASTER_TLS && window.CCTV_AUDIT_MASTER_TLS.length)
     ? window.CCTV_AUDIT_MASTER_TLS
@@ -143,6 +160,9 @@ window.getTeamLeaderNames = function() {
 };
 
 window.getOmNames = function() {
+  if (window.masterlistService && typeof window.masterlistService.getOms === "function") {
+    return window.masterlistService.getOms();
+  }
   const custom = loadCustomEdrOptions().oms;
   const base = (window.CCTV_AUDIT_MASTER_OMS && window.CCTV_AUDIT_MASTER_OMS.length)
     ? window.CCTV_AUDIT_MASTER_OMS
@@ -152,6 +172,9 @@ window.getOmNames = function() {
 };
 
 window.getAccountNames = function() {
+  if (window.masterlistService && typeof window.masterlistService.getAccounts === "function") {
+    return window.masterlistService.getAccounts();
+  }
   const custom = loadCustomEdrOptions().accounts;
   const base = (window.CCTV_AUDIT_MASTER_ACCOUNTS && window.CCTV_AUDIT_MASTER_ACCOUNTS.length)
     ? window.CCTV_AUDIT_MASTER_ACCOUNTS

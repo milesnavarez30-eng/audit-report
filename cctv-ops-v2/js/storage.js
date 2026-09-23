@@ -28,6 +28,7 @@
     "cctv_dropdown_reasonCode",
     "cctv_master_hr_local_crud_v1",
     "cctv_master_edr_custom_options_v1",
+    "cctv_master_options_v2",
     "maintenance_google_sheets_web_app_url_v1",
     "edr_google_docs_web_app_url_v1",
     "edr_google_docs_receiver_font_fix_v1"

@@ -1036,7 +1036,13 @@
 
                       <div class="form-group">
                         <div class="edr-field-header">
-                          <label class="form-label" for="edrOmName">Dedicated OM</label>
+                          <div class="edr-label-group">
+                            <label class="form-label" for="edrOmName">Dedicated OM</label>
+                            <span class="btn-opt-mgmt-wrap">
+                              <button type="button" class="btn-opt-mgmt" id="btnAddDedicatedOmOption" title="Add custom Dedicated OM to masterlist">+</button>
+                              <button type="button" class="btn-opt-mgmt" id="btnRemoveDedicatedOmOption" title="Remove custom Dedicated OM from masterlist">-</button>
+                            </span>
+                          </div>
                         </div>
                         <input type="text" id="edrOmName" class="form-control" list="listOms" placeholder="Search OM...">
                         <datalist id="listOms"></datalist>
@@ -2331,6 +2337,63 @@
                       </tr>
                     </thead>
                     <tbody id="masterAssignedHrBody"></tbody>
+                  </table>
+                </div>
+              </section>
+
+              <!-- Saved Options (Authoritative EDR / Audit Registry) Card -->
+              <section class="masterlist-card" id="masterSavedOptionsCard">
+                <div class="masterlist-card-head">
+                  <div>
+                    <span class="masterlist-kicker">Authoritative Options Registry</span>
+                    <h3 class="masterlist-card-title">Saved Options</h3>
+                  </div>
+                  <span class="badge badge-info" id="masterSavedOptionsCount">0</span>
+                </div>
+
+                <!-- Option Category Sub-Tabs -->
+                <div class="masterlist-tabs" id="masterOptionsTabs">
+                  <button type="button" class="masterlist-tab-btn active" data-option-cat="tls">
+                    <span>Teams / TLs</span>
+                    <span class="masterlist-tab-badge" id="badgeOptionsTls">0</span>
+                  </button>
+                  <button type="button" class="masterlist-tab-btn" data-option-cat="oms">
+                    <span>Dedicated OMs</span>
+                    <span class="masterlist-tab-badge" id="badgeOptionsOms">0</span>
+                  </button>
+                  <button type="button" class="masterlist-tab-btn" data-option-cat="accounts">
+                    <span>Accounts / Campaigns</span>
+                    <span class="masterlist-tab-badge" id="badgeOptionsAccounts">0</span>
+                  </button>
+                </div>
+
+                <!-- Option Quick Add Form -->
+                <div class="masterlist-hr-form" style="display:flex; gap:8px; padding:10px 14px; background:var(--bg-surface-elevated); border-bottom:1px solid var(--border-default); align-items:center;">
+                  <div class="form-group" style="margin:0; flex:1;">
+                    <input type="text" id="masterOptionNewInput" class="form-control form-control-sm" placeholder="Add new Team / TL to Masterlist...">
+                  </div>
+                  <button type="button" class="btn btn-primary btn-sm" id="masterOptionAddBtn" style="white-space:nowrap;">Add Option</button>
+                </div>
+
+                <!-- Realtime Search Row -->
+                <div class="masterlist-search-row">
+                  <svg class="icon icon-sm" style="color:var(--text-muted);" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                  <input type="search" id="masterOptionSearch" class="form-control form-control-sm masterlist-search-input" placeholder="Search saved options in this list...">
+                  <button type="button" class="btn btn-ghost btn-sm" id="masterOptionSearchClear">Clear</button>
+                </div>
+
+                <!-- Options Table Wrap -->
+                <div class="masterlist-table-wrap table-responsive-wrapper" style="max-height:280px; overflow-y:auto;">
+                  <table class="masterlist-data-table" id="masterSavedOptionsTable">
+                    <thead>
+                      <tr>
+                        <th style="width:48px;">#</th>
+                        <th>Option Name</th>
+                        <th style="width:140px;">Source</th>
+                        <th style="width:90px; text-align:right;">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody id="masterSavedOptionsBody"></tbody>
                   </table>
                 </div>
               </section>

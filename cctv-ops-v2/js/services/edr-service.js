@@ -770,6 +770,24 @@ window.CCTV_EDR = (function () {
 
       await this.saveReports();
 
+      // Authoritative Masterlist option persistence for any newly entered values
+      if (window.masterlistService) {
+        try {
+          const meta = { site: data.site, account: data.account, om: data.omName };
+          if (data.supervisorName) {
+            window.masterlistService.addRespondent(data.supervisorName, data.supervisorRole || "Team Leader", meta);
+          }
+          if (data.omName) {
+            window.masterlistService.addDedicatedOm(data.omName, meta);
+          }
+          if (data.account) {
+            window.masterlistService.addAccount(data.account, meta);
+          }
+        } catch (e) {
+          console.warn("Auto-persisting EDR options to Masterlist encountered error:", e);
+        }
+      }
+
       // Auto sync with Google Docs if connected
       if (saved && this.isValidDocsUrl(this.getDocsUrl())) {
         this.syncReportToGoogleDocs(saved).catch(err => console.warn("Google Docs auto-sync failed:", err));
@@ -1170,29 +1188,61 @@ window.CCTV_EDR = (function () {
       return window.getAccountNames ? window.getAccountNames() : (cfg.DEFAULTS.ACCOUNTS || []);
     },
 
-    // Option Management
-    addSupervisorOption(role, name) {
+    // Option Management (Masterlist Authoritative)
+    addSupervisorOption(role, name, meta = {}) {
+      if (window.masterlistService) {
+        return window.masterlistService.addRespondent(name, role, meta).added;
+      }
       if (window.addCustomOption) {
-        return window.addCustomOption(role === "OM" ? "oms" : "tls", name);
+        return window.addCustomOption(role === "OM" ? "oms" : "tls", name, meta);
       }
       return false;
     },
 
     removeSupervisorOption(role, name) {
+      if (window.masterlistService) {
+        return window.masterlistService.removeRespondent(name, role);
+      }
       if (window.removeCustomOption) {
         return window.removeCustomOption(role === "OM" ? "oms" : "tls", name);
       }
       return false;
     },
 
-    addAccountOption(name) {
+    addDedicatedOmOption(name, meta = {}) {
+      if (window.masterlistService) {
+        return window.masterlistService.addDedicatedOm(name, meta).added;
+      }
       if (window.addCustomOption) {
-        return window.addCustomOption("accounts", name);
+        return window.addCustomOption("oms", name, meta);
+      }
+      return false;
+    },
+
+    removeDedicatedOmOption(name) {
+      if (window.masterlistService) {
+        return window.masterlistService.removeDedicatedOm(name);
+      }
+      if (window.removeCustomOption) {
+        return window.removeCustomOption("oms", name);
+      }
+      return false;
+    },
+
+    addAccountOption(name, meta = {}) {
+      if (window.masterlistService) {
+        return window.masterlistService.addAccount(name, meta).added;
+      }
+      if (window.addCustomOption) {
+        return window.addCustomOption("accounts", name, meta);
       }
       return false;
     },
 
     removeAccountOption(name) {
+      if (window.masterlistService) {
+        return window.masterlistService.removeAccount(name);
+      }
       if (window.removeCustomOption) {
         return window.removeCustomOption("accounts", name);
       }

@@ -14,6 +14,8 @@
   const NOTEPAD_KEY_PREFIX = "cctv_master_pending_notes_v2_";
   const HR_LOCAL_KEY = "cctv_master_hr_local_crud_v1";
   const ACTIVE_PENDING_KEY = "cctv_master_active_pending_v2";
+  const OPTIONS_LOCAL_KEY = "cctv_master_options_v2";
+  const EDR_LEGACY_CUSTOM_KEY = "cctv_master_edr_custom_options_v1";
 
   const PENDING_LABELS = {
     miles: "Miles",
@@ -122,6 +124,10 @@
       this.activePendingKey = localStorage.getItem(ACTIVE_PENDING_KEY) || "miles";
       this.hrAssignments = [];
       this.localHrChanges = this._loadLocalHrChanges();
+      this.masterOptions = this._loadMasterOptions();
+      this.activeOms = [];
+      this.activeTls = [];
+      this.activeAccounts = [];
       this.lastSyncError = "";
       this.lastUpdated = null;
       this.syncState = { kind: "syncing", title: "Connecting...", detail: "Initializing Master List data" };
@@ -145,6 +151,45 @@
         localStorage.setItem(HR_LOCAL_KEY, JSON.stringify(this.localHrChanges));
       } catch (err) {
         console.warn("Failed to persist local HR changes:", err);
+      }
+    }
+
+    _loadMasterOptions() {
+      try {
+        const raw = localStorage.getItem(OPTIONS_LOCAL_KEY);
+        let parsed = raw ? JSON.parse(raw) : null;
+        if (!parsed) {
+          const legacy = JSON.parse(localStorage.getItem(EDR_LEGACY_CUSTOM_KEY) || "{}");
+          parsed = {
+            added: {
+              oms: Array.isArray(legacy?.oms) ? legacy.oms : [],
+              tls: Array.isArray(legacy?.tls) ? legacy.tls : [],
+              accounts: Array.isArray(legacy?.accounts) ? legacy.accounts : []
+            },
+            deactivated: {
+              oms: [],
+              tls: [],
+              accounts: []
+            }
+          };
+          localStorage.setItem(OPTIONS_LOCAL_KEY, JSON.stringify(parsed));
+        }
+        if (!parsed.added) parsed.added = { oms: [], tls: [], accounts: [] };
+        if (!parsed.deactivated) parsed.deactivated = { oms: [], tls: [], accounts: [] };
+        return parsed;
+      } catch (_) {
+        return {
+          added: { oms: [], tls: [], accounts: [] },
+          deactivated: { oms: [], tls: [], accounts: [] }
+        };
+      }
+    }
+
+    _saveMasterOptions() {
+      try {
+        localStorage.setItem(OPTIONS_LOCAL_KEY, JSON.stringify(this.masterOptions));
+      } catch (err) {
+        console.warn("Failed to persist master options:", err);
       }
     }
 
@@ -358,6 +403,69 @@
         clean(a.site).localeCompare(clean(b.site)) ||
         clean(a.omTeam).localeCompare(clean(b.omTeam))
       );
+
+      // Derive Active Authoritative Options
+      const deactOms = new Set((this.masterOptions.deactivated.oms || []).map(v => norm(v)));
+      const deactTls = new Set((this.masterOptions.deactivated.tls || []).map(v => norm(v)));
+      const deactAccs = new Set((this.masterOptions.deactivated.accounts || []).map(v => norm(v)));
+
+      const defaultOms = (window.CCTV_V2_CONFIG && window.CCTV_V2_CONFIG.DEFAULTS && window.CCTV_V2_CONFIG.DEFAULTS.OMS) || [];
+      const defaultTls = (window.CCTV_V2_CONFIG && window.CCTV_V2_CONFIG.DEFAULTS && window.CCTV_V2_CONFIG.DEFAULTS.TLS) || [];
+      const defaultAccs = (window.CCTV_V2_CONFIG && window.CCTV_V2_CONFIG.DEFAULTS && window.CCTV_V2_CONFIG.DEFAULTS.ACCOUNTS) || [];
+
+      const sheetTls = new Set();
+      const sheetOms = new Set();
+      const sheetAccs = new Set();
+
+      Object.values(this.pendingTrackers).forEach(arr => {
+        if (!Array.isArray(arr)) return;
+        arr.forEach(row => {
+          const om = this.valueForPendingColumn(row, "OM");
+          const tl = this.valueForPendingColumn(row, "TL");
+          const acc = this.valueForPendingColumn(row, "Account");
+          if (om) sheetOms.add(om);
+          if (tl) sheetTls.add(tl);
+          if (acc) sheetAccs.add(acc);
+        });
+      });
+
+      this.hrAssignments.forEach(h => {
+        if (h.deleted) return;
+        const name = clean(h.omTeam);
+        if (!name) return;
+        if (/^OM\s+/i.test(name)) {
+          sheetOms.add(name.replace(/^OM\s+/i, "").trim());
+        } else if (/^Team\s+/i.test(name)) {
+          sheetTls.add(name);
+        }
+      });
+
+      const omMap = new Map();
+      [...defaultOms, ...sheetOms, ...(this.masterOptions.added.oms || [])].forEach(raw => {
+        const c = clean(raw);
+        const k = norm(c);
+        if (!k || deactOms.has(k)) return;
+        if (!omMap.has(k)) omMap.set(k, c);
+      });
+      this.activeOms = [...omMap.values()].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base", numeric: true }));
+
+      const tlMap = new Map();
+      [...defaultTls, ...sheetTls, ...(this.masterOptions.added.tls || [])].forEach(raw => {
+        const c = clean(raw);
+        const k = norm(c);
+        if (!k || deactTls.has(k)) return;
+        if (!tlMap.has(k)) tlMap.set(k, c);
+      });
+      this.activeTls = [...tlMap.values()].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base", numeric: true }));
+
+      const accMap = new Map();
+      [...defaultAccs, ...sheetAccs, ...(this.masterOptions.added.accounts || [])].forEach(raw => {
+        const c = clean(raw);
+        const k = norm(c);
+        if (!k || deactAccs.has(k)) return;
+        if (!accMap.has(k)) accMap.set(k, c);
+      });
+      this.activeAccounts = [...accMap.values()].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base", numeric: true }));
     }
 
     async loadMasterList(forceFresh = false) {
@@ -669,6 +777,223 @@
       return true;
     }
 
+    // Authoritative Option Management
+    getOms() {
+      return [...this.activeOms];
+    }
+
+    getTeamLeaders() {
+      return [...this.activeTls];
+    }
+
+    getTeams() {
+      return [...this.activeTls];
+    }
+
+    getAccounts() {
+      return [...this.activeAccounts];
+    }
+
+    getRespondents(role = "Team Leader") {
+      return role === "OM" ? this.getOms() : this.getTeamLeaders();
+    }
+
+    findCanonical(type, candidate) {
+      const v = clean(candidate);
+      if (!v) return null;
+      const target = norm(v);
+      const list = type === "oms" ? this.activeOms : (type === "accounts" ? this.activeAccounts : this.activeTls);
+      for (const item of list) {
+        const itemNorm = norm(item);
+        if (itemNorm === target) return item;
+        if (type === "oms") {
+          const strippedTarget = target.replace(/^om\s+/i, "");
+          const strippedItem = itemNorm.replace(/^om\s+/i, "");
+          if (strippedItem === strippedTarget) return item;
+        }
+      }
+      return null;
+    }
+
+    isCustomOption(type, name) {
+      const cleanName = clean(name);
+      if (!cleanName || !this.masterOptions?.added?.[type]) return false;
+      const target = norm(cleanName);
+      return this.masterOptions.added[type].some(item => norm(item) === target);
+    }
+
+    _isDeactivated(type, name) {
+      const target = norm(name);
+      const list = this.masterOptions.deactivated[type] || [];
+      return list.some(item => norm(item) === target);
+    }
+
+    _reactivateOption(type, name) {
+      const target = norm(name);
+      if (this.masterOptions.deactivated[type]) {
+        this.masterOptions.deactivated[type] = this.masterOptions.deactivated[type].filter(item => norm(item) !== target);
+      }
+      this._saveMasterOptions();
+    }
+
+    _addOptionToRegistry(type, name) {
+      const cleanName = clean(name);
+      if (!cleanName) return;
+      if (!this.masterOptions.added[type]) this.masterOptions.added[type] = [];
+      if (!this.masterOptions.deactivated[type]) this.masterOptions.deactivated[type] = [];
+
+      const target = norm(cleanName);
+      this.masterOptions.deactivated[type] = this.masterOptions.deactivated[type].filter(item => norm(item) !== target);
+
+      const inAdded = this.masterOptions.added[type].some(item => norm(item) === target);
+      if (!inAdded) {
+        this.masterOptions.added[type].push(cleanName);
+        this.masterOptions.added[type].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base", numeric: true }));
+      }
+      this._saveMasterOptions();
+    }
+
+    _deactivateOption(type, name) {
+      const cleanName = clean(name);
+      if (!cleanName) return;
+      if (!this.masterOptions.added[type]) this.masterOptions.added[type] = [];
+      if (!this.masterOptions.deactivated[type]) this.masterOptions.deactivated[type] = [];
+
+      const target = norm(cleanName);
+      this.masterOptions.added[type] = this.masterOptions.added[type].filter(item => norm(item) !== target);
+
+      const inDeact = this.masterOptions.deactivated[type].some(item => norm(item) === target);
+      if (!inDeact) {
+        this.masterOptions.deactivated[type].push(cleanName);
+      }
+      this._saveMasterOptions();
+    }
+
+    findHrForOmTeam(omTeam, site) {
+      const normName = norm(omTeam);
+      const normSite = norm(site);
+      if (!normName) return "";
+
+      const match = this.hrAssignments.find(h =>
+        !h.deleted && (norm(h.omTeam) === normName || norm(h.omTeam).includes(normName)) &&
+        (!normSite || norm(h.site) === normSite || norm(h.site).includes(normSite)) &&
+        clean(h.hr)
+      );
+      if (match) return clean(match.hr);
+
+      const anySiteMatch = this.hrAssignments.find(h =>
+        !h.deleted && (norm(h.omTeam) === normName || norm(h.omTeam).includes(normName)) &&
+        clean(h.hr)
+      );
+      return anySiteMatch ? clean(anySiteMatch.hr) : "";
+    }
+
+    addTeam(name, _meta = {}) {
+      const cleanName = clean(name);
+      if (!cleanName) return { added: false, canonical: "" };
+
+      const canonical = this.findCanonical("tls", cleanName);
+      if (canonical) {
+        if (this._isDeactivated("tls", canonical)) {
+          this._reactivateOption("tls", canonical);
+          this._derive();
+          this._notify();
+        }
+        return { added: false, canonical, exists: true };
+      }
+
+      this._addOptionToRegistry("tls", cleanName);
+      this._derive();
+      this._notify();
+      return { added: true, canonical: cleanName };
+    }
+
+    removeTeam(name) {
+      const cleanName = clean(name);
+      if (!cleanName) return false;
+      const canonical = this.findCanonical("tls", cleanName) || cleanName;
+      this._deactivateOption("tls", canonical);
+      this._derive();
+      this._notify();
+      return true;
+    }
+
+    addDedicatedOm(name, _meta = {}) {
+      let cleanName = clean(name);
+      if (!cleanName) return { added: false, canonical: "" };
+      cleanName = cleanName.replace(/^om\s+/i, "").trim();
+
+      const canonical = this.findCanonical("oms", cleanName);
+      if (canonical) {
+        if (this._isDeactivated("oms", canonical)) {
+          this._reactivateOption("oms", canonical);
+          this._derive();
+          this._notify();
+        }
+        return { added: false, canonical, exists: true };
+      }
+
+      this._addOptionToRegistry("oms", cleanName);
+      this._derive();
+      this._notify();
+      return { added: true, canonical: cleanName };
+    }
+
+    removeDedicatedOm(name) {
+      let cleanName = clean(name);
+      if (!cleanName) return false;
+      cleanName = cleanName.replace(/^om\s+/i, "").trim();
+      const canonical = this.findCanonical("oms", cleanName) || cleanName;
+      this._deactivateOption("oms", canonical);
+      this._derive();
+      this._notify();
+      return true;
+    }
+
+    addAccount(name, _meta = {}) {
+      const cleanName = clean(name);
+      if (!cleanName) return { added: false, canonical: "" };
+
+      const canonical = this.findCanonical("accounts", cleanName);
+      if (canonical) {
+        if (this._isDeactivated("accounts", canonical)) {
+          this._reactivateOption("accounts", canonical);
+          this._derive();
+          this._notify();
+        }
+        return { added: false, canonical, exists: true };
+      }
+
+      this._addOptionToRegistry("accounts", cleanName);
+      this._derive();
+      this._notify();
+      return { added: true, canonical: cleanName };
+    }
+
+    removeAccount(name) {
+      const cleanName = clean(name);
+      if (!cleanName) return false;
+      const canonical = this.findCanonical("accounts", cleanName) || cleanName;
+      this._deactivateOption("accounts", canonical);
+      this._derive();
+      this._notify();
+      return true;
+    }
+
+    addRespondent(name, role = "Team Leader", meta = {}) {
+      if (role === "OM") {
+        return this.addDedicatedOm(name, meta);
+      }
+      return this.addTeam(name, meta);
+    }
+
+    removeRespondent(name, role = "Team Leader") {
+      if (role === "OM") {
+        return this.removeDedicatedOm(name);
+      }
+      return this.removeTeam(name);
+    }
+
     async _postHrAction(body) {
       try {
         await fetch(this.apiUrl, {
@@ -691,7 +1016,8 @@
         snapshot: () => ({
           activeKey: this.activePendingKey,
           note: this.getNotepad(this.activePendingKey),
-          hrLocal: JSON.parse(JSON.stringify(this.localHrChanges || []))
+          hrLocal: JSON.parse(JSON.stringify(this.localHrChanges || [])),
+          options: JSON.parse(JSON.stringify(this.masterOptions || {}))
         }),
         restore: async (snap) => {
           const key = snap?.activeKey || this.activePendingKey;
@@ -701,6 +1027,10 @@
           if (Array.isArray(snap?.hrLocal)) {
             this.localHrChanges = JSON.parse(JSON.stringify(snap.hrLocal));
             this._saveLocalHrChanges();
+          }
+          if (snap?.options && typeof snap.options === "object") {
+            this.masterOptions = JSON.parse(JSON.stringify(snap.options));
+            this._saveMasterOptions();
           }
           this._derive();
           this._notify();
