@@ -15,7 +15,8 @@
   const pending = window.pendingService;
   const followup = window.followupService;
 
-  let currentScreenshot = "";
+  let currentScreenshots = [];  // Array of base64 data URLs
+  let currentClipLinks = [];    // Array of clip link strings
   let supervisorRole = "Team Leader";
   let subjectType = "Agent/s";
 
@@ -181,23 +182,48 @@
     }
   }
 
-  // Screenshot Upload, Paste & Drop
+  // Multi-Screenshot Upload, Paste & Drop
   function initScreenshotDropzone() {
     const zone = el("dropzoneScreenshot");
     const fileInput = el("fileScreenshot");
-    const thumb = el("shotThumb");
     const dropText = el("dropText");
-    const btnRemove = el("btnRemoveShot");
+    const strip = el("edrShotPreviewStrip");
+    const btnAddMore = el("btnAddMoreShot");
 
     if (!zone) return;
 
-    zone.addEventListener("click", (e) => {
-      if (e.target !== btnRemove) fileInput.click();
-    });
+    // Click dropzone → open file picker
+    zone.addEventListener("click", () => fileInput.click());
 
-    fileInput.addEventListener("change", (e) => {
-      const file = e.target.files[0];
-      if (file) handleImageFile(file);
+    // "Add Screenshot" button also triggers file picker
+    btnAddMore?.addEventListener("click", () => fileInput.click());
+
+    // Helper to read a file as DataURL sequentially
+    function readFileAsDataUrl(file) {
+      return new Promise((resolve) => {
+        if (!file || !file.type.startsWith("image/")) return resolve(null);
+        const reader = new FileReader();
+        reader.onload = (evt) => {
+          if (evt.target?.result) {
+            currentScreenshots.push(evt.target.result);
+          }
+          resolve();
+        };
+        reader.onerror = () => resolve(null);
+        reader.readAsDataURL(file);
+      });
+    }
+
+    // File input change (supports multiple, sequentially preserves order)
+    fileInput.addEventListener("change", async (e) => {
+      const files = Array.from(e.target.files || []);
+      for (const file of files) {
+        await readFileAsDataUrl(file);
+      }
+      fileInput.value = "";
+      renderShotStrip();
+      updateLivePreview();
+      scheduleDraftSave();
     });
 
     // Drag and Drop
@@ -210,84 +236,217 @@
       zone.classList.remove("drag-over");
     });
 
-    zone.addEventListener("drop", (e) => {
+    zone.addEventListener("drop", async (e) => {
       e.preventDefault();
       zone.classList.remove("drag-over");
-      const file = e.dataTransfer.files[0];
-      if (file && file.type.startsWith("image/")) {
-        handleImageFile(file);
+      const files = Array.from(e.dataTransfer.files || []).filter(f => f.type.startsWith("image/"));
+      for (const file of files) {
+        await readFileAsDataUrl(file);
       }
+      renderShotStrip();
+      updateLivePreview();
+      scheduleDraftSave();
     });
 
     // Paste from Clipboard
-    window.addEventListener("paste", (e) => {
-      const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+    window.addEventListener("paste", async (e) => {
+      const items = (e.clipboardData || e.originalEvent.clipboardData)?.items;
+      if (!items) return;
       for (const item of items) {
         if (item.type.indexOf("image") === 0) {
-          const blob = item.getAsFile();
-          handleImageFile(blob);
-          showToast("Screenshot pasted from clipboard.", "success");
-          break;
+          const file = item.getAsFile();
+          if (file) {
+            await readFileAsDataUrl(file);
+            renderShotStrip();
+            updateLivePreview();
+            scheduleDraftSave();
+            showToast("Screenshot pasted from clipboard.", "success");
+            break;
+          }
         }
       }
     });
 
-    btnRemove.addEventListener("click", (e) => {
-      e.stopPropagation();
-      clearScreenshot();
-    });
-
-    function handleImageFile(file) {
-      const reader = new FileReader();
-      reader.onload = (evt) => {
-        currentScreenshot = evt.target.result;
-        thumb.src = currentScreenshot;
-        thumb.style.display = "block";
-        dropText.textContent = `${file.name || "Screenshot ready"}`;
-        btnRemove.style.display = "inline-flex";
-        updateLivePreview();
-      };
-      reader.readAsDataURL(file);
+    function renderShotStrip() {
+      if (!strip) return;
+      if (currentScreenshots.length === 0) {
+        strip.style.display = "none";
+        dropText.textContent = "Drop image, Ctrl+V, or click to add screenshots";
+        return;
+      }
+      strip.style.display = "flex";
+      dropText.textContent = `${currentScreenshots.length} screenshot${currentScreenshots.length > 1 ? 's' : ''} added`;
+      strip.innerHTML = currentScreenshots.map((src, idx) =>
+        `<div style="position:relative; flex-shrink:0;">
+           <img src="${src}" alt="Screenshot ${idx+1}"
+             style="height:60px; width:auto; max-width:100px; object-fit:cover; border-radius:4px; border:1px solid var(--border-default); cursor:pointer; display:block;"
+             title="Click to view full screenshot"
+           >
+           <button type="button"
+             style="position:absolute; top:-5px; right:-5px; width:16px; height:16px; border-radius:50%; border:none; background:var(--accent-danger); color:#fff; font-size:9px; line-height:1; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0;"
+             data-idx="${idx}" title="Remove">✕</button>
+         </div>`
+      ).join("");
+      // Wire remove buttons
+      strip.querySelectorAll("button[data-idx]").forEach(btn => {
+        btn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const i = parseInt(btn.dataset.idx, 10);
+          currentScreenshots.splice(i, 1);
+          renderShotStrip();
+          updateLivePreview();
+          scheduleDraftSave();
+        });
+      });
+      // Wire image click to open full viewer with actual src and full list
+      strip.querySelectorAll("img").forEach((img, idx) => {
+        img.addEventListener("click", () => {
+          openScreenshotViewer(currentScreenshots, `Screenshot ${idx + 1} of ${currentScreenshots.length}`, "EDR Evidence", idx);
+        });
+      });
     }
 
-    function clearScreenshot() {
-      currentScreenshot = "";
-      thumb.src = "";
-      thumb.style.display = "none";
-      dropText.textContent = "Drop image, Ctrl+V, or click to browse";
-      btnRemove.style.display = "none";
-      fileInput.value = "";
-      updateLivePreview();
-    }
+    // Expose clear function
+    window.clearEdrScreenshots = function () {
+      currentScreenshots = [];
+      renderShotStrip();
+    };
 
+    // Expose set function for backward compat (single screenshot restore)
     window.setCctvScreenshot = function (dataUrl) {
       if (dataUrl) {
-        currentScreenshot = dataUrl;
-        thumb.src = dataUrl;
-        thumb.style.display = "block";
-        dropText.textContent = "Screenshot attached";
-        btnRemove.style.display = "inline-flex";
+        currentScreenshots = [dataUrl];
       } else {
-        clearScreenshot();
+        currentScreenshots = [];
       }
+      renderShotStrip();
+      updateLivePreview();
+    };
+
+    // Expose set-many for edit mode
+    window.setCctvScreenshots = function (arr) {
+      currentScreenshots = Array.isArray(arr) ? arr.filter(Boolean) : [];
+      renderShotStrip();
+      updateLivePreview();
+    };
+  }
+
+  // Multi-Link field management
+  function initMultiLinkField() {
+    const list = el("edrLinksList");
+    const btnAdd = el("btnAddMoreLink");
+    if (!list || !btnAdd) return;
+
+    function updateRemoveBtns() {
+      const rows = list.querySelectorAll(".edr-link-row");
+      rows.forEach((row, i) => {
+        const btn = row.querySelector(".edr-remove-link-btn");
+        if (btn) btn.style.display = rows.length > 1 ? "inline-flex" : "none";
+      });
+    }
+
+    function addLinkRow(value = "") {
+      const row = document.createElement("div");
+      row.className = "edr-link-row";
+      row.style.cssText = "display:flex; align-items:center; gap:4px;";
+      row.innerHTML = `<input type="url" class="form-control edr-clip-link-input" placeholder="https://drive.google.com/..." style="flex:1;" value="${window.escapeHtml ? window.escapeHtml(value) : value.replace(/"/g,'&quot;')}">
+        <button type="button" class="btn btn-ghost btn-sm edr-remove-link-btn" style="flex-shrink:0; padding:0 6px; color:var(--accent-danger);">✕</button>`;
+      row.querySelector(".edr-remove-link-btn").addEventListener("click", () => {
+        row.remove();
+        updateRemoveBtns();
+        scheduleDraftSave();
+      });
+      row.querySelector("input").addEventListener("input", scheduleDraftSave);
+      list.appendChild(row);
+      updateRemoveBtns();
+    }
+
+    btnAdd.addEventListener("click", () => {
+      addLinkRow();
+    });
+
+    // Wire existing first row's remove btn and autosave
+    const firstRow = list.querySelector(".edr-link-row");
+    if (firstRow) {
+      firstRow.querySelector(".edr-remove-link-btn")?.addEventListener("click", () => {
+        // Don't remove if it's the last one; just clear it
+        const rows = list.querySelectorAll(".edr-link-row");
+        if (rows.length > 1) { firstRow.remove(); updateRemoveBtns(); scheduleDraftSave(); }
+        else { firstRow.querySelector("input").value = ""; scheduleDraftSave(); }
+      });
+      firstRow.querySelector("input")?.addEventListener("input", scheduleDraftSave);
+    }
+    updateRemoveBtns();
+
+    // Expose getters/setters
+    window.getEdrClipLinks = function () {
+      return Array.from(list.querySelectorAll(".edr-clip-link-input"))
+        .map(i => i.value.trim())
+        .filter(Boolean);
+    };
+
+    window.setEdrClipLinks = function (links) {
+      // Clear existing rows
+      list.innerHTML = "";
+      const arr = Array.isArray(links) ? links : (links ? [links] : [""]);
+      if (arr.length === 0) arr.push("");
+      arr.forEach(v => addLinkRow(v));
+      updateRemoveBtns();
+    };
+
+    window.clearEdrClipLinks = function () {
+      list.innerHTML = "";
+      addLinkRow();
+      updateRemoveBtns();
     };
   }
 
   // Modal Screenshot Evidence Viewer
-  function openScreenshotViewer(dataUrl, title, meta) {
-    if (!dataUrl) {
+  let viewerShots = [];
+  let viewerIndex = 0;
+  let viewerTitleBase = "";
+  let viewerMetaBase = "";
+
+  function updateViewerImage() {
+    const img = el("screenshotViewerImg");
+    const titleEl = el("screenshotViewerTitle");
+    const metaEl = el("screenshotViewerMeta");
+    const cur = viewerShots[viewerIndex];
+    if (img) img.src = cur || "";
+    if (titleEl) {
+      if (viewerShots.length > 1) {
+        titleEl.textContent = `${viewerTitleBase} (${viewerIndex + 1}/${viewerShots.length})`;
+      } else {
+        titleEl.textContent = viewerTitleBase;
+      }
+    }
+    if (metaEl) {
+      if (viewerShots.length > 1) {
+        metaEl.textContent = `${viewerMetaBase} • Image ${viewerIndex + 1} of ${viewerShots.length} (Use ← / → keys)`;
+      } else {
+        metaEl.textContent = viewerMetaBase;
+      }
+    }
+  }
+
+  function openScreenshotViewer(dataUrlOrArray, title, meta, initialIndex = 0) {
+    const list = Array.isArray(dataUrlOrArray)
+      ? dataUrlOrArray.filter(Boolean)
+      : (dataUrlOrArray ? [dataUrlOrArray] : []);
+
+    if (!list.length) {
       showToast("No screenshot image to display.", "info");
       return;
     }
     const modal = el("modalScreenshotViewer");
-    const img = el("screenshotViewerImg");
-    const titleEl = el("screenshotViewerTitle");
-    const metaEl = el("screenshotViewerMeta");
-    if (!modal || !img) return;
+    if (!modal) return;
 
-    img.src = dataUrl;
-    if (titleEl) titleEl.textContent = title || "CCTV Incident Evidence";
-    if (metaEl) metaEl.textContent = meta || "Full Resolution Screenshot";
+    viewerShots = list;
+    viewerIndex = Math.max(0, Math.min(initialIndex, list.length - 1));
+    viewerTitleBase = title || "CCTV Incident Evidence";
+    viewerMetaBase = meta || "Full Resolution Screenshot";
+
+    updateViewerImage();
     modal.hidden = false;
   }
 
@@ -296,7 +455,24 @@
     const img = el("screenshotViewerImg");
     if (modal) modal.hidden = true;
     if (img) img.src = "";
+    viewerShots = [];
+    viewerIndex = 0;
   }
+
+  window.openScreenshotViewer = openScreenshotViewer;
+  window.closeScreenshotViewer = closeScreenshotViewer;
+
+  window.addEventListener("keydown", (e) => {
+    const modal = el("modalScreenshotViewer");
+    if (!modal || modal.hidden || viewerShots.length <= 1) return;
+    if (e.key === "ArrowLeft") {
+      viewerIndex = (viewerIndex - 1 + viewerShots.length) % viewerShots.length;
+      updateViewerImage();
+    } else if (e.key === "ArrowRight") {
+      viewerIndex = (viewerIndex + 1) % viewerShots.length;
+      updateViewerImage();
+    }
+  });
 
   // Helper to format ISO YYYY-MM-DD to "Sep 9, 2026" or preserve custom date text
   function formatDisplayDate(dateStr) {
@@ -440,7 +616,10 @@
       const isDone = !!r.done;
       const isSelected = !!r.selected;
       const isLinked = !!edr.isReportInAudit(r.id);
-      const hasRealImage = !!(r.screenshotData && r.screenshotData.trim().length > 10);
+      const shots = Array.isArray(r.screenshots) && r.screenshots.length
+        ? r.screenshots
+        : (r.screenshotData ? [r.screenshotData] : []);
+      const hasRealImage = shots.length > 0;
       const hasRemoteOnly = !hasRealImage && !!r.screenshotFileId;
       const hasShot = hasRealImage || hasRemoteOnly;
       const formattedDate = formatDisplayDate(r.date);
@@ -449,7 +628,8 @@
       // Status chips: SS, DONE, DOCS (no IN AUDIT status badge)
       const chips = [];
       if (hasShot) {
-        chips.push('<span class="status-chip chip-ss" title="Screenshot attached">SS</span>');
+        const ssLabel = shots.length > 1 ? `SS (${shots.length})` : "SS";
+        chips.push(`<span class="status-chip chip-ss" title="${shots.length > 1 ? `${shots.length} screenshots attached` : 'Screenshot attached'}">${ssLabel}</span>`);
       }
       if (isDone) {
         chips.push('<span class="status-chip chip-done" title="Completed">DONE</span>');
@@ -491,7 +671,7 @@
 
           <div class="record-actions">
             ${hasShot ? `
-              <button type="button" class="btn-action btn-shot-view" title="View CCTV screenshot">View SS</button>
+              <button type="button" class="btn-action btn-shot-view" title="View CCTV screenshot${shots.length > 1 ? 's' : ''}">View SS${shots.length > 1 ? ` (${shots.length})` : ''}</button>
             ` : `
               <button type="button" class="btn-action btn-shot-add" title="Add screenshot">Add SS</button>
             `}
@@ -568,27 +748,56 @@
 
       // View SS
       const triggerView = async () => {
-        if (!report.screenshotData && report.screenshotFileId) {
+        if (!report.screenshotData && (!report.screenshots || !report.screenshots.length) && report.screenshotFileId) {
           showToast("Loading remote screenshot...", "info");
           await edr.ensureRemoteScreenshot(report);
         }
-        if (window.openFullScreenshotViewer) {
-          window.openFullScreenshotViewer(
-            report.screenshotData,
-            `${report.site || 'Site'}  -  ${report.account || 'EDR'}`,
-            `Observed: ${report.date || ''} ${report.timeObserved || ''}  -  Supervisor: ${report.supervisorName || 'N/A'}`
-          );
-        } else {
-          openScreenshotViewer(
-            report.screenshotData,
-            `${report.site || 'Site'}  -  ${report.account || 'EDR'}`,
-            `Observed: ${report.date || ''} ${report.timeObserved || ''}  -  Supervisor: ${report.supervisorName || 'N/A'}`
-          );
+        const activeShots = Array.isArray(report.screenshots) && report.screenshots.length
+          ? report.screenshots
+          : (report.screenshotData ? [report.screenshotData] : []);
+
+        if (!activeShots.length) {
+          showToast("No screenshot available.", "info");
+          return;
         }
+
+        openScreenshotViewer(
+          activeShots,
+          `${report.site || 'Site'}  -  ${report.account || 'EDR'}`,
+          `Observed: ${report.date || ''} ${report.timeObserved || ''}  -  Supervisor: ${report.supervisorName || 'N/A'}`
+        );
       };
 
-      // Add / Replace SS
-      const triggerAddReplace = () => {
+      // Add SS
+      const triggerAdd = () => {
+        const picker = document.createElement("input");
+        picker.type = "file";
+        picker.accept = "image/*";
+        picker.multiple = true;
+        picker.onchange = async () => {
+          const files = Array.from(picker.files || []);
+          if (!files.length) return;
+          for (const file of files) {
+            await new Promise(resolve => {
+              const reader = new FileReader();
+              reader.onload = async (evt) => {
+                try {
+                  await edr.attachScreenshotToReport(id, evt.target.result);
+                } catch (err) {
+                  console.warn("attachScreenshotToReport error:", err);
+                }
+                resolve();
+              };
+              reader.readAsDataURL(file);
+            });
+          }
+          showToast("Screenshot(s) attached to saved EDR.", "success");
+        };
+        picker.click();
+      };
+
+      // Replace SS
+      const triggerReplace = () => {
         const picker = document.createElement("input");
         picker.type = "file";
         picker.accept = "image/*";
@@ -597,12 +806,11 @@
           if (!file) return;
           const reader = new FileReader();
           reader.onload = async (evt) => {
-            const dataUrl = evt.target.result;
             try {
-              await edr.attachScreenshotToReport(id, dataUrl);
-              showToast("Screenshot attached to saved EDR.", "success");
+              await edr.replaceScreenshotOnReport(id, evt.target.result);
+              showToast("Screenshot replaced on saved EDR.", "success");
             } catch (err) {
-              showToast(err.message || "Failed to attach screenshot.", "error");
+              showToast(err.message || "Failed to replace screenshot.", "error");
             }
           };
           reader.readAsDataURL(file);
@@ -611,7 +819,7 @@
       };
 
       card.querySelector(".btn-shot-view")?.addEventListener("click", triggerView);
-      card.querySelector(".btn-shot-add")?.addEventListener("click", triggerAddReplace);
+      card.querySelector(".btn-shot-add")?.addEventListener("click", triggerAdd);
 
       // Copy SS (in More menu)
       card.querySelector(".btn-shot-copy")?.addEventListener("click", async (e) => {
@@ -653,7 +861,7 @@
       card.querySelector(".btn-action-replace")?.addEventListener("click", (e) => {
         e.stopPropagation();
         closeMoreMenu(moreMenu);
-        triggerAddReplace();
+        triggerReplace();
       });
 
       // Remove SS (in More menu)
@@ -743,10 +951,21 @@
     el("edrAccount").value = report.account || "";
     el("edrIncident").value = report.incident || "";
     el("edrActionRemarks").value = report.action || "";
-    el("edrClipLink").value = report.clipLink || "";
+    // Restore clip links
+    if (window.setEdrClipLinks) {
+      const links = Array.isArray(report.clipLinks) && report.clipLinks.length
+        ? report.clipLinks
+        : (report.clipLink ? [report.clipLink] : [""]);
+      window.setEdrClipLinks(links);
+    }
 
-    if (window.setCctvScreenshot) {
-      window.setCctvScreenshot(report.screenshotData || "");
+    // Restore screenshots
+    if (window.setCctvScreenshots) {
+      window.setCctvScreenshots(
+        Array.isArray(report.screenshots) && report.screenshots.length
+          ? report.screenshots
+          : (report.screenshotData ? [report.screenshotData] : [])
+      );
     }
 
     el("edrFormTitle").textContent = "Update EDR";
@@ -766,7 +985,9 @@
     el("edrSubjectName").placeholder = "Employee name...";
     el("edrSubjectName").removeAttribute("list");
     initFormDropdowns();
-    if (window.setCctvScreenshot) window.setCctvScreenshot("");
+    if (window.clearEdrScreenshots) window.clearEdrScreenshots();
+    else if (window.setCctvScreenshot) window.setCctvScreenshot("");
+    if (window.clearEdrClipLinks) window.clearEdrClipLinks();
     el("edrFormTitle").textContent = "Manual EDR Entry";
     el("btnEdrSubmitText").textContent = "Save EDR";
     el("btnEdrCancelEdit").style.display = "none";
@@ -788,7 +1009,7 @@
   function restoreDraftForm() {
     const draft = edr.getDraftForm();
     if (!draft) return;
-    if (!draft.incident && !draft.subjectName && !draft.account && !draft.screenshotData) return;
+    if (!draft.incident && !draft.subjectName && !draft.account && !draft.screenshotData && !(Array.isArray(draft.screenshots) && draft.screenshots.length)) return;
 
     if (draft.site && el("edrSite")) el("edrSite").value = draft.site;
     if (draft.date && el("edrDate")) el("edrDate").value = draft.date;
@@ -820,9 +1041,19 @@
     if (draft.account && el("edrAccount")) el("edrAccount").value = draft.account;
     if (draft.incident && el("edrIncident")) el("edrIncident").value = draft.incident;
     if (draft.action && el("edrActionRemarks")) el("edrActionRemarks").value = draft.action;
-    if (draft.clipLink && el("edrClipLink")) el("edrClipLink").value = draft.clipLink;
-    if (draft.screenshotData && window.setCctvScreenshot) {
-      window.setCctvScreenshot(draft.screenshotData);
+    // Restore clip links
+    if (window.setEdrClipLinks) {
+      const links = Array.isArray(draft.clipLinks) && draft.clipLinks.length
+        ? draft.clipLinks
+        : (draft.clipLink ? [draft.clipLink] : null);
+      if (links) window.setEdrClipLinks(links);
+    }
+    // Restore screenshots
+    if (window.setCctvScreenshots) {
+      const shots = Array.isArray(draft.screenshots) && draft.screenshots.length
+        ? draft.screenshots
+        : (draft.screenshotData ? [draft.screenshotData] : null);
+      if (shots) window.setCctvScreenshots(shots);
     }
   }
 
@@ -833,6 +1064,29 @@
     const fbText = el("edrFacebookText")?.value || "";
     const html = edr.buildPreviewHtml(fbText);
     previewBox.innerHTML = html;
+
+    // Attach click handlers to preview images for full resolution viewing
+    previewBox.querySelectorAll(".edr-preview-card").forEach(card => {
+      const id = card.dataset.edrId;
+      const rep = edr.getReport(id);
+      if (!rep) return;
+      const shots = Array.isArray(rep.screenshots) && rep.screenshots.length
+        ? rep.screenshots
+        : (rep.screenshotData ? [rep.screenshotData] : []);
+      if (!shots.length) return;
+
+      card.querySelectorAll(".edr-preview-shots img").forEach(img => {
+        img.addEventListener("click", () => {
+          const idx = parseInt(img.dataset.shotIdx, 10) || 0;
+          openScreenshotViewer(
+            shots,
+            `${rep.site || 'Site'} - ${rep.account || 'EDR'}`,
+            `Observed: ${rep.date || ''} ${rep.timeObserved || ''}`,
+            idx
+          );
+        });
+      });
+    });
   }
 
   function closeMoreMenu(menu) {
@@ -882,8 +1136,12 @@
       account: el("edrAccount").value,
       incident: el("edrIncident").value,
       action: el("edrActionRemarks").value,
-      clipLink: el("edrClipLink").value,
-      screenshotData: currentScreenshot
+      // Multi-link: collect all filled link inputs
+      clipLinks: window.getEdrClipLinks ? window.getEdrClipLinks() : [],
+      clipLink: window.getEdrClipLinks ? (window.getEdrClipLinks()[0] || "") : "",
+      // Multi-screenshot: store array + first as screenshotData for compat
+      screenshots: currentScreenshots.slice(),
+      screenshotData: currentScreenshots[0] || ""
     };
   }
 
@@ -1322,8 +1580,7 @@
       "edrSubjectName",
       "edrAccount",
       "edrIncident",
-      "edrActionRemarks",
-      "edrClipLink"
+      "edrActionRemarks"
     ].forEach(id => {
       el(id)?.addEventListener("input", scheduleDraftSave);
       el(id)?.addEventListener("change", scheduleDraftSave);
@@ -2952,7 +3209,7 @@ function doPost(e) {
     selection.addRange(range);
   }
 
-  // â”€â”€â”€ Missing Helpers for Global Keyboard Shortcut Handler â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // --- Missing Helpers for Global Keyboard Shortcut Handler ---
 
   /**
    * Moves cell selection by arrow keys (item 5-8 parity with V1)
@@ -3053,7 +3310,7 @@ function doPost(e) {
     showToast(`${newRows.length} pasted row(s) added to AI Sorter.`, "success");
   }
 
-  // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ----------------------------------------------------------------
 
   function normalizeMiniSheetCellRange(a, b) {
     if (!a || !b) return null;
@@ -4269,7 +4526,7 @@ function doPost(e) {
       const actionsWrap = document.createElement("div");
       actionsWrap.className = "eod-block-actions";
 
-      // â”€â”€ Hide Report / Show Report toggle button â”€â”€
+      // --- Hide Report / Show Report toggle button ---
       const toggleBtn = document.createElement("button");
       toggleBtn.type = "button";
       if (block.dataHidden) {
@@ -5698,7 +5955,7 @@ function doPost(e) {
         showToast("No visible block found to receive screenshot.", "info");
         return;
       }
-      updateMaintenanceAutosaveIndicator("â— Processing pasted image...", "saving");
+      updateMaintenanceAutosaveIndicator("Processing pasted image...", "saving");
       try {
         const compressed = await maintenance.compressImage(imageFile);
         if (!Array.isArray(targetBlock.screenshots)) targetBlock.screenshots = [];
@@ -8113,7 +8370,7 @@ function doPost(e) {
 
           if (sourceInfo && sourceInfo.ok === false) {
             const errDetail = sourceInfo.error || "Sheet could not be read or was not found.";
-            tbody.innerHTML = `<tr><td colspan="${columns.length}" class="masterlist-empty-cell is-error">âš ï¸ <strong>Source Error:</strong> Could not load ${escapeHtml(activeTracker.label)} tracker: ${escapeHtml(errDetail)}</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="${columns.length}" class="masterlist-empty-cell is-error"><strong>Source Error:</strong> Could not load ${escapeHtml(activeTracker.label)} tracker: ${escapeHtml(errDetail)}</td></tr>`;
           } else if (!rows.length) {
             tbody.innerHTML = `<tr><td colspan="${columns.length}" class="masterlist-empty-cell">No Pending ${escapeHtml(activeTracker ? activeTracker.label : 'Miles')} rows found.</td></tr>`;
           } else {
@@ -9444,6 +9701,7 @@ ${escapeHtml(JSON.stringify(entry.after || entry.before, null, 2))}
     initFormDropdowns();
     initChoiceButtons();
     initScreenshotDropzone();
+    initMultiLinkField();
     initEvents();
 
     if (params.get("edr") === "expanded" && typeof window.setDispatchExpanded === "function") {
@@ -9730,7 +9988,7 @@ ${escapeHtml(JSON.stringify(entry.after || entry.before, null, 2))}
     window.renderEdrList = renderEdrList;
     window.renderAuditTable = renderAuditTable;
 
-    // â”€â”€ Restored Authentication Gate & Session Lifecycle â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // --- Restored Authentication Gate & Session Lifecycle ---
     const loginModal = el("loginModal");
     const loginForm = el("loginForm");
     const loginBtn = el("loginBtn");
@@ -9972,10 +10230,8 @@ ${escapeHtml(JSON.stringify(entry.after || entry.before, null, 2))}
     if (!matrix) return;
 
     const chars = Array.from(
-      "ã‚¢ã‚¤ã‚¦ã‚¨ã‚ªã‚«ã‚­ã‚¯ã‚±ã‚³ã‚µã‚·ã‚¹ã‚»ã‚½ã‚¿ãƒãƒ„ãƒ†ãƒˆ" +
-      "ãƒŠãƒ‹ãƒŒãƒãƒŽãƒãƒ’ãƒ•ãƒ˜ãƒ›ãƒžãƒŸãƒ ãƒ¡ãƒ¢ãƒ¤ãƒ¦ãƒ¨" +
-      "ãƒ©ãƒªãƒ«ãƒ¬ãƒ­ãƒ¯ãƒ²ãƒ³ã‚¬ã‚®ã‚°ã‚²ã‚´ã‚¶ã‚¸ã‚ºã‚¼ã‚¾" +
-      "ãƒ€ãƒ‚ãƒ…ãƒ‡ãƒ‰ãƒãƒ“ãƒ–ãƒ™ãƒœãƒ‘ãƒ”ãƒ—ãƒšãƒ"
+      "アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン" +
+      "ガギグゲゴザジズゼゾダヂヅデドバビブベボパピプペポ"
     );
 
     const render = () => {

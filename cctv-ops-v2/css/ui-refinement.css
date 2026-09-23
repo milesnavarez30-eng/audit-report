@@ -1121,26 +1121,85 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 
 .followup-add-lower {
   display: grid !important;
-  grid-template-columns: 200px 1fr !important;
-  gap: 10px !important;
+  grid-template-columns: minmax(240px, 260px) minmax(0, 1fr) !important;
+  gap: 12px !important;
   align-items: start !important;
+}
+
+@media (max-width: 880px) {
+  .followup-add-lower {
+    grid-template-columns: 1fr !important;
+  }
 }
 
 .followup-add-shot-zone {
   border: 1px dashed var(--border-default, #30363d) !important;
   border-radius: 4px !important;
-  padding: 10px !important;
+  padding: 8px 10px !important;
   background: rgba(0, 0, 0, 0.2) !important;
   min-height: 80px !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
   transition: border-color 0.15s ease !important;
+  box-sizing: border-box !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  overflow: hidden !important;
+  width: 100% !important;
 }
 
 .followup-add-shot-zone.dragover {
   border-color: #f43f5e !important;
   background: rgba(244, 63, 94, 0.05) !important;
+}
+
+.followup-add-shot-preview {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+  overflow: hidden !important;
+}
+
+.followup-add-shot-preview img {
+  width: 88px !important;
+  height: 68px !important;
+  object-fit: cover !important;
+  border-radius: 4px !important;
+  border: 1px solid var(--border-subtle, #30363d) !important;
+  background: #000 !important;
+  flex-shrink: 0 !important;
+}
+
+.followup-shot-preview-actions {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 4px !important;
+  align-items: flex-start !important;
+  min-width: 0 !important;
+  flex: 1 !important;
+}
+
+.followup-shot-preview-actions > div {
+  display: flex !important;
+  gap: 4px !important;
+  flex-wrap: wrap !important;
+}
+
+.followup-add-lower > div:last-child {
+  min-width: 0 !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+#followupRemarks {
+  width: 100% !important;
+  box-sizing: border-box !important;
+  min-width: 0 !important;
 }
 
 .followup-queue-card {
@@ -2262,3 +2321,158 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 
 
 
+
+
+/* 2026-09-23 responsive regression fixes */
+/* Preserve the compact topbar by removing lower-priority integration pills before
+   the 200px desktop rail leaves too little content width on laptop-size screens. */
+@media (max-width: 1239px) {
+  .integration-status-group {
+    display: none !important;
+  }
+}
+
+/* CCTV Report needs to stop using its desktop minimum column widths once the
+   available workspace becomes narrower than the two-column composition. */
+@media (max-width: 1150px) {
+  .cctv-report-layout {
+    flex-direction: column !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    height: 100% !important;
+  }
+  .cctv-report-left-col,
+  .cctv-report-right-col {
+    min-width: 0 !important;
+    width: 100% !important;
+  }
+  .cctv-report-left-col {
+    flex: 0 0 auto !important;
+    overflow: visible !important;
+    padding-right: 0 !important;
+  }
+  .cctv-report-right-col {
+    flex: 0 0 auto !important;
+    height: auto !important;
+    min-height: 420px !important;
+    overflow: visible !important;
+  }
+  .cctv-preview-card {
+    min-height: 420px !important;
+  }
+}
+
+@media (max-width: 900px) {
+  .conduct-title-row,
+  .conduct-search-row {
+    align-items: stretch !important;
+    flex-direction: column !important;
+  }
+  .conduct-title-row {
+    gap: 4px !important;
+  }
+  .coc-search-bar,
+  .coc-select-wrap,
+  #conductCategorySelect {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  .coc-search-input {
+    min-width: 0 !important;
+  }
+  .penalty-matrix-header {
+    align-items: flex-start !important;
+    flex-wrap: wrap !important;
+    gap: 4px 10px !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .history-toolbar-card {
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+  .history-toolbar-left,
+  .history-toolbar-right {
+    width: 100% !important;
+    min-width: 0 !important;
+    flex-wrap: wrap !important;
+  }
+  .history-toolbar-left .btn {
+    flex: 1 1 auto !important;
+  }
+  .history-toolbar-right {
+    justify-content: space-between !important;
+  }
+  .history-summary-text {
+    flex: 1 1 180px !important;
+    min-width: 0 !important;
+    white-space: normal !important;
+  }
+
+  .masterlist-sync-strip {
+    align-items: stretch !important;
+    flex-direction: column !important;
+  }
+  .masterlist-sync-actions {
+    width: 100% !important;
+    justify-content: space-between !important;
+    flex-wrap: wrap !important;
+  }
+  .masterlist-last-updated {
+    white-space: normal !important;
+  }
+
+  .sorter-toolbar > div,
+  .sorter-header-row > div,
+  .mini-sheet-findbar,
+  .mini-sheet-actions {
+    min-width: 0 !important;
+    flex-wrap: wrap !important;
+  }
+  #miniSheetFindTlInput {
+    max-width: 100% !important;
+    min-width: 0 !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .cctv-report-layout,
+  .cctv-conduct-layout,
+  .masterlist-workspace-layout,
+  .history-workspace-layout {
+    padding-left: 8px !important;
+    padding-right: 8px !important;
+  }
+  .cctv-card-header,
+  .cctv-report-composer-card .card-header,
+  .cctv-preview-card .card-header,
+  .report-clean-header {
+    align-items: flex-start !important;
+    flex-wrap: wrap !important;
+  }
+  .cctv-card-header .card-actions,
+  .cctv-report-composer-card .card-actions,
+  .cctv-preview-card .card-actions,
+  .report-clean-actions {
+    margin-left: 0 !important;
+  }
+  .cctv-report-right-col,
+  .cctv-preview-card {
+    min-height: 360px !important;
+  }
+  .history-toolbar-left .btn {
+    flex-basis: calc(50% - 4px) !important;
+  }
+  .masterlist-sync-info {
+    align-items: flex-start !important;
+  }
+  .masterlist-sync-title,
+  .masterlist-sync-detail {
+    white-space: normal !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+  }
+}

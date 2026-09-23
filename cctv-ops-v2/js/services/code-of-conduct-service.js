@@ -503,7 +503,7 @@ window.CCTV_CONDUCT = (function () {
         {
           num: "3.12",
           title: "Importing or Copying Unauthorized Files or Software",
-          description: "Importing, downloading, copying, or forwarding non-text filesâ€”such as applications, utilities, images, music, or internet pagesâ€”through unauthorized storage devices or without proper approval.",
+          description: "Importing, downloading, copying, or forwarding non-text files - such as applications, utilities, images, music, or internet pages - through unauthorized storage devices or without proper approval.",
           severity: "MAJOR"
         },
         {
@@ -623,7 +623,7 @@ window.CCTV_CONDUCT = (function () {
         {
           num: "3.32",
           title: "Concealing or Covering Up Work-Related Errors",
-          description: "Concealing, hiding, or covering up mistakes in workâ€”whether one's own or a co-worker'sâ€”that result in loss, damage, or harm to the company.",
+          description: "Concealing, hiding, or covering up mistakes in work - whether one's own or a co-worker's - that result in loss, damage, or harm to the company.",
           severity: "GRAVE"
         },
         {
@@ -706,7 +706,7 @@ window.CCTV_CONDUCT = (function () {
         {
           num: "4.12",
           title: "Spreading Rumors or Derogatory Statements",
-          description: "Spreading rumors or derogatory, malicious, or libelous statementsâ€”whether spoken, written, or posted on social media that criticize, discredit, damage, or undermine the honor, integrity, reputation, or good name of the Company, its management, stockholders, or employees.",
+          description: "Spreading rumors or derogatory, malicious, or libelous statements - whether spoken, written, or posted on social media that criticize, discredit, damage, or undermine the honor, integrity, reputation, or good name of the Company, its management, stockholders, or employees.",
           severity: "GRAVE"
         },
         {
@@ -861,7 +861,7 @@ window.CCTV_CONDUCT = (function () {
         {
           num: "5.23",
           title: "Acceptance or Offer of Anything of Value to Influence Decisions",
-          description: "Accepting or offering money, gifts, favors, or anything of valueâ€”whether from applicants, employees, clients, suppliers, contractors, or principals in order to obtain or grant a job, promotion, favorable employment condition, or to influence any act, decision, or service that the employee is duty-bound to perform.",
+          description: "Accepting or offering money, gifts, favors, or anything of value - whether from applicants, employees, clients, suppliers, contractors, or principals in order to obtain or grant a job, promotion, favorable employment condition, or to influence any act, decision, or service that the employee is duty-bound to perform.",
           severity: "GRAVE"
         },
         {

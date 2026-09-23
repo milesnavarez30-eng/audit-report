@@ -338,19 +338,30 @@ window.CCTV_EDR = (function () {
       `Action Taken/Remarks: ${report.action || ""}`
     ];
 
-    if (report.clipLink) {
-      lines.push(`CCTV Clip: Click here! (${report.clipLink})`);
-    }
+    const links = Array.isArray(report.clipLinks) && report.clipLinks.length
+      ? report.clipLinks
+      : (report.clipLink ? [report.clipLink] : []);
+
+    links.forEach((link, idx) => {
+      const label = links.length > 1 ? `CCTV Clip ${idx + 1}` : "CCTV Clip";
+      lines.push(`${label}: Click here! (${link})`);
+    });
 
     return lines.join("\n");
   }
 
   function reportTeamsHtml(report) {
     const topLine = [report.site, "CCTV", report.account].filter(Boolean).join(" | ");
-    const clipUrl = safeUrl(report.clipLink);
-    const clip = clipUrl
-      ? `<div>CCTV Clip: <a href="${escapeHtml(clipUrl)}">Click here!</a></div>`
-      : "";
+    const links = Array.isArray(report.clipLinks) && report.clipLinks.length
+      ? report.clipLinks
+      : (report.clipLink ? [report.clipLink] : []);
+
+    const clipLines = links.map((link, idx) => {
+      const clipUrl = safeUrl(link);
+      if (!clipUrl) return "";
+      const label = links.length > 1 ? `CCTV Clip ${idx + 1}` : "CCTV Clip";
+      return `<div>${label}: <a href="${escapeHtml(clipUrl)}">Click here!</a></div>`;
+    }).filter(Boolean);
 
     const lines = [
       `<div>${escapeHtml(topLine)}</div>`,
@@ -362,7 +373,7 @@ window.CCTV_EDR = (function () {
       `<div>Incident: ${escapeHtml(report.incident || "")}</div>`,
       `<div>Action Taken/Remarks: ${escapeHtml(report.action || "")}</div>`
     ];
-    if (clip) lines.push(clip);
+    clipLines.forEach(c => lines.push(c));
 
     return lines.join("");
   }
@@ -388,16 +399,21 @@ window.CCTV_EDR = (function () {
   }
 
   async function reportTeamsClipboardHtml(report) {
-    const screenshot = await compressClipboardImage(report.screenshotData);
-    const image = screenshot
-      ? `<div><img src="${escapeHtml(screenshot)}" alt="CCTV Screenshot" style="max-width:800px;display:block;"></div>`
-      : "";
+    const rawShots = Array.isArray(report.screenshots) && report.screenshots.length
+      ? report.screenshots
+      : (report.screenshotData ? [report.screenshotData] : []);
+
+    const compressedShots = (await Promise.all(rawShots.map(compressClipboardImage))).filter(Boolean);
+    const imagesHtml = compressedShots
+      .map(s => `<div><img src="${escapeHtml(s)}" alt="CCTV Screenshot" style="max-width:800px;display:block;"></div>`)
+      .join("");
+
     const body = reportTeamsHtml(report);
-    const clipMarker = '<div>CCTV Clip:';
+    const clipMarker = '<div>CCTV Clip';
     const clipIndex = body.indexOf(clipMarker);
     return clipIndex === -1
-      ? `${body}${image}`
-      : `${body.slice(0, clipIndex)}${image}${body.slice(clipIndex)}`;
+      ? `${body}${imagesHtml}`
+      : `${body.slice(0, clipIndex)}${imagesHtml}${body.slice(clipIndex)}`;
   }
 
   function buildTeamsHtml(facebookText = "") {
@@ -475,14 +491,33 @@ window.CCTV_EDR = (function () {
 
   function reportHtml(report, includeImage = true) {
     const topLine = [report.site, "CCTV", report.account].filter(Boolean).join(" | ");
-    const clipUrl = safeUrl(report.clipLink);
-    const screenshot = includeImage && report.screenshotData
-      ? `<div class="edr-preview-shot" style="margin:8px 0 6px 0;"><img src="${report.screenshotData}" alt="CCTV Screenshot" style="max-width:100%; max-height:260px; border-radius:4px; border:1px solid var(--border-default); display:block;"></div>`
+
+    const shots = includeImage
+      ? (Array.isArray(report.screenshots) && report.screenshots.length
+          ? report.screenshots
+          : (report.screenshotData ? [report.screenshotData] : []))
+      : [];
+
+    const screenshotsHtml = shots.length
+      ? `<div class="edr-preview-shots" style="display:flex; flex-wrap:wrap; gap:8px; margin:8px 0 6px 0;">` +
+        shots.map((shot, idx) =>
+          `<div class="edr-preview-shot" style="position:relative; flex:0 0 auto;">` +
+          `<img src="${shot}" alt="CCTV Screenshot ${idx + 1}" style="max-width:100%; max-height:220px; border-radius:4px; border:1px solid var(--border-default); display:block; object-fit:contain; cursor:pointer;" data-shot-idx="${idx}" title="Click to view full screenshot">` +
+          `</div>`
+        ).join("") +
+        `</div>`
       : "";
 
-    const clip = clipUrl
-      ? `<div class="edr-preview-line edr-preview-clip" style="margin-top:4px;"><strong>CCTV Clip:</strong> <a href="${clipUrl}" target="_blank" rel="noopener noreferrer">Click here!</a></div>`
-      : "";
+    const links = Array.isArray(report.clipLinks) && report.clipLinks.length
+      ? report.clipLinks
+      : (report.clipLink ? [report.clipLink] : []);
+
+    const clipsHtml = links.map((link, idx) => {
+      const clipUrl = safeUrl(link);
+      if (!clipUrl) return "";
+      const label = links.length > 1 ? `CCTV Clip ${idx + 1}:` : "CCTV Clip:";
+      return `<div class="edr-preview-line edr-preview-clip" style="margin-top:4px;"><strong>${escapeHtml(label)}</strong> <a href="${clipUrl}" target="_blank" rel="noopener noreferrer">Click here!</a></div>`;
+    }).join("");
 
     return `<div class="edr-preview-card" data-edr-id="${escapeHtml(report.id)}" style="padding:10px 12px; font-size:12px; line-height:1.45;">` +
       `<div style="font-weight:700; color:var(--accent-primary); margin-bottom:5px;">${escapeHtml(topLine)}</div>` +
@@ -493,8 +528,8 @@ window.CCTV_EDR = (function () {
       `<div class="edr-preview-line"><strong>Account/Campaign:</strong> ${escapeHtml(report.account || "")}</div>` +
       `<div class="edr-preview-line"><strong>Incident:</strong> ${escapeHtml(report.incident || "")}</div>` +
       `<div class="edr-preview-line"><strong>Action Taken/Remarks:</strong> ${escapeHtml(report.action || "")}</div>` +
-      screenshot +
-      clip +
+      screenshotsHtml +
+      clipsHtml +
     `</div>`;
   }
 
@@ -702,23 +737,29 @@ window.CCTV_EDR = (function () {
       if (editingId) {
         const idx = edrReports.findIndex(r => r.id === editingId);
         if (idx !== -1) {
+          const oldShots = edrReports[idx].screenshots || (edrReports[idx].screenshotData ? [edrReports[idx].screenshotData] : []);
+          const newShots = data.screenshots || (data.screenshotData ? [data.screenshotData] : []);
+          const screenshotChanged = (data.screenshotData !== edrReports[idx].screenshotData) ||
+            (JSON.stringify(newShots) !== JSON.stringify(oldShots));
+
           edrReports[idx] = {
             ...edrReports[idx],
             ...data,
-            screenshotChanged: data.screenshotData !== edrReports[idx].screenshotData,
+            screenshotChanged,
             updatedAt: new Date().toISOString()
           };
           saved = edrReports[idx];
         }
         editingId = null;
       } else {
+        const newShots = data.screenshots || (data.screenshotData ? [data.screenshotData] : []);
         saved = {
           id: uid(),
           selected: true,
           done: false,
           doneAt: "",
           cloudSynced: false,
-          screenshotChanged: !!data.screenshotData,
+          screenshotChanged: newShots.length > 0,
           screenshotFileId: "",
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
@@ -813,7 +854,26 @@ window.CCTV_EDR = (function () {
     async attachScreenshotToReport(id, dataUrl) {
       const rep = edrReports.find(r => r.id === id);
       if (!rep) throw new Error("Report not found.");
+      if (!Array.isArray(rep.screenshots)) {
+        rep.screenshots = rep.screenshotData ? [rep.screenshotData] : [];
+      }
+      if (dataUrl) rep.screenshots.push(dataUrl);
+      rep.screenshotData = rep.screenshots[0] || dataUrl || "";
+      rep.screenshotChanged = true;
+      rep.updatedAt = new Date().toISOString();
+      await this.saveReports();
+      if (this.isValidDocsUrl(this.getDocsUrl())) {
+        await this.syncReportToGoogleDocs(rep);
+      }
+      return rep;
+    },
+
+    async replaceScreenshotOnReport(id, dataUrl) {
+      const rep = edrReports.find(r => r.id === id);
+      if (!rep) throw new Error("Report not found.");
+      rep.screenshots = dataUrl ? [dataUrl] : [];
       rep.screenshotData = dataUrl || "";
+      rep.screenshotFileId = "";
       rep.screenshotChanged = true;
       rep.updatedAt = new Date().toISOString();
       await this.saveReports();
@@ -826,6 +886,7 @@ window.CCTV_EDR = (function () {
     async removeScreenshotFromReport(id) {
       const rep = edrReports.find(r => r.id === id);
       if (!rep) throw new Error("Report not found.");
+      rep.screenshots = [];
       rep.screenshotData = "";
       rep.screenshotFileId = "";
       rep.screenshotChanged = true;
@@ -959,7 +1020,7 @@ window.CCTV_EDR = (function () {
 
       // Ensure remote screenshots are loaded
       for (const report of activeSelected) {
-        if (!report.screenshotData && report.screenshotFileId) {
+        if (!report.screenshotData && (!report.screenshots || !report.screenshots.length) && report.screenshotFileId) {
           await this.ensureRemoteScreenshot(report);
         }
       }
@@ -1035,13 +1096,20 @@ window.CCTV_EDR = (function () {
         notify();
       }
 
+      const totalScreenshotsCount = activeSelected.reduce((acc, r) => {
+        const count = Array.isArray(r.screenshots) && r.screenshots.length
+          ? r.screenshots.length
+          : (r.screenshotData ? 1 : 0);
+        return acc + count;
+      }, 0);
+
       return {
         count: activeSelected.length,
-        hasScreenshot: activeSelected.some(r => !!r.screenshotData),
+        hasScreenshot: totalScreenshotsCount > 0,
         richHtml,
         plainText: safePlainText,
         wroteSuccessfully,
-        inlineScreenshotCount: activeSelected.filter(r => r.screenshotData).length
+        inlineScreenshotCount: totalScreenshotsCount
       };
     },
 
@@ -1049,18 +1117,18 @@ window.CCTV_EDR = (function () {
       let dataUrl = "";
       if (typeof reportOrDataUrl === "string") {
         dataUrl = reportOrDataUrl;
-      } else if (reportOrDataUrl && reportOrDataUrl.screenshotData) {
-        dataUrl = reportOrDataUrl.screenshotData;
+      } else if (reportOrDataUrl && (reportOrDataUrl.screenshotData || (Array.isArray(reportOrDataUrl.screenshots) && reportOrDataUrl.screenshots.length))) {
+        dataUrl = reportOrDataUrl.screenshotData || reportOrDataUrl.screenshots[0];
       } else if (reportOrDataUrl && reportOrDataUrl.screenshotFileId) {
         await this.ensureRemoteScreenshot(reportOrDataUrl);
-        dataUrl = reportOrDataUrl.screenshotData;
+        dataUrl = reportOrDataUrl.screenshotData || (reportOrDataUrl.screenshots && reportOrDataUrl.screenshots[0]) || "";
       } else {
-        const sel = edrReports.find(r => r.selected && !r.done && (r.screenshotData || r.screenshotFileId));
+        const sel = edrReports.find(r => r.selected && !r.done && (r.screenshotData || (Array.isArray(r.screenshots) && r.screenshots.length) || r.screenshotFileId));
         if (sel) {
-          if (!sel.screenshotData && sel.screenshotFileId) {
+          if (!sel.screenshotData && (!sel.screenshots || !sel.screenshots.length) && sel.screenshotFileId) {
             await this.ensureRemoteScreenshot(sel);
           }
-          dataUrl = sel.screenshotData;
+          dataUrl = sel.screenshotData || (sel.screenshots && sel.screenshots[0]) || "";
         }
       }
 
@@ -1216,6 +1284,13 @@ window.CCTV_EDR = (function () {
     },
 
     cloudRecordPayload(report) {
+      const clipLinks = Array.isArray(report.clipLinks) && report.clipLinks.length
+        ? report.clipLinks
+        : (report.clipLink ? [report.clipLink] : []);
+      const screenshots = Array.isArray(report.screenshots) && report.screenshots.length
+        ? report.screenshots
+        : (report.screenshotData ? [report.screenshotData] : []);
+
       return {
         id: report.id,
         site: report.site || "",
@@ -1231,8 +1306,10 @@ window.CCTV_EDR = (function () {
         account: report.account || "",
         incident: report.incident || "",
         action: report.action || "",
-        clipLink: report.clipLink || "",
-        screenshotData: report.screenshotData || "",
+        clipLink: report.clipLink || (clipLinks[0] || ""),
+        clipLinks: clipLinks,
+        screenshotData: report.screenshotData || (screenshots[0] || ""),
+        screenshots: screenshots,
         screenshotChanged: !!report.screenshotChanged,
         screenshotFileId: report.screenshotFileId || "",
         done: !!report.done,
@@ -1243,6 +1320,13 @@ window.CCTV_EDR = (function () {
     },
 
     normalizeCloudRecord(record) {
+      const clipLinks = Array.isArray(record.clipLinks) && record.clipLinks.length
+        ? record.clipLinks
+        : (record.clipLink ? [record.clipLink] : []);
+      const screenshots = Array.isArray(record.screenshots) && record.screenshots.length
+        ? record.screenshots
+        : (record.screenshotData ? [record.screenshotData] : []);
+
       return {
         id: record.id || uid(),
         selected: false,
@@ -1250,7 +1334,8 @@ window.CCTV_EDR = (function () {
         doneAt: record.doneAt || "",
         expanded: false,
         cloudSynced: true,
-        screenshotData: record.screenshotData || "",
+        screenshotData: record.screenshotData || (screenshots[0] || ""),
+        screenshots: screenshots,
         screenshotFileId: record.screenshotFileId || "",
         screenshotChanged: false,
         site: record.site || "Mabini Site A - 1st Floor",
@@ -1266,7 +1351,8 @@ window.CCTV_EDR = (function () {
         account: record.account || "",
         incident: record.incident || "",
         action: record.action || "",
-        clipLink: record.clipLink || "",
+        clipLink: record.clipLink || (clipLinks[0] || ""),
+        clipLinks: clipLinks,
         createdAt: record.createdAt || "",
         updatedAt: record.updatedAt || ""
       };
@@ -1327,7 +1413,7 @@ window.CCTV_EDR = (function () {
     },
 
     async ensureRemoteScreenshot(report) {
-      if (!report || report.screenshotData || !report.screenshotFileId) {
+      if (!report || report.screenshotData || (Array.isArray(report.screenshots) && report.screenshots.length) || !report.screenshotFileId) {
         return report;
       }
 
@@ -1337,8 +1423,11 @@ window.CCTV_EDR = (function () {
 
       try {
         const full = await this.fetchFullCloudRecord(report.id);
-        if (full.screenshotData) {
-          report.screenshotData = full.screenshotData;
+        if (full.screenshotData || (Array.isArray(full.screenshots) && full.screenshots.length)) {
+          report.screenshotData = full.screenshotData || (full.screenshots && full.screenshots[0]) || "";
+          report.screenshots = Array.isArray(full.screenshots) && full.screenshots.length
+            ? full.screenshots
+            : (full.screenshotData ? [full.screenshotData] : []);
           await this.saveReports();
         }
         return report;

@@ -471,8 +471,13 @@
   };
 
   // Modal Screenshot Viewer Helper
-  window.openFullScreenshotViewer = function (dataUrl, title, meta) {
-    if (!dataUrl) {
+  window.openFullScreenshotViewer = function (dataUrlOrArray, title, meta, initialIndex = 0) {
+    if (typeof window.openScreenshotViewer === "function") {
+      window.openScreenshotViewer(dataUrlOrArray, title, meta, initialIndex);
+      return;
+    }
+    const list = Array.isArray(dataUrlOrArray) ? dataUrlOrArray.filter(Boolean) : (dataUrlOrArray ? [dataUrlOrArray] : []);
+    if (!list.length) {
       window.showToast("No screenshot available.", "info");
       return;
     }
@@ -482,13 +487,17 @@
     const metaEl = document.getElementById("screenshotViewerMeta");
     if (!modal || !img) return;
 
-    img.src = dataUrl;
+    img.src = list[0];
     if (titleEl) titleEl.textContent = title || "CCTV Incident Evidence";
     if (metaEl) metaEl.textContent = meta || "Full Resolution Screenshot";
     modal.hidden = false;
   };
 
   window.closeFullScreenshotViewer = function () {
+    if (typeof window.closeScreenshotViewer === "function") {
+      window.closeScreenshotViewer();
+      return;
+    }
     const modal = document.getElementById("modalScreenshotViewer");
     const img = document.getElementById("screenshotViewerImg");
     if (modal) modal.hidden = true;
