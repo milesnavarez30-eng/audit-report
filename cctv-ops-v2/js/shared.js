@@ -504,4 +504,140 @@
     if (img) img.src = "";
   };
 
+  // Authoritative Active Workspace Fallback Detection
+  window.getCurrentWorkspace = window.getCurrentWorkspace || function () {
+    const activePane = document.querySelector(".workspace-pane.active:not([hidden])") ||
+      document.querySelector(".workspace-pane:not([hidden])");
+    if (activePane && activePane.id) {
+      const paneMap = {
+        paneCctvReport: "report",
+        paneEdr: "edr",
+        paneFollowup: "followup",
+        paneUnreported: "unreported",
+        paneMaintenance: "maintenance",
+        panePending: "pending",
+        paneAudit: "audit",
+        paneSorter: "sorter",
+        paneMasterlist: "masterlist",
+        paneTrackers: "trackers",
+        paneHistory: "history",
+        paneAccounts: "accounts",
+        paneConduct: "conduct",
+        paneOutlook: "outlook",
+        paneTeams: "teams"
+      };
+      return paneMap[activePane.id] || "report";
+    }
+    return "report";
+  };
+
+  // =========================================================================
+  // GLOBAL CLIPBOARD PASTE ROUTER
+  // Single central listener enforcing ONE PASTE EVENT = ONE DESTINATION.
+  // Routes image paste strictly to the active workspace.
+  // Allows non-image (plain text) paste to flow to native fields unimpeded.
+  // =========================================================================
+  window.CCTV_PASTE_ROUTER = (function () {
+    const handlers = {};
+    let isInitialized = false;
+
+    function register(workspaceKey, handlerFn) {
+      if (!workspaceKey || typeof handlerFn !== "function") return;
+      handlers[workspaceKey] = handlerFn;
+    }
+
+    function getHandler(workspaceKey) {
+      return handlers[workspaceKey] || null;
+    }
+
+    function extractImageFiles(clipboardData) {
+      if (!clipboardData) return [];
+      const files = [];
+      const items = clipboardData.items;
+      if (items && items.length) {
+        for (let i = 0; i < items.length; i++) {
+          const it = items[i];
+          if (it && it.type && it.type.startsWith("image/")) {
+            const file = typeof it.getAsFile === "function" ? it.getAsFile() : null;
+            if (file) files.push(file);
+          }
+        }
+      }
+      if (!files.length && clipboardData.files && clipboardData.files.length) {
+        for (let i = 0; i < clipboardData.files.length; i++) {
+          const f = clipboardData.files[i];
+          if (f && f.type && f.type.startsWith("image/")) {
+            files.push(f);
+          }
+        }
+      }
+      return files;
+    }
+
+    async function handlePasteEvent(event) {
+      const clipboardData = event.clipboardData || window.clipboardData;
+      if (!clipboardData) return;
+
+      // 1. Detect whether clipboard contains an image
+      const imageFiles = extractImageFiles(clipboardData);
+
+      // 2. If clipboard contains only text (no images):
+      //    Allow normal text paste; do not interfere!
+      if (!imageFiles || imageFiles.length === 0) {
+        return;
+      }
+
+      // 3. Clipboard contains an image.
+      //    Prevent default so browser does not paste raw image into text fields or document
+      event.preventDefault();
+      event.stopPropagation();
+      if (typeof event.stopImmediatePropagation === "function") {
+        event.stopImmediatePropagation();
+      }
+
+      // 4. Determine authoritative active workspace
+      const activeWs = typeof window.getCurrentWorkspace === "function"
+        ? window.getCurrentWorkspace()
+        : "report";
+
+      // 5. Route the image to exactly ONE registered workspace handler
+      const handler = handlers[activeWs];
+      if (typeof handler === "function") {
+        try {
+          await handler(imageFiles, event);
+        } catch (err) {
+          console.error(`Error in paste handler for workspace "${activeWs}":`, err);
+        }
+      } else {
+        console.warn(`No screenshot paste handler registered for active workspace: "${activeWs}"`);
+      }
+    }
+
+    function init() {
+      if (isInitialized) return;
+      isInitialized = true;
+      // Capture phase guarantees single central router catches image paste before anything else
+      document.addEventListener("paste", handlePasteEvent, true);
+    }
+
+    return {
+      register,
+      getHandler,
+      init,
+      extractImageFiles,
+      handlePasteEvent,
+      get handlers() { return handlers; },
+      get isInitialized() { return isInitialized; }
+    };
+  })();
+
+  // Global helper alias
+  window.registerPasteHandler = function (workspaceKey, handlerFn) {
+    window.CCTV_PASTE_ROUTER.register(workspaceKey, handlerFn);
+  };
+
+  // Initialize router once
+  window.CCTV_PASTE_ROUTER.init();
+
 })();
+

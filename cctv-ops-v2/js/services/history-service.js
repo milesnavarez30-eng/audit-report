@@ -12,24 +12,81 @@
   const MAX_HISTORY = 20;
 
   const WORKSPACE_MAP = {
+    paneCctvReport: "report",
     paneEdr: "edr",
-    paneAudit: "cctv",
-    paneSorter: "aiSorter",
-    paneMaintenance: "maintenanceReport",
-    panePending: "pendingReports",
-    paneFollowup: "followupReports",
-    paneMasterlist: "masterlist"
+    paneAudit: "audit",
+    paneSorter: "sorter",
+    paneMaintenance: "maintenance",
+    panePending: "pending",
+    paneFollowup: "followup",
+    paneUnreported: "unreported",
+    paneMasterlist: "masterlist",
+    paneTrackers: "trackers"
   };
 
   const WORKSPACE_NAMES = {
-    cctv: "CCTV Audit",
+    report: "CCTV Report",
+    cctvReport: "CCTV Report",
     edr: "EDR Workspace",
+    audit: "CCTV Audit",
+    cctv: "CCTV Audit",
+    sorter: "AI Sorter",
     aiSorter: "AI Sorter",
+    maintenance: "Maintenance",
     maintenanceReport: "Maintenance",
+    pending: "Pending Reports",
     pendingReports: "Pending Reports",
+    followup: "Follow Up Reports",
     followupReports: "Follow Up Reports",
-    masterlist: "Master List"
+    unreported: "Unreported",
+    unreportedItems: "Unreported",
+    masterlist: "Master List",
+    trackers: "Trackers"
   };
+
+  function canonicalWorkspace(ws) {
+    if (!ws) return "";
+    const key = String(ws).trim();
+    const map = {
+      report: "report",
+      cctvReport: "report",
+      paneCctvReport: "report",
+
+      edr: "edr",
+      paneEdr: "edr",
+
+      audit: "audit",
+      cctv: "audit",
+      paneAudit: "audit",
+
+      sorter: "sorter",
+      aiSorter: "sorter",
+      paneSorter: "sorter",
+
+      maintenance: "maintenance",
+      maintenanceReport: "maintenance",
+      paneMaintenance: "maintenance",
+
+      pending: "pending",
+      pendingReports: "pending",
+      panePending: "pending",
+
+      followup: "followup",
+      followupReports: "followup",
+      paneFollowup: "followup",
+
+      unreported: "unreported",
+      unreportedItems: "unreported",
+      paneUnreported: "unreported",
+
+      masterlist: "masterlist",
+      paneMasterlist: "masterlist",
+
+      trackers: "trackers",
+      paneTrackers: "trackers"
+    };
+    return map[key] || key;
+  }
 
   function clone(val) {
     try {
@@ -56,37 +113,50 @@
   }
 
   function collectionDescriptor(workspace, snapshot) {
-    if (workspace === "cctv") {
+    const ws = canonicalWorkspace(workspace);
+    if (ws === "report") {
       return {
-        items: Array.isArray(snapshot?.entries) ? snapshot.entries : [],
-        apply(target, items) { target.entries = items; }
+        items: Array.isArray(snapshot?.screenshots) ? snapshot.screenshots : [],
+        apply(target, items) { if (target) target.screenshots = items; }
       };
     }
-    if (workspace === "maintenanceReport") {
-      return {
-        items: Array.isArray(snapshot?.blocks) ? snapshot.blocks : [],
-        apply(target, items) { target.blocks = items; }
-      };
-    }
-    if (workspace === "pendingReports" || workspace === "followupReports") {
+    if (ws === "unreported") {
       return {
         items: Array.isArray(snapshot) ? snapshot : [],
         apply(target, items) { return items; }
       };
     }
-    if (workspace === "edr") {
+    if (ws === "audit") {
+      return {
+        items: Array.isArray(snapshot?.entries) ? snapshot.entries : [],
+        apply(target, items) { target.entries = items; }
+      };
+    }
+    if (ws === "maintenance") {
+      return {
+        items: Array.isArray(snapshot?.blocks) ? snapshot.blocks : [],
+        apply(target, items) { target.blocks = items; }
+      };
+    }
+    if (ws === "pending" || ws === "followup") {
+      return {
+        items: Array.isArray(snapshot) ? snapshot : [],
+        apply(target, items) { return items; }
+      };
+    }
+    if (ws === "edr") {
       return {
         items: Array.isArray(snapshot?.reports) ? snapshot.reports : [],
         apply(target, items) { target.reports = items; }
       };
     }
-    if (workspace === "aiSorter") {
+    if (ws === "sorter") {
       return {
         items: Array.isArray(snapshot?.rows) ? snapshot.rows : [],
         apply(target, items) { target.rows = items; }
       };
     }
-    if (workspace === "masterlist") {
+    if (ws === "masterlist") {
       return {
         items: Array.isArray(snapshot?.hrLocal) ? snapshot.hrLocal : [],
         apply(target, items) { target.hrLocal = items; }
@@ -122,7 +192,8 @@
 
   function restoreNestedRemovedContent(workspace, before, after, current) {
     let restored = 0;
-    if (workspace === "maintenanceReport") {
+    const ws = canonicalWorkspace(workspace);
+    if (ws === "maintenance") {
       const beforeBlocks = Array.isArray(before?.blocks) ? before.blocks : [];
       const afterBlocks = Array.isArray(after?.blocks) ? after.blocks : [];
       const currentBlocks = Array.isArray(current?.blocks) ? current.blocks : [];
@@ -151,7 +222,7 @@
       });
     }
 
-    if (workspace === "edr") {
+    if (ws === "edr") {
       const beforeReports = Array.isArray(before?.reports) ? before.reports : [];
       const afterReports = Array.isArray(after?.reports) ? after.reports : [];
       const currentReports = Array.isArray(current?.reports) ? current.reports : [];
@@ -176,6 +247,7 @@
     constructor() {
       this.entries = [];
       this.cursor = -1;
+      this.workspaceHistory = {};
       this.lastSnapshots = {};
       this.timers = {};
       this.suppress = false;
@@ -286,6 +358,52 @@
         };
       }
 
+      if (!ad.report) {
+        ad.report = {
+          label: "CCTV Report",
+          snapshot: async () => {
+            const draft = window.getCctvReportDraft?.() || window.CCTV_REPORT_SERVICE?.getDraft?.();
+            return draft ? clone(draft) : null;
+          },
+          restore: async (snap) => {
+            if (!snap) return;
+            if (typeof window.setCctvReportDraft === "function") {
+              window.setCctvReportDraft(clone(snap));
+            }
+            if (window.CCTV_REPORT_SERVICE?.saveDraft) {
+              window.CCTV_REPORT_SERVICE.saveDraft(clone(snap));
+            }
+            window.syncCctvReportFormFromDraft?.();
+            window.renderCctvReportScreenshots?.();
+            window.updateCctvReportPreview?.();
+          }
+        };
+        ad.cctvReport = ad.report;
+      }
+
+      if (!ad.unreported && window.unreportedService) {
+        ad.unreported = {
+          label: "Unreported Items",
+          snapshot: async () => {
+            const items = window.unreportedService.getItems?.() || [];
+            return clone(items);
+          },
+          restore: async (snap) => {
+            if (Array.isArray(snap) && window.unreportedService.saveItems) {
+              await window.unreportedService.saveItems(clone(snap));
+              window.unreportedService.renderWorkspace?.();
+            }
+          }
+        };
+        ad.unreportedItems = ad.unreported;
+      }
+
+      if (ad.cctv && !ad.audit) ad.audit = ad.cctv;
+      if (ad.aiSorter && !ad.sorter) ad.sorter = ad.aiSorter;
+      if (ad.maintenanceReport && !ad.maintenance) ad.maintenance = ad.maintenanceReport;
+      if (ad.pendingReports && !ad.pending) ad.pending = ad.pendingReports;
+      if (ad.followupReports && !ad.followup) ad.followup = ad.followupReports;
+
       return ad;
     }
 
@@ -308,7 +426,11 @@
         const db = await this._openDb();
         await new Promise((resolve, reject) => {
           const tx = db.transaction(STORE, "readwrite");
-          tx.objectStore(STORE).put({ entries: this.entries, cursor: this.cursor }, STATE_KEY);
+          tx.objectStore(STORE).put({
+            entries: this.entries,
+            cursor: this.cursor,
+            workspaceHistory: this.workspaceHistory
+          }, STATE_KEY);
           tx.oncomplete = resolve;
           tx.onerror = () => reject(tx.error);
         });
@@ -336,6 +458,22 @@
             this.entries.length - 1
           );
         }
+        if (saved && saved.workspaceHistory && typeof saved.workspaceHistory === "object") {
+          this.workspaceHistory = saved.workspaceHistory;
+        } else {
+          // Reconstruct workspaceHistory from loaded entries if missing
+          this.workspaceHistory = {};
+          if (Array.isArray(this.entries)) {
+            this.entries.forEach(ent => {
+              const ws = canonicalWorkspace(ent.workspace);
+              if (!this.workspaceHistory[ws]) {
+                this.workspaceHistory[ws] = { entries: [], cursor: -1 };
+              }
+              this.workspaceHistory[ws].entries.push(ent);
+              this.workspaceHistory[ws].cursor = this.workspaceHistory[ws].entries.length - 1;
+            });
+          }
+        }
       } catch (err) {
         console.warn("Global history load failed:", err);
       }
@@ -352,7 +490,8 @@
     }
 
     async takeSnapshot(workspace) {
-      const adapter = this._adapters()[workspace];
+      const canonical = canonicalWorkspace(workspace);
+      const adapter = this._adapters()[canonical] || this._adapters()[workspace];
       if (!adapter?.snapshot) return null;
       try {
         return clone(await adapter.snapshot());
@@ -366,44 +505,60 @@
       for (const ws of Object.keys(WORKSPACE_NAMES)) {
         const snap = await this.takeSnapshot(ws);
         if (snap != null) {
-          this.lastSnapshots[ws] = snap;
+          this.lastSnapshots[canonicalWorkspace(ws)] = snap;
         }
       }
     }
 
     async captureIfChanged(workspace, action) {
       if (this.suppress || !workspace) return;
+      const canonical = canonicalWorkspace(workspace);
 
-      const after = await this.takeSnapshot(workspace);
+      const after = await this.takeSnapshot(canonical);
       if (after == null) return;
 
-      const before = this.lastSnapshots[workspace];
+      const before = this.lastSnapshots[canonical];
       if (before == null) {
-        this.lastSnapshots[workspace] = after;
+        this.lastSnapshots[canonical] = after;
         return;
       }
 
       if (stable(before) === stable(after)) return;
 
-      if (this.cursor < this.entries.length - 1) {
-        this.entries = this.entries.slice(0, this.cursor + 1);
-      }
-
-      this.entries.push({
+      const entry = {
         id: Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 7),
-        workspace,
-        action: action || `Updated ${WORKSPACE_NAMES[workspace] || workspace}`,
+        workspace: canonical,
+        action: action || `Updated ${WORKSPACE_NAMES[canonical] || canonical}`,
         at: new Date().toISOString(),
         before: clone(before),
         after: clone(after)
-      });
+      };
 
+      // 1. Maintain global entries list for Activity History tab
+      if (this.cursor < this.entries.length - 1) {
+        this.entries = this.entries.slice(0, this.cursor + 1);
+      }
+      this.entries.push(entry);
       if (this.entries.length > MAX_HISTORY) {
         this.entries = this.entries.slice(this.entries.length - MAX_HISTORY);
       }
-
       this.cursor = this.entries.length - 1;
-      this.lastSnapshots[workspace] = clone(after);
+
+      // 2. Maintain SCOPED workspace history stack
+      if (!this.workspaceHistory[canonical]) {
+        this.workspaceHistory[canonical] = { entries: [], cursor: -1 };
+      }
+      const wsHist = this.workspaceHistory[canonical];
+      if (wsHist.cursor < wsHist.entries.length - 1) {
+        wsHist.entries = wsHist.entries.slice(0, wsHist.cursor + 1);
+      }
+      wsHist.entries.push(entry);
+      if (wsHist.entries.length > MAX_HISTORY) {
+        wsHist.entries = wsHist.entries.slice(wsHist.entries.length - MAX_HISTORY);
+      }
+      wsHist.cursor = wsHist.entries.length - 1;
+
+      this.lastSnapshots[canonical] = clone(after);
 
       await this._saveTimeline();
       this._notify();
@@ -411,45 +566,133 @@
 
     scheduleCapture(workspace, action, delay = 650) {
       if (!workspace || this.suppress) return;
-      clearTimeout(this.timers[workspace]);
-      this.timers[workspace] = setTimeout(() => {
-        this.captureIfChanged(workspace, action).catch(console.error);
+      const canonical = canonicalWorkspace(workspace);
+      clearTimeout(this.timers[canonical]);
+      this.timers[canonical] = setTimeout(() => {
+        this.captureIfChanged(canonical, action).catch(console.error);
       }, delay);
     }
 
     async restoreEntry(entry, direction) {
       if (!entry) return;
-      const adapter = this._adapters()[entry.workspace];
+      const canonical = canonicalWorkspace(entry.workspace);
+      const adapter = this._adapters()[canonical] || this._adapters()[entry.workspace];
       if (!adapter?.restore) return;
 
       this.suppress = true;
       try {
         const snapshot = direction === "undo" ? entry.before : entry.after;
         await adapter.restore(clone(snapshot));
-        this.lastSnapshots[entry.workspace] = clone(snapshot);
+        this.lastSnapshots[canonical] = clone(snapshot);
       } finally {
         this.suppress = false;
       }
     }
 
-    async undo() {
-      if (this.cursor < 0 || !this.entries[this.cursor]) return false;
-      const entry = this.entries[this.cursor];
+    async undo(targetWorkspace) {
+      const activeWs = targetWorkspace || (typeof window.getCurrentWorkspace === "function" ? window.getCurrentWorkspace() : "");
+      const canonical = canonicalWorkspace(activeWs);
+
+      if (canonical === "trackers") {
+        if (window.CCTV_LIVE_TRACKER && typeof window.CCTV_LIVE_TRACKER.undo === "function") {
+          return window.CCTV_LIVE_TRACKER.undo();
+        }
+        return false;
+      }
+
+      if (canonical === "history" || !canonical) {
+        if (this.cursor < 0 || !this.entries[this.cursor]) return false;
+        const entry = this.entries[this.cursor];
+        await this.restoreEntry(entry, "undo");
+        this.cursor--;
+        const wsKey = canonicalWorkspace(entry.workspace);
+        if (this.workspaceHistory[wsKey] && this.workspaceHistory[wsKey].cursor >= 0) {
+          this.workspaceHistory[wsKey].cursor--;
+        }
+        await this._saveTimeline();
+        this._notify();
+        return true;
+      }
+
+      // STRICT SCOPED UNDO FOR TARGET WORKSPACE
+      const wsHist = this.workspaceHistory[canonical];
+      if (!wsHist || wsHist.cursor < 0 || !wsHist.entries[wsHist.cursor]) {
+        return false;
+      }
+
+      const entry = wsHist.entries[wsHist.cursor];
       await this.restoreEntry(entry, "undo");
-      this.cursor--;
+      wsHist.cursor--;
+
       await this._saveTimeline();
       this._notify();
       return true;
     }
 
-    async redo() {
-      if (this.cursor >= this.entries.length - 1) return false;
-      const entry = this.entries[this.cursor + 1];
+    async redo(targetWorkspace) {
+      const activeWs = targetWorkspace || (typeof window.getCurrentWorkspace === "function" ? window.getCurrentWorkspace() : "");
+      const canonical = canonicalWorkspace(activeWs);
+
+      if (canonical === "trackers") {
+        if (window.CCTV_LIVE_TRACKER && typeof window.CCTV_LIVE_TRACKER.redo === "function") {
+          return window.CCTV_LIVE_TRACKER.redo();
+        }
+        return false;
+      }
+
+      if (canonical === "history" || !canonical) {
+        if (this.cursor >= this.entries.length - 1) return false;
+        const entry = this.entries[this.cursor + 1];
+        await this.restoreEntry(entry, "redo");
+        this.cursor++;
+        const wsKey = canonicalWorkspace(entry.workspace);
+        if (this.workspaceHistory[wsKey] && this.workspaceHistory[wsKey].cursor < this.workspaceHistory[wsKey].entries.length - 1) {
+          this.workspaceHistory[wsKey].cursor++;
+        }
+        await this._saveTimeline();
+        this._notify();
+        return true;
+      }
+
+      // STRICT SCOPED REDO FOR TARGET WORKSPACE
+      const wsHist = this.workspaceHistory[canonical];
+      if (!wsHist || wsHist.cursor >= wsHist.entries.length - 1 || !wsHist.entries[wsHist.cursor + 1]) {
+        return false;
+      }
+
+      const entry = wsHist.entries[wsHist.cursor + 1];
       await this.restoreEntry(entry, "redo");
-      this.cursor++;
+      wsHist.cursor++;
+
       await this._saveTimeline();
       this._notify();
       return true;
+    }
+
+    canUndo(targetWorkspace) {
+      const activeWs = targetWorkspace || (typeof window.getCurrentWorkspace === "function" ? window.getCurrentWorkspace() : "");
+      const canonical = canonicalWorkspace(activeWs);
+      if (canonical === "trackers") {
+        return !!window.CCTV_LIVE_TRACKER?.canUndo?.();
+      }
+      if (canonical === "history" || !canonical) {
+        return this.cursor >= 0;
+      }
+      const wsHist = this.workspaceHistory[canonical];
+      return !!(wsHist && wsHist.cursor >= 0);
+    }
+
+    canRedo(targetWorkspace) {
+      const activeWs = targetWorkspace || (typeof window.getCurrentWorkspace === "function" ? window.getCurrentWorkspace() : "");
+      const canonical = canonicalWorkspace(activeWs);
+      if (canonical === "trackers") {
+        return false;
+      }
+      if (canonical === "history" || !canonical) {
+        return this.cursor < this.entries.length - 1;
+      }
+      const wsHist = this.workspaceHistory[canonical];
+      return !!(wsHist && wsHist.cursor < wsHist.entries.length - 1);
     }
 
     async restoreSelectedEntry(id = this.selectedHistoryId) {
@@ -515,6 +758,7 @@
     async clearHistory() {
       this.entries = [];
       this.cursor = -1;
+      this.workspaceHistory = {};
       this.selectedHistoryId = null;
 
       try {
@@ -608,12 +852,16 @@
 
     _workspaceForElement(target) {
       const pane = target?.closest?.(".workspace-pane");
-      return pane ? WORKSPACE_MAP[pane.id] || null : null;
+      return pane ? canonicalWorkspace(WORKSPACE_MAP[pane.id]) : null;
     }
 
     _activeWorkspace() {
-      const pane = document.querySelector(".workspace-pane:not([hidden])");
-      return pane ? WORKSPACE_MAP[pane.id] || null : null;
+      if (typeof window.getCurrentWorkspace === "function") {
+        return canonicalWorkspace(window.getCurrentWorkspace());
+      }
+      const pane = document.querySelector(".workspace-pane.active:not([hidden])") ||
+        document.querySelector(".workspace-pane:not([hidden])");
+      return pane ? canonicalWorkspace(WORKSPACE_MAP[pane.id]) : null;
     }
 
     _actionFromTarget(target, workspace) {
@@ -637,12 +885,6 @@
         const ws = this._workspaceForElement(event.target);
         if (!ws) return;
         this.scheduleCapture(ws, `Changed ${WORKSPACE_NAMES[ws] || ws}`, 500);
-      }, true);
-
-      document.addEventListener("paste", event => {
-        const ws = this._workspaceForElement(event.target) || this._activeWorkspace();
-        if (!ws) return;
-        this.scheduleCapture(ws, `Pasted into ${WORKSPACE_NAMES[ws] || ws}`, 900);
       }, true);
 
       document.addEventListener("drop", event => {
@@ -673,22 +915,8 @@
         setTimeout(() => this.captureIfChanged(ws, action).catch(console.error), 1200);
       }, true);
 
-      // Global keyboard shortcuts (Ctrl+Z, Ctrl+Y, Ctrl+Shift+Z)
-      document.addEventListener("keydown", event => {
-        if (!(event.ctrlKey || event.metaKey)) return;
-        const key = String(event.key || "").toLowerCase();
-
-        const activeTag = document.activeElement ? document.activeElement.tagName : "";
-        if (activeTag === "INPUT" || activeTag === "TEXTAREA") return;
-
-        if (key === "z" && !event.shiftKey) {
-          event.preventDefault();
-          this.undo().catch(console.error);
-        } else if (key === "y" || (key === "z" && event.shiftKey)) {
-          event.preventDefault();
-          this.redo().catch(console.error);
-        }
-      });
+      // Note: Keydown undo/redo (Ctrl+Z, Ctrl+Y, Ctrl+Shift+Z) is centralized in app.js
+      // to eliminate duplicate handlers and enforce strict workspace and text-input scoping.
     }
 
     subscribe(fn) {

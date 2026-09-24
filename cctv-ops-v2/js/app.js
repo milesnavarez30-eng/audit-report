@@ -257,24 +257,21 @@
       scheduleDraftSave();
     });
 
-    // Paste from Clipboard
-    window.addEventListener("paste", async (e) => {
-      const items = (e.clipboardData || e.originalEvent.clipboardData)?.items;
-      if (!items) return;
-      for (const item of items) {
-        if (item.type.indexOf("image") === 0) {
-          const file = item.getAsFile();
-          if (file) {
-            await readFileAsDataUrl(file);
-            renderShotStrip();
-            updateLivePreview();
-            scheduleDraftSave();
-            showToast("Screenshot pasted from clipboard.", "success");
-            break;
-          }
+    // Central Paste Router registration for EDR workspace
+    if (window.CCTV_PASTE_ROUTER) {
+      window.CCTV_PASTE_ROUTER.register("edr", async (files) => {
+        if (!files || !files.length) return;
+        const file = files[0];
+        await readFileAsDataUrl(file);
+        renderShotStrip();
+        updateLivePreview();
+        scheduleDraftSave();
+        if (window.historyService?.captureIfChanged) {
+          await window.historyService.captureIfChanged("edr", "Pasted screenshot into EDR draft");
         }
-      }
-    });
+        showToast("Screenshot pasted from clipboard.", "success");
+      });
+    }
 
     function renderShotStrip() {
       if (!strip) return;
@@ -319,6 +316,10 @@
     window.clearEdrScreenshots = function () {
       currentScreenshots = [];
       renderShotStrip();
+    };
+
+    window.getEdrScreenshots = function () {
+      return currentScreenshots.slice();
     };
 
     // Expose set function for backward compat (single screenshot restore)
@@ -1786,6 +1787,12 @@
       title: "Follow Up Reports",
       subtitle: ""
     },
+    unreported: {
+      tabId: "tabUnreported",
+      paneId: "paneUnreported",
+      title: "Unreported",
+      subtitle: ""
+    },
     pending: {
       tabId: "tabPending",
       paneId: "panePending",
@@ -1824,6 +1831,11 @@
     }
   };
 
+  function getCurrentWorkspace() {
+    return currentWorkspace || "report";
+  }
+  window.getCurrentWorkspace = getCurrentWorkspace;
+
   function switchWorkspace(targetKey) {
     if (!WORKSPACES[targetKey]) return;
     if (auth && typeof auth.canAccessWorkspace === "function" && !auth.canAccessWorkspace(targetKey)) {
@@ -1831,6 +1843,7 @@
       return;
     }
     currentWorkspace = targetKey;
+    window.getCurrentWorkspace = () => currentWorkspace;
 
     // Update nav rail buttons
     Object.entries(WORKSPACES).forEach(([key, ws]) => {
@@ -1884,6 +1897,10 @@
       renderPendingWorkspace();
     } else if (targetKey === "followup") {
       renderFollowupWorkspace();
+    } else if (targetKey === "unreported") {
+      if (window.unreportedService && typeof window.unreportedService.renderWorkspace === "function") {
+        window.unreportedService.renderWorkspace();
+      }
     } else if (targetKey === "report") {
       renderCctvReportWorkspace();
     } else if (targetKey === "conduct") {
@@ -5134,34 +5151,6 @@ function doPost(e) {
       contentWrapper.appendChild(proofZone);
       blockEl.appendChild(contentWrapper);
 
-      // Paste listener: routes Ctrl+V screenshot into this block's proof zone (item 9)
-      blockEl.addEventListener("paste", async (e) => {
-        if (block.dataHidden) return;
-        const items = (e.clipboardData || window.clipboardData)?.items;
-        if (!items) return;
-        for (let i = 0; i < items.length; i++) {
-          if (items[i].type.indexOf("image") !== -1) {
-            e.preventDefault();
-            const file = items[i].getAsFile();
-            if (file) {
-              activePasteBlockId = block.id;
-              updateMaintenanceAutosaveIndicator("Processing pasted image...", "saving");
-              try {
-                const compressed = await maintenance.compressImage(file);
-                if (!Array.isArray(block.screenshots)) block.screenshots = [];
-                block.screenshots.push(compressed);
-                renderMaintenanceBlocks();
-                queueMaintenanceAutosave();
-                showToast("Screenshot pasted into block proof.", "success");
-              } catch (err) {
-                console.error("Paste image compression error:", err);
-              }
-            }
-            break;
-          }
-        }
-      });
-
       container.appendChild(blockEl);
     });
   }
@@ -6022,71 +6011,37 @@ function doPost(e) {
 
     // =========================================================================
     // GLOBAL PASTE HANDLER: Maintenance workspace (item 9)
-    // Routes Ctrl+V screenshot paste to the active block even when focus is
-    // not directly on a proof zone (mirrors V1 document-level paste handler)
     // =========================================================================
-    document.addEventListener("paste", async (event) => {
-      if (currentWorkspace !== "maintenance") return;
-      const active = document.activeElement;
-      // If focus is in a specific textarea, let the block-level paste handler manage it
-      if (active && active.tagName === "TEXTAREA") return;
-      // Check if clipboard has an image
-      const items = (event.clipboardData || window.clipboardData)?.items;
-      if (!items) return;
-      let imageFile = null;
-      for (let i = 0; i < items.length; i++) {
-        if (items[i].type.indexOf("image") !== -1) {
-          imageFile = items[i].getAsFile();
-          break;
+    // Central Paste Router registration for Maintenance workspace
+    // Routes Ctrl+V screenshot paste to active block in Maintenance
+    // =========================================================================
+    if (window.CCTV_PASTE_ROUTER) {
+      window.CCTV_PASTE_ROUTER.register("maintenance", async (files, event) => {
+        if (!files || !files.length) return;
+        const imageFile = files[0];
+        const targetBlock = (event?.target?.closest ? (maintenanceState.blocks.find(b => b.id === Number(event.target.closest(".eod-block, .eod-block-card")?.id?.replace("block_", "")))) : null) ||
+          maintenanceState.blocks.find(b => b.id === activePasteBlockId && !b.dataHidden) ||
+          maintenanceState.blocks.find(b => !b.dataHidden);
+        if (!targetBlock) {
+          showToast("No visible block found to receive screenshot.", "info");
+          return;
         }
-      }
-      if (!imageFile) {
-        // Text paste in maintenance when not inside an input/textarea
-        const text = event.clipboardData?.getData("text/plain") || "";
-        if (text.trim()) {
-          const active = document.activeElement;
-          const inTypingField = active && (/^(INPUT|TEXTAREA)$/i.test(active.tagName) || active.isContentEditable);
-          if (!inTypingField) {
-            event.preventDefault();
-            const targetBlock = maintenanceState.blocks.find(b => b.id === activePasteBlockId && !b.dataHidden) ||
-              maintenanceState.blocks.find(b => !b.dataHidden);
-            if (targetBlock) {
-              targetBlock.lanesText = targetBlock.lanesText ? `${targetBlock.lanesText}\n${text.trim()}` : text.trim();
-              renderMaintenanceBlocks();
-              queueMaintenanceAutosave();
-              if (window.historyService?.captureIfChanged) {
-                window.historyService.captureIfChanged("maintenanceReport", `Pasted text into Block #${maintenanceState.blocks.indexOf(targetBlock) + 1}`);
-              }
-              showToast("Pasted text into active Maintenance block.", "success");
-            }
+        updateMaintenanceAutosaveIndicator("Processing pasted image...", "saving");
+        try {
+          const compressed = await maintenance.compressImage(imageFile);
+          if (!Array.isArray(targetBlock.screenshots)) targetBlock.screenshots = [];
+          targetBlock.screenshots.push(compressed);
+          renderMaintenanceBlocks();
+          queueMaintenanceAutosave();
+          if (window.historyService?.captureIfChanged) {
+            window.historyService.captureIfChanged("maintenance", `Added screenshot to Block #${maintenanceState.blocks.indexOf(targetBlock) + 1}`);
           }
+          showToast("Screenshot pasted into Maintenance block.", "success");
+        } catch (err) {
+          console.error("Global maintenance paste error:", err);
         }
-        return;
-      }
-      event.preventDefault();
-
-      // Find the active paste block
-      const targetBlock = maintenanceState.blocks.find(b => b.id === activePasteBlockId && !b.dataHidden) ||
-        maintenanceState.blocks.find(b => !b.dataHidden);
-      if (!targetBlock) {
-        showToast("No visible block found to receive screenshot.", "info");
-        return;
-      }
-      updateMaintenanceAutosaveIndicator("Processing pasted image...", "saving");
-      try {
-        const compressed = await maintenance.compressImage(imageFile);
-        if (!Array.isArray(targetBlock.screenshots)) targetBlock.screenshots = [];
-        targetBlock.screenshots.push(compressed);
-        renderMaintenanceBlocks();
-        queueMaintenanceAutosave();
-        if (window.historyService?.captureIfChanged) {
-          window.historyService.captureIfChanged("maintenanceReport", `Added screenshot to Block #${maintenanceState.blocks.indexOf(targetBlock) + 1}`);
-        }
-        showToast("Screenshot pasted into Maintenance block.", "success");
-      } catch (err) {
-        console.error("Global maintenance paste error:", err);
-      }
-    });
+      });
+    }
 
     // =========================================================================
     // GLOBAL KEYBOARD: Maintenance Universal Shortcuts
@@ -6642,27 +6597,20 @@ function doPost(e) {
       }
     });
 
-    document.addEventListener("paste", async (e) => {
-      if (currentWorkspace !== "pending") return;
-      const items = (e.clipboardData || window.clipboardData)?.items;
-      if (!items) return;
-      for (let i = 0; i < items.length; i++) {
-        if (items[i].type.indexOf("image") !== -1) {
-          e.preventDefault();
-          const file = items[i].getAsFile();
-          if (file) {
-            try {
-              const compressed = await pending.compressImage(file);
-              setPendingAddScreenshot(compressed);
-              showToast("Screenshot pasted into form.", "info");
-            } catch (err) {
-              console.error("Paste image error:", err);
-            }
-          }
-          break;
+    // Central Paste Router registration for Pending workspace
+    if (window.CCTV_PASTE_ROUTER) {
+      window.CCTV_PASTE_ROUTER.register("pending", async (files) => {
+        if (!files || !files.length) return;
+        const file = files[0];
+        try {
+          const compressed = await pending.compressImage(file);
+          setPendingAddScreenshot(compressed);
+          showToast("Screenshot pasted into form.", "info");
+        } catch (err) {
+          console.error("Paste image error:", err);
         }
-      }
-    });
+      });
+    }
 
     el("btnEnablePendingAlerts")?.addEventListener("click", async () => {
       if (!("Notification" in window)) {
@@ -7186,25 +7134,22 @@ function doPost(e) {
       }
     });
 
-    // Paste handler for screenshot
-    document.addEventListener("paste", async ev => {
-      const pane = el("paneFollowup");
-      if (!pane || pane.hidden || !pane.classList.contains("active")) return;
-      const target = ev.target;
-      if (target && /^(INPUT|TEXTAREA|SELECT)$/i.test(target.tagName)) return;
-      const file = [...(ev.clipboardData?.files || [])].find(f => String(f.type || "").startsWith("image/"));
-      if (!file) return;
-      ev.preventDefault();
-      try {
-        showFollowupMessage("Processing pasted screenshot...");
-        const compressed = await followup.compressImage(file);
-        setFollowupAddScreenshot(compressed);
-        showFollowupMessage("Screenshot ready.", "success");
-        showToast("Screenshot pasted into Follow Up form.", "info");
-      } catch (err) {
-        showFollowupMessage(err.message || "Could not read image.", "error");
-      }
-    });
+    // Central Paste Router registration for Follow Up workspace
+    if (window.CCTV_PASTE_ROUTER) {
+      window.CCTV_PASTE_ROUTER.register("followup", async (files) => {
+        if (!files || !files.length) return;
+        const file = files[0];
+        try {
+          showFollowupMessage("Processing pasted screenshot...");
+          const compressed = await followup.compressImage(file);
+          setFollowupAddScreenshot(compressed);
+          showFollowupMessage("Screenshot ready.", "success");
+          showToast("Screenshot pasted into Follow Up form.", "info");
+        } catch (err) {
+          showFollowupMessage(err.message || "Could not read image.", "error");
+        }
+      });
+    }
 
     // Add button
     el("followupAddBtn")?.addEventListener("click", async () => {
@@ -7620,27 +7565,49 @@ function doPost(e) {
         window.CCTV_REPORT_SERVICE.saveDraft(cctvReportDraft);
         renderCctvReportScreenshots();
         updateCctvReportPreview();
+        if (window.historyService?.captureIfChanged) {
+          window.historyService.captureIfChanged("report", "Removed screenshot from report");
+        }
         showToast("Screenshot removed.", "info");
       });
     });
   }
 
-  function handleReportImageFiles(files) {
-    if (!files || !files.length || !cctvReportDraft) return;
-    Array.from(files).forEach(file => {
-      if (!file.type.startsWith("image/")) return;
-      const reader = new FileReader();
-      reader.onload = (evt) => {
-        const dataUrl = evt.target.result;
-        if (!Array.isArray(cctvReportDraft.screenshots)) cctvReportDraft.screenshots = [];
+  async function handleReportImageFiles(files) {
+    if (!files || !files.length) return;
+    if (!cctvReportDraft && window.CCTV_REPORT_SERVICE) {
+      cctvReportDraft = window.CCTV_REPORT_SERVICE.getDraft();
+    }
+    if (!cctvReportDraft) return;
+    if (!Array.isArray(cctvReportDraft.screenshots)) cctvReportDraft.screenshots = [];
+
+    const imageFiles = Array.from(files).filter(f => f && f.type && f.type.startsWith("image/"));
+    if (!imageFiles.length) return;
+
+    let addedCount = 0;
+    for (const file of imageFiles) {
+      const dataUrl = await new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = (evt) => resolve(evt.target?.result || null);
+        reader.onerror = () => resolve(null);
+        reader.readAsDataURL(file);
+      });
+      if (dataUrl) {
         cctvReportDraft.screenshots.push(dataUrl);
-        window.CCTV_REPORT_SERVICE.saveDraft(cctvReportDraft);
-        renderCctvReportScreenshots();
-        updateCctvReportPreview();
-        showToast("Screenshot added to report.", "success");
-      };
-      reader.readAsDataURL(file);
-    });
+        addedCount++;
+      }
+    }
+
+    if (addedCount > 0) {
+      window.CCTV_REPORT_SERVICE.saveDraft(cctvReportDraft);
+      renderCctvReportScreenshots();
+      updateCctvReportPreview();
+      if (window.historyService?.captureIfChanged) {
+        await window.historyService.captureIfChanged("report", addedCount === 1 ? "Added screenshot to report" : `Added ${addedCount} screenshots to report`);
+      }
+      const msg = addedCount === 1 ? "Screenshot added to report." : `${addedCount} screenshots added to report.`;
+      showToast(msg, "success");
+    }
   }
 
   function initCctvReportController() {
@@ -7873,46 +7840,29 @@ function doPost(e) {
       }
     });
 
-    // Global document paste handler for CCTV Report workspace
-    document.addEventListener("paste", (e) => {
-      if (currentWorkspace !== "report") return;
-      const activeTag = document.activeElement?.tagName;
-      if (activeTag === "INPUT" || activeTag === "TEXTAREA") {
-        const items = e.clipboardData?.items;
-        if (!items) return;
-        let hasImage = false;
-        let hasText = false;
-        for (let i = 0; i < items.length; i++) {
-          if (items[i].type.startsWith("image/")) hasImage = true;
-          if (items[i].type === "text/plain") hasText = true;
-        }
-        if (hasImage && !hasText) {
-          e.preventDefault();
-          const files = e.clipboardData.files;
-          handleReportImageFiles(files);
-        }
-        return;
-      }
-
-      const files = e.clipboardData?.files;
-      if (files && files.length) {
-        let hasImage = false;
-        for (let i = 0; i < files.length; i++) {
-          if (files[i].type.startsWith("image/")) hasImage = true;
-        }
-        if (hasImage) {
-          e.preventDefault();
-          handleReportImageFiles(files);
-        }
-      }
-    });
+    // Central Paste Router registration for CCTV Report workspace
+    if (window.CCTV_PASTE_ROUTER) {
+      window.CCTV_PASTE_ROUTER.register("report", async (files) => {
+        await handleReportImageFiles(files);
+      });
+    }
 
     window.renderCctvReportScreenshots = renderCctvReportScreenshots;
     window.updateCctvReportPreview = updateCctvReportPreview;
     window.syncCctvReportFormFromDraft = syncCctvReportFormFromDraft;
     window.syncCctvReportDraftFromForm = syncCctvReportDraftFromForm;
-    window.getCctvReportDraft = () => cctvReportDraft;
-    window.setCctvReportDraft = (d) => { cctvReportDraft = d; };
+    window.getCctvReportDraft = () => {
+      if (!cctvReportDraft && window.CCTV_REPORT_SERVICE) {
+        cctvReportDraft = window.CCTV_REPORT_SERVICE.getDraft();
+      }
+      return cctvReportDraft;
+    };
+    window.setCctvReportDraft = (d) => {
+      cctvReportDraft = d;
+      if (window.CCTV_REPORT_SERVICE && d) {
+        window.CCTV_REPORT_SERVICE.saveDraft(d);
+      }
+    };
   }
 
   // =========================================================================
@@ -9018,48 +8968,60 @@ ${escapeHtml(JSON.stringify(entry.after || entry.before, null, 2))}
     }
 
     undoBtn?.addEventListener("click", async () => {
-      const ok = await history.undo();
+      const ok = await history.undo("history");
       if (ok) showToast("Undone last workspace change.", "info");
     });
 
     redoBtn?.addEventListener("click", async () => {
-      const ok = await history.redo();
+      const ok = await history.redo("history");
       if (ok) showToast("Redone workspace change.", "info");
     });
 
     // =========================================================================
     // GLOBAL KEYBOARD SHORTCUTS: Undo (Ctrl+Z) and Redo (Ctrl+Y / Ctrl+Shift+Z)
-    // Items 11 and 12 - works from any workspace when not typing in an input field
+    // Centralized authoritative keyboard router enforcing strict workspace scoping
+    // and preserving native browser text editing undo/redo.
     // =========================================================================
     document.addEventListener("keydown", async (event) => {
       if (!(event.ctrlKey || event.metaKey)) return;
       const active = document.activeElement;
-      const isTyping = active && /^(INPUT|TEXTAREA|SELECT)$/i.test(active.tagName);
-      // Allow undo/redo in contenteditable cells only when NOT in editing mode
-      const isEditingCell = active && active.matches &&
-        active.matches('[contenteditable="true"]') && active.dataset.editing === "true";
-      if (isTyping || isEditingCell) return;
+      const target = event.target;
+      const isTyping = (active && /^(INPUT|TEXTAREA|SELECT)$/i.test(active.tagName)) ||
+                       (target && /^(INPUT|TEXTAREA|SELECT)$/i.test(target.tagName));
+      // Allow native undo/redo in contenteditable cells
+      const isEditingCell = (active && (active.isContentEditable || (active.matches && active.matches('[contenteditable="true"]') && active.dataset.editing === "true"))) ||
+                            (target && (target.isContentEditable || (target.matches && target.matches('[contenteditable="true"]') && target.dataset.editing === "true")));
+      if (isTyping || isEditingCell) {
+        // Native browser undo/redo must continue working; do not intercept
+        return;
+      }
 
-      const key = event.key;
-      // Ctrl+Z: Undo
-      if (!event.shiftKey && key === "z") {
-        event.preventDefault();
-        const ok = await history.undo();
-        if (ok) showToast("Undone last workspace change.", "info");
+      const key = String(event.key || "").toLowerCase();
+      const isUndo = !event.shiftKey && key === "z";
+      const isRedo = (!event.shiftKey && key === "y") || (event.shiftKey && key === "z");
+
+      if (!isUndo && !isRedo) return;
+
+      event.preventDefault();
+      const targetWs = typeof window.getCurrentWorkspace === "function"
+        ? window.getCurrentWorkspace()
+        : currentWorkspace;
+
+      if (isUndo) {
+        const ok = await history.undo(targetWs);
+        if (ok) {
+          const wsTitle = WORKSPACES[targetWs]?.title || targetWs;
+          showToast(`Undone last change in ${wsTitle}.`, "info");
+        }
         return;
       }
-      // Ctrl+Y: Redo
-      if (!event.shiftKey && key === "y") {
-        event.preventDefault();
-        const ok = await history.redo();
-        if (ok) showToast("Redone workspace change.", "info");
-        return;
-      }
-      // Ctrl+Shift+Z: Redo (alternate)
-      if (event.shiftKey && key === "z") {
-        event.preventDefault();
-        const ok = await history.redo();
-        if (ok) showToast("Redone workspace change.", "info");
+
+      if (isRedo) {
+        const ok = await history.redo(targetWs);
+        if (ok) {
+          const wsTitle = WORKSPACES[targetWs]?.title || targetWs;
+          showToast(`Redone change in ${wsTitle}.`, "info");
+        }
         return;
       }
     });
@@ -10014,6 +9976,11 @@ ${escapeHtml(JSON.stringify(entry.after || entry.before, null, 2))}
 
     // Follow Up Reports Initialization
     initFollowupController();
+
+    // Unreported Workspace Initialization
+    if (window.unreportedService && typeof window.unreportedService.init === "function") {
+      window.unreportedService.init();
+    }
 
     // CCTV Report Workspace Initialization
     initCctvReportController();
