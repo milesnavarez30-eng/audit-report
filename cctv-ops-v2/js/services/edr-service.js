@@ -758,6 +758,8 @@ window.CCTV_EDR = (function () {
           selected: true,
           done: false,
           doneAt: "",
+          teamsCopied: false,
+          teamsCopiedAt: "",
           cloudSynced: false,
           screenshotChanged: newShots.length > 0,
           screenshotFileId: "",
@@ -1104,11 +1106,14 @@ window.CCTV_EDR = (function () {
       }
 
       if (wroteSuccessfully) {
+        const copiedTimestamp = new Date().toISOString();
         for (const r of activeSelected) {
           r.done = true;
-          r.doneAt = new Date().toISOString();
+          r.doneAt = copiedTimestamp;
+          r.teamsCopied = true;
+          r.teamsCopiedAt = copiedTimestamp;
           r.selected = false;
-          r.updatedAt = new Date().toISOString();
+          r.updatedAt = copiedTimestamp;
         }
         await this.saveReports();
         notify();
@@ -1129,6 +1134,10 @@ window.CCTV_EDR = (function () {
         wroteSuccessfully,
         inlineScreenshotCount: totalScreenshotsCount
       };
+    },
+
+    getUncopiedTeamsCount() {
+      return (edrReports || []).filter(r => !r.teamsCopied && !r.done).length;
     },
 
     async copyScreenshot(reportOrDataUrl) {

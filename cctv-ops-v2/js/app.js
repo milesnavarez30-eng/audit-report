@@ -541,6 +541,7 @@
     el("badgeSelectedCount").textContent = `${selected} selected`;
     el("badgeDoneCount").textContent = `${done} done`;
     el("railEdrBadge").textContent = total;
+    window.CCTV_DASHBOARD?.syncLocalWorkspaces?.();
 
     // Update Delete Selected button
     const btnDel = el("btnDeleteSelectedEdr");
@@ -1730,9 +1731,15 @@
   // =========================================================================
   // WORKSPACE NAVIGATION SYSTEM
   // =========================================================================
-  let currentWorkspace = "edr";
+  let currentWorkspace = "dashboard";
 
   const WORKSPACES = {
+    dashboard: {
+      tabId: "tabDashboard",
+      paneId: "paneDashboard",
+      title: "Operations Dashboard",
+      subtitle: ""
+    },
     report: {
       tabId: "tabCctvReport",
       paneId: "paneCctvReport",
@@ -1832,11 +1839,12 @@
   };
 
   function getCurrentWorkspace() {
-    return currentWorkspace || "report";
+    return currentWorkspace || "dashboard";
   }
   window.getCurrentWorkspace = getCurrentWorkspace;
 
   function switchWorkspace(targetKey) {
+    if (targetKey === "cctv") targetKey = "report";
     if (!WORKSPACES[targetKey]) return;
     if (auth && typeof auth.canAccessWorkspace === "function" && !auth.canAccessWorkspace(targetKey)) {
       showToast("Access restricted: You do not have permission to access this workspace.", "warning");
@@ -1858,6 +1866,7 @@
       if (paneEl) {
         paneEl.hidden = !isActive;
         paneEl.classList.toggle("active", isActive);
+        paneEl.style.display = isActive ? "" : "none";
       }
     });
 
@@ -1884,7 +1893,10 @@
       }
     }
 
-    if (targetKey === "audit") {
+    if (targetKey === "dashboard") {
+      renderDashboardWorkspace();
+      window.CCTV_DASHBOARD?.syncLocalWorkspaces?.();
+    } else if (targetKey === "audit") {
       renderAuditTable();
       renderGuardStatus();
     } else if (targetKey === "trackers") {
@@ -7027,6 +7039,7 @@ function doPost(e) {
         await followup.saveReports(followupReportsList);
       }
       renderFollowupList();
+      window.CCTV_DASHBOARD?.syncLocalWorkspaces?.();
     } catch (err) {
       console.error("Initial load follow-up reports error:", err);
       followupReportsList = [];
@@ -8274,6 +8287,277 @@ function doPost(e) {
     window.getSavedTrackerZoom = getSavedTrackerZoom;
     window.updateTrackerStatus = updateTrackerStatus;
   }
+
+  // =========================================================================
+  // WORKSPACE: OPERATIONS DASHBOARD
+  // =========================================================================
+  function initDashboardController() {
+    if (!window.CCTV_DASHBOARD) return;
+
+    // Refresh Button Click
+    const btnRefresh = el("btnDashRefresh");
+    if (btnRefresh) {
+      btnRefresh.addEventListener("click", async () => {
+        btnRefresh.classList.add("is-spinning");
+        try {
+          await window.CCTV_DASHBOARD.refresh();
+          showToast("Dashboard data refreshed.", "info");
+        } catch (err) {
+          showToast(`Refresh error: ${err.message || 'Connection failed'}`, "warning");
+        } finally {
+          btnRefresh.classList.remove("is-spinning");
+        }
+      });
+    }
+
+    // KPI Card Click Handlers
+    el("kpiCardOverallReports")?.addEventListener("click", () => {
+      switchWorkspace("trackers");
+      if (typeof window.setTrackerWorkbook === "function") window.setTrackerWorkbook("audit");
+    });
+
+    el("kpiCardPostedMonth")?.addEventListener("click", () => {
+      switchWorkspace("trackers");
+      if (typeof window.setTrackerWorkbook === "function") window.setTrackerWorkbook("audit");
+    });
+
+    el("kpiCardPendingReports")?.addEventListener("click", () => {
+      const targetSec = el("secPendingDetails") || el("secPendingByTeam");
+      if (targetSec && !targetSec.hidden && targetSec.style.display !== "none") {
+        targetSec.scrollIntoView({ behavior: "smooth", block: "start" });
+      } else {
+        switchWorkspace("trackers");
+      }
+    });
+
+    el("kpiCardFollowUp")?.addEventListener("click", () => {
+      switchWorkspace("followup");
+    });
+
+    el("kpiCardEdrNotCopied")?.addEventListener("click", () => {
+      switchWorkspace("edr");
+    });
+
+    el("kpiCardPendingPct")?.addEventListener("click", () => {
+      el("secPendingByTeam")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+
+    // Subscribe to Dashboard Service updates
+    window.CCTV_DASHBOARD.subscribe(renderDashboardWorkspace);
+
+    // Initial service initialization
+    window.CCTV_DASHBOARD.init();
+  }
+
+  function renderDashboardWorkspace(providedState) {
+    const svc = window.CCTV_DASHBOARD;
+    const s = providedState || (svc ? svc.getState() : null);
+    if (!s) return;
+
+    // Header info
+    const monthEl = el("dashCurrentMonthText");
+    if (monthEl) monthEl.textContent = s.currentMonthLabel || "September 2026";
+
+    const updatedEl = el("dashLastUpdatedText");
+    if (updatedEl) updatedEl.textContent = s.lastUpdatedFormatted || "—";
+
+    // Stale/Error Notification Banner
+    const staleBanner = el("dashStaleBanner");
+    const staleMessage = el("dashStaleMessage");
+    if (staleBanner) {
+      if (s.isStale && s.fetchError) {
+        staleBanner.style.display = "flex";
+        if (staleMessage) {
+          const suffix = s.hasLoadedAuthoritativeData
+            ? " Preserving previous valid metrics."
+            : " Displaying unavailable indicators until connected.";
+          staleMessage.textContent = `Tracker notice: ${s.fetchError}.${suffix}`;
+        }
+      } else {
+        staleBanner.style.display = "none";
+      }
+    }
+
+    // Top 6 KPI Cards
+    const isLoaded = s.hasLoadedAuthoritativeData;
+
+    const valOverall = el("kpiValOverallReports");
+    if (valOverall) {
+      valOverall.textContent = (isLoaded && s.overallReports != null) ? s.overallReports.toLocaleString() : "—";
+    }
+
+    const valPosted = el("kpiValPostedMonth");
+    if (valPosted) {
+      valPosted.textContent = (isLoaded && s.postedThisMonth != null) ? s.postedThisMonth.toLocaleString() : "—";
+    }
+
+    const subPosted = el("kpiSubPostedMonth");
+    if (subPosted) subPosted.textContent = `${s.currentMonthLabel || "Current month"} reports`;
+
+    const valPending = el("kpiValPendingReports");
+    if (valPending) {
+      valPending.textContent = (isLoaded && s.pendingReports != null) ? s.pendingReports.toLocaleString() : "—";
+    }
+
+    const valFollowup = el("kpiValFollowUp");
+    if (valFollowup) {
+      valFollowup.textContent = (s.followupCount != null) ? s.followupCount.toLocaleString() : "—";
+    }
+
+    const valEdr = el("kpiValEdrNotCopied");
+    if (valEdr) {
+      valEdr.textContent = (s.edrUncopiedCount != null) ? s.edrUncopiedCount.toLocaleString() : "—";
+    }
+
+    const valPct = el("kpiValPendingPct");
+    if (valPct) {
+      valPct.textContent = (isLoaded && s.pendingPercentage != null) ? s.pendingPercentage : "—";
+    }
+
+    // Successful NOC — Monthly Total Summary
+    const totalNocEl = el("dashTotalNocThisMonth");
+    if (totalNocEl) {
+      totalNocEl.textContent = (isLoaded && s.totalNocThisMonth != null) ? s.totalNocThisMonth.toLocaleString() : "—";
+    }
+
+    // Successful NOC — Monthly Individual Member Graphs
+    const memberGridEl = el("dashMemberGraphsGrid");
+    if (memberGridEl) {
+      if (isLoaded && Array.isArray(s.memberNocGraphs) && s.memberNocGraphs.length > 0) {
+        memberGridEl.innerHTML = s.memberNocGraphs.map(member => {
+          const maxCount = Math.max(5, ...member.monthlyData.map(m => m.count || 0));
+
+          const barsHtml = member.monthlyData.map(m => {
+            const barHeightPct = m.count > 0 ? Math.max(6, Math.round((m.count / maxCount) * 100)) : 3;
+            const currentClass = m.isCurrent ? "is-current" : "";
+            const zeroClass = m.count === 0 ? "is-zero" : "";
+            const titleText = `${member.name} - ${m.fullName}: ${m.count} Successful NOC`;
+
+            return `
+              <div class="member-noc-bar-col ${currentClass} ${zeroClass}" title="${titleText}">
+                <div class="member-noc-bar-track">
+                  <div class="member-noc-bar-fill" style="height: ${barHeightPct}%;"></div>
+                </div>
+                <div class="member-noc-bar-label">${m.month}</div>
+              </div>
+            `;
+          }).join("");
+
+          return `
+            <div class="member-noc-card">
+              <div class="member-noc-header">
+                <div class="member-noc-title">
+                  <span>${escapeHtml(member.name)}</span>
+                </div>
+                <span class="member-noc-badge">NOC = YES</span>
+              </div>
+              <div class="member-noc-chart-wrap">
+                ${barsHtml}
+              </div>
+              <div class="member-noc-footer">
+                <span>Total this year: <strong>${(member.totalThisYear || 0).toLocaleString()}</strong></span>
+                <span>This month: <strong>${(member.thisMonth || 0).toLocaleString()}</strong></span>
+              </div>
+            </div>
+          `;
+        }).join("");
+      } else {
+        memberGridEl.innerHTML = `<div class="dashboard-empty-placeholder" style="grid-column: 1 / -1; text-align: center; padding: 36px 16px; color: var(--text-muted); font-size: 13px;">Tracker API unavailable — No NOC graph data to display</div>`;
+      }
+    }
+
+    // Pending by CCTV Team
+    const pendingListEl = el("dashPendingByTeamList");
+    if (pendingListEl) {
+      if (isLoaded && Array.isArray(s.pendingByTeam) && s.pendingByTeam.length > 0) {
+        pendingListEl.innerHTML = s.pendingByTeam.map(item => {
+          const isZero = item.pending === 0;
+          return `
+            <div class="dashboard-pending-item ${isZero ? 'has-zero' : ''}">
+              <div class="pending-item-name">${escapeHtml(item.name)}</div>
+              <div class="pending-item-stats">
+                <span class="pending-count-badge ${isZero ? 'zero' : ''}">${item.pending} Pending</span>
+                <span class="pending-pct-text">${item.trackerPct || item.sharePct}</span>
+              </div>
+            </div>
+          `;
+        }).join("");
+      } else {
+        pendingListEl.innerHTML = `<div style="text-align: center; padding: 24px 16px; color: var(--text-muted); font-size: 13px;">Tracker API unavailable — No pending data</div>`;
+      }
+    }
+
+    // CCTV Team — Current Month Table (Sorted by Reports descending)
+    const tbodyTeam = el("tbodyTeamCurrentMonth");
+    if (tbodyTeam) {
+      if (isLoaded && Array.isArray(s.teamStats) && s.teamStats.length > 0) {
+        tbodyTeam.innerHTML = s.teamStats.map(t => {
+          return `
+            <tr>
+              <td><strong>${escapeHtml(t.name)}</strong></td>
+              <td class="col-num">${(t.reports || 0).toLocaleString()}</td>
+              <td class="col-num" style="color:var(--accent-emerald,#10b981);">${(t.yes || 0).toLocaleString()}</td>
+              <td class="col-num" style="color:#f87171;">${(t.no || 0).toLocaleString()}</td>
+              <td class="col-num" style="color:var(--accent-amber,#fbbf24); font-weight:700;">${(t.pending || 0).toLocaleString()}</td>
+              <td class="col-num" style="color:var(--text-secondary,#94a3b8);">${t.pendingPct || '0.00%'}</td>
+            </tr>
+          `;
+        }).join("");
+      } else {
+        tbodyTeam.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:20px; color:var(--text-muted); font-size:13px;">Tracker API unavailable — No team statistics loaded</td></tr>`;
+      }
+    }
+
+    // Pending Details Table
+    const secDetails = el("secPendingDetails");
+    const tbodyDetails = el("tbodyPendingDetails");
+    const countBadge = el("dashPendingDetailsCount");
+
+    if (secDetails && tbodyDetails) {
+      if (Array.isArray(s.pendingDetails) && s.pendingDetails.length > 0) {
+        secDetails.style.display = "";
+        if (countBadge) countBadge.textContent = `${s.pendingDetails.length} Records`;
+
+        tbodyDetails.innerHTML = s.pendingDetails.map((row, idx) => {
+          return `
+            <tr>
+              <td>${escapeHtml(row.date || '—')}</td>
+              <td><strong>${escapeHtml(row.team || '—')}</strong></td>
+              <td>${escapeHtml(row.site || '—')}</td>
+              <td><span class="badge-pending">${escapeHtml(row.status || 'Pending')}</span></td>
+              <td style="max-width:180px; overflow:hidden; text-overflow:ellipsis;" title="${escapeHtml(row.pendingReason || '')}">
+                ${escapeHtml(row.pendingReason || '—')}
+              </td>
+              <td style="max-width:240px; overflow:hidden; text-overflow:ellipsis;" title="${escapeHtml(row.remarks || '')}">
+                ${escapeHtml(row.remarks || '—')}
+              </td>
+              <td>
+                <button type="button" class="btn-open-source" data-action="open-tracker" data-index="${idx}">
+                  Open
+                </button>
+              </td>
+            </tr>
+          `;
+        }).join("");
+
+        // Delegate Open button clicks to switch to Tracker
+        tbodyDetails.querySelectorAll("button[data-action='open-tracker']").forEach(btn => {
+          btn.addEventListener("click", () => {
+            switchWorkspace("trackers");
+            if (typeof window.setTrackerWorkbook === "function") {
+              window.setTrackerWorkbook("audit");
+            }
+          });
+        });
+      } else {
+        // As requested: Do NOT fabricate individual pending records if only aggregate numbers exist
+        secDetails.style.display = "none";
+      }
+    }
+  }
+
+  window.renderDashboardWorkspace = renderDashboardWorkspace;
+  window.initDashboardController = initDashboardController;
 
   // =========================================================================
   // WORKSPACE: HRIS (SixEleven HRIS / Employee DTR Integration)
@@ -9938,11 +10222,13 @@ ${escapeHtml(JSON.stringify(entry.after || entry.before, null, 2))}
   window.addEventListener("DOMContentLoaded", async () => {
     initWorkspaceNavigation();
 
-    // Check initial workspace from URL param or hash
+    // Check initial workspace from URL param or hash; default to dashboard
     const params = new URLSearchParams(window.location.search);
     const initialWorkspace = params.get("workspace") || (window.location.hash ? window.location.hash.slice(1).toLowerCase() : null);
     if (initialWorkspace && WORKSPACES[initialWorkspace]) {
       switchWorkspace(initialWorkspace);
+    } else {
+      switchWorkspace("dashboard");
     }
 
     initFormDropdowns();
@@ -9950,6 +10236,9 @@ ${escapeHtml(JSON.stringify(entry.after || entry.before, null, 2))}
     initScreenshotDropzone();
     initMultiLinkField();
     initEvents();
+
+    // Dashboard Controller Initialization
+    initDashboardController();
 
     if (params.get("edr") === "expanded" && typeof window.setDispatchExpanded === "function") {
       window.setDispatchExpanded(true);
@@ -10049,6 +10338,7 @@ ${escapeHtml(JSON.stringify(entry.after || entry.before, null, 2))}
 
     // Initial load of existing EDR records from IndexedDB
     await edr.init();
+    window.CCTV_DASHBOARD?.syncLocalWorkspaces?.();
 
     // Initial load of existing Audit entries & Guard snapshot
     await audit.init();

@@ -26,6 +26,8 @@
   <link rel="stylesheet" href="./css/ui-refinement.css">
   <!-- Native Microsoft Integration (Outlook & Teams) -->
   <link rel="stylesheet" href="./css/ms-integration.css">
+  <!-- Operations Dashboard Workspace Styles -->
+  <link rel="stylesheet" href="./css/dashboard.css">
 
   <style>
     /* ==========================================================================
@@ -733,6 +735,17 @@
       <nav class="rail-menu" role="tablist" aria-label="Workspaces">
         <div class="rail-section-label">Workspaces</div>
 
+        <!-- 0. Operations Dashboard Workspace Tab -->
+        <button type="button" class="nav-item active" id="tabDashboard" role="tab" aria-selected="true" title="Dashboard" data-tooltip="Dashboard" data-tooltip-pos="right">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="7" height="9" rx="1"></rect>
+            <rect x="14" y="3" width="7" height="5" rx="1"></rect>
+            <rect x="14" y="12" width="7" height="9" rx="1"></rect>
+            <rect x="3" y="16" width="7" height="5" rx="1"></rect>
+          </svg>
+          <span class="nav-label">Dashboard</span>
+        </button>
+
         <!-- 1. CCTV Report Workspace Tab -->
         <button type="button" class="nav-item" id="tabCctvReport" role="tab" aria-selected="false" title="CCTV Report" data-tooltip="CCTV Report" data-tooltip-pos="right">
           <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -755,7 +768,7 @@
         </button>
 
         <!-- 3. EDR Workspace Tab -->
-        <button type="button" class="nav-item active" id="tabEdr" role="tab" aria-selected="true" title="End of the Day Report" data-tooltip="End of the Day Report" data-tooltip-pos="right">
+        <button type="button" class="nav-item" id="tabEdr" role="tab" aria-selected="false" title="End of the Day Report" data-tooltip="End of the Day Report" data-tooltip-pos="right">
           <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
             <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
@@ -972,7 +985,197 @@
 
       <!-- Viewport: Split-View Layout -->
       <div class="workspace-viewport">
-        <section class="workspace-pane active" id="paneEdr">
+        <!-- 0. Operations Dashboard Workspace Pane -->
+        <section class="workspace-pane active" id="paneDashboard" role="tabpanel" aria-labelledby="tabDashboard">
+          <div class="dashboard-workspace">
+            <!-- Dashboard Header -->
+            <div class="dashboard-header">
+              <div class="dashboard-title-group">
+                <h2 class="dashboard-main-title">Operations Dashboard</h2>
+                <div class="dashboard-meta-pills">
+                  <span class="dashboard-meta-pill">Current month: <strong id="dashCurrentMonthText">September 2026</strong></span>
+                  <span class="dashboard-meta-pill">Last Updated: <strong id="dashLastUpdatedText">—</strong></span>
+                </div>
+              </div>
+              <div class="dashboard-actions">
+                <button type="button" id="btnDashRefresh" class="btn-dashboard-refresh" title="Refresh Dashboard data">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
+                  </svg>
+                  <span>Refresh</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Stale / Offline Notification Banner -->
+            <div id="dashStaleBanner" class="dashboard-stale-banner" style="display:none;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                <line x1="12" y1="9" x2="12" y2="13"/>
+                <line x1="12" y1="17" x2="12.01" y2="17"/>
+              </svg>
+              <span id="dashStaleMessage">Connection notice: Displaying cached data.</span>
+            </div>
+
+            <!-- Top 6 Compact KPI Cards -->
+            <div class="dashboard-kpi-grid">
+              <!-- 1. Overall Reports -->
+              <div class="dashboard-kpi-card kpi-card-reports" id="kpiCardOverallReports" title="Click to view Tracker workspace">
+                <div class="dashboard-kpi-label">
+                  <span>Overall Reports</span>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg>
+                </div>
+                <div class="dashboard-kpi-val" id="kpiValOverallReports">—</div>
+                <div class="dashboard-kpi-sub">Authoritative Tracker total</div>
+              </div>
+
+              <!-- 2. Posted This Month -->
+              <div class="dashboard-kpi-card kpi-card-posted" id="kpiCardPostedMonth" title="Click to view current month Tracker">
+                <div class="dashboard-kpi-label">
+                  <span>Posted This Month</span>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                </div>
+                <div class="dashboard-kpi-val" id="kpiValPostedMonth">—</div>
+                <div class="dashboard-kpi-sub" id="kpiSubPostedMonth">Current month reports</div>
+              </div>
+
+              <!-- 3. Pending Reports -->
+              <div class="dashboard-kpi-card kpi-card-pending" id="kpiCardPendingReports" title="Click to view Pending section">
+                <div class="dashboard-kpi-label">
+                  <span>Pending Reports</span>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                </div>
+                <div class="dashboard-kpi-val" id="kpiValPendingReports">—</div>
+                <div class="dashboard-kpi-sub">Active Tracker pending</div>
+              </div>
+
+              <!-- 4. Follow Up -->
+              <div class="dashboard-kpi-card kpi-card-followup" id="kpiCardFollowUp" title="Click to view Follow Up workspace">
+                <div class="dashboard-kpi-label">
+                  <span>Follow Up</span>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                </div>
+                <div class="dashboard-kpi-val" id="kpiValFollowUp">—</div>
+                <div class="dashboard-kpi-sub">Follow Up workspace records</div>
+              </div>
+
+              <!-- 5. EDR Not Copied to Teams -->
+              <div class="dashboard-kpi-card kpi-card-edr" id="kpiCardEdrNotCopied" title="Click to view EDR workspace">
+                <div class="dashboard-kpi-label">
+                  <span>EDR Not Copied to Teams</span>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>
+                </div>
+                <div class="dashboard-kpi-val" id="kpiValEdrNotCopied">—</div>
+                <div class="dashboard-kpi-sub">EDRs awaiting Teams copy</div>
+              </div>
+
+              <!-- 6. Pending % -->
+              <div class="dashboard-kpi-card kpi-card-pct" id="kpiCardPendingPct" title="Click to view Pending by Team">
+                <div class="dashboard-kpi-label">
+                  <span>Pending %</span>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="5" x2="5" y2="19"/><circle cx="6.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/></svg>
+                </div>
+                <div class="dashboard-kpi-val" id="kpiValPendingPct">—</div>
+                <div class="dashboard-kpi-sub">Tracker Pending ratio</div>
+              </div>
+            </div>
+
+            <!-- Middle Split: Monthly Overview & Pending by CCTV Team -->
+            <div class="dashboard-grid-2col">
+              <!-- Successful NOC — Monthly Panel -->
+              <div class="dashboard-panel" id="secSuccessfulNocMonthly">
+                <div class="dashboard-panel-header">
+                  <h3 class="dashboard-panel-title">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                    <span>Successful NOC — Monthly</span>
+                  </h3>
+                  <div class="dashboard-meta-pills">
+                    <span class="dashboard-meta-pill" style="font-size:11px;">Successful NOC This Month: <strong id="dashTotalNocThisMonth">—</strong></span>
+                  </div>
+                </div>
+                <div class="dashboard-panel-body" style="padding: 12px;">
+                  <div class="dashboard-member-graphs-grid" id="dashMemberGraphsGrid">
+                    <!-- Populated dynamically via JS for Seth, Miles, Wendie, John Ric, Kenneth, Reymart -->
+                  </div>
+                </div>
+              </div>
+
+              <!-- Pending By CCTV Team Panel -->
+              <div class="dashboard-panel" id="secPendingByTeam">
+                <div class="dashboard-panel-header">
+                  <h3 class="dashboard-panel-title">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    <span>Pending by CCTV Team</span>
+                  </h3>
+                </div>
+                <div class="dashboard-panel-body">
+                  <div class="dashboard-pending-list" id="dashPendingByTeamList">
+                    <!-- Populated dynamically via JS -->
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- CCTV Team — Current Month Panel -->
+            <div class="dashboard-panel">
+              <div class="dashboard-panel-header">
+                <h3 class="dashboard-panel-title">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                  <span>CCTV Team — Current Month</span>
+                </h3>
+                <span class="dashboard-meta-pill" style="font-size:11px;">Sorted by Reports (High → Low)</span>
+              </div>
+              <div class="dashboard-table-wrap">
+                <table class="dashboard-table" id="tableTeamCurrentMonth">
+                  <thead>
+                    <tr>
+                      <th>Team Name / CCTV Team Member</th>
+                      <th class="col-num">Reports</th>
+                      <th class="col-num">YES</th>
+                      <th class="col-num">NO</th>
+                      <th class="col-num">Pending</th>
+                      <th class="col-num">Pending %</th>
+                    </tr>
+                  </thead>
+                  <tbody id="tbodyTeamCurrentMonth">
+                    <!-- Populated dynamically via JS -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Pending Details Panel -->
+            <div class="dashboard-panel" id="secPendingDetails">
+              <div class="dashboard-panel-header">
+                <h3 class="dashboard-panel-title">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                  <span>Pending Details</span>
+                </h3>
+                <span class="dashboard-meta-pill" id="dashPendingDetailsCount">0 Records</span>
+              </div>
+              <div class="dashboard-table-wrap">
+                <table class="dashboard-table" id="tablePendingDetails">
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th>Team</th>
+                      <th>Site</th>
+                      <th>Status</th>
+                      <th>Pending Reason</th>
+                      <th>Remarks</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody id="tbodyPendingDetails">
+                    <!-- Populated dynamically via JS -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="workspace-pane" id="paneEdr" hidden>
           <div class="edr-split-layout">
 
             <!-- LEFT COLUMN: Manual EDR Form (~55% width) -->
@@ -3446,6 +3649,7 @@
   <script src="./js/services/accounts-service.js"></script>
   <script src="./js/services/code-of-conduct-service.js"></script>
   <script src="./js/services/cctv-report-service.js"></script>
+  <script src="./js/services/dashboard-service.js"></script>
   <!-- Microsoft 365 Services & Components -->
   <script src="./js/services/ms-auth-service.js"></script>
   <script src="./js/services/ms-graph-service.js"></script>
