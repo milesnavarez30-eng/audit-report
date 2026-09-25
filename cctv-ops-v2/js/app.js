@@ -519,6 +519,8 @@
     }
   }
 
+  let currentEdrFilter = "all";
+
   // Render EDR Cards in Column 2
   function renderEdrList(rawReports) {
     const listContainer = el("edrListContainer");
@@ -537,11 +539,57 @@
     const selected = reports.filter(r => r.selected).length;
     const done = reports.filter(r => r.done).length;
 
-    el("badgeTotalCount").textContent = total;
-    el("badgeSelectedCount").textContent = `${selected} selected`;
-    el("badgeDoneCount").textContent = `${done} done`;
-    el("railEdrBadge").textContent = total;
+    // Compact status counts
+    const notCopied = reports.filter(r => !r.teamsCopied).length;
+    const notAudited = reports.filter(r => !r.audited).length;
+    const complete = reports.filter(r => !!r.teamsCopied && !!r.audited).length;
+    const needsAction = reports.filter(r => !r.teamsCopied || !r.audited).length;
+
+    if (el("badgeTotalCount")) el("badgeTotalCount").textContent = total;
+    if (el("badgeSelectedCount")) el("badgeSelectedCount").textContent = `${selected} selected`;
+    if (el("badgeDoneCount")) el("badgeDoneCount").textContent = `${done} done`;
+    if (el("railEdrBadge")) el("railEdrBadge").textContent = total;
     window.CCTV_DASHBOARD?.syncLocalWorkspaces?.();
+
+    // Update compact filter pill count badges
+    if (el("pillCountAll")) el("pillCountAll").textContent = total;
+    if (el("pillCountNeedsAction")) el("pillCountNeedsAction").textContent = needsAction;
+    if (el("pillCountNotCopied")) el("pillCountNotCopied").textContent = notCopied;
+    if (el("pillCountNotAudited")) el("pillCountNotAudited").textContent = notAudited;
+    if (el("pillCountComplete")) el("pillCountComplete").textContent = complete;
+
+    // Update compact status summary stats
+    if (el("statNotCopied")) el("statNotCopied").textContent = notCopied;
+    if (el("statNotAudited")) el("statNotAudited").textContent = notAudited;
+    if (el("statComplete")) el("statComplete").textContent = complete;
+
+    // Synchronize active filter pill styling
+    document.querySelectorAll(".edr-filter-pill").forEach(p => {
+      p.classList.toggle("active", (p.dataset.filter || "all") === currentEdrFilter);
+    });
+
+    // Wire filter button listeners once
+    if (!listContainer._filterBound) {
+      document.querySelectorAll(".edr-filter-pill").forEach(btn => {
+        btn.addEventListener("click", () => {
+          currentEdrFilter = btn.dataset.filter || "all";
+          renderEdrList(window.CCTV_EDR.getReports());
+        });
+      });
+      listContainer._filterBound = true;
+    }
+
+    // Filter display reports
+    let displayReports = reports;
+    if (currentEdrFilter === "needs_action") {
+      displayReports = reports.filter(r => !r.teamsCopied || !r.audited);
+    } else if (currentEdrFilter === "not_copied") {
+      displayReports = reports.filter(r => !r.teamsCopied);
+    } else if (currentEdrFilter === "not_audited") {
+      displayReports = reports.filter(r => !r.audited);
+    } else if (currentEdrFilter === "complete") {
+      displayReports = reports.filter(r => !!r.teamsCopied && !!r.audited);
+    }
 
     // Update Delete Selected button
     const btnDel = el("btnDeleteSelectedEdr");
@@ -568,26 +616,34 @@
 
     if (!reports.length) {
       listContainer.innerHTML = '<div style="color:var(--text-muted); font-size:11.5px; text-align:center; padding:30px 10px;">No EDR records found. Complete the form on the left to save an incident.</div>';
+      listContainer._lastFilter = currentEdrFilter;
+      updateLivePreview();
+      return;
+    }
+
+    if (!displayReports.length) {
+      const filterLabel = currentEdrFilter === "needs_action" ? "Needs Action" : (currentEdrFilter === "not_copied" ? "Not Copied" : (currentEdrFilter === "not_audited" ? "Not Audited" : "Complete"));
+      listContainer.innerHTML = `<div style="color:var(--text-muted); font-size:11.5px; text-align:center; padding:30px 10px;">No Saved EDRs match filter “${filterLabel}”.</div>`;
+      listContainer._lastFilter = currentEdrFilter;
       updateLivePreview();
       return;
     }
 
     const existingCards = listContainer.querySelectorAll(".record-row");
     const existingIds = Array.from(existingCards).map(c => c.dataset.id);
-    const newIds = reports.map(r => r.id);
-    // Fast-path: only update selection/done state when IDs are identical AND
-    // no report content has changed (updatedAt fingerprint). If any record was
-    // edited, fall through to the full re-render so event listeners are
-    // re-attached with a fresh reference to the latest report object.
-    const isSameStructure = existingIds.length === newIds.length &&
+    const newIds = displayReports.map(r => r.id);
+    // Fast-path: only update selection/done state when IDs and filter are identical AND
+    // no report content has changed (updatedAt fingerprint).
+    const isSameStructure = (listContainer._lastFilter === currentEdrFilter) &&
+      existingIds.length === newIds.length &&
       existingIds.every((id, i) => {
         if (id !== newIds[i]) return false;
         const card = listContainer.querySelector(`.record-row[data-id="${id}"]`);
-        return card && card.dataset.updatedAt === (reports[i].updatedAt || "");
+        return card && card.dataset.updatedAt === (displayReports[i].updatedAt || "");
       });
 
     if (isSameStructure) {
-      reports.forEach((r, idx) => {
+      displayReports.forEach((r, idx) => {
         const card = listContainer.querySelector(`.record-row[data-id="${r.id}"]`) || existingCards[idx];
         if (!card) return;
         const isDone = !!r.done;
@@ -605,7 +661,21 @@
           doneBtn.title = isDone ? "Reopen EDR" : "Mark as Done";
           doneBtn.classList.toggle("is-done-btn", isDone);
         }
+        const isAudited = !!r.audited;
+        const auditBtn = card.querySelector(".btn-audit-send");
+        if (auditBtn) {
+          auditBtn.title = "Send to CCTV Audit";
+          const longLbl = auditBtn.querySelector(".label-long");
+          const shortLbl = auditBtn.querySelector(".label-short");
+          if (longLbl) longLbl.textContent = "Send to Audit";
+          if (shortLbl) shortLbl.textContent = "Audit";
+        }
         let chipsWrap = card.querySelector(".status-chips-wrap");
+        if (!chipsWrap) {
+          chipsWrap = document.createElement("span");
+          chipsWrap.className = "status-chips-wrap";
+          card.querySelector(".record-main-line")?.appendChild(chipsWrap);
+        }
         let doneChip = card.querySelector(".chip-done");
         if (isDone && !doneChip && chipsWrap) {
           const chip = document.createElement("span");
@@ -616,17 +686,50 @@
         } else if (!isDone && doneChip) {
           doneChip.remove();
         }
+
+        // TEAMS tag: ALWAYS present
+        const isTeamsCopied = !!r.teamsCopied;
+        const teamsTitle = isTeamsCopied
+          ? (r.teamsCopiedAt ? `TEAMS: Copied (${formatLastEdited(r.teamsCopiedAt)})` : "TEAMS: Copied")
+          : "TEAMS: Not Copied";
+        let teamsChip = card.querySelector(".chip-teams");
+        if (!teamsChip && chipsWrap) {
+          teamsChip = document.createElement("span");
+          chipsWrap.appendChild(teamsChip);
+        }
+        if (teamsChip) {
+          teamsChip.className = `status-chip chip-teams ${isTeamsCopied ? 'is-copied' : 'is-not-copied'}`;
+          teamsChip.textContent = isTeamsCopied ? "TEAMS: Copied" : "TEAMS: Not Copied";
+          teamsChip.title = teamsTitle;
+        }
+
+        // AUDIT tag: ALWAYS present
+        const auditTitle = isAudited
+          ? (r.auditedAt ? `AUDIT: Audited (${formatLastEdited(r.auditedAt)})` : "AUDIT: Audited")
+          : "AUDIT: Not Audited";
+        let auditChip = card.querySelector(".chip-audit");
+        if (!auditChip && chipsWrap) {
+          auditChip = document.createElement("span");
+          chipsWrap.appendChild(auditChip);
+        }
+        if (auditChip) {
+          auditChip.className = `status-chip chip-audit ${isAudited ? 'is-audited' : 'is-not-audited'}`;
+          auditChip.textContent = isAudited ? "AUDIT: Audited" : "AUDIT: Not Audited";
+          auditChip.title = auditTitle;
+        }
       });
       updateLivePreview();
       return;
     }
 
+    listContainer._lastFilter = currentEdrFilter;
     const esc = window.escapeHtml || (s => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g, '&#39;'));
 
-    listContainer.innerHTML = reports.map((r) => {
+    listContainer.innerHTML = displayReports.map((r) => {
       const isDone = !!r.done;
       const isSelected = !!r.selected;
-      const isLinked = !!edr.isReportInAudit(r.id);
+      const isAudited = !!r.audited;
+      const isLinked = isAudited;
       const shots = Array.isArray(r.screenshots) && r.screenshots.length
         ? r.screenshots
         : (r.screenshotData ? [r.screenshotData] : []);
@@ -636,12 +739,26 @@
       const formattedDate = formatDisplayDate(r.date);
       const lastEditedText = r.updatedAt ? formatLastEdited(r.updatedAt) : "";
 
-      // Status chips: SS, DONE, DOCS (no IN AUDIT status badge)
+      // Status chips: SS, TEAMS (always), AUDIT (always), DONE, DOCS
       const chips = [];
       if (hasShot) {
         const ssLabel = shots.length > 1 ? `SS (${shots.length})` : "SS";
         chips.push(`<span class="status-chip chip-ss" title="${shots.length > 1 ? `${shots.length} screenshots attached` : 'Screenshot attached'}">${ssLabel}</span>`);
       }
+
+      // 1. TEAMS Status Chip - ALWAYS present
+      const isTeamsCopied = !!r.teamsCopied;
+      const teamsTitle = isTeamsCopied
+        ? (r.teamsCopiedAt ? `TEAMS: Copied (${formatLastEdited(r.teamsCopiedAt)})` : 'TEAMS: Copied')
+        : 'TEAMS: Not Copied';
+      chips.push(`<span class="status-chip chip-teams ${isTeamsCopied ? 'is-copied' : 'is-not-copied'}" title="${esc(teamsTitle)}">${isTeamsCopied ? 'TEAMS: Copied' : 'TEAMS: Not Copied'}</span>`);
+
+      // 2. AUDIT Status Chip - ALWAYS present
+      const auditTitle = isAudited
+        ? (r.auditedAt ? `AUDIT: Audited (${formatLastEdited(r.auditedAt)})` : 'AUDIT: Audited')
+        : 'AUDIT: Not Audited';
+      chips.push(`<span class="status-chip chip-audit ${isAudited ? 'is-audited' : 'is-not-audited'}" title="${esc(auditTitle)}">${isAudited ? 'AUDIT: Audited' : 'AUDIT: Not Audited'}</span>`);
+
       if (isDone) {
         chips.push('<span class="status-chip chip-done" title="Completed">DONE</span>');
       }
@@ -695,10 +812,28 @@
             </button>
             <button type="button" class="btn-action btn-edit" title="Edit EDR">Edit</button>
 
-            <!-- Compact More Menu for Screenshot & Deletion Actions -->
+            <!-- Compact More Menu for Screenshot, Audit & Deletion Actions -->
             <div class="record-more-menu-wrap">
               <button type="button" class="btn-action btn-more-trigger" title="More options">...</button>
               <div class="record-dropdown-menu">
+                ${isAudited ? `
+                  <button type="button" class="dropdown-item btn-action-undo-audit text-warning" title="Clear Audited status for this EDR">
+                    <svg class="dropdown-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="1 4 1 10 7 10"></polyline>
+                      <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+                    </svg>
+                    <span>Undo Audited</span>
+                  </button>
+                  <div class="dropdown-divider"></div>
+                ` : `
+                  <button type="button" class="dropdown-item btn-action-mark-audit" title="Mark this EDR as Audited">
+                    <svg class="dropdown-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                    <span>Mark as Audited</span>
+                  </button>
+                  <div class="dropdown-divider"></div>
+                `}
                 ${hasShot ? `
                   <button type="button" class="dropdown-item btn-action-copy btn-shot-copy">
                     <svg class="dropdown-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -846,6 +981,20 @@
 
       card.querySelector(".btn-audit-send")?.addEventListener("click", () => {
         sendSingleReportToAudit(report);
+      });
+
+      card.querySelector(".btn-action-undo-audit")?.addEventListener("click", async (e) => {
+        e.stopPropagation();
+        closeMoreMenu(moreMenu);
+        await edr.undoAudited(id);
+        showToast("AUDIT: Audited status removed.", "info");
+      });
+
+      card.querySelector(".btn-action-mark-audit")?.addEventListener("click", async (e) => {
+        e.stopPropagation();
+        closeMoreMenu(moreMenu);
+        await edr.markAsAudited(id);
+        showToast("AUDIT: Marked as Audited.", "success");
       });
 
       card.querySelector(".btn-done-toggle")?.addEventListener("click", () => {

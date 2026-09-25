@@ -604,6 +604,14 @@ window.CCTV_EDR = (function () {
           });
           edrReports = Array.isArray(saved) ? saved : [];
         }
+        edrReports = (edrReports || []).map(r => {
+          if (!r) return r;
+          if (r.audited === undefined) r.audited = false;
+          if (r.auditedAt === undefined) r.auditedAt = null;
+          if (r.teamsCopied === undefined) r.teamsCopied = false;
+          if (r.teamsCopiedAt === undefined) r.teamsCopiedAt = null;
+          return r;
+        });
       } catch (err) {
         console.warn("Could not load EDRs from IndexedDB, fallback to empty list:", err);
         edrReports = [];
@@ -742,9 +750,19 @@ window.CCTV_EDR = (function () {
           const screenshotChanged = (data.screenshotData !== edrReports[idx].screenshotData) ||
             (JSON.stringify(newShots) !== JSON.stringify(oldShots));
 
+          // Preserve historical audited completion flag and teams status across edits
+          const existingAudited = (data && typeof data.audited === "boolean") ? data.audited : (edrReports[idx].audited ?? false);
+          const existingAuditedAt = (data && data.auditedAt !== undefined) ? data.auditedAt : (edrReports[idx].auditedAt ?? null);
+          const existingTeamsCopied = (data && typeof data.teamsCopied === "boolean") ? data.teamsCopied : (edrReports[idx].teamsCopied ?? false);
+          const existingTeamsCopiedAt = (data && data.teamsCopiedAt !== undefined) ? data.teamsCopiedAt : (edrReports[idx].teamsCopiedAt ?? null);
+
           edrReports[idx] = {
             ...edrReports[idx],
             ...data,
+            audited: existingAudited,
+            auditedAt: existingAuditedAt,
+            teamsCopied: existingTeamsCopied,
+            teamsCopiedAt: existingTeamsCopiedAt,
             screenshotChanged,
             updatedAt: new Date().toISOString()
           };
@@ -758,8 +776,10 @@ window.CCTV_EDR = (function () {
           selected: true,
           done: false,
           doneAt: "",
+          audited: false,
+          auditedAt: null,
           teamsCopied: false,
-          teamsCopiedAt: "",
+          teamsCopiedAt: null,
           cloudSynced: false,
           screenshotChanged: newShots.length > 0,
           screenshotFileId: "",
@@ -1373,6 +1393,8 @@ window.CCTV_EDR = (function () {
         screenshotFileId: report.screenshotFileId || "",
         done: !!report.done,
         doneAt: report.doneAt || "",
+        audited: !!report.audited,
+        auditedAt: report.auditedAt || "",
         createdAt: report.createdAt || "",
         updatedAt: new Date().toISOString()
       };
@@ -1391,6 +1413,8 @@ window.CCTV_EDR = (function () {
         selected: false,
         done: !!record.done,
         doneAt: record.doneAt || "",
+        audited: !!record.audited,
+        auditedAt: record.auditedAt || "",
         expanded: false,
         cloudSynced: true,
         screenshotData: record.screenshotData || (screenshots[0] || ""),
@@ -1554,6 +1578,14 @@ window.CCTV_EDR = (function () {
         throw new Error("CCTV Audit bridge is not ready.");
       }
       const result = window.cctvAuditBridge.sendFromEdr(report);
+      // Historical completion flag: Mark as Audited directly on the Saved EDR record
+      const rep = edrReports.find(r => r.id === report.id);
+      if (rep) {
+        rep.audited = true;
+        if (!rep.auditedAt) rep.auditedAt = new Date().toISOString();
+        rep.updatedAt = new Date().toISOString();
+        this.saveReports().catch(console.error);
+      }
       notify();
       return result;
     },
@@ -1567,17 +1599,60 @@ window.CCTV_EDR = (function () {
       }
       let created = 0;
       let updated = 0;
+      const nowIso = new Date().toISOString();
       list.forEach(rep => {
         const result = window.cctvAuditBridge.sendFromEdr(rep);
         if (result?.action === "created") created++;
         else updated++;
+        const target = edrReports.find(r => r.id === rep.id);
+        if (target) {
+          target.audited = true;
+          if (!target.auditedAt) target.auditedAt = nowIso;
+          target.updatedAt = nowIso;
+        }
       });
+      this.saveReports().catch(console.error);
       notify();
       return { count: list.length, created, updated };
     },
 
+    /**
+     * Historical completion check for Saved EDR
+     * Independent of CCTV Audit Data Output Grid row presence.
+     */
     isReportInAudit(reportId) {
-      return !!window.cctvAuditBridge?.hasEdr(reportId);
+      const rep = (edrReports || []).find(r => r.id === reportId);
+      return !!(rep && rep.audited);
+    },
+
+    /**
+     * Explicitly mark Saved EDR record as Audited
+     * Persists audited=true and auditedAt timestamp
+     */
+    async markAsAudited(reportId, timestamp = null) {
+      const rep = (edrReports || []).find(r => r.id === reportId);
+      if (!rep) return null;
+      rep.audited = true;
+      rep.auditedAt = timestamp || new Date().toISOString();
+      rep.updatedAt = new Date().toISOString();
+      await this.saveReports();
+      notify();
+      return rep;
+    },
+
+    /**
+     * Explicit "Undo Audited" action
+     * The ONLY action that clears audited=false and clears auditedAt.
+     */
+    async undoAudited(reportId) {
+      const rep = (edrReports || []).find(r => r.id === reportId);
+      if (!rep) return null;
+      rep.audited = false;
+      rep.auditedAt = null;
+      rep.updatedAt = new Date().toISOString();
+      await this.saveReports();
+      notify();
+      return rep;
     }
   };
 })();

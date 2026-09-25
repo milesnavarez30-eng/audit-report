@@ -229,6 +229,10 @@ select.form-control { cursor: pointer; padding-right: 28px; background-image: ur
 .status-chip.chip-audit { background: var(--accent-primary-soft) !important; color: #A78BFA !important; border-color: rgba(108,92,231,0.35) !important; }
 .status-chip.chip-done { background: var(--accent-success-soft) !important; color: var(--accent-success) !important; border-color: rgba(74,222,128,0.35) !important; }
 .status-chip.chip-docs { background: var(--accent-secondary-soft) !important; color: var(--accent-secondary) !important; border-color: rgba(92,225,230,0.35) !important; }
+.status-chip.chip-teams.is-copied { background: rgba(59, 130, 246, 0.15) !important; color: #60A5FA !important; border-color: rgba(59, 130, 246, 0.35) !important; text-transform: none !important; }
+.status-chip.chip-teams.is-not-copied { background: rgba(148, 163, 184, 0.06) !important; color: #8b949e !important; border-color: rgba(148, 163, 184, 0.22) !important; text-transform: none !important; }
+.status-chip.chip-audit.is-audited { background: rgba(167, 139, 250, 0.15) !important; color: #A78BFA !important; border-color: rgba(167, 139, 250, 0.35) !important; text-transform: none !important; }
+.status-chip.chip-audit.is-not-audited { background: rgba(148, 163, 184, 0.06) !important; color: #8b949e !important; border-color: rgba(148, 163, 184, 0.22) !important; text-transform: none !important; }
 
 .btn-action { font-family: var(--font-ui) !important; font-size: var(--text-xs) !important; font-weight: 500 !important; border: 1px solid var(--border-default) !important; border-radius: var(--radius-xs) !important; background: var(--bg-surface-elevated) !important; color: var(--text-secondary) !important; box-shadow: none !important; transition: background var(--trans-fast), border-color var(--trans-fast), color var(--trans-fast) !important; letter-spacing: 0 !important; text-transform: none !important; }
 .btn-action:hover { background: var(--bg-surface-hover) !important; color: var(--text-primary) !important; border-color: var(--border-hover) !important; box-shadow: none !important; transform: none !important; }
