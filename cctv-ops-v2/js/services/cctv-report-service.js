@@ -9,6 +9,274 @@ window.CCTV_REPORT_SERVICE = (function () {
 
   const STORAGE_KEY = "cctv_ops_v2_incident_report_draft_v2";
 
+  const MEDIA_DB_NAME = "cctv_report_media_v1";
+  const MEDIA_STORE_NAME = "draftMedia";
+  const MEDIA_STATE_KEY = "screenshots";
+
+  let lastMediaSignature = null;
+  let pendingMediaSignature = null;
+  let mediaSaveQueue = Promise.resolve(true);
+  let inMemoryDraftScreenshots = null;
+
+  function upgradeMediaDb(db) {
+    if (!db.objectStoreNames.contains(MEDIA_STORE_NAME)) {
+      db.createObjectStore(MEDIA_STORE_NAME);
+    }
+  }
+
+  function getScreenshotSignature(screenshots) {
+    const list = Array.isArray(screenshots)
+      ? screenshots
+      : [];
+
+    return list.map((shot, idx) => {
+      if (typeof shot === "string") {
+        return `${idx}:${shot.length}:${shot.slice(-64)}`;
+      }
+
+      if (shot && typeof shot === "object") {
+        const data =
+          shot.dataUrl ||
+          shot.data ||
+          shot.url ||
+          "";
+
+        return `${idx}:${String(data).length}:${String(data).slice(-64)}`;
+      }
+
+      return `${idx}:0:`;
+    }).join("|");
+  }
+
+  async function writeDraftScreenshots(screenshots) {
+    if (!window.CCTV_STORAGE) {
+      throw new Error("CCTV storage service is unavailable.");
+    }
+
+    const list = Array.isArray(screenshots)
+      ? screenshots.slice()
+      : [];
+
+    await window.CCTV_STORAGE.idbSet(
+      MEDIA_DB_NAME,
+      MEDIA_STORE_NAME,
+      {
+        screenshots: list,
+        updatedAt: new Date().toISOString()
+      },
+      MEDIA_STATE_KEY,
+      1,
+      upgradeMediaDb
+    );
+
+    lastMediaSignature =
+      getScreenshotSignature(list);
+    inMemoryDraftScreenshots = list.slice();
+
+    return true;
+  }
+
+  function enqueueMediaSave(screenshots) {
+    const list = Array.isArray(screenshots)
+      ? screenshots.slice()
+      : [];
+
+    const signature =
+      getScreenshotSignature(list);
+
+    inMemoryDraftScreenshots = list.slice();
+    pendingMediaSignature = signature;
+
+    const op = mediaSaveQueue
+      .catch(() => false)
+      .then(async () => {
+        await writeDraftScreenshots(list);
+
+        if (pendingMediaSignature === signature) {
+          pendingMediaSignature = null;
+        }
+
+        return true;
+      })
+      .catch((error) => {
+        if (pendingMediaSignature === signature) {
+          pendingMediaSignature = null;
+        }
+
+        console.warn(
+          "Could not persist CCTV Report screenshots to IndexedDB:",
+          error
+        );
+
+        throw error;
+      });
+
+    mediaSaveQueue = op.catch(() => false);
+    return op;
+  }
+
+  async function saveDraftScreenshots(screenshots) {
+    return enqueueMediaSave(screenshots);
+  }
+
+  function queueDraftScreenshotsSave(screenshots) {
+    const list = Array.isArray(screenshots)
+      ? screenshots.slice()
+      : [];
+
+    const signature =
+      getScreenshotSignature(list);
+
+    if (
+      signature === lastMediaSignature ||
+      signature === pendingMediaSignature
+    ) {
+      return mediaSaveQueue;
+    }
+
+    return enqueueMediaSave(list);
+  }
+
+  function getDraftScreenshots() {
+    return inMemoryDraftScreenshots ? inMemoryDraftScreenshots.slice() : [];
+  }
+
+  async function loadDraftScreenshots() {
+    if (!window.CCTV_STORAGE) {
+      return inMemoryDraftScreenshots ? inMemoryDraftScreenshots.slice() : [];
+    }
+
+    try {
+      const saved = await window.CCTV_STORAGE.idbGet(
+        MEDIA_DB_NAME,
+        MEDIA_STORE_NAME,
+        MEDIA_STATE_KEY,
+        1,
+        upgradeMediaDb
+      );
+
+      if (saved && Array.isArray(saved.screenshots)) {
+        inMemoryDraftScreenshots = saved.screenshots.slice();
+        lastMediaSignature =
+          getScreenshotSignature(saved.screenshots);
+
+        // Ensure legacy localStorage doesn't still hold heavy screenshot payloads
+        try {
+          const raw = localStorage.getItem(STORAGE_KEY);
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            if (Array.isArray(parsed?.screenshots) && parsed.screenshots.length > 0) {
+              const lightweight = {
+                ...parsed,
+                screenshots: []
+              };
+              localStorage.setItem(STORAGE_KEY, JSON.stringify(lightweight));
+            }
+          }
+        } catch (_) {}
+
+        return saved.screenshots.slice();
+      }
+
+      // If IndexedDB has no record yet, safely migrate legacy screenshots from localStorage
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        try {
+          const parsed = JSON.parse(raw);
+          const legacyScreenshots = Array.isArray(parsed?.screenshots)
+            ? parsed.screenshots.slice()
+            : [];
+
+          if (legacyScreenshots.length > 0) {
+            // 1. Copy into IndexedDB
+            await writeDraftScreenshots(legacyScreenshots);
+
+            // 2. Verify save succeeded, then remove heavy screenshot payload from localStorage
+            try {
+              const lightweight = {
+                ...parsed,
+                screenshots: []
+              };
+              localStorage.setItem(STORAGE_KEY, JSON.stringify(lightweight));
+            } catch (persistError) {
+              console.warn(
+                "CCTV Report screenshots migrated, but the lightweight draft could not be rewritten:",
+                persistError
+              );
+            }
+
+            return legacyScreenshots;
+          }
+        } catch (migrationError) {
+          console.warn(
+            "Could not migrate legacy CCTV Report screenshots to IndexedDB. Original localStorage data was preserved.",
+            migrationError
+          );
+        }
+      }
+
+      lastMediaSignature =
+        getScreenshotSignature([]);
+      inMemoryDraftScreenshots = [];
+
+      return [];
+    } catch (error) {
+      console.warn(
+        "Could not load CCTV Report screenshots from IndexedDB:",
+        error
+      );
+
+      return inMemoryDraftScreenshots ? inMemoryDraftScreenshots.slice() : [];
+    }
+  }
+
+  async function clearDraftScreenshots() {
+    inMemoryDraftScreenshots = [];
+    lastMediaSignature =
+      getScreenshotSignature([]);
+    pendingMediaSignature = null;
+
+    if (!window.CCTV_STORAGE) {
+      return false;
+    }
+
+    try {
+      await window.CCTV_STORAGE.idbDelete(
+        MEDIA_DB_NAME,
+        MEDIA_STORE_NAME,
+        MEDIA_STATE_KEY,
+        1,
+        upgradeMediaDb
+      );
+
+      return true;
+    } catch (error) {
+      console.warn(
+        "Could not clear CCTV Report screenshots from IndexedDB:",
+        error
+      );
+
+      return false;
+    }
+  }
+
+  function persistLightweightDraft(draft) {
+    const normalized =
+      normalizeCctvReportDraft(draft);
+
+    const lightweight = {
+      ...normalized,
+      screenshots: []
+    };
+
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify(lightweight)
+    );
+
+    return lightweight;
+  }
+
   // Code of Conduct dataset & matrix are owned by window.CCTV_CONDUCT (code-of-conduct-service.js)
   function getCodeOfConduct() {
     return window.CCTV_CONDUCT ? window.CCTV_CONDUCT.getCodeOfConduct() : [];
@@ -76,33 +344,81 @@ window.CCTV_REPORT_SERVICE = (function () {
 
   function getDraft() {
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
+      const raw =
+        localStorage.getItem(STORAGE_KEY);
+
       if (raw) {
         const parsed = JSON.parse(raw);
-        const merged = { ...getDefaultDraft(), ...parsed };
-        const normalized = normalizeCctvReportDraft(merged);
-        const normalizedJson = JSON.stringify(normalized);
-        if (raw !== normalizedJson) {
-          try {
-            localStorage.setItem(STORAGE_KEY, normalizedJson);
-          } catch (persistErr) {
-            console.warn("Could not persist migrated CCTV report draft:", persistErr);
-          }
-        }
+
+        const currentScreenshots =
+          (inMemoryDraftScreenshots && inMemoryDraftScreenshots.length > 0)
+            ? inMemoryDraftScreenshots.slice()
+            : (Array.isArray(parsed?.screenshots) ? parsed.screenshots.slice() : []);
+
+        const merged = {
+          ...getDefaultDraft(),
+          ...parsed,
+          screenshots: currentScreenshots
+        };
+
+        const normalized =
+          normalizeCctvReportDraft(merged);
+
         return normalized;
       }
-    } catch (e) {
-      console.warn("Could not load CCTV report draft:", e);
+    } catch (error) {
+      console.warn(
+        "Could not load CCTV report draft:",
+        error
+      );
     }
-    return getDefaultDraft();
+
+    const def = getDefaultDraft();
+    if (inMemoryDraftScreenshots && inMemoryDraftScreenshots.length > 0) {
+      def.screenshots = inMemoryDraftScreenshots.slice();
+    }
+    return def;
   }
 
   function saveDraft(draft) {
     try {
-      const normalized = normalizeCctvReportDraft(draft);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(normalized));
-    } catch (e) {
-      console.warn("Could not save CCTV report draft:", e);
+      const normalized =
+        normalizeCctvReportDraft(draft);
+
+      // Handle screenshots safely:
+      if (Array.isArray(draft?.screenshots)) {
+        if (draft.screenshots.length > 0) {
+          inMemoryDraftScreenshots = draft.screenshots.slice();
+          const signature =
+            getScreenshotSignature(draft.screenshots);
+
+          if (
+            signature !== lastMediaSignature &&
+            signature !== pendingMediaSignature
+          ) {
+            queueDraftScreenshotsSave(
+              draft.screenshots
+            );
+          }
+        } else if (inMemoryDraftScreenshots && inMemoryDraftScreenshots.length > 0) {
+          // If draft.screenshots is [] (e.g. lightweight draft from localStorage or form field),
+          // preserve existing in-memory screenshots on the draft and do NOT wipe IndexedDB!
+          draft.screenshots = inMemoryDraftScreenshots.slice();
+        }
+      } else if (inMemoryDraftScreenshots && inMemoryDraftScreenshots.length > 0) {
+        draft.screenshots = inMemoryDraftScreenshots.slice();
+      }
+
+      persistLightweightDraft(normalized);
+
+      return true;
+    } catch (error) {
+      console.warn(
+        "Could not save CCTV report draft:",
+        error
+      );
+
+      return false;
     }
   }
 
@@ -110,6 +426,9 @@ window.CCTV_REPORT_SERVICE = (function () {
     try {
       localStorage.removeItem(STORAGE_KEY);
     } catch (_) {}
+
+    clearDraftScreenshots().catch(() => {});
+
     return getDefaultDraft();
   }
 
@@ -965,6 +1284,10 @@ window.CCTV_REPORT_SERVICE = (function () {
     getDraft,
     saveDraft,
     resetDraft,
+    loadDraftScreenshots,
+    saveDraftScreenshots,
+    clearDraftScreenshots,
+    getDraftScreenshots,
     normalizeCctvReportText,
     normalizeCctvReportDraft,
     getCodeOfConduct,

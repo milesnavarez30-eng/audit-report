@@ -298,6 +298,128 @@
         this.setItem(key, { __swr_ts: now, data: fresh });
       }
       return fresh;
+    },
+
+    async estimateStorage() {
+      if (
+        !navigator.storage ||
+        typeof navigator.storage.estimate !== "function"
+      ) {
+        return {
+          supported: false,
+          usage: 0,
+          quota: 0,
+          available: 0,
+          percentUsed: 0,
+          usageText: "Unavailable",
+          quotaText: "Unavailable",
+          availableText: "Unavailable"
+        };
+      }
+
+      const formatBytes = (bytes) => {
+        const value = Number(bytes || 0);
+
+        if (!value) return "0 B";
+
+        const units = ["B", "KB", "MB", "GB", "TB"];
+
+        const index = Math.min(
+          Math.floor(Math.log(value) / Math.log(1024)),
+          units.length - 1
+        );
+
+        const amount =
+          value / Math.pow(1024, index);
+
+        return `${amount.toFixed(index >= 3 ? 2 : 1)} ${units[index]}`;
+      };
+
+      try {
+        const estimate =
+          await navigator.storage.estimate();
+
+        const usage =
+          Number(estimate?.usage || 0);
+
+        const quota =
+          Number(estimate?.quota || 0);
+
+        const available =
+          Math.max(0, quota - usage);
+
+        const percentUsed =
+          quota > 0
+            ? Math.min(100, (usage / quota) * 100)
+            : 0;
+
+        return {
+          supported: true,
+          usage,
+          quota,
+          available,
+          percentUsed,
+          usageText: formatBytes(usage),
+          quotaText: formatBytes(quota),
+          availableText: formatBytes(available)
+        };
+      } catch (error) {
+        console.warn(
+          "Could not estimate browser storage.",
+          error
+        );
+
+        return {
+          supported: false,
+          usage: 0,
+          quota: 0,
+          available: 0,
+          percentUsed: 0,
+          usageText: "Unavailable",
+          quotaText: "Unavailable",
+          availableText: "Unavailable"
+        };
+      }
+    },
+
+    async isPersistentStorage() {
+      if (
+        !navigator.storage ||
+        typeof navigator.storage.persisted !== "function"
+      ) {
+        return null;
+      }
+
+      try {
+        return await navigator.storage.persisted();
+      } catch (error) {
+        console.warn(
+          "Could not check persistent browser storage.",
+          error
+        );
+
+        return null;
+      }
+    },
+
+    async requestPersistentStorage() {
+      if (
+        !navigator.storage ||
+        typeof navigator.storage.persist !== "function"
+      ) {
+        return null;
+      }
+
+      try {
+        return await navigator.storage.persist();
+      } catch (error) {
+        console.warn(
+          "Could not request persistent browser storage.",
+          error
+        );
+
+        return null;
+      }
     }
   };
 })();

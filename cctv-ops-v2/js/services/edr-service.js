@@ -1571,26 +1571,18 @@ window.CCTV_EDR = (function () {
       }
     },
 
-    // Single-report CCTV Audit Export
+    // Single-report CCTV Audit Export: Stages EDR into CCTV Audit WITHOUT marking as audited
     sendReportToAudit(report) {
       if (!report) throw new Error("No report specified.");
       if (!window.cctvAuditBridge?.sendFromEdr) {
         throw new Error("CCTV Audit bridge is not ready.");
       }
       const result = window.cctvAuditBridge.sendFromEdr(report);
-      // Historical completion flag: Mark as Audited directly on the Saved EDR record
-      const rep = edrReports.find(r => r.id === report.id);
-      if (rep) {
-        rep.audited = true;
-        if (!rep.auditedAt) rep.auditedAt = new Date().toISOString();
-        rep.updatedAt = new Date().toISOString();
-        this.saveReports().catch(console.error);
-      }
       notify();
       return result;
     },
 
-    // Multi-report CCTV Audit Export
+    // Multi-report CCTV Audit Export: Stages EDRs into CCTV Audit WITHOUT marking as audited
     sendReportsToAudit(reports) {
       const list = Array.isArray(reports) ? reports : [reports];
       if (!list.length) throw new Error("No reports specified.");
@@ -1599,19 +1591,11 @@ window.CCTV_EDR = (function () {
       }
       let created = 0;
       let updated = 0;
-      const nowIso = new Date().toISOString();
       list.forEach(rep => {
         const result = window.cctvAuditBridge.sendFromEdr(rep);
         if (result?.action === "created") created++;
         else updated++;
-        const target = edrReports.find(r => r.id === rep.id);
-        if (target) {
-          target.audited = true;
-          if (!target.auditedAt) target.auditedAt = nowIso;
-          target.updatedAt = nowIso;
-        }
       });
-      this.saveReports().catch(console.error);
       notify();
       return { count: list.length, created, updated };
     },
@@ -1638,6 +1622,31 @@ window.CCTV_EDR = (function () {
       await this.saveReports();
       notify();
       return rep;
+    },
+
+    /**
+     * Bulk mark multiple Saved EDR records as Audited
+     * Persists audited=true and auditedAt timestamp in a single save
+     */
+    async markMultipleAsAudited(reportIds, timestamp = null) {
+      const idList = Array.isArray(reportIds) ? reportIds.filter(Boolean) : [reportIds].filter(Boolean);
+      if (!idList.length) return 0;
+      const ids = new Set(idList);
+      const nowIso = timestamp || new Date().toISOString();
+      let updatedCount = 0;
+      (edrReports || []).forEach(rep => {
+        if (ids.has(rep.id)) {
+          rep.audited = true;
+          if (!rep.auditedAt) rep.auditedAt = nowIso;
+          rep.updatedAt = nowIso;
+          updatedCount++;
+        }
+      });
+      if (updatedCount > 0) {
+        await this.saveReports();
+        notify();
+      }
+      return updatedCount;
     },
 
     /**

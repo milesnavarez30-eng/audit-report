@@ -620,9 +620,18 @@
       document.addEventListener("paste", handlePasteEvent, true);
     }
 
+    async function dispatch(workspaceKey, files, event) {
+      const handler = handlers[workspaceKey];
+      if (typeof handler === "function") {
+        return await handler(files, event);
+      }
+      return null;
+    }
+
     return {
       register,
       getHandler,
+      dispatch,
       init,
       extractImageFiles,
       handlePasteEvent,

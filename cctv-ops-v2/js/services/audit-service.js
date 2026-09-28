@@ -703,6 +703,26 @@ window.CCTV_AUDIT = (function () {
       const safeHtml = `<div style="font-family: Arial, sans-serif; font-size: 10pt; line-height: normal; white-space: pre-wrap;"><table style="border-collapse: collapse; border: none; background-color: transparent !important; color: #000000 !important; font-family: Arial, sans-serif; font-size: 10pt; line-height: normal;"><tbody>${tableRowsHTML}</tbody></table></div>`;
 
       await window.copyToClipboardHtmlAndText(safeText, safeHtml);
+
+      // On successful copy from Data Output Grid, mark originating Saved EDRs as Audited
+      try {
+        const sourceEdrIds = list
+          .map(entry => entry.sourceEdrId)
+          .filter(Boolean);
+
+        if (sourceEdrIds.length && window.CCTV_EDR) {
+          if (typeof window.CCTV_EDR.markMultipleAsAudited === "function") {
+            await window.CCTV_EDR.markMultipleAsAudited(sourceEdrIds);
+          } else if (typeof window.CCTV_EDR.markAsAudited === "function") {
+            for (const edrId of sourceEdrIds) {
+              await window.CCTV_EDR.markAsAudited(edrId);
+            }
+          }
+        }
+      } catch (markErr) {
+        console.warn("Could not mark source EDR as audited after copy:", markErr);
+      }
+
       return { count: list.length };
     },
 
