@@ -74,6 +74,11 @@
     return String(value == null ? "" : value).replace(/\s+/g, " ").trim();
   }
 
+  function optionIdentityKey(value) {
+    if (value == null) return "";
+    return clean(value).toLowerCase();
+  }
+
   function norm(value) {
     return clean(value)
       .toLowerCase()
@@ -164,25 +169,84 @@
             added: {
               oms: Array.isArray(legacy?.oms) ? legacy.oms : [],
               tls: Array.isArray(legacy?.tls) ? legacy.tls : [],
-              accounts: Array.isArray(legacy?.accounts) ? legacy.accounts : []
+              accounts: Array.isArray(legacy?.accounts) ? legacy.accounts : [],
+              sites: [],
+              reasons: []
             },
             deactivated: {
               oms: [],
               tls: [],
-              accounts: []
+              accounts: [],
+              sites: [],
+              reasons: []
             }
           };
           localStorage.setItem(OPTIONS_LOCAL_KEY, JSON.stringify(parsed));
         }
-        if (!parsed.added) parsed.added = { oms: [], tls: [], accounts: [] };
-        if (!parsed.deactivated) parsed.deactivated = { oms: [], tls: [], accounts: [] };
+        // Ensure all categories exist (backward compat with old saves lacking sites/reasons)
+        if (!parsed.added) parsed.added = {};
+        if (!parsed.deactivated) parsed.deactivated = {};
+        if (!parsed.displayOverrides) parsed.displayOverrides = {};
+        for (const cat of ["oms", "tls", "accounts", "sites", "reasons"]) {
+          if (!Array.isArray(parsed.added[cat])) parsed.added[cat] = [];
+          if (!Array.isArray(parsed.deactivated[cat])) parsed.deactivated[cat] = [];
+          if (!parsed.displayOverrides[cat] || typeof parsed.displayOverrides[cat] !== "object") {
+            parsed.displayOverrides[cat] = {};
+          }
+        }
+        // Also migrate any cctv_dropdown_* values that aren't yet in masterOptions
+        this._migrateLegacyDropdownKeys(parsed);
         return parsed;
       } catch (_) {
         return {
-          added: { oms: [], tls: [], accounts: [] },
-          deactivated: { oms: [], tls: [], accounts: [] }
+          added: { oms: [], tls: [], accounts: [], sites: [], reasons: [] },
+          deactivated: { oms: [], tls: [], accounts: [], sites: [], reasons: [] },
+          displayOverrides: { oms: {}, tls: {}, accounts: {}, sites: {}, reasons: {} }
         };
       }
+    }
+
+    _migrateLegacyDropdownKeys(parsed) {
+      // One-time migration: pull any custom entries from flat cctv_dropdown_* arrays
+      // into masterOptions so there is a single source of truth going forward.
+      const legacyMap = {
+        sites: "cctv_dropdown_site",
+        accounts: "cctv_dropdown_account",
+        reasons: "cctv_dropdown_reasonCode"
+      };
+      let changed = false;
+      const defaultSites = (window.CCTV_V2_CONFIG && window.CCTV_V2_CONFIG.DEFAULTS && window.CCTV_V2_CONFIG.DEFAULTS.SITES) || [];
+      const defaultAccs = (window.CCTV_V2_CONFIG && window.CCTV_V2_CONFIG.DEFAULTS && window.CCTV_V2_CONFIG.DEFAULTS.ACCOUNTS) || [];
+      const defaultReasons = (window.CCTV_V2_CONFIG && window.CCTV_V2_CONFIG.DEFAULTS && window.CCTV_V2_CONFIG.DEFAULTS.REASON_CODES) || [];
+      const defaultsMap = { sites: defaultSites, accounts: defaultAccs, reasons: defaultReasons };
+
+      for (const [cat, storageKey] of Object.entries(legacyMap)) {
+        try {
+          const raw = localStorage.getItem(storageKey);
+          if (!raw) continue;
+          const arr = JSON.parse(raw);
+          if (!Array.isArray(arr)) continue;
+          const defaults = defaultsMap[cat] || [];
+          for (const item of arr) {
+            const c = clean(item);
+            const k = optionIdentityKey(c);
+            if (!k) continue;
+            // Only migrate entries that are NOT in the defaults list
+            const isDefault = defaults.some(d => optionIdentityKey(d) === k);
+            if (isDefault) continue;
+            const alreadyAdded = parsed.added[cat].some(x => optionIdentityKey(x) === k);
+            const isDeactivated = parsed.deactivated[cat].some(x => optionIdentityKey(x) === k);
+            if (!alreadyAdded && !isDeactivated) {
+              parsed.added[cat].push(c);
+              changed = true;
+            }
+          }
+          if (changed) {
+            parsed.added[cat].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base', numeric: true }));
+          }
+        } catch (_) {/* ignore bad legacy data */}
+      }
+      return changed;
     }
 
     _saveMasterOptions() {
@@ -405,13 +469,17 @@
       );
 
       // Derive Active Authoritative Options
-      const deactOms = new Set((this.masterOptions.deactivated.oms || []).map(v => norm(v)));
-      const deactTls = new Set((this.masterOptions.deactivated.tls || []).map(v => norm(v)));
-      const deactAccs = new Set((this.masterOptions.deactivated.accounts || []).map(v => norm(v)));
+      const deactOms = new Set((this.masterOptions.deactivated.oms || []).map(v => optionIdentityKey(v)));
+      const deactTls = new Set((this.masterOptions.deactivated.tls || []).map(v => optionIdentityKey(v)));
+      const deactAccs = new Set((this.masterOptions.deactivated.accounts || []).map(v => optionIdentityKey(v)));
+      const deactSites = new Set((this.masterOptions.deactivated.sites || []).map(v => optionIdentityKey(v)));
+      const deactReasons = new Set((this.masterOptions.deactivated.reasons || []).map(v => optionIdentityKey(v)));
 
       const defaultOms = (window.CCTV_V2_CONFIG && window.CCTV_V2_CONFIG.DEFAULTS && window.CCTV_V2_CONFIG.DEFAULTS.OMS) || [];
       const defaultTls = (window.CCTV_V2_CONFIG && window.CCTV_V2_CONFIG.DEFAULTS && window.CCTV_V2_CONFIG.DEFAULTS.TLS) || [];
       const defaultAccs = (window.CCTV_V2_CONFIG && window.CCTV_V2_CONFIG.DEFAULTS && window.CCTV_V2_CONFIG.DEFAULTS.ACCOUNTS) || [];
+      const defaultSites = (window.CCTV_V2_CONFIG && window.CCTV_V2_CONFIG.DEFAULTS && window.CCTV_V2_CONFIG.DEFAULTS.SITES) || [];
+      const defaultReasons = (window.CCTV_V2_CONFIG && window.CCTV_V2_CONFIG.DEFAULTS && window.CCTV_V2_CONFIG.DEFAULTS.REASON_CODES) || [];
 
       const sheetTls = new Set();
       const sheetOms = new Set();
@@ -440,32 +508,124 @@
         }
       });
 
+      // OMs: defaults + sheets first, then user additions & displayOverrides OVERWRITE display label
       const omMap = new Map();
-      [...defaultOms, ...sheetOms, ...(this.masterOptions.added.oms || [])].forEach(raw => {
+      [...defaultOms, ...sheetOms].forEach(raw => {
         const c = clean(raw);
-        const k = norm(c);
+        const k = optionIdentityKey(c);
         if (!k || deactOms.has(k)) return;
         if (!omMap.has(k)) omMap.set(k, c);
       });
+      (this.masterOptions.added.oms || []).forEach(raw => {
+        const c = clean(raw);
+        const k = optionIdentityKey(c);
+        if (!k || deactOms.has(k)) return;
+        omMap.set(k, c);
+      });
+      if (this.masterOptions.displayOverrides?.oms) {
+        Object.entries(this.masterOptions.displayOverrides.oms).forEach(([k, displayVal]) => {
+          if (displayVal && !deactOms.has(k)) omMap.set(k, clean(displayVal));
+        });
+      }
       this.activeOms = [...omMap.values()].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base", numeric: true }));
 
+      // TLs: defaults + sheets first, then user additions & displayOverrides OVERWRITE display label
       const tlMap = new Map();
-      [...defaultTls, ...sheetTls, ...(this.masterOptions.added.tls || [])].forEach(raw => {
+      [...defaultTls, ...sheetTls].forEach(raw => {
         const c = clean(raw);
-        const k = norm(c);
+        const k = optionIdentityKey(c);
         if (!k || deactTls.has(k)) return;
         if (!tlMap.has(k)) tlMap.set(k, c);
       });
+      (this.masterOptions.added.tls || []).forEach(raw => {
+        const c = clean(raw);
+        const k = optionIdentityKey(c);
+        if (!k || deactTls.has(k)) return;
+        tlMap.set(k, c);
+      });
+      if (this.masterOptions.displayOverrides?.tls) {
+        Object.entries(this.masterOptions.displayOverrides.tls).forEach(([k, displayVal]) => {
+          if (displayVal && !deactTls.has(k)) tlMap.set(k, clean(displayVal));
+        });
+      }
       this.activeTls = [...tlMap.values()].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base", numeric: true }));
 
+      // Accounts: defaults + sheets first, then user additions & displayOverrides OVERWRITE display label
       const accMap = new Map();
-      [...defaultAccs, ...sheetAccs, ...(this.masterOptions.added.accounts || [])].forEach(raw => {
+      [...defaultAccs, ...sheetAccs].forEach(raw => {
         const c = clean(raw);
-        const k = norm(c);
+        const k = optionIdentityKey(c);
         if (!k || deactAccs.has(k)) return;
         if (!accMap.has(k)) accMap.set(k, c);
       });
+      (this.masterOptions.added.accounts || []).forEach(raw => {
+        const c = clean(raw);
+        const k = optionIdentityKey(c);
+        if (!k || deactAccs.has(k)) return;
+        accMap.set(k, c);
+      });
+      if (this.masterOptions.displayOverrides?.accounts) {
+        Object.entries(this.masterOptions.displayOverrides.accounts).forEach(([k, displayVal]) => {
+          if (displayVal && !deactAccs.has(k)) accMap.set(k, clean(displayVal));
+        });
+      }
       this.activeAccounts = [...accMap.values()].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base", numeric: true }));
+
+      // Sites: defaults first, then user additions & displayOverrides OVERWRITE display label
+      const siteMap = new Map();
+      defaultSites.forEach(raw => {
+        const c = clean(raw);
+        const k = optionIdentityKey(c);
+        if (!k || deactSites.has(k)) return;
+        if (!siteMap.has(k)) siteMap.set(k, c);
+      });
+      (this.masterOptions.added.sites || []).forEach(raw => {
+        const c = clean(raw);
+        const k = optionIdentityKey(c);
+        if (!k || deactSites.has(k)) return;
+        siteMap.set(k, c);
+      });
+      if (this.masterOptions.displayOverrides?.sites) {
+        Object.entries(this.masterOptions.displayOverrides.sites).forEach(([k, displayVal]) => {
+          if (displayVal && !deactSites.has(k)) siteMap.set(k, clean(displayVal));
+        });
+      }
+      const defaultSiteKeys = new Set(defaultSites.map(s => optionIdentityKey(s)));
+      this.activeSites = [
+        ...defaultSites.filter(s => !deactSites.has(optionIdentityKey(s))).map(s => siteMap.get(optionIdentityKey(s)) || s),
+        ...(this.masterOptions.added.sites || []).filter(s => {
+          const k = optionIdentityKey(s);
+          return k && !deactSites.has(k) && !defaultSiteKeys.has(k);
+        }).map(s => siteMap.get(optionIdentityKey(s)) || s).sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base", numeric: true }))
+      ];
+
+      // Reason codes: defaults first, then user additions & displayOverrides OVERWRITE display label
+      const reasonMap = new Map();
+      defaultReasons.forEach(raw => {
+        const c = clean(raw);
+        const k = optionIdentityKey(c);
+        if (!k || deactReasons.has(k)) return;
+        if (!reasonMap.has(k)) reasonMap.set(k, c);
+      });
+      (this.masterOptions.added.reasons || []).forEach(raw => {
+        const c = clean(raw);
+        const k = optionIdentityKey(c);
+        if (!k || deactReasons.has(k)) return;
+        reasonMap.set(k, c);
+      });
+      if (this.masterOptions.displayOverrides?.reasons) {
+        Object.entries(this.masterOptions.displayOverrides.reasons).forEach(([k, displayVal]) => {
+          if (displayVal && !deactReasons.has(k)) reasonMap.set(k, clean(displayVal));
+        });
+      }
+      const defaultReasonKeys = new Set(defaultReasons.map(r => optionIdentityKey(r)));
+      this.activeReasons = [
+        ...defaultReasons.filter(r => !deactReasons.has(optionIdentityKey(r))).map(r => reasonMap.get(optionIdentityKey(r)) || r),
+        ...(this.masterOptions.added.reasons || []).filter(r => {
+          const k = optionIdentityKey(r);
+          return k && !deactReasons.has(k) && !defaultReasonKeys.has(k);
+        }).map(r => reasonMap.get(optionIdentityKey(r)) || r).sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base", numeric: true }))
+      ];
     }
 
     async loadMasterList(forceFresh = false) {
@@ -779,19 +939,27 @@
 
     // Authoritative Option Management
     getOms() {
-      return [...this.activeOms];
+      return [...(this.activeOms || [])];
     }
 
     getTeamLeaders() {
-      return [...this.activeTls];
+      return [...(this.activeTls || [])];
     }
 
     getTeams() {
-      return [...this.activeTls];
+      return [...(this.activeTls || [])];
     }
 
     getAccounts() {
-      return [...this.activeAccounts];
+      return [...(this.activeAccounts || [])];
+    }
+
+    getSites() {
+      return [...(this.activeSites || [])];
+    }
+
+    getReasons() {
+      return [...(this.activeReasons || [])];
     }
 
     getRespondents(role = "Team Leader") {
@@ -801,14 +969,20 @@
     findCanonical(type, candidate) {
       const v = clean(candidate);
       if (!v) return null;
-      const target = norm(v);
-      const list = type === "oms" ? this.activeOms : (type === "accounts" ? this.activeAccounts : this.activeTls);
+      const target = optionIdentityKey(v);
+      let list;
+      if (type === "oms") list = this.activeOms;
+      else if (type === "accounts") list = this.activeAccounts;
+      else if (type === "sites") list = this.activeSites;
+      else if (type === "reasons") list = this.activeReasons;
+      else list = this.activeTls;
+      list = list || [];
       for (const item of list) {
-        const itemNorm = norm(item);
-        if (itemNorm === target) return item;
+        const itemKey = optionIdentityKey(item);
+        if (itemKey === target) return item;
         if (type === "oms") {
           const strippedTarget = target.replace(/^om\s+/i, "");
-          const strippedItem = itemNorm.replace(/^om\s+/i, "");
+          const strippedItem = itemKey.replace(/^om\s+/i, "");
           if (strippedItem === strippedTarget) return item;
         }
       }
@@ -818,20 +992,20 @@
     isCustomOption(type, name) {
       const cleanName = clean(name);
       if (!cleanName || !this.masterOptions?.added?.[type]) return false;
-      const target = norm(cleanName);
-      return this.masterOptions.added[type].some(item => norm(item) === target);
+      const target = optionIdentityKey(cleanName);
+      return this.masterOptions.added[type].some(item => optionIdentityKey(item) === target);
     }
 
     _isDeactivated(type, name) {
-      const target = norm(name);
+      const target = optionIdentityKey(name);
       const list = this.masterOptions.deactivated[type] || [];
-      return list.some(item => norm(item) === target);
+      return list.some(item => optionIdentityKey(item) === target);
     }
 
     _reactivateOption(type, name) {
-      const target = norm(name);
+      const target = optionIdentityKey(name);
       if (this.masterOptions.deactivated[type]) {
-        this.masterOptions.deactivated[type] = this.masterOptions.deactivated[type].filter(item => norm(item) !== target);
+        this.masterOptions.deactivated[type] = this.masterOptions.deactivated[type].filter(item => optionIdentityKey(item) !== target);
       }
       this._saveMasterOptions();
     }
@@ -841,15 +1015,21 @@
       if (!cleanName) return;
       if (!this.masterOptions.added[type]) this.masterOptions.added[type] = [];
       if (!this.masterOptions.deactivated[type]) this.masterOptions.deactivated[type] = [];
+      if (!this.masterOptions.displayOverrides) this.masterOptions.displayOverrides = {};
+      if (!this.masterOptions.displayOverrides[type]) this.masterOptions.displayOverrides[type] = {};
 
-      const target = norm(cleanName);
-      this.masterOptions.deactivated[type] = this.masterOptions.deactivated[type].filter(item => norm(item) !== target);
+      const target = optionIdentityKey(cleanName);
+      this.masterOptions.deactivated[type] = this.masterOptions.deactivated[type].filter(item => optionIdentityKey(item) !== target);
+      this.masterOptions.displayOverrides[type][target] = cleanName;
 
-      const inAdded = this.masterOptions.added[type].some(item => norm(item) === target);
-      if (!inAdded) {
+      const existingIdx = this.masterOptions.added[type].findIndex(item => optionIdentityKey(item) === target);
+      if (existingIdx >= 0) {
+        this.masterOptions.added[type][existingIdx] = cleanName;
+      } else {
         this.masterOptions.added[type].push(cleanName);
-        this.masterOptions.added[type].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base", numeric: true }));
       }
+      this.masterOptions.added[type].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base", numeric: true }));
+
       this._saveMasterOptions();
     }
 
@@ -858,11 +1038,14 @@
       if (!cleanName) return;
       if (!this.masterOptions.added[type]) this.masterOptions.added[type] = [];
       if (!this.masterOptions.deactivated[type]) this.masterOptions.deactivated[type] = [];
+      if (!this.masterOptions.displayOverrides) this.masterOptions.displayOverrides = {};
+      if (!this.masterOptions.displayOverrides[type]) this.masterOptions.displayOverrides[type] = {};
 
-      const target = norm(cleanName);
-      this.masterOptions.added[type] = this.masterOptions.added[type].filter(item => norm(item) !== target);
+      const target = optionIdentityKey(cleanName);
+      this.masterOptions.added[type] = this.masterOptions.added[type].filter(item => optionIdentityKey(item) !== target);
+      delete this.masterOptions.displayOverrides[type][target];
 
-      const inDeact = this.masterOptions.deactivated[type].some(item => norm(item) === target);
+      const inDeact = this.masterOptions.deactivated[type].some(item => optionIdentityKey(item) === target);
       if (!inDeact) {
         this.masterOptions.deactivated[type].push(cleanName);
       }
@@ -892,12 +1075,21 @@
       const cleanName = clean(name);
       if (!cleanName) return { added: false, canonical: "" };
 
+      if (this._isDeactivated("tls", cleanName)) {
+        this._reactivateOption("tls", cleanName);
+        this._addOptionToRegistry("tls", cleanName);
+        this._derive();
+        this._notify();
+        return { added: true, canonical: cleanName, reactivated: true };
+      }
+
       const canonical = this.findCanonical("tls", cleanName);
       if (canonical) {
-        if (this._isDeactivated("tls", canonical)) {
-          this._reactivateOption("tls", canonical);
+        if (canonical !== cleanName) {
+          this._addOptionToRegistry("tls", cleanName);
           this._derive();
           this._notify();
+          return { added: true, canonical: cleanName, updated: true };
         }
         return { added: false, canonical, exists: true };
       }
@@ -923,12 +1115,21 @@
       if (!cleanName) return { added: false, canonical: "" };
       cleanName = cleanName.replace(/^om\s+/i, "").trim();
 
+      if (this._isDeactivated("oms", cleanName)) {
+        this._reactivateOption("oms", cleanName);
+        this._addOptionToRegistry("oms", cleanName);
+        this._derive();
+        this._notify();
+        return { added: true, canonical: cleanName, reactivated: true };
+      }
+
       const canonical = this.findCanonical("oms", cleanName);
       if (canonical) {
-        if (this._isDeactivated("oms", canonical)) {
-          this._reactivateOption("oms", canonical);
+        if (canonical !== cleanName) {
+          this._addOptionToRegistry("oms", cleanName);
           this._derive();
           this._notify();
+          return { added: true, canonical: cleanName, updated: true };
         }
         return { added: false, canonical, exists: true };
       }
@@ -954,12 +1155,21 @@
       const cleanName = clean(name);
       if (!cleanName) return { added: false, canonical: "" };
 
+      if (this._isDeactivated("accounts", cleanName)) {
+        this._reactivateOption("accounts", cleanName);
+        this._addOptionToRegistry("accounts", cleanName);
+        this._derive();
+        this._notify();
+        return { added: true, canonical: cleanName, reactivated: true };
+      }
+
       const canonical = this.findCanonical("accounts", cleanName);
       if (canonical) {
-        if (this._isDeactivated("accounts", canonical)) {
-          this._reactivateOption("accounts", canonical);
+        if (canonical !== cleanName) {
+          this._addOptionToRegistry("accounts", cleanName);
           this._derive();
           this._notify();
+          return { added: true, canonical: cleanName, updated: true };
         }
         return { added: false, canonical, exists: true };
       }
@@ -975,6 +1185,84 @@
       if (!cleanName) return false;
       const canonical = this.findCanonical("accounts", cleanName) || cleanName;
       this._deactivateOption("accounts", canonical);
+      this._derive();
+      this._notify();
+      return true;
+    }
+
+    addSite(name, _meta = {}) {
+      const cleanName = clean(name);
+      if (!cleanName) return { added: false, canonical: "" };
+
+      if (this._isDeactivated("sites", cleanName)) {
+        this._reactivateOption("sites", cleanName);
+        this._addOptionToRegistry("sites", cleanName);
+        this._derive();
+        this._notify();
+        return { added: true, canonical: cleanName, reactivated: true };
+      }
+
+      const canonical = this.findCanonical("sites", cleanName);
+      if (canonical) {
+        if (canonical !== cleanName) {
+          this._addOptionToRegistry("sites", cleanName);
+          this._derive();
+          this._notify();
+          return { added: true, canonical: cleanName, updated: true };
+        }
+        return { added: false, canonical, exists: true };
+      }
+
+      this._addOptionToRegistry("sites", cleanName);
+      this._derive();
+      this._notify();
+      return { added: true, canonical: cleanName };
+    }
+
+    removeSite(name) {
+      const cleanName = clean(name);
+      if (!cleanName) return false;
+      const canonical = this.findCanonical("sites", cleanName) || cleanName;
+      this._deactivateOption("sites", canonical);
+      this._derive();
+      this._notify();
+      return true;
+    }
+
+    addReason(name, _meta = {}) {
+      const cleanName = clean(name);
+      if (!cleanName) return { added: false, canonical: "" };
+
+      if (this._isDeactivated("reasons", cleanName)) {
+        this._reactivateOption("reasons", cleanName);
+        this._addOptionToRegistry("reasons", cleanName);
+        this._derive();
+        this._notify();
+        return { added: true, canonical: cleanName, reactivated: true };
+      }
+
+      const canonical = this.findCanonical("reasons", cleanName);
+      if (canonical) {
+        if (canonical !== cleanName) {
+          this._addOptionToRegistry("reasons", cleanName);
+          this._derive();
+          this._notify();
+          return { added: true, canonical: cleanName, updated: true };
+        }
+        return { added: false, canonical, exists: true };
+      }
+
+      this._addOptionToRegistry("reasons", cleanName);
+      this._derive();
+      this._notify();
+      return { added: true, canonical: cleanName };
+    }
+
+    removeReason(name) {
+      const cleanName = clean(name);
+      if (!cleanName) return false;
+      const canonical = this.findCanonical("reasons", cleanName) || cleanName;
+      this._deactivateOption("reasons", canonical);
       this._derive();
       this._notify();
       return true;

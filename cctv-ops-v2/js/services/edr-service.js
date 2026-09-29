@@ -167,6 +167,19 @@ window.CCTV_EDR = (function () {
   function ensureAuditDropdownValue(selectId, value) {
     const text = String(value || "").trim();
     if (!text || text === "N/A") return;
+
+    const ms = window.masterlistService;
+    if (ms) {
+      // Route through unified registry so EDR and CCTV Audit share one source of truth
+      if (selectId === "site") ms.addSite(text);
+      else if (selectId === "omName") ms.addDedicatedOm(text);
+      else if (selectId === "account") ms.addAccount(text);
+      else if (selectId === "reasonCode") ms.addReason(text);
+      // masterlistService._saveMasterOptions() is called inside each add method
+      return;
+    }
+
+    // Fallback: legacy flat-array storage
     const storageKey = `cctv_dropdown_${selectId}`;
     let list = storage.getItem(storageKey, []);
     if (!Array.isArray(list)) list = [];

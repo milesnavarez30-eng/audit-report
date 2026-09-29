@@ -273,45 +273,108 @@
       });
     }
 
+    function extractScreenshotSource(item) {
+      if (!item) return "";
+      if (typeof item === "string") {
+        const trimmed = item.trim();
+        if (trimmed.startsWith("{") && trimmed.endsWith("}")) {
+          try {
+            const parsed = JSON.parse(trimmed);
+            return extractScreenshotSource(parsed);
+          } catch (_) {}
+        }
+        return trimmed;
+      }
+      if (typeof item === "object") {
+        return extractScreenshotSource(item.src || item.dataUrl || item.url || item.data || item.image || "");
+      }
+      return "";
+    }
+
+    function isValidScreenshotSource(src) {
+      if (typeof src !== "string" || !src) return false;
+      return /^(data:image\/[a-zA-Z0-9+.-]+;base64,|blob:|https?:\/\/)/i.test(src.trim());
+    }
+
     function renderShotStrip() {
       if (!strip) return;
-      if (currentScreenshots.length === 0) {
+
+      // Extract and sanitize valid sources safely
+      const validScreenshots = currentScreenshots
+        .map(extractScreenshotSource)
+        .filter(isValidScreenshotSource);
+
+      if (validScreenshots.length === 0) {
         strip.style.display = "none";
-        dropText.textContent = "Drop image, Ctrl+V, or click to add screenshots";
+        strip.innerHTML = "";
+        if (dropText) dropText.textContent = "Drop image, Ctrl+V, or click to add screenshots";
         return;
       }
+
       strip.style.display = "flex";
-      dropText.textContent = `${currentScreenshots.length} screenshot${currentScreenshots.length > 1 ? 's' : ''} added`;
-      strip.innerHTML = currentScreenshots.map((src, idx) =>
-        `<div style="position:relative; flex-shrink:0;">
-           <img src="${src}" alt="Screenshot ${idx+1}"
-             style="height:60px; width:auto; max-width:100px; object-fit:cover; border-radius:4px; border:1px solid var(--border-default); cursor:pointer; display:block;"
-             title="Click to view full screenshot"
-           >
-           <button type="button"
-             style="position:absolute; top:-5px; right:-5px; width:16px; height:16px; border-radius:50%; border:none; background:var(--accent-danger); color:#fff; font-size:9px; line-height:1; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0;"
-             data-idx="${idx}" title="Remove">✕</button>
-         </div>`
-      ).join("");
-      // Wire remove buttons
-      strip.querySelectorAll("button[data-idx]").forEach(btn => {
+      if (dropText) {
+        dropText.textContent = `${validScreenshots.length} screenshot${validScreenshots.length > 1 ? 's' : ''} added`;
+      }
+
+      // Safe DOM construction: clear previous nodes without innerHTML payload injection
+      strip.innerHTML = "";
+
+      validScreenshots.forEach((src, idx) => {
+        const container = document.createElement("div");
+        container.style.position = "relative";
+        container.style.flexShrink = "0";
+
+        const img = document.createElement("img");
+        img.src = src;
+        img.alt = `Screenshot ${idx + 1}`;
+        img.title = "Click to view full screenshot";
+        img.style.height = "60px";
+        img.style.width = "auto";
+        img.style.maxWidth = "100px";
+        img.style.objectFit = "cover";
+        img.style.borderRadius = "4px";
+        img.style.border = "1px solid var(--border-default)";
+        img.style.cursor = "pointer";
+        img.style.display = "block";
+        img.addEventListener("click", () => {
+          openScreenshotViewer(validScreenshots, `Screenshot ${idx + 1} of ${validScreenshots.length}`, "EDR Evidence", idx);
+        });
+
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.textContent = "×";
+        btn.title = "Remove";
+        btn.dataset.idx = String(idx);
+        btn.style.position = "absolute";
+        btn.style.top = "-5px";
+        btn.style.right = "-5px";
+        btn.style.width = "16px";
+        btn.style.height = "16px";
+        btn.style.borderRadius = "50%";
+        btn.style.border = "none";
+        btn.style.background = "var(--accent-danger, #ef4444)";
+        btn.style.color = "#ffffff";
+        btn.style.fontSize = "12px";
+        btn.style.lineHeight = "1";
+        btn.style.cursor = "pointer";
+        btn.style.display = "flex";
+        btn.style.alignItems = "center";
+        btn.style.justifyContent = "center";
+        btn.style.padding = "0";
+        btn.style.overflow = "hidden";
         btn.addEventListener("click", (e) => {
           e.stopPropagation();
-          const i = parseInt(btn.dataset.idx, 10);
-          currentScreenshots.splice(i, 1);
+          currentScreenshots.splice(idx, 1);
           renderShotStrip();
           updateLivePreview();
           scheduleDraftSave();
         });
-      });
-      // Wire image click to open full viewer with actual src and full list
-      strip.querySelectorAll("img").forEach((img, idx) => {
-        img.addEventListener("click", () => {
-          openScreenshotViewer(currentScreenshots, `Screenshot ${idx + 1} of ${currentScreenshots.length}`, "EDR Evidence", idx);
-        });
+
+        container.appendChild(img);
+        container.appendChild(btn);
+        strip.appendChild(container);
       });
     }
-
     // Expose clear function
     window.clearEdrScreenshots = function () {
       currentScreenshots = [];
@@ -360,7 +423,7 @@
       row.className = "edr-link-row";
       row.style.cssText = "display:flex; align-items:center; gap:4px;";
       row.innerHTML = `<input type="url" class="form-control edr-clip-link-input" placeholder="https://drive.google.com/..." style="flex:1;" value="${window.escapeHtml ? window.escapeHtml(value) : value.replace(/"/g,'&quot;')}">
-        <button type="button" class="btn btn-ghost btn-sm edr-remove-link-btn" style="flex-shrink:0; padding:0 6px; color:var(--accent-danger);">✕</button>`;
+        <button type="button" class="btn btn-ghost btn-sm edr-remove-link-btn" style="flex-shrink:0; padding:0 6px; color:var(--accent-danger);">Ã—</button>`;
       row.querySelector(".edr-remove-link-btn").addEventListener("click", () => {
         row.remove();
         updateRemoveBtns();
@@ -1714,7 +1777,11 @@
       const roleType = supervisorRole === "OM" ? "oms" : "tls";
       const canonical = window.masterlistService.findCanonical(roleType, rawVal);
       if (canonical) {
-        if (canonical !== input.value) input.value = canonical;
+        if (canonical.toLowerCase() === rawVal.toLowerCase() && canonical !== rawVal) {
+          window.masterlistService.addRespondent(rawVal, supervisorRole);
+        } else if (canonical !== input.value) {
+          input.value = canonical;
+        }
       } else {
         const site = el("edrSite")?.value;
         const account = el("edrAccount")?.value;
@@ -1735,7 +1802,11 @@
       if (!rawVal || !window.masterlistService) return;
       const canonical = window.masterlistService.findCanonical("oms", rawVal);
       if (canonical) {
-        if (canonical !== input.value) input.value = canonical;
+        if (canonical.toLowerCase() === rawVal.toLowerCase() && canonical !== rawVal) {
+          window.masterlistService.addDedicatedOm(rawVal);
+        } else if (canonical !== input.value) {
+          input.value = canonical;
+        }
       } else {
         const site = el("edrSite")?.value;
         const res = window.masterlistService.addDedicatedOm(rawVal, { site });
@@ -1753,7 +1824,12 @@
       if (!rawVal || !window.masterlistService) return;
       const canonical = window.masterlistService.findCanonical("accounts", rawVal);
       if (canonical) {
-        if (canonical !== input.value) input.value = canonical;
+        if (canonical.toLowerCase() === rawVal.toLowerCase() && canonical !== rawVal) {
+          // User explicitly typed a casing variation: update display override
+          window.masterlistService.addAccount(rawVal);
+        } else if (canonical !== input.value) {
+          input.value = canonical;
+        }
       } else {
         const site = el("edrSite")?.value;
         const res = window.masterlistService.addAccount(rawVal, { site });
@@ -2196,32 +2272,42 @@
   let auditEditingIndex = -1;
 
   function initAuditDropdowns() {
-    // Audit Sites
+    const ms = window.masterlistService;
+
+    // Audit Sites — prefer masterlistService, fall back to legacy cctv_dropdown_site
     const siteSelect = el("auditSite");
     if (siteSelect) {
-      const sites = storage.getItem(cfg.KEYS.DROPDOWN_SITE, cfg.DEFAULTS.SITES);
+      const sites = ms ? ms.getSites() : storage.getItem(cfg.KEYS.DROPDOWN_SITE, cfg.DEFAULTS.SITES);
+      const current = siteSelect.value;
       siteSelect.innerHTML = sites.map(s => `<option value="${s}">${s}</option>`).join("");
+      if (current && sites.includes(current)) siteSelect.value = current;
     }
 
-    // Audit OM
+    // Audit OM — prefer masterlistService
     const omSelect = el("auditOmName");
     if (omSelect) {
-      const oms = storage.getItem(cfg.KEYS.DROPDOWN_OM, cfg.DEFAULTS.OMS);
+      const oms = ms ? ms.getOms() : storage.getItem(cfg.KEYS.DROPDOWN_OM, cfg.DEFAULTS.OMS);
+      const current = omSelect.value;
       omSelect.innerHTML = oms.map(o => `<option value="${o}">${o}</option>`).join("");
+      if (current && oms.includes(current)) omSelect.value = current;
     }
 
-    // Audit Account
+    // Audit Account — prefer masterlistService (SHARED with EDR)
     const accSelect = el("auditAccount");
     if (accSelect) {
-      const accs = storage.getItem(cfg.KEYS.DROPDOWN_ACCOUNT, cfg.DEFAULTS.ACCOUNTS);
+      const accs = ms ? ms.getAccounts() : storage.getItem(cfg.KEYS.DROPDOWN_ACCOUNT, cfg.DEFAULTS.ACCOUNTS);
+      const current = accSelect.value;
       accSelect.innerHTML = accs.map(a => `<option value="${a}">${a}</option>`).join("");
+      if (current && accs.includes(current)) accSelect.value = current;
     }
 
-    // Audit Reason Code
+    // Audit Reason Code — prefer masterlistService
     const reasonSelect = el("auditReasonCode");
     if (reasonSelect) {
-      const reasons = storage.getItem(cfg.KEYS.DROPDOWN_REASON, cfg.DEFAULTS.REASON_CODES);
+      const reasons = ms ? ms.getReasons() : storage.getItem(cfg.KEYS.DROPDOWN_REASON, cfg.DEFAULTS.REASON_CODES);
+      const current = reasonSelect.value;
       reasonSelect.innerHTML = reasons.map(r => `<option value="${r}">${r}</option>`).join("");
+      if (current && reasons.includes(current)) reasonSelect.value = current;
     }
 
     // Audit TL datalist
@@ -2458,12 +2544,43 @@
     renderAuditTable();
   }
 
-  // Audit Option Management (+ / -)
+  // Audit Option Management (+ / -) — now routes through masterlistService for unified persistence
   function setupAuditOptionManagement() {
-    function addOpt(storageKey, defaultArray, selectId, label) {
+    const ms = () => window.masterlistService;
+
+    // Generic add handler using masterlistService when available, falling back to legacy storage
+    function addOpt(cat, storageKey, defaultArray, selectId, label) {
       const val = prompt(`Enter new ${label}:`);
-      if (val && val.trim()) {
-        const clean = val.trim();
+      if (!val || !val.trim()) return;
+      const clean = val.trim().replace(/\s+/g, " ");
+      const msInst = ms();
+
+      if (msInst) {
+        // Route through the unified registry
+        let res;
+        if (cat === "sites") res = msInst.addSite(clean);
+        else if (cat === "oms") res = msInst.addDedicatedOm(clean);
+        else if (cat === "reasons") res = msInst.addReason(clean);
+        else res = msInst.addAccount(clean); // "accounts" (CCTV Audit Account = same as EDR Account)
+
+        // Verify persistence
+        const saved = localStorage.getItem("cctv_master_options_v2");
+        const ok = !!saved && JSON.parse(saved).added?.[cat]?.some(x =>
+          x.toLowerCase().replace(/\s+/g, " ") === clean.toLowerCase().replace(/\s+/g, " ")
+        );
+        if (!ok && !res.exists) {
+          showToast(`Failed to persist "${clean}". Please try again.`, "error");
+          return;
+        }
+
+        initAuditDropdowns();
+        if (el(selectId)) el(selectId).value = res.canonical || clean;
+        showToast(
+          res.added ? `Added "${res.canonical || clean}" to ${label} list.` : `"${res.canonical || clean}" is already in the list.`,
+          res.added ? "success" : "info"
+        );
+      } else {
+        // Legacy flat-array fallback
         const current = storage.getItem(storageKey, defaultArray);
         if (!current.some(c => c.toLowerCase() === clean.toLowerCase())) {
           current.push(clean);
@@ -2478,7 +2595,7 @@
       }
     }
 
-    async function removeOpt(storageKey, defaultArray, selectId, label) {
+    async function removeOpt(cat, storageKey, defaultArray, selectId, label) {
       const select = el(selectId);
       const val = select ? select.value : "";
       if (!val) {
@@ -2487,11 +2604,22 @@
       }
       const agreed = await window.appConfirm({
         title: `Remove ${label}?`,
-        message: `Remove "${val}" from saved ${label} options?`,
+        message: `Remove "${val}" from saved ${label} options? Historical records will NOT be changed.`,
         confirmText: "Remove",
         tone: "danger"
       });
-      if (agreed) {
+      if (!agreed) return;
+
+      const msInst = ms();
+      if (msInst) {
+        if (cat === "sites") msInst.removeSite(val);
+        else if (cat === "oms") msInst.removeDedicatedOm(val);
+        else if (cat === "reasons") msInst.removeReason(val);
+        else msInst.removeAccount(val);
+
+        initAuditDropdowns();
+        showToast(`Removed "${val}" from ${label} list. Historical records are safe.`, "info");
+      } else {
         let current = storage.getItem(storageKey, defaultArray);
         current = current.filter(c => c.toLowerCase() !== val.toLowerCase());
         storage.setItem(storageKey, current);
@@ -2502,35 +2630,43 @@
 
     // Site
     el("btnAddAuditSite")?.addEventListener("click", () => {
-      addOpt(cfg.KEYS.DROPDOWN_SITE, cfg.DEFAULTS.SITES, "auditSite", "Site");
+      addOpt("sites", cfg.KEYS.DROPDOWN_SITE, cfg.DEFAULTS.SITES, "auditSite", "Site");
     });
     el("btnRemoveAuditSite")?.addEventListener("click", () => {
-      removeOpt(cfg.KEYS.DROPDOWN_SITE, cfg.DEFAULTS.SITES, "auditSite", "Site");
+      removeOpt("sites", cfg.KEYS.DROPDOWN_SITE, cfg.DEFAULTS.SITES, "auditSite", "Site");
     });
 
     // OM
     el("btnAddAuditOm")?.addEventListener("click", () => {
-      addOpt(cfg.KEYS.DROPDOWN_OM, cfg.DEFAULTS.OMS, "auditOmName", "OM");
+      addOpt("oms", cfg.KEYS.DROPDOWN_OM, cfg.DEFAULTS.OMS, "auditOmName", "OM");
     });
     el("btnRemoveAuditOm")?.addEventListener("click", () => {
-      removeOpt(cfg.KEYS.DROPDOWN_OM, cfg.DEFAULTS.OMS, "auditOmName", "OM");
+      removeOpt("oms", cfg.KEYS.DROPDOWN_OM, cfg.DEFAULTS.OMS, "auditOmName", "OM");
     });
 
-    // Account
+    // Account — SHARED with EDR, routes through masterlistService
     el("btnAddAuditAccount")?.addEventListener("click", () => {
-      addOpt(cfg.KEYS.DROPDOWN_ACCOUNT, cfg.DEFAULTS.ACCOUNTS, "auditAccount", "Account / Campaign");
+      addOpt("accounts", cfg.KEYS.DROPDOWN_ACCOUNT, cfg.DEFAULTS.ACCOUNTS, "auditAccount", "Account / Campaign");
     });
     el("btnRemoveAuditAccount")?.addEventListener("click", () => {
-      removeOpt(cfg.KEYS.DROPDOWN_ACCOUNT, cfg.DEFAULTS.ACCOUNTS, "auditAccount", "Account / Campaign");
+      removeOpt("accounts", cfg.KEYS.DROPDOWN_ACCOUNT, cfg.DEFAULTS.ACCOUNTS, "auditAccount", "Account / Campaign");
     });
 
     // Reason
     el("btnAddAuditReason")?.addEventListener("click", () => {
-      addOpt(cfg.KEYS.DROPDOWN_REASON, cfg.DEFAULTS.REASON_CODES, "auditReasonCode", "CCTV Reason");
+      addOpt("reasons", cfg.KEYS.DROPDOWN_REASON, cfg.DEFAULTS.REASON_CODES, "auditReasonCode", "CCTV Reason");
     });
     el("btnRemoveAuditReason")?.addEventListener("click", () => {
-      removeOpt(cfg.KEYS.DROPDOWN_REASON, cfg.DEFAULTS.REASON_CODES, "auditReasonCode", "CCTV Reason");
+      removeOpt("reasons", cfg.KEYS.DROPDOWN_REASON, cfg.DEFAULTS.REASON_CODES, "auditReasonCode", "CCTV Reason");
     });
+
+    // Subscribe CCTV Audit dropdowns to masterlist changes (so adding from EDR/Masterlist reflects here too)
+    if (window.masterlistService && !window.__auditMasterlistSubscribed) {
+      window.__auditMasterlistSubscribed = true;
+      window.masterlistService.subscribe(() => {
+        initAuditDropdowns();
+      });
+    }
   }
 
   function initAuditEvents() {
@@ -4447,7 +4583,18 @@ function doPost(e) {
       miniSheetFindInput.addEventListener("keydown", event => {
         if (event.key === "Enter") {
           event.preventDefault();
+          event.stopPropagation();
           findTeamLeaderInMiniSheet();
+          // KEYBOARD TRANSFER FIX:
+          // findTeamLeaderInMiniSheet() calls input.blur() + setMiniSheetKeyboardActive(true),
+          // but document.activeElement may not update synchronously within the same event loop
+          // tick. To guarantee Ctrl+X fires correctly without requiring a mouse click,
+          // we also give focus to the minisheet table immediately.
+          const sheet = el("maintenanceMiniSheet");
+          if (sheet) {
+            if (!sheet.hasAttribute("tabindex")) sheet.setAttribute("tabindex", "-1");
+            sheet.focus({ preventScroll: true });
+          }
         }
         if (event.key === "Escape") {
           event.preventDefault();
@@ -4518,14 +4665,20 @@ function doPost(e) {
     // =========================================================================
     document.addEventListener("keydown", (event) => {
       if (currentWorkspace !== "sorter") return;
+
       const active = document.activeElement;
-      // Guard: never hijack shortcuts when user is typing in a non-minisheet input
+      const isFindInput = active && active === el("miniSheetFindTlInput");
+      const hasSelection = (miniSheetSelectedRows.size > 0) || hasMiniSheetCellSelection();
       const inTypingField = active && /^(INPUT|TEXTAREA|SELECT)$/i.test(active.tagName) &&
-        !active.closest("#maintenanceMiniSheet");
+        !active.closest("#maintenanceMiniSheet") &&
+        // Special case: don't block shortcuts when find input handed off to minisheet
+        !(isFindInput && hasSelection);
       if (inTypingField) return;
+
       const editingCell = active && active.matches &&
         active.matches('#maintenanceMiniSheet td[contenteditable="true"]') &&
         active.dataset.editing === "true";
+
       // Ctrl+F: Focus find bar
       if ((event.ctrlKey || event.metaKey) && !event.shiftKey && event.key.toLowerCase() === "f") {
         if (editingCell) active.blur();
@@ -4536,6 +4689,7 @@ function doPost(e) {
         if (findInput) { findInput.focus(); findInput.select(); }
         return;
       }
+
       // F3: Find next match
       if (event.key === "F3" && !editingCell) {
         event.preventDefault();
@@ -4543,6 +4697,27 @@ function doPost(e) {
         findNextTeamLeaderMatch();
         return;
       }
+
+      // Ctrl+C: Copy selected rows / cells
+      // When rows or cells are selected in sorter and user is not editing a cell, copy them
+      if ((event.ctrlKey || event.metaKey) && !event.shiftKey && event.key.toLowerCase() === "c") {
+        if (!hasSelection) return;
+        if (editingCell) return;
+        event.preventDefault();
+        copyMiniSheetSelection().catch(console.error);
+        return;
+      }
+
+      // Ctrl+X: Cut selected rows / cells
+      // When rows or cells are selected in sorter and user is not editing a cell, cut them
+      if ((event.ctrlKey || event.metaKey) && !event.shiftKey && event.key.toLowerCase() === "x") {
+        if (!hasSelection) return;
+        if (editingCell) return;
+        event.preventDefault();
+        cutMiniSheetSelection().catch(console.error);
+        return;
+      }
+
       // Arrow keys when mini-sheet keyboard active
       if (miniSheetKeyboardActive &&
           ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(event.key) &&
@@ -4550,28 +4725,17 @@ function doPost(e) {
         handleMiniSheetArrowNavigation(event);
         return;
       }
+
       if (!miniSheetKeyboardActive) return;
       if (editingCell) return;
+
       // Ctrl+A: Select all rows
       if ((event.ctrlKey || event.metaKey) && !event.shiftKey && event.key.toLowerCase() === "a") {
         event.preventDefault();
         selectAllMiniSheetRows();
         return;
       }
-      // Ctrl+C: Copy selected rows / cells
-      if ((event.ctrlKey || event.metaKey) && !event.shiftKey && event.key.toLowerCase() === "c") {
-        if (!hasMiniSheetCellSelection() && !miniSheetSelectedRows.size) return;
-        event.preventDefault();
-        copyMiniSheetSelection().catch(console.error);
-        return;
-      }
-      // Ctrl+X: Cut selected rows / cells
-      if ((event.ctrlKey || event.metaKey) && !event.shiftKey && event.key.toLowerCase() === "x") {
-        if (!hasMiniSheetCellSelection() && !miniSheetSelectedRows.size) return;
-        event.preventDefault();
-        cutMiniSheetSelection().catch(console.error);
-        return;
-      }
+
       // Ctrl+Shift+M: Send to Maintenance report
       if ((event.ctrlKey || event.metaKey) && event.shiftKey && event.key.toLowerCase() === "m") {
         if (!miniSheetSelectedRows.size) return;
@@ -4579,6 +4743,7 @@ function doPost(e) {
         sendSelectedMiniSheetRowsToMaintenanceReport();
         return;
       }
+
       // Delete / Backspace: Clear cells or remove rows
       if (event.key === "Delete" || event.key === "Backspace") {
         if (hasMiniSheetCellSelection()) {
