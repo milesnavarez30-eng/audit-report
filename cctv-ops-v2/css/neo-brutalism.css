@@ -1485,12 +1485,6 @@ tbody td {
   border-color: #2DD4BF !important;
 }
 
-#tabHris.active {
-  background: #818CF8 !important;
-  color: #0D1117 !important;
-  border-color: #818CF8 !important;
-}
-
 /* =========================================================
    SAVED EDRS HEADER FIX
    Prevent overlapping at 100% zoom

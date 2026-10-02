@@ -124,7 +124,6 @@ h1, h2, h3, h4, h5, h6 {
 .edr-split-layout,
 .audit-workspace-layout,
 .trackers-workspace-layout,
-.hris-workspace-layout,
 .sorter-workspace-layout,
 .maintenance-workspace-layout,
 .pending-workspace-layout,
@@ -132,9 +131,7 @@ h1, h2, h3, h4, h5, h6 {
 .masterlist-workspace-layout,
 .history-workspace-layout,
 .accounts-workspace-layout,
-.cctv-conduct-layout,
-.outlook-container,
-.teams-container {
+.cctv-conduct-layout {
   padding-top: 8px !important;
 }
 .topbar-progress-line { background: var(--accent-primary); height: 2px; }

@@ -201,7 +201,7 @@
 
     if (!zone) return;
 
-    // Click dropzone → open file picker
+    // Click dropzone -> open file picker
     zone.addEventListener("click", () => fileInput.click());
 
     // "Add Screenshot" button also triggers file picker
@@ -423,7 +423,7 @@
       row.className = "edr-link-row";
       row.style.cssText = "display:flex; align-items:center; gap:4px;";
       row.innerHTML = `<input type="url" class="form-control edr-clip-link-input" placeholder="https://drive.google.com/..." style="flex:1;" value="${window.escapeHtml ? window.escapeHtml(value) : value.replace(/"/g,'&quot;')}">
-        <button type="button" class="btn btn-ghost btn-sm edr-remove-link-btn" style="flex-shrink:0; padding:0 6px; color:var(--accent-danger);">Ã—</button>`;
+        <button type="button" class="btn btn-ghost btn-sm edr-remove-link-btn" style="flex-shrink:0; padding:0 6px; color:var(--accent-danger);">&times;</button>`;
       row.querySelector(".edr-remove-link-btn").addEventListener("click", () => {
         row.remove();
         updateRemoveBtns();
@@ -474,7 +474,436 @@
     };
   }
 
-  // Modal Screenshot Evidence Viewer
+  // ── Multi-Subject EDR Controller ─────────────────────────────────────────
+  // Prototype implementation of multi-subject entry within a single EDR form.
+
+  let msSubjects = []; // In-memory subject list for the current EDR being edited/created
+
+  function initMultiSubjectEdr() {
+    const ms = window.EDR_MULTI_SUBJECT;
+    if (!ms) {
+      console.warn("[MultiSubject] EDR_MULTI_SUBJECT module not loaded.");
+      return;
+    }
+
+    // ── Infraction Dropdown Population ────────────────────────────────────
+
+    function populateInfractionDropdowns() {
+      const infractions = ms.getInfractions();
+      const options = ["", ...infractions];
+      const optHtml = opt => `<option value="${ms.escHtml(opt)}">${ms.escHtml(opt || "— none —")}</option>`;
+      const optHtmlSelect = opt => `<option value="${ms.escHtml(opt)}">${ms.escHtml(opt || "— select —")}</option>`;
+
+      const defaultSel = el("edrDefaultInfraction");
+      if (defaultSel) {
+        const prev = defaultSel.value;
+        defaultSel.innerHTML = options.map(optHtmlSelect).join("");
+        if (infractions.includes(prev)) defaultSel.value = prev;
+      }
+
+      const editorSel = el("subjectEditorInfraction");
+      if (editorSel) {
+        const prev = editorSel.value;
+        editorSel.innerHTML = ["", ...infractions].map(optHtml).join("");
+        if (infractions.includes(prev)) editorSel.value = prev;
+      }
+    }
+
+    // ── Respondents and Account Datalists (for default bar + modal) ───────
+
+    function populateSubjectDropdowns() {
+      const tls = edr.getTeamLeaderNames();
+      const accounts = edr.getAccountNames();
+      const tlHtml = tls.map(t => `<option value="${ms.escHtml(t)}"></option>`).join("");
+      const accHtml = accounts.map(a => `<option value="${ms.escHtml(a)}"></option>`).join("");
+
+      // Default bar datalists
+      const defTl = el("listRespondentsDefault");
+      if (defTl) defTl.innerHTML = tlHtml;
+      const defAcc = el("listAccountsDefault");
+      if (defAcc) defAcc.innerHTML = accHtml;
+
+      // Editor modal datalists
+      const editorTl = el("listRespondentsSubjEditor");
+      if (editorTl) editorTl.innerHTML = tlHtml;
+      const editorAcc = el("listAccountsSubjEditor");
+      if (editorAcc) editorAcc.innerHTML = accHtml;
+
+      populateInfractionDropdowns();
+    }
+
+    // ── Subject List Rendering ────────────────────────────────────────────
+
+    function renderSubjectList() {
+      const list = el("edrSubjectList");
+      const emptyEl = el("edrSubjectEmpty");
+      const countBadge = el("edrSubjectCountBadge");
+
+      if (!list) return;
+
+      // Count badge
+      if (countBadge) {
+        countBadge.textContent = `${msSubjects.length} subject${msSubjects.length !== 1 ? "s" : ""}`;
+      }
+
+      if (msSubjects.length === 0) {
+        // Show empty state
+        list.innerHTML = "";
+        const empty = document.createElement("div");
+        empty.className = "edr-subject-empty";
+        empty.id = "edrSubjectEmpty";
+        empty.textContent = "No subjects added yet. Use the buttons below to add.";
+        list.appendChild(empty);
+        return;
+      }
+
+      // Remove old empty placeholder if it was a child
+      const oldEmpty = list.querySelector(".edr-subject-empty");
+      if (oldEmpty) oldEmpty.remove();
+
+      // Diff render: remove deleted rows, add new ones
+      const existingRows = list.querySelectorAll(".edr-subject-row");
+      const existingIds = Array.from(existingRows).map(r => r.dataset.sid);
+      const currentIds = msSubjects.map(s => s.id);
+
+      // Remove rows for deleted subjects
+      existingRows.forEach(row => {
+        if (!currentIds.includes(row.dataset.sid)) row.remove();
+      });
+
+      // Update or insert rows
+      msSubjects.forEach((s, i) => {
+        let row = list.querySelector(`.edr-subject-row[data-sid="${s.id}"]`);
+        const metaParts = [s.supervisorName, s.account, s.infraction].filter(Boolean);
+        const metaText = metaParts.join(" · ");
+        const tagClass = s.type === "Team Leader" ? "tag-tl" : "tag-agent";
+        const tagLabel = s.type === "Team Leader" ? "TL" : "Agent";
+
+        if (!row) {
+          row = document.createElement("div");
+          row.className = "edr-subject-row";
+          row.dataset.sid = s.id;
+          list.appendChild(row);
+        }
+
+        row.innerHTML = `
+          <span class="edr-subject-row-num">${i + 1}</span>
+          <span class="edr-subject-type-tag ${tagClass}">${tagLabel}</span>
+          <div class="edr-subject-row-info">
+            <div class="edr-subject-name">${ms.escHtml(s.name)}</div>
+            ${metaText ? `<div class="edr-subject-meta">${ms.escHtml(metaText)}</div>` : ""}
+          </div>
+          <button type="button" class="edr-subject-btn-edit" data-sid="${ms.escHtml(s.id)}" title="Edit subject">Edit</button>
+          <button type="button" class="edr-subject-btn-remove" data-sid="${ms.escHtml(s.id)}" title="Remove subject">&times;</button>
+        `;
+
+        // Wire buttons
+        row.querySelector(".edr-subject-btn-edit").addEventListener("click", () => openSubjectEditor(s.id));
+        row.querySelector(".edr-subject-btn-remove").addEventListener("click", () => {
+          msSubjects = msSubjects.filter(x => x.id !== s.id);
+          renderSubjectList();
+          syncLegacyHiddenFields();
+          scheduleDraftSave();
+        });
+      });
+    }
+
+    // Sync the hidden legacy fields from subjects
+    function syncLegacyHiddenFields() {
+      const nameEl = el("edrSubjectName");
+      const accEl = el("edrAccount");
+      if (nameEl) nameEl.value = msSubjects.map(s => s.name).join(", ");
+      if (accEl) accEl.value = msSubjects.length > 0 ? (msSubjects[0].account || "") : "";
+    }
+
+    // ── Subject Editor Modal ─────────────────────────────────────────────
+
+    let editorSubjectType = "Agent";
+
+    function openSubjectEditor(subjectId = null) {
+      const modal = el("modalSubjectEditor");
+      if (!modal) return;
+
+      const isNew = !subjectId;
+      const subject = subjectId ? msSubjects.find(s => s.id === subjectId) : null;
+
+      el("subjectEditorTitle").textContent = isNew ? "Add Subject" : "Edit Subject";
+      el("subjectEditorId").value = subjectId || "";
+      el("subjectEditorName").value = subject ? subject.name : "";
+      el("subjectEditorSupervisor").value = subject ? subject.supervisorName : (el("edrDefaultTl")?.value || "");
+      el("subjectEditorAccount").value = subject ? subject.account : (el("edrDefaultAccount")?.value || "");
+      populateInfractionDropdowns();
+
+      const defaultInfraction = el("edrDefaultInfraction")?.value || "";
+      const subjectInfraction = subject ? subject.infraction : defaultInfraction;
+      const editorInfSel = el("subjectEditorInfraction");
+      if (editorInfSel) editorInfSel.value = subjectInfraction;
+
+      editorSubjectType = subject ? subject.type : "Agent";
+      el("btnSubjEditorAgent").classList.toggle("active", editorSubjectType === "Agent");
+      el("btnSubjEditorTl").classList.toggle("active", editorSubjectType === "Team Leader");
+
+      modal.hidden = false;
+      setTimeout(() => el("subjectEditorName")?.focus(), 80);
+    }
+
+    function closeSubjectEditor() {
+      const modal = el("modalSubjectEditor");
+      if (modal) modal.hidden = true;
+    }
+
+    function saveSubjectEditor() {
+      const name = ms.clean(el("subjectEditorName")?.value || "");
+      if (!name) {
+        showToast("Please enter a subject name.", "warning");
+        el("subjectEditorName")?.focus();
+        return;
+      }
+
+      const subjectId = el("subjectEditorId")?.value || "";
+      const isNew = !subjectId;
+
+      const subjectData = {
+        id: subjectId || ms.uid(),
+        type: editorSubjectType,
+        name,
+        supervisorName: ms.clean(el("subjectEditorSupervisor")?.value || ""),
+        account: ms.clean(el("subjectEditorAccount")?.value || ""),
+        infraction: el("subjectEditorInfraction")?.value || ""
+      };
+
+      if (isNew) {
+        // Duplicate check
+        if (ms.isDuplicateName(msSubjects, name)) {
+          showToast(`"${name}" is already in the subject list.`, "info");
+          return;
+        }
+        msSubjects.push(subjectData);
+        showToast(`"${name}" added as ${editorSubjectType}.`, "success");
+      } else {
+        const idx = msSubjects.findIndex(s => s.id === subjectId);
+        if (idx >= 0) {
+          msSubjects[idx] = subjectData;
+          showToast(`"${name}" updated.`, "success");
+        }
+      }
+
+      renderSubjectList();
+      syncLegacyHiddenFields();
+      scheduleDraftSave();
+      closeSubjectEditor();
+    }
+
+    // Subject type toggle inside editor
+    el("btnSubjEditorAgent")?.addEventListener("click", () => {
+      editorSubjectType = "Agent";
+      el("btnSubjEditorAgent").classList.add("active");
+      el("btnSubjEditorTl").classList.remove("active");
+    });
+    el("btnSubjEditorTl")?.addEventListener("click", () => {
+      editorSubjectType = "Team Leader";
+      el("btnSubjEditorTl").classList.add("active");
+      el("btnSubjEditorAgent").classList.remove("active");
+    });
+
+    // Editor modal buttons
+    el("btnSubjectEditorSave")?.addEventListener("click", saveSubjectEditor);
+    el("btnSubjectEditorCancel")?.addEventListener("click", closeSubjectEditor);
+    el("btnSubjectEditorClose")?.addEventListener("click", closeSubjectEditor);
+    el("subjectEditorName")?.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); saveSubjectEditor(); } });
+
+    // ── Add Single Subject button ─────────────────────────────────────────
+
+    el("btnAddSubject")?.addEventListener("click", () => openSubjectEditor(null));
+
+    // ── Paste Multiple Names Modal ────────────────────────────────────────
+
+    function openPasteNamesModal() {
+      const modal = el("modalPasteNames");
+      if (!modal) return;
+      el("pasteNamesInput").value = "";
+      el("pasteNamesPreview").textContent = "";
+      modal.hidden = false;
+      setTimeout(() => el("pasteNamesInput")?.focus(), 80);
+    }
+
+    function closePasteNamesModal() {
+      const modal = el("modalPasteNames");
+      if (modal) modal.hidden = true;
+    }
+
+    el("pasteNamesInput")?.addEventListener("input", () => {
+      const text = el("pasteNamesInput")?.value || "";
+      const names = ms.parseNamesPaste(text);
+      const preview = el("pasteNamesPreview");
+      if (!preview) return;
+      if (!names.length) {
+        preview.textContent = "";
+        return;
+      }
+      const dupeCount = names.filter(n => ms.isDuplicateName(msSubjects, n)).length;
+      const newCount = names.length - dupeCount;
+      preview.textContent = `${names.length} name${names.length !== 1 ? "s" : ""} detected${dupeCount ? ` (${dupeCount} already in list, ${newCount} new)` : ` — all new`}.`;
+    });
+
+    function confirmPasteNames() {
+      const text = el("pasteNamesInput")?.value || "";
+      const names = ms.parseNamesPaste(text);
+      if (!names.length) {
+        showToast("No names found. Please paste some names.", "warning");
+        return;
+      }
+
+      const defaultTl = ms.clean(el("edrDefaultTl")?.value || "");
+      const defaultAccount = ms.clean(el("edrDefaultAccount")?.value || "");
+      const defaultInfraction = el("edrDefaultInfraction")?.value || "";
+
+      let added = 0;
+      let dupes = 0;
+      names.forEach(name => {
+        if (ms.isDuplicateName(msSubjects, name)) {
+          dupes++;
+          return;
+        }
+        msSubjects.push({
+          id: ms.uid(),
+          type: "Agent",
+          name,
+          supervisorName: defaultTl,
+          account: defaultAccount,
+          infraction: defaultInfraction
+        });
+        added++;
+      });
+
+      renderSubjectList();
+      syncLegacyHiddenFields();
+      scheduleDraftSave();
+      closePasteNamesModal();
+
+      if (added > 0 && dupes > 0) {
+        showToast(`Added ${added} new subject${added !== 1 ? "s" : ""}. ${dupes} duplicate${dupes !== 1 ? "s" : ""} skipped.`, "success");
+      } else if (added > 0) {
+        showToast(`Added ${added} subject${added !== 1 ? "s" : ""}.`, "success");
+      } else {
+        showToast("All names were already in the subject list.", "info");
+      }
+    }
+
+    el("btnPasteMultipleNames")?.addEventListener("click", openPasteNamesModal);
+    el("btnPasteNamesClose")?.addEventListener("click", closePasteNamesModal);
+    el("btnPasteNamesCancel")?.addEventListener("click", closePasteNamesModal);
+    el("btnPasteNamesConfirm")?.addEventListener("click", confirmPasteNames);
+
+    // ── Apply Defaults to All ─────────────────────────────────────────────
+
+    el("btnApplyDefaultsToAll")?.addEventListener("click", () => {
+      if (!msSubjects.length) {
+        showToast("No subjects to apply defaults to.", "info");
+        return;
+      }
+      const defaultTl = ms.clean(el("edrDefaultTl")?.value || "");
+      const defaultAccount = ms.clean(el("edrDefaultAccount")?.value || "");
+      const defaultInfraction = el("edrDefaultInfraction")?.value || "";
+
+      msSubjects = msSubjects.map(s => ({
+        ...s,
+        supervisorName: defaultTl || s.supervisorName,
+        account: defaultAccount || s.account,
+        infraction: defaultInfraction || s.infraction
+      }));
+
+      renderSubjectList();
+      syncLegacyHiddenFields();
+      scheduleDraftSave();
+      showToast(`Defaults applied to ${msSubjects.length} subject${msSubjects.length !== 1 ? "s" : ""}.`, "success");
+    });
+
+    // ── Infraction Option Management ──────────────────────────────────────
+
+    el("btnAddInfractionOption")?.addEventListener("click", () => {
+      const curr = el("edrDefaultInfraction")?.value || "";
+      const val = prompt("Add new infraction to masterlist:", curr);
+      if (val && val.trim()) {
+        const res = ms.addInfraction(val.trim());
+        populateInfractionDropdowns();
+        const defaultSel = el("edrDefaultInfraction");
+        if (defaultSel) defaultSel.value = res.canonical || val.trim();
+        showToast(res.added ? `Added "${res.canonical || val.trim()}" to infraction list.` : `"${val.trim()}" already in list.`, res.added ? "success" : "info");
+      }
+    });
+
+    el("btnRemoveInfractionOption")?.addEventListener("click", () => {
+      const curr = el("edrDefaultInfraction")?.value;
+      if (!curr) {
+        showToast("Select an infraction to remove.", "info");
+        return;
+      }
+      if (confirm(`Remove "${curr}" from infraction options?`)) {
+        ms.removeInfraction(curr);
+        populateInfractionDropdowns();
+        showToast(`Removed "${curr}". Historical records remain safe.`, "info");
+      }
+    });
+
+    // ── Account Option Management (Multi-Subject Bar) ─────────────────────
+
+    el("btnAddAccountOptionMs")?.addEventListener("click", () => {
+      const curr = el("edrDefaultAccount")?.value?.trim() || "";
+      const val = prompt("Add new Account / Campaign to masterlist:", curr);
+      if (val && val.trim()) {
+        const res = window.masterlistService
+          ? window.masterlistService.addAccount(val.trim())
+          : { added: false, canonical: val.trim() };
+        populateSubjectDropdowns();
+        if (el("edrDefaultAccount")) el("edrDefaultAccount").value = res.canonical || val.trim();
+        showToast(res.added ? `Added "${res.canonical || val.trim()}".` : `"${val.trim()}" already in list.`, res.added ? "success" : "info");
+      }
+    });
+
+    el("btnRemoveAccountOptionMs")?.addEventListener("click", () => {
+      const curr = el("edrDefaultAccount")?.value?.trim();
+      if (!curr) {
+        showToast("Enter an Account to remove.", "info");
+        return;
+      }
+      if (confirm(`Remove "${curr}" from Account/Campaign options?`)) {
+        if (window.masterlistService) window.masterlistService.removeAccount(curr);
+        populateSubjectDropdowns();
+        if (el("edrDefaultAccount")) el("edrDefaultAccount").value = "";
+        showToast(`Removed "${curr}". Historical records remain safe.`, "info");
+      }
+    });
+
+    // ── Masterlist sync ───────────────────────────────────────────────────
+
+    if (window.masterlistService && !window.__msEdrMasterlistSubscribed) {
+      window.__msEdrMasterlistSubscribed = true;
+      window.masterlistService.subscribe(() => {
+        populateSubjectDropdowns();
+      });
+    }
+
+    // ── Expose functions used by form submit and reset ─────────────────────
+
+    window.getMsSubjects = () => msSubjects.slice();
+    window.setMsSubjects = (subjects) => {
+      msSubjects = Array.isArray(subjects) ? subjects.map(s => ({ ...s })) : [];
+      renderSubjectList();
+      syncLegacyHiddenFields();
+    };
+    window.clearMsSubjects = () => {
+      msSubjects = [];
+      renderSubjectList();
+      syncLegacyHiddenFields();
+    };
+
+    // Initial population
+    populateSubjectDropdowns();
+    renderSubjectList();
+  }
+
+
   let viewerShots = [];
   let viewerIndex = 0;
   let viewerTitleBase = "";
@@ -803,6 +1232,25 @@
       const lastEditedText = r.updatedAt ? formatLastEdited(r.updatedAt) : "";
       const roleShort = (r.supervisorRole === 'Operations Manager' || r.supervisorRole === 'OM') ? 'OM' : (r.supervisorRole === 'Team Leader' || r.supervisorRole === 'TL' ? 'TL' : (r.supervisorRole || 'TL'));
 
+      // Multi-subject normalization
+      const subjects = (Array.isArray(r.subjects) && r.subjects.length)
+        ? r.subjects
+        : (r.subjectName ? [{ id: 'legacy_0', type: r.subjectType === 'Team Leader' ? 'Team Leader' : 'Agent', name: r.subjectName, supervisorName: r.supervisorName, account: r.account, infraction: '' }] : []);
+
+      const isMultiSubject = subjects.length > 1;
+      const agentCount = subjects.filter(s => s.type !== 'Team Leader').length;
+      const tlCount = subjects.filter(s => s.type === 'Team Leader').length;
+      let countLabel = '';
+      if (agentCount > 0 && tlCount > 0) {
+        countLabel = `${subjects.length} SUBJECTS`;
+      } else if (tlCount > 0) {
+        countLabel = `${tlCount} TEAM LEADER${tlCount > 1 ? 'S' : ''}`;
+      } else {
+        countLabel = `${agentCount} AGENT${agentCount > 1 ? 'S' : ''}`;
+      }
+      const displayMax = 3;
+      const previewNames = subjects.slice(0, displayMax).map(s => s.name).join(', ') + (subjects.length > displayMax ? ` +${subjects.length - displayMax}` : '');
+
       // Status chips: SS, TEAMS (always), AUDIT (always), DONE, DOCS
       const chips = [];
       if (hasShot) {
@@ -849,15 +1297,25 @@
 
           <div class="record-sub-line">
             <div class="record-meta-group">
-              <span class="meta-item meta-account" title="${esc(r.account || 'General')}">${esc(r.account || 'General')}</span>
-              <span class="meta-sep">·</span>
-              <span class="meta-item meta-resp" title="${esc(r.supervisorRole || 'TL')}: ${esc(r.supervisorName || 'N/A')}">
-                <span class="sub-label">${esc(roleShort)}:</span> <strong>${esc(r.supervisorName || 'N/A')}</strong>
-              </span>
-              ${r.subjectName ? `
+              ${isMultiSubject ? `
+                <div class="edr-card-subject-pill-wrap">
+                  <button type="button" class="edr-card-subject-toggle" data-id="${esc(r.id)}" title="Click to view all ${subjects.length} subjects">
+                    <span class="edr-subj-pill-label">${esc(countLabel)}</span>
+                    <span class="edr-subj-pill-chevron">▾</span>
+                  </button>
+                  <span class="edr-subj-pill-names" title="${esc(subjects.map(s => s.name).join(', '))}">${esc(previewNames)}</span>
+                </div>
+              ` : `
+                <span class="meta-item meta-account" title="${esc(r.account || 'General')}">${esc(r.account || 'General')}</span>
                 <span class="meta-sep">·</span>
-                <span class="meta-item meta-subj" title="Subject: ${esc(r.subjectName)}"><span class="sub-label">Subj:</span> ${esc(r.subjectName)}</span>
-              ` : ''}
+                <span class="meta-item meta-resp" title="${esc(r.supervisorRole || 'TL')}: ${esc(r.supervisorName || 'N/A')}">
+                  <span class="sub-label">${esc(roleShort)}:</span> <strong>${esc(r.supervisorName || 'N/A')}</strong>
+                </span>
+                ${r.subjectName ? `
+                  <span class="meta-sep">·</span>
+                  <span class="meta-item meta-subj" title="Subject: ${esc(r.subjectName)}"><span class="sub-label">Subj:</span> ${esc(r.subjectName)}</span>
+                ` : ''}
+              `}
               ${lastEditedText ? `
                 <span class="meta-sep meta-sep-time">·</span>
                 <span class="meta-item meta-time" title="${esc(lastEditedText)}">${esc(lastEditedText)}</span>
@@ -939,6 +1397,21 @@
             </div>
           </div>
         </div>
+
+        ${isMultiSubject ? `
+          <div class="edr-card-expanded-subjects" id="edrCardExpanded_${esc(r.id)}" style="display:none;">
+            ${subjects.map(s => {
+              const metaParts = [s.supervisorName, s.account, s.infraction].filter(Boolean);
+              const metaStr = metaParts.join(' · ');
+              return `
+                <div class="edr-card-expanded-row">
+                  <div class="edr-card-expanded-name">${esc(s.name)}</div>
+                  ${metaStr ? `<div class="edr-card-expanded-meta">${esc(metaStr)}</div>` : ''}
+                </div>
+              `;
+            }).join('')}
+          </div>
+        ` : ''}
       </div>
     `;
     }).join("");
@@ -948,6 +1421,21 @@
       const id = card.dataset.id;
       const report = reports.find(r => r.id === id);
       if (!report) return;
+
+      // Multi-subject expansion toggle
+      card.querySelectorAll(".edr-card-subject-toggle").forEach(btn => {
+        btn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const targetId = btn.dataset.id;
+          const container = card.querySelector(`#edrCardExpanded_${targetId}`);
+          const chevron = btn.querySelector(".edr-subj-pill-chevron");
+          if (!container) return;
+          const isHidden = container.style.display === "none";
+          container.style.display = isHidden ? "flex" : "none";
+          if (chevron) chevron.textContent = isHidden ? "▴" : "▾";
+          btn.classList.toggle("is-expanded", isHidden);
+        });
+      });
 
       const chk = card.querySelector(".edr-check");
       if (chk) {
@@ -1164,19 +1652,17 @@
     el("edrOmName").value = report.omName || "";
 
     subjectType = report.subjectType || "Agent/s";
-    if (subjectType === "Team Leader") {
-      el("btnSubjTl").classList.add("active");
-      el("btnSubjAgent").classList.remove("active");
-      el("edrSubjectName").placeholder = "Search Team Leader...";
-      el("edrSubjectName").setAttribute("list", "listSubjectTls");
-    } else {
-      el("btnSubjAgent").classList.add("active");
-      el("btnSubjTl").classList.remove("active");
-      el("edrSubjectName").placeholder = "Employee name...";
-      el("edrSubjectName").removeAttribute("list");
+    // Restore multi-subject list from report
+    if (window.setMsSubjects && window.EDR_MULTI_SUBJECT) {
+      const subjects = window.EDR_MULTI_SUBJECT.normalizeSubjects(report);
+      window.setMsSubjects(subjects);
     }
-    el("edrSubjectName").value = report.subjectName || "";
-    el("edrAccount").value = report.account || "";
+    // Also set default bar to first subject's values for convenience
+    const firstSubject = (Array.isArray(report.subjects) && report.subjects.length) ? report.subjects[0] : null;
+    if (el("edrDefaultTl")) el("edrDefaultTl").value = (firstSubject?.supervisorName) || report.supervisorName || "";
+    if (el("edrDefaultAccount")) el("edrDefaultAccount").value = (firstSubject?.account) || report.account || "";
+    if (el("edrDefaultInfraction") && firstSubject?.infraction) el("edrDefaultInfraction").value = firstSubject.infraction;
+
     el("edrIncident").value = report.incident || "";
     el("edrActionRemarks").value = report.action || "";
     // Restore clip links
@@ -1208,10 +1694,8 @@
     el("btnRoleTl").classList.add("active");
     el("btnRoleOm").classList.remove("active");
     subjectType = "Agent/s";
-    el("btnSubjAgent").classList.add("active");
-    el("btnSubjTl").classList.remove("active");
-    el("edrSubjectName").placeholder = "Employee name...";
-    el("edrSubjectName").removeAttribute("list");
+    // Clear multi-subject list
+    if (window.clearMsSubjects) window.clearMsSubjects();
     initFormDropdowns();
     if (window.clearEdrScreenshots) window.clearEdrScreenshots();
     else if (window.setCctvScreenshot) window.setCctvScreenshot("");
@@ -1256,17 +1740,15 @@
     if (draft.omName && el("edrOmName")) el("edrOmName").value = draft.omName;
 
     subjectType = draft.subjectType === "Team Leader" ? "Team Leader" : "Agent/s";
-    if (subjectType === "Team Leader") {
-      el("btnSubjTl")?.classList.add("active");
-      el("btnSubjAgent")?.classList.remove("active");
-      el("edrSubjectName")?.setAttribute("list", "listSubjectTls");
-    } else {
-      el("btnSubjAgent")?.classList.add("active");
-      el("btnSubjTl")?.classList.remove("active");
-      el("edrSubjectName")?.removeAttribute("list");
+    // Restore multi-subject list from draft
+    if (window.setMsSubjects && window.EDR_MULTI_SUBJECT && Array.isArray(draft.subjects) && draft.subjects.length) {
+      window.setMsSubjects(window.EDR_MULTI_SUBJECT.normalizeSubjects(draft));
+    } else if (draft.subjectName) {
+      // Legacy single-subject draft compat
+      if (window.setMsSubjects && window.EDR_MULTI_SUBJECT) {
+        window.setMsSubjects(window.EDR_MULTI_SUBJECT.normalizeSubjects(draft));
+      }
     }
-    if (draft.subjectName && el("edrSubjectName")) el("edrSubjectName").value = draft.subjectName;
-    if (draft.account && el("edrAccount")) el("edrAccount").value = draft.account;
     if (draft.incident && el("edrIncident")) el("edrIncident").value = draft.incident;
     if (draft.action && el("edrActionRemarks")) el("edrActionRemarks").value = draft.action;
     // Restore clip links
@@ -1351,6 +1833,10 @@
   }
 
   function getFormData() {
+    const currentSubjects = window.getMsSubjects ? window.getMsSubjects() : [];
+    // Sync legacy hidden fields from subjects
+    const subjectNames = currentSubjects.map(s => s.name).join(", ");
+    const firstSubjectAccount = currentSubjects.length > 0 ? (currentSubjects[0].account || "") : "";
     return {
       site: el("edrSite").value,
       date: el("edrDate").value,
@@ -1359,9 +1845,14 @@
       supervisorRole: supervisorRole,
       supervisorName: el("edrSupervisorName").value,
       omName: el("edrOmName").value,
-      subjectType: subjectType,
-      subjectName: el("edrSubjectName").value,
-      account: el("edrAccount").value,
+      // Multi-subject: include subjects array
+      subjects: currentSubjects,
+      // Legacy compat: drive from subjects if available
+      subjectType: currentSubjects.length > 0
+        ? (currentSubjects[0].type === "Team Leader" ? "Team Leader" : "Agent/s")
+        : subjectType,
+      subjectName: subjectNames || el("edrSubjectName").value,
+      account: firstSubjectAccount || el("edrAccount").value,
       incident: el("edrIncident").value,
       action: el("edrActionRemarks").value,
       // Multi-link: collect all filled link inputs
@@ -1379,22 +1870,31 @@
       return;
     }
     try {
-      const result = edr.sendReportToAudit(report);
-      renderEdrList(edr.getReports());
-      if (typeof renderAuditTable === "function") {
-        renderAuditTable();
-      }
-
-      if (result.action === "created") {
-        showToast(
-          "Added to CCTV Audit Data Output Grid. NOC starts as Pending; Remarks can be edited anytime.",
-          "success"
-        );
+      // Multi-subject fan-out: use EDR_MULTI_SUBJECT.fanOutToAudit if subjects exist
+      const ms = window.EDR_MULTI_SUBJECT;
+      const hasSubjects = Array.isArray(report.subjects) && report.subjects.length > 0;
+      if (ms && hasSubjects) {
+        const res = ms.fanOutToAudit(report);
+        renderEdrList(edr.getReports());
+        if (typeof renderAuditTable === "function") renderAuditTable();
+        const subjectWord = res.total === 1 ? "subject" : "subjects";
+        if (res.created > 0 && res.skipped > 0) {
+          showToast(`Sent ${res.created} new audit row(s) for ${res.total} ${subjectWord}. ${res.skipped} already audited (kept).`, "success");
+        } else if (res.created > 0) {
+          showToast(`Added ${res.created} audit row(s) for ${res.total} ${subjectWord}. NOC starts as Pending.`, "success");
+        } else {
+          showToast(`All ${res.total} subject(s) already in Audit Grid. Existing NOC/Remarks kept.`, "info");
+        }
       } else {
-        showToast(
-          "CCTV Audit Data Output Grid entry updated. Existing NOC and Remarks were kept.",
-          "info"
-        );
+        // Legacy single-subject path
+        const result = edr.sendReportToAudit(report);
+        renderEdrList(edr.getReports());
+        if (typeof renderAuditTable === "function") renderAuditTable();
+        if (result.action === "created") {
+          showToast("Added to CCTV Audit Data Output Grid. NOC starts as Pending; Remarks can be edited anytime.", "success");
+        } else {
+          showToast("CCTV Audit Data Output Grid entry updated. Existing NOC and Remarks were kept.", "info");
+        }
       }
     } catch (err) {
       console.error(err);
@@ -1409,30 +1909,46 @@
       return;
     }
 
-    let createdCount = 0;
-    let updatedCount = 0;
+    const ms = window.EDR_MULTI_SUBJECT;
+    let totalCreated = 0;
+    let totalUpdated = 0;
+    let totalSubjects = 0;
 
     for (const rep of reports) {
       try {
-        const res = edr.sendReportToAudit(rep);
-        if (res && res.action === "created") createdCount++;
-        else updatedCount++;
+        const hasSubjects = Array.isArray(rep.subjects) && rep.subjects.length > 0;
+        if (ms && hasSubjects) {
+          // Multi-subject fan-out
+          const res = ms.fanOutToAudit(rep);
+          totalCreated += res.created;
+          totalUpdated += res.skipped;
+          totalSubjects += res.total;
+        } else {
+          // Legacy path
+          const res = edr.sendReportToAudit(rep);
+          if (res && res.action === "created") totalCreated++;
+          else totalUpdated++;
+        }
       } catch (err) {
         console.error("sendReportToAudit error for EDR:", rep.id, err);
       }
     }
 
     renderEdrList(edr.getReports());
-    if (typeof renderAuditTable === "function") {
-      renderAuditTable();
-    }
+    if (typeof renderAuditTable === "function") renderAuditTable();
 
-    if (createdCount > 0 && updatedCount > 0) {
-      showToast(`Sent ${createdCount} EDR(s) to CCTV Audit (${updatedCount} updated).`, "success");
-    } else if (createdCount > 0) {
-      showToast(`Sent ${createdCount} EDR(s) to CCTV Audit. NOC starts as Pending.`, "success");
-    } else if (updatedCount > 0) {
-      showToast(`Updated ${updatedCount} existing record(s) in CCTV Audit.`, "info");
+    if (totalSubjects > 0) {
+      // Multi-subject result
+      const parts = [];
+      if (totalCreated > 0) parts.push(`${totalCreated} new audit row${totalCreated > 1 ? "s" : ""}`);
+      if (totalUpdated > 0) parts.push(`${totalUpdated} already audited (kept)`);
+      showToast(`Sent ${reports.length} EDR(s) → ${parts.join(", ")}.`, totalCreated > 0 ? "success" : "info");
+    } else if (totalCreated > 0 && totalUpdated > 0) {
+      showToast(`Sent ${totalCreated} EDR(s) to CCTV Audit (${totalUpdated} updated).`, "success");
+    } else if (totalCreated > 0) {
+      showToast(`Sent ${totalCreated} EDR(s) to CCTV Audit. NOC starts as Pending.`, "success");
+    } else if (totalUpdated > 0) {
+      showToast(`Updated ${totalUpdated} existing record(s) in CCTV Audit.`, "info");
     } else {
       showToast("Selected EDRs processed for CCTV Audit.", "info");
     }
@@ -1467,6 +1983,11 @@
     // Form submit
     el("edrForm")?.addEventListener("submit", async (e) => {
       e.preventDefault();
+      const currentSubjects = window.getMsSubjects ? window.getMsSubjects() : [];
+      if (!currentSubjects.length) {
+        showToast("Please add at least one subject to the EDR.", "warning");
+        return;
+      }
       const data = getFormData();
       await edr.createOrUpdate(data);
       resetForm();
@@ -1488,7 +2009,12 @@
       }
 
       const form = el("edrForm");
-      if (el("edrIncident")?.value || el("edrSubjectName")?.value || el("edrSupervisorName")?.value) {
+      const currentSubjects = window.getMsSubjects ? window.getMsSubjects() : [];
+      if (el("edrIncident")?.value || el("edrSupervisorName")?.value || currentSubjects.length > 0) {
+        if (!currentSubjects.length) {
+          showToast("Please add at least one subject before sending to CCTV Audit.", "warning");
+          return;
+        }
         if (!form.checkValidity()) {
           form.reportValidity();
           return;
@@ -1588,29 +2114,6 @@
         }
       } catch (err) {
         showToast(`Error preparing EDR for Teams: ${err.message}`, "error");
-      }
-    });
-
-    // Send EDR by Outlook
-    el("btnSendEdrToOutlook")?.addEventListener("click", () => {
-      try {
-        const previewBox = el("edrPreviewBox");
-        const text = previewBox ? (previewBox.innerText || previewBox.textContent || "") : "";
-        if (!text.trim() || text.includes("Select active EDRs in the list")) {
-          showToast("Please select active EDRs before sending by Outlook.", "warning");
-          return;
-        }
-        const dateStr = new Date().toLocaleDateString([], { month: "short", day: "numeric", year: "numeric" });
-        switchWorkspace("outlook");
-        if (window.CCTV_OUTLOOK) {
-          window.CCTV_OUTLOOK.openComposer({
-            mode: "new",
-            subject: `[CCTV OPS] End of the Day Report - ${dateStr}`,
-            body: text
-          });
-        }
-      } catch (err) {
-        showToast(`Error opening Outlook composer: ${err.message}`, "error");
       }
     });
 
@@ -2000,12 +2503,6 @@
       title: "Trackers",
       subtitle: ""
     },
-    hris: {
-      tabId: "tabHris",
-      paneId: "paneHris",
-      title: "HRIS",
-      subtitle: ""
-    },
     sorter: {
       tabId: "tabSorter",
       paneId: "paneSorter",
@@ -2052,18 +2549,6 @@
       tabId: "tabAccounts",
       paneId: "paneAccounts",
       title: "Account Management",
-      subtitle: ""
-    },
-    outlook: {
-      tabId: "tabOutlook",
-      paneId: "paneOutlook",
-      title: "Microsoft Outlook",
-      subtitle: ""
-    },
-    teams: {
-      tabId: "tabTeams",
-      paneId: "paneTeams",
-      title: "Microsoft Teams",
       subtitle: ""
     }
   };
@@ -2154,22 +2639,6 @@
     } else if (targetKey === "accounts") {
       if (typeof window._renderAccountsWorkspaceFn === 'function') {
         window._renderAccountsWorkspaceFn();
-      }
-    } else if (targetKey === "outlook") {
-      if (window.CCTV_OUTLOOK) {
-        if (typeof window.CCTV_OUTLOOK.render === 'function') {
-          window.CCTV_OUTLOOK.render();
-        } else {
-          window.CCTV_OUTLOOK.loadInbox();
-        }
-      }
-    } else if (targetKey === "teams") {
-      if (window.CCTV_TEAMS) {
-        if (typeof window.CCTV_TEAMS.render === 'function') {
-          window.CCTV_TEAMS.render();
-        } else {
-          window.CCTV_TEAMS.loadNavList();
-        }
       }
     }
 
@@ -8397,31 +8866,6 @@ function doPost(e) {
       }
     });
 
-    // Send CCTV Report by Outlook
-    el("btnSendReportOutlook")?.addEventListener("click", () => {
-      try {
-        syncCctvReportDraftFromForm();
-        if (!cctvReportDraft.observation && !cctvReportDraft.personInvolved) {
-          showToast("Please enter report details before sending by Outlook.", "error");
-          return;
-        }
-        const previewBox = el("teamsMessageBox");
-        const plainText = previewBox ? (previewBox.innerText || previewBox.textContent || "") : "";
-        const dateStr = cctvReportDraft.date || new Date().toISOString().slice(0, 10);
-        const agent = cctvReportDraft.personInvolved || "Incident";
-        switchWorkspace("outlook");
-        if (window.CCTV_OUTLOOK) {
-          window.CCTV_OUTLOOK.openComposer({
-            mode: "new",
-            subject: `[CCTV Report] ${cctvReportDraft.site || "Site"} - ${agent} (${dateStr})`,
-            body: plainText
-          });
-        }
-      } catch (err) {
-        showToast(`Error opening Outlook: ${err.message}`, "error");
-      }
-    });
-
     // Central Paste Router registration for CCTV Report workspace
     if (window.CCTV_PASTE_ROUTER) {
       window.CCTV_PASTE_ROUTER.register("report", async (files) => {
@@ -9129,85 +9573,6 @@ function doPost(e) {
 
   window.renderDashboardWorkspace = renderDashboardWorkspace;
   window.initDashboardController = initDashboardController;
-
-  // =========================================================================
-  // WORKSPACE: HRIS (SixEleven HRIS / Employee DTR Integration)
-  // =========================================================================
-  function initHrisController() {
-    const reloadBtn = el("btnHrisReload");
-    const retryBtn = el("btnHrisRetry");
-    const reloadCardBtn = el("btnHrisReloadCard");
-    const hrisFrame = el("hrisFrame");
-    const loadingState = el("hrisLoadingState");
-    const errorState = el("hrisErrorState");
-    const errorReason = el("hrisErrorReason");
-
-    let loadTimeout = null;
-    let isLoadedOnce = false;
-
-    function showLoading() {
-      if (loadingState) loadingState.style.display = "flex";
-      if (errorState) errorState.style.display = "none";
-    }
-
-    function hideLoading() {
-      if (loadingState) loadingState.style.display = "none";
-      if (errorState) errorState.style.display = "none";
-    }
-
-    function showError(reason) {
-      if (loadingState) loadingState.style.display = "none";
-      if (errorState) errorState.style.display = "flex";
-      if (errorReason && reason) errorReason.textContent = reason;
-    }
-
-    const doReload = () => {
-      if (!hrisFrame) return;
-      showLoading();
-      if (loadTimeout) clearTimeout(loadTimeout);
-
-      loadTimeout = setTimeout(() => {
-        if (loadingState && loadingState.style.display !== "none") {
-          showError("Connection timed out. Check your network or open HRIS externally.");
-        }
-      }, 15000);
-
-      hrisFrame.src = "https://611systems.com/hrsys/employee-dtr";
-      if (typeof showToast === "function") {
-        showToast("Reloading HRIS Employee DTR...", "info");
-      }
-    };
-
-    reloadBtn?.addEventListener("click", doReload);
-    retryBtn?.addEventListener("click", doReload);
-    reloadCardBtn?.addEventListener("click", doReload);
-
-    el("btnHrisSessionHelp")?.addEventListener("click", () => {
-      if (typeof showToast === "function") {
-        showToast("HRIS Session Notice: If the embedded login returns '419 Page Expired', your browser is omitting cross-site session cookies. Click 'Open HRIS' to log in directly, or deploy CCTV OPS under 611systems.com.", "warning", 8000);
-      }
-    });
-
-    if (hrisFrame) {
-      hrisFrame.addEventListener("load", () => {
-        if (loadTimeout) clearTimeout(loadTimeout);
-        hideLoading();
-        isLoadedOnce = true;
-      });
-
-      hrisFrame.addEventListener("error", () => {
-        if (loadTimeout) clearTimeout(loadTimeout);
-        showError("The browser blocked loading HRIS or the server is unreachable.");
-      });
-
-      // Initial load timeout guard
-      loadTimeout = setTimeout(() => {
-        if (!isLoadedOnce && loadingState && loadingState.style.display !== "none") {
-          showError("Connection timed out. The HRIS portal may be slow to respond or unreachable.");
-        }
-      }, 15000);
-    }
-  }
 
   function renderMasterlistWorkspace() {
     if (window._renderMasterlistWorkspaceFn) {
@@ -9963,7 +10328,6 @@ ${escapeHtml(JSON.stringify(entry.after || entry.before, null, 2))}
       if (p.edr !== false) list.push('EDR');
       if (p.audit !== false && p.cctv !== false) list.push('Audit');
       if (p.trackers !== false) list.push('Trackers');
-      if (p.hris === true) list.push('HRIS');
       if (p.sorter !== false && p.aiSorter !== false) list.push('Sorter');
       if (p.maintenance !== false) list.push('Maint');
       if (p.pending !== false) list.push('Pending');
@@ -10445,7 +10809,7 @@ ${escapeHtml(JSON.stringify(entry.after || entry.before, null, 2))}
         } else if (item.role === 'admin') {
           input.checked = perms[k] === true || (perms[k] !== false && (k === 'edr' || k === 'report' || k === 'cctv' || k === 'audit' || k === 'sorter' || k === 'maintenance' || k === 'followup' || k === 'pending' || k === 'masterlist' || k === 'history'));
         } else {
-          input.checked = perms[k] !== false && k !== 'accounts' && k !== 'hris';
+          input.checked = perms[k] !== false && k !== 'accounts';
         }
       });
 
@@ -10806,6 +11170,7 @@ ${escapeHtml(JSON.stringify(entry.after || entry.before, null, 2))}
     initChoiceButtons();
     initScreenshotDropzone();
     initMultiLinkField();
+    initMultiSubjectEdr();
     initEvents();
 
     // Dashboard Controller Initialization
@@ -10851,9 +11216,6 @@ ${escapeHtml(JSON.stringify(entry.after || entry.before, null, 2))}
     // Trackers Workspace Initialization
     initTrackersController();
 
-    // HRIS Workspace Initialization
-    initHrisController();
-
     // Masterlist Workspace Initialization
     initMasterlistController();
 
@@ -10880,12 +11242,6 @@ ${escapeHtml(JSON.stringify(entry.after || entry.before, null, 2))}
     }
     if (window.CCTV_TEAMS_SHARE) {
       window.CCTV_TEAMS_SHARE.init();
-    }
-    if (window.CCTV_OUTLOOK) {
-      window.CCTV_OUTLOOK.init();
-    }
-    if (window.CCTV_TEAMS) {
-      window.CCTV_TEAMS.init();
     }
 
     // Manila clock ticker

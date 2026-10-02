@@ -522,9 +522,7 @@
         paneTrackers: "trackers",
         paneHistory: "history",
         paneAccounts: "accounts",
-        paneConduct: "conduct",
-        paneOutlook: "outlook",
-        paneTeams: "teams"
+        paneConduct: "conduct"
       };
       return paneMap[activePane.id] || "report";
     }

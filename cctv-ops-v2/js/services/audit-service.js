@@ -414,6 +414,18 @@ window.CCTV_AUDIT = (function () {
       return [...entryList];
     },
 
+    reloadEntries() {
+      try {
+        const saved = storage.getItem(STORAGE_KEY, []);
+        entryList = Array.isArray(saved) ? saved : [];
+        sortEntries();
+        notify();
+      } catch (e) {
+        console.warn("Could not reload audit entryList:", e);
+      }
+      return [...entryList];
+    },
+
     getEditingIndex() {
       return editingIndex;
     },
@@ -978,5 +990,8 @@ window.cctvAuditBridge = {
   },
   sendFromEdr(report) {
     return window.CCTV_AUDIT.sendFromEdr(report);
+  },
+  reloadEntries() {
+    return window.CCTV_AUDIT?.reloadEntries?.();
   }
 };

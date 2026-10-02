@@ -744,6 +744,292 @@
       flex: 1;
       min-width: 0;
     }
+
+    /* =========================================================================
+       MULTI-SUBJECT EDR SECTION
+       ========================================================================= */
+
+    .edr-subjects-section {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    /* Defaults Bar */
+    .edr-defaults-bar {
+      background: var(--bg-input);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      padding: 8px 10px;
+    }
+    .edr-defaults-label {
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 6px;
+    }
+    .edr-defaults-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 8px;
+    }
+    @container edrform (max-width: 560px) {
+      .edr-defaults-row {
+        grid-template-columns: 1fr;
+      }
+    }
+    @media (max-width: 1100px) {
+      .edr-defaults-row {
+        grid-template-columns: 1fr;
+      }
+    }
+    .edr-default-field {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+    .edr-def-label {
+      font-size: 10.5px;
+      font-weight: 600;
+      color: var(--text-secondary);
+    }
+    .form-control-sm {
+      height: 30px;
+      font-size: 11.5px;
+      padding: 4px 8px;
+    }
+    select.form-control-sm {
+      height: 30px;
+    }
+
+    /* Subject List Header */
+    .edr-subjects-header {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 0 2px 0;
+    }
+    .edr-subjects-title {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    /* Subject List */
+    .edr-subject-list {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .edr-subject-empty {
+      font-size: 11.5px;
+      color: var(--text-muted);
+      padding: 10px 4px;
+      text-align: center;
+    }
+
+    /* Individual Subject Row */
+    .edr-subject-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--bg-input);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      padding: 6px 8px;
+      transition: border-color var(--trans-fast);
+    }
+    .edr-subject-row:hover {
+      border-color: var(--border-hover);
+    }
+    .edr-subject-row-num {
+      font-size: 10.5px;
+      font-weight: 700;
+      color: var(--text-muted);
+      flex-shrink: 0;
+      min-width: 16px;
+    }
+    .edr-subject-row-info {
+      flex: 1;
+      min-width: 0;
+    }
+    .edr-subject-name {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-primary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .edr-subject-meta {
+      font-size: 10.5px;
+      color: var(--text-muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-top: 1px;
+    }
+    .edr-subject-type-tag {
+      font-size: 9px;
+      font-weight: 700;
+      padding: 1px 5px;
+      border-radius: 3px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      flex-shrink: 0;
+    }
+    .edr-subject-type-tag.tag-agent {
+      background: rgba(56, 189, 248, 0.15);
+      color: #38bdf8;
+      border: 1px solid rgba(56, 189, 248, 0.3);
+    }
+    .edr-subject-type-tag.tag-tl {
+      background: rgba(167, 139, 250, 0.15);
+      color: #a78bfa;
+      border: 1px solid rgba(167, 139, 250, 0.3);
+    }
+    .edr-subject-btn-edit,
+    .edr-subject-btn-remove {
+      flex-shrink: 0;
+      background: none;
+      border: 1px solid transparent;
+      border-radius: var(--radius-xs);
+      padding: 3px 7px;
+      font-size: 10.5px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background var(--trans-fast), color var(--trans-fast), border-color var(--trans-fast);
+      line-height: 1.4;
+    }
+    .edr-subject-btn-edit {
+      color: var(--text-secondary);
+    }
+    .edr-subject-btn-edit:hover {
+      background: var(--bg-hover);
+      border-color: var(--border-hover);
+      color: var(--text-primary);
+    }
+    .edr-subject-btn-remove {
+      color: var(--accent-danger);
+    }
+    .edr-subject-btn-remove:hover {
+      background: rgba(248, 113, 113, 0.12);
+      border-color: rgba(248, 113, 113, 0.3);
+    }
+
+    /* Subject Actions Bar */
+    .edr-subject-actions {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    /* Expanded Subject Detail in Saved EDR Card */
+    .edr-subjects-expanded {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      margin-top: 2px;
+    }
+    .edr-subject-detail-row {
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+      font-size: 11px;
+    }
+    .edr-subj-name {
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+    .edr-subj-meta {
+      color: var(--text-muted);
+      font-size: 10.5px;
+    }
+
+    /* Collapsed & Expanded Multi-Subject in Saved EDR Card */
+    .edr-card-subject-pill-wrap {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      min-width: 0;
+      max-width: 100%;
+      overflow: hidden;
+    }
+    .edr-card-subject-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      background: var(--bg-hover, rgba(255,255,255,0.06));
+      border: 1px solid var(--border-subtle, rgba(255,255,255,0.12));
+      border-radius: 4px;
+      padding: 1px 6px;
+      font-size: 10.5px;
+      font-weight: 700;
+      color: var(--accent-primary, #60a5fa);
+      cursor: pointer;
+      user-select: none;
+      transition: all 0.15s ease;
+      line-height: 1.4;
+      flex-shrink: 0;
+    }
+    .edr-card-subject-toggle:hover {
+      background: var(--bg-active, rgba(255,255,255,0.12));
+      border-color: var(--accent-primary, #60a5fa);
+    }
+    .edr-card-subject-toggle.is-expanded {
+      background: rgba(96,165,250,0.15);
+      border-color: var(--accent-primary, #60a5fa);
+    }
+    .edr-subj-pill-chevron {
+      font-size: 9px;
+      transition: transform 0.15s ease;
+      display: inline-block;
+    }
+    .edr-subj-pill-names {
+      color: var(--text-secondary);
+      font-size: 11px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 240px;
+    }
+    .edr-card-expanded-subjects {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-top: 6px;
+      padding: 6px 10px;
+      background: var(--bg-input, rgba(0,0,0,0.25));
+      border: 1px solid var(--border-subtle, rgba(255,255,255,0.08));
+      border-radius: var(--radius-sm, 6px);
+      width: 100%;
+      box-sizing: border-box;
+    }
+    .edr-card-expanded-row {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+      padding: 2px 0;
+      border-bottom: 1px dashed var(--border-subtle, rgba(255,255,255,0.08));
+    }
+    .edr-card-expanded-row:last-child {
+      border-bottom: none;
+    }
+    .edr-card-expanded-name {
+      font-weight: 600;
+      font-size: 11.5px;
+      color: var(--text-primary);
+    }
+    .edr-card-expanded-meta {
+      font-size: 10.5px;
+      color: var(--text-muted);
+    }
+
   </style>
 </head>
 <body class="auth-locked">
@@ -949,42 +1235,6 @@
             <path d="M12 3l1.9 5.8a2 2 0 0 0 1.3 1.3L21 12l-5.8 1.9a2 2 0 0 0-1.3 1.3L12 21l-1.9-5.8a2 2 0 0 0-1.3-1.3L3 12l5.8-1.9a2 2 0 0 0 1.3-1.3L12 3z"></path>
           </svg>
           <span class="nav-label">AI Sorter</span>
-        </button>
-
-        <div class="rail-section-label">Communications</div>
-
-        <!-- HRIS Workspace Tab -->
-        <button type="button" class="nav-item" id="tabHris" role="tab" aria-selected="false" title="HRIS" data-tooltip="HRIS" data-tooltip-pos="right">
-          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="3" y="4" width="18" height="16" rx="2"></rect>
-            <circle cx="9" cy="10" r="2"></circle>
-            <line x1="15" y1="8" x2="17" y2="8"></line>
-            <line x1="15" y1="12" x2="17" y2="12"></line>
-            <line x1="7" y1="16" x2="17" y2="16"></line>
-          </svg>
-          <span class="nav-label">HRIS</span>
-        </button>
-
-        <!-- Outlook Workspace Tab -->
-        <button type="button" class="nav-item" id="tabOutlook" role="tab" aria-selected="false" title="Outlook" data-tooltip="Outlook" data-tooltip-pos="right">
-          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
-            <polyline points="22,6 12,13 2,6"></polyline>
-          </svg>
-          <span class="nav-label">Outlook</span>
-          <span class="nav-badge" id="railOutlookBadge" style="display:none;">0</span>
-        </button>
-
-        <!-- Microsoft Teams Workspace Tab -->
-        <button type="button" class="nav-item" id="tabTeams" role="tab" aria-selected="false" title="MS Teams" data-tooltip="MS Teams" data-tooltip-pos="right">
-          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-            <circle cx="9" cy="7" r="4"></circle>
-            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-          </svg>
-          <span class="nav-label">MS Teams</span>
-          <span class="nav-badge" id="railTeamsBadge" style="display:none;">0</span>
         </button>
 
         <div class="rail-section-label">Management</div>
@@ -1366,32 +1616,88 @@
                       </div>
                     </div>
 
-                    <div class="form-row-2">
-                      <div class="form-group">
-                        <div class="edr-field-header">
-                          <label class="form-label" for="edrSubjectName">Violation Subject</label>
-                          <div class="choice-segment">
-                            <button type="button" class="choice-btn active" id="btnSubjAgent">Agent/s</button>
-                            <button type="button" class="choice-btn" id="btnSubjTl">TL</button>
+                    <!-- Hidden legacy compat inputs (kept for save compat, driven by multi-subject module) -->
+                    <input type="hidden" id="edrSubjectName" value="">
+                    <input type="hidden" id="edrAccount" value="">
+                    <datalist id="listSubjectTls"></datalist>
+                    <datalist id="listAccounts"></datalist>
+
+                    <!-- MULTI-SUBJECT SECTION -->
+                    <div class="edr-subjects-section" id="edrSubjectsSection">
+
+                      <!-- Defaults Bar -->
+                      <div class="edr-defaults-bar">
+                        <div class="edr-defaults-label">Defaults for new subjects</div>
+                        <div class="edr-defaults-row">
+                          <div class="edr-default-field">
+                            <label class="edr-def-label" for="edrDefaultTl">TL / Supervisor</label>
+                            <input type="text" id="edrDefaultTl" class="form-control form-control-sm" list="listRespondentsDefault" placeholder="Default TL...">
+                            <datalist id="listRespondentsDefault"></datalist>
+                          </div>
+                          <div class="edr-default-field">
+                            <label class="edr-def-label" for="edrDefaultAccount">Account / Campaign</label>
+                            <div style="display:flex;gap:3px;align-items:center;">
+                              <input type="text" id="edrDefaultAccount" class="form-control form-control-sm" list="listAccountsDefault" placeholder="Default Account...">
+                              <datalist id="listAccountsDefault"></datalist>
+                              <button type="button" class="btn-opt-mgmt" id="btnAddAccountOptionMs" title="Add custom Account/Campaign">+</button>
+                              <button type="button" class="btn-opt-mgmt" id="btnRemoveAccountOptionMs" title="Remove Account/Campaign">-</button>
+                            </div>
+                          </div>
+                          <div class="edr-default-field">
+                            <label class="edr-def-label" for="edrDefaultInfraction">Infraction</label>
+                            <div style="display:flex;gap:3px;align-items:center;">
+                              <select id="edrDefaultInfraction" class="form-control form-control-sm" style="flex:1;min-width:0;">
+                                <option value="">— select —</option>
+                              </select>
+                              <button type="button" class="btn-opt-mgmt" id="btnAddInfractionOption" title="Add new infraction">+</button>
+                              <button type="button" class="btn-opt-mgmt" id="btnRemoveInfractionOption" title="Remove infraction">-</button>
+                            </div>
                           </div>
                         </div>
-                        <input type="text" id="edrSubjectName" class="form-control" placeholder="Employee name..." required>
-                        <datalist id="listSubjectTls"></datalist>
+                        <div style="display:flex;justify-content:flex-end;margin-top:4px;">
+                          <button type="button" class="btn btn-ghost btn-sm" id="btnApplyDefaultsToAll" title="Apply current defaults to ALL subjects">Apply Defaults to All</button>
+                        </div>
                       </div>
 
-                      <div class="form-group">
-                        <div class="edr-field-header">
-                          <div class="edr-label-group">
-                            <label class="form-label" for="edrAccount">Account / Campaign <span class="required-dot">*</span></label>
-                            <span class="btn-opt-mgmt-wrap">
-                              <button type="button" class="btn-opt-mgmt" id="btnAddAccountOption" title="Add custom Account/Campaign to masterlist">+</button>
-                              <button type="button" class="btn-opt-mgmt" id="btnRemoveAccountOption" title="Remove custom Account/Campaign from masterlist">-</button>
-                            </span>
-                          </div>
-                        </div>
-                        <input type="text" id="edrAccount" class="form-control" list="listAccounts" placeholder="Search campaign..." required>
-                        <datalist id="listAccounts"></datalist>
+                      <!-- Subject List Header -->
+                      <div class="edr-subjects-header">
+                        <span class="edr-subjects-title">Subjects</span>
+                        <span class="badge badge-neutral" id="edrSubjectCountBadge">0 subjects</span>
                       </div>
+
+                      <!-- Subject List -->
+                      <div id="edrSubjectList" class="edr-subject-list">
+                        <!-- Populated by JS -->
+                        <div class="edr-subject-empty" id="edrSubjectEmpty">
+                          No subjects added yet. Use the buttons below to add.
+                        </div>
+                      </div>
+
+                      <!-- Actions -->
+                      <div class="edr-subject-actions">
+                        <button type="button" class="btn btn-outline btn-sm" id="btnAddSubject">
+                          <svg class="icon icon-sm" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                          Add Subject
+                        </button>
+                        <button type="button" class="btn btn-ghost btn-sm" id="btnPasteMultipleNames">
+                          <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg>
+                          Paste Multiple Names
+                        </button>
+                      </div>
+                    </div>
+
+                    <!-- Account field for multi-subject (shown only for legacy mode, hidden when subjects > 0) -->
+                    <div class="form-group" id="legacyAccountGroup" style="display:none;">
+                      <div class="edr-field-header">
+                        <div class="edr-label-group">
+                          <label class="form-label" for="edrAccountLegacy">Account / Campaign <span class="required-dot">*</span></label>
+                          <span class="btn-opt-mgmt-wrap">
+                            <button type="button" class="btn-opt-mgmt" id="btnAddAccountOption" title="Add custom Account/Campaign to masterlist">+</button>
+                            <button type="button" class="btn-opt-mgmt" id="btnRemoveAccountOption" title="Remove custom Account/Campaign from masterlist">-</button>
+                          </span>
+                        </div>
+                      </div>
+                      <input type="text" id="edrAccountLegacy" class="form-control" list="listAccounts" placeholder="Search campaign...">
                     </div>
 
                     <!-- SECTION 3: Findings -->
@@ -1808,72 +2114,6 @@
               </div>
 
               <iframe id="trackerFrame" class="tracker-iframe" src="https://docs.google.com/spreadsheets/d/1dhQKpRxZUFjQc-00a5SQXRRsIOMCjT_d-b-o36bYWzs/edit?gid=312942343#gid=312942343" allow="clipboard-read; clipboard-write" loading="eager" title="Shared Google Spreadsheet"></iframe>
-            </div>
-          </div>
-        </section>
-
-        <!-- WORKSPACE: Dedicated HRIS (SixEleven HRIS / Employee DTR) -->
-        <!-- WORKSPACE: SixEleven HRIS / Employee DTR -->
-        <section id="paneHris" class="workspace-pane" role="tabpanel" aria-labelledby="tabHris" hidden>
-          <div class="hris-workspace-layout">
-            <!-- Compact HRIS Switcher Topbar -->
-            <div class="hris-topbar">
-              <div class="hris-title-cluster">
-                <span class="hris-title">SixEleven HRIS / Employee DTR</span>
-                <span class="badge badge-neutral" style="font-size:10px;">Embedded Portal</span>
-              </div>
-              <div class="hris-actions">
-                <button type="button" class="btn btn-ghost btn-xs" id="btnHrisSessionHelp" title="Why do I see 419 Page Expired?" style="gap:4px; color:var(--text-muted); font-size:11px;">
-                  <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
-                  <span>419 / Session Info</span>
-                </button>
-                <button type="button" class="btn btn-outline btn-xs" id="btnHrisReload" title="Reload HRIS application" style="gap:4px;">
-                  <svg class="icon icon-xs" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
-                  <span>Reload</span>
-                </button>
-                <a id="linkOpenHris" href="https://611systems.com/hrsys/employee-dtr" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-xs" title="Open HRIS directly in a new browser tab" style="gap:4px; text-decoration:none;">
-                  <svg class="icon icon-xs" viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
-                  <span>Open HRIS</span>
-                </a>
-              </div>
-            </div>
-
-            <!-- Full Body HRIS Viewport -->
-            <div class="hris-frame-container" id="hrisFrameContainer">
-              <!-- Loading State -->
-              <div id="hrisLoadingState" class="hris-state-overlay">
-                <div class="hris-state-card">
-                  <div class="hris-spinner"></div>
-                  <div class="hris-state-text">
-                    <h3 class="hris-state-title">HRIS</h3>
-                    <p class="hris-state-desc">Loading HRIS...</p>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Error Diagnostic State (Hidden by default) -->
-              <div id="hrisErrorState" class="hris-state-overlay" style="display:none;">
-                <div class="hris-state-card hris-state-card-error">
-                  <div class="hris-error-icon">
-                    <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="#f87171" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
-                  </div>
-                  <h3 class="hris-state-title">HRIS session could not be established inside the embedded portal</h3>
-                  <div class="hris-state-reason-box">
-                    <span class="hris-reason-label">Reason:</span>
-                    <span class="hris-reason-val" id="hrisErrorReason">The HRIS server rejected the embedded session (419 Page Expired). Cross-site browser cookie restrictions block the required session cookies.</span>
-                  </div>
-                  <div class="hris-state-actions">
-                    <button type="button" class="btn btn-primary btn-sm" id="btnHrisRetry">Retry</button>
-                    <button type="button" class="btn btn-outline btn-sm" id="btnHrisReloadCard">Reload HRIS</button>
-                    <a href="https://611systems.com/hrsys/employee-dtr" target="_blank" rel="noopener noreferrer" class="btn btn-outline btn-sm" id="btnOpenHrisExternalFallback" style="gap:4px; text-decoration:none;">
-                      <span>Open HRIS</span>
-                      <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
-                    </a>
-                  </div>
-                </div>
-              </div>
-
-              <iframe id="hrisFrame" class="hris-iframe" src="https://611systems.com/hrsys/employee-dtr" allow="clipboard-read; clipboard-write; fullscreen" title="HRIS"></iframe>
             </div>
           </div>
         </section>
@@ -3081,222 +3321,81 @@
 
           </div>
         </section>
-
-        <!-- ================================================================= -->
-        <!-- OUTLOOK WORKSPACE PANE -->
-        <!-- ================================================================= -->
-        <section id="paneOutlook" class="workspace-pane" role="tabpanel" aria-labelledby="tabOutlook" hidden>
-          <div class="outlook-container">
-            <!-- Workspace Header / Toolbar -->
-            <div class="ms-workspace-header">
-              <div class="ms-header-left">
-                <div class="ms-header-title">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
-                    <polyline points="22,6 12,13 2,6"></polyline>
-                  </svg>
-                  <span>Microsoft Outlook</span>
-                </div>
-                <span class="ms-mode-indicator">Mode: Native Microsoft Graph Integration</span>
-              </div>
-              <div class="ms-header-actions">
-                <button type="button" class="btn btn-primary btn-sm" id="btnOutlookCompose" style="gap:6px;">
-                  <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                  <span>Compose</span>
-                </button>
-                <button type="button" class="btn btn-outline btn-sm" id="btnOutlookRefresh" title="Refresh Inbox">
-                  <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
-                  <span>Refresh</span>
-                </button>
-                <div class="ms-account-pill is-anonymous" id="outlookAccountPill" title="Microsoft Account Settings">
-                  <div class="ms-account-avatar" id="outlookAccountAvatar">?</div>
-                  <span id="outlookAccountName">Sign In</span>
-                </div>
-              </div>
-            </div>
-
-            <!-- State View: Setup / Disconnected / Error / Ready to sign in -->
-            <div class="ms-state-view" id="outlookStateView"></div>
-
-            <!-- Desktop & Mobile Split Layout -->
-            <div class="outlook-split-layout" id="outlookMainLayout" style="display:none;">
-              <!-- Left Column: Inbox List -->
-              <div class="outlook-inbox-col">
-                <div class="outlook-inbox-toolbar">
-                  <div class="outlook-search-wrap">
-                    <svg class="outlook-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-                    <input type="search" class="outlook-search-input" id="outlookSearchInput" placeholder="Search emails..." autocomplete="off">
-                  </div>
-                </div>
-                <div class="outlook-filter-chips">
-                  <button type="button" class="outlook-filter-chip active" data-filter="all">All</button>
-                  <button type="button" class="outlook-filter-chip" data-filter="unread">Unread</button>
-                </div>
-                <div class="outlook-message-list" id="outlookMessageList">
-                  <div style="padding:24px 16px; text-align:center; color:var(--text-muted); font-size:12px;">Connecting to Microsoft mailbox...</div>
-                </div>
-              </div>
-
-              <!-- Right Column: Reading Pane -->
-              <div class="outlook-reading-col" id="outlookReadingCol">
-                <div class="outlook-empty-pane" id="outlookEmptyState">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
-                  <span>Select an email from the list to read</span>
-                </div>
-
-                <div id="outlookMessageContent" style="display:none; flex-direction:column; height:100%; min-height:0;">
-                  <div class="outlook-reading-header">
-                    <div class="outlook-reading-actions">
-                      <button type="button" class="btn btn-outline btn-xs" id="btnOutlookMobileBack" style="gap:4px;">
-                        <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"></polyline></svg>
-                        <span>Back to Inbox</span>
-                      </button>
-                      <div class="outlook-btn-group">
-                        <button type="button" class="btn btn-outline btn-xs" id="btnOutlookReply" style="gap:4px;">
-                          <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 17 4 12 9 7"></polyline><path d="M20 18v-2a4 4 0 0 0-4-4H4"></path></svg>
-                          <span>Reply</span>
-                        </button>
-                        <button type="button" class="btn btn-outline btn-xs" id="btnOutlookReplyAll" style="gap:4px;">
-                          <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><polyline points="7 17 2 12 7 7"></polyline><polyline points="12 17 7 12 12 7"></polyline><path d="M22 18v-2a4 4 0 0 0-4-4H7"></path></svg>
-                          <span>Reply All</span>
-                        </button>
-                      </div>
-                    </div>
-                    <div class="outlook-reading-meta">
-                      <div class="outlook-reading-subject" id="outlookReadingSubject"></div>
-                      <div class="outlook-reading-from" id="outlookReadingFrom"></div>
-                      <div class="outlook-reading-to" id="outlookReadingTo"></div>
-                    </div>
-                  </div>
-
-                  <div class="outlook-reading-body" id="outlookReadingBody"></div>
-
-                  <div class="outlook-reading-attachments" id="outlookAttachmentsContainer" style="display:none;">
-                    <div class="outlook-att-title">Attachments</div>
-                    <div class="outlook-att-items" id="outlookAttachmentsList"></div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Right Column Overlay: Composer -->
-              <div class="outlook-composer-col" id="outlookComposerCol" style="display:none;">
-                <div class="outlook-composer-header">
-                  <span class="outlook-composer-title" id="outlookComposerTitle">New Message</span>
-                  <button type="button" class="btn btn-ghost btn-sm" id="btnComposerCancel">✕</button>
-                </div>
-                <div class="outlook-composer-form">
-                  <div class="outlook-composer-row">
-                    <label class="outlook-composer-label" for="composerTo">To</label>
-                    <input type="email" class="outlook-composer-input" id="composerTo" placeholder="Recipient emails (comma separated)" multiple>
-                  </div>
-                  <div class="outlook-composer-row">
-                    <label class="outlook-composer-label" for="composerCc">CC</label>
-                    <input type="email" class="outlook-composer-input" id="composerCc" placeholder="CC recipients" multiple>
-                  </div>
-                  <div class="outlook-composer-row">
-                    <label class="outlook-composer-label" for="composerSubject">Subject</label>
-                    <input type="text" class="outlook-composer-input" id="composerSubject" placeholder="Email subject">
-                  </div>
-                  <div class="outlook-composer-body-area">
-                    <textarea class="outlook-composer-textarea" id="composerBody" placeholder="Type your email message..."></textarea>
-                  </div>
-                </div>
-                <div class="outlook-composer-actions">
-                  <button type="button" class="btn btn-outline btn-sm" id="btnComposerCancel">Cancel</button>
-                  <button type="button" class="btn btn-primary btn-sm" id="btnComposerSend" style="gap:6px;">
-                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
-                    <span>Send</span>
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <!-- ================================================================= -->
-        <!-- MICROSOFT TEAMS WORKSPACE PANE -->
-        <!-- ================================================================= -->
-        <section id="paneTeams" class="workspace-pane" role="tabpanel" aria-labelledby="tabTeams" hidden>
-          <div class="teams-container">
-            <!-- Workspace Header / Toolbar -->
-            <div class="ms-workspace-header">
-              <div class="ms-header-left">
-                <div class="ms-header-title">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="#6264a7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                    <circle cx="9" cy="7" r="4"></circle>
-                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-                  </svg>
-                  <span>Microsoft Teams</span>
-                </div>
-                <span class="ms-mode-indicator">Mode: Native Microsoft Graph Integration</span>
-              </div>
-              <div class="ms-header-actions">
-                <div class="ms-account-pill is-anonymous" id="teamsAccountPill" title="Microsoft Account Settings">
-                  <div class="ms-account-avatar" id="teamsAccountAvatar">?</div>
-                  <span id="teamsAccountName">Sign In</span>
-                </div>
-              </div>
-            </div>
-
-            <!-- Diagnostics / Notice Banner -->
-            <div class="ms-notice-banner" id="teamsNoticeBanner" style="display:none;"></div>
-
-            <!-- State View: Setup / Disconnected / Error / Ready to sign in -->
-            <div class="ms-state-view" id="teamsStateView"></div>
-
-            <!-- Split Layout -->
-            <div class="teams-split-layout" id="teamsMainLayout" style="display:none;">
-              <!-- Left Column: Chats / Teams & Channels list -->
-              <div class="teams-nav-col">
-                <div class="teams-nav-tabs">
-                  <button type="button" class="teams-nav-tab-btn active" id="btnTeamsTabChats">Chats</button>
-                  <button type="button" class="teams-nav-tab-btn" id="btnTeamsTabTeams">Teams &amp; Channels</button>
-                </div>
-                <div class="teams-list-scroll" id="teamsNavList">
-                  <div style="padding:24px 16px; text-align:center; color:var(--text-muted); font-size:12px;">Loading Teams...</div>
-                </div>
-              </div>
-
-              <!-- Right Column: Conversation Stream & Composer -->
-              <div class="teams-main-col">
-                <div class="teams-main-header">
-                  <div class="teams-active-info">
-                    <button type="button" class="btn btn-outline btn-xs" id="btnTeamsMobileBack" style="gap:4px;">
-                      <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"></polyline></svg>
-                      <span>Back</span>
-                    </button>
-                    <div id="teamsActiveWrap" style="display:none; flex-direction:column; gap:2px;">
-                      <span class="teams-active-title" id="teamsActiveTitle"></span>
-                      <small style="color:var(--text-muted); font-size:10.5px;" id="teamsActiveSubtitle"></small>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Empty state when no chat selected -->
-                <div class="outlook-empty-pane" id="teamsEmptyState">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
-                  <span>Select a chat or channel to start messaging</span>
-                </div>
-
-                <!-- Active Thread View -->
-                <div class="teams-thread-container" id="teamsThreadContainer"></div>
-
-                <!-- Bottom Message Composer -->
-                <div class="teams-composer-bar">
-                  <textarea class="teams-composer-input" id="teamsMessageInput" placeholder="Type a message (Enter to send, Shift+Enter for newline)..." rows="1"></textarea>
-                  <button type="button" class="teams-btn-send" id="btnTeamsSend" title="Send message">
-                    <span>Send</span>
-                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
       </div>
     </main>
+  </div>
+
+  <!-- Subject Editor Modal (Multi-Subject EDR) -->
+  <div class="modal-backdrop" id="modalSubjectEditor" hidden>
+    <div class="modal-dialog" style="max-width:460px;">
+      <div class="modal-header">
+        <h3 class="modal-title" id="subjectEditorTitle">Add Subject</h3>
+        <button type="button" class="modal-close" id="btnSubjectEditorClose" aria-label="Close">&times;</button>
+      </div>
+      <div class="modal-body" style="display:flex;flex-direction:column;gap:12px;">
+        <input type="hidden" id="subjectEditorId">
+        <!-- Subject Type -->
+        <div class="form-group" style="margin:0;">
+          <label class="form-label">Subject Type</label>
+          <div class="choice-segment" id="subjectEditorTypeSegment">
+            <button type="button" class="choice-btn active" id="btnSubjEditorAgent" data-type="Agent">Agent</button>
+            <button type="button" class="choice-btn" id="btnSubjEditorTl" data-type="Team Leader">Team Leader</button>
+          </div>
+        </div>
+        <!-- Name -->
+        <div class="form-group" style="margin:0;">
+          <label class="form-label" for="subjectEditorName">Name <span class="required-dot">*</span></label>
+          <input type="text" id="subjectEditorName" class="form-control" placeholder="Employee name...">
+        </div>
+        <!-- TL / Supervisor -->
+        <div class="form-group" style="margin:0;">
+          <label class="form-label" for="subjectEditorSupervisor">TL / Supervisor</label>
+          <input type="text" id="subjectEditorSupervisor" class="form-control" list="listRespondentsSubjEditor" placeholder="Team Leader name...">
+          <datalist id="listRespondentsSubjEditor"></datalist>
+        </div>
+        <!-- Account -->
+        <div class="form-group" style="margin:0;">
+          <label class="form-label" for="subjectEditorAccount">Account / Campaign</label>
+          <input type="text" id="subjectEditorAccount" class="form-control" list="listAccountsSubjEditor" placeholder="Account or campaign...">
+          <datalist id="listAccountsSubjEditor"></datalist>
+        </div>
+        <!-- Infraction -->
+        <div class="form-group" style="margin:0;">
+          <label class="form-label" for="subjectEditorInfraction">Infraction</label>
+          <select id="subjectEditorInfraction" class="form-control">
+            <option value="">— none —</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer" style="justify-content:flex-end;gap:8px;">
+        <button type="button" class="btn btn-ghost btn-sm" id="btnSubjectEditorCancel">Cancel</button>
+        <button type="button" class="btn btn-primary btn-sm" id="btnSubjectEditorSave">Save Subject</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Paste Names Modal (Multi-Subject EDR) -->
+  <div class="modal-backdrop" id="modalPasteNames" hidden>
+    <div class="modal-dialog" style="max-width:480px;">
+      <div class="modal-header">
+        <h3 class="modal-title">Paste Multiple Names</h3>
+        <button type="button" class="modal-close" id="btnPasteNamesClose" aria-label="Close">&times;</button>
+      </div>
+      <div class="modal-body" style="display:flex;flex-direction:column;gap:12px;">
+        <div style="font-size:11.5px;color:var(--text-secondary);">
+          Paste or type multiple names separated by commas or new lines. Defaults (TL, Account, Infraction) will be applied to each new subject.
+        </div>
+        <div class="form-group" style="margin:0;">
+          <label class="form-label" for="pasteNamesInput">Names</label>
+          <textarea id="pasteNamesInput" class="form-control" rows="6" placeholder="Juan Cruz&#10;Maria Santos&#10;or: Juan Cruz, Maria Santos, ..."></textarea>
+        </div>
+        <div id="pasteNamesPreview" style="font-size:11.5px;color:var(--text-secondary);min-height:20px;"></div>
+      </div>
+      <div class="modal-footer" style="justify-content:space-between;">
+        <button type="button" class="btn btn-ghost btn-sm" id="btnPasteNamesCancel">Cancel</button>
+        <button type="button" class="btn btn-primary btn-sm" id="btnPasteNamesConfirm">Add Names</button>
+      </div>
+    </div>
   </div>
 
   <!-- Google Docs Web App Receiver Setup Dialog -->
@@ -3591,7 +3690,6 @@
             <label><input type="checkbox" data-permission="edr"> EDR</label>
             <label><input type="checkbox" data-permission="audit"> CCTV Audit</label>
             <label><input type="checkbox" data-permission="trackers"> Trackers</label>
-            <label><input type="checkbox" data-permission="hris"> HRIS</label>
             <label><input type="checkbox" data-permission="sorter"> AI Sorter</label>
             <label><input type="checkbox" data-permission="maintenance"> Maintenance</label>
             <label><input type="checkbox" data-permission="pending"> Pending Reports</label>
@@ -3757,6 +3855,7 @@
   <script src="./js/shared.js"></script>
   <script src="./js/services/auth-service.js"></script>
   <script src="./js/services/edr-service.js"></script>
+  <script src="./js/services/edr-multi-subject.js"></script>
   <script src="./js/services/audit-service.js"></script>
   <script src="./js/services/live-tracker-service.js"></script>
   <script src="./js/components/spreadsheet-grid.js"></script>
@@ -3774,8 +3873,6 @@
   <!-- Microsoft 365 Services & Components -->
   <script src="./js/services/ms-auth-service.js"></script>
   <script src="./js/services/ms-graph-service.js"></script>
-  <script src="./js/services/outlook-service.js"></script>
-  <script src="./js/services/teams-service.js"></script>
   <script src="./js/components/ms-teams-share-dialog.js"></script>
   <script src="./js/components/ms-config-dialog.js"></script>
   <script src="./js/app.js"></script>

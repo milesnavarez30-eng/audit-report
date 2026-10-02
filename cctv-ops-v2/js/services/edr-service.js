@@ -339,6 +339,10 @@ window.CCTV_EDR = (function () {
   }
 
   function reportPlainText(report) {
+    if (window.EDR_MULTI_SUBJECT) {
+      const msText = window.EDR_MULTI_SUBJECT.buildMultiSubjectTeamsText(report);
+      if (msText) return msText;
+    }
     const topLine = [report.site, "CCTV", report.account].filter(Boolean).join(" | ");
     const lines = [
       topLine,
@@ -364,6 +368,10 @@ window.CCTV_EDR = (function () {
   }
 
   function reportTeamsHtml(report) {
+    if (window.EDR_MULTI_SUBJECT) {
+      const msHtml = window.EDR_MULTI_SUBJECT.buildMultiSubjectTeamsHtml(report);
+      if (msHtml) return msHtml;
+    }
     const topLine = [report.site, "CCTV", report.account].filter(Boolean).join(" | ");
     const links = Array.isArray(report.clipLinks) && report.clipLinks.length
       ? report.clipLinks
@@ -532,13 +540,50 @@ window.CCTV_EDR = (function () {
       return `<div class="edr-preview-line edr-preview-clip" style="margin-top:4px;"><strong>${escapeHtml(label)}</strong> <a href="${clipUrl}" target="_blank" rel="noopener noreferrer">Click here!</a></div>`;
     }).join("");
 
+    let subjectLinesHtml = "";
+    if (window.EDR_MULTI_SUBJECT && Array.isArray(report.subjects) && report.subjects.length > 0) {
+      const subjects = report.subjects;
+      const allSameTl = subjects.every(s => s.supervisorName === subjects[0].supervisorName);
+      const allSameAccount = subjects.every(s => s.account === subjects[0].account);
+      const allSameInfraction = subjects.every(s => s.infraction === subjects[0].infraction);
+      if (allSameTl && allSameAccount && allSameInfraction) {
+        const agentNames = subjects.map(s => escapeHtml(s.name)).join(", ");
+        const isAllTl = subjects.every(s => s.type === "Team Leader");
+        subjectLinesHtml = `
+          <div class="edr-preview-line"><strong>Team Leader:</strong> ${escapeHtml(subjects[0].supervisorName || "")}</div>
+          <div class="edr-preview-line"><strong>${isAllTl ? "Team Leaders" : "Agents"}:</strong> ${agentNames}</div>
+          <div class="edr-preview-line"><strong>Account/Campaign:</strong> ${escapeHtml(subjects[0].account || "")}</div>
+          ${subjects[0].infraction ? `<div class="edr-preview-line"><strong>Infraction:</strong> ${escapeHtml(subjects[0].infraction)}</div>` : ""}
+        `;
+      } else {
+        const isAllTl = subjects.every(s => s.type === "Team Leader");
+        const isAllAgent = subjects.every(s => s.type !== "Team Leader");
+        const listHeader = isAllTl ? "Team Leaders:" : (isAllAgent ? "Agents:" : "Subjects:");
+        const subList = subjects.map(s => {
+          const parts = [escapeHtml(s.name)];
+          if (s.supervisorName) parts.push(escapeHtml(s.supervisorName));
+          if (s.account) parts.push(escapeHtml(s.account));
+          if (s.infraction) parts.push(escapeHtml(s.infraction));
+          return `<div>${parts.join(" &mdash; ")}</div>`;
+        }).join("");
+        subjectLinesHtml = `
+          <div class="edr-preview-line" style="margin-top:4px;"><strong>${listHeader}</strong></div>
+          <div style="font-size:11.5px; line-height:1.4; padding-left:4px;">${subList}</div>
+        `;
+      }
+    } else {
+      subjectLinesHtml = `
+        <div class="edr-preview-line"><strong>${escapeHtml(supervisorOutputLabel(report))}:</strong> ${escapeHtml(report.supervisorName || "")}</div>
+        <div class="edr-preview-line"><strong>${escapeHtml(subjectOutputLabel(report))}:</strong> ${escapeHtml(report.subjectName || "")}</div>
+        <div class="edr-preview-line"><strong>Account/Campaign:</strong> ${escapeHtml(report.account || "")}</div>
+      `;
+    }
+
     return `<div class="edr-preview-card" data-edr-id="${escapeHtml(report.id)}" style="padding:10px 12px; font-size:12px; line-height:1.45;">` +
       `<div style="font-weight:700; color:var(--accent-primary); margin-bottom:5px;">${escapeHtml(topLine)}</div>` +
       `<div class="edr-preview-line"><strong>Date:</strong> ${escapeHtml(formatDate(report.date))}</div>` +
       `<div class="edr-preview-line"><strong>Time Observed:</strong> ${escapeHtml(report.timeObserved || report.timeStart || "")}</div>` +
-      `<div class="edr-preview-line"><strong>${escapeHtml(supervisorOutputLabel(report))}:</strong> ${escapeHtml(report.supervisorName || "")}</div>` +
-      `<div class="edr-preview-line"><strong>${escapeHtml(subjectOutputLabel(report))}:</strong> ${escapeHtml(report.subjectName || "")}</div>` +
-      `<div class="edr-preview-line"><strong>Account/Campaign:</strong> ${escapeHtml(report.account || "")}</div>` +
+      subjectLinesHtml +
       `<div class="edr-preview-line"><strong>Incident:</strong> ${escapeHtml(report.incident || "")}</div>` +
       `<div class="edr-preview-line"><strong>Action Taken/Remarks:</strong> ${escapeHtml(report.action || "")}</div>` +
       screenshotsHtml +
