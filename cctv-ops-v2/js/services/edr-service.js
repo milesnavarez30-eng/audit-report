@@ -549,8 +549,13 @@ window.CCTV_EDR = (function () {
       if (allSameTl && allSameAccount && allSameInfraction) {
         const agentNames = subjects.map(s => escapeHtml(s.name)).join(", ");
         const isAllTl = subjects.every(s => s.type === "Team Leader");
+        const tlHeader = (!isAllTl && subjects[0].supervisorName)
+          ? `<div class="edr-preview-line"><strong>Team Leader:</strong> ${escapeHtml(subjects[0].supervisorName || "")}</div>`
+          : (isAllTl && subjects[0].supervisorName && subjects[0].supervisorName.toLowerCase() !== subjects[0].name.toLowerCase()
+              ? `<div class="edr-preview-line"><strong>Supervisor:</strong> ${escapeHtml(subjects[0].supervisorName)}</div>`
+              : "");
         subjectLinesHtml = `
-          <div class="edr-preview-line"><strong>Team Leader:</strong> ${escapeHtml(subjects[0].supervisorName || "")}</div>
+          ${tlHeader}
           <div class="edr-preview-line"><strong>${isAllTl ? "Team Leaders" : "Agents"}:</strong> ${agentNames}</div>
           <div class="edr-preview-line"><strong>Account/Campaign:</strong> ${escapeHtml(subjects[0].account || "")}</div>
           ${subjects[0].infraction ? `<div class="edr-preview-line"><strong>Infraction:</strong> ${escapeHtml(subjects[0].infraction)}</div>` : ""}
@@ -561,7 +566,9 @@ window.CCTV_EDR = (function () {
         const listHeader = isAllTl ? "Team Leaders:" : (isAllAgent ? "Agents:" : "Subjects:");
         const subList = subjects.map(s => {
           const parts = [escapeHtml(s.name)];
-          if (s.supervisorName) parts.push(escapeHtml(s.supervisorName));
+          if (s.supervisorName && (s.type !== "Team Leader" || s.supervisorName.toLowerCase() !== s.name.toLowerCase())) {
+            parts.push(escapeHtml(s.supervisorName));
+          }
           if (s.account) parts.push(escapeHtml(s.account));
           if (s.infraction) parts.push(escapeHtml(s.infraction));
           return `<div>${parts.join(" &mdash; ")}</div>`;
@@ -572,8 +579,11 @@ window.CCTV_EDR = (function () {
         `;
       }
     } else {
+      const isTlLegacy = report.subjectType === "Team Leader";
+      const supLegacy = report.supervisorName || "";
+      const showSup = !isTlLegacy || (supLegacy && supLegacy.toLowerCase() !== (report.subjectName || "").toLowerCase());
       subjectLinesHtml = `
-        <div class="edr-preview-line"><strong>${escapeHtml(supervisorOutputLabel(report))}:</strong> ${escapeHtml(report.supervisorName || "")}</div>
+        ${showSup ? `<div class="edr-preview-line"><strong>${escapeHtml(supervisorOutputLabel(report))}:</strong> ${escapeHtml(supLegacy)}</div>` : ""}
         <div class="edr-preview-line"><strong>${escapeHtml(subjectOutputLabel(report))}:</strong> ${escapeHtml(report.subjectName || "")}</div>
         <div class="edr-preview-line"><strong>Account/Campaign:</strong> ${escapeHtml(report.account || "")}</div>
       `;

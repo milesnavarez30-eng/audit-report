@@ -574,7 +574,9 @@
       // Update or insert rows
       msSubjects.forEach((s, i) => {
         let row = list.querySelector(`.edr-subject-row[data-sid="${s.id}"]`);
-        const metaParts = [s.supervisorName, s.account, s.infraction].filter(Boolean);
+        const isSelfTl = s.type === "Team Leader" && s.supervisorName && s.supervisorName.toLowerCase() === s.name.toLowerCase();
+        const displaySup = isSelfTl ? "" : s.supervisorName;
+        const metaParts = [displaySup, s.account, s.infraction].filter(Boolean);
         const metaText = metaParts.join(" · ");
         const tagClass = s.type === "Team Leader" ? "tag-tl" : "tag-agent";
         const tagLabel = s.type === "Team Leader" ? "TL" : "Agent";
@@ -612,8 +614,12 @@
     function syncLegacyHiddenFields() {
       const nameEl = el("edrSubjectName");
       const accEl = el("edrAccount");
+      const supEl = el("edrSupervisorName");
+      const defTl = ms.clean(el("edrDefaultTl")?.value || "");
+      const firstSubjectTl = msSubjects.length > 0 ? (msSubjects[0].supervisorName || "") : "";
       if (nameEl) nameEl.value = msSubjects.map(s => s.name).join(", ");
-      if (accEl) accEl.value = msSubjects.length > 0 ? (msSubjects[0].account || "") : "";
+      if (accEl) accEl.value = msSubjects.length > 0 ? (msSubjects[0].account || "") : (el("edrDefaultAccount")?.value || "");
+      if (supEl) supEl.value = defTl || firstSubjectTl || supEl.value || "";
     }
 
     // ── Subject Editor Modal ─────────────────────────────────────────────
@@ -627,10 +633,25 @@
       const isNew = !subjectId;
       const subject = subjectId ? msSubjects.find(s => s.id === subjectId) : null;
 
+      editorSubjectType = subject ? subject.type : "Agent";
+      el("btnSubjEditorAgent").classList.toggle("active", editorSubjectType === "Agent");
+      el("btnSubjEditorTl").classList.toggle("active", editorSubjectType === "Team Leader");
+
       el("subjectEditorTitle").textContent = isNew ? "Add Subject" : "Edit Subject";
       el("subjectEditorId").value = subjectId || "";
       el("subjectEditorName").value = subject ? subject.name : "";
-      el("subjectEditorSupervisor").value = subject ? subject.supervisorName : (el("edrDefaultTl")?.value || "");
+
+      const defaultTl = ms.clean(el("edrDefaultTl")?.value || "");
+      const supInput = el("subjectEditorSupervisor");
+      if (editorSubjectType === "Team Leader") {
+        if (supInput) supInput.placeholder = "Optional OM / Supervisor (none if N/A)...";
+        const existingSup = subject ? (subject.supervisorName || "") : "";
+        if (supInput) supInput.value = (existingSup.toLowerCase() === (subject?.name || "").toLowerCase() || existingSup.toLowerCase() === defaultTl.toLowerCase()) ? "" : existingSup;
+      } else {
+        if (supInput) supInput.placeholder = "Team Leader name...";
+        if (supInput) supInput.value = subject ? (subject.supervisorName || defaultTl) : defaultTl;
+      }
+
       el("subjectEditorAccount").value = subject ? subject.account : (el("edrDefaultAccount")?.value || "");
       populateInfractionDropdowns();
 
@@ -638,10 +659,6 @@
       const subjectInfraction = subject ? subject.infraction : defaultInfraction;
       const editorInfSel = el("subjectEditorInfraction");
       if (editorInfSel) editorInfSel.value = subjectInfraction;
-
-      editorSubjectType = subject ? subject.type : "Agent";
-      el("btnSubjEditorAgent").classList.toggle("active", editorSubjectType === "Agent");
-      el("btnSubjEditorTl").classList.toggle("active", editorSubjectType === "Team Leader");
 
       modal.hidden = false;
       setTimeout(() => el("subjectEditorName")?.focus(), 80);
@@ -663,11 +680,16 @@
       const subjectId = el("subjectEditorId")?.value || "";
       const isNew = !subjectId;
 
+      let supervisorVal = ms.clean(el("subjectEditorSupervisor")?.value || "");
+      if (editorSubjectType === "Team Leader" && supervisorVal.toLowerCase() === name.toLowerCase()) {
+        supervisorVal = "";
+      }
+
       const subjectData = {
         id: subjectId || ms.uid(),
         type: editorSubjectType,
         name,
-        supervisorName: ms.clean(el("subjectEditorSupervisor")?.value || ""),
+        supervisorName: supervisorVal,
         account: ms.clean(el("subjectEditorAccount")?.value || ""),
         infraction: el("subjectEditorInfraction")?.value || ""
       };
@@ -699,11 +721,28 @@
       editorSubjectType = "Agent";
       el("btnSubjEditorAgent").classList.add("active");
       el("btnSubjEditorTl").classList.remove("active");
+      const supInput = el("subjectEditorSupervisor");
+      if (supInput) {
+        supInput.placeholder = "Team Leader name...";
+        if (!supInput.value.trim()) {
+          supInput.value = el("edrDefaultTl")?.value || "";
+        }
+      }
     });
     el("btnSubjEditorTl")?.addEventListener("click", () => {
       editorSubjectType = "Team Leader";
       el("btnSubjEditorTl").classList.add("active");
       el("btnSubjEditorAgent").classList.remove("active");
+      const supInput = el("subjectEditorSupervisor");
+      const currName = ms.clean(el("subjectEditorName")?.value || "");
+      const defTl = ms.clean(el("edrDefaultTl")?.value || "");
+      if (supInput) {
+        supInput.placeholder = "Optional OM / Supervisor (none if N/A)...";
+        if (supInput.value.trim().toLowerCase() === currName.toLowerCase() ||
+            supInput.value.trim().toLowerCase() === defTl.toLowerCase()) {
+          supInput.value = "";
+        }
+      }
     });
 
     // Editor modal buttons
@@ -806,12 +845,15 @@
       const defaultAccount = ms.clean(el("edrDefaultAccount")?.value || "");
       const defaultInfraction = el("edrDefaultInfraction")?.value || "";
 
-      msSubjects = msSubjects.map(s => ({
-        ...s,
-        supervisorName: defaultTl || s.supervisorName,
-        account: defaultAccount || s.account,
-        infraction: defaultInfraction || s.infraction
-      }));
+      msSubjects = msSubjects.map(s => {
+        const isSelfTl = s.type === "Team Leader" && defaultTl.toLowerCase() === s.name.toLowerCase();
+        return {
+          ...s,
+          supervisorName: isSelfTl ? s.supervisorName : (defaultTl || s.supervisorName),
+          account: defaultAccount || s.account,
+          infraction: defaultInfraction || s.infraction
+        };
+      });
 
       renderSubjectList();
       syncLegacyHiddenFields();
@@ -1308,13 +1350,19 @@
               ` : `
                 <span class="meta-item meta-account" title="${esc(r.account || 'General')}">${esc(r.account || 'General')}</span>
                 <span class="meta-sep">·</span>
-                <span class="meta-item meta-resp" title="${esc(r.supervisorRole || 'TL')}: ${esc(r.supervisorName || 'N/A')}">
-                  <span class="sub-label">${esc(roleShort)}:</span> <strong>${esc(r.supervisorName || 'N/A')}</strong>
-                </span>
-                ${r.subjectName ? `
-                  <span class="meta-sep">·</span>
-                  <span class="meta-item meta-subj" title="Subject: ${esc(r.subjectName)}"><span class="sub-label">Subj:</span> ${esc(r.subjectName)}</span>
-                ` : ''}
+                ${(r.subjectType === 'Team Leader' || subjects[0]?.type === 'Team Leader') ? `
+                  <span class="meta-item meta-resp" title="Team Leader: ${esc(r.subjectName || r.supervisorName || 'N/A')}">
+                    <span class="sub-label">TL:</span> <strong>${esc(r.subjectName || r.supervisorName || 'N/A')}</strong>
+                  </span>
+                ` : `
+                  <span class="meta-item meta-resp" title="${esc(r.supervisorRole || 'TL')}: ${esc(r.supervisorName || 'N/A')}">
+                    <span class="sub-label">${esc(roleShort)}:</span> <strong>${esc(r.supervisorName || 'N/A')}</strong>
+                  </span>
+                  ${r.subjectName ? `
+                    <span class="meta-sep">·</span>
+                    <span class="meta-item meta-subj" title="Subject: ${esc(r.subjectName)}"><span class="sub-label">Subj:</span> ${esc(r.subjectName)}</span>
+                  ` : ''}
+                `}
               `}
               ${lastEditedText ? `
                 <span class="meta-sep meta-sep-time">·</span>
@@ -1401,7 +1449,9 @@
         ${isMultiSubject ? `
           <div class="edr-card-expanded-subjects" id="edrCardExpanded_${esc(r.id)}" style="display:none;">
             ${subjects.map(s => {
-              const metaParts = [s.supervisorName, s.account, s.infraction].filter(Boolean);
+              const isSelfTl = s.type === 'Team Leader' && s.supervisorName && s.supervisorName.toLowerCase() === s.name.toLowerCase();
+              const displaySup = isSelfTl ? '' : s.supervisorName;
+              const metaParts = [displaySup, s.account, s.infraction].filter(Boolean);
               const metaStr = metaParts.join(' · ');
               return `
                 <div class="edr-card-expanded-row">
@@ -1659,9 +1709,9 @@
     }
     // Also set default bar to first subject's values for convenience
     const firstSubject = (Array.isArray(report.subjects) && report.subjects.length) ? report.subjects[0] : null;
-    if (el("edrDefaultTl")) el("edrDefaultTl").value = (firstSubject?.supervisorName) || report.supervisorName || "";
-    if (el("edrDefaultAccount")) el("edrDefaultAccount").value = (firstSubject?.account) || report.account || "";
-    if (el("edrDefaultInfraction") && firstSubject?.infraction) el("edrDefaultInfraction").value = firstSubject.infraction;
+    if (el("edrDefaultTl")) el("edrDefaultTl").value = report.defaultTl || (firstSubject?.supervisorName) || report.supervisorName || "";
+    if (el("edrDefaultAccount")) el("edrDefaultAccount").value = report.defaultAccount || (firstSubject?.account) || report.account || "";
+    if (el("edrDefaultInfraction")) el("edrDefaultInfraction").value = report.defaultInfraction || (firstSubject?.infraction) || "";
 
     el("edrIncident").value = report.incident || "";
     el("edrActionRemarks").value = report.action || "";
@@ -1690,9 +1740,12 @@
   function resetForm() {
     edr.setEditingId(null);
     el("edrForm").reset();
+    if (el("edrDefaultTl")) el("edrDefaultTl").value = "";
+    if (el("edrDefaultAccount")) el("edrDefaultAccount").value = "";
+    if (el("edrDefaultInfraction")) el("edrDefaultInfraction").value = "";
     supervisorRole = "Team Leader";
-    el("btnRoleTl").classList.add("active");
-    el("btnRoleOm").classList.remove("active");
+    el("btnRoleTl")?.classList.add("active");
+    el("btnRoleOm")?.classList.remove("active");
     subjectType = "Agent/s";
     // Clear multi-subject list
     if (window.clearMsSubjects) window.clearMsSubjects();
@@ -1738,6 +1791,9 @@
     populateRespondentList(supervisorRole);
     if (draft.supervisorName && el("edrSupervisorName")) el("edrSupervisorName").value = draft.supervisorName;
     if (draft.omName && el("edrOmName")) el("edrOmName").value = draft.omName;
+    if (el("edrDefaultTl")) el("edrDefaultTl").value = draft.defaultTl || draft.supervisorName || "";
+    if (el("edrDefaultAccount")) el("edrDefaultAccount").value = draft.defaultAccount || draft.account || "";
+    if (el("edrDefaultInfraction") && draft.defaultInfraction) el("edrDefaultInfraction").value = draft.defaultInfraction;
 
     subjectType = draft.subjectType === "Team Leader" ? "Team Leader" : "Agent/s";
     // Restore multi-subject list from draft
@@ -1836,15 +1892,31 @@
     const currentSubjects = window.getMsSubjects ? window.getMsSubjects() : [];
     // Sync legacy hidden fields from subjects
     const subjectNames = currentSubjects.map(s => s.name).join(", ");
+    const defaultTl = el("edrDefaultTl") ? el("edrDefaultTl").value.trim() : "";
+    const defaultAccount = el("edrDefaultAccount") ? el("edrDefaultAccount").value.trim() : "";
+    const defaultInfraction = el("edrDefaultInfraction") ? el("edrDefaultInfraction").value : "";
     const firstSubjectAccount = currentSubjects.length > 0 ? (currentSubjects[0].account || "") : "";
+    const firstSubjectTl = currentSubjects.length > 0 ? (currentSubjects[0].supervisorName || "") : "";
+
+    // Authoritative TL / Supervisor resolution:
+    // If all subjects have the same supervisor and it's non-empty, use that.
+    // Otherwise use defaultTl, or first subject TL, or hidden input.
+    const allSameTl = currentSubjects.length > 0 && currentSubjects.every(s => s.supervisorName === currentSubjects[0].supervisorName);
+    const resolvedSupervisor = (allSameTl && firstSubjectTl)
+      ? firstSubjectTl
+      : (defaultTl || firstSubjectTl || el("edrSupervisorName")?.value || "");
+
     return {
       site: el("edrSite").value,
       date: el("edrDate").value,
       timeObserved: el("edrTimeObserved").value,
       timeStart: el("edrTimeObserved").value,
       supervisorRole: supervisorRole,
-      supervisorName: el("edrSupervisorName").value,
+      supervisorName: resolvedSupervisor,
       omName: el("edrOmName").value,
+      defaultTl,
+      defaultAccount,
+      defaultInfraction,
       // Multi-subject: include subjects array
       subjects: currentSubjects,
       // Legacy compat: drive from subjects if available
@@ -1852,7 +1924,7 @@
         ? (currentSubjects[0].type === "Team Leader" ? "Team Leader" : "Agent/s")
         : subjectType,
       subjectName: subjectNames || el("edrSubjectName").value,
-      account: firstSubjectAccount || el("edrAccount").value,
+      account: firstSubjectAccount || defaultAccount || el("edrAccount").value,
       incident: el("edrIncident").value,
       action: el("edrActionRemarks").value,
       // Multi-link: collect all filled link inputs
@@ -2010,7 +2082,7 @@
 
       const form = el("edrForm");
       const currentSubjects = window.getMsSubjects ? window.getMsSubjects() : [];
-      if (el("edrIncident")?.value || el("edrSupervisorName")?.value || currentSubjects.length > 0) {
+      if (el("edrIncident")?.value || el("edrDefaultTl")?.value || el("edrSupervisorName")?.value || currentSubjects.length > 0) {
         if (!currentSubjects.length) {
           showToast("Please add at least one subject before sending to CCTV Audit.", "warning");
           return;
@@ -2298,6 +2370,75 @@
       }
     };
     el("edrSupervisorName")?.addEventListener("change", handleSupervisorInputChange);
+
+    // Option Management - Default TL / Supervisor (Multi-Subject Bar)
+    el("btnAddSupervisorOptionMs")?.addEventListener("click", () => {
+      const curr = el("edrDefaultTl")?.value.trim();
+      const val = prompt("Add new Team Leader to masterlist:", curr);
+      if (val && val.trim()) {
+        const site = el("edrSite")?.value;
+        const account = el("edrDefaultAccount")?.value || el("edrAccount")?.value;
+        const om = el("edrOmName")?.value;
+        const res = window.masterlistService
+          ? window.masterlistService.addRespondent(val.trim(), "Team Leader", { site, account, om })
+          : { added: edr.addSupervisorOption("Team Leader", val.trim(), { site, account, om }), canonical: val.trim() };
+        initFormDropdowns();
+        if (typeof populateSubjectDropdowns === "function") populateSubjectDropdowns();
+        if (el("edrDefaultTl")) el("edrDefaultTl").value = res.canonical || val.trim();
+        if (el("edrSupervisorName")) el("edrSupervisorName").value = res.canonical || val.trim();
+        showToast(res.added ? `Added "${res.canonical || val.trim()}" to Team Leader masterlist.` : `"${res.canonical || val.trim()}" is already in list.`, res.added ? "success" : "info");
+      }
+    });
+
+    el("btnRemoveSupervisorOptionMs")?.addEventListener("click", () => {
+      const curr = el("edrDefaultTl")?.value.trim();
+      if (!curr) {
+        showToast("Select or type a Team Leader name to remove.", "info");
+        return;
+      }
+      if (confirm(`Remove "${curr}" from the Team Leader masterlist options?`)) {
+        if (window.masterlistService) {
+          window.masterlistService.removeRespondent(curr, "Team Leader");
+        } else {
+          edr.removeSupervisorOption("Team Leader", curr);
+        }
+        initFormDropdowns();
+        if (typeof populateSubjectDropdowns === "function") populateSubjectDropdowns();
+        if (el("edrDefaultTl")) el("edrDefaultTl").value = "";
+        if (el("edrSupervisorName")) el("edrSupervisorName").value = "";
+        showToast(`Removed "${curr}" from active Team Leader options. Historical records remain safe.`, "info");
+      }
+    });
+
+    const handleDefaultTlInputChange = () => {
+      const input = el("edrDefaultTl");
+      const rawVal = input?.value?.trim();
+      if (el("edrSupervisorName")) el("edrSupervisorName").value = rawVal || "";
+      if (!rawVal || !window.masterlistService) return;
+      const canonical = window.masterlistService.findCanonical("tls", rawVal);
+      if (canonical) {
+        if (canonical.toLowerCase() === rawVal.toLowerCase() && canonical !== rawVal) {
+          window.masterlistService.addRespondent(rawVal, "Team Leader");
+        } else if (canonical !== input.value) {
+          input.value = canonical;
+        }
+      } else {
+        const site = el("edrSite")?.value;
+        const account = el("edrDefaultAccount")?.value || el("edrAccount")?.value;
+        const om = el("edrOmName")?.value;
+        const res = window.masterlistService.addRespondent(rawVal, "Team Leader", { site, account, om });
+        if (res && res.added) {
+          if (typeof populateSubjectDropdowns === "function") populateSubjectDropdowns();
+          input.value = res.canonical || rawVal;
+        }
+      }
+    };
+    el("edrDefaultTl")?.addEventListener("change", handleDefaultTlInputChange);
+    el("edrDefaultTl")?.addEventListener("input", () => {
+      if (el("edrSupervisorName")) el("edrSupervisorName").value = el("edrDefaultTl")?.value?.trim() || "";
+      updateLivePreview();
+      scheduleDraftSave();
+    });
 
     const handleOmInputChange = () => {
       const input = el("edrOmName");
@@ -5410,6 +5551,170 @@ function doPost(e) {
         window.addMaintenanceSorterRowsToReport(pending.tsv, pending);
       }
     }
+  let maintenanceImageCompressionQueue = Promise.resolve();
+
+  function renderBlockScreenshots(blockId) {
+    const block = maintenanceState.blocks.find(b => b.id === Number(blockId));
+    if (!block) return;
+    const proofZone = document.getElementById(`proof_zone_${block.id}`);
+    if (!proofZone) return;
+
+    const proofBadge = proofZone.querySelector(".badge");
+    const proofCount = (block.screenshots || []).length;
+    if (proofBadge) {
+      proofBadge.textContent = `${proofCount} ${proofCount === 1 ? "Screenshot" : "Screenshots"}`;
+    }
+
+    let gridEl = proofZone.querySelector(".eod-proof-grid");
+    if (!gridEl) {
+      gridEl = document.createElement("div");
+      gridEl.className = "eod-proof-grid";
+      proofZone.appendChild(gridEl);
+    }
+    gridEl.innerHTML = "";
+
+    const blockIndex = maintenanceState.blocks.indexOf(block);
+
+    (block.screenshots || []).forEach((shot, shotIdx) => {
+      const item = document.createElement("div");
+      item.className = "eod-proof-item";
+
+      const src = maintenance.maintenanceScreenshotSource(shot, "thumbnail");
+
+      const img = document.createElement("img");
+      img.src = src;
+      img.alt = `Proof Screenshot ${shotIdx + 1}`;
+      img.title = "Click to view full resolution";
+      img.addEventListener("click", () => {
+        const fullSrc = maintenance.maintenanceScreenshotSource(shot, "full");
+        openScreenshotViewer(fullSrc, `Proof Screenshot - Block #${blockIndex + 1}`, `Image ${shotIdx + 1} of ${block.screenshots.length}`);
+      });
+      item.appendChild(img);
+
+      if (shot && shot.isProcessing) {
+        const statusOverlay = document.createElement("div");
+        statusOverlay.style.position = "absolute";
+        statusOverlay.style.bottom = "3px";
+        statusOverlay.style.right = "3px";
+        statusOverlay.style.background = "rgba(15, 23, 42, 0.82)";
+        statusOverlay.style.color = "#93c5fd";
+        statusOverlay.style.fontSize = "8.5px";
+        statusOverlay.style.fontWeight = "600";
+        statusOverlay.style.padding = "1px 4px";
+        statusOverlay.style.borderRadius = "3px";
+        statusOverlay.style.pointerEvents = "none";
+        statusOverlay.textContent = "Optimizing...";
+        item.appendChild(statusOverlay);
+      }
+
+      const removeBtn = document.createElement("button");
+      removeBtn.type = "button";
+      removeBtn.className = "eod-proof-remove";
+      removeBtn.title = "Remove screenshot";
+      removeBtn.innerHTML = "x";
+      removeBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        if (shot && shot.thumbnail && /^blob:/i.test(shot.thumbnail)) {
+          try { URL.revokeObjectURL(shot.thumbnail); } catch (_) {}
+        }
+        block.screenshots.splice(shotIdx, 1);
+        renderBlockScreenshots(block.id);
+        queueMaintenanceAutosave();
+        showToast("Screenshot removed.", "info");
+      });
+      item.appendChild(removeBtn);
+
+      gridEl.appendChild(item);
+    });
+  }
+
+  async function addScreenshotsToBlock(block, files) {
+    if (!block || !files || !files.length) return;
+    if (!Array.isArray(block.screenshots)) block.screenshots = [];
+
+    const fileList = Array.from(files).filter(f => f && (f.type?.startsWith("image/") || typeof f === "string" || f instanceof Blob));
+    if (!fileList.length) return;
+
+    updateMaintenanceAutosaveIndicator("Processing images...", "saving");
+
+    // 1. Instant preview: generate immediate blob/thumbnail URLs so UI responds instantly (<20ms)
+    const placeholders = [];
+    for (const file of fileList) {
+      let previewUrl = "";
+      if (file instanceof Blob) {
+        try {
+          previewUrl = URL.createObjectURL(file);
+        } catch (_) {
+          previewUrl = "";
+        }
+      } else if (typeof file === "string") {
+        previewUrl = file;
+      }
+
+      const tempPlaceholder = {
+        id: "shot_" + Date.now() + "_" + Math.random().toString(36).slice(2, 7),
+        dataUrl: previewUrl,
+        thumbnail: previewUrl,
+        isTemp: true,
+        isProcessing: true,
+        file: file
+      };
+      block.screenshots.push(tempPlaceholder);
+      placeholders.push(tempPlaceholder);
+    }
+
+    // Render immediately - no page wipe, no input reset
+    renderBlockScreenshots(block.id);
+
+    // 2. Asynchronous background queue: optimize without blocking main thread
+    maintenanceImageCompressionQueue = maintenanceImageCompressionQueue.then(async () => {
+      for (const placeholder of placeholders) {
+        try {
+          const compressed = await maintenance.compressImage(placeholder.file);
+          const currentIdx = block.screenshots.indexOf(placeholder);
+          if (currentIdx !== -1) {
+            if (placeholder.thumbnail && /^blob:/i.test(placeholder.thumbnail)) {
+              try { URL.revokeObjectURL(placeholder.thumbnail); } catch (_) {}
+            }
+            block.screenshots[currentIdx] = compressed;
+          }
+        } catch (err) {
+          console.error("Screenshot compression error:", err);
+          // Fallback if canvas compression fails: read as data URL
+          try {
+            if (placeholder.file instanceof Blob) {
+              const dataUrl = await new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = reject;
+                reader.readAsDataURL(placeholder.file);
+              });
+              const currentIdx = block.screenshots.indexOf(placeholder);
+              if (currentIdx !== -1) {
+                block.screenshots[currentIdx] = {
+                  id: placeholder.id,
+                  dataUrl: dataUrl,
+                  thumbnail: dataUrl,
+                  width: 1280,
+                  height: 720,
+                  aspectRatio: 16 / 9,
+                  format: "image/jpeg"
+                };
+              }
+            }
+          } catch (_) {
+            const currentIdx = block.screenshots.indexOf(placeholder);
+            if (currentIdx !== -1) block.screenshots.splice(currentIdx, 1);
+          }
+        }
+      }
+      renderBlockScreenshots(block.id);
+      queueMaintenanceAutosave();
+      showToast("Screenshot proof added.", "success");
+    }).catch(err => {
+      console.error("Background compression queue error:", err);
+      renderBlockScreenshots(block.id);
+    });
   }
 
   function renderMaintenanceBlocks() {
@@ -5850,20 +6155,8 @@ function doPost(e) {
       fileInput.style.display = "none";
       fileInput.addEventListener("change", async () => {
         if (!fileInput.files || !fileInput.files.length) return;
-        updateMaintenanceAutosaveIndicator("Processing images...", "saving");
-        for (let i = 0; i < fileInput.files.length; i++) {
-          try {
-            const compressed = await maintenance.compressImage(fileInput.files[i]);
-            if (!Array.isArray(block.screenshots)) block.screenshots = [];
-            block.screenshots.push(compressed);
-          } catch (err) {
-            console.error("Screenshot compression error:", err);
-          }
-        }
+        await addScreenshotsToBlock(block, fileInput.files);
         fileInput.value = "";
-        renderMaintenanceBlocks();
-        queueMaintenanceAutosave();
-        showToast("Screenshot proof added.", "success");
       });
       proofActions.appendChild(fileInput);
 
@@ -5888,39 +6181,6 @@ function doPost(e) {
 
       const gridEl = document.createElement("div");
       gridEl.className = "eod-proof-grid";
-
-      (block.screenshots || []).forEach((shot, shotIdx) => {
-        const item = document.createElement("div");
-        item.className = "eod-proof-item";
-
-        const src = maintenance.maintenanceScreenshotSource(shot);
-
-        const img = document.createElement("img");
-        img.src = src;
-        img.alt = `Proof Screenshot ${shotIdx + 1}`;
-        img.title = "Click to view full resolution";
-        img.addEventListener("click", () => {
-          openScreenshotViewer(src, `Proof Screenshot - Block #${index + 1}`, `Image ${shotIdx + 1} of ${block.screenshots.length}`);
-        });
-        item.appendChild(img);
-
-        const removeBtn = document.createElement("button");
-        removeBtn.type = "button";
-        removeBtn.className = "eod-proof-remove";
-        removeBtn.title = "Remove screenshot";
-        removeBtn.innerHTML = "x";
-        removeBtn.addEventListener("click", (e) => {
-          e.stopPropagation();
-          block.screenshots.splice(shotIdx, 1);
-          renderMaintenanceBlocks();
-          queueMaintenanceAutosave();
-          showToast("Screenshot removed.", "info");
-        });
-        item.appendChild(removeBtn);
-
-        gridEl.appendChild(item);
-      });
-
       proofZone.appendChild(gridEl);
 
       // Drag and drop handlers for proofZone
@@ -5935,22 +6195,7 @@ function doPost(e) {
         e.preventDefault();
         proofZone.classList.remove("drag-over");
         if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length) {
-          updateMaintenanceAutosaveIndicator("Processing images...", "saving");
-          for (let i = 0; i < e.dataTransfer.files.length; i++) {
-            const file = e.dataTransfer.files[i];
-            if (file.type.startsWith("image/")) {
-              try {
-                const compressed = await maintenance.compressImage(file);
-                if (!Array.isArray(block.screenshots)) block.screenshots = [];
-                block.screenshots.push(compressed);
-              } catch (err) {
-                console.error("Drop compression error:", err);
-              }
-            }
-          }
-          renderMaintenanceBlocks();
-          queueMaintenanceAutosave();
-          showToast("Screenshot proof added.", "success");
+          await addScreenshotsToBlock(block, e.dataTransfer.files);
         }
       });
 
@@ -5958,6 +6203,9 @@ function doPost(e) {
       blockEl.appendChild(contentWrapper);
 
       container.appendChild(blockEl);
+
+      // Render block screenshots initially
+      renderBlockScreenshots(block.id);
     });
   }
 
@@ -6147,6 +6395,13 @@ function doPost(e) {
         requestAnimationFrame(() => requestAnimationFrame(resolve))
       );
 
+      // Await any pending background image compression queue so full resolution data is ready
+      if (maintenanceImageCompressionQueue) {
+        try {
+          await maintenanceImageCompressionQueue;
+        } catch (_) {}
+      }
+
       const doc = new JsPdf({
         orientation: "portrait",
         unit: "mm",
@@ -6312,13 +6567,21 @@ function doPost(e) {
           ? block.screenshots
           : [];
 
-        const imageSources = screenshots
-          .map(shot =>
-            maintenance.maintenanceScreenshotSource?.(shot) || ""
-          )
-          .filter(src => /^data:image\//i.test(src));
+        const imageItems = screenshots
+          .map(shot => {
+            const src = maintenance.maintenanceScreenshotSource?.(shot, "full") || "";
+            return {
+              src,
+              shot,
+              aspectRatio: (typeof shot === "object" && shot && shot.aspectRatio)
+                ? shot.aspectRatio
+                : (shot?.width && shot?.height ? shot.width / shot.height : null),
+              format: (typeof shot === "object" && shot?.format && shot.format.includes("png")) ? "PNG" : "JPEG"
+            };
+          })
+          .filter(item => /^data:image\//i.test(item.src) || /^blob:/i.test(item.src));
 
-        if (imageSources.length) {
+        if (imageItems.length) {
           addPageIfNeeded(12);
 
           const gap = 4;
@@ -6327,24 +6590,27 @@ function doPost(e) {
 
           let x = marginX;
 
-          for (const src of imageSources) {
+          for (const item of imageItems) {
             let imageWidth = maxImageWidth;
             let imageHeight = maxImageHeight;
 
-            try {
-              const props = doc.getImageProperties(src);
+            let ratio = item.aspectRatio;
+            if (!ratio) {
+              try {
+                const props = doc.getImageProperties(item.src);
+                if (props?.width && props?.height) {
+                  ratio = props.width / props.height;
+                }
+              } catch (_) {}
+            }
 
-              if (props?.width && props?.height) {
-                const ratio = props.width / props.height;
-
-                imageWidth = Math.min(
-                  maxImageWidth,
-                  maxImageHeight * ratio
-                );
-
-                imageHeight = imageWidth / ratio;
-              }
-            } catch (_) {}
+            if (ratio) {
+              imageWidth = Math.min(
+                maxImageWidth,
+                maxImageHeight * ratio
+              );
+              imageHeight = imageWidth / ratio;
+            }
 
             if (x + imageWidth > pageWidth - marginX) {
               x = marginX;
@@ -6359,8 +6625,8 @@ function doPost(e) {
 
             try {
               doc.addImage(
-                src,
-                "JPEG",
+                item.src,
+                item.format,
                 x,
                 y,
                 imageWidth,
@@ -6372,11 +6638,14 @@ function doPost(e) {
             catch (_) {
               try {
                 doc.addImage(
-                  src,
+                  item.src,
+                  "JPEG",
                   x,
                   y,
                   imageWidth,
-                  imageHeight
+                  imageHeight,
+                  undefined,
+                  "FAST"
                 );
               } catch (_) {}
             }
@@ -6824,7 +7093,6 @@ function doPost(e) {
     if (window.CCTV_PASTE_ROUTER) {
       window.CCTV_PASTE_ROUTER.register("maintenance", async (files, event) => {
         if (!files || !files.length) return;
-        const imageFile = files[0];
         const targetBlock = (event?.target?.closest ? (maintenanceState.blocks.find(b => b.id === Number(event.target.closest(".eod-block, .eod-block-card")?.id?.replace("block_", "")))) : null) ||
           maintenanceState.blocks.find(b => b.id === activePasteBlockId && !b.dataHidden) ||
           maintenanceState.blocks.find(b => !b.dataHidden);
@@ -6832,19 +7100,9 @@ function doPost(e) {
           showToast("No visible block found to receive screenshot.", "info");
           return;
         }
-        updateMaintenanceAutosaveIndicator("Processing pasted image...", "saving");
-        try {
-          const compressed = await maintenance.compressImage(imageFile);
-          if (!Array.isArray(targetBlock.screenshots)) targetBlock.screenshots = [];
-          targetBlock.screenshots.push(compressed);
-          renderMaintenanceBlocks();
-          queueMaintenanceAutosave();
-          if (window.historyService?.captureIfChanged) {
-            window.historyService.captureIfChanged("maintenance", `Added screenshot to Block #${maintenanceState.blocks.indexOf(targetBlock) + 1}`);
-          }
-          showToast("Screenshot pasted into Maintenance block.", "success");
-        } catch (err) {
-          console.error("Global maintenance paste error:", err);
+        await addScreenshotsToBlock(targetBlock, files);
+        if (window.historyService?.captureIfChanged) {
+          window.historyService.captureIfChanged("maintenance", `Added screenshot to Block #${maintenanceState.blocks.indexOf(targetBlock) + 1}`);
         }
       });
     }

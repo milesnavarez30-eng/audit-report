@@ -53,15 +53,17 @@ window.EDR_MULTI_SUBJECT = (function () {
     }
 
     // Legacy single-subject
-    const legacyName = clean(report.subjectName);
+    const legacyName = clean(report.subjectName || report.agentName);
     if (legacyName) {
+      const isTl = report.subjectType === "Team Leader";
+      const sup = clean(report.supervisorName);
       return [{
         id: "legacy_0",
-        type: report.subjectType === "Team Leader" ? "Team Leader" : "Agent",
+        type: isTl ? "Team Leader" : "Agent",
         name: legacyName,
-        supervisorName: clean(report.supervisorName),
+        supervisorName: (isTl && sup.toLowerCase() === legacyName.toLowerCase()) ? "" : sup,
         account: clean(report.account),
-        infraction: ""
+        infraction: clean(report.infraction)
       }];
     }
 
@@ -120,24 +122,30 @@ window.EDR_MULTI_SUBJECT = (function () {
     const allSameAccount = subjects.every(s => s.account === subjects[0].account);
     const allSameInfraction = subjects.every(s => s.infraction === subjects[0].infraction);
 
+    const isAllTl = subjects.every(s => s.type === "Team Leader");
+
     if (allSameTl && allSameAccount && allSameInfraction) {
       // Compact grouped format
       const agentNames = subjects.map(s => s.name).join(", ");
-      const isAllTl = subjects.every(s => s.type === "Team Leader");
       const subjectLabel = isAllTl ? "Team Leaders" : "Agents";
-      lines.push(`Team Leader: ${subjects[0].supervisorName || ""}`);
+      if (!isAllTl && subjects[0].supervisorName) {
+        lines.push(`Team Leader: ${subjects[0].supervisorName || ""}`);
+      } else if (isAllTl && subjects[0].supervisorName && subjects[0].supervisorName.toLowerCase() !== subjects[0].name.toLowerCase()) {
+        lines.push(`Supervisor: ${subjects[0].supervisorName}`);
+      }
       lines.push(`${subjectLabel}: ${agentNames}`);
       lines.push(`Account/Campaign: ${subjects[0].account || ""}`);
       if (subjects[0].infraction) lines.push(`Infraction: ${subjects[0].infraction}`);
     } else {
       // Per-subject list format
-      const isAllTl = subjects.every(s => s.type === "Team Leader");
       const isAllAgent = subjects.every(s => s.type !== "Team Leader");
       const listHeader = isAllTl ? "Team Leaders:" : (isAllAgent ? "Agents:" : "Subjects:");
       lines.push(listHeader);
       subjects.forEach((s) => {
         const parts = [s.name];
-        if (s.supervisorName) parts.push(s.supervisorName);
+        if (s.supervisorName && (s.type !== "Team Leader" || s.supervisorName.toLowerCase() !== s.name.toLowerCase())) {
+          parts.push(s.supervisorName);
+        }
         if (s.account) parts.push(s.account);
         if (s.infraction) parts.push(s.infraction);
         lines.push(parts.join(" — "));
@@ -177,22 +185,28 @@ window.EDR_MULTI_SUBJECT = (function () {
       `<div>Time Observed: ${escHtml(report.timeObserved || report.timeStart || "")}</div>`
     ];
 
+    const isAllTl = subjects.every(s => s.type === "Team Leader");
+
     if (allSameTl && allSameAccount && allSameInfraction) {
       const agentNames = subjects.map(s => escHtml(s.name)).join(", ");
-      const isAllTl = subjects.every(s => s.type === "Team Leader");
       const subjectLabel = isAllTl ? "Team Leaders" : "Agents";
-      lines.push(`<div>Team Leader: ${escHtml(subjects[0].supervisorName || "")}</div>`);
+      if (!isAllTl && subjects[0].supervisorName) {
+        lines.push(`<div>Team Leader: ${escHtml(subjects[0].supervisorName || "")}</div>`);
+      } else if (isAllTl && subjects[0].supervisorName && subjects[0].supervisorName.toLowerCase() !== subjects[0].name.toLowerCase()) {
+        lines.push(`<div>Supervisor: ${escHtml(subjects[0].supervisorName)}</div>`);
+      }
       lines.push(`<div>${escHtml(subjectLabel)}: ${agentNames}</div>`);
       lines.push(`<div>Account/Campaign: ${escHtml(subjects[0].account || "")}</div>`);
       if (subjects[0].infraction) lines.push(`<div>Infraction: ${escHtml(subjects[0].infraction)}</div>`);
     } else {
-      const isAllTl = subjects.every(s => s.type === "Team Leader");
       const isAllAgent = subjects.every(s => s.type !== "Team Leader");
       const listHeader = isAllTl ? "Team Leaders:" : (isAllAgent ? "Agents:" : "Subjects:");
       lines.push(`<div>${listHeader}</div>`);
       subjects.forEach((s) => {
         const parts = [escHtml(s.name)];
-        if (s.supervisorName) parts.push(escHtml(s.supervisorName));
+        if (s.supervisorName && (s.type !== "Team Leader" || s.supervisorName.toLowerCase() !== s.name.toLowerCase())) {
+          parts.push(escHtml(s.supervisorName));
+        }
         if (s.account) parts.push(escHtml(s.account));
         if (s.infraction) parts.push(escHtml(s.infraction));
         lines.push(`<div>${parts.join(" &mdash; ")}</div>`);

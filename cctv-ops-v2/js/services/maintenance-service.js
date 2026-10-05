@@ -371,27 +371,85 @@
     }
   }
 
-  function compressImage(file) {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onerror = reject;
-      reader.onload = () => {
-        const img = new Image();
-        img.onerror = reject;
-        img.onload = () => {
-          const maxWidth = 900;
-          const scale = Math.min(1, maxWidth / img.width);
-          const canvas = document.createElement("canvas");
-          canvas.width = Math.max(1, Math.round(img.width * scale));
-          canvas.height = Math.max(1, Math.round(img.height * scale));
+  function compressImage(fileOrBlobOrString, options = {}) {
+    if (!fileOrBlobOrString) return Promise.reject(new Error("No image provided"));
 
-          const ctx = canvas.getContext("2d");
-          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-          resolve(canvas.toDataURL("image/jpeg", 0.65));
+    // If already an optimized screenshot object with both dataUrl and thumbnail, return as-is
+    if (typeof fileOrBlobOrString === "object" && fileOrBlobOrString !== null && !(fileOrBlobOrString instanceof Blob)) {
+      if (fileOrBlobOrString.dataUrl && fileOrBlobOrString.thumbnail && fileOrBlobOrString.width) {
+        return Promise.resolve(fileOrBlobOrString);
+      }
+    }
+
+    return new Promise((resolve, reject) => {
+      const loadImg = (src, mimeType = "image/jpeg") => {
+        const img = new Image();
+        img.onerror = () => reject(new Error("Failed to load image"));
+        img.onload = () => {
+          try {
+            const origWidth = img.naturalWidth || img.width;
+            const origHeight = img.naturalHeight || img.height;
+            const maxW = options.maxWidth || 1280;
+            const maxH = options.maxHeight || 960;
+            const scale = Math.min(1, maxW / origWidth, maxH / origHeight);
+            const targetW = Math.max(1, Math.round(origWidth * scale));
+            const targetH = Math.max(1, Math.round(origHeight * scale));
+
+            // Full optimized canvas for evidence and PDF (preserves crisp station numbers & text)
+            const canvas = document.createElement("canvas");
+            canvas.width = targetW;
+            canvas.height = targetH;
+            const ctx = canvas.getContext("2d", { alpha: false });
+            ctx.fillStyle = "#ffffff";
+            ctx.fillRect(0, 0, targetW, targetH);
+            ctx.drawImage(img, 0, 0, targetW, targetH);
+
+            const isPng = (mimeType === "image/png" || String(src).startsWith("data:image/png")) && (origWidth * origHeight < 1200000);
+            const outMime = isPng ? "image/png" : "image/jpeg";
+            const quality = options.quality || 0.82;
+            const optimizedDataUrl = canvas.toDataURL(outMime, quality);
+
+            // Lightweight thumbnail canvas for ultra-fast UI preview (max 280px, ~15KB)
+            const thumbScale = Math.min(1, 280 / targetW);
+            const thumbW = Math.max(1, Math.round(targetW * thumbScale));
+            const thumbH = Math.max(1, Math.round(targetH * thumbScale));
+            const thumbCanvas = document.createElement("canvas");
+            thumbCanvas.width = thumbW;
+            thumbCanvas.height = thumbH;
+            const thumbCtx = thumbCanvas.getContext("2d", { alpha: false });
+            thumbCtx.fillStyle = "#ffffff";
+            thumbCtx.fillRect(0, 0, thumbW, thumbH);
+            thumbCtx.drawImage(canvas, 0, 0, thumbW, thumbH);
+            const thumbDataUrl = thumbCanvas.toDataURL("image/jpeg", 0.68);
+
+            resolve({
+              id: "shot_" + Date.now() + "_" + Math.random().toString(36).slice(2, 7),
+              dataUrl: optimizedDataUrl,
+              thumbnail: thumbDataUrl,
+              width: targetW,
+              height: targetH,
+              aspectRatio: targetW / Math.max(1, targetH),
+              format: outMime
+            });
+          } catch (err) {
+            reject(err);
+          }
         };
-        img.src = reader.result;
+        img.src = src;
       };
-      reader.readAsDataURL(file);
+
+      if (typeof fileOrBlobOrString === "string") {
+        loadImg(fileOrBlobOrString);
+      } else if (fileOrBlobOrString instanceof Blob) {
+        const reader = new FileReader();
+        reader.onerror = reject;
+        reader.onload = () => loadImg(reader.result, fileOrBlobOrString.type || "image/jpeg");
+        reader.readAsDataURL(fileOrBlobOrString);
+      } else if (fileOrBlobOrString && fileOrBlobOrString.dataUrl) {
+        loadImg(fileOrBlobOrString.dataUrl);
+      } else {
+        reject(new Error("Unsupported image source"));
+      }
     });
   }
 
@@ -426,21 +484,31 @@
     }
   }
 
-  function maintenanceScreenshotSource(shot) {
+  function maintenanceScreenshotSource(shot, target = "full") {
     if (!shot) return "";
     if (typeof shot === "string") return shot;
+
+    if (target === "thumbnail") {
+      if (shot.thumbnail && typeof shot.thumbnail === "string" && (/^data:image\//i.test(shot.thumbnail) || /^blob:/i.test(shot.thumbnail))) {
+        return shot.thumbnail;
+      }
+      if (shot.preview && typeof shot.preview === "string" && (/^data:image\//i.test(shot.preview) || /^blob:/i.test(shot.preview))) {
+        return shot.preview;
+      }
+    }
 
     const candidates = [
       shot.dataUrl,
       shot.src,
       shot.imageData,
       shot.url,
+      shot.thumbnail,
       shot.preview,
       shot.data,
       shot.content
     ];
 
-    return String(candidates.find(value => /^data:image\//i.test(String(value || ""))) || "");
+    return String(candidates.find(value => /^data:image\//i.test(String(value || "")) || /^blob:/i.test(String(value || ""))) || "");
   }
 
   function maintenanceRowsForSheets(text) {

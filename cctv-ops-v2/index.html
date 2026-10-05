@@ -1582,38 +1582,29 @@
                       <span class="form-section-title">Parties Involved</span>
                     </div>
 
-                    <div class="form-row-2">
-                      <div class="form-group">
-                        <div class="edr-field-header">
-                          <div class="edr-label-group">
-                            <label class="form-label" for="edrSupervisorName">Respondent</label>
-                            <span class="btn-opt-mgmt-wrap">
-                              <button type="button" class="btn-opt-mgmt" id="btnAddSupervisorOption" title="Add custom Team Leader/OM to masterlist">+</button>
-                              <button type="button" class="btn-opt-mgmt" id="btnRemoveSupervisorOption" title="Remove custom Team Leader/OM from masterlist">-</button>
-                            </span>
-                          </div>
-                          <div class="choice-segment">
-                            <button type="button" class="choice-btn active" id="btnRoleTl">TL</button>
-                            <button type="button" class="choice-btn" id="btnRoleOm">OM</button>
-                          </div>
-                        </div>
-                        <input type="text" id="edrSupervisorName" class="form-control" list="listRespondents" placeholder="Search Team Leader..." required>
-                        <datalist id="listRespondents"></datalist>
-                      </div>
+                    <!-- Legacy Respondent Controls (Hidden from UI, preserved for backward/export compat) -->
+                    <div id="edrLegacyRespondentGroup" style="display:none;" aria-hidden="true">
+                      <input type="text" id="edrSupervisorName" class="form-control" list="listRespondents" placeholder="Search Team Leader...">
+                      <datalist id="listRespondents"></datalist>
+                      <button type="button" id="btnAddSupervisorOption">+</button>
+                      <button type="button" id="btnRemoveSupervisorOption">-</button>
+                      <button type="button" id="btnRoleTl">TL</button>
+                      <button type="button" id="btnRoleOm">OM</button>
+                    </div>
 
-                      <div class="form-group">
-                        <div class="edr-field-header">
-                          <div class="edr-label-group">
-                            <label class="form-label" for="edrOmName">Dedicated OM</label>
-                            <span class="btn-opt-mgmt-wrap">
-                              <button type="button" class="btn-opt-mgmt" id="btnAddDedicatedOmOption" title="Add custom Dedicated OM to masterlist">+</button>
-                              <button type="button" class="btn-opt-mgmt" id="btnRemoveDedicatedOmOption" title="Remove custom Dedicated OM from masterlist">-</button>
-                            </span>
-                          </div>
+                    <!-- Dedicated OM (Visually separated from TL workflow, clearly optional) -->
+                    <div class="form-group edr-dedicated-om-wrap" style="margin-bottom:10px;">
+                      <div class="edr-field-header">
+                        <div class="edr-label-group">
+                          <label class="form-label" for="edrOmName" style="color:var(--text-secondary);font-size:11px;font-weight:600;">Dedicated OM <span style="font-weight:normal;font-size:10px;color:var(--text-muted);">(Optional)</span></label>
+                          <span class="btn-opt-mgmt-wrap">
+                            <button type="button" class="btn-opt-mgmt" id="btnAddDedicatedOmOption" title="Add custom Dedicated OM to masterlist">+</button>
+                            <button type="button" class="btn-opt-mgmt" id="btnRemoveDedicatedOmOption" title="Remove custom Dedicated OM from masterlist">-</button>
+                          </span>
                         </div>
-                        <input type="text" id="edrOmName" class="form-control" list="listOms" placeholder="Search OM...">
-                        <datalist id="listOms"></datalist>
                       </div>
+                      <input type="text" id="edrOmName" class="form-control form-control-sm" list="listOms" placeholder="Search Dedicated OM (optional)...">
+                      <datalist id="listOms"></datalist>
                     </div>
 
                     <!-- Hidden legacy compat inputs (kept for save compat, driven by multi-subject module) -->
@@ -1631,8 +1622,12 @@
                         <div class="edr-defaults-row">
                           <div class="edr-default-field">
                             <label class="edr-def-label" for="edrDefaultTl">TL / Supervisor</label>
-                            <input type="text" id="edrDefaultTl" class="form-control form-control-sm" list="listRespondentsDefault" placeholder="Default TL...">
-                            <datalist id="listRespondentsDefault"></datalist>
+                            <div style="display:flex;gap:3px;align-items:center;">
+                              <input type="text" id="edrDefaultTl" class="form-control form-control-sm" list="listRespondentsDefault" placeholder="Default TL...">
+                              <datalist id="listRespondentsDefault"></datalist>
+                              <button type="button" class="btn-opt-mgmt" id="btnAddSupervisorOptionMs" title="Add custom Team Leader to masterlist">+</button>
+                              <button type="button" class="btn-opt-mgmt" id="btnRemoveSupervisorOptionMs" title="Remove custom Team Leader from masterlist">-</button>
+                            </div>
                           </div>
                           <div class="edr-default-field">
                             <label class="edr-def-label" for="edrDefaultAccount">Account / Campaign</label>
