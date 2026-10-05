@@ -1346,8 +1346,9 @@
               <div class="dashboard-title-group">
                 <h2 class="dashboard-main-title">Operations Dashboard</h2>
                 <div class="dashboard-meta-pills">
-                  <span class="dashboard-meta-pill">Current month: <strong id="dashCurrentMonthText">September 2026</strong></span>
+                  <span class="dashboard-meta-pill">Current month: <strong id="dashCurrentMonthText">—</strong></span>
                   <span class="dashboard-meta-pill">Last Updated: <strong id="dashLastUpdatedText">—</strong></span>
+                  <span class="dashboard-meta-pill" id="metaOverallReportsPill">Overall Reports: <strong id="dashOverallReportsText">—</strong></span>
                 </div>
               </div>
               <div class="dashboard-actions">
@@ -1370,36 +1371,38 @@
               <span id="dashStaleMessage">Connection notice: Displaying cached data.</span>
             </div>
 
-            <!-- Top 6 Compact KPI Cards -->
+            <!-- Top 6 Primary KPI Cards (Operational Priorities) -->
             <div class="dashboard-kpi-grid">
-              <!-- 1. Overall Reports -->
-              <div class="dashboard-kpi-card kpi-card-reports" id="kpiCardOverallReports" title="Click to view Tracker workspace">
-                <div class="dashboard-kpi-label">
-                  <span>Overall Reports</span>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg>
-                </div>
-                <div class="dashboard-kpi-val" id="kpiValOverallReports">—</div>
-                <div class="dashboard-kpi-sub">Authoritative Tracker total</div>
-              </div>
-
-              <!-- 2. Posted This Month -->
+              <!-- 1. Reports This Month -->
               <div class="dashboard-kpi-card kpi-card-posted" id="kpiCardPostedMonth" title="Click to view current month Tracker">
                 <div class="dashboard-kpi-label">
-                  <span>Posted This Month</span>
+                  <span>Reports This Month</span>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
                 </div>
                 <div class="dashboard-kpi-val" id="kpiValPostedMonth">—</div>
                 <div class="dashboard-kpi-sub" id="kpiSubPostedMonth">Current month reports</div>
               </div>
 
-              <!-- 3. Pending Reports -->
+              <!-- 2. Successful NOC (Current Month) -->
+              <div class="dashboard-kpi-card kpi-card-noc" id="kpiCardSuccessfulNoc" title="Click to view CCTV Audit workspace">
+                <div class="dashboard-kpi-label">
+                  <span>Successful NOC</span>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                </div>
+                <div class="dashboard-kpi-val" id="kpiValSuccessfulNoc" style="color:var(--accent-emerald,#10b981);">—</div>
+                <div class="dashboard-kpi-sub" id="kpiSubSuccessfulNoc">Current month (YES)</div>
+              </div>
+
+              <!-- 3. Pending NOC -->
               <div class="dashboard-kpi-card kpi-card-pending" id="kpiCardPendingReports" title="Click to view Pending section">
                 <div class="dashboard-kpi-label">
-                  <span>Pending Reports</span>
+                  <span>Pending NOC</span>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                 </div>
-                <div class="dashboard-kpi-val" id="kpiValPendingReports">—</div>
-                <div class="dashboard-kpi-sub">Active Tracker pending</div>
+                <div class="dashboard-kpi-val" id="kpiValPendingReports" style="color:var(--accent-amber,#fbbf24);">—</div>
+                <div class="dashboard-kpi-sub" id="kpiSubPendingReports">
+                  <span id="kpiValPendingPct">—</span> of all tracked reports
+                </div>
               </div>
 
               <!-- 4. Follow Up -->
@@ -1408,73 +1411,78 @@
                   <span>Follow Up</span>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
                 </div>
-                <div class="dashboard-kpi-val" id="kpiValFollowUp">—</div>
-                <div class="dashboard-kpi-sub">Follow Up workspace records</div>
+                <div class="dashboard-kpi-val" id="kpiValFollowUp" style="color:#818cf8;">—</div>
+                <div class="dashboard-kpi-sub">Active follow up records</div>
               </div>
 
-              <!-- 5. EDR Not Copied to Teams -->
-              <div class="dashboard-kpi-card kpi-card-edr" id="kpiCardEdrNotCopied" title="Click to view EDR workspace">
+              <!-- 5. Unreported -->
+              <div class="dashboard-kpi-card kpi-card-unreported" id="kpiCardUnreported" title="Click to view Unreported workspace">
                 <div class="dashboard-kpi-label">
-                  <span>EDR Not Copied to Teams</span>
+                  <span>Unreported</span>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                </div>
+                <div class="dashboard-kpi-val" id="kpiValUnreported" style="color:#f59e0b;">—</div>
+                <div class="dashboard-kpi-sub">Holding area violations</div>
+              </div>
+
+              <!-- 6. EDR Action Needed -->
+              <div class="dashboard-kpi-card kpi-card-edr" id="kpiCardEdrAction" title="Click to view EDR workspace">
+                <div class="dashboard-kpi-label">
+                  <span>EDR Action Needed</span>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>
                 </div>
-                <div class="dashboard-kpi-val" id="kpiValEdrNotCopied">—</div>
-                <div class="dashboard-kpi-sub">EDRs awaiting Teams copy</div>
-              </div>
-
-              <!-- 6. Pending % -->
-              <div class="dashboard-kpi-card kpi-card-pct" id="kpiCardPendingPct" title="Click to view Pending by Team">
-                <div class="dashboard-kpi-label">
-                  <span>Pending %</span>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="5" x2="5" y2="19"/><circle cx="6.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/></svg>
-                </div>
-                <div class="dashboard-kpi-val" id="kpiValPendingPct">—</div>
-                <div class="dashboard-kpi-sub">Tracker Pending ratio</div>
+                <div class="dashboard-kpi-val" id="kpiValEdrAction" style="color:#f43f5e;">—</div>
+                <div class="dashboard-kpi-sub" id="kpiSubEdrAction">— Teams · — Audit</div>
               </div>
             </div>
 
-            <!-- Middle Split: Monthly Overview & Pending by CCTV Team -->
-            <div class="dashboard-grid-2col">
-              <!-- Successful NOC — Monthly Panel -->
-              <div class="dashboard-panel" id="secSuccessfulNocMonthly">
-                <div class="dashboard-panel-header">
-                  <h3 class="dashboard-panel-title">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-                    <span>Successful NOC — Monthly</span>
-                  </h3>
-                  <div class="dashboard-meta-pills">
-                    <span class="dashboard-meta-pill" style="font-size:11px;">Successful NOC This Month: <strong id="dashTotalNocThisMonth">—</strong></span>
-                  </div>
+            <!-- SECTION 2: Needs Attention Strip -->
+            <div class="dashboard-panel dashboard-needs-attention" id="secNeedsAttention">
+              <div class="dashboard-panel-header" style="padding:10px 14px;">
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <span class="needs-attention-pulse"></span>
+                  <h3 class="dashboard-panel-title" style="font-size:12.5px; color:#f87171;">Needs Attention</h3>
                 </div>
-                <div class="dashboard-panel-body" style="padding: 12px;">
-                  <div class="dashboard-member-graphs-grid" id="dashMemberGraphsGrid">
-                    <!-- Populated dynamically via JS for Seth, Miles, Wendie, John Ric, Kenneth, Reymart -->
-                  </div>
-                </div>
+                <span class="dashboard-meta-pill" style="font-size:11px;">Actionable items requiring operational attention</span>
               </div>
-
-              <!-- Pending By CCTV Team Panel -->
-              <div class="dashboard-panel" id="secPendingByTeam">
-                <div class="dashboard-panel-header">
-                  <h3 class="dashboard-panel-title">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                    <span>Pending by CCTV Team</span>
-                  </h3>
+              <div class="needs-attention-grid" id="needsAttentionGrid">
+                <div class="na-chip" id="naChipPending" data-action="scroll-pending" title="Active Pending NOCs">
+                  <span class="na-chip-count" id="naCountPending">—</span>
+                  <span class="na-chip-label">Pending NOC</span>
                 </div>
-                <div class="dashboard-panel-body">
-                  <div class="dashboard-pending-list" id="dashPendingByTeamList">
-                    <!-- Populated dynamically via JS -->
-                  </div>
+                <div class="na-chip" id="naChipPending24" data-action="scroll-pending" title="Pending records older than 24 hours">
+                  <span class="na-chip-count" id="naCountPending24">—</span>
+                  <span class="na-chip-label">>24h</span>
+                </div>
+                <div class="na-chip" id="naChipPending48" data-action="scroll-pending" title="Pending records older than 48 hours">
+                  <span class="na-chip-count" id="naCountPending48">—</span>
+                  <span class="na-chip-label">>48h</span>
+                </div>
+                <div class="na-chip" id="naChipFollowUp" data-action="goto-followup" title="Active Follow Up records">
+                  <span class="na-chip-count" id="naCountFollowUp">—</span>
+                  <span class="na-chip-label">Follow Ups</span>
+                </div>
+                <div class="na-chip" id="naChipUnreported" data-action="goto-unreported" title="Unreported violations in holding area">
+                  <span class="na-chip-count" id="naCountUnreported">—</span>
+                  <span class="na-chip-label">Unreported</span>
+                </div>
+                <div class="na-chip" id="naChipEdrTeams" data-action="goto-edr" title="EDRs not yet copied to Teams">
+                  <span class="na-chip-count" id="naCountEdrTeams">—</span>
+                  <span class="na-chip-label">Teams Pending</span>
+                </div>
+                <div class="na-chip" id="naChipEdrAudit" data-action="goto-edr" title="EDRs awaiting completed Audit">
+                  <span class="na-chip-count" id="naCountEdrAudit">—</span>
+                  <span class="na-chip-label">Audit Pending</span>
                 </div>
               </div>
             </div>
 
-            <!-- CCTV Team — Current Month Panel -->
-            <div class="dashboard-panel">
+            <!-- SECTION 3: CCTV Team — Current Month Panel -->
+            <div class="dashboard-panel" id="secTeamCurrentMonth">
               <div class="dashboard-panel-header">
                 <h3 class="dashboard-panel-title">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                  <span>CCTV Team — Current Month</span>
+                  <span id="dashTeamCurrentMonthHeading">CCTV Team — Current Month</span>
                 </h3>
                 <span class="dashboard-meta-pill" style="font-size:11px;">Sorted by Reports (High → Low)</span>
               </div>
@@ -1482,7 +1490,7 @@
                 <table class="dashboard-table" id="tableTeamCurrentMonth">
                   <thead>
                     <tr>
-                      <th>Team Name / CCTV Team Member</th>
+                      <th>Team Member</th>
                       <th class="col-num">Reports</th>
                       <th class="col-num">YES</th>
                       <th class="col-num">NO</th>
@@ -1497,13 +1505,129 @@
               </div>
             </div>
 
-            <!-- Pending Details Panel -->
-            <div class="dashboard-panel" id="secPendingDetails">
+            <!-- SECTION 4: 2-Column Grid (Monthly Activity + Pending by CCTV Team) -->
+            <div class="dashboard-grid-2col">
+              <!-- Monthly Activity Panel -->
+              <div class="dashboard-panel" id="secMonthlyActivity">
+                <div class="dashboard-panel-header">
+                  <h3 class="dashboard-panel-title">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                    <span id="dashMonthlyActivityHeading">Monthly Activity — 2026</span>
+                  </h3>
+                  <div style="display:flex; align-items:center; gap:8px;">
+                    <select id="selectNocGraphMember" class="dashboard-select" aria-label="Select Team Member for Monthly Activity">
+                      <option value="ALL">Entire CCTV Team</option>
+                      <option value="Seth">Seth</option>
+                      <option value="John Ric">John Ric</option>
+                      <option value="Wendie">Wendie</option>
+                      <option value="Miles">Miles</option>
+                      <option value="Kenneth">Kenneth</option>
+                      <option value="Reymart">Reymart</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="dashboard-panel-body" style="padding: 14px;">
+                  <div class="monthly-activity-chart-wrap" id="dashMonthlyActivityChart">
+                    <!-- Rendered dynamically via JS -->
+                  </div>
+                  <div class="monthly-activity-footer" id="dashMonthlyActivityFooter">
+                    <div class="ma-footer-stat">
+                      <span class="ma-footer-label">Total this year:</span>
+                      <strong class="ma-footer-val" id="dashMonthlyActivityTotalYear">—</strong>
+                    </div>
+                    <div class="ma-footer-stat">
+                      <span class="ma-footer-label">This month:</span>
+                      <strong class="ma-footer-val" id="dashMonthlyActivityThisMonth">—</strong>
+                    </div>
+                    <div class="ma-footer-stat ma-note" style="margin-left:auto; font-size:10.5px; color:var(--text-muted);">
+                      Authoritative Monthly Successful NOC (12 independent non-cumulative buckets)
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Pending By CCTV Team Panel -->
+              <div class="dashboard-panel" id="secPendingByTeam">
+                <div class="dashboard-panel-header">
+                  <h3 class="dashboard-panel-title">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    <span>Pending by CCTV Team</span>
+                  </h3>
+                  <span class="dashboard-meta-pill" style="font-size:10.5px;">Click member to filter records</span>
+                </div>
+                <div class="dashboard-panel-body">
+                  <div class="dashboard-pending-list" id="dashPendingByTeamList">
+                    <!-- Populated dynamically via JS -->
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- SECTION 5: Month Breakdown Panel -->
+            <div class="dashboard-panel" id="secMonthBreakdown">
               <div class="dashboard-panel-header">
                 <h3 class="dashboard-panel-title">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-                  <span>Pending Details</span>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>
+                  <span id="dashBreakdownTitle">Month Breakdown — October 2026</span>
                 </h3>
+                <div class="breakdown-tabs" id="breakdownTabs">
+                  <button type="button" class="btn-breakdown-tab is-active" data-tab="infractions">Infractions</button>
+                  <button type="button" class="btn-breakdown-tab" data-tab="sites">Sites</button>
+                  <button type="button" class="btn-breakdown-tab" data-tab="accounts">Accounts</button>
+                </div>
+              </div>
+              <div class="dashboard-panel-body" style="padding: 12px 16px;">
+                <div id="dashBreakdownContent" class="breakdown-content-area">
+                  <!-- Populated dynamically via JS -->
+                </div>
+              </div>
+            </div>
+
+            <!-- SECTION 6: Today Panel -->
+            <div class="dashboard-panel" id="secToday">
+              <div class="dashboard-panel-header">
+                <h3 class="dashboard-panel-title">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 14 14"/></svg>
+                  <span id="dashTodayHeading">Today — Oct 5</span>
+                </h3>
+                <span class="dashboard-meta-pill" style="font-size:11px;">Authoritative live operational counts</span>
+              </div>
+              <div class="dashboard-panel-body" style="padding: 12px 14px;">
+                <div class="today-metrics-grid">
+                  <div class="today-metric-card">
+                    <span class="today-metric-label">Reports Today</span>
+                    <strong class="today-metric-val" id="todayValReports">—</strong>
+                  </div>
+                  <div class="today-metric-card">
+                    <span class="today-metric-label">Successful NOC Today</span>
+                    <strong class="today-metric-val" id="todayValNoc" style="color:var(--accent-emerald,#10b981);">—</strong>
+                  </div>
+                  <div class="today-metric-card">
+                    <span class="today-metric-label">Pending Added Today</span>
+                    <strong class="today-metric-val" id="todayValPending" style="color:var(--accent-amber,#fbbf24);">—</strong>
+                  </div>
+                  <div class="today-metric-card">
+                    <span class="today-metric-label">EDRs Created Today</span>
+                    <strong class="today-metric-val" id="todayValEdrs">—</strong>
+                  </div>
+                  <div class="today-metric-card">
+                    <span class="today-metric-label">Follow Ups Active/Due</span>
+                    <strong class="today-metric-val" id="todayValFollowups">—</strong>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- SECTION 7: Pending Details Panel -->
+            <div class="dashboard-panel" id="secPendingDetails">
+              <div class="dashboard-panel-header">
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <h3 class="dashboard-panel-title">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                    <span>Pending Details</span>
+                  </h3>
+                  <span class="dashboard-meta-pill" id="dashPendingFilterIndicator" style="display:none; font-size:11px; cursor:pointer;" title="Click to clear member filter">Filter: <strong id="dashPendingFilterName">All</strong> ✕</span>
+                </div>
                 <span class="dashboard-meta-pill" id="dashPendingDetailsCount">0 Records</span>
               </div>
               <div class="dashboard-table-wrap">
@@ -1525,6 +1649,26 @@
                 </table>
               </div>
             </div>
+
+            <!-- SECTION 8: System Status Footer -->
+            <div class="dashboard-system-status" id="secSystemStatus">
+              <div class="system-status-item">
+                <span class="status-indicator-dot is-online" id="statusDotTracker"></span>
+                <span>Tracker API: <strong id="statusTextTracker">Synced</strong></span>
+              </div>
+              <div class="system-status-item">
+                <span class="status-indicator-dot is-online"></span>
+                <span>Google Docs EDR: <strong>Connected</strong></span>
+              </div>
+              <div class="system-status-item">
+                <span class="status-indicator-dot is-online"></span>
+                <span>Google Sheets Maintenance: <strong>Configured</strong></span>
+              </div>
+              <div class="system-status-item" style="margin-left:auto;">
+                <span>Last refresh: <strong id="statusLastRefresh">—</strong></span>
+              </div>
+            </div>
+
           </div>
         </section>
 

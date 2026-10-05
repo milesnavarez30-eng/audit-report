@@ -9563,20 +9563,21 @@ function doPost(e) {
     window.updateTrackerStatus = updateTrackerStatus;
   }
 
-  // =========================================================================
-  // WORKSPACE: OPERATIONS DASHBOARD
-  // =========================================================================
+  let currentNocMemberFilter = "ALL";
+  let currentBreakdownTab = "infractions";
+  let activePendingTeamFilter = null;
+
   function initDashboardController() {
     if (!window.CCTV_DASHBOARD) return;
 
-    // Refresh Button Click
     const btnRefresh = el("btnDashRefresh");
     if (btnRefresh) {
       btnRefresh.addEventListener("click", async () => {
+        if (btnRefresh.classList.contains("is-spinning")) return;
         btnRefresh.classList.add("is-spinning");
         try {
           await window.CCTV_DASHBOARD.refresh();
-          showToast("Dashboard data refreshed.", "info");
+          showToast("Dashboard synchronized with authoritative Tracker", "info");
         } catch (err) {
           showToast(`Refresh error: ${err.message || 'Connection failed'}`, "warning");
         } finally {
@@ -9585,15 +9586,14 @@ function doPost(e) {
       });
     }
 
-    // KPI Card Click Handlers
-    el("kpiCardOverallReports")?.addEventListener("click", () => {
+    // Top 6 KPI Card Click Handlers
+    el("kpiCardPostedMonth")?.addEventListener("click", () => {
       switchWorkspace("trackers");
       if (typeof window.setTrackerWorkbook === "function") window.setTrackerWorkbook("audit");
     });
 
-    el("kpiCardPostedMonth")?.addEventListener("click", () => {
-      switchWorkspace("trackers");
-      if (typeof window.setTrackerWorkbook === "function") window.setTrackerWorkbook("audit");
+    el("kpiCardSuccessfulNoc")?.addEventListener("click", () => {
+      switchWorkspace("audit");
     });
 
     el("kpiCardPendingReports")?.addEventListener("click", () => {
@@ -9609,13 +9609,67 @@ function doPost(e) {
       switchWorkspace("followup");
     });
 
-    el("kpiCardEdrNotCopied")?.addEventListener("click", () => {
+    el("kpiCardUnreported")?.addEventListener("click", () => {
+      switchWorkspace("unreported");
+    });
+
+    el("kpiCardEdrAction")?.addEventListener("click", () => {
       switchWorkspace("edr");
     });
 
-    el("kpiCardPendingPct")?.addEventListener("click", () => {
-      el("secPendingByTeam")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    // Needs Attention Navigation Handlers
+    el("naChipPending")?.addEventListener("click", () => {
+      el("secPendingDetails")?.scrollIntoView({ behavior: "smooth", block: "start" });
     });
+    el("naChipPending24")?.addEventListener("click", () => {
+      el("secPendingDetails")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+    el("naChipPending48")?.addEventListener("click", () => {
+      el("secPendingDetails")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+    el("naChipFollowUp")?.addEventListener("click", () => {
+      switchWorkspace("followup");
+    });
+    el("naChipUnreported")?.addEventListener("click", () => {
+      switchWorkspace("unreported");
+    });
+    el("naChipEdrTeams")?.addEventListener("click", () => {
+      switchWorkspace("edr");
+    });
+    el("naChipEdrAudit")?.addEventListener("click", () => {
+      switchWorkspace("edr");
+    });
+
+    // Monthly Activity Selector Listener
+    const selectMemberEl = el("selectNocGraphMember");
+    if (selectMemberEl) {
+      selectMemberEl.addEventListener("change", (e) => {
+        currentNocMemberFilter = e.target.value || "ALL";
+        renderDashboardWorkspace();
+      });
+    }
+
+    // Month Breakdown Tabs
+    const breakdownTabsContainer = el("breakdownTabs");
+    if (breakdownTabsContainer) {
+      breakdownTabsContainer.querySelectorAll(".btn-breakdown-tab").forEach(tabBtn => {
+        tabBtn.addEventListener("click", () => {
+          breakdownTabsContainer.querySelectorAll(".btn-breakdown-tab").forEach(b => b.classList.remove("is-active"));
+          tabBtn.classList.add("is-active");
+          currentBreakdownTab = tabBtn.dataset.tab || "infractions";
+          renderDashboardWorkspace();
+        });
+      });
+    }
+
+    // Pending Details Filter Clear
+    const filterPill = el("dashPendingFilterIndicator");
+    if (filterPill) {
+      filterPill.addEventListener("click", () => {
+        activePendingTeamFilter = null;
+        renderDashboardWorkspace();
+      });
+    }
 
     // Subscribe to Dashboard Service updates
     window.CCTV_DASHBOARD.subscribe(renderDashboardWorkspace);
@@ -9629,12 +9683,19 @@ function doPost(e) {
     const s = providedState || (svc ? svc.getState() : null);
     if (!s) return;
 
+    const isLoaded = s.hasLoadedAuthoritativeData;
+
     // Header info
     const monthEl = el("dashCurrentMonthText");
-    if (monthEl) monthEl.textContent = s.currentMonthLabel || "September 2026";
+    if (monthEl) monthEl.textContent = s.currentMonthLabel || "—";
 
     const updatedEl = el("dashLastUpdatedText");
     if (updatedEl) updatedEl.textContent = s.lastUpdatedFormatted || "—";
+
+    const overallReportsEl = el("dashOverallReportsText");
+    if (overallReportsEl) {
+      overallReportsEl.textContent = (isLoaded && s.overallReports != null) ? s.overallReports.toLocaleString() : "—";
+    }
 
     // Stale/Error Notification Banner
     const staleBanner = el("dashStaleBanner");
@@ -9653,25 +9714,28 @@ function doPost(e) {
       }
     }
 
-    // Top 6 KPI Cards
-    const isLoaded = s.hasLoadedAuthoritativeData;
-
-    const valOverall = el("kpiValOverallReports");
-    if (valOverall) {
-      valOverall.textContent = (isLoaded && s.overallReports != null) ? s.overallReports.toLocaleString() : "—";
-    }
-
+    // Top 6 Primary KPI Cards
     const valPosted = el("kpiValPostedMonth");
     if (valPosted) {
       valPosted.textContent = (isLoaded && s.postedThisMonth != null) ? s.postedThisMonth.toLocaleString() : "—";
     }
-
     const subPosted = el("kpiSubPostedMonth");
     if (subPosted) subPosted.textContent = `${s.currentMonthLabel || "Current month"} reports`;
+
+    const valNoc = el("kpiValSuccessfulNoc");
+    if (valNoc) {
+      valNoc.textContent = (isLoaded && s.totalNocThisMonth != null) ? s.totalNocThisMonth.toLocaleString() : "—";
+    }
+    const subNoc = el("kpiSubSuccessfulNoc");
+    if (subNoc) subNoc.textContent = `${s.currentMonthLabel || "This Month"} (YES)`;
 
     const valPending = el("kpiValPendingReports");
     if (valPending) {
       valPending.textContent = (isLoaded && s.pendingReports != null) ? s.pendingReports.toLocaleString() : "—";
+    }
+    const valPct = el("kpiValPendingPct");
+    if (valPct) {
+      valPct.textContent = (isLoaded && s.pendingPercentage != null) ? s.pendingPercentage : "—";
     }
 
     const valFollowup = el("kpiValFollowUp");
@@ -9679,90 +9743,49 @@ function doPost(e) {
       valFollowup.textContent = (s.followupCount != null) ? s.followupCount.toLocaleString() : "—";
     }
 
-    const valEdr = el("kpiValEdrNotCopied");
-    if (valEdr) {
-      valEdr.textContent = (s.edrUncopiedCount != null) ? s.edrUncopiedCount.toLocaleString() : "—";
+    const valUnreported = el("kpiValUnreported");
+    if (valUnreported) {
+      valUnreported.textContent = (s.unreportedCount != null) ? s.unreportedCount.toLocaleString() : "—";
     }
 
-    const valPct = el("kpiValPendingPct");
-    if (valPct) {
-      valPct.textContent = (isLoaded && s.pendingPercentage != null) ? s.pendingPercentage : "—";
+    const valEdrAction = el("kpiValEdrAction");
+    if (valEdrAction) {
+      valEdrAction.textContent = (s.edrActionNeededCount != null) ? s.edrActionNeededCount.toLocaleString() : "—";
+    }
+    const subEdrAction = el("kpiSubEdrAction");
+    if (subEdrAction) {
+      subEdrAction.textContent = `${s.edrUncopiedCount || 0} Teams · ${s.edrUnauditedCount || 0} Audit`;
     }
 
-    // Successful NOC — Monthly Total Summary
-    const totalNocEl = el("dashTotalNocThisMonth");
-    if (totalNocEl) {
-      totalNocEl.textContent = (isLoaded && s.totalNocThisMonth != null) ? s.totalNocThisMonth.toLocaleString() : "—";
+    // SECTION 2: Needs Attention Strip
+    const na = s.needsAttention || {};
+    const countPending = el("naCountPending");
+    if (countPending) countPending.textContent = (isLoaded && s.pendingReports != null) ? s.pendingReports : (na.pendingNoc || "—");
+
+    const countPending24 = el("naCountPending24");
+    if (countPending24) countPending24.textContent = na.pendingOlder24 != null ? na.pendingOlder24 : "—";
+
+    const countPending48 = el("naCountPending48");
+    if (countPending48) countPending48.textContent = na.pendingOlder48 != null ? na.pendingOlder48 : "—";
+
+    const countFollowUp = el("naCountFollowUp");
+    if (countFollowUp) countFollowUp.textContent = s.followupCount != null ? s.followupCount : (na.followup || "—");
+
+    const countUnreported = el("naCountUnreported");
+    if (countUnreported) countUnreported.textContent = s.unreportedCount != null ? s.unreportedCount : (na.unreported || "—");
+
+    const countEdrTeams = el("naCountEdrTeams");
+    if (countEdrTeams) countEdrTeams.textContent = s.edrUncopiedCount != null ? s.edrUncopiedCount : (na.edrTeamsPending || "—");
+
+    const countEdrAudit = el("naCountEdrAudit");
+    if (countEdrAudit) countEdrAudit.textContent = s.edrUnauditedCount != null ? s.edrUnauditedCount : (na.edrAuditPending || "—");
+
+    // SECTION 3: CCTV Team — Current Month Table (Sorted by Reports descending)
+    const teamHeading = el("dashTeamCurrentMonthHeading");
+    if (teamHeading) {
+      teamHeading.textContent = `CCTV Team — ${s.currentMonthLabel || "Current Month"}`;
     }
 
-    // Successful NOC — Monthly Individual Member Graphs
-    const memberGridEl = el("dashMemberGraphsGrid");
-    if (memberGridEl) {
-      if (isLoaded && Array.isArray(s.memberNocGraphs) && s.memberNocGraphs.length > 0) {
-        memberGridEl.innerHTML = s.memberNocGraphs.map(member => {
-          const maxCount = Math.max(5, ...member.monthlyData.map(m => m.count || 0));
-
-          const barsHtml = member.monthlyData.map(m => {
-            const barHeightPct = m.count > 0 ? Math.max(6, Math.round((m.count / maxCount) * 100)) : 3;
-            const currentClass = m.isCurrent ? "is-current" : "";
-            const zeroClass = m.count === 0 ? "is-zero" : "";
-            const titleText = `${member.name} - ${m.fullName}: ${m.count} Successful NOC`;
-
-            return `
-              <div class="member-noc-bar-col ${currentClass} ${zeroClass}" title="${titleText}">
-                <div class="member-noc-bar-track">
-                  <div class="member-noc-bar-fill" style="height: ${barHeightPct}%;"></div>
-                </div>
-                <div class="member-noc-bar-label">${m.month}</div>
-              </div>
-            `;
-          }).join("");
-
-          return `
-            <div class="member-noc-card">
-              <div class="member-noc-header">
-                <div class="member-noc-title">
-                  <span>${escapeHtml(member.name)}</span>
-                </div>
-                <span class="member-noc-badge">NOC = YES</span>
-              </div>
-              <div class="member-noc-chart-wrap">
-                ${barsHtml}
-              </div>
-              <div class="member-noc-footer">
-                <span>Total this year: <strong>${(member.totalThisYear || 0).toLocaleString()}</strong></span>
-                <span>This month: <strong>${(member.thisMonth || 0).toLocaleString()}</strong></span>
-              </div>
-            </div>
-          `;
-        }).join("");
-      } else {
-        memberGridEl.innerHTML = `<div class="dashboard-empty-placeholder" style="grid-column: 1 / -1; text-align: center; padding: 36px 16px; color: var(--text-muted); font-size: 13px;">Tracker API unavailable — No NOC graph data to display</div>`;
-      }
-    }
-
-    // Pending by CCTV Team
-    const pendingListEl = el("dashPendingByTeamList");
-    if (pendingListEl) {
-      if (isLoaded && Array.isArray(s.pendingByTeam) && s.pendingByTeam.length > 0) {
-        pendingListEl.innerHTML = s.pendingByTeam.map(item => {
-          const isZero = item.pending === 0;
-          return `
-            <div class="dashboard-pending-item ${isZero ? 'has-zero' : ''}">
-              <div class="pending-item-name">${escapeHtml(item.name)}</div>
-              <div class="pending-item-stats">
-                <span class="pending-count-badge ${isZero ? 'zero' : ''}">${item.pending} Pending</span>
-                <span class="pending-pct-text">${item.trackerPct || item.sharePct}</span>
-              </div>
-            </div>
-          `;
-        }).join("");
-      } else {
-        pendingListEl.innerHTML = `<div style="text-align: center; padding: 24px 16px; color: var(--text-muted); font-size: 13px;">Tracker API unavailable — No pending data</div>`;
-      }
-    }
-
-    // CCTV Team — Current Month Table (Sorted by Reports descending)
     const tbodyTeam = el("tbodyTeamCurrentMonth");
     if (tbodyTeam) {
       if (isLoaded && Array.isArray(s.teamStats) && s.teamStats.length > 0) {
@@ -9771,7 +9794,7 @@ function doPost(e) {
             <tr>
               <td><strong>${escapeHtml(t.name)}</strong></td>
               <td class="col-num">${(t.reports || 0).toLocaleString()}</td>
-              <td class="col-num" style="color:var(--accent-emerald,#10b981);">${(t.yes || 0).toLocaleString()}</td>
+              <td class="col-num" style="color:var(--accent-emerald,#10b981); font-weight:600;">${(t.yes || 0).toLocaleString()}</td>
               <td class="col-num" style="color:#f87171;">${(t.no || 0).toLocaleString()}</td>
               <td class="col-num" style="color:var(--accent-amber,#fbbf24); font-weight:700;">${(t.pending || 0).toLocaleString()}</td>
               <td class="col-num" style="color:var(--text-secondary,#94a3b8);">${t.pendingPct || '0.00%'}</td>
@@ -9783,20 +9806,187 @@ function doPost(e) {
       }
     }
 
-    // Pending Details Table
+    // SECTION 4: Monthly Activity Historical Panel
+    const maHeading = el("dashMonthlyActivityHeading");
+    if (maHeading) {
+      maHeading.textContent = `Monthly Activity — ${s.currentYear || 2026}`;
+    }
+
+    const maChartEl = el("dashMonthlyActivityChart");
+    const selectMemberEl = el("selectNocGraphMember");
+    const activeMember = (selectMemberEl && selectMemberEl.value) || "ALL";
+
+    let activeGraphData = null;
+    if (activeMember === "ALL") {
+      activeGraphData = s.entireTeamGraph;
+    } else if (Array.isArray(s.memberNocGraphs)) {
+      activeGraphData = s.memberNocGraphs.find(m => m.name === activeMember);
+    }
+
+    if (maChartEl) {
+      if (isLoaded && activeGraphData && Array.isArray(activeGraphData.monthlyData) && activeGraphData.monthlyData.length > 0) {
+        const maxVal = Math.max(5, ...activeGraphData.monthlyData.map(m => m.count || 0));
+
+        maChartEl.innerHTML = activeGraphData.monthlyData.map(m => {
+          const barHeightPct = m.count > 0 ? Math.max(6, Math.round((m.count / maxVal) * 100)) : 3;
+          const currentClass = m.isCurrent ? "is-current" : "";
+          const zeroClass = m.count === 0 ? "is-zero" : "";
+          const titleText = `${activeGraphData.name} - ${m.fullName}: ${m.count} Successful NOC`;
+
+          return `
+            <div class="ma-bar-col ${currentClass} ${zeroClass}" title="${titleText}">
+              <div class="ma-bar-val">${m.count > 0 ? m.count : ""}</div>
+              <div class="ma-bar-track">
+                <div class="ma-bar-fill" style="height: ${barHeightPct}%;"></div>
+              </div>
+              <div class="ma-bar-label">${m.month}</div>
+            </div>
+          `;
+        }).join("");
+
+        const totalYearEl = el("dashMonthlyActivityTotalYear");
+        if (totalYearEl) totalYearEl.textContent = (activeGraphData.totalThisYear || 0).toLocaleString();
+
+        const thisMonthEl = el("dashMonthlyActivityThisMonth");
+        if (thisMonthEl) thisMonthEl.textContent = (activeGraphData.thisMonth || 0).toLocaleString();
+      } else {
+        maChartEl.innerHTML = `<div style="text-align: center; width: 100%; padding: 40px 16px; color: var(--text-muted); font-size: 13px;">Tracker API unavailable — No monthly activity data</div>`;
+      }
+    }
+
+    // Pending by CCTV Team
+    const pendingListEl = el("dashPendingByTeamList");
+    if (pendingListEl) {
+      if (isLoaded && Array.isArray(s.pendingByTeam) && s.pendingByTeam.length > 0) {
+        pendingListEl.innerHTML = s.pendingByTeam.map(item => {
+          const isZero = item.pending === 0;
+          const isSelected = activePendingTeamFilter === item.name;
+          return `
+            <div class="dashboard-pending-item ${isZero ? 'has-zero' : ''} ${isSelected ? 'is-selected' : ''}" data-team="${escapeHtml(item.name)}" style="cursor:pointer;" title="Click to filter pending records for ${escapeHtml(item.name)}">
+              <div class="pending-item-name" style="${isSelected ? 'color:var(--accent-cyan,#06b6d4); font-weight:700;' : ''}">${escapeHtml(item.name)}</div>
+              <div class="pending-item-stats">
+                <span class="pending-count-badge ${isZero ? 'zero' : ''}">${item.pending} Pending</span>
+                <span class="pending-pct-text">${item.trackerPct || item.sharePct}</span>
+              </div>
+            </div>
+          `;
+        }).join("");
+
+        // Delegate click on pending items to filter Pending Details
+        pendingListEl.querySelectorAll(".dashboard-pending-item").forEach(itemEl => {
+          itemEl.addEventListener("click", () => {
+            const teamName = itemEl.getAttribute("data-team");
+            if (activePendingTeamFilter === teamName) {
+              activePendingTeamFilter = null;
+            } else {
+              activePendingTeamFilter = teamName;
+            }
+            renderDashboardWorkspace();
+            el("secPendingDetails")?.scrollIntoView({ behavior: "smooth", block: "start" });
+          });
+        });
+      } else {
+        pendingListEl.innerHTML = `<div style="text-align: center; padding: 24px 16px; color: var(--text-muted); font-size: 13px;">Tracker API unavailable — No pending data</div>`;
+      }
+    }
+
+    // SECTION 5: Month Breakdown
+    const breakdownTitleEl = el("dashBreakdownTitle");
+    if (breakdownTitleEl) {
+      breakdownTitleEl.textContent = `Month Breakdown — ${s.currentMonthLabel || "October 2026"}`;
+    }
+
+    const breakdownContentEl = el("dashBreakdownContent");
+    if (breakdownContentEl) {
+      const activeTab = currentBreakdownTab || "infractions";
+      const items = (s.breakdown && Array.isArray(s.breakdown[activeTab])) ? s.breakdown[activeTab] : [];
+
+      if (items.length > 0) {
+        const maxCount = Math.max(1, ...items.map(it => it.count || 0));
+        breakdownContentEl.innerHTML = items.map(it => {
+          const pct = Math.max(4, Math.round((it.count / maxCount) * 100));
+          return `
+            <div class="breakdown-row">
+              <span class="breakdown-row-name" title="${escapeHtml(it.name)}">${escapeHtml(it.name)}</span>
+              <div class="breakdown-row-track">
+                <div class="breakdown-row-fill" style="width: ${pct}%;"></div>
+              </div>
+              <span class="breakdown-row-val">${(it.count || 0).toLocaleString()}</span>
+            </div>
+          `;
+        }).join("");
+      } else {
+        const tabLabel = activeTab.charAt(0).toUpperCase() + activeTab.slice(1);
+        breakdownContentEl.innerHTML = `
+          <div style="text-align:center; padding:24px 16px; color:var(--text-muted); font-size:12.5px;">
+            <div style="font-weight:600; color:var(--text-secondary); margin-bottom:4px;">No ${escapeHtml(tabLabel)} Breakdown Data</div>
+            <div>Awaiting monthly breakdown sync from Google Sheets (see scratch/CCTV_OPS_Dashboard_Tracker_API.gs)</div>
+          </div>
+        `;
+      }
+    }
+
+    // SECTION 6: Today Operational Panel
+    const todayDateEl = el("dashTodayHeading");
+    if (todayDateEl) {
+      const todayInfo = svc && typeof svc.getCurrentMonthInfo === "function" ? svc.getCurrentMonthInfo() : null;
+      todayDateEl.textContent = todayInfo ? `Today — ${todayInfo.monthShort} ${todayInfo.day}` : "Today";
+    }
+
+    const todayObj = s.today || {};
+    const repToday = el("todayValReports");
+    if (repToday) repToday.textContent = todayObj.reportsToday != null ? todayObj.reportsToday : "Unavailable";
+
+    const nocToday = el("todayValNoc");
+    if (nocToday) nocToday.textContent = todayObj.successfulNocToday != null ? todayObj.successfulNocToday : "Unavailable";
+
+    const pendToday = el("todayValPending");
+    if (pendToday) pendToday.textContent = todayObj.pendingAddedToday != null ? todayObj.pendingAddedToday : "Unavailable";
+
+    const edrToday = el("todayValEdrs");
+    if (edrToday) edrToday.textContent = todayObj.edrsCreatedToday != null ? todayObj.edrsCreatedToday : "0";
+
+    const fuToday = el("todayValFollowups");
+    if (fuToday) fuToday.textContent = todayObj.followupsDueToday != null ? todayObj.followupsDueToday : "0";
+
+    // SECTION 7: Pending Details Table (with Age Indicators & Member Filter)
     const secDetails = el("secPendingDetails");
     const tbodyDetails = el("tbodyPendingDetails");
     const countBadge = el("dashPendingDetailsCount");
+    const filterIndicator = el("dashPendingFilterIndicator");
+    const filterNameText = el("dashPendingFilterName");
 
     if (secDetails && tbodyDetails) {
-      if (Array.isArray(s.pendingDetails) && s.pendingDetails.length > 0) {
-        secDetails.style.display = "";
-        if (countBadge) countBadge.textContent = `${s.pendingDetails.length} Records`;
+      let detailsList = Array.isArray(s.pendingDetails) ? s.pendingDetails : [];
 
-        tbodyDetails.innerHTML = s.pendingDetails.map((row, idx) => {
+      if (activePendingTeamFilter) {
+        detailsList = detailsList.filter(d => d.team === activePendingTeamFilter);
+        if (filterIndicator) filterIndicator.style.display = "inline-flex";
+        if (filterNameText) filterNameText.textContent = activePendingTeamFilter;
+      } else {
+        if (filterIndicator) filterIndicator.style.display = "none";
+      }
+
+      if (detailsList.length > 0) {
+        secDetails.style.display = "";
+        if (countBadge) countBadge.textContent = `${detailsList.length} Records`;
+
+        tbodyDetails.innerHTML = detailsList.map((row, idx) => {
+          let ageBadgeHtml = "";
+          if (row.ageCategory === ">48h") {
+            ageBadgeHtml = `<span class="age-badge age-48" title="${row.ageHours || 48}h old">>48h</span>`;
+          } else if (row.ageCategory === "24–48h") {
+            ageBadgeHtml = `<span class="age-badge age-24" title="${row.ageHours || 24}h old">24-48h</span>`;
+          } else if (row.ageCategory === "<24h" && row.parsedDate) {
+            ageBadgeHtml = `<span class="age-badge age-fresh">&lt;24h</span>`;
+          }
+
           return `
             <tr>
-              <td>${escapeHtml(row.date || '—')}</td>
+              <td>
+                <span style="font-family:var(--font-mono,monospace);">${escapeHtml(row.date || '—')}</span>
+                ${ageBadgeHtml}
+              </td>
               <td><strong>${escapeHtml(row.team || '—')}</strong></td>
               <td>${escapeHtml(row.site || '—')}</td>
               <td><span class="badge-pending">${escapeHtml(row.status || 'Pending')}</span></td>
@@ -9815,7 +10005,6 @@ function doPost(e) {
           `;
         }).join("");
 
-        // Delegate Open button clicks to switch to Tracker
         tbodyDetails.querySelectorAll("button[data-action='open-tracker']").forEach(btn => {
           btn.addEventListener("click", () => {
             switchWorkspace("trackers");
@@ -9825,10 +10014,30 @@ function doPost(e) {
           });
         });
       } else {
-        // As requested: Do NOT fabricate individual pending records if only aggregate numbers exist
-        secDetails.style.display = "none";
+        if (activePendingTeamFilter) {
+          secDetails.style.display = "";
+          if (countBadge) countBadge.textContent = `0 Records`;
+          tbodyDetails.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:20px; color:var(--text-muted); font-size:13px;">No pending records for ${escapeHtml(activePendingTeamFilter)}</td></tr>`;
+        } else {
+          secDetails.style.display = "none";
+        }
       }
     }
+
+    // SECTION 8: System Status Footer
+    const dotTracker = el("statusDotTracker");
+    const textTracker = el("statusTextTracker");
+    if (dotTracker && textTracker) {
+      if (s.isStale) {
+        dotTracker.className = "status-indicator-dot is-stale";
+        textTracker.textContent = "Stale / Cached";
+      } else {
+        dotTracker.className = "status-indicator-dot is-online";
+        textTracker.textContent = "Synced";
+      }
+    }
+    const lastRefreshEl = el("statusLastRefresh");
+    if (lastRefreshEl) lastRefreshEl.textContent = s.lastUpdatedFormatted || "—";
   }
 
   window.renderDashboardWorkspace = renderDashboardWorkspace;
