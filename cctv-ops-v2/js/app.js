@@ -5551,6 +5551,8 @@ function doPost(e) {
         window.addMaintenanceSorterRowsToReport(pending.tsv, pending);
       }
     }
+  }
+
   let maintenanceImageCompressionQueue = Promise.resolve();
 
   function renderBlockScreenshots(blockId) {
