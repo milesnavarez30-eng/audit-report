@@ -1,0 +1,26 @@
+# Temporary & Generated Chromium Profiles
+scratch/*_profile/
+scratch/test_profiles/
+scratch/test_cdp_profile/
+
+# Test Screenshots & Visual Dumps
+scratch/screenshots/
+scratch/responsive_snaps/
+scratch/regression_audit_output/
+
+# Runtime Logs, Locks, and Dumps
+scratch/*.log
+scratch/*.lock
+scratch/*.tmp
+*.log
+
+# Windows / OS Caches
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# Explicit Whitelist: Always track user project code, backups, and QA runners
+!scratch/user-backups/
+!scratch/*.gs
+!scratch/cloud-storage-backup/
+!scratch/qa_harness.ps1
