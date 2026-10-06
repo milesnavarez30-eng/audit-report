@@ -690,14 +690,12 @@ window.CCTV_DASHBOARD = (function () {
       console.warn("Could not sync Unreported count for Dashboard:", e);
     }
 
-    // 3. EDR Workspace Action Needed Count (Live local IndexedDB/Storage)
+    // 3. EDR Workspace Action Needed Count (Live in-memory state consumer)
     try {
       const edrService = window.CCTV_EDR || window.edrService;
       if (edrService) {
         let edrList = [];
-        if (typeof edrService.loadReports === "function") {
-          edrList = await edrService.loadReports();
-        } else if (typeof edrService.getReports === "function") {
+        if (typeof edrService.getReports === "function") {
           edrList = edrService.getReports();
         }
         if (Array.isArray(edrList)) {
@@ -859,14 +857,17 @@ window.CCTV_DASHBOARD = (function () {
       });
     }
 
-    // EDR change listeners
+    // EDR change listener (single authoritative subscription)
     const edrService = window.CCTV_EDR || window.edrService;
     if (edrService) {
       const handleEdrReports = () => {
         syncLocalWorkspaces().catch(console.warn);
       };
-      if (typeof edrService.onChange === "function") edrService.onChange(handleEdrReports);
-      if (typeof edrService.subscribe === "function") edrService.subscribe(handleEdrReports);
+      if (typeof edrService.subscribe === "function") {
+        edrService.subscribe(handleEdrReports);
+      } else if (typeof edrService.onChange === "function") {
+        edrService.onChange(handleEdrReports);
+      }
     }
 
     // Initial fetch from authoritative Google Sheets endpoint

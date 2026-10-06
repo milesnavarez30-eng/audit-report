@@ -9,7 +9,7 @@
   const DB_NAME = "cctv_global_workspace_history_v1";
   const STORE = "history";
   const STATE_KEY = "timeline";
-  const MAX_HISTORY = 20;
+  const MAX_HISTORY = 50;
 
   const WORKSPACE_MAP = {
     paneCctvReport: "report",
@@ -98,6 +98,67 @@
 
   function stable(val) {
     return JSON.stringify(val);
+  }
+
+  // In-memory bounded media cache to prevent multi-hundred megabyte history bloat
+  const MAX_CACHED_MEDIA = 120;
+  const historyMediaCache = new Map();
+
+  function fastHash(str) {
+    let hash = 0;
+    const len = Math.min(str.length, 2048);
+    for (let i = 0; i < len; i++) {
+      hash = ((hash << 5) - hash) + str.charCodeAt(i);
+      hash |= 0;
+    }
+    return Math.abs(hash).toString(36);
+  }
+
+  function compressMedia(val) {
+    if (!val || typeof val !== "object") {
+      if (typeof val === "string" && val.startsWith("data:image/") && val.length > 256) {
+        const key = `img_${val.length}_${fastHash(val)}`;
+        if (!historyMediaCache.has(key)) {
+          if (historyMediaCache.size >= MAX_CACHED_MEDIA) {
+            const firstKey = historyMediaCache.keys().next().value;
+            historyMediaCache.delete(firstKey);
+          }
+          historyMediaCache.set(key, val);
+        }
+        return `@@IMG_REF:${key}@@`;
+      }
+      return val;
+    }
+
+    if (Array.isArray(val)) {
+      return val.map(compressMedia);
+    }
+
+    const out = {};
+    for (const [k, v] of Object.entries(val)) {
+      out[k] = compressMedia(v);
+    }
+    return out;
+  }
+
+  function decompressMedia(val) {
+    if (!val || typeof val !== "object") {
+      if (typeof val === "string" && val.startsWith("@@IMG_REF:") && val.endsWith("@@")) {
+        const key = val.slice(10, -2);
+        return historyMediaCache.get(key) || val;
+      }
+      return val;
+    }
+
+    if (Array.isArray(val)) {
+      return val.map(decompressMedia);
+    }
+
+    const out = {};
+    for (const [k, v] of Object.entries(val)) {
+      out[k] = decompressMedia(v);
+    }
+    return out;
   }
 
   function historyValue(v) {
@@ -440,8 +501,25 @@
       }
     }
 
+    _scheduleSaveTimeline() {
+      clearTimeout(this._saveTimelineTimer);
+      this._saveTimelineTimer = setTimeout(() => {
+        this._saveTimeline().catch(console.error);
+      }, 300);
+    }
+
     async _loadTimeline() {
       try {
+        const PRUNED_KEY = "cctv_history_pruned_v2";
+        const needsPrune = !localStorage.getItem(PRUNED_KEY);
+        if (needsPrune) {
+          // One-time pruning of legacy oversized snapshot database
+          await this.clearHistory();
+          localStorage.setItem(PRUNED_KEY, new Date().toISOString());
+          console.info("History database safely reset and bounded to 50 snapshots/workspace.");
+          return;
+        }
+
         const db = await this._openDb();
         const saved = await new Promise((resolve, reject) => {
           const tx = db.transaction(STORE, "readonly");
@@ -459,6 +537,12 @@
           );
         }
         if (saved && saved.workspaceHistory && typeof saved.workspaceHistory === "object") {
+          for (const ws of Object.keys(saved.workspaceHistory)) {
+            if (Array.isArray(saved.workspaceHistory[ws]?.entries)) {
+              saved.workspaceHistory[ws].entries = saved.workspaceHistory[ws].entries.slice(-MAX_HISTORY);
+              saved.workspaceHistory[ws].cursor = saved.workspaceHistory[ws].entries.length - 1;
+            }
+          }
           this.workspaceHistory = saved.workspaceHistory;
         } else {
           // Reconstruct workspaceHistory from loaded entries if missing
@@ -505,7 +589,7 @@
       for (const ws of Object.keys(WORKSPACE_NAMES)) {
         const snap = await this.takeSnapshot(ws);
         if (snap != null) {
-          this.lastSnapshots[canonicalWorkspace(ws)] = snap;
+          this.lastSnapshots[canonicalWorkspace(ws)] = compressMedia(snap);
         }
       }
     }
@@ -514,8 +598,9 @@
       if (this.suppress || !workspace) return;
       const canonical = canonicalWorkspace(workspace);
 
-      const after = await this.takeSnapshot(canonical);
-      if (after == null) return;
+      const rawAfter = await this.takeSnapshot(canonical);
+      if (rawAfter == null) return;
+      const after = compressMedia(rawAfter);
 
       const before = this.lastSnapshots[canonical];
       if (before == null) {
@@ -534,6 +619,19 @@
         after: clone(after)
       };
 
+      // 2. Maintain SCOPED workspace history stack
+      if (!this.workspaceHistory[canonical]) {
+        this.workspaceHistory[canonical] = { entries: [], cursor: -1 };
+      }
+      const wsHist = this.workspaceHistory[canonical];
+
+      // Duplicate snapshot prevention: do not add if after state matches the latest recorded snapshot in this workspace
+      const lastRecorded = (wsHist && wsHist.entries.length) ? wsHist.entries[wsHist.entries.length - 1] : null;
+      if (lastRecorded && stable(lastRecorded.after) === stable(after)) {
+        this.lastSnapshots[canonical] = clone(after);
+        return;
+      }
+
       // 1. Maintain global entries list for Activity History tab
       if (this.cursor < this.entries.length - 1) {
         this.entries = this.entries.slice(0, this.cursor + 1);
@@ -544,11 +642,6 @@
       }
       this.cursor = this.entries.length - 1;
 
-      // 2. Maintain SCOPED workspace history stack
-      if (!this.workspaceHistory[canonical]) {
-        this.workspaceHistory[canonical] = { entries: [], cursor: -1 };
-      }
-      const wsHist = this.workspaceHistory[canonical];
       if (wsHist.cursor < wsHist.entries.length - 1) {
         wsHist.entries = wsHist.entries.slice(0, wsHist.cursor + 1);
       }
@@ -560,7 +653,7 @@
 
       this.lastSnapshots[canonical] = clone(after);
 
-      await this._saveTimeline();
+      this._scheduleSaveTimeline();
       this._notify();
     }
 
@@ -581,9 +674,10 @@
 
       this.suppress = true;
       try {
-        const snapshot = direction === "undo" ? entry.before : entry.after;
-        await adapter.restore(clone(snapshot));
-        this.lastSnapshots[canonical] = clone(snapshot);
+        const rawSnapshot = direction === "undo" ? entry.before : entry.after;
+        const snapshot = decompressMedia(clone(rawSnapshot));
+        await adapter.restore(snapshot);
+        this.lastSnapshots[canonical] = compressMedia(clone(rawSnapshot));
       } finally {
         this.suppress = false;
       }
@@ -737,12 +831,12 @@
 
       this.suppress = true;
       try {
-        await adapter.restore(clone(next));
+        await adapter.restore(decompressMedia(clone(next)));
       } finally {
         this.suppress = false;
       }
 
-      this.lastSnapshots[entry.workspace] = clone(currentBefore);
+      this.lastSnapshots[entry.workspace] = compressMedia(clone(currentBefore));
       await this.captureIfChanged(
         entry.workspace,
         restoredCount
@@ -912,7 +1006,6 @@
 
         const action = this._actionFromTarget(control, ws);
         this.scheduleCapture(ws, action, 400);
-        setTimeout(() => this.captureIfChanged(ws, action).catch(console.error), 1200);
       }, true);
 
       // Note: Keydown undo/redo (Ctrl+Z, Ctrl+Y, Ctrl+Shift+Z) is centralized in app.js

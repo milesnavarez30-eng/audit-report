@@ -1498,6 +1498,29 @@
         chk.addEventListener("change", handleToggle);
       }
 
+      // Approved EDR Selection: clicking anywhere on the card body toggles selection, and clicking the checkbox directly also toggles it
+      card.style.cursor = "pointer";
+      card.addEventListener("click", (e) => {
+        if (!chk) return;
+        // Do not intercept clicks on buttons, more menu, subject toggles, or the checkbox/label itself
+        if (e.target.closest(".record-actions") ||
+            e.target.closest(".record-more-menu-wrap") ||
+            e.target.closest(".edr-card-subject-toggle") ||
+            e.target.closest(".edr-card-expanded-subjects") ||
+            e.target.closest(".record-select-col") ||
+            e.target.closest("button") ||
+            e.target.closest("a") ||
+            e.target.closest("input")) {
+          return; // let those handlers fire natively
+        }
+        // Toggle selection
+        const newChecked = !chk.checked;
+        chk.checked = newChecked;
+        edr.toggleSelect(id, newChecked);
+        card.classList.toggle("is-selected", newChecked);
+        updateLivePreview();
+      });
+
       // View SS
       const triggerView = async () => {
         if (!report.screenshotData && (!report.screenshots || !report.screenshots.length) && report.screenshotFileId) {
