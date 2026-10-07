@@ -62,6 +62,19 @@
     return "b_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 8);
   }
 
+  function normalizeMaintenanceBlockId(value) {
+    if (value == null) return "";
+    let str = typeof value === "object" && value !== null && value.id ? String(value.id) : String(value);
+    str = str.trim();
+    if (str.startsWith("block_")) {
+      str = str.slice(6);
+    } else if (str.startsWith("proof_zone_")) {
+      str = str.slice(11);
+    }
+    return str;
+  }
+
+
   function getQuickRemarks() {
     try {
       const raw = localStorage.getItem(QUICK_REMARKS_STORAGE_KEY);
@@ -246,7 +259,7 @@
             : (block.customNote ? [block.customNote] : [""]);
 
           return {
-            id: block.id || uid(),
+            id: block.id ? normalizeMaintenanceBlockId(block.id) : uid(),
             lanesText: block.lanesText || "",
             remarks: existingRemarks.length ? existingRemarks : [""],
             screenshots: Array.isArray(block.screenshots) ? block.screenshots : [],
@@ -1215,6 +1228,7 @@
     DRAFT_KEY,
     MAINTENANCE_DESTINATIONS,
     uid,
+    normalizeMaintenanceBlockId,
     makeBlock,
     todayLocal,
     getMaintenanceSheetsWebAppUrl,
@@ -1234,6 +1248,7 @@
     maintenanceScreenshotSource,
     maintenanceRowsForSheets,
     buildMaintenanceSheetsPayload,
+    buildMaintenanceEvidencePayload,
     testMaintenanceSheetsConnection,
     sendMaintenanceReportToGoogleSheets,
     maintenanceReportPlainTextForSheets,

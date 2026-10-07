@@ -5576,10 +5576,23 @@ function doPost(e) {
     }
   }
 
+  function normalizeMaintenanceBlockId(value) {
+    if (value == null) return "";
+    let str = typeof value === "object" && value !== null && value.id ? String(value.id) : String(value);
+    str = str.trim();
+    if (str.startsWith("block_")) {
+      str = str.slice(6);
+    } else if (str.startsWith("proof_zone_")) {
+      str = str.slice(11);
+    }
+    return str;
+  }
+
   let maintenanceImageCompressionQueue = Promise.resolve();
 
   function renderBlockScreenshots(blockId) {
-    const block = maintenanceState.blocks.find(b => b.id === Number(blockId));
+    const canonicalId = normalizeMaintenanceBlockId(blockId);
+    const block = maintenanceState.blocks.find(b => normalizeMaintenanceBlockId(b.id) === canonicalId);
     if (!block) return;
     const proofZone = document.getElementById(`proof_zone_${block.id}`);
     if (!proofZone) return;
@@ -5754,7 +5767,11 @@ function doPost(e) {
       blockEl.id = `block_${block.id}`;
       blockEl.dataset.blockId = block.id;
       blockEl.addEventListener("click", () => {
-        if (!block.dataHidden) activePasteBlockId = block.id;
+        if (!block.dataHidden) {
+          activePasteBlockId = block.id;
+          document.querySelectorAll(".eod-block-card.is-active-target").forEach(c => c.classList.remove("is-active-target"));
+          blockEl.classList.add("is-active-target");
+        }
       });
 
       // Header row
@@ -6204,6 +6221,15 @@ function doPost(e) {
       dropNotice.textContent = "Browse, drag & drop image files, or press Ctrl+V to paste screenshot here.";
       proofZone.appendChild(dropNotice);
 
+      proofZone.dataset.blockId = block.id;
+      proofZone.addEventListener("click", () => {
+        if (!block.dataHidden) {
+          activePasteBlockId = block.id;
+          document.querySelectorAll(".eod-block-card.is-active-target").forEach(c => c.classList.remove("is-active-target"));
+          blockEl.classList.add("is-active-target");
+        }
+      });
+
       const gridEl = document.createElement("div");
       gridEl.className = "eod-proof-grid";
       proofZone.appendChild(gridEl);
@@ -6446,6 +6472,46 @@ function doPost(e) {
 
       const state = maintenanceState || {};
       const blocks = Array.isArray(state.blocks) ? state.blocks : [];
+
+      // Await pending compression queue and ensure no screenshot remains a raw blob URL
+      if (maintenanceImageCompressionQueue) {
+        try {
+          await maintenanceImageCompressionQueue;
+        } catch (_) {}
+      }
+
+      for (const b of blocks) {
+        if (Array.isArray(b.screenshots)) {
+          for (let sIdx = 0; sIdx < b.screenshots.length; sIdx++) {
+            const shot = b.screenshots[sIdx];
+            const src = maintenance.maintenanceScreenshotSource?.(shot, "full") || "";
+            if (/^blob:/i.test(src) && shot?.file instanceof Blob) {
+              try {
+                const comp = await maintenance.compressImage(shot.file);
+                b.screenshots[sIdx] = comp;
+              } catch (_) {
+                try {
+                  const dataUrl = await new Promise((res, rej) => {
+                    const r = new FileReader();
+                    r.onload = () => res(r.result);
+                    r.onerror = rej;
+                    r.readAsDataURL(shot.file);
+                  });
+                  b.screenshots[sIdx] = {
+                    id: shot.id || "shot_" + Date.now(),
+                    dataUrl,
+                    thumbnail: dataUrl,
+                    width: 1280,
+                    height: 720,
+                    aspectRatio: 16 / 9,
+                    format: "image/jpeg"
+                  };
+                } catch (_) {}
+              }
+            }
+          }
+        }
+      }
 
       const cleanTitle = String(
         state.title || "Maintenance Report"
@@ -7108,6 +7174,12 @@ function doPost(e) {
 
     window.syncMaintenanceStateFromDom = syncMaintenanceStateFromDom;
     window.getMaintenanceState = () => maintenanceState;
+    window.setMaintenanceState = (st) => { maintenanceState = st; };
+    window.renderMaintenanceBlocks = renderMaintenanceBlocks;
+    window.renderBlockScreenshots = renderBlockScreenshots;
+    window.addScreenshotsToBlock = addScreenshotsToBlock;
+    window.downloadMaintenancePdf = downloadMaintenancePdf;
+    window.getMaintenanceCompressionQueue = () => maintenanceImageCompressionQueue;
 
     // =========================================================================
     // GLOBAL PASTE HANDLER: Maintenance workspace (item 9)
@@ -7118,13 +7190,44 @@ function doPost(e) {
     if (window.CCTV_PASTE_ROUTER) {
       window.CCTV_PASTE_ROUTER.register("maintenance", async (files, event) => {
         if (!files || !files.length) return;
-        const targetBlock = (event?.target?.closest ? (maintenanceState.blocks.find(b => b.id === Number(event.target.closest(".eod-block, .eod-block-card")?.id?.replace("block_", "")))) : null) ||
-          maintenanceState.blocks.find(b => b.id === activePasteBlockId && !b.dataHidden) ||
-          maintenanceState.blocks.find(b => !b.dataHidden);
+
+        let targetBlock = null;
+
+        // Priority 1: Block containing paste event target or activeElement
+        const pasteElement = event?.target || document.activeElement;
+        const cardEl = pasteElement?.closest ? pasteElement.closest(".eod-block, .eod-block-card, [data-block-id]") : null;
+        if (cardEl) {
+          const rawId = cardEl.dataset?.blockId || cardEl.id;
+          const canonicalId = normalizeMaintenanceBlockId(rawId);
+          if (canonicalId) {
+            const found = maintenanceState.blocks.find(b => !b.dataHidden && normalizeMaintenanceBlockId(b.id) === canonicalId);
+            if (found) targetBlock = found;
+          }
+        }
+
+        // Priority 2: activePasteBlockId
+        if (!targetBlock && activePasteBlockId) {
+          const canonicalActive = normalizeMaintenanceBlockId(activePasteBlockId);
+          const found = maintenanceState.blocks.find(b => !b.dataHidden && normalizeMaintenanceBlockId(b.id) === canonicalActive);
+          if (found) targetBlock = found;
+        }
+
+        // Priority 3: First visible block fallback
         if (!targetBlock) {
+          targetBlock = maintenanceState.blocks.find(b => !b.dataHidden);
+        }
+
+        // Hidden blocks must never receive a screenshot
+        if (!targetBlock || targetBlock.dataHidden) {
           showToast("No visible block found to receive screenshot.", "info");
           return;
         }
+
+        activePasteBlockId = targetBlock.id;
+        document.querySelectorAll(".eod-block-card.is-active-target").forEach(c => c.classList.remove("is-active-target"));
+        const targetEl = document.getElementById(`block_${targetBlock.id}`);
+        if (targetEl) targetEl.classList.add("is-active-target");
+
         await addScreenshotsToBlock(targetBlock, files);
         if (window.historyService?.captureIfChanged) {
           window.historyService.captureIfChanged("maintenance", `Added screenshot to Block #${maintenanceState.blocks.indexOf(targetBlock) + 1}`);
@@ -7147,7 +7250,7 @@ function doPost(e) {
       const isCtrlOrMeta = !!(event.ctrlKey || event.metaKey);
 
       // Target block for shortcuts: active block or first visible block
-      const targetBlock = maintenanceState.blocks.find(b => b.id === activePasteBlockId && !b.dataHidden) ||
+      const targetBlock = (activePasteBlockId ? maintenanceState.blocks.find(b => !b.dataHidden && normalizeMaintenanceBlockId(b.id) === normalizeMaintenanceBlockId(activePasteBlockId)) : null) ||
         maintenanceState.blocks.find(b => !b.dataHidden);
 
       // Ctrl+A: Select All lanes text in active block
@@ -7225,7 +7328,7 @@ function doPost(e) {
         event.preventDefault();
         const visibleBlocks = maintenanceState.blocks.filter(b => !b.dataHidden);
         if (!visibleBlocks.length) return;
-        const curIdx = visibleBlocks.findIndex(b => b.id === activePasteBlockId);
+        const curIdx = visibleBlocks.findIndex(b => normalizeMaintenanceBlockId(b.id) === normalizeMaintenanceBlockId(activePasteBlockId));
         let nextIdx = 0;
         if (key === "arrowup") {
           nextIdx = curIdx <= 0 ? visibleBlocks.length - 1 : curIdx - 1;
@@ -7233,7 +7336,9 @@ function doPost(e) {
           nextIdx = curIdx < 0 || curIdx >= visibleBlocks.length - 1 ? 0 : curIdx + 1;
         }
         activePasteBlockId = visibleBlocks[nextIdx].id;
+        document.querySelectorAll(".eod-block-card.is-active-target").forEach(c => c.classList.remove("is-active-target"));
         const blockEl = document.getElementById(`block_${activePasteBlockId}`);
+        blockEl?.classList.add("is-active-target");
         blockEl?.scrollIntoView({ behavior: "smooth", block: "nearest" });
         showToast(`Selected Block #${maintenanceState.blocks.indexOf(visibleBlocks[nextIdx]) + 1}.`, "info");
         return;
