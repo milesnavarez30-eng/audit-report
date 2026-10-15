@@ -2623,11 +2623,11 @@ table.mini-sheet tr.floor-break td {
 
 .followup-add-lower {
   display: grid;
-  grid-template-columns: 240px 1fr;
-  gap: 10px;
+  grid-template-columns: minmax(240px, 260px) minmax(0, 1fr);
+  gap: 12px;
 }
 
-@media (max-width: 900px) {
+@media (max-width: 880px) {
   .followup-add-lower {
     grid-template-columns: 1fr;
   }
@@ -2646,6 +2646,10 @@ table.mini-sheet tr.floor-break td {
   min-height: 86px;
   transition: all 0.2s ease;
   position: relative;
+  box-sizing: border-box;
+  max-width: 100%;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .followup-add-shot-zone.dragover {
@@ -5102,7 +5106,7 @@ table.mini-sheet tr.floor-break td {
   min-height: 0;
   overflow: hidden;
   position: relative;
-  background: #ffffff;
+  background: var(--bg-main, #0b0f19);
 }
 
 .tracker-iframe {
@@ -5548,4 +5552,27 @@ body:not(.auth-locked) #loginModal {
   background: rgba(148, 163, 184, 0.08) !important;
   color: #94a3b8 !important;
   border: 1px solid rgba(148, 163, 184, 0.22) !important;
+}
+
+/* Unreported Card Collapsed Compact Layout */
+.unreported-card.is-collapsed {
+  gap: 8px !important;
+  padding: 10px 14px !important;
+}
+
+.unreported-card.is-collapsed .unreported-card-header {
+  border-bottom: none !important;
+  padding-bottom: 0 !important;
+}
+
+.unreported-card.is-collapsed .unreported-card-footer {
+  border-top: 1px solid var(--border-subtle, #21262d) !important;
+  padding-top: 8px !important;
+  margin-top: 0 !important;
+}
+
+.unreported-card-header-actions {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
 }

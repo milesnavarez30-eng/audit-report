@@ -2714,6 +2714,12 @@
       paneId: "paneAccounts",
       title: "Account Management",
       subtitle: ""
+    },
+    vault: {
+      tabId: "tabVault",
+      paneId: "paneVault",
+      title: "Secure Vault",
+      subtitle: "Local Encrypted Storage"
     }
   };
 
@@ -2729,6 +2735,22 @@
       showToast("Access restricted: You do not have permission to access this workspace.", "warning");
       return;
     }
+
+    // Vault Private Owner Authorization Check
+    if (targetKey === "vault") {
+      if (!window.CCTV_VAULT || !window.CCTV_VAULT.isAuthorizedOwner()) {
+        showToast("Access restricted: Vault is private to the authorized owner.", "warning");
+        return;
+      }
+    }
+
+    // Vault Immediate Lock when leaving Vault workspace
+    if (currentWorkspace === "vault" && targetKey !== "vault") {
+      if (window.CCTV_VAULT && typeof window.CCTV_VAULT.lock === "function") {
+        window.CCTV_VAULT.lock();
+      }
+    }
+
     currentWorkspace = targetKey;
     window.getCurrentWorkspace = () => currentWorkspace;
 
@@ -2803,6 +2825,10 @@
     } else if (targetKey === "accounts") {
       if (typeof window._renderAccountsWorkspaceFn === 'function') {
         window._renderAccountsWorkspaceFn();
+      }
+    } else if (targetKey === "vault") {
+      if (window.CCTV_VAULT && typeof window.CCTV_VAULT.renderWorkspace === "function") {
+        window.CCTV_VAULT.renderWorkspace();
       }
     }
 
@@ -8010,6 +8036,11 @@ function doPost(e) {
                 </button>
               `}
 
+              <button type="button" class="btn btn-danger-ghost btn-xs followup-delete-btn" title="Delete follow-up report">
+                <svg class="icon icon-xs" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                <span>Delete</span>
+              </button>
+
               <button type="button" class="btn btn-ghost btn-xs followup-toggle-drawer-btn" title="${isExpanded ? "Collapse editing drawer" : "Expand editing drawer"}">
                 <span>${isExpanded ? "Close" : "Edit"}</span>
                 <svg class="icon icon-xs" viewBox="0 0 24 24" style="transform:${isExpanded ? "rotate(180deg)" : "none"}; transition:transform 0.15s ease;"><polyline points="6 9 12 15 18 9"></polyline></svg>
@@ -8059,7 +8090,6 @@ function doPost(e) {
               </div>
               <div style="display:flex; align-items:center; gap:6px;">
                 <button type="button" class="btn btn-outline btn-xs followup-replace-btn">Replace Screenshot</button>
-                <button type="button" class="btn btn-danger-ghost btn-xs followup-delete-btn">Delete</button>
               </div>
             </div>
           </div>
@@ -8402,6 +8432,14 @@ function doPost(e) {
         followupReplaceTargetId = "";
       }
     });
+
+    followup.onChange(updatedReports => {
+      followupReportsList = Array.isArray(updatedReports) ? updatedReports : [];
+      renderFollowupList();
+    });
+
+    window.renderFollowupList = renderFollowupList;
+    window.loadFollowupReportsInitial = loadFollowupReportsInitial;
   }
 
   // =========================================================================
@@ -9457,11 +9495,34 @@ function doPost(e) {
     } catch (_) {}
   }
 
-  function applyTrackerZoom(zoomPct) {
-    const iframe = el("trackerFrame");
+  const MAX_LIVE_TRACKER_IFRAMES = 2;
+  const trackerIframeCache = new Map(); // key -> { key, iframe, reqId, loaded: boolean }
+  const trackerLruOrder = []; // [lruKey, mruKey]
+  let currentTrackerReqId = 0;
+
+  function evictLruTracker() {
+    while (trackerLruOrder.length >= MAX_LIVE_TRACKER_IFRAMES) {
+      const evictKey = trackerLruOrder.shift();
+      const entry = trackerIframeCache.get(evictKey);
+      if (entry) {
+        try {
+          if (entry.iframe) {
+            entry.iframe.onload = null;
+            entry.iframe.onerror = null;
+            entry.iframe.src = "about:blank";
+            entry.iframe.remove();
+          }
+        } catch (_) {}
+        trackerIframeCache.delete(evictKey);
+      }
+    }
+  }
+
+  function applyTrackerZoom(zoomPct, targetIframe = null) {
     const display = el("trackerZoomDisplay");
     if (display) display.textContent = `${zoomPct}%`;
 
+    const iframe = targetIframe || trackerIframeCache.get(activeTrackerKey)?.iframe || el("trackerFrame");
     if (iframe) {
       const scale = zoomPct / 100;
       const logicalDim = `${(100 / scale).toFixed(4)}%`;
@@ -9562,7 +9623,6 @@ function doPost(e) {
     } catch (_) {}
 
     const cfg = TRACKER_CONFIGS[key];
-    const iframe = el("trackerFrame");
     const labelEl = el("trackersActiveLabel");
     const openLink = el("linkOpenGoogleSheets");
     const errorOpenLink = el("linkTrackerErrorOpen");
@@ -9580,25 +9640,115 @@ function doPost(e) {
       btn.setAttribute("aria-selected", isCurrent ? "true" : "false");
     });
 
-    // Apply saved independent zoom for this specific tracker workbook
     const savedZoom = getSavedTrackerZoom(key);
-    applyTrackerZoom(savedZoom);
+    const container = el("trackersFrameContainer");
+    if (!container) return;
 
-    if (iframe) {
-      const needsReload = forceReload || iframe.src !== cfg.url;
-      if (needsReload) {
+    // Check if tracker iframe is already in LRU cache
+    if (trackerIframeCache.has(key)) {
+      // Update LRU position: move key to most recently used (end)
+      const lruIdx = trackerLruOrder.indexOf(key);
+      if (lruIdx !== -1) trackerLruOrder.splice(lruIdx, 1);
+      trackerLruOrder.push(key);
+
+      const entry = trackerIframeCache.get(key);
+
+      // Hide other cached iframes and show this one
+      trackerIframeCache.forEach((otherEntry, otherKey) => {
+        if (otherKey === key) {
+          otherEntry.iframe.style.display = "block";
+          otherEntry.iframe.id = "trackerFrame";
+        } else {
+          otherEntry.iframe.style.display = "none";
+          if (otherEntry.iframe.id === "trackerFrame") otherEntry.iframe.id = "";
+        }
+      });
+
+      applyTrackerZoom(savedZoom, entry.iframe);
+
+      if (forceReload) {
+        const reqId = ++currentTrackerReqId;
+        entry.reqId = reqId;
+        entry.loaded = false;
         showTrackerLoading(cfg.label);
-        iframe.src = cfg.url;
+        entry.iframe.src = cfg.url;
 
-        // Safety fallback: Google Docs iframe sometimes takes a while or suppresses cross-origin onload
         if (trackerLoadTimeout) clearTimeout(trackerLoadTimeout);
         trackerLoadTimeout = setTimeout(() => {
-          hideTrackerLoading(true);
+          if (activeTrackerKey === key && entry.reqId === currentTrackerReqId) {
+            entry.loaded = true;
+            hideTrackerLoading(true);
+          }
         }, 3200);
       } else {
-        updateTrackerStatus("ready", "Live Ready");
+        // Instant cached switch!
+        if (entry.loaded) {
+          hideTrackerLoading(true);
+          updateTrackerStatus("ready", "Live Ready");
+        } else {
+          showTrackerLoading(cfg.label);
+        }
       }
+      return;
     }
+
+    // Tracker is not cached. Ensure capacity before creating new iframe.
+    evictLruTracker();
+
+    // Hide any currently cached iframes
+    trackerIframeCache.forEach(otherEntry => {
+      otherEntry.iframe.style.display = "none";
+      if (otherEntry.iframe.id === "trackerFrame") otherEntry.iframe.id = "";
+    });
+
+    // Create fresh live iframe
+    const reqId = ++currentTrackerReqId;
+    const iframe = document.createElement("iframe");
+    iframe.id = "trackerFrame";
+    iframe.className = "tracker-iframe";
+    iframe.setAttribute("allow", "clipboard-read; clipboard-write");
+    iframe.setAttribute("loading", "eager");
+    iframe.setAttribute("title", cfg.sheetTitle || cfg.label);
+    iframe.dataset.tracker = key;
+    iframe.style.display = "block";
+
+    const entry = { key, iframe, reqId, loaded: false };
+    trackerIframeCache.set(key, entry);
+    trackerLruOrder.push(key);
+
+    container.appendChild(iframe);
+
+    iframe.addEventListener("load", () => {
+      entry.loaded = true;
+      if (activeTrackerKey === key && entry.reqId === currentTrackerReqId) {
+        hideTrackerLoading(true);
+        const err = el("trackersErrorState");
+        if (err) err.style.display = "none";
+        applyTrackerZoom(getSavedTrackerZoom(key), iframe);
+      }
+    });
+
+    iframe.addEventListener("error", () => {
+      if (activeTrackerKey === key && entry.reqId === currentTrackerReqId) {
+        if (Date.now() - lastTrackerSwitchTime < 1500) return;
+        hideTrackerLoading(false);
+        updateTrackerStatus("error", "Embed Restricted");
+        const err = el("trackersErrorState");
+        if (err) err.style.display = "flex";
+      }
+    });
+
+    showTrackerLoading(cfg.label);
+    applyTrackerZoom(savedZoom, iframe);
+    iframe.src = cfg.url;
+
+    if (trackerLoadTimeout) clearTimeout(trackerLoadTimeout);
+    trackerLoadTimeout = setTimeout(() => {
+      if (activeTrackerKey === key && entry.reqId === currentTrackerReqId) {
+        entry.loaded = true;
+        hideTrackerLoading(true);
+      }
+    }, 3200);
   }
 
   function renderTrackersWorkspace() {
@@ -9607,31 +9757,28 @@ function doPost(e) {
       savedKey = localStorage.getItem(TRACKER_STORAGE_KEY) || "audit";
     } catch (_) {}
     if (!TRACKER_CONFIGS[savedKey]) savedKey = "audit";
+
+    if (activeTrackerKey === savedKey && trackerIframeCache.has(savedKey)) {
+      const entry = trackerIframeCache.get(savedKey);
+      if (entry && entry.iframe) {
+        entry.iframe.style.display = "block";
+        applyTrackerZoom(getSavedTrackerZoom(savedKey), entry.iframe);
+        if (entry.loaded) {
+          hideTrackerLoading(true);
+          updateTrackerStatus("ready", "Live Ready");
+        }
+      }
+      return;
+    }
+
     setTrackerWorkbook(savedKey, false);
   }
 
   function initTrackersController() {
-    const iframe = el("trackerFrame");
-
-    // Iframe load & error handling
-    if (iframe) {
-      iframe.addEventListener("load", () => {
-        hideTrackerLoading(true);
-        const errOverlay = el("trackersErrorState");
-        if (errOverlay) errOverlay.style.display = "none";
-        const savedZoom = getSavedTrackerZoom(activeTrackerKey);
-        applyTrackerZoom(savedZoom);
-      });
-      iframe.addEventListener("error", () => {
-        // Ignore aborted navigations caused by rapid switcher clicks
-        if (Date.now() - lastTrackerSwitchTime < 1500) {
-          return;
-        }
-        hideTrackerLoading(false);
-        updateTrackerStatus("error", "Embed Restricted");
-        const errOverlay = el("trackersErrorState");
-        if (errOverlay) errOverlay.style.display = "flex";
-      });
+    // Check if an initial #trackerFrame exists in HTML, adopt or remove
+    const initialIframe = el("trackerFrame");
+    if (initialIframe) {
+      initialIframe.remove();
     }
 
     // Switcher buttons
@@ -9689,6 +9836,8 @@ function doPost(e) {
     window.applyTrackerZoom = applyTrackerZoom;
     window.getSavedTrackerZoom = getSavedTrackerZoom;
     window.updateTrackerStatus = updateTrackerStatus;
+    window.__trackerIframeCache = trackerIframeCache;
+    window.__trackerLruOrder = trackerLruOrder;
   }
 
   let currentNocMemberFilter = "ALL";
@@ -12124,10 +12273,22 @@ ${escapeHtml(JSON.stringify(entry.after || entry.before, null, 2))}
         loginModal.style.display = "flex";
         loginModal.classList.remove("hidden");
       }
+      if (typeof window.__renderJapaneseMatrix === "function") {
+        window.__renderJapaneseMatrix();
+      }
       const tabAccounts = el("tabAccounts");
       if (tabAccounts) tabAccounts.style.display = "none";
       if (currentWorkspace === "accounts") {
         currentWorkspace = "edr";
+      }
+      if (window.CCTV_VAULT && typeof window.CCTV_VAULT.lock === "function") {
+        window.CCTV_VAULT.lock();
+        window.CCTV_VAULT.updateVisibility();
+      }
+      const tabVault = el("tabVault");
+      if (tabVault) tabVault.style.display = "none";
+      if (currentWorkspace === "vault") {
+        currentWorkspace = "dashboard";
       }
     }
 
@@ -12159,6 +12320,10 @@ ${escapeHtml(JSON.stringify(entry.after || entry.before, null, 2))}
       }
       if (!canAccessAccounts && currentWorkspace === "accounts") {
         switchWorkspace("edr");
+      }
+
+      if (window.CCTV_VAULT && typeof window.CCTV_VAULT.updateVisibility === "function") {
+        window.CCTV_VAULT.updateVisibility();
       }
 
       if (user) {
@@ -12248,9 +12413,11 @@ ${escapeHtml(JSON.stringify(entry.after || entry.before, null, 2))}
       });
     }
 
-    // User profile menu button
+    // User profile menu button -> Opens My Account
     el("btnUserMenu")?.addEventListener("click", () => {
-      if (auth && typeof auth.canAccessWorkspace === "function" && auth.canAccessWorkspace("accounts")) {
+      if (window.CCTV_MY_ACCOUNT && typeof window.CCTV_MY_ACCOUNT.open === "function") {
+        window.CCTV_MY_ACCOUNT.open();
+      } else if (auth && typeof auth.canAccessWorkspace === "function" && auth.canAccessWorkspace("accounts")) {
         switchWorkspace("accounts");
       } else {
         const prof = auth?.getProfile();

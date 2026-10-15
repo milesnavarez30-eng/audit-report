@@ -9,6 +9,45 @@
   const DB_NAME = "cctv_unreported_v1";
   const STORE_NAME = "workspace";
   const STATE_KEY = "records";
+  const COLLAPSED_STORAGE_KEY = "cctv_unreported_collapsed_v1";
+
+  function loadCollapsedIds() {
+    try {
+      const raw = localStorage.getItem(COLLAPSED_STORAGE_KEY);
+      if (!raw) return new Set();
+      const parsed = JSON.parse(raw);
+      return new Set(Array.isArray(parsed) ? parsed : []);
+    } catch (_) {
+      return new Set();
+    }
+  }
+
+  function saveCollapsedIds(idSet) {
+    try {
+      const arr = Array.from(idSet);
+      localStorage.setItem(COLLAPSED_STORAGE_KEY, JSON.stringify(arr));
+    } catch (_) {}
+  }
+
+  function removeCollapsedId(id) {
+    if (!id) return;
+    const set = loadCollapsedIds();
+    if (set.delete(id)) {
+      saveCollapsedIds(set);
+    }
+  }
+
+  function toggleCardCollapse(id) {
+    if (!id) return false;
+    const set = loadCollapsedIds();
+    if (set.has(id)) {
+      set.delete(id);
+    } else {
+      set.add(id);
+    }
+    saveCollapsedIds(set);
+    return set.has(id);
+  }
 
   let itemsList = [];
   let activeCardId = "";
@@ -207,6 +246,8 @@
       return;
     }
 
+    const collapsedIds = loadCollapsedIds();
+
     container.innerHTML = itemsList.map((item, itemIdx) => {
       const shots = Array.isArray(item.screenshots) ? item.screenshots : [];
       const shotCount = shots.length;
@@ -214,6 +255,41 @@
       if (activeIdx < 0 || activeIdx >= shotCount) activeIdx = 0;
       const activeShot = shots[activeIdx] || "";
       const isActiveCard = item.id === activeCardId;
+      const isCollapsed = collapsedIds.has(item.id);
+
+      if (isCollapsed) {
+        return `
+        <article class="unreported-card is-collapsed ${isActiveCard ? "is-active-card" : ""}" data-item-id="${escapeHtml(item.id)}" tabindex="0">
+          <div class="unreported-card-header">
+            <div class="unreported-card-title-group">
+              <span class="unreported-card-title">UNREPORTED ITEM</span>
+              <span class="unreported-card-timestamp">Created: ${escapeHtml(formatDateTime(item.createdAt))}</span>
+            </div>
+            <div class="unreported-card-header-actions">
+              <span class="unreported-shot-count-badge">
+                ${shotCount} ${shotCount === 1 ? "Screenshot" : "Screenshots"}
+              </span>
+              <button type="button" class="btn btn-outline btn-sm unreported-toggle-collapse-btn" data-item-id="${escapeHtml(item.id)}" style="height:22px; padding:0 8px; font-size:10.5px; gap:4px; line-height:1;" title="Show Content">
+                <svg class="icon icon-xs" viewBox="0 0 24 24" style="width:11px; height:11px;"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                <span>Show Content</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Card Footer Actions (Directly accessible while collapsed) -->
+          <div class="unreported-card-footer">
+            <button type="button" class="btn btn-primary btn-sm unreported-move-btn" data-item-id="${escapeHtml(item.id)}" style="gap:6px;">
+              <svg class="icon icon-xs" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"></polyline></svg>
+              <strong>Move to CCTV Report</strong>
+            </button>
+            <button type="button" class="btn btn-danger-ghost btn-sm unreported-delete-btn" data-item-id="${escapeHtml(item.id)}" style="gap:4px;">
+              <svg class="icon icon-xs" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+              <span>Delete</span>
+            </button>
+          </div>
+        </article>
+        `;
+      }
 
       return `
         <article class="unreported-card ${isActiveCard ? "is-active-card" : ""}" data-item-id="${escapeHtml(item.id)}" tabindex="0">
@@ -222,9 +298,15 @@
               <span class="unreported-card-title">UNREPORTED ITEM</span>
               <span class="unreported-card-timestamp">Created: ${escapeHtml(formatDateTime(item.createdAt))}</span>
             </div>
-            <span class="unreported-shot-count-badge">
-              ${shotCount} ${shotCount === 1 ? "Screenshot" : "Screenshots"}
-            </span>
+            <div class="unreported-card-header-actions">
+              <span class="unreported-shot-count-badge">
+                ${shotCount} ${shotCount === 1 ? "Screenshot" : "Screenshots"}
+              </span>
+              <button type="button" class="btn btn-outline btn-sm unreported-toggle-collapse-btn" data-item-id="${escapeHtml(item.id)}" style="height:22px; padding:0 8px; font-size:10.5px; gap:4px; line-height:1;" title="Hide Content">
+                <svg class="icon icon-xs" viewBox="0 0 24 24" style="width:11px; height:11px;"><polyline points="18 15 12 9 6 15"></polyline></svg>
+                <span>Hide Content</span>
+              </button>
+            </div>
           </div>
 
           <!-- Screenshots Evidence Area -->
@@ -321,6 +403,28 @@
         container.querySelectorAll(".unreported-card").forEach(c => {
           c.classList.toggle("is-active-card", c.dataset.itemId === activeCardId);
         });
+      });
+    });
+
+    // Toggle Collapse / Expand button
+    container.querySelectorAll(".unreported-toggle-collapse-btn").forEach(btn => {
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const id = btn.dataset.itemId;
+        // If collapsing an expanded card, ensure active input values are flushed first to prevent data loss
+        const cardEl = btn.closest(".unreported-card");
+        if (cardEl && !cardEl.classList.contains("is-collapsed")) {
+          const item = itemsList.find(x => x.id === id);
+          if (item) {
+            const urlInp = cardEl.querySelector(".unreported-url-input");
+            const remarksInp = cardEl.querySelector(".unreported-remarks-input");
+            if (urlInp) item.blueIrisUrl = urlInp.value.trim();
+            if (remarksInp) item.remarks = remarksInp.value;
+            saveItems(itemsList);
+          }
+        }
+        toggleCardCollapse(id);
+        renderWorkspace();
       });
     });
 
@@ -554,6 +658,7 @@
 
         itemsList = itemsList.filter(x => x.id !== id);
         if (activeCardId === id) activeCardId = "";
+        removeCollapsedId(id);
         await saveItems(itemsList);
         renderWorkspace();
         if (typeof window.showToast === "function") {
@@ -643,6 +748,7 @@
       // 7. DELETE the source Unreported block automatically ONLY AFTER transfer succeeded
       itemsList = itemsList.filter(x => x.id !== id);
       if (activeCardId === id) activeCardId = "";
+      removeCollapsedId(id);
       await saveItems(itemsList);
       renderWorkspace();
 
@@ -771,6 +877,12 @@
     init,
     getItems() {
       return itemsList;
+    },
+    getCollapsedIds() {
+      return Array.from(loadCollapsedIds());
+    },
+    toggleCollapse(id) {
+      return toggleCardCollapse(id);
     },
     onChange(fn) {
       if (typeof fn === "function") changeListeners.push(fn);
