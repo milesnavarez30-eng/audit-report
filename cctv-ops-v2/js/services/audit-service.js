@@ -1,4 +1,4 @@
-/**
+﻿/**
  * CCTV OPS V2 - CCTV Audit & Smart Audit Guard Service
  * 100% Functional Parity with Authoritative V1 Audit Engine
  */
@@ -269,7 +269,21 @@ window.CCTV_AUDIT = (function () {
   }
 
   function sortEntries() {
-    entryList.sort((a, b) => new Date(a.rawDate || a.date) - new Date(b.rawDate || b.date));
+    entryList.sort((a, b) => {
+      const dateAStr = String(a.rawDate || a.date || "").trim();
+      const dateBStr = String(b.rawDate || b.date || "").trim();
+      const timeA = dateAStr ? new Date(dateAStr).getTime() : NaN;
+      const timeB = dateBStr ? new Date(dateBStr).getTime() : NaN;
+      const validA = !Number.isNaN(timeA);
+      const validB = !Number.isNaN(timeB);
+
+      if (validA && validB) {
+        return timeA - timeB;
+      }
+      if (validA && !validB) return -1;
+      if (!validA && validB) return 1;
+      return 0;
+    });
   }
 
   function saveEntries() {
@@ -441,17 +455,31 @@ window.CCTV_AUDIT = (function () {
         ? window.normalizeAuditorName(rawUser?.display_name || rawUser?.username || "Miles")
         : "Miles";
 
-      const dateObj = new Date(entryData.rawDate || entryData.date);
-      const year = dateObj.getFullYear();
-      const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-      const month = months[dateObj.getMonth()];
-      const formattedDate = `${dateObj.getMonth() + 1}/${dateObj.getDate()}/${year}`;
+      const rawDateStr = String(entryData.rawDate || entryData.date || "").trim();
+      let year = "";
+      let month = "";
+      let formattedDate = "";
+      let rawDate = "";
+
+      if (rawDateStr) {
+        const dateObj = new Date(rawDateStr);
+        if (!Number.isNaN(dateObj.getTime())) {
+          year = String(dateObj.getFullYear());
+          const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+          month = months[dateObj.getMonth()];
+          formattedDate = `${dateObj.getMonth() + 1}/${dateObj.getDate()}/${year}`;
+          rawDate = rawDateStr;
+        } else {
+          rawDate = rawDateStr;
+          formattedDate = rawDateStr;
+        }
+      }
 
       const site = window.normalizeTrackerSite ? window.normalizeTrackerSite(entryData.site) : (entryData.site || "Mabini Site A");
 
       const entry = {
         id: entryData.id || ("audit_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 7)),
-        rawDate: entryData.rawDate || entryData.date,
+        rawDate,
         year,
         month,
         formattedDate,
@@ -459,12 +487,12 @@ window.CCTV_AUDIT = (function () {
         name: auditor,
         omName: entryData.omName || "",
         site,
-        tlName: entryData.tlName || "N/A",
-        agentName: entryData.agentName || "N/A",
+        tlName: entryData.tlName || "",
+        agentName: entryData.agentName || "",
         cleanAccount: entryData.cleanAccount || entryData.account || "",
         reasonCode: entryData.reasonCode || "SLEEPING",
         noc: entryData.noc || "YES",
-        remarks: entryData.remarks || "N/A",
+        remarks: entryData.remarks != null ? String(entryData.remarks) : "",
         sourceEdrId: entryData.sourceEdrId || "",
         sourceEdrUpdatedAt: entryData.sourceEdrUpdatedAt || "",
         sourceEdrReasonAuto: entryData.sourceEdrReasonAuto !== false
@@ -512,6 +540,15 @@ window.CCTV_AUDIT = (function () {
         else if (editingIndex > index) editingIndex--;
         saveEntries();
       }
+    },
+
+    restoreEntries(entries) {
+      if (!Array.isArray(entries)) return 0;
+      entryList = JSON.parse(JSON.stringify(entries));
+      editingIndex = -1;
+      sortEntries();
+      saveEntries();
+      return entryList.length;
     },
 
     clearAllEntries() {
@@ -638,21 +675,33 @@ window.CCTV_AUDIT = (function () {
       list.forEach(entry => {
         const auditor = window.normalizeAuditorName ? window.normalizeAuditorName(entry.name || entry.auditorName || "Miles") : (entry.name || "Miles");
         const esc = window.escapeHtml || (s => s);
-        const san = window.sanitize || (s => s);
+        const san = window.sanitize || (s => (s == null ? "" : String(s)).replace(/[\t\r\n]+/g, " ").trim());
+
+        const yearVal = entry.year != null ? String(entry.year) : "";
+        const monthVal = entry.month != null ? String(entry.month) : "";
+        const dateVal = entry.formattedDate != null ? String(entry.formattedDate) : "";
+        const omVal = entry.omName != null ? String(entry.omName) : "";
+        const siteVal = entry.site != null ? String(entry.site) : "";
+        const tlVal = entry.tlName != null ? String(entry.tlName) : "";
+        const agentVal = entry.agentName != null ? String(entry.agentName) : "";
+        const accountVal = entry.cleanAccount != null ? String(entry.cleanAccount) : (entry.account != null ? String(entry.account) : "");
+        const reasonVal = entry.reasonCode != null ? String(entry.reasonCode) : "";
+        const nocVal = entry.noc != null ? String(entry.noc) : "";
+        const remarksVal = entry.remarks != null ? String(entry.remarks) : "";
 
         tableRowsHTML += `<tr>` +
-          `<td style="border: none; text-align: center; background-color: transparent !important; color: #000000 !important; font-family: Arial, sans-serif; font-size: 10pt; line-height: normal;">${esc(san(entry.year))}</td>` +
-          `<td style="border: none; text-align: center; background-color: transparent !important; color: #000000 !important; font-family: Arial, sans-serif; font-size: 10pt; line-height: normal;">${esc(san(entry.month))}</td>` +
-          `<td style="border: none; text-align: center; background-color: transparent !important; color: #000000 !important; font-family: Arial, sans-serif; font-size: 10pt; line-height: normal;">${esc(san(entry.formattedDate))}</td>` +
+          `<td style="border: none; text-align: center; background-color: transparent !important; color: #000000 !important; font-family: Arial, sans-serif; font-size: 10pt; line-height: normal;">${esc(san(yearVal))}</td>` +
+          `<td style="border: none; text-align: center; background-color: transparent !important; color: #000000 !important; font-family: Arial, sans-serif; font-size: 10pt; line-height: normal;">${esc(san(monthVal))}</td>` +
+          `<td style="border: none; text-align: center; background-color: transparent !important; color: #000000 !important; font-family: Arial, sans-serif; font-size: 10pt; line-height: normal;">${esc(san(dateVal))}</td>` +
           `<td style="border: none; text-align: center; background-color: transparent !important; color: #000000 !important; font-family: Arial, sans-serif; font-size: 10pt; line-height: normal;">${esc(san(auditor))}</td>` +
-          `<td style="border: none; text-align: center; background-color: transparent !important; color: #000000 !important; font-family: Arial, sans-serif; font-size: 10pt; line-height: normal;">${esc(san(entry.omName))}</td>` +
-          `<td style="border: none; text-align: center; background-color: transparent !important; color: #000000 !important; font-family: Arial, sans-serif; font-size: 10pt; line-height: normal;">${esc(san(entry.site))}</td>` +
-          `<td style="border: none; text-align: center; background-color: transparent !important; color: #000000 !important; font-family: Arial, sans-serif; font-size: 10pt; line-height: normal;">${esc(san(entry.tlName))}</td>` +
-          `<td style="border: none; text-align: center; background-color: transparent !important; color: #000000 !important; font-family: Arial, sans-serif; font-size: 10pt; line-height: normal;">${esc(san(entry.agentName))}</td>` +
-          `<td style="border: none; text-align: center; background-color: transparent !important; color: #000000 !important; font-family: Arial, sans-serif; font-size: 10pt; line-height: normal;">${esc(san(entry.cleanAccount))}</td>` +
-          `<td style="border: none; text-align: center; background-color: transparent !important; color: #000000 !important; font-family: Arial, sans-serif; font-size: 10pt; line-height: normal;">${esc(san(entry.reasonCode))}</td>` +
-          `<td style="border: none; text-align: center; background-color: transparent !important; color: #000000 !important; font-family: Arial, sans-serif; font-size: 10pt; line-height: normal;">${esc(san(entry.noc))}</td>` +
-          `<td style="border: none; text-align: left; background-color: transparent !important; color: #000000 !important; font-family: Arial, sans-serif; font-size: 10pt; line-height: normal; white-space: pre-wrap;">${esc(san(entry.remarks)).replace(/\n/g, "<br>")}</td>` +
+          `<td style="border: none; text-align: center; background-color: transparent !important; color: #000000 !important; font-family: Arial, sans-serif; font-size: 10pt; line-height: normal;">${esc(san(omVal))}</td>` +
+          `<td style="border: none; text-align: center; background-color: transparent !important; color: #000000 !important; font-family: Arial, sans-serif; font-size: 10pt; line-height: normal;">${esc(san(siteVal))}</td>` +
+          `<td style="border: none; text-align: center; background-color: transparent !important; color: #000000 !important; font-family: Arial, sans-serif; font-size: 10pt; line-height: normal;">${esc(san(tlVal))}</td>` +
+          `<td style="border: none; text-align: center; background-color: transparent !important; color: #000000 !important; font-family: Arial, sans-serif; font-size: 10pt; line-height: normal;">${esc(san(agentVal))}</td>` +
+          `<td style="border: none; text-align: center; background-color: transparent !important; color: #000000 !important; font-family: Arial, sans-serif; font-size: 10pt; line-height: normal;">${esc(san(accountVal))}</td>` +
+          `<td style="border: none; text-align: center; background-color: transparent !important; color: #000000 !important; font-family: Arial, sans-serif; font-size: 10pt; line-height: normal;">${esc(san(reasonVal))}</td>` +
+          `<td style="border: none; text-align: center; background-color: transparent !important; color: #000000 !important; font-family: Arial, sans-serif; font-size: 10pt; line-height: normal;">${esc(san(nocVal))}</td>` +
+          `<td style="border: none; text-align: left; background-color: transparent !important; color: #000000 !important; font-family: Arial, sans-serif; font-size: 10pt; line-height: normal; white-space: pre-wrap;">${esc(san(remarksVal)).replace(/\n/g, "<br>")}</td>` +
           `</tr>`;
       });
       return `<div style="font-family: Arial, sans-serif; font-size: 10pt; line-height: normal; white-space: pre-wrap;"><table style="border-collapse: collapse; border: none; background-color: transparent !important; color: #000000 !important; font-family: Arial, sans-serif; font-size: 10pt; line-height: normal;"><tbody>${tableRowsHTML}</tbody></table></div>`;
@@ -669,25 +718,27 @@ window.CCTV_AUDIT = (function () {
         throw new Error("No entries to copy in Data Output Grid.");
       }
 
-      // Plain Text: TSV
+      // Plain Text: TSV (Fixed 12 columns, NO global trim to preserve structural tab delimiters)
       const textRows = list.map(entry => {
         const auditor = window.normalizeAuditorName ? window.normalizeAuditorName(entry.name || entry.auditorName || "Miles") : (entry.name || "Miles");
-        return [
-          entry.year,
-          entry.month,
-          entry.formattedDate,
-          auditor,
-          entry.omName,
-          entry.site,
-          entry.tlName,
-          entry.agentName,
-          entry.cleanAccount,
-          entry.reasonCode,
-          entry.noc,
-          entry.remarks
-        ].map(v => window.sanitize ? window.sanitize(v) : String(v || "").replace(/[\t\r\n]+/g, " ").trim()).join("\t");
+        const cleanCell = v => (v == null ? "" : String(v)).replace(/[\t\r\n]+/g, " ").trim();
+        const row12 = [
+          cleanCell(entry.year),
+          cleanCell(entry.month),
+          cleanCell(entry.formattedDate),
+          cleanCell(auditor),
+          cleanCell(entry.omName),
+          cleanCell(entry.site),
+          cleanCell(entry.tlName),
+          cleanCell(entry.agentName),
+          cleanCell(entry.cleanAccount != null ? entry.cleanAccount : entry.account),
+          cleanCell(entry.reasonCode),
+          cleanCell(entry.noc),
+          cleanCell(entry.remarks)
+        ];
+        return row12.join("\t");
       });
-      const safeText = textRows.join("\n").trim();
+      const safeText = textRows.join("\n");
 
       // HTML: Exact Arial 10pt Table Format matching V1
       let tableRowsHTML = "";

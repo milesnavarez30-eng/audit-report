@@ -5110,11 +5110,20 @@ table.mini-sheet tr.floor-break td {
 }
 
 .tracker-iframe {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
   border: none;
+  transform-origin: top left;
+}
+
+.tracker-iframe.is-hidden {
+  display: none !important;
+}
+
+.tracker-iframe.is-active {
   display: block;
-  transform-origin: 0 0;
 }
 
 /* =========================================================================

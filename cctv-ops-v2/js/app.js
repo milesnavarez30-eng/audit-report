@@ -3070,8 +3070,8 @@
             ${window.escapeHtml(entry.site || "")}
             ${hasEdr ? '<span class="badge badge-info" style="font-size:8px; padding:1px 4px; margin-left:4px;" title="Linked from EDR">EDR</span>' : ''}
           </td>
-          <td style="white-space:nowrap; font-weight:600; color:var(--text-primary);">${window.escapeHtml(entry.tlName || "N/A")}</td>
-          <td style="white-space:nowrap;">${window.escapeHtml(entry.agentName || "N/A")}</td>
+          <td style="white-space:nowrap; font-weight:600; color:var(--text-primary);">${window.escapeHtml(entry.tlName || "")}</td>
+          <td style="white-space:nowrap;">${window.escapeHtml(entry.agentName || "")}</td>
           <td style="white-space:nowrap; color:var(--text-secondary);">${window.escapeHtml(entry.omName || "")}</td>
           <td style="white-space:nowrap; color:var(--text-secondary);">${window.escapeHtml(entry.cleanAccount || "")}</td>
           <td style="white-space:nowrap;"><span class="badge badge-neutral" style="font-size:9.5px;">${window.escapeHtml(entry.reasonCode || "")}</span></td>
@@ -3335,23 +3335,19 @@
     // Form submission
     el("auditForm")?.addEventListener("submit", (e) => {
       e.preventDefault();
-      const dateVal = el("auditDate")?.value;
-      if (!dateVal) {
-        showToast("Please specify the audit date.", "error");
-        return;
-      }
+      const dateVal = el("auditDate")?.value ? el("auditDate").value.trim() : "";
 
       const entryData = {
         rawDate: dateVal,
         site: el("auditSite")?.value || "",
-        tlName: el("auditTlName")?.value.trim() || "N/A",
-        agentName: el("auditAgentName")?.value.trim() || "N/A",
+        tlName: el("auditTlName")?.value ? el("auditTlName").value.trim() : "",
+        agentName: el("auditAgentName")?.value ? el("auditAgentName").value.trim() : "",
         omName: el("auditOmName")?.value || "",
         account: el("auditAccount")?.value || "",
         cleanAccount: el("auditAccount")?.value || "",
         reasonCode: el("auditReasonCode")?.value || "SLEEPING",
         noc: el("auditNoc")?.value || "YES",
-        remarks: el("auditRemarks")?.value.trim() || "N/A"
+        remarks: el("auditRemarks")?.value ? el("auditRemarks").value.trim() : ""
       };
 
       if (auditEditingIndex >= 0) {
@@ -9653,16 +9649,8 @@ function doPost(e) {
 
       const entry = trackerIframeCache.get(key);
 
-      // Hide other cached iframes and show this one
-      trackerIframeCache.forEach((otherEntry, otherKey) => {
-        if (otherKey === key) {
-          otherEntry.iframe.style.display = "block";
-          otherEntry.iframe.id = "trackerFrame";
-        } else {
-          otherEntry.iframe.style.display = "none";
-          if (otherEntry.iframe.id === "trackerFrame") otherEntry.iframe.id = "";
-        }
-      });
+      // Single activation helper: show this frame, hide every other cached frame
+      activateTrackerIframe(key);
 
       applyTrackerZoom(savedZoom, entry.iframe);
 
@@ -9695,28 +9683,29 @@ function doPost(e) {
     // Tracker is not cached. Ensure capacity before creating new iframe.
     evictLruTracker();
 
-    // Hide any currently cached iframes
+    // Mark any currently cached iframes hidden
     trackerIframeCache.forEach(otherEntry => {
-      otherEntry.iframe.style.display = "none";
+      otherEntry.iframe.classList.add("is-hidden");
+      otherEntry.iframe.classList.remove("is-active");
       if (otherEntry.iframe.id === "trackerFrame") otherEntry.iframe.id = "";
     });
 
-    // Create fresh live iframe
+    // Create fresh live iframe with overlay styling
     const reqId = ++currentTrackerReqId;
     const iframe = document.createElement("iframe");
     iframe.id = "trackerFrame";
-    iframe.className = "tracker-iframe";
+    iframe.className = "tracker-iframe is-active";
     iframe.setAttribute("allow", "clipboard-read; clipboard-write");
     iframe.setAttribute("loading", "eager");
     iframe.setAttribute("title", cfg.sheetTitle || cfg.label);
     iframe.dataset.tracker = key;
-    iframe.style.display = "block";
 
     const entry = { key, iframe, reqId, loaded: false };
     trackerIframeCache.set(key, entry);
     trackerLruOrder.push(key);
 
     container.appendChild(iframe);
+    activateTrackerIframe(key);
 
     iframe.addEventListener("load", () => {
       entry.loaded = true;
@@ -9751,6 +9740,20 @@ function doPost(e) {
     }, 3200);
   }
 
+  function activateTrackerIframe(key) {
+    trackerIframeCache.forEach((entry, entryKey) => {
+      if (entryKey === key) {
+        entry.iframe.classList.remove("is-hidden");
+        entry.iframe.classList.add("is-active");
+        entry.iframe.id = "trackerFrame";
+      } else {
+        entry.iframe.classList.add("is-hidden");
+        entry.iframe.classList.remove("is-active");
+        if (entry.iframe.id === "trackerFrame") entry.iframe.id = "";
+      }
+    });
+  }
+
   function renderTrackersWorkspace() {
     let savedKey = "audit";
     try {
@@ -9759,9 +9762,9 @@ function doPost(e) {
     if (!TRACKER_CONFIGS[savedKey]) savedKey = "audit";
 
     if (activeTrackerKey === savedKey && trackerIframeCache.has(savedKey)) {
+      activateTrackerIframe(savedKey);
       const entry = trackerIframeCache.get(savedKey);
       if (entry && entry.iframe) {
-        entry.iframe.style.display = "block";
         applyTrackerZoom(getSavedTrackerZoom(savedKey), entry.iframe);
         if (entry.loaded) {
           hideTrackerLoading(true);
@@ -9830,6 +9833,7 @@ function doPost(e) {
     if (!TRACKER_CONFIGS[savedKey]) savedKey = "audit";
     setTrackerWorkbook(savedKey, false);
 
+    window.activateTrackerIframe = activateTrackerIframe;
     window.setTrackerWorkbook = setTrackerWorkbook;
     window.renderTrackersWorkspace = renderTrackersWorkspace;
     window.TRACKER_CONFIGS = TRACKER_CONFIGS;
@@ -10860,15 +10864,45 @@ function doPost(e) {
         </div>
       `;
 
-      if (entry.before || entry.after) {
-        previewHtml += `
-          <div style="display:flex; flex-direction:column; gap:6px; margin-top:6px;">
-            <div style="font-size:11px; font-weight:700; color:var(--text-secondary); text-transform:uppercase;">Snapshot Diff Detail</div>
-            <div class="history-preview-box" style="font-family:var(--font-mono); font-size:10.5px; max-height:220px; overflow-y:auto; white-space:pre-wrap;">
-${escapeHtml(JSON.stringify(entry.after || entry.before, null, 2))}
-            </div>
+            const deletedDetails = (typeof history.getDeletedDetails === "function")
+        ? history.getDeletedDetails(entry)
+        : [];
+
+      previewHtml += `
+        <div style="display:flex; flex-direction:column; gap:6px; margin-top:6px;">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-size:11px; font-weight:700; color:var(--text-secondary); text-transform:uppercase;">Deleted Data</span>
+            ${deletedDetails.length > 0 ? `<span class="history-ws-badge" style="font-size:10px; background:rgba(239,68,68,0.15); color:#ef4444; border:1px solid rgba(239,68,68,0.3); font-weight:700;">${deletedDetails.length} deleted</span>` : ''}
           </div>
-        `;
+      `;
+
+      if (deletedDetails.length === 0) {
+        previewHtml += `
+          <div class="history-preview-box" style="font-size:11.5px; color:var(--text-muted); font-style:italic;">
+            No deleted data in this change. Use Undo/Redo for edits or additions.
+          </div>
+        </div>`;
+      } else {
+        previewHtml += `
+          <div style="display:flex; flex-direction:column; gap:8px; max-height:260px; overflow-y:auto; padding-right:2px;">
+            ${deletedDetails.map(item => `
+              <div class="history-preview-box" style="margin-bottom:0; background:rgba(239,68,68,0.04); border-color:rgba(239,68,68,0.2);">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; border-bottom:1px solid rgba(255,255,255,0.06); padding-bottom:4px;">
+                  <strong style="color:var(--text-primary); font-size:11.5px;">${escapeHtml(item.title || item.type)}</strong>
+                  <span style="font-size:10px; color:#ef4444; font-weight:600; text-transform:uppercase;">${escapeHtml(item.type)}</span>
+                </div>
+                <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(130px, 1fr)); gap:4px 8px; font-size:11px;">
+                  ${item.fields.map(([k, v]) => `
+                    <div>
+                      <span style="color:var(--text-dim); font-size:10px; display:block;">${escapeHtml(k)}</span>
+                      <span style="color:var(--text-secondary); font-weight:500; word-break:break-word;">${escapeHtml(String(v))}</span>
+                    </div>
+                  `).join("")}
+                </div>
+              </div>
+            `).join("")}
+          </div>
+        </div>`;
       }
 
       previewContainer.innerHTML = previewHtml;
@@ -10877,9 +10911,21 @@ ${escapeHtml(JSON.stringify(entry.after || entry.before, null, 2))}
     function renderTimeline() {
       const timeline = history.getTimeline();
 
+      const selectedEntry = timeline.entries.find(e => e.id === timeline.selectedId);
+      const deletedDetails = selectedEntry && typeof history.getDeletedDetails === "function"
+        ? history.getDeletedDetails(selectedEntry)
+        : [];
+
       if (undoBtn) undoBtn.disabled = !timeline.canUndo;
       if (redoBtn) redoBtn.disabled = !timeline.canRedo;
-      if (restoreBtn) restoreBtn.disabled = !timeline.selectedId;
+      if (restoreBtn) {
+        restoreBtn.disabled = !selectedEntry || deletedDetails.length === 0;
+        if (selectedEntry && deletedDetails.length > 0) {
+          restoreBtn.title = "Restore " + deletedDetails.length + " deleted item" + (deletedDetails.length === 1 ? "" : "s");
+        } else {
+          restoreBtn.title = "No deleted data in this change";
+        }
+      }
 
       if (countBadge) countBadge.textContent = String(timeline.total);
       if (summaryText) {
@@ -10994,15 +11040,18 @@ ${escapeHtml(JSON.stringify(entry.after || entry.before, null, 2))}
 
     restoreBtn?.addEventListener("click", async () => {
       const timeline = history.getTimeline();
-
       if (!timeline.selectedId) return;
 
-      const ok = await history.restoreSelectedEntry(timeline.selectedId);
-      if (ok) {
-        showToast("Selected workspace change restored.", "success");
+      const res = await history.restoreSelectedEntry(timeline.selectedId);
+      if (res && res.success && res.restoredCount > 0) {
+        const desc = res.description || (res.restoredCount + " deleted item" + (res.restoredCount === 1 ? "" : "s"));
+        showToast("Restored " + desc + ".", "success");
+      } else if (res && res.reason === "already-restored") {
+        showToast("Deleted data is already restored.", "info");
       } else {
-        showToast("Could not restore selected change.", "error");
+        showToast("No deleted data to restore from this change.", "info");
       }
+      renderTimeline();
     });
 
     clearBtn?.addEventListener("click", async () => {

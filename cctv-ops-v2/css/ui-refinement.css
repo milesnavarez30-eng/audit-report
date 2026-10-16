@@ -1,4 +1,4 @@
-/**
+﻿/**
  * CCTV OPS V2 - Professional UI Refinement Layer
  * ================================================
  * Presentation-only. All IDs, event wiring, data attributes: untouched.
@@ -853,12 +853,21 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 }
 
 .tracker-iframe {
+  position: absolute !important;
+  inset: 0 !important;
   border: none !important;
-  display: block !important;
   transform-origin: top left !important;
   background: #ffffff !important;
   max-width: none !important;
   max-height: none !important;
+}
+
+.tracker-iframe.is-hidden {
+  display: none !important;
+}
+
+.tracker-iframe.is-active {
+  display: block !important;
 }
 
 /* State Overlays */

@@ -643,6 +643,15 @@ window.CCTV_EDR = (function () {
       return edrReports.find(r => r.id === id) || null;
     },
 
+    async restoreReports(reports) {
+      if (!Array.isArray(reports)) return 0;
+      edrReports = JSON.parse(JSON.stringify(reports));
+      editingId = null;
+      await this.saveReports();
+      notify();
+      return edrReports.length;
+    },
+
     getEditingReport() {
       return editingId ? edrReports.find(r => r.id === editingId) : null;
     },
