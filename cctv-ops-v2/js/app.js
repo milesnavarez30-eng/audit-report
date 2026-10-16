@@ -10975,7 +10975,6 @@ function doPost(e) {
         });
       });
 
-      const selectedEntry = timeline.entries.find(e => e.id === timeline.selectedId);
       renderHistoryPreview(selectedEntry || null);
     }
 
