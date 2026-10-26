@@ -170,7 +170,7 @@ window.CCTV_PEOPLE = (function () {
         name: p.name,
         roles: p.roles,
         roleLabel,
-        displayLabel: `${roleLabel} \u2014 ${p.name}`,
+        displayLabel: p.name,
         isCustom: p.isCustom
       };
     });
@@ -196,7 +196,7 @@ window.CCTV_PEOPLE = (function () {
           name: p.name,
           roles: p.roles,
           roleLabel,
-          displayLabel: `${roleLabel} \u2014 ${p.name}`,
+          displayLabel: p.name,
           isCustom: p.isCustom
         };
       });

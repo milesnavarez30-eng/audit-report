@@ -539,6 +539,7 @@ window.EDR_MULTI_SUBJECT = (function () {
     uid,
     clean,
     escHtml,
+    stripRolePrefix,
     normalizeSubjects,
     parseNamesPaste,
     isDuplicateName,

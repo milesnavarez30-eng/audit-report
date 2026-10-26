@@ -55,16 +55,34 @@
     if (!respList || !input) return;
 
     const people = window.CCTV_PEOPLE;
+    const cleanFn = (v) => (people?.stripRolePrefix ? people.stripRolePrefix(v) : (v || "")).trim();
+    const seen = new Set();
+    const unique = [];
+
     if (people && typeof people.getSupervisorOptions === "function") {
       const sups = people.getSupervisorOptions();
-      const html = sups.map(s => `<option value="${s.displayLabel}">${s.name}</option><option value="${s.name}"></option>`).join("");
-      respList.innerHTML = html;
+      sups.forEach(s => {
+        const c = cleanFn(s.name);
+        const k = c.toLowerCase();
+        if (k && !seen.has(k)) {
+          seen.add(k);
+          unique.push(c);
+        }
+      });
       input.placeholder = role === "OM" ? "Search OM / Supervisor..." : "Search Team Leader / Supervisor...";
     } else {
       const names = role === "OM" ? edr.getOmNames() : edr.getTeamLeaderNames();
-      respList.innerHTML = names.map(n => `<option value="${n}"></option>`).join("");
+      names.forEach(n => {
+        const c = cleanFn(n);
+        const k = c.toLowerCase();
+        if (k && !seen.has(k)) {
+          seen.add(k);
+          unique.push(c);
+        }
+      });
       input.placeholder = role === "OM" ? "Search OM..." : "Search Team Leader...";
     }
+    respList.innerHTML = unique.map(n => `<option value="${n}"></option>`).join("");
   }
 
   function initFormDropdowns() {
@@ -79,7 +97,18 @@
     const omList = el("listOms");
     const oms = edr.getOmNames();
     if (omList) {
-      omList.innerHTML = oms.map(o => `<option value="${o}"></option>`).join("");
+      const cleanFn = (v) => (window.CCTV_PEOPLE?.stripRolePrefix ? window.CCTV_PEOPLE.stripRolePrefix(v) : (v || "")).trim();
+      const seen = new Set();
+      const uniqueOms = [];
+      oms.forEach(o => {
+        const c = cleanFn(o);
+        const k = c.toLowerCase();
+        if (k && !seen.has(k)) {
+          seen.add(k);
+          uniqueOms.push(c);
+        }
+      });
+      omList.innerHTML = uniqueOms.map(o => `<option value="${o}"></option>`).join("");
     }
 
     // Respondent datalist (TL / OM / Supervisor)
@@ -89,15 +118,34 @@
     const subjTlList = el("listSubjectTls");
     const subjEmpList = el("listSubjectEmployees");
     const people = window.CCTV_PEOPLE;
+    const cleanFn = (v) => (people?.stripRolePrefix ? people.stripRolePrefix(v) : (v || "")).trim();
+    const seen = new Set();
+    const uniqueEmps = [];
+
     if (people && typeof people.getEmployeeOptions === "function") {
       const emps = people.getEmployeeOptions();
-      const empHtml = emps.map(e => `<option value="${e.displayLabel}">${e.name}</option><option value="${e.name}"></option>`).join("");
-      if (subjTlList) subjTlList.innerHTML = empHtml;
-      if (subjEmpList) subjEmpList.innerHTML = empHtml;
+      emps.forEach(e => {
+        const c = cleanFn(e.name);
+        const k = c.toLowerCase();
+        if (k && !seen.has(k)) {
+          seen.add(k);
+          uniqueEmps.push(c);
+        }
+      });
     } else {
       const tls = edr.getTeamLeaderNames();
-      if (subjTlList) subjTlList.innerHTML = tls.map(t => `<option value="${t}"></option>`).join("");
+      tls.forEach(t => {
+        const c = cleanFn(t);
+        const k = c.toLowerCase();
+        if (k && !seen.has(k)) {
+          seen.add(k);
+          uniqueEmps.push(c);
+        }
+      });
     }
+    const empHtml = uniqueEmps.map(n => `<option value="${n}"></option>`).join("");
+    if (subjTlList) subjTlList.innerHTML = empHtml;
+    if (subjEmpList) subjEmpList.innerHTML = empHtml;
 
     // Account / Campaign datalist
     const accList = el("listAccounts");
@@ -503,25 +551,59 @@
     function populateSubjectDropdowns() {
       const people = window.CCTV_PEOPLE;
       const accounts = edr.getAccountNames();
-      const accHtml = accounts.map(a => `<option value="${ms.escHtml(a)}"></option>`).join("");
+      const accHtml = (accounts || []).map(a => `<option value="${ms.escHtml(a)}"></option>`).join("");
 
-      let tlHtml = "";
-      let empHtml = "";
+      const cleanFn = (v) => (ms?.stripRolePrefix ? ms.stripRolePrefix(v) : (v || "")).trim();
+
+      const tlSeen = new Set();
+      const uniqueTls = [];
       if (people && typeof people.getSupervisorOptions === "function") {
         const sups = people.getSupervisorOptions();
-        tlHtml = sups.map(s => `<option value="${ms.escHtml(s.displayLabel)}">${ms.escHtml(s.name)}</option><option value="${ms.escHtml(s.name)}"></option>`).join("");
+        sups.forEach(s => {
+          const c = cleanFn(s.name);
+          const k = c.toLowerCase();
+          if (k && !tlSeen.has(k)) {
+            tlSeen.add(k);
+            uniqueTls.push(c);
+          }
+        });
       } else {
         const tls = edr.getTeamLeaderNames();
-        tlHtml = tls.map(t => `<option value="${ms.escHtml(t)}"></option>`).join("");
+        (tls || []).forEach(t => {
+          const c = cleanFn(t);
+          const k = c.toLowerCase();
+          if (k && !tlSeen.has(k)) {
+            tlSeen.add(k);
+            uniqueTls.push(c);
+          }
+        });
       }
+      const tlHtml = uniqueTls.map(t => `<option value="${ms.escHtml(t)}"></option>`).join("");
 
+      const empSeen = new Set();
+      const uniqueEmps = [];
       if (people && typeof people.getEmployeeOptions === "function") {
         const emps = people.getEmployeeOptions();
-        empHtml = emps.map(e => `<option value="${ms.escHtml(e.displayLabel)}">${ms.escHtml(e.name)}</option><option value="${ms.escHtml(e.name)}"></option>`).join("");
+        emps.forEach(e => {
+          const c = cleanFn(e.name);
+          const k = c.toLowerCase();
+          if (k && !empSeen.has(k)) {
+            empSeen.add(k);
+            uniqueEmps.push(c);
+          }
+        });
       } else {
         const tls = edr.getTeamLeaderNames();
-        empHtml = tls.map(t => `<option value="${ms.escHtml(t)}"></option>`).join("");
+        (tls || []).forEach(t => {
+          const c = cleanFn(t);
+          const k = c.toLowerCase();
+          if (k && !empSeen.has(k)) {
+            empSeen.add(k);
+            uniqueEmps.push(c);
+          }
+        });
       }
+      const empHtml = uniqueEmps.map(e => `<option value="${ms.escHtml(e)}"></option>`).join("");
 
       // Default bar datalists
       const defTl = el("listRespondentsDefault");
@@ -656,7 +738,7 @@
       const supInput = el("subjectEditorSupervisor");
       if (supInput) {
         supInput.placeholder = editorSubjectType === "Team Leader"
-          ? "OM / Supervisor (e.g. OM Irene Fuentes or Self)..."
+          ? "OM / Supervisor (e.g. Irene Fuentes or Self)..."
           : "Team Leader / Supervisor...";
         supInput.value = subject ? (subject.supervisorName || defaultTl) : defaultTl;
       }
@@ -742,7 +824,7 @@
       el("btnSubjEditorAgent").classList.remove("active");
       const supInput = el("subjectEditorSupervisor");
       if (supInput) {
-        supInput.placeholder = "OM / Supervisor (e.g. OM Irene Fuentes or Self)...";
+        supInput.placeholder = "OM / Supervisor (e.g. Irene Fuentes or Self)...";
       }
     });
 
