@@ -1,4 +1,4 @@
-﻿/**
+/**
  * CCTV OPS V2 - CCTV Audit & Smart Audit Guard Service
  * 100% Functional Parity with Authoritative V1 Audit Engine
  */
@@ -41,6 +41,16 @@ window.CCTV_AUDIT = (function () {
       .toLowerCase()
       .replace(/&/g, " and ")
       .replace(/[^a-z0-9]+/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+
+  function stripRolePrefix(name) {
+    if (window.CCTV_PEOPLE?.stripRolePrefix) {
+      return window.CCTV_PEOPLE.stripRolePrefix(name);
+    }
+    return String(name || "")
+      .replace(/^(?:TL|OM|Agent)\b\s*[\u2014\u2013\-:]?\s*/i, "")
       .replace(/\s+/g, " ")
       .trim();
   }
@@ -575,16 +585,17 @@ window.CCTV_AUDIT = (function () {
         ? window.normalizeAuditorName(rawUser?.display_name || rawUser?.username || "Miles")
         : "Miles";
 
-      const supervisorRole = report.supervisorRole || "Team Leader";
-      const tlName = supervisorRole === "Team Leader"
-        ? (report.supervisorName || "N/A")
-        : (report.subjectType === "Team Leader" ? (report.subjectName || "N/A") : "N/A");
+      // RULE 7: EDR Employee / Agent -> CCTV Audit Agent
+      //         EDR TL / Supervisor -> CCTV Audit TL
+      // Explicit EDR values win. Role prefixes stripped.
+      const firstSubj = (Array.isArray(report?.subjects) && report.subjects.length > 0) ? report.subjects[0] : null;
+      const rawAgent = report.subjectName || report.agentName || firstSubj?.name || "";
+      const rawTl = report.supervisorName || report.tlName || firstSubj?.supervisorName || report.defaultTl || "";
+      const rawOm = report.omName || (report.supervisorRole === "OM" ? (report.supervisorName || firstSubj?.supervisorName) : "") || "";
 
-      const agentName = report.subjectType === "Agent/s"
-        ? (report.subjectName || "N/A")
-        : "N/A";
-
-      const omName = report.omName || (supervisorRole === "OM" ? (report.supervisorName || "N/A") : "N/A");
+      const agentName = stripRolePrefix(rawAgent) || "N/A";
+      const tlName = stripRolePrefix(rawTl) || "N/A";
+      const omName = stripRolePrefix(rawOm) || "N/A";
       const site = window.normalizeTrackerSite ? window.normalizeTrackerSite(report.site) : (report.site || "Mabini Site A");
 
       // Auto-detect CCTV reason from incident using authoritative V1 rules
@@ -680,10 +691,10 @@ window.CCTV_AUDIT = (function () {
         const yearVal = entry.year != null ? String(entry.year) : "";
         const monthVal = entry.month != null ? String(entry.month) : "";
         const dateVal = entry.formattedDate != null ? String(entry.formattedDate) : "";
-        const omVal = entry.omName != null ? String(entry.omName) : "";
+        const omVal = stripRolePrefix(entry.omName != null ? String(entry.omName) : "");
         const siteVal = entry.site != null ? String(entry.site) : "";
-        const tlVal = entry.tlName != null ? String(entry.tlName) : "";
-        const agentVal = entry.agentName != null ? String(entry.agentName) : "";
+        const tlVal = stripRolePrefix(entry.tlName != null ? String(entry.tlName) : "");
+        const agentVal = stripRolePrefix(entry.agentName != null ? String(entry.agentName) : "");
         const accountVal = entry.cleanAccount != null ? String(entry.cleanAccount) : (entry.account != null ? String(entry.account) : "");
         const reasonVal = entry.reasonCode != null ? String(entry.reasonCode) : "";
         const nocVal = entry.noc != null ? String(entry.noc) : "";
@@ -721,7 +732,11 @@ window.CCTV_AUDIT = (function () {
       // Plain Text: TSV (Fixed 12 columns, NO global trim to preserve structural tab delimiters)
       const textRows = list.map(entry => {
         const auditor = window.normalizeAuditorName ? window.normalizeAuditorName(entry.name || entry.auditorName || "Miles") : (entry.name || "Miles");
-        const cleanCell = v => (v == null ? "" : String(v)).replace(/[\t\r\n]+/g, " ").trim();
+        const cleanCell = v => {
+          const s = (v == null ? "" : String(v)).replace(/[\t\r\n]+/g, " ").trim();
+          if (window.CCTV_PEOPLE?.stripRolePrefix) return window.CCTV_PEOPLE.stripRolePrefix(s);
+          return s.replace(/^(?:TL|OM|Agent)\b\s*[\u2014\u2013\-:]?\s*/i, "").trim();
+        };
         const row12 = [
           cleanCell(entry.year),
           cleanCell(entry.month),
@@ -746,16 +761,17 @@ window.CCTV_AUDIT = (function () {
         const auditor = window.normalizeAuditorName ? window.normalizeAuditorName(entry.name || entry.auditorName || "Miles") : (entry.name || "Miles");
         const esc = window.escapeHtml || (s => s);
         const san = window.sanitize || (s => s);
+        const stripFn = window.CCTV_PEOPLE?.stripRolePrefix || (s => String(s || "").replace(/^(?:TL|OM|Agent)\b\s*[\u2014\u2013\-:]?\s*/i, "").trim());
 
         tableRowsHTML += `<tr>` +
           `<td style="border: none; text-align: center; background-color: transparent !important; color: #000000 !important; font-family: Arial, sans-serif; font-size: 10pt; line-height: normal;">${esc(san(entry.year))}</td>` +
           `<td style="border: none; text-align: center; background-color: transparent !important; color: #000000 !important; font-family: Arial, sans-serif; font-size: 10pt; line-height: normal;">${esc(san(entry.month))}</td>` +
           `<td style="border: none; text-align: center; background-color: transparent !important; color: #000000 !important; font-family: Arial, sans-serif; font-size: 10pt; line-height: normal;">${esc(san(entry.formattedDate))}</td>` +
           `<td style="border: none; text-align: center; background-color: transparent !important; color: #000000 !important; font-family: Arial, sans-serif; font-size: 10pt; line-height: normal;">${esc(san(auditor))}</td>` +
-          `<td style="border: none; text-align: center; background-color: transparent !important; color: #000000 !important; font-family: Arial, sans-serif; font-size: 10pt; line-height: normal;">${esc(san(entry.omName))}</td>` +
+          `<td style="border: none; text-align: center; background-color: transparent !important; color: #000000 !important; font-family: Arial, sans-serif; font-size: 10pt; line-height: normal;">${esc(san(stripFn(entry.omName)))}</td>` +
           `<td style="border: none; text-align: center; background-color: transparent !important; color: #000000 !important; font-family: Arial, sans-serif; font-size: 10pt; line-height: normal;">${esc(san(entry.site))}</td>` +
-          `<td style="border: none; text-align: center; background-color: transparent !important; color: #000000 !important; font-family: Arial, sans-serif; font-size: 10pt; line-height: normal;">${esc(san(entry.tlName))}</td>` +
-          `<td style="border: none; text-align: center; background-color: transparent !important; color: #000000 !important; font-family: Arial, sans-serif; font-size: 10pt; line-height: normal;">${esc(san(entry.agentName))}</td>` +
+          `<td style="border: none; text-align: center; background-color: transparent !important; color: #000000 !important; font-family: Arial, sans-serif; font-size: 10pt; line-height: normal;">${esc(san(stripFn(entry.tlName)))}</td>` +
+          `<td style="border: none; text-align: center; background-color: transparent !important; color: #000000 !important; font-family: Arial, sans-serif; font-size: 10pt; line-height: normal;">${esc(san(stripFn(entry.agentName)))}</td>` +
           `<td style="border: none; text-align: center; background-color: transparent !important; color: #000000 !important; font-family: Arial, sans-serif; font-size: 10pt; line-height: normal;">${esc(san(entry.cleanAccount))}</td>` +
           `<td style="border: none; text-align: center; background-color: transparent !important; color: #000000 !important; font-family: Arial, sans-serif; font-size: 10pt; line-height: normal;">${esc(san(entry.reasonCode))}</td>` +
           `<td style="border: none; text-align: center; background-color: transparent !important; color: #000000 !important; font-family: Arial, sans-serif; font-size: 10pt; line-height: normal;">${esc(san(entry.noc))}</td>` +

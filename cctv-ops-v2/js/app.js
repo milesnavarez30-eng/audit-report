@@ -54,14 +54,16 @@
     const input = el("edrSupervisorName");
     if (!respList || !input) return;
 
-    if (role === "OM") {
-      const oms = edr.getOmNames();
-      respList.innerHTML = oms.map(o => `<option value="${o}"></option>`).join("");
-      input.placeholder = "Search OM...";
+    const people = window.CCTV_PEOPLE;
+    if (people && typeof people.getSupervisorOptions === "function") {
+      const sups = people.getSupervisorOptions();
+      const html = sups.map(s => `<option value="${s.displayLabel}">${s.name}</option><option value="${s.name}"></option>`).join("");
+      respList.innerHTML = html;
+      input.placeholder = role === "OM" ? "Search OM / Supervisor..." : "Search Team Leader / Supervisor...";
     } else {
-      const tls = edr.getTeamLeaderNames();
-      respList.innerHTML = tls.map(t => `<option value="${t}"></option>`).join("");
-      input.placeholder = "Search Team Leader...";
+      const names = role === "OM" ? edr.getOmNames() : edr.getTeamLeaderNames();
+      respList.innerHTML = names.map(n => `<option value="${n}"></option>`).join("");
+      input.placeholder = role === "OM" ? "Search OM..." : "Search Team Leader...";
     }
   }
 
@@ -80,14 +82,21 @@
       omList.innerHTML = oms.map(o => `<option value="${o}"></option>`).join("");
     }
 
-    // Respondent datalist (initial TL only)
+    // Respondent datalist (TL / OM / Supervisor)
     populateRespondentList(supervisorRole);
 
-    // Subject TL datalist (for Violation Subject = TL)
+    // Subject datalists (Agents, TLs, custom people)
     const subjTlList = el("listSubjectTls");
-    const tls = edr.getTeamLeaderNames();
-    if (subjTlList) {
-      subjTlList.innerHTML = tls.map(t => `<option value="${t}"></option>`).join("");
+    const subjEmpList = el("listSubjectEmployees");
+    const people = window.CCTV_PEOPLE;
+    if (people && typeof people.getEmployeeOptions === "function") {
+      const emps = people.getEmployeeOptions();
+      const empHtml = emps.map(e => `<option value="${e.displayLabel}">${e.name}</option><option value="${e.name}"></option>`).join("");
+      if (subjTlList) subjTlList.innerHTML = empHtml;
+      if (subjEmpList) subjEmpList.innerHTML = empHtml;
+    } else {
+      const tls = edr.getTeamLeaderNames();
+      if (subjTlList) subjTlList.innerHTML = tls.map(t => `<option value="${t}"></option>`).join("");
     }
 
     // Account / Campaign datalist
@@ -133,16 +142,6 @@
         btnTl.classList.add("active");
         btnOm.classList.remove("active");
         supervisorRole = "Team Leader";
-
-        // Switching OM -> TL: clear if current value is not a valid TL
-        if (respInput && respInput.value) {
-          const validTls = edr.getTeamLeaderNames();
-          const current = respInput.value.trim().toLowerCase();
-          const isValid = validTls.some(t => t.toLowerCase() === current);
-          if (!isValid) {
-            respInput.value = "";
-          }
-        }
         populateRespondentList("Team Leader");
       });
 
@@ -151,16 +150,6 @@
         btnOm.classList.add("active");
         btnTl.classList.remove("active");
         supervisorRole = "OM";
-
-        // Switching TL -> OM: clear if current value is not a valid OM
-        if (respInput && respInput.value) {
-          const validOms = edr.getOmNames();
-          const current = respInput.value.trim().toLowerCase();
-          const isValid = validOms.some(o => o.toLowerCase() === current);
-          if (!isValid) {
-            respInput.value = "";
-          }
-        }
         populateRespondentList("OM");
       });
     }
@@ -175,8 +164,8 @@
         btnSubjTl.classList.remove("active");
         subjectType = "Agent/s";
         if (subjInput) {
-          subjInput.placeholder = "Employee name...";
-          subjInput.removeAttribute("list");
+          subjInput.placeholder = "Employee name (Agent, TL, etc.)...";
+          subjInput.setAttribute("list", "listSubjectEmployees");
         }
       });
       btnSubjTl.addEventListener("click", () => {
@@ -184,8 +173,8 @@
         btnAgent.classList.remove("active");
         subjectType = "Team Leader";
         if (subjInput) {
-          subjInput.placeholder = "Search Team Leader...";
-          subjInput.setAttribute("list", "listSubjectTls");
+          subjInput.placeholder = "Search Team Leader / Employee...";
+          subjInput.setAttribute("list", "listSubjectEmployees");
         }
       });
     }
@@ -512,10 +501,27 @@
     // ── Respondents and Account Datalists (for default bar + modal) ───────
 
     function populateSubjectDropdowns() {
-      const tls = edr.getTeamLeaderNames();
+      const people = window.CCTV_PEOPLE;
       const accounts = edr.getAccountNames();
-      const tlHtml = tls.map(t => `<option value="${ms.escHtml(t)}"></option>`).join("");
       const accHtml = accounts.map(a => `<option value="${ms.escHtml(a)}"></option>`).join("");
+
+      let tlHtml = "";
+      let empHtml = "";
+      if (people && typeof people.getSupervisorOptions === "function") {
+        const sups = people.getSupervisorOptions();
+        tlHtml = sups.map(s => `<option value="${ms.escHtml(s.displayLabel)}">${ms.escHtml(s.name)}</option><option value="${ms.escHtml(s.name)}"></option>`).join("");
+      } else {
+        const tls = edr.getTeamLeaderNames();
+        tlHtml = tls.map(t => `<option value="${ms.escHtml(t)}"></option>`).join("");
+      }
+
+      if (people && typeof people.getEmployeeOptions === "function") {
+        const emps = people.getEmployeeOptions();
+        empHtml = emps.map(e => `<option value="${ms.escHtml(e.displayLabel)}">${ms.escHtml(e.name)}</option><option value="${ms.escHtml(e.name)}"></option>`).join("");
+      } else {
+        const tls = edr.getTeamLeaderNames();
+        empHtml = tls.map(t => `<option value="${ms.escHtml(t)}"></option>`).join("");
+      }
 
       // Default bar datalists
       const defTl = el("listRespondentsDefault");
@@ -528,6 +534,11 @@
       if (editorTl) editorTl.innerHTML = tlHtml;
       const editorAcc = el("listAccountsSubjEditor");
       if (editorAcc) editorAcc.innerHTML = accHtml;
+
+      const editorEmp = el("listSubjectEmployees");
+      if (editorEmp) editorEmp.innerHTML = empHtml;
+      const subjTls = el("listSubjectTls");
+      if (subjTls) subjTls.innerHTML = empHtml;
 
       populateInfractionDropdowns();
     }
@@ -574,8 +585,7 @@
       // Update or insert rows
       msSubjects.forEach((s, i) => {
         let row = list.querySelector(`.edr-subject-row[data-sid="${s.id}"]`);
-        const isSelfTl = s.type === "Team Leader" && s.supervisorName && s.supervisorName.toLowerCase() === s.name.toLowerCase();
-        const displaySup = isSelfTl ? "" : s.supervisorName;
+        const displaySup = s.supervisorName || "";
         const metaParts = [displaySup, s.account, s.infraction].filter(Boolean);
         const metaText = metaParts.join(" · ");
         const tagClass = s.type === "Team Leader" ? "tag-tl" : "tag-agent";
@@ -641,15 +651,14 @@
       el("subjectEditorId").value = subjectId || "";
       el("subjectEditorName").value = subject ? subject.name : "";
 
-      const defaultTl = ms.clean(el("edrDefaultTl")?.value || "");
+      populateSubjectDropdowns();
+      const defaultTl = ms.stripRolePrefix(ms.clean(el("edrDefaultTl")?.value || ""));
       const supInput = el("subjectEditorSupervisor");
-      if (editorSubjectType === "Team Leader") {
-        if (supInput) supInput.placeholder = "Optional OM / Supervisor (none if N/A)...";
-        const existingSup = subject ? (subject.supervisorName || "") : "";
-        if (supInput) supInput.value = (existingSup.toLowerCase() === (subject?.name || "").toLowerCase() || existingSup.toLowerCase() === defaultTl.toLowerCase()) ? "" : existingSup;
-      } else {
-        if (supInput) supInput.placeholder = "Team Leader name...";
-        if (supInput) supInput.value = subject ? (subject.supervisorName || defaultTl) : defaultTl;
+      if (supInput) {
+        supInput.placeholder = editorSubjectType === "Team Leader"
+          ? "OM / Supervisor (e.g. OM Irene Fuentes or Self)..."
+          : "Team Leader / Supervisor...";
+        supInput.value = subject ? (subject.supervisorName || defaultTl) : defaultTl;
       }
 
       el("subjectEditorAccount").value = subject ? subject.account : (el("edrDefaultAccount")?.value || "");
@@ -670,7 +679,7 @@
     }
 
     function saveSubjectEditor() {
-      const name = ms.clean(el("subjectEditorName")?.value || "");
+      const name = ms.stripRolePrefix(ms.clean(el("subjectEditorName")?.value || ""));
       if (!name) {
         showToast("Please enter a subject name.", "warning");
         el("subjectEditorName")?.focus();
@@ -680,10 +689,8 @@
       const subjectId = el("subjectEditorId")?.value || "";
       const isNew = !subjectId;
 
-      let supervisorVal = ms.clean(el("subjectEditorSupervisor")?.value || "");
-      if (editorSubjectType === "Team Leader" && supervisorVal.toLowerCase() === name.toLowerCase()) {
-        supervisorVal = "";
-      }
+      const supervisorVal = ms.stripRolePrefix(ms.clean(el("subjectEditorSupervisor")?.value || ""));
+      const infraction = el("subjectEditorInfraction")?.value || "";
 
       const subjectData = {
         id: subjectId || ms.uid(),
@@ -691,13 +698,13 @@
         name,
         supervisorName: supervisorVal,
         account: ms.clean(el("subjectEditorAccount")?.value || ""),
-        infraction: el("subjectEditorInfraction")?.value || ""
+        infraction
       };
 
       if (isNew) {
-        // Duplicate check
-        if (ms.isDuplicateName(msSubjects, name)) {
-          showToast(`"${name}" is already in the subject list.`, "info");
+        // Allow multiple incidents for same person on same day if infraction is distinct
+        if (ms.isDuplicateName(msSubjects, name, infraction)) {
+          showToast(`"${name}" already has an entry for "${infraction || 'unspecified infraction'}".`, "info");
           return;
         }
         msSubjects.push(subjectData);
@@ -723,9 +730,9 @@
       el("btnSubjEditorTl").classList.remove("active");
       const supInput = el("subjectEditorSupervisor");
       if (supInput) {
-        supInput.placeholder = "Team Leader name...";
+        supInput.placeholder = "Team Leader / Supervisor...";
         if (!supInput.value.trim()) {
-          supInput.value = el("edrDefaultTl")?.value || "";
+          supInput.value = ms.stripRolePrefix(el("edrDefaultTl")?.value || "");
         }
       }
     });
@@ -734,13 +741,74 @@
       el("btnSubjEditorTl").classList.add("active");
       el("btnSubjEditorAgent").classList.remove("active");
       const supInput = el("subjectEditorSupervisor");
-      const currName = ms.clean(el("subjectEditorName")?.value || "");
-      const defTl = ms.clean(el("edrDefaultTl")?.value || "");
       if (supInput) {
-        supInput.placeholder = "Optional OM / Supervisor (none if N/A)...";
-        if (supInput.value.trim().toLowerCase() === currName.toLowerCase() ||
-            supInput.value.trim().toLowerCase() === defTl.toLowerCase()) {
-          supInput.value = "";
+        supInput.placeholder = "OM / Supervisor (e.g. OM Irene Fuentes or Self)...";
+      }
+    });
+
+    // Option Management - Subject Editor Employee & Supervisor Buttons
+    el("btnAddSubjectEmployeeOption")?.addEventListener("click", () => {
+      const curr = ms.stripRolePrefix(ms.clean(el("subjectEditorName")?.value || ""));
+      const val = prompt("Add new employee/person to masterlist:", curr);
+      if (val && val.trim()) {
+        const cleanVal = ms.stripRolePrefix(val.trim());
+        const role = editorSubjectType === "Team Leader" ? "TL" : "Agent";
+        const people = window.CCTV_PEOPLE;
+        const res = people ? people.addCustomPerson(cleanVal, role) : { added: true, person: { name: cleanVal } };
+        populateSubjectDropdowns();
+        if (el("subjectEditorName")) el("subjectEditorName").value = cleanVal;
+        showToast(res.added ? `Added "${cleanVal}" to people registry.` : `"${cleanVal}" is already registered.`, res.added ? "success" : "info");
+      }
+    });
+
+    el("btnRemoveSubjectEmployeeOption")?.addEventListener("click", () => {
+      const curr = ms.stripRolePrefix(ms.clean(el("subjectEditorName")?.value || ""));
+      if (!curr) {
+        showToast("Enter or select an employee name to remove.", "info");
+        return;
+      }
+      if (confirm(`Remove custom person "${curr}" from options? Historical records remain safe.`)) {
+        const people = window.CCTV_PEOPLE;
+        const res = people ? people.removeCustomPerson(curr) : { removed: true };
+        if (res.removed) {
+          populateSubjectDropdowns();
+          if (el("subjectEditorName")) el("subjectEditorName").value = "";
+          showToast(`Removed "${curr}". Historical records remain intact.`, "info");
+        } else {
+          showToast(res.error || `Could not remove "${curr}".`, "warning");
+        }
+      }
+    });
+
+    el("btnAddSubjectSupervisorOption")?.addEventListener("click", () => {
+      const curr = ms.stripRolePrefix(ms.clean(el("subjectEditorSupervisor")?.value || ""));
+      const defaultRole = editorSubjectType === "Team Leader" ? "OM" : "TL";
+      const val = prompt(`Add new supervisor (${defaultRole}) to masterlist:`, curr);
+      if (val && val.trim()) {
+        const cleanVal = ms.stripRolePrefix(val.trim());
+        const people = window.CCTV_PEOPLE;
+        const res = people ? people.addCustomPerson(cleanVal, defaultRole) : { added: true, person: { name: cleanVal } };
+        populateSubjectDropdowns();
+        if (el("subjectEditorSupervisor")) el("subjectEditorSupervisor").value = cleanVal;
+        showToast(res.added ? `Added "${cleanVal}" as ${defaultRole}.` : `"${cleanVal}" is already registered.`, res.added ? "success" : "info");
+      }
+    });
+
+    el("btnRemoveSubjectSupervisorOption")?.addEventListener("click", () => {
+      const curr = ms.stripRolePrefix(ms.clean(el("subjectEditorSupervisor")?.value || ""));
+      if (!curr) {
+        showToast("Enter or select a supervisor name to remove.", "info");
+        return;
+      }
+      if (confirm(`Remove custom supervisor "${curr}" from options? Historical records remain safe.`)) {
+        const people = window.CCTV_PEOPLE;
+        const res = people ? people.removeCustomPerson(curr) : { removed: true };
+        if (res.removed) {
+          populateSubjectDropdowns();
+          if (el("subjectEditorSupervisor")) el("subjectEditorSupervisor").value = "";
+          showToast(`Removed "${curr}". Historical records remain intact.`, "info");
+        } else {
+          showToast(res.error || `Could not remove "${curr}".`, "warning");
         }
       }
     });
@@ -780,7 +848,8 @@
         preview.textContent = "";
         return;
       }
-      const dupeCount = names.filter(n => ms.isDuplicateName(msSubjects, n)).length;
+      const defaultInfraction = el("edrDefaultInfraction")?.value || "";
+      const dupeCount = names.filter(n => ms.isDuplicateName(msSubjects, ms.stripRolePrefix(n), defaultInfraction)).length;
       const newCount = names.length - dupeCount;
       preview.textContent = `${names.length} name${names.length !== 1 ? "s" : ""} detected${dupeCount ? ` (${dupeCount} already in list, ${newCount} new)` : ` — all new`}.`;
     });
@@ -793,14 +862,16 @@
         return;
       }
 
-      const defaultTl = ms.clean(el("edrDefaultTl")?.value || "");
+      const defaultTl = ms.stripRolePrefix(ms.clean(el("edrDefaultTl")?.value || ""));
       const defaultAccount = ms.clean(el("edrDefaultAccount")?.value || "");
       const defaultInfraction = el("edrDefaultInfraction")?.value || "";
 
       let added = 0;
       let dupes = 0;
-      names.forEach(name => {
-        if (ms.isDuplicateName(msSubjects, name)) {
+      names.forEach(rawName => {
+        const name = ms.stripRolePrefix(rawName);
+        if (!name) return;
+        if (ms.isDuplicateName(msSubjects, name, defaultInfraction)) {
           dupes++;
           return;
         }
@@ -1912,10 +1983,26 @@
   }
 
   function getFormData() {
-    const currentSubjects = window.getMsSubjects ? window.getMsSubjects() : [];
+    const ms = window.EDR_MULTI_SUBJECT;
+    const cleanFn = (v) => {
+      if (window.CCTV_PEOPLE && typeof window.CCTV_PEOPLE.stripRolePrefix === "function") {
+        return window.CCTV_PEOPLE.stripRolePrefix(v || "");
+      }
+      if (ms && typeof ms.stripRolePrefix === "function") {
+        return ms.stripRolePrefix(v || "");
+      }
+      return String(v || "").trim();
+    };
+
+    const currentSubjects = (window.getMsSubjects ? window.getMsSubjects() : []).map(s => ({
+      ...s,
+      name: cleanFn(s.name),
+      supervisorName: cleanFn(s.supervisorName)
+    }));
+
     // Sync legacy hidden fields from subjects
     const subjectNames = currentSubjects.map(s => s.name).join(", ");
-    const defaultTl = el("edrDefaultTl") ? el("edrDefaultTl").value.trim() : "";
+    const defaultTl = cleanFn(el("edrDefaultTl") ? el("edrDefaultTl").value : "");
     const defaultAccount = el("edrDefaultAccount") ? el("edrDefaultAccount").value.trim() : "";
     const defaultInfraction = el("edrDefaultInfraction") ? el("edrDefaultInfraction").value : "";
     const firstSubjectAccount = currentSubjects.length > 0 ? (currentSubjects[0].account || "") : "";
@@ -1927,7 +2014,7 @@
     const allSameTl = currentSubjects.length > 0 && currentSubjects.every(s => s.supervisorName === currentSubjects[0].supervisorName);
     const resolvedSupervisor = (allSameTl && firstSubjectTl)
       ? firstSubjectTl
-      : (defaultTl || firstSubjectTl || el("edrSupervisorName")?.value || "");
+      : (defaultTl || firstSubjectTl || cleanFn(el("edrSupervisorName")?.value) || "");
 
     return {
       site: el("edrSite").value,
@@ -1936,7 +2023,7 @@
       timeStart: el("edrTimeObserved").value,
       supervisorRole: supervisorRole,
       supervisorName: resolvedSupervisor,
-      omName: el("edrOmName").value,
+      omName: cleanFn(el("edrOmName")?.value || ""),
       defaultTl,
       defaultAccount,
       defaultInfraction,
@@ -1946,7 +2033,7 @@
       subjectType: currentSubjects.length > 0
         ? (currentSubjects[0].type === "Team Leader" ? "Team Leader" : "Agent/s")
         : subjectType,
-      subjectName: subjectNames || el("edrSubjectName").value,
+      subjectName: subjectNames || cleanFn(el("edrSubjectName")?.value || ""),
       account: firstSubjectAccount || defaultAccount || el("edrAccount").value,
       incident: el("edrIncident").value,
       action: el("edrActionRemarks").value,
@@ -2075,18 +2162,28 @@
 
   // Initialize UI Events
   function initEvents() {
+    let isSubmittingEdr = false;
     // Form submit
     el("edrForm")?.addEventListener("submit", async (e) => {
       e.preventDefault();
-      const currentSubjects = window.getMsSubjects ? window.getMsSubjects() : [];
-      if (!currentSubjects.length) {
-        showToast("Please add at least one subject to the EDR.", "warning");
-        return;
+      if (isSubmittingEdr) return;
+      isSubmittingEdr = true;
+      try {
+        const currentSubjects = window.getMsSubjects ? window.getMsSubjects() : [];
+        if (!currentSubjects.length) {
+          showToast("Please add at least one subject to the EDR.", "warning");
+          return;
+        }
+        const data = getFormData();
+        await edr.createOrUpdate(data);
+        resetForm();
+        showToast("EDR saved successfully.", "success");
+      } catch (err) {
+        console.error(err);
+        showToast(err.message || "Failed to save EDR.", "error");
+      } finally {
+        isSubmittingEdr = false;
       }
-      const data = getFormData();
-      await edr.createOrUpdate(data);
-      resetForm();
-      showToast("EDR saved successfully.", "success");
     });
 
     el("btnEdrClear")?.addEventListener("click", resetForm);
@@ -2370,7 +2467,9 @@
     // Auto-persist new values typed into EDR inputs
     const handleSupervisorInputChange = () => {
       const input = el("edrSupervisorName");
-      const rawVal = input?.value?.trim();
+      const cleanFn = v => (window.CCTV_PEOPLE && typeof window.CCTV_PEOPLE.stripRolePrefix === "function") ? window.CCTV_PEOPLE.stripRolePrefix(v) : (v || "").trim();
+      const rawVal = cleanFn(input?.value);
+      if (input && input.value !== rawVal) input.value = rawVal;
       if (!rawVal || !window.masterlistService) return;
       const roleType = supervisorRole === "OM" ? "oms" : "tls";
       const canonical = window.masterlistService.findCanonical(roleType, rawVal);
@@ -2396,25 +2495,28 @@
 
     // Option Management - Default TL / Supervisor (Multi-Subject Bar)
     el("btnAddSupervisorOptionMs")?.addEventListener("click", () => {
-      const curr = el("edrDefaultTl")?.value.trim();
+      const cleanFn = v => (window.CCTV_PEOPLE && typeof window.CCTV_PEOPLE.stripRolePrefix === "function") ? window.CCTV_PEOPLE.stripRolePrefix(v) : (v || "").trim();
+      const curr = cleanFn(el("edrDefaultTl")?.value);
       const val = prompt("Add new Team Leader to masterlist:", curr);
       if (val && val.trim()) {
+        const cleanVal = cleanFn(val.trim());
         const site = el("edrSite")?.value;
         const account = el("edrDefaultAccount")?.value || el("edrAccount")?.value;
         const om = el("edrOmName")?.value;
         const res = window.masterlistService
-          ? window.masterlistService.addRespondent(val.trim(), "Team Leader", { site, account, om })
-          : { added: edr.addSupervisorOption("Team Leader", val.trim(), { site, account, om }), canonical: val.trim() };
+          ? window.masterlistService.addRespondent(cleanVal, "Team Leader", { site, account, om })
+          : { added: edr.addSupervisorOption("Team Leader", cleanVal, { site, account, om }), canonical: cleanVal };
         initFormDropdowns();
         if (typeof populateSubjectDropdowns === "function") populateSubjectDropdowns();
-        if (el("edrDefaultTl")) el("edrDefaultTl").value = res.canonical || val.trim();
-        if (el("edrSupervisorName")) el("edrSupervisorName").value = res.canonical || val.trim();
-        showToast(res.added ? `Added "${res.canonical || val.trim()}" to Team Leader masterlist.` : `"${res.canonical || val.trim()}" is already in list.`, res.added ? "success" : "info");
+        if (el("edrDefaultTl")) el("edrDefaultTl").value = res.canonical || cleanVal;
+        if (el("edrSupervisorName")) el("edrSupervisorName").value = res.canonical || cleanVal;
+        showToast(res.added ? `Added "${res.canonical || cleanVal}" to Team Leader masterlist.` : `"${res.canonical || cleanVal}" is already in list.`, res.added ? "success" : "info");
       }
     });
 
     el("btnRemoveSupervisorOptionMs")?.addEventListener("click", () => {
-      const curr = el("edrDefaultTl")?.value.trim();
+      const cleanFn = v => (window.CCTV_PEOPLE && typeof window.CCTV_PEOPLE.stripRolePrefix === "function") ? window.CCTV_PEOPLE.stripRolePrefix(v) : (v || "").trim();
+      const curr = cleanFn(el("edrDefaultTl")?.value);
       if (!curr) {
         showToast("Select or type a Team Leader name to remove.", "info");
         return;
@@ -2435,7 +2537,9 @@
 
     const handleDefaultTlInputChange = () => {
       const input = el("edrDefaultTl");
-      const rawVal = input?.value?.trim();
+      const cleanFn = v => (window.CCTV_PEOPLE && typeof window.CCTV_PEOPLE.stripRolePrefix === "function") ? window.CCTV_PEOPLE.stripRolePrefix(v) : (v || "").trim();
+      const rawVal = cleanFn(input?.value);
+      if (input && input.value !== rawVal) input.value = rawVal;
       if (el("edrSupervisorName")) el("edrSupervisorName").value = rawVal || "";
       if (!rawVal || !window.masterlistService) return;
       const canonical = window.masterlistService.findCanonical("tls", rawVal);
@@ -2458,7 +2562,8 @@
     };
     el("edrDefaultTl")?.addEventListener("change", handleDefaultTlInputChange);
     el("edrDefaultTl")?.addEventListener("input", () => {
-      if (el("edrSupervisorName")) el("edrSupervisorName").value = el("edrDefaultTl")?.value?.trim() || "";
+      const cleanFn = v => (window.CCTV_PEOPLE && typeof window.CCTV_PEOPLE.stripRolePrefix === "function") ? window.CCTV_PEOPLE.stripRolePrefix(v) : (v || "").trim();
+      if (el("edrSupervisorName")) el("edrSupervisorName").value = cleanFn(el("edrDefaultTl")?.value) || "";
       updateLivePreview();
       scheduleDraftSave();
     });

@@ -30,6 +30,16 @@ window.EDR_MULTI_SUBJECT = (function () {
       .replace(/'/g, "&#039;");
   }
 
+  function stripRolePrefix(name) {
+    if (window.CCTV_PEOPLE?.stripRolePrefix) {
+      return window.CCTV_PEOPLE.stripRolePrefix(name);
+    }
+    return String(name || "")
+      .replace(/^(?:TL|OM|Agent)\b\s*[\u2014\u2013\-:]?\s*/i, "")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+
   // ── Subject Normalization (backward compat) ───────────────────────────────
 
   /**
@@ -45,23 +55,23 @@ window.EDR_MULTI_SUBJECT = (function () {
       return report.subjects.map(s => ({
         id: s.id || uid(),
         type: s.type || "Agent",
-        name: clean(s.name),
-        supervisorName: clean(s.supervisorName),
+        name: stripRolePrefix(clean(s.name)),
+        supervisorName: stripRolePrefix(clean(s.supervisorName)),
         account: clean(s.account),
         infraction: clean(s.infraction)
       })).filter(s => s.name);
     }
 
     // Legacy single-subject
-    const legacyName = clean(report.subjectName || report.agentName);
+    const legacyName = stripRolePrefix(clean(report.subjectName || report.agentName));
     if (legacyName) {
       const isTl = report.subjectType === "Team Leader";
-      const sup = clean(report.supervisorName);
+      const sup = stripRolePrefix(clean(report.supervisorName));
       return [{
         id: "legacy_0",
         type: isTl ? "Team Leader" : "Agent",
         name: legacyName,
-        supervisorName: (isTl && sup.toLowerCase() === legacyName.toLowerCase()) ? "" : sup,
+        supervisorName: sup,
         account: clean(report.account),
         infraction: clean(report.infraction)
       }];
@@ -95,9 +105,14 @@ window.EDR_MULTI_SUBJECT = (function () {
 
   // ── Check Duplicate Within EDR ────────────────────────────────────────────
 
-  function isDuplicateName(existingSubjects, candidateName) {
-    const k = clean(candidateName).toLowerCase();
-    return existingSubjects.some(s => s.name.toLowerCase() === k);
+  function isDuplicateName(existingSubjects, candidateName, candidateInfraction) {
+    const k = clean(stripRolePrefix(candidateName)).toLowerCase();
+    const inf = clean(candidateInfraction || "").toLowerCase();
+    return existingSubjects.some(s => {
+      const sName = clean(stripRolePrefix(s.name)).toLowerCase();
+      const sInf = clean(s.infraction || "").toLowerCase();
+      return sName === k && (!inf || sInf === inf);
+    });
   }
 
   // ── Teams Output Generator ────────────────────────────────────────────────
@@ -130,7 +145,7 @@ window.EDR_MULTI_SUBJECT = (function () {
       const subjectLabel = isAllTl ? "Team Leaders" : "Agents";
       if (!isAllTl && subjects[0].supervisorName) {
         lines.push(`Team Leader: ${subjects[0].supervisorName || ""}`);
-      } else if (isAllTl && subjects[0].supervisorName && subjects[0].supervisorName.toLowerCase() !== subjects[0].name.toLowerCase()) {
+      } else if (isAllTl && subjects[0].supervisorName) {
         lines.push(`Supervisor: ${subjects[0].supervisorName}`);
       }
       lines.push(`${subjectLabel}: ${agentNames}`);
@@ -143,7 +158,7 @@ window.EDR_MULTI_SUBJECT = (function () {
       lines.push(listHeader);
       subjects.forEach((s) => {
         const parts = [s.name];
-        if (s.supervisorName && (s.type !== "Team Leader" || s.supervisorName.toLowerCase() !== s.name.toLowerCase())) {
+        if (s.supervisorName) {
           parts.push(s.supervisorName);
         }
         if (s.account) parts.push(s.account);
@@ -192,7 +207,7 @@ window.EDR_MULTI_SUBJECT = (function () {
       const subjectLabel = isAllTl ? "Team Leaders" : "Agents";
       if (!isAllTl && subjects[0].supervisorName) {
         lines.push(`<div>Team Leader: ${escHtml(subjects[0].supervisorName || "")}</div>`);
-      } else if (isAllTl && subjects[0].supervisorName && subjects[0].supervisorName.toLowerCase() !== subjects[0].name.toLowerCase()) {
+      } else if (isAllTl && subjects[0].supervisorName) {
         lines.push(`<div>Supervisor: ${escHtml(subjects[0].supervisorName)}</div>`);
       }
       lines.push(`<div>${escHtml(subjectLabel)}: ${agentNames}</div>`);
@@ -204,7 +219,7 @@ window.EDR_MULTI_SUBJECT = (function () {
       lines.push(`<div>${listHeader}</div>`);
       subjects.forEach((s) => {
         const parts = [escHtml(s.name)];
-        if (s.supervisorName && (s.type !== "Team Leader" || s.supervisorName.toLowerCase() !== s.name.toLowerCase())) {
+        if (s.supervisorName) {
           parts.push(escHtml(s.supervisorName));
         }
         if (s.account) parts.push(escHtml(s.account));
@@ -315,9 +330,16 @@ window.EDR_MULTI_SUBJECT = (function () {
          entry._compositeKey === compositeKey)
       );
 
-      const isTl = subject.type === "Team Leader";
-      const agentName = isTl ? "N/A" : (subject.name || "N/A");
-      const tlName = isTl ? (subject.name || "N/A") : (subject.supervisorName || "N/A");
+      // RULE 7: EDR Employee/Agent -> CCTV Audit Agent
+      //         EDR TL/Supervisor -> CCTV Audit TL
+      // Explicit EDR values win. Role prefixes stripped.
+      const rawAgent = subject.name || report.subjectName || "";
+      const rawTl = subject.supervisorName || report.supervisorName || report.defaultTl || "";
+      const rawOm = report.omName || (report.supervisorRole === "OM" ? (report.supervisorName || subject.supervisorName) : "") || "";
+
+      const agentName = stripRolePrefix(clean(rawAgent)) || "N/A";
+      const tlName = stripRolePrefix(clean(rawTl)) || "N/A";
+      const omName = stripRolePrefix(clean(rawOm)) || "N/A";
 
       const subjectEntry = {
         rawDate,

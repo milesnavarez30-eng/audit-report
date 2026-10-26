@@ -3508,13 +3508,26 @@
         </div>
         <!-- Name -->
         <div class="form-group" style="margin:0;">
-          <label class="form-label" for="subjectEditorName">Name <span class="required-dot">*</span></label>
-          <input type="text" id="subjectEditorName" class="form-control" placeholder="Employee name...">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <label class="form-label" for="subjectEditorName" style="margin:0;">Name <span class="required-dot">*</span></label>
+            <span class="btn-opt-mgmt-wrap">
+              <button type="button" class="btn-opt-mgmt" id="btnAddSubjectEmployeeOption" title="Add custom person to registry">+</button>
+              <button type="button" class="btn-opt-mgmt" id="btnRemoveSubjectEmployeeOption" title="Remove custom person from registry">-</button>
+            </span>
+          </div>
+          <input type="text" id="subjectEditorName" class="form-control" list="listSubjectEmployees" placeholder="Search or enter employee name...">
+          <datalist id="listSubjectEmployees"></datalist>
         </div>
         <!-- TL / Supervisor -->
         <div class="form-group" style="margin:0;">
-          <label class="form-label" for="subjectEditorSupervisor">TL / Supervisor</label>
-          <input type="text" id="subjectEditorSupervisor" class="form-control" list="listRespondentsSubjEditor" placeholder="Team Leader name...">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <label class="form-label" for="subjectEditorSupervisor" style="margin:0;">TL / Supervisor</label>
+            <span class="btn-opt-mgmt-wrap">
+              <button type="button" class="btn-opt-mgmt" id="btnAddSubjectSupervisorOption" title="Add custom supervisor to registry">+</button>
+              <button type="button" class="btn-opt-mgmt" id="btnRemoveSubjectSupervisorOption" title="Remove custom supervisor from registry">-</button>
+            </span>
+          </div>
+          <input type="text" id="subjectEditorSupervisor" class="form-control" list="listRespondentsSubjEditor" placeholder="Search or enter TL / OM supervisor...">
           <datalist id="listRespondentsSubjEditor"></datalist>
         </div>
         <!-- Account -->
@@ -4101,6 +4114,7 @@
   <script src="./js/storage.js"></script>
   <script src="./js/shared.js"></script>
   <script src="./js/services/auth-service.js"></script>
+  <script src="./js/services/people-service.js"></script>
   <script src="./js/services/edr-service.js"></script>
   <script src="./js/services/edr-multi-subject.js"></script>
   <script src="./js/services/audit-service.js"></script>

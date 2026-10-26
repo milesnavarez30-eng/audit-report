@@ -190,34 +190,28 @@ window.CCTV_EDR = (function () {
     }
   }
 
+  function stripRolePrefix(name) {
+    if (window.CCTV_PEOPLE?.stripRolePrefix) {
+      return window.CCTV_PEOPLE.stripRolePrefix(name);
+    }
+    return String(name || "")
+      .replace(/^(?:TL|OM|Agent)\b\s*[\u2014\u2013\-:]?\s*/i, "")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+
   function auditSharedFieldsFromEdr(report) {
-    const supervisorRole =
-      report?.supervisorRole === "OM"
-        ? "OM"
-        : "Team Leader";
+    // RULE 7: EDR Employee/Agent -> CCTV Audit Agent
+    //         EDR TL/Supervisor -> CCTV Audit TL
+    // Explicit EDR values win. Role prefixes are UI-only and stripped.
+    const firstSubj = (Array.isArray(report?.subjects) && report.subjects.length > 0) ? report.subjects[0] : null;
+    const rawAgent = report?.subjectName || report?.agentName || firstSubj?.name || "";
+    const rawTl = report?.supervisorName || report?.tlName || firstSubj?.supervisorName || report?.defaultTl || "";
+    const rawOm = report?.omName || (report?.supervisorRole === "OM" ? (report?.supervisorName || firstSubj?.supervisorName) : "") || "";
 
-    const subjectType =
-      report?.subjectType === "Team Leader"
-        ? "Team Leader"
-        : "Agent/s";
-
-    const tlName =
-      subjectType === "Team Leader"
-        ? (report?.subjectName || "N/A")
-        : (
-          supervisorRole === "Team Leader"
-            ? (report?.supervisorName || "N/A")
-            : "N/A"
-        );
-
-    const agentName =
-      subjectType === "Agent/s"
-        ? (report?.subjectName || "N/A")
-        : "N/A";
-
-    const omName =
-      String(report?.omName || "").trim() ||
-      (supervisorRole === "OM" ? (report?.supervisorName || "N/A") : "N/A");
+    const agentName = stripRolePrefix(clean(rawAgent)) || "N/A";
+    const tlName = stripRolePrefix(clean(rawTl)) || "N/A";
+    const omName = stripRolePrefix(clean(rawOm)) || "N/A";
 
     const rawDate = report?.date || new Date().toISOString().slice(0, 10);
     const dateObj = new Date(`${rawDate}T00:00:00`);
@@ -643,6 +637,17 @@ window.CCTV_EDR = (function () {
       return edrReports.find(r => r.id === id) || null;
     },
 
+    getAllReports() {
+      return [...(edrReports || [])];
+    },
+
+    addBulkReports(reports) {
+      if (Array.isArray(reports)) {
+        reports.forEach(r => edrReports.push(r));
+        notify();
+      }
+    },
+
     async restoreReports(reports) {
       if (!Array.isArray(reports)) return 0;
       edrReports = JSON.parse(JSON.stringify(reports));
@@ -650,6 +655,10 @@ window.CCTV_EDR = (function () {
       await this.saveReports();
       notify();
       return edrReports.length;
+    },
+
+    notify() {
+      notify();
     },
 
     getEditingReport() {
@@ -819,23 +828,45 @@ window.CCTV_EDR = (function () {
 
     async createOrUpdate(data) {
       let saved = null;
-      if (editingId) {
-        const idx = edrReports.findIndex(r => r.id === editingId);
+      // Strip UI-only role prefixes from all stored fields
+      const cleanedData = { ...data };
+      if (Array.isArray(cleanedData.subjects)) {
+        cleanedData.subjects = cleanedData.subjects.map(s => ({
+          ...s,
+          name: stripRolePrefix(s.name),
+          supervisorName: stripRolePrefix(s.supervisorName)
+        }));
+        if (!cleanedData.subjectName && cleanedData.subjects.length > 0) {
+          cleanedData.subjectName = cleanedData.subjects.map(s => s.name).join(", ");
+        }
+        if (!cleanedData.supervisorName && cleanedData.subjects.length > 0) {
+          cleanedData.supervisorName = cleanedData.subjects[0].supervisorName || cleanedData.defaultTl || "";
+        }
+      }
+      if (cleanedData.subjectName) cleanedData.subjectName = stripRolePrefix(cleanedData.subjectName);
+      if (cleanedData.supervisorName) cleanedData.supervisorName = stripRolePrefix(cleanedData.supervisorName);
+      if (cleanedData.omName) cleanedData.omName = stripRolePrefix(cleanedData.omName);
+      if (cleanedData.defaultTl) cleanedData.defaultTl = stripRolePrefix(cleanedData.defaultTl);
+
+      const targetId = editingId || (cleanedData.id && edrReports.some(r => r.id === cleanedData.id) ? cleanedData.id : null);
+      if (targetId) {
+        const idx = edrReports.findIndex(r => r.id === targetId);
         if (idx !== -1) {
           const oldShots = edrReports[idx].screenshots || (edrReports[idx].screenshotData ? [edrReports[idx].screenshotData] : []);
-          const newShots = data.screenshots || (data.screenshotData ? [data.screenshotData] : []);
-          const screenshotChanged = (data.screenshotData !== edrReports[idx].screenshotData) ||
+          const newShots = cleanedData.screenshots || (cleanedData.screenshotData ? [cleanedData.screenshotData] : []);
+          const screenshotChanged = (cleanedData.screenshotData !== edrReports[idx].screenshotData) ||
             (JSON.stringify(newShots) !== JSON.stringify(oldShots));
 
           // Preserve historical audited completion flag and teams status across edits
-          const existingAudited = (data && typeof data.audited === "boolean") ? data.audited : (edrReports[idx].audited ?? false);
-          const existingAuditedAt = (data && data.auditedAt !== undefined) ? data.auditedAt : (edrReports[idx].auditedAt ?? null);
-          const existingTeamsCopied = (data && typeof data.teamsCopied === "boolean") ? data.teamsCopied : (edrReports[idx].teamsCopied ?? false);
-          const existingTeamsCopiedAt = (data && data.teamsCopiedAt !== undefined) ? data.teamsCopiedAt : (edrReports[idx].teamsCopiedAt ?? null);
+          const existingAudited = (cleanedData && typeof cleanedData.audited === "boolean") ? cleanedData.audited : (edrReports[idx].audited ?? false);
+          const existingAuditedAt = (cleanedData && cleanedData.auditedAt !== undefined) ? cleanedData.auditedAt : (edrReports[idx].auditedAt ?? null);
+          const existingTeamsCopied = (cleanedData && typeof cleanedData.teamsCopied === "boolean") ? cleanedData.teamsCopied : (edrReports[idx].teamsCopied ?? false);
+          const existingTeamsCopiedAt = (cleanedData && cleanedData.teamsCopiedAt !== undefined) ? cleanedData.teamsCopiedAt : (edrReports[idx].teamsCopiedAt ?? null);
 
           edrReports[idx] = {
             ...edrReports[idx],
-            ...data,
+            ...cleanedData,
+            id: targetId, // preserve exact record ID across edits
             audited: existingAudited,
             auditedAt: existingAuditedAt,
             teamsCopied: existingTeamsCopied,
@@ -847,9 +878,11 @@ window.CCTV_EDR = (function () {
         }
         editingId = null;
       } else {
-        const newShots = data.screenshots || (data.screenshotData ? [data.screenshotData] : []);
+        const newShots = cleanedData.screenshots || (cleanedData.screenshotData ? [cleanedData.screenshotData] : []);
+        const newId = uid();
         saved = {
-          id: uid(),
+          ...cleanedData,
+          id: newId, // brand-new record identity guaranteed
           selected: true,
           done: false,
           doneAt: "",
@@ -861,8 +894,7 @@ window.CCTV_EDR = (function () {
           screenshotChanged: newShots.length > 0,
           screenshotFileId: "",
           createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-          ...data
+          updatedAt: new Date().toISOString()
         };
         edrReports.unshift(saved);
       }
@@ -1294,8 +1326,11 @@ window.CCTV_EDR = (function () {
       return window.getAccountNames ? window.getAccountNames() : (cfg.DEFAULTS.ACCOUNTS || []);
     },
 
-    // Option Management (Masterlist Authoritative)
+    // Option Management (Role-aware People Registry)
     addSupervisorOption(role, name, meta = {}) {
+      if (window.CCTV_PEOPLE?.addCustomPerson) {
+        return window.CCTV_PEOPLE.addCustomPerson(name, role, meta).added;
+      }
       if (window.masterlistService) {
         return window.masterlistService.addRespondent(name, role, meta).added;
       }
@@ -1306,11 +1341,34 @@ window.CCTV_EDR = (function () {
     },
 
     removeSupervisorOption(role, name) {
+      if (window.CCTV_PEOPLE?.removeCustomPerson) {
+        return window.CCTV_PEOPLE.removeCustomPerson(name, role).success;
+      }
       if (window.masterlistService) {
         return window.masterlistService.removeRespondent(name, role);
       }
       if (window.removeCustomOption) {
         return window.removeCustomOption(role === "OM" ? "oms" : "tls", name);
+      }
+      return false;
+    },
+
+    addEmployeeOption(name, role = "Agent", meta = {}) {
+      if (window.CCTV_PEOPLE?.addCustomPerson) {
+        return window.CCTV_PEOPLE.addCustomPerson(name, role, meta).added;
+      }
+      if (window.masterlistService?.addAgent) {
+        return window.masterlistService.addAgent(name, meta).added;
+      }
+      return false;
+    },
+
+    removeEmployeeOption(name, role = "Agent") {
+      if (window.CCTV_PEOPLE?.removeCustomPerson) {
+        return window.CCTV_PEOPLE.removeCustomPerson(name, role).success;
+      }
+      if (window.masterlistService?.removeAgent) {
+        return window.masterlistService.removeAgent(name);
       }
       return false;
     },

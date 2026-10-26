@@ -133,6 +133,7 @@
       this.activeOms = [];
       this.activeTls = [];
       this.activeAccounts = [];
+      this.activeAgents = [];
       this.lastSyncError = "";
       this.lastUpdated = null;
       this.syncState = { kind: "syncing", title: "Connecting...", detail: "Initializing Master List data" };
@@ -187,7 +188,7 @@
         if (!parsed.added) parsed.added = {};
         if (!parsed.deactivated) parsed.deactivated = {};
         if (!parsed.displayOverrides) parsed.displayOverrides = {};
-        for (const cat of ["oms", "tls", "accounts", "sites", "reasons", "infractions"]) {
+        for (const cat of ["oms", "tls", "accounts", "sites", "reasons", "infractions", "agents"]) {
           if (!Array.isArray(parsed.added[cat])) parsed.added[cat] = [];
           if (!Array.isArray(parsed.deactivated[cat])) parsed.deactivated[cat] = [];
           if (!parsed.displayOverrides[cat] || typeof parsed.displayOverrides[cat] !== "object") {
@@ -199,9 +200,9 @@
         return parsed;
       } catch (_) {
         return {
-          added: { oms: [], tls: [], accounts: [], sites: [], reasons: [], infractions: [] },
-          deactivated: { oms: [], tls: [], accounts: [], sites: [], reasons: [], infractions: [] },
-          displayOverrides: { oms: {}, tls: {}, accounts: {}, sites: {}, reasons: {}, infractions: {} }
+          added: { oms: [], tls: [], accounts: [], sites: [], reasons: [], infractions: [], agents: [] },
+          deactivated: { oms: [], tls: [], accounts: [], sites: [], reasons: [], infractions: [], agents: [] },
+          displayOverrides: { oms: {}, tls: {}, accounts: {}, sites: {}, reasons: {}, infractions: {}, agents: {} }
         };
       }
     }
@@ -656,6 +657,22 @@
           return k && !deactInfractions.has(k) && !defaultInfractionKeys.has(k);
         }).map(r => infraMap.get(optionIdentityKey(r)) || r).sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base", numeric: true }))
       ];
+
+      // Agents: user additions & displayOverrides
+      const deactAgents = new Set(this.masterOptions.deactivated.agents || []);
+      const agentMap = new Map();
+      (this.masterOptions.added.agents || []).forEach(raw => {
+        const c = clean(raw);
+        const k = optionIdentityKey(c);
+        if (!k || deactAgents.has(k)) return;
+        agentMap.set(k, c);
+      });
+      if (this.masterOptions.displayOverrides && this.masterOptions.displayOverrides.agents) {
+        Object.entries(this.masterOptions.displayOverrides.agents).forEach(([k, displayVal]) => {
+          if (displayVal && !deactAgents.has(k)) agentMap.set(k, clean(displayVal));
+        });
+      }
+      this.activeAgents = [...agentMap.values()].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base", numeric: true }));
     }
 
     async loadMasterList(forceFresh = false) {
@@ -996,6 +1013,49 @@
       return [...(this.activeInfractions || [])];
     }
 
+    getAgents() {
+      return [...(this.activeAgents || [])];
+    }
+
+    addAgent(name, _meta = {}) {
+      const cleanName = clean(name);
+      if (!cleanName) return { added: false, canonical: "" };
+
+      if (this._isDeactivated("agents", cleanName)) {
+        this._reactivateOption("agents", cleanName);
+        this._addOptionToRegistry("agents", cleanName);
+        this._derive();
+        this._notify();
+        return { added: true, canonical: cleanName, reactivated: true };
+      }
+
+      const canonical = this.findCanonical("agents", cleanName);
+      if (canonical) {
+        if (canonical !== cleanName) {
+          this._addOptionToRegistry("agents", cleanName);
+          this._derive();
+          this._notify();
+          return { added: true, canonical: cleanName, updated: true };
+        }
+        return { added: false, canonical, exists: true };
+      }
+
+      this._addOptionToRegistry("agents", cleanName);
+      this._derive();
+      this._notify();
+      return { added: true, canonical: cleanName };
+    }
+
+    removeAgent(name) {
+      const cleanName = clean(name);
+      if (!cleanName) return false;
+      const canonical = this.findCanonical("agents", cleanName) || cleanName;
+      this._deactivateOption("agents", canonical);
+      this._derive();
+      this._notify();
+      return true;
+    }
+
     addInfraction(name, _meta = {}) {
       const cleanName = clean(name);
       if (!cleanName) return { added: false, canonical: "" };
@@ -1049,6 +1109,7 @@
       else if (type === "sites") list = this.activeSites;
       else if (type === "reasons") list = this.activeReasons;
       else if (type === "infractions") list = this.activeInfractions;
+      else if (type === "agents") list = this.activeAgents;
       else list = this.activeTls;
       list = list || [];
       for (const item of list) {
