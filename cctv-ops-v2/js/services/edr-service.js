@@ -1795,6 +1795,11 @@ window.CCTV_EDR = (function () {
       rep.auditedAt = null;
       rep.updatedAt = new Date().toISOString();
       await this.saveReports();
+      if (window.CCTV_AUDIT && typeof window.CCTV_AUDIT.clearEdrCopiedStatus === "function") {
+        try {
+          window.CCTV_AUDIT.clearEdrCopiedStatus(reportId);
+        } catch (_) {}
+      }
       notify();
       return rep;
     }

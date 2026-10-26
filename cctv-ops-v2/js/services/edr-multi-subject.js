@@ -322,14 +322,6 @@ window.EDR_MULTI_SUBJECT = (function () {
       const subjectId = subject.id || uid();
       const compositeKey = `${report.id}::${subjectId}`;
 
-      // Idempotency: skip if this exact subject was already sent
-      const existingIdx = entryList.findIndex(entry =>
-        entry.sourceEdrId === report.id &&
-        (entry.sourceSubjectId === subjectId ||
-         // Also check composite key for older format
-         entry._compositeKey === compositeKey)
-      );
-
       // RULE 7: EDR Employee/Agent -> CCTV Audit Agent
       //         EDR TL/Supervisor -> CCTV Audit TL
       // Explicit EDR values win. Role prefixes stripped.
@@ -340,6 +332,15 @@ window.EDR_MULTI_SUBJECT = (function () {
       const agentName = stripRolePrefix(clean(rawAgent)) || "N/A";
       const tlName = stripRolePrefix(clean(rawTl)) || "N/A";
       const omName = stripRolePrefix(clean(rawOm)) || "N/A";
+
+      // Idempotency: skip if this exact subject was already sent
+      const existingIdx = entryList.findIndex(entry =>
+        entry.sourceEdrId === report.id &&
+        (entry.sourceSubjectId === subjectId ||
+         // Also check composite key for older format
+         entry._compositeKey === compositeKey ||
+         (entry.agentName && agentName && entry.agentName.trim().toLowerCase() === agentName.trim().toLowerCase()))
+      );
 
       const subjectEntry = {
         rawDate,
@@ -361,7 +362,9 @@ window.EDR_MULTI_SUBJECT = (function () {
         sourceSubjectId: subjectId,
         _compositeKey: compositeKey,
         sourceEdrUpdatedAt: report.updatedAt || "",
-        sourceEdrReasonAuto: !subject.infraction
+        sourceEdrReasonAuto: !subject.infraction,
+        _copied: false,
+        _copiedAt: null
       };
 
       if (existingIdx === -1) {
@@ -378,7 +381,9 @@ window.EDR_MULTI_SUBJECT = (function () {
           remarks: prev.remarks || sharedRemarks,
           reasonCode: prev.sourceEdrReasonAuto !== false
             ? subjectEntry.reasonCode
-            : prev.reasonCode
+            : prev.reasonCode,
+          _copied: prev._copied || false,
+          _copiedAt: prev._copiedAt || null
         };
         skipped++;
       }

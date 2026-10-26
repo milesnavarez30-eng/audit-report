@@ -665,7 +665,9 @@ window.CCTV_AUDIT = (function () {
         ...prev,
         ...shared,
         reasonCode: prev.sourceEdrReasonAuto === false ? prev.reasonCode : reasonCode,
-        sourceEdrUpdatedAt: report.updatedAt || ""
+        sourceEdrUpdatedAt: report.updatedAt || "",
+        _copied: prev._copied || false,
+        _copiedAt: prev._copiedAt || null
       };
       sortEntries();
       saveEntries();
@@ -678,6 +680,19 @@ window.CCTV_AUDIT = (function () {
 
     findByEdrId(edrId) {
       return entryList.find(e => e.sourceEdrId === edrId) || null;
+    },
+
+    clearEdrCopiedStatus(edrId) {
+      if (!edrId) return;
+      let changed = false;
+      entryList.forEach(e => {
+        if (e.sourceEdrId === edrId && e._copied) {
+          e._copied = false;
+          e._copiedAt = null;
+          changed = true;
+        }
+      });
+      if (changed) saveEntries();
     },
 
     buildTrackerHtml(entries = null) {
@@ -783,19 +798,92 @@ window.CCTV_AUDIT = (function () {
 
       await window.copyToClipboardHtmlAndText(safeText, safeHtml);
 
-      // On successful copy from Data Output Grid, mark originating Saved EDRs as Audited
-      try {
-        const sourceEdrIds = list
-          .map(entry => entry.sourceEdrId)
-          .filter(Boolean);
+      // Track that these specific audit rows were successfully copied
+      const nowIso = new Date().toISOString();
+      list.forEach(item => {
+        item._copied = true;
+        item._copiedAt = nowIso;
+        const found = entryList.find(e =>
+          (e.id && item.id && e.id === item.id) ||
+          (e._compositeKey && item._compositeKey && e._compositeKey === item._compositeKey) ||
+          (e.sourceEdrId && e.sourceSubjectId && e.sourceEdrId === item.sourceEdrId && e.sourceSubjectId === item.sourceSubjectId)
+        );
+        if (found) {
+          found._copied = true;
+          found._copiedAt = nowIso;
+        }
+      });
+      saveEntries();
 
-        if (sourceEdrIds.length && window.CCTV_EDR) {
-          if (typeof window.CCTV_EDR.markMultipleAsAudited === "function") {
-            await window.CCTV_EDR.markMultipleAsAudited(sourceEdrIds);
-          } else if (typeof window.CCTV_EDR.markAsAudited === "function") {
-            for (const edrId of sourceEdrIds) {
-              await window.CCTV_EDR.markAsAudited(edrId);
+      // On successful copy from Data Output Grid, mark originating Saved EDRs as Audited.
+      // RULE: For multi-subject incidents, mark parent Saved EDR Audited ONLY when all
+      // required fan-out rows belonging to that parent have been included in the successful copy.
+      try {
+        const uniqueSourceEdrIds = Array.from(new Set(
+          list.map(entry => entry.sourceEdrId).filter(Boolean)
+        ));
+
+        if (uniqueSourceEdrIds.length && window.CCTV_EDR) {
+          const allEdrReports = typeof window.CCTV_EDR.getReports === "function"
+            ? (window.CCTV_EDR.getReports() || [])
+            : [];
+          const fullyAuditedEdrIds = [];
+
+          for (const edrId of uniqueSourceEdrIds) {
+            const report = allEdrReports.find(r => r.id === edrId);
+            if (!report) {
+              fullyAuditedEdrIds.push(edrId);
+              continue;
             }
+
+            const subjects = (window.EDR_MULTI_SUBJECT && typeof window.EDR_MULTI_SUBJECT.normalizeSubjects === "function")
+              ? window.EDR_MULTI_SUBJECT.normalizeSubjects(report)
+              : (Array.isArray(report.subjects) && report.subjects.length ? report.subjects : []);
+
+            if (subjects && subjects.length > 1) {
+              // Multi-subject incident: check if every required subject has been copied
+              const allSubjectsCopied = subjects.every(subj => {
+                const subjNameNorm = (subj.name || "").trim().toLowerCase();
+                // Check if in current copied list
+                const inCurrentCopy = list.some(row =>
+                  row.sourceEdrId === edrId &&
+                  ((row.sourceSubjectId && subj.id && row.sourceSubjectId === subj.id) ||
+                   (row.agentName && row.agentName.trim().toLowerCase() === subjNameNorm))
+                );
+                if (inCurrentCopy) return true;
+
+                // Check if already copied in a prior copy from active entryList
+                const inGridAndCopied = entryList.some(row =>
+                  row.sourceEdrId === edrId &&
+                  row._copied === true &&
+                  ((row.sourceSubjectId && subj.id && row.sourceSubjectId === subj.id) ||
+                   (row.agentName && row.agentName.trim().toLowerCase() === subjNameNorm))
+                );
+                return inGridAndCopied;
+              });
+
+              if (allSubjectsCopied) {
+                fullyAuditedEdrIds.push(edrId);
+              }
+            } else {
+              // Single-subject incident: row was copied, so mark as audited
+              fullyAuditedEdrIds.push(edrId);
+            }
+          }
+
+          if (fullyAuditedEdrIds.length) {
+            if (typeof window.CCTV_EDR.markMultipleAsAudited === "function") {
+              await window.CCTV_EDR.markMultipleAsAudited(fullyAuditedEdrIds);
+            } else if (typeof window.CCTV_EDR.markAsAudited === "function") {
+              for (const edrId of fullyAuditedEdrIds) {
+                await window.CCTV_EDR.markAsAudited(edrId);
+              }
+            }
+          }
+
+          // Promptly update the Saved EDR UI badge
+          if (typeof window.renderEdrList === "function" && typeof window.CCTV_EDR.getReports === "function") {
+            window.renderEdrList(window.CCTV_EDR.getReports());
           }
         }
       } catch (markErr) {

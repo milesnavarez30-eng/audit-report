@@ -2143,7 +2143,7 @@
         if (typeof renderAuditTable === "function") renderAuditTable();
         const subjectWord = res.total === 1 ? "subject" : "subjects";
         if (res.created > 0 && res.skipped > 0) {
-          showToast(`Sent ${res.created} new audit row(s) for ${res.total} ${subjectWord}. ${res.skipped} already audited (kept).`, "success");
+          showToast(`Sent ${res.created} new audit row(s) for ${res.total} ${subjectWord}. ${res.skipped} already in grid (kept).`, "success");
         } else if (res.created > 0) {
           showToast(`Added ${res.created} audit row(s) for ${res.total} ${subjectWord}. NOC starts as Pending.`, "success");
         } else {
@@ -2205,7 +2205,7 @@
       // Multi-subject result
       const parts = [];
       if (totalCreated > 0) parts.push(`${totalCreated} new audit row${totalCreated > 1 ? "s" : ""}`);
-      if (totalUpdated > 0) parts.push(`${totalUpdated} already audited (kept)`);
+      if (totalUpdated > 0) parts.push(`${totalUpdated} already in grid (kept)`);
       showToast(`Sent ${reports.length} EDR(s) → ${parts.join(", ")}.`, totalCreated > 0 ? "success" : "info");
     } else if (totalCreated > 0 && totalUpdated > 0) {
       showToast(`Sent ${totalCreated} EDR(s) to CCTV Audit (${totalUpdated} updated).`, "success");
