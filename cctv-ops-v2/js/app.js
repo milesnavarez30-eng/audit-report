@@ -2904,12 +2904,6 @@
       paneId: "paneAccounts",
       title: "Account Management",
       subtitle: ""
-    },
-    vault: {
-      tabId: "tabVault",
-      paneId: "paneVault",
-      title: "Secure Vault",
-      subtitle: "Local Encrypted Storage"
     }
   };
 
@@ -2924,21 +2918,6 @@
     if (auth && typeof auth.canAccessWorkspace === "function" && !auth.canAccessWorkspace(targetKey)) {
       showToast("Access restricted: You do not have permission to access this workspace.", "warning");
       return;
-    }
-
-    // Vault Private Owner Authorization Check
-    if (targetKey === "vault") {
-      if (!window.CCTV_VAULT || !window.CCTV_VAULT.isAuthorizedOwner()) {
-        showToast("Access restricted: Vault is private to the authorized owner.", "warning");
-        return;
-      }
-    }
-
-    // Vault Immediate Lock when leaving Vault workspace
-    if (currentWorkspace === "vault" && targetKey !== "vault") {
-      if (window.CCTV_VAULT && typeof window.CCTV_VAULT.lock === "function") {
-        window.CCTV_VAULT.lock();
-      }
     }
 
     currentWorkspace = targetKey;
@@ -3027,10 +3006,6 @@
     } else if (targetKey === "accounts") {
       if (typeof window._renderAccountsWorkspaceFn === 'function') {
         window._renderAccountsWorkspaceFn();
-      }
-    } else if (targetKey === "vault") {
-      if (window.CCTV_VAULT && typeof window.CCTV_VAULT.renderWorkspace === "function") {
-        window.CCTV_VAULT.renderWorkspace();
       }
     }
 
@@ -12556,15 +12531,6 @@ function doPost(e) {
       if (currentWorkspace === "accounts") {
         currentWorkspace = "edr";
       }
-      if (window.CCTV_VAULT && typeof window.CCTV_VAULT.lock === "function") {
-        window.CCTV_VAULT.lock();
-        window.CCTV_VAULT.updateVisibility();
-      }
-      const tabVault = el("tabVault");
-      if (tabVault) tabVault.style.display = "none";
-      if (currentWorkspace === "vault") {
-        currentWorkspace = "dashboard";
-      }
     }
 
     function unlockApp(user, profile) {
@@ -12597,10 +12563,6 @@ function doPost(e) {
       }
       if (!canAccessAccounts && currentWorkspace === "accounts") {
         switchWorkspace("edr");
-      }
-
-      if (window.CCTV_VAULT && typeof window.CCTV_VAULT.updateVisibility === "function") {
-        window.CCTV_VAULT.updateVisibility();
       }
 
       if (user) {
