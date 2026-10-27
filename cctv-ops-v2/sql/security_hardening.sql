@@ -1,4 +1,4 @@
--- =============================================================================
+﻿-- =============================================================================
 -- CCTV OPS V2 - Production Supabase Security Hardening & Authorization Migration
 -- =============================================================================
 -- Architecture: Super Admin + Granular Administrative Permissions + Standard User
@@ -1159,5 +1159,336 @@ $$;
 
 REVOKE ALL ON FUNCTION public.update_own_display_name(TEXT) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.update_own_display_name(TEXT) TO authenticated;
+
+
+-- -----------------------------------------------------------------------------
+-- 9. Centralized Operational Settings (Singleton Table, RLS & Secure RPC)
+-- -----------------------------------------------------------------------------
+-- Singleton table holding organization-wide operational configuration:
+-- UI Theme, Default Landing Workspace, Application Subtitle, CCTV Audit Auto-Trim.
+-- Strictly forbids secret storage (passwords, tokens, API keys, service roles).
+
+CREATE TABLE IF NOT EXISTS public.cctv_operational_settings (
+  id TEXT PRIMARY KEY DEFAULT 'global_settings',
+  settings JSONB NOT NULL DEFAULT '{}'::jsonb,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT pg_catalog.now(),
+  updated_by UUID REFERENCES auth.users(id) ON DELETE SET NULL
+);
+
+ALTER TABLE public.cctv_operational_settings ENABLE ROW LEVEL SECURITY;
+
+-- Revoke direct modifications from client roles
+REVOKE INSERT, UPDATE, DELETE, TRUNCATE ON public.cctv_operational_settings FROM authenticated, anon;
+GRANT SELECT ON public.cctv_operational_settings TO authenticated;
+
+-- Policy 9.1: Authenticated users can view global operational settings
+DROP POLICY IF EXISTS "cctv_operational_settings_read" ON public.cctv_operational_settings;
+CREATE POLICY "cctv_operational_settings_read"
+ON public.cctv_operational_settings
+FOR SELECT
+TO authenticated
+USING (true);
+
+-- RPC 9.1: Get Operational Settings (Fetch singleton row, initialize with defaults if empty)
+CREATE OR REPLACE FUNCTION public.get_cctv_operational_settings()
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+DECLARE
+  v_settings JSONB;
+BEGIN
+  IF auth.uid() IS NULL THEN
+    RAISE EXCEPTION 'Not authenticated';
+  END IF;
+
+  SELECT settings INTO v_settings
+  FROM public.cctv_operational_settings
+  WHERE id = 'global_settings';
+
+  IF NOT FOUND THEN
+    v_settings := pg_catalog.jsonb_build_object(
+      'theme', 'dark',
+      'landing', 'cctv',
+      'subtitle', 'Secure operations workspace',
+      'autoTrim', true
+    );
+    INSERT INTO public.cctv_operational_settings (id, settings, updated_at, updated_by)
+    VALUES ('global_settings', v_settings, pg_catalog.now(), auth.uid())
+    ON CONFLICT (id) DO NOTHING;
+  END IF;
+
+  RETURN v_settings;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.get_cctv_operational_settings() FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.get_cctv_operational_settings() TO authenticated;
+
+-- RPC 9.2: Save Operational Settings (Strict Role Check, Parameter Sanitization & Audit Logging)
+CREATE OR REPLACE FUNCTION public.save_cctv_operational_settings(
+  p_settings JSONB
+)
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+DECLARE
+  v_caller_username TEXT;
+  v_caller_role TEXT;
+  v_caller_status TEXT;
+  v_sanitized JSONB;
+  v_prev_settings JSONB;
+  v_result JSONB;
+  v_changed JSONB := '{}'::jsonb;
+BEGIN
+  IF auth.uid() IS NULL THEN
+    RAISE EXCEPTION 'Not authenticated';
+  END IF;
+
+  -- 1. Authoritative caller validation from public.profiles
+  SELECT username, role, status INTO v_caller_username, v_caller_role, v_caller_status
+  FROM public.profiles
+  WHERE id = auth.uid();
+
+  IF v_caller_status IS DISTINCT FROM 'approved' THEN
+    RAISE EXCEPTION 'Access Denied: Active approved status required.';
+  END IF;
+
+  -- 2. Authority Check:
+  -- Super Admin: full authority
+  -- Admin: permitted only if granted 'accounts' or 'manageOptions' permission
+  IF v_caller_role = 'super_admin' THEN
+    NULL;
+  ELSIF v_caller_role = 'admin' THEN
+    IF NOT (private.cctv_has_permission('accounts') OR private.cctv_has_permission('manageOptions')) THEN
+      RAISE EXCEPTION 'Access Denied: Insufficient administrator permissions to update operational settings.';
+    END IF;
+  ELSE
+    RAISE EXCEPTION 'Access Denied: Only authorized administrators can update operational settings.';
+  END IF;
+
+  -- 3. Strict Payload Validation & Sanitization (Reject secrets, whitelist safe operational keys)
+  IF p_settings IS NULL OR pg_catalog.jsonb_typeof(p_settings) <> 'object' THEN
+    RAISE EXCEPTION 'Operation Failed: Settings payload must be a JSON object.';
+  END IF;
+
+  v_sanitized := pg_catalog.jsonb_build_object(
+    'theme', CASE WHEN p_settings->>'theme' IN ('light', 'dark', 'system') THEN p_settings->>'theme' ELSE 'dark' END,
+    'landing', CASE WHEN p_settings->>'landing' IN ('cctv', 'edr', 'audit', 'trackers', 'maintenance', 'pending', 'followup', 'masterlist', 'history', 'accounts', 'conduct', 'hris', 'sorter') THEN p_settings->>'landing' ELSE 'cctv' END,
+    'subtitle', COALESCE(NULLIF(pg_catalog.btrim(p_settings->>'subtitle'), ''), 'Secure operations workspace'),
+    'autoTrim', COALESCE((p_settings->>'autoTrim')::boolean, true)
+  );
+
+  -- Fetch previous settings for diff in audit log
+  SELECT settings INTO v_prev_settings
+  FROM public.cctv_operational_settings
+  WHERE id = 'global_settings';
+
+  -- Upsert singleton record
+  INSERT INTO public.cctv_operational_settings (id, settings, updated_at, updated_by)
+  VALUES ('global_settings', v_sanitized, pg_catalog.now(), auth.uid())
+  ON CONFLICT (id) DO UPDATE
+  SET settings = EXCLUDED.settings,
+      updated_at = EXCLUDED.updated_at,
+      updated_by = EXCLUDED.updated_by
+  RETURNING settings INTO v_result;
+
+  -- Compute diff for audit log
+  IF v_prev_settings IS NOT NULL THEN
+    IF (v_prev_settings->>'theme') IS DISTINCT FROM (v_sanitized->>'theme') THEN
+      v_changed := jsonb_set(v_changed, '{theme}', jsonb_build_object('from', v_prev_settings->'theme', 'to', v_sanitized->'theme'));
+    END IF;
+    IF (v_prev_settings->>'landing') IS DISTINCT FROM (v_sanitized->>'landing') THEN
+      v_changed := jsonb_set(v_changed, '{landing}', jsonb_build_object('from', v_prev_settings->'landing', 'to', v_sanitized->'landing'));
+    END IF;
+    IF (v_prev_settings->>'subtitle') IS DISTINCT FROM (v_sanitized->>'subtitle') THEN
+      v_changed := jsonb_set(v_changed, '{subtitle}', jsonb_build_object('from', v_prev_settings->'subtitle', 'to', v_sanitized->'subtitle'));
+    END IF;
+    IF (v_prev_settings->>'autoTrim') IS DISTINCT FROM (v_sanitized->>'autoTrim') THEN
+      v_changed := jsonb_set(v_changed, '{autoTrim}', jsonb_build_object('from', v_prev_settings->'autoTrim', 'to', v_sanitized->'autoTrim'));
+    END IF;
+  ELSE
+    v_changed := jsonb_build_object('initialized', true);
+  END IF;
+
+  -- 4. Record tamper-proof audit log entry
+  INSERT INTO public.cctv_security_audit_logs (
+    actor_id,
+    actor_username,
+    actor_role,
+    action,
+    target_user_id,
+    target_item,
+    details
+  ) VALUES (
+    auth.uid(),
+    COALESCE(v_caller_username, 'admin'),
+    v_caller_role,
+    'save_operational_settings',
+    NULL,
+    'global_settings',
+    pg_catalog.jsonb_build_object(
+      'keys_changed', CASE WHEN v_changed = '{}'::jsonb THEN jsonb_build_object('status', 'no_changes') ELSE v_changed END,
+      'result', 'success'
+    )
+  );
+
+  RETURN v_result;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.save_cctv_operational_settings(JSONB) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.save_cctv_operational_settings(JSONB) TO authenticated;
+
+
+-- -----------------------------------------------------------------------------
+-- 10. Vault Security State & 4-Attempt Lockout Schema
+-- -----------------------------------------------------------------------------
+-- Authoritative server-side failed PIN tracking and lockout state.
+
+CREATE TABLE IF NOT EXISTS public.cctv_vault_security_state (
+  user_id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  failed_pin_attempts INT NOT NULL DEFAULT 0,
+  locked_at TIMESTAMPTZ,
+  unlock_challenge_required BOOLEAN NOT NULL DEFAULT FALSE,
+  recovery_email TEXT,
+  recovery_email_verified BOOLEAN NOT NULL DEFAULT FALSE,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT pg_catalog.now()
+);
+
+ALTER TABLE public.cctv_vault_security_state ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON public.cctv_vault_security_state FROM anon, authenticated;
+
+-- RPC 10.1: Record Failed Vault PIN Attempt
+CREATE OR REPLACE FUNCTION public.record_failed_vault_pin_attempt()
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS 
+DECLARE
+  v_caller_id UUID;
+  v_rec RECORD;
+  v_new_attempts INT;
+  v_is_locked BOOLEAN;
+BEGIN
+  v_caller_id := auth.uid();
+  IF v_caller_id IS NULL THEN
+    RAISE EXCEPTION 'Not authenticated';
+  END IF;
+
+  INSERT INTO public.cctv_vault_security_state (user_id, failed_pin_attempts, updated_at)
+  VALUES (v_caller_id, 1, pg_catalog.now())
+  ON CONFLICT (user_id) DO UPDATE
+  SET failed_pin_attempts = public.cctv_vault_security_state.failed_pin_attempts + 1,
+      updated_at = pg_catalog.now()
+  RETURNING failed_pin_attempts, recovery_email, recovery_email_verified, locked_at, unlock_challenge_required
+  INTO v_rec;
+
+  v_new_attempts := v_rec.failed_pin_attempts;
+
+  IF v_new_attempts >= 4 THEN
+    UPDATE public.cctv_vault_security_state
+    SET locked_at = COALESCE(locked_at, pg_catalog.now()),
+        unlock_challenge_required = TRUE
+    WHERE user_id = v_caller_id;
+    v_is_locked := TRUE;
+  ELSE
+    v_is_locked := FALSE;
+  END IF;
+
+  RETURN pg_catalog.jsonb_build_object(
+    'attempts', v_new_attempts,
+    'remaining', pg_catalog.greatest(0, 4 - v_new_attempts),
+    'is_locked', v_is_locked,
+    'recovery_email_configured', (v_rec.recovery_email IS NOT NULL AND v_rec.recovery_email_verified = TRUE)
+  );
+END;
+;
+
+REVOKE ALL ON FUNCTION public.record_failed_vault_pin_attempt() FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.record_failed_vault_pin_attempt() TO authenticated;
+
+-- RPC 10.2: Reset Vault PIN Attempts
+CREATE OR REPLACE FUNCTION public.reset_vault_pin_attempts()
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS 
+DECLARE
+  v_caller_id UUID;
+BEGIN
+  v_caller_id := auth.uid();
+  IF v_caller_id IS NULL THEN
+    RAISE EXCEPTION 'Not authenticated';
+  END IF;
+
+  UPDATE public.cctv_vault_security_state
+  SET failed_pin_attempts = 0,
+      locked_at = NULL,
+      unlock_challenge_required = FALSE,
+      updated_at = pg_catalog.now()
+  WHERE user_id = v_caller_id;
+
+  RETURN pg_catalog.jsonb_build_object('success', true, 'reset', true);
+END;
+;
+
+REVOKE ALL ON FUNCTION public.reset_vault_pin_attempts() FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.reset_vault_pin_attempts() TO authenticated;
+
+-- RPC 10.3: Get Vault Security Status
+CREATE OR REPLACE FUNCTION public.get_vault_security_status()
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS 
+DECLARE
+  v_caller_id UUID;
+  v_rec RECORD;
+BEGIN
+  v_caller_id := auth.uid();
+  IF v_caller_id IS NULL THEN
+    RAISE EXCEPTION 'Not authenticated';
+  END IF;
+
+  SELECT failed_pin_attempts, locked_at, unlock_challenge_required, recovery_email, recovery_email_verified
+  INTO v_rec
+  FROM public.cctv_vault_security_state
+  WHERE user_id = v_caller_id;
+
+  IF NOT FOUND THEN
+    RETURN pg_catalog.jsonb_build_object(
+      'failed_attempts', 0,
+      'is_locked', false,
+      'recovery_email_configured', false,
+      'masked_recovery_email', null
+    );
+  END IF;
+
+  RETURN pg_catalog.jsonb_build_object(
+    'failed_attempts', v_rec.failed_pin_attempts,
+    'is_locked', (v_rec.failed_pin_attempts >= 4 OR v_rec.unlock_challenge_required = TRUE),
+    'recovery_email_configured', (v_rec.recovery_email IS NOT NULL AND v_rec.recovery_email_verified = TRUE),
+    'masked_recovery_email', CASE
+      WHEN v_rec.recovery_email IS NOT NULL AND v_rec.recovery_email_verified = TRUE THEN
+        pg_catalog.concat(
+          pg_catalog.substr(pg_catalog.split_part(v_rec.recovery_email, '@', 1), 1, 1),
+          '***@',
+          pg_catalog.split_part(v_rec.recovery_email, '@', 2)
+        )
+      ELSE NULL
+    END
+  );
+END;
+;
+
+REVOKE ALL ON FUNCTION public.get_vault_security_status() FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.get_vault_security_status() TO authenticated;
 
 COMMIT;

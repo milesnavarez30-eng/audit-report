@@ -1,4 +1,4 @@
-/**
+﻿/**
  * CCTV OPS V2 - Accounts & Admin Operations Console Service
  * Full parity with Authoritative V1 Admin Operations Console:
  * - Supabase Auth & Profile Synchronization + Multi-tenant Local Fallback
@@ -702,11 +702,17 @@
 
       if (client) {
         try {
-          await client.rpc("admin_set_user_access", {
+          const { error: superErr } = await client.rpc("admin_set_super_admin", {
             p_target: id,
-            p_role: "super_admin",
-            p_permissions: { all: true, super_admin: true }
+            p_role: "super_admin"
           });
+          if (superErr) {
+            await client.rpc("admin_set_user_access", {
+              p_target: id,
+              p_role: "super_admin",
+              p_permissions: { all: true, super_admin: true }
+            });
+          }
         } catch (err) {
           console.error("[Accounts Service] Remote promotion error:", err);
           throw new Error(err.message || "Failed to promote account on Supabase.");
@@ -748,11 +754,17 @@
 
       if (client) {
         try {
-          await client.rpc("admin_set_user_access", {
+          const { error: superErr } = await client.rpc("admin_set_super_admin", {
             p_target: id,
-            p_role: "admin",
-            p_permissions: { ...FULL_ADMIN_PERMISSIONS }
+            p_role: "admin"
           });
+          if (superErr) {
+            await client.rpc("admin_set_user_access", {
+              p_target: id,
+              p_role: "admin",
+              p_permissions: { ...FULL_ADMIN_PERMISSIONS }
+            });
+          }
         } catch (err) {
           console.error("[Accounts Service] Remote demotion error:", err);
           throw new Error(err.message || "Failed to demote account on Supabase.");

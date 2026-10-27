@@ -1,4 +1,4 @@
-/**
+﻿/**
  * CCTV OPS V2 - Authentication & Account Service
  * Supabase Client, Role & Permission Management, Audit Logging & Admin Controls
  */
@@ -12,7 +12,63 @@ window.CCTV_AUTH = (function () {
   let currentProfile = null;
   let authListeners = [];
 
+  const STORAGE_KEYS = Object.freeze({
+    CACHED_PROFILE: "cctv_auth_cached_profile_v2",
+    LOCAL_SESSION: "cctv_auth_local_session_v2",
+    ACTIVE_WORKSPACE: "cctv_active_workspace"
+  });
+
+  function saveCachedProfile(userId, profile) {
+    if (!userId || !profile) return;
+    try {
+      localStorage.setItem(`${STORAGE_KEYS.CACHED_PROFILE}_${userId}`, JSON.stringify(profile));
+    } catch (_) {}
+  }
+
+  function readCachedProfile(userId) {
+    if (!userId) return null;
+    try {
+      const raw = localStorage.getItem(`${STORAGE_KEYS.CACHED_PROFILE}_${userId}`);
+      return raw ? JSON.parse(raw) : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  function saveLocalSession(user, profile) {
+    try {
+      if (user && profile) {
+        const payload = JSON.stringify({ user, profile });
+        sessionStorage.setItem(STORAGE_KEYS.LOCAL_SESSION, payload);
+        localStorage.setItem(STORAGE_KEYS.LOCAL_SESSION, payload);
+        saveCachedProfile(user.id, profile);
+      } else {
+        clearLocalAuth();
+      }
+    } catch (_) {}
+  }
+
+  function readLocalSession() {
+    try {
+      const raw = sessionStorage.getItem(STORAGE_KEYS.LOCAL_SESSION) || localStorage.getItem(STORAGE_KEYS.LOCAL_SESSION);
+      return raw ? JSON.parse(raw) : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  function clearLocalAuth() {
+    try {
+      sessionStorage.removeItem(STORAGE_KEYS.LOCAL_SESSION);
+      localStorage.removeItem(STORAGE_KEYS.LOCAL_SESSION);
+      if (currentUser && currentUser.id) {
+        localStorage.removeItem(`${STORAGE_KEYS.CACHED_PROFILE}_${currentUser.id}`);
+      }
+    } catch (_) {}
+  }
+
   const DEFAULT_USER_PERMISSIONS = Object.freeze({
+    dashboard: true,
     report: true,
     conduct: true,
     edr: true,
@@ -34,6 +90,7 @@ window.CCTV_AUTH = (function () {
   });
 
   const FULL_ADMIN_PERMISSIONS = Object.freeze({
+    dashboard: true,
     report: true,
     conduct: true,
     edr: true,
@@ -57,6 +114,7 @@ window.CCTV_AUTH = (function () {
   function normalizePermissions(perms) {
     if (!perms || typeof perms !== "object") return { ...DEFAULT_USER_PERMISSIONS };
     return {
+      dashboard: perms.dashboard !== undefined ? !!perms.dashboard : true,
       report: perms.report !== undefined ? !!perms.report : (perms.cctv !== undefined ? !!perms.cctv : true),
       conduct: perms.conduct !== undefined ? !!perms.conduct : true,
       edr: perms.edr !== undefined ? !!perms.edr : true,
@@ -142,6 +200,10 @@ window.CCTV_AUTH = (function () {
       currentRole = "user";
     }
 
+    if (user && profile) {
+      saveCachedProfile(user.id, profile);
+    }
+
     const isSuperAdmin = currentRole === "super_admin";
     const isAdmin = isSuperAdmin || currentRole === "admin";
     if (user && window.CCTV_DATA_SCOPE) {
@@ -160,25 +222,71 @@ window.CCTV_AUTH = (function () {
   return {
     async init() {
       initClient();
+
+      // 1. Check for persisted local session first (e.g. standalone mode / tests / refresh)
+      const localSess = readLocalSession();
+      if (localSess && localSess.user && localSess.profile) {
+        currentUser = Object.freeze({ ...localSess.user });
+        currentProfile = Object.freeze({ ...localSess.profile });
+        await notifyAuthChange(currentUser, currentProfile);
+      }
+
       if (!client) {
         console.warn("Supabase not available, running in standalone local mode.");
-        return null;
+        return { user: currentUser, profile: currentProfile };
       }
 
       try {
         const { data: { session } } = await client.auth.getSession();
         if (session && session.user) {
           currentUser = Object.freeze({ ...session.user });
-          currentProfile = await fetchProfile(session.user.id);
-          await notifyAuthChange(currentUser, currentProfile);
+
+          // Fast path: load cached profile immediately to prevent UI lockout / modal flicker on refresh
+          const cachedProfile = readCachedProfile(session.user.id);
+          if (cachedProfile) {
+            currentProfile = Object.freeze({ ...cachedProfile });
+            await notifyAuthChange(currentUser, currentProfile);
+          }
+
+          // Authoritative fetch from Supabase
+          const remoteProfile = await fetchProfile(session.user.id);
+          if (remoteProfile) {
+            currentProfile = Object.freeze({ ...remoteProfile });
+            saveCachedProfile(session.user.id, remoteProfile);
+            await notifyAuthChange(currentUser, currentProfile);
+          } else if (!cachedProfile) {
+            // Fallback safe active profile if database query fails or record is pending creation
+            currentProfile = Object.freeze({
+              id: session.user.id,
+              email: session.user.email,
+              username: session.user.email ? session.user.email.split("@")[0] : "operator",
+              role: "user",
+              status: "approved",
+              permissions: { ...DEFAULT_USER_PERMISSIONS }
+            });
+            await notifyAuthChange(currentUser, currentProfile);
+          }
+        } else if (!localSess && !currentUser) {
+          currentUser = null;
+          currentProfile = null;
+          currentRole = "guest";
+          await notifyAuthChange(null, null);
         }
 
         client.auth.onAuthStateChange(async (event, session) => {
           if (session && session.user) {
             currentUser = Object.freeze({ ...session.user });
-            currentProfile = await fetchProfile(session.user.id);
+            const remoteProfile = await fetchProfile(session.user.id);
+            if (remoteProfile) {
+              currentProfile = Object.freeze({ ...remoteProfile });
+              saveCachedProfile(session.user.id, remoteProfile);
+            } else {
+              const cached = readCachedProfile(session.user.id);
+              if (cached) currentProfile = Object.freeze({ ...cached });
+            }
             await notifyAuthChange(currentUser, currentProfile);
-          } else {
+          } else if (event === "SIGNED_OUT") {
+            clearLocalAuth();
             currentUser = null;
             currentProfile = null;
             currentRole = "guest";
@@ -219,6 +327,11 @@ window.CCTV_AUTH = (function () {
     },
 
     setLocalSession(user, profile) {
+      if (user && profile) {
+        saveLocalSession(user, profile);
+      } else {
+        clearLocalAuth();
+      }
       return notifyAuthChange(user, profile);
     },
 
@@ -236,6 +349,7 @@ window.CCTV_AUTH = (function () {
       if (this.isSuperAdmin()) {
         return {
           ...FULL_ADMIN_PERMISSIONS,
+          dashboard: true,
           accounts: true,
           hris: true,
           manage_users: true,
@@ -270,8 +384,8 @@ window.CCTV_AUTH = (function () {
 
     canAccessWorkspace(wsKey) {
       if (!currentUser || !currentProfile) {
-        // In local standalone mode without active remote profile: allow operational workspaces, protect accounts
-        return wsKey !== "accounts";
+        // In local standalone mode without active remote profile: allow operational workspaces, protect accounts & hris
+        return wsKey !== "accounts" && wsKey !== "hris";
       }
       // Super Admin has universal workspace access
       if (this.isSuperAdmin()) return true;
@@ -330,8 +444,20 @@ window.CCTV_AUTH = (function () {
           await client.auth.signOut();
           throw new Error("This account registration was rejected.");
         }
+      } else {
+        // Fallback default profile if not yet created in public.profiles
+        currentProfile = {
+          id: data.user.id,
+          email: data.user.email || email,
+          username: cleanUsername(usernameOrEmail).toLowerCase(),
+          display_name: data.user.user_metadata?.display_name || cleanUsername(usernameOrEmail),
+          status: "approved",
+          role: "user",
+          permissions: { ...DEFAULT_USER_PERMISSIONS }
+        };
       }
 
+      saveCachedProfile(data.user.id, currentProfile);
       await notifyAuthChange(currentUser, currentProfile);
       return { user: currentUser, profile: currentProfile };
     },
@@ -359,6 +485,7 @@ window.CCTV_AUTH = (function () {
     },
 
     async signOut() {
+      clearLocalAuth();
       if (client) {
         try {
           await client.auth.signOut();
@@ -457,12 +584,34 @@ window.CCTV_AUTH = (function () {
     async updateDisplayName(userId, displayName) {
       initClient();
       if (!client) return false;
+      const cleanName = String(displayName || "").trim();
+
+      try {
+        const { error: rpcErr } = await client.rpc("update_own_display_name", {
+          p_display_name: cleanName
+        });
+        if (!rpcErr) {
+          if (currentUser && currentUser.id === userId && currentProfile) {
+            currentProfile = Object.freeze({ ...currentProfile, display_name: cleanName });
+            saveCachedProfile(userId, currentProfile);
+          }
+          return true;
+        }
+      } catch (_) {}
+
       try {
         const { error } = await client
           .from("profiles")
-          .update({ display_name: displayName })
+          .update({ display_name: cleanName })
           .eq("id", userId);
-        return !error;
+        if (!error) {
+          if (currentUser && currentUser.id === userId && currentProfile) {
+            currentProfile = Object.freeze({ ...currentProfile, display_name: cleanName });
+            saveCachedProfile(userId, currentProfile);
+          }
+          return true;
+        }
+        return false;
       } catch (e) {
         console.error("Update display name error:", e);
         return false;
@@ -473,15 +622,30 @@ window.CCTV_AUTH = (function () {
       initClient();
       if (!client) return false;
       try {
-        // Fetch current permissions to preserve them
         const profile = await fetchProfile(userId);
+        const currentRole = profile?.role || "user";
+
+        // Dedicated Super Admin promotion/demotion flow
+        if (newRole === "super_admin" || currentRole === "super_admin") {
+          try {
+            const { error: superErr } = await client.rpc("admin_set_super_admin", {
+              p_target: userId,
+              p_role: newRole
+            });
+            if (!superErr) {
+              await this.logSecurityEvent("change_role", `user:${userId}`, { newRole, previousRole: currentRole });
+              return true;
+            }
+          } catch (_) {}
+        }
+
         const { error } = await client.rpc("admin_set_user_access", {
           p_target: userId,
           p_role: newRole,
           p_permissions: profile?.permissions || {}
         });
         if (!error) {
-          await this.logSecurityEvent("change_role", `user:${userId}`, { newRole });
+          await this.logSecurityEvent("change_role", `user:${userId}`, { newRole, previousRole: currentRole });
           return true;
         }
       } catch (e) {

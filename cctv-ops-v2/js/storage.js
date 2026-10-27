@@ -1,4 +1,4 @@
-/**
+﻿/**
  * CCTV OPS V2 - Storage Management & Multi-Tenant Data Scope
  * 100% Backward Compatible with Legacy Production Records
  */
@@ -80,6 +80,8 @@
     const text = String(key || "");
     return (
       /^sb-/i.test(text) ||
+      /^cctv_auth_/i.test(text) ||
+      text === 'cctv_active_workspace' ||
       text === LEGACY_OWNER_KEY ||
       text === ACTIVE_USER_KEY ||
       GLOBAL_APP_KEYS.has(text)

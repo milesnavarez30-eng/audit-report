@@ -1,4 +1,4 @@
-/**
+﻿/**
  * CCTV OPS V2 - Main Application Orchestrator & Prototype Controller
  */
 
@@ -2943,6 +2943,15 @@
 
     currentWorkspace = targetKey;
     window.getCurrentWorkspace = () => currentWorkspace;
+
+    try {
+      sessionStorage.setItem("cctv_active_workspace", targetKey);
+      const curUrl = new URL(window.location.href);
+      if (curUrl.searchParams.get("workspace") !== targetKey) {
+        curUrl.searchParams.set("workspace", targetKey);
+        window.history.replaceState({ workspace: targetKey }, "", curUrl.toString());
+      }
+    } catch (_) {}
 
     // Update nav rail buttons
     Object.entries(WORKSPACES).forEach(([key, ws]) => {
@@ -12163,9 +12172,9 @@ function doPost(e) {
   window.addEventListener("DOMContentLoaded", async () => {
     initWorkspaceNavigation();
 
-    // Check initial workspace from URL param or hash; default to dashboard
+    // Check initial workspace from URL param, hash or sessionStorage; default to dashboard
     const params = new URLSearchParams(window.location.search);
-    const initialWorkspace = params.get("workspace") || (window.location.hash ? window.location.hash.slice(1).toLowerCase() : null);
+    const initialWorkspace = params.get("workspace") || (window.location.hash ? window.location.hash.slice(1).toLowerCase() : null) || sessionStorage.getItem("cctv_active_workspace");
     if (initialWorkspace && WORKSPACES[initialWorkspace]) {
       switchWorkspace(initialWorkspace);
     } else {
@@ -12607,6 +12616,17 @@ function doPost(e) {
         optCreateAdmin.hidden = !isSuper;
         optCreateAdmin.disabled = !isSuper;
       }
+
+      // Restore user requested workspace if accessible upon unlock
+      try {
+        const p = new URLSearchParams(window.location.search);
+        const reqWs = p.get("workspace") || (window.location.hash ? window.location.hash.slice(1).toLowerCase() : null) || sessionStorage.getItem("cctv_active_workspace");
+        if (reqWs && WORKSPACES[reqWs] && reqWs !== currentWorkspace) {
+          if (auth && typeof auth.canAccessWorkspace === "function" && auth.canAccessWorkspace(reqWs)) {
+            switchWorkspace(reqWs);
+          }
+        }
+      } catch (_) {}
     }
 
     // Bind login form submit
@@ -12706,13 +12726,13 @@ function doPost(e) {
 
     // Initial auth check on app startup
     const initialAuth = await auth.init();
-    if (initialAuth && initialAuth.user) {
-      unlockApp(initialAuth.user, initialAuth.profile);
+    const activeUser = (initialAuth && initialAuth.user) || auth?.getUser?.();
+    const activeProfile = (initialAuth && initialAuth.profile) || auth?.getProfile?.();
+    if (activeUser) {
+      unlockApp(activeUser, activeProfile);
     } else {
       lockApp();
     }
-    updateIntegrationStatusPills();
-
     window.addEventListener("storage", (e) => {
       if (e.key === "maintenance_google_sheets_web_app_url_v1" || e.key === "cctv_edr_docs_url_v1") {
         updateIntegrationStatusPills();
