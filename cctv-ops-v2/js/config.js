@@ -1,11 +1,88 @@
-/**
+﻿/**
  * CCTV OPS V2 - Global Configuration & Constants
  */
 
+// =============================================================================
+// Preview & Production Environment Detection + Isolation Guard
+// =============================================================================
+const _PROD_SUPABASE_URL = "https://afxgfyuudqujueeooplj.supabase.co";
+const _PROD_SUPABASE_KEY = "sb_publishable_JGUCURJkbOw-KypucxXNSQ_magKTFPd";
+
+function _checkIsPreview() {
+  if (typeof window === "undefined" || !window.location) return false;
+  if (window.CCTV_PREVIEW_MODE === true) return true;
+  if (window.CCTV_AUTH_CONFIG && window.CCTV_AUTH_CONFIG.IS_PREVIEW === true) return true;
+  try {
+    const p = new URLSearchParams(window.location.search);
+    if (p.get("preview") === "true" || p.get("preview") === "1" || p.get("env") === "preview") {
+      return true;
+    }
+  } catch (_) {}
+  const host = (window.location.hostname || "").toLowerCase();
+  return (
+    host.endsWith(".pages.dev") ||
+    host.includes(".pages.dev") ||
+    host.includes("preview.") ||
+    host.includes("-preview")
+  );
+}
+
+const _isPreviewMode = _checkIsPreview();
+const _configuredUrl = (window.CCTV_AUTH_CONFIG && window.CCTV_AUTH_CONFIG.SUPABASE_URL)
+  ? String(window.CCTV_AUTH_CONFIG.SUPABASE_URL).trim()
+  : "";
+const _configuredKey = (window.CCTV_AUTH_CONFIG && window.CCTV_AUTH_CONFIG.SUPABASE_PUBLIC_KEY)
+  ? String(window.CCTV_AUTH_CONFIG.SUPABASE_PUBLIC_KEY).trim()
+  : "";
+
+let _activeSupabaseUrl = null;
+let _activeSupabaseKey = null;
+let _isStagingConfigured = false;
+let _isBackendAvailable = false;
+
+if (_isPreviewMode) {
+  // PREVIEW ISOLATION GUARD:
+  // Strictly prevent writes to the production Supabase database.
+  // If a staging URL is provided AND is NOT production, allow staging.
+  const _isTargetingProd = _configuredUrl && _configuredUrl.toLowerCase().includes("afxgfyuudqujueeooplj.supabase.co");
+  if (_configuredUrl && !_isTargetingProd) {
+    _activeSupabaseUrl = _configuredUrl;
+    _activeSupabaseKey = _configuredKey;
+    _isStagingConfigured = true;
+    _isBackendAvailable = true;
+    console.info("[CCTV OPS V2] Preview mode active with staging Supabase:", _activeSupabaseUrl);
+  } else {
+    // Production database strictly blocked / staging not configured
+    _activeSupabaseUrl = null;
+    _activeSupabaseKey = null;
+    _isStagingConfigured = false;
+    _isBackendAvailable = false;
+    if (_isTargetingProd) {
+      console.warn("[CCTV OPS V2] PREVIEW ISOLATION GUARD: Attempted connection to production Supabase was blocked. Staging backend required.");
+    } else {
+      console.info("[CCTV OPS V2] PREVIEW ISOLATION ACTIVE: Cloud backend is isolated. Actions requiring backend will fail safely.");
+    }
+  }
+} else {
+  // Production Mode:
+  // Retain exact existing configuration and default to authoritative production Supabase
+  _activeSupabaseUrl = _configuredUrl || _PROD_SUPABASE_URL;
+  _activeSupabaseKey = _configuredKey || _PROD_SUPABASE_KEY;
+  _isStagingConfigured = false;
+  _isBackendAvailable = true;
+}
+
 window.CCTV_V2_CONFIG = {
-  // Public Supabase Configuration
-  SUPABASE_URL: (window.CCTV_AUTH_CONFIG && window.CCTV_AUTH_CONFIG.SUPABASE_URL) || "https://afxgfyuudqujueeooplj.supabase.co",
-  SUPABASE_PUBLIC_KEY: (window.CCTV_AUTH_CONFIG && window.CCTV_AUTH_CONFIG.SUPABASE_PUBLIC_KEY) || "sb_publishable_JGUCURJkbOw-KypucxXNSQ_magKTFPd",
+  // Environment & Isolation State
+  IS_PREVIEW: _isPreviewMode,
+  IS_STAGING_CONFIGURED: _isStagingConfigured,
+  IS_BACKEND_AVAILABLE: _isBackendAvailable,
+  PROD_SUPABASE_URL: _PROD_SUPABASE_URL,
+  PREVIEW_ISOLATION_NOTICE: "Preview Environment: Production database is isolated. Staging backend is required for cloud database operations.",
+
+  // Public Supabase Configuration (null in preview without staging)
+  SUPABASE_URL: _activeSupabaseUrl,
+  SUPABASE_PUBLIC_KEY: _activeSupabaseKey,
 
   // Storage & Receiver Keys
   KEYS: {

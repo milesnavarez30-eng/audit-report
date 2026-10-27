@@ -142,7 +142,11 @@ window.CCTV_AUTH = (function () {
       client = window._sharedSupabaseClient;
       return client;
     }
-    if (window.supabase && typeof window.supabase.createClient === "function") {
+    // Prevent client initialization if backend is disabled in preview
+    if (cfg.IS_PREVIEW && !cfg.IS_BACKEND_AVAILABLE) {
+      return null;
+    }
+    if (window.supabase && typeof window.supabase.createClient === "function" && cfg.SUPABASE_URL && cfg.SUPABASE_PUBLIC_KEY) {
       try {
         client = window.supabase.createClient(cfg.SUPABASE_URL, cfg.SUPABASE_PUBLIC_KEY);
         window._sharedSupabaseClient = client;
@@ -420,6 +424,9 @@ window.CCTV_AUTH = (function () {
     },
 
     async signIn(usernameOrEmail, password) {
+      if (cfg.IS_PREVIEW && !cfg.IS_BACKEND_AVAILABLE) {
+        throw new Error("Preview Mode: Cloud authentication is disabled because no staging backend is configured. Production database is isolated.");
+      }
       initClient();
       if (!client) throw new Error("Supabase client not initialized.");
 
@@ -463,6 +470,9 @@ window.CCTV_AUTH = (function () {
     },
 
     async signUp(username, password, displayName = "") {
+      if (cfg.IS_PREVIEW && !cfg.IS_BACKEND_AVAILABLE) {
+        throw new Error("Preview Mode: User registration is disabled because no staging backend is configured. Production database is isolated.");
+      }
       initClient();
       if (!client) throw new Error("Supabase client not initialized.");
 
@@ -582,6 +592,9 @@ window.CCTV_AUTH = (function () {
     },
 
     async updateDisplayName(userId, displayName) {
+      if (cfg.IS_PREVIEW && !cfg.IS_BACKEND_AVAILABLE) {
+        throw new Error("Preview Mode: Profile updates are disabled because no staging backend is configured.");
+      }
       initClient();
       if (!client) return false;
       const cleanName = String(displayName || "").trim();

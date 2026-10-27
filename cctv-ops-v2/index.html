@@ -7,7 +7,7 @@
 
   <!-- Client-Side Security Meta Policies (Note: X-Content-Type-Options, HSTS, frame-ancestors, and Permissions-Policy must be set via HTTP response headers on the hosting server/CDN) -->
   <meta name="referrer" content="strict-origin-when-cross-origin">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://afxgfyuudqujueeooplj.supabase.co https://cdn.jsdelivr.net https://alcdn.msauth.net https://script.google.com https://script.googleusercontent.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; frame-src 'self' https://docs.google.com https://*.google.com https://611systems.com https://10.10.10.20:8081 https://login.microsoftonline.com; connect-src 'self' https://afxgfyuudqujueeooplj.supabase.co wss://afxgfyuudqujueeooplj.supabase.co https://docs.google.com https://script.google.com https://script.googleusercontent.com https://611systems.com https://10.10.10.20:8081 https://login.microsoftonline.com https://graph.microsoft.com; object-src 'none'; base-uri 'self';">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://afxgfyuudqujueeooplj.supabase.co https://*.supabase.co https://cdn.jsdelivr.net https://alcdn.msauth.net https://script.google.com https://script.googleusercontent.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; frame-src 'self' https://docs.google.com https://*.google.com https://611systems.com https://10.10.10.20:8081 https://login.microsoftonline.com; connect-src 'self' https://afxgfyuudqujueeooplj.supabase.co wss://afxgfyuudqujueeooplj.supabase.co https://*.supabase.co wss://*.supabase.co https://docs.google.com https://script.google.com https://script.googleusercontent.com https://611systems.com https://10.10.10.20:8081 https://login.microsoftonline.com https://graph.microsoft.com; object-src 'none'; base-uri 'self';">
 
   <!-- Google Fonts: Inter (UI primary) + JetBrains Mono (data/code) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1035,6 +1035,12 @@
   </style>
 </head>
 <body class="auth-locked">
+  <!-- Preview Mode Isolation Banner (Visible in preview environment across both login and app) -->
+  <div class="cctv-preview-banner" id="cctvPreviewBanner" hidden>
+    <span class="preview-tag">PREVIEW MODE</span>
+    <span>Production database isolated &mdash; Staging backend required for cloud database writes.</span>
+  </div>
+
   <!-- CYBER-TERMINAL "SECURE_DATA" LOGIN INTERFACE -->
   <div class="terminal-login-wrapper" id="loginModal">
     <div class="jp-matrix" id="jpMatrix" aria-hidden="true"></div>
@@ -4038,7 +4044,7 @@
   <div class="toast-container" id="toastContainer"></div>
 
   <!-- External Script Dependencies -->
-  <script src="../auth-config.js"></script>
+  <script src="../auth-config.js" onerror="this.onerror=null;"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>

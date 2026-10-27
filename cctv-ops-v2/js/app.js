@@ -12460,6 +12460,19 @@ function doPost(e) {
       updateLivePreview();
     }
 
+    // Display Preview Mode Banner if active
+    const cfg = window.CCTV_V2_CONFIG || {};
+    if (cfg.IS_PREVIEW) {
+      const banner = el("cctvPreviewBanner");
+      if (banner) {
+        banner.hidden = false;
+        banner.style.display = "flex";
+        if (cfg.IS_STAGING_CONFIGURED) {
+          banner.innerHTML = '<span class="preview-tag">PREVIEW MODE</span><span>Connected to Staging Backend. Production database is isolated.</span>';
+        }
+      }
+    }
+
     // Google Docs initial connection check
     const currentDocsUrl = edr.getDocsUrl();
     if (el("edrDocsStatusText")) {
@@ -12468,20 +12481,27 @@ function doPost(e) {
 
     // Live Integration Status Controller
     function updateIntegrationStatusPills() {
+      const cfg = window.CCTV_V2_CONFIG || {};
       // 1. Supabase Auth
       const pillAuth = el("pillSupabaseAuth");
       if (pillAuth) {
-        const user = window.CCTV_AUTH?.getUser?.() || null;
-        const isAuth = !!user;
         const val = el("valSupabaseAuth");
-        if (isAuth) {
-          pillAuth.className = "integration-pill is-connected";
-          if (val) val.textContent = "Connected";
-          pillAuth.title = `Supabase Auth: Connected (${user.email || user.id || "Active session"})`;
+        if (cfg.IS_PREVIEW && !cfg.IS_BACKEND_AVAILABLE) {
+          pillAuth.className = "integration-pill is-preview is-isolated";
+          if (val) val.textContent = "Preview (Isolated)";
+          pillAuth.title = "Preview Environment: Production database is isolated. Staging backend required for cloud auth.";
         } else {
-          pillAuth.className = "integration-pill is-disconnected";
-          if (val) val.textContent = "Disconnected";
-          pillAuth.title = "Supabase Auth: Disconnected (Sign in to establish active session)";
+          const user = window.CCTV_AUTH?.getUser?.() || null;
+          const isAuth = !!user;
+          if (isAuth) {
+            pillAuth.className = "integration-pill is-connected";
+            if (val) val.textContent = cfg.IS_STAGING_CONFIGURED ? "Staging Connected" : "Connected";
+            pillAuth.title = `Supabase Auth: Connected (${user.email || user.id || "Active session"})`;
+          } else {
+            pillAuth.className = "integration-pill is-disconnected";
+            if (val) val.textContent = "Disconnected";
+            pillAuth.title = "Supabase Auth: Disconnected (Sign in to establish active session)";
+          }
         }
       }
 
@@ -12595,6 +12615,10 @@ function doPost(e) {
       }
       if (typeof window.__renderJapaneseMatrix === "function") {
         window.__renderJapaneseMatrix();
+      }
+      const cfg = window.CCTV_V2_CONFIG || {};
+      if (cfg.IS_PREVIEW && !cfg.IS_BACKEND_AVAILABLE) {
+        showAuthMessage("PREVIEW MODE: Production database isolated. Backend authentication is disabled until staging is configured.");
       }
       const tabAccounts = el("tabAccounts");
       if (tabAccounts) tabAccounts.style.display = "none";
@@ -12726,7 +12750,12 @@ function doPost(e) {
           showToast("Authenticated successfully.", "success");
         } catch (err) {
           console.error("Sign in error:", err);
-          const msg = (err?.message || "").toLowerCase();
+          const rawErr = err?.message || "";
+          const msg = rawErr.toLowerCase();
+          if (msg.includes("preview mode")) {
+            showAuthMessage(rawErr);
+            return;
+          }
           const isNetworkError = msg.includes("failed to fetch") || msg.includes("network") || msg.includes("abort") || err?.name === "TypeError";
           if (isNetworkError) {
             showAuthMessage("Network connection error. Please check your internet connection.");
@@ -12802,6 +12831,7 @@ function doPost(e) {
     } else {
       lockApp();
     }
+    updateIntegrationStatusPills();
     window.addEventListener("storage", (e) => {
       if (e.key === "maintenance_google_sheets_web_app_url_v1" || e.key === "cctv_edr_docs_url_v1") {
         updateIntegrationStatusPills();

@@ -95,6 +95,9 @@
 
   function initClient() {
     if (client) return client;
+    if (cfg.IS_PREVIEW && !cfg.IS_BACKEND_AVAILABLE) {
+      return null;
+    }
     if (window._sharedSupabaseClient) {
       client = window._sharedSupabaseClient;
       return client;
@@ -240,10 +243,26 @@
       const isSheetsReady = /^https:\/\/script\.google\.com\/macros\/s\/[^/]+\/exec/i.test(sheetsUrl);
       const isSupabaseReady = !!(client && cfg.SUPABASE_URL && cfg.SUPABASE_PUBLIC_KEY);
 
+      let supabaseLabel = "Connected";
+      let supabaseOnline = isSupabaseReady;
+      if (cfg.IS_PREVIEW) {
+        if (cfg.IS_STAGING_CONFIGURED) {
+          supabaseLabel = "Staging Connected";
+          supabaseOnline = true;
+        } else {
+          supabaseLabel = "Preview (Isolated)";
+          supabaseOnline = false;
+        }
+      } else if (!isSupabaseReady) {
+        supabaseLabel = "Standalone Local";
+        supabaseOnline = false;
+      }
+
       return {
         supabase: {
-          label: isSupabaseReady ? "Connected" : "Standalone Local",
-          isOnline: isSupabaseReady
+          label: supabaseLabel,
+          isOnline: supabaseOnline,
+          isPreview: !!cfg.IS_PREVIEW
         },
         docs: {
           label: isDocsReady ? "Connected" : "Not Configured",
@@ -339,6 +358,9 @@
     },
 
     async createAccount({ name, username, password, role = "user" }) {
+      if (cfg.IS_PREVIEW && !cfg.IS_BACKEND_AVAILABLE) {
+        throw new Error("Preview Mode: Account creation is disabled because no staging backend is configured. Production database is isolated.");
+      }
       assertAdmin("createAccount", "manage_users");
       const cleanN = clean(name);
       const cleanU = cleanUsername(username);
@@ -478,6 +500,9 @@
     },
 
     async setStatus(id, newStatus) {
+      if (cfg.IS_PREVIEW && !cfg.IS_BACKEND_AVAILABLE) {
+        throw new Error("Preview Mode: Updating account status is disabled because no staging backend is configured.");
+      }
       assertAdmin("setStatus", "manage_users");
       initClient();
       const currentList = this.getCachedUsers();
@@ -532,6 +557,9 @@
     },
 
     async saveUserAccess(id, { role, status, displayName, permissions }) {
+      if (cfg.IS_PREVIEW && !cfg.IS_BACKEND_AVAILABLE) {
+        throw new Error("Preview Mode: Updating permissions is disabled because no staging backend is configured.");
+      }
       assertAdmin("saveUserAccess", "manage_permissions");
       initClient();
       const currentList = this.getCachedUsers();
@@ -615,6 +643,9 @@
     },
 
     async deleteAccount(id) {
+      if (cfg.IS_PREVIEW && !cfg.IS_BACKEND_AVAILABLE) {
+        throw new Error("Preview Mode: Deleting accounts is disabled because no staging backend is configured.");
+      }
       assertAdmin("deleteAccount", "manage_users");
       initClient();
       const currentList = this.getCachedUsers();
@@ -683,6 +714,9 @@
     },
 
     async promoteToSuperAdmin(id) {
+      if (cfg.IS_PREVIEW && !cfg.IS_BACKEND_AVAILABLE) {
+        throw new Error("Preview Mode: Role changes are disabled because no staging backend is configured.");
+      }
       assertAdmin("promoteToSuperAdmin");
       const isCallerSuper = !!(window.CCTV_AUTH && typeof window.CCTV_AUTH.isSuperAdmin === "function" && window.CCTV_AUTH.isSuperAdmin());
       if (!isCallerSuper) {
@@ -729,6 +763,9 @@
     },
 
     async demoteSuperAdmin(id) {
+      if (cfg.IS_PREVIEW && !cfg.IS_BACKEND_AVAILABLE) {
+        throw new Error("Preview Mode: Role changes are disabled because no staging backend is configured.");
+      }
       assertAdmin("demoteSuperAdmin");
       const isCallerSuper = !!(window.CCTV_AUTH && typeof window.CCTV_AUTH.isSuperAdmin === "function" && window.CCTV_AUTH.isSuperAdmin());
       if (!isCallerSuper) {
@@ -1038,6 +1075,9 @@
     },
 
     async saveOperationalSettings(settings) {
+      if (cfg.IS_PREVIEW && !cfg.IS_BACKEND_AVAILABLE) {
+        throw new Error("Preview Mode: Operational settings changes are disabled because no staging backend is configured.");
+      }
       assertAdmin("saveOperationalSettings", "accounts");
       initClient();
       const prev = this.getOperationalSettings();

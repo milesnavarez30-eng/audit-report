@@ -1,4 +1,4 @@
-﻿/**
+/**
  * CCTV OPS V2 - Professional UI Refinement Layer
  * ================================================
  * Presentation-only. All IDs, event wiring, data attributes: untouched.
@@ -3247,4 +3247,52 @@ tbody tr:hover {
     grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)) !important;
     gap: 8px !important;
   }
+}
+
+
+/* ==========================================================================
+   PREVIEW ISOLATION BANNER & STATUS BADGES
+   ========================================================================== */
+.cctv-preview-banner {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 10px !important;
+  background: #f59e0b !important;
+  color: #0f172a !important;
+  padding: 6px 16px !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.02em !important;
+  z-index: 999 !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+  flex-shrink: 0 !important;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.15) !important;
+}
+
+.cctv-preview-banner[hidden] {
+  display: none !important;
+}
+
+.cctv-preview-banner .preview-tag {
+  background: #0f172a !important;
+  color: #fbbf24 !important;
+  padding: 2px 7px !important;
+  border-radius: 4px !important;
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+}
+
+.integration-pill.is-preview {
+  background: rgba(245, 158, 11, 0.12) !important;
+  border-color: rgba(245, 158, 11, 0.45) !important;
+  color: #fbbf24 !important;
+}
+
+.integration-pill.is-preview .status-dot {
+  background: #f59e0b !important;
+  box-shadow: 0 0 6px rgba(245, 158, 11, 0.6) !important;
 }

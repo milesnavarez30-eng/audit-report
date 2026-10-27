@@ -1,0 +1,4 @@
+# Cloudflare Pages Client-Side Redirects / Rewrites for CCTV OPS V2
+# Static files and assets are served directly by Cloudflare Pages.
+/cctv-ops-v2/*    /:splat        301
+/*                /index.html    200
