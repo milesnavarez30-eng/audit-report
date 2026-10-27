@@ -2387,7 +2387,12 @@
     el("edrFacebookText")?.addEventListener("input", updateLivePreview);
 
     // Copy All Teams Button
+    let isCopyingTeams = false;
     el("btnCopyAllTeams")?.addEventListener("click", async () => {
+      if (isCopyingTeams) return;
+      isCopyingTeams = true;
+      const btn = el("btnCopyAllTeams");
+      if (btn) btn.disabled = true;
       try {
         const fb = el("edrFacebookText")?.value || "";
         const res = await edr.copyAllToTeams(fb);
@@ -2397,6 +2402,9 @@
         showToast(`Copied ${res.count} complete EDR report(s)${imageText} for Teams.`, "success");
       } catch (err) {
         showToast(err.message || "Failed to copy.", "error");
+      } finally {
+        isCopyingTeams = false;
+        if (btn) btn.disabled = false;
       }
     });
 
@@ -3585,7 +3593,12 @@
     });
 
     // Copy for Tracker (Arial 10pt formatted)
+    let isCopyingAuditData = false;
     el("btnAuditCopyTracker")?.addEventListener("click", async () => {
+      if (isCopyingAuditData) return;
+      isCopyingAuditData = true;
+      const btn = el("btnAuditCopyTracker");
+      if (btn) btn.disabled = true;
       try {
         await audit.copyAuditForTracker();
         if (typeof renderEdrList === "function" && window.CCTV_EDR) {
@@ -3594,6 +3607,9 @@
         showToast("Audit data copied for Tracker (Arial 10pt formatted).", "success");
       } catch (err) {
         showToast(err.message || "Failed to copy audit data.", "error");
+      } finally {
+        isCopyingAuditData = false;
+        if (btn) btn.disabled = false;
       }
     });
   }
@@ -3785,32 +3801,59 @@
       }
     });
 
+    let isCopyingTrackerRows = false;
     el("btnTrackerCopyAll")?.addEventListener("click", async () => {
-      const rows = window.CCTV_LIVE_TRACKER.getRows();
-      const cols = window.CCTV_LIVE_TRACKER.getColumns();
-      if (!rows.length) {
-        showToast("No tracker rows to copy.", "info");
-        return;
-      }
-      const lines = rows.map(r => cols.map(c => r[c.key] || "").join("\t"));
-      const tsv = lines.join("\r\n");
+      if (isCopyingTrackerRows) return;
+      isCopyingTrackerRows = true;
+      const btn = el("btnTrackerCopyAll");
+      if (btn) btn.disabled = true;
       try {
-        await navigator.clipboard.writeText(tsv);
+        const rows = window.CCTV_LIVE_TRACKER.getRows();
+        const cols = window.CCTV_LIVE_TRACKER.getColumns();
+        if (!rows.length) {
+          showToast("No tracker rows to copy.", "info");
+          return;
+        }
+        const lines = rows.map(r => cols.map(c => r[c.key] || "").join("\t"));
+        const tsv = lines.join("\r\n");
+        await window.copyToClipboardHtmlAndText(tsv, `<pre>${window.escapeHtml(tsv)}</pre>`);
         showToast(`Copied ${rows.length} rows formatted for Google Sheets.`, "success");
       } catch (err) {
         showToast("Failed to copy rows: " + err.message, "error");
+      } finally {
+        isCopyingTrackerRows = false;
+        if (btn) btn.disabled = false;
       }
     });
 
+    let isSyncingTracker = false;
     el("btnTrackerSyncNow")?.addEventListener("click", async () => {
+      if (isSyncingTracker) return;
       const settings = window.CCTV_LIVE_TRACKER.getSettings();
       if (!settings.webAppUrl) {
         showToast("Please configure your Google Sheets Apps Script URL in Setup first.", "warning");
         el("modalTrackerSetup").hidden = false;
         return;
       }
+      isSyncingTracker = true;
+      const btn = el("btnTrackerSyncNow");
+      if (btn) btn.disabled = true;
       showToast("Syncing with Google Sheets...", "info");
-      await window.CCTV_LIVE_TRACKER.triggerImmediateSync();
+      try {
+        const res = await window.CCTV_LIVE_TRACKER.triggerImmediateSync();
+        if (res && res.readOnly) {
+          // info toast was already triggered
+        } else if (res && res.success === false) {
+          showToast(res.error || "Sync failed. Local edits safely preserved.", "error");
+        } else {
+          showToast("Sync with Google Sheets completed successfully.", "success");
+        }
+      } catch (err) {
+        showToast(err.message || "Failed to sync with Google Sheets.", "error");
+      } finally {
+        isSyncingTracker = false;
+        if (btn) btn.disabled = false;
+      }
     });
 
     el("btnTrackerClearAll")?.addEventListener("click", async () => {
@@ -6562,15 +6605,7 @@ function doPost(e) {
       const html = maintenance.maintenanceReportHtmlForSheets(maintenanceState);
       const text = maintenance.maintenanceReportPlainTextForSheets(maintenanceState);
 
-      if (navigator.clipboard && window.ClipboardItem) {
-        const item = new ClipboardItem({
-          "text/html": new Blob([html], { type: "text/html" }),
-          "text/plain": new Blob([text], { type: "text/plain" })
-        });
-        await navigator.clipboard.write([item]);
-      } else {
-        await navigator.clipboard.writeText(text);
-      }
+      await window.copyToClipboardHtmlAndText(text, html);
       showToast("Full Maintenance Report copied (Arial 10pt formatted for Google Sheets).", "success");
     } catch (err) {
       console.error("Failed to copy report:", err);
@@ -9454,7 +9489,12 @@ function doPost(e) {
     }
 
     // COPY ALL button
+    let isCopyingReport = false;
     el("btnCopyAllReport")?.addEventListener("click", async () => {
+      if (isCopyingReport) return;
+      isCopyingReport = true;
+      const btn = el("btnCopyAllReport");
+      if (btn) btn.disabled = true;
       try {
         syncCctvReportDraftFromForm();
         if (!cctvReportDraft.observation && !cctvReportDraft.personInvolved) {
@@ -9473,6 +9513,9 @@ function doPost(e) {
       } catch (err) {
         console.error("Copy report error:", err);
         showToast(err.message || "Failed to copy report to clipboard.", "error");
+      } finally {
+        isCopyingReport = false;
+        if (btn) btn.disabled = false;
       }
     });
 
@@ -12555,9 +12598,39 @@ function doPost(e) {
       }
       const tabAccounts = el("tabAccounts");
       if (tabAccounts) tabAccounts.style.display = "none";
-      if (currentWorkspace === "accounts") {
-        currentWorkspace = "edr";
-      }
+
+      // Reset active workspace away from any restricted workspaces
+      currentWorkspace = "dashboard";
+      window.getCurrentWorkspace = () => "dashboard";
+      try {
+        sessionStorage.setItem("cctv_active_workspace", "dashboard");
+      } catch (_) {}
+
+      // Ensure restricted panes and all non-dashboard panes are hidden
+      document.querySelectorAll(".workspace-pane").forEach(pane => {
+        if (pane.id === "paneDashboard") {
+          pane.hidden = false;
+          pane.classList.add("active");
+        } else {
+          pane.hidden = true;
+          pane.classList.remove("active");
+        }
+      });
+      document.querySelectorAll(".nav-rail .nav-item").forEach(tab => {
+        if (tab.id === "tabDashboard") {
+          tab.classList.add("active");
+          tab.setAttribute("aria-selected", "true");
+        } else {
+          tab.classList.remove("active");
+          tab.setAttribute("aria-selected", "false");
+        }
+      });
+
+      // Close open modals so sensitive operational data is not left visible behind login screen
+      document.querySelectorAll(".modal-backdrop:not(#loginModal)").forEach(m => {
+        m.hidden = true;
+        m.classList.remove("is-visible");
+      });
     }
 
     function unlockApp(user, profile) {
@@ -12653,6 +12726,13 @@ function doPost(e) {
           showToast("Authenticated successfully.", "success");
         } catch (err) {
           console.error("Sign in error:", err);
+          const msg = (err?.message || "").toLowerCase();
+          const isNetworkError = msg.includes("failed to fetch") || msg.includes("network") || msg.includes("abort") || err?.name === "TypeError";
+          if (isNetworkError) {
+            showAuthMessage("Network connection error. Please check your internet connection.");
+            return;
+          }
+
           failedLoginAttempts++;
           if (failedLoginAttempts >= 5) {
             lockoutUntil = Date.now() + 30000;

@@ -1,4 +1,4 @@
-/**
+﻿/**
  * CCTV OPS V2 - EDR Service
  * Full manual EDR workflow, IndexedDB persistence, Google Docs sync, and Teams plain-text copy
  */
@@ -1251,21 +1251,23 @@ window.CCTV_EDR = (function () {
         }
       }
 
-      if (wroteSuccessfully) {
-        const copiedTimestamp = new Date().toISOString();
-        for (const r of activeSelected) {
-          r.teamsCopied = true;
-          r.teamsCopiedAt = copiedTimestamp;
-          r.selected = false;
-          r.updatedAt = copiedTimestamp;
-          if (r.audited) {
-            r.done = true;
-            r.doneAt = copiedTimestamp;
-          }
-        }
-        await this.saveReports();
-        notify();
+      if (!wroteSuccessfully) {
+        throw new Error("Unable to copy EDR to clipboard. Please check browser permissions or focus the document.");
       }
+
+      const copiedTimestamp = new Date().toISOString();
+      for (const r of activeSelected) {
+        r.teamsCopied = true;
+        r.teamsCopiedAt = copiedTimestamp;
+        r.selected = false;
+        r.updatedAt = copiedTimestamp;
+        if (r.audited) {
+          r.done = true;
+          r.doneAt = copiedTimestamp;
+        }
+      }
+      await this.saveReports();
+      notify();
 
       const totalScreenshotsCount = activeSelected.reduce((acc, r) => {
         const count = Array.isArray(r.screenshots) && r.screenshots.length

@@ -285,7 +285,7 @@ window.CCTV_AUTH = (function () {
               if (cached) currentProfile = Object.freeze({ ...cached });
             }
             await notifyAuthChange(currentUser, currentProfile);
-          } else if (event === "SIGNED_OUT") {
+          } else if (event === "SIGNED_OUT" || !session || !session.user) {
             clearLocalAuth();
             currentUser = null;
             currentProfile = null;

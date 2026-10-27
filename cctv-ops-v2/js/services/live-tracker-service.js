@@ -380,7 +380,12 @@ window.CCTV_LIVE_TRACKER = (function () {
       return { success: true, readOnly: true };
     }
     if (debounceTimer) clearTimeout(debounceTimer);
-    return autoSyncPending();
+    await autoSyncPending();
+    return {
+      success: syncStatus.state !== "unsaved",
+      state: syncStatus.state,
+      error: syncStatus.error
+    };
   }
 
   let runtimeTrace = {
@@ -1153,7 +1158,7 @@ window.CCTV_LIVE_TRACKER = (function () {
     },
 
     triggerImmediateSync() {
-      return autoSyncPending();
+      return triggerImmediateSync();
     }
   };
 })();

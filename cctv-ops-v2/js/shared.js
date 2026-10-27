@@ -1,4 +1,4 @@
-/**
+﻿/**
  * CCTV OPS V2 - Shared Runtime Utilities
  * Toasts, Confirmations, Clipboard, Manila Clock & Media Handlers
  */
@@ -457,14 +457,16 @@
     return true;
   };
 
-  // Safe Multi-Format Clipboard Write (HTML + Text fallback)
+  // Safe Multi-Format Clipboard Write (HTML + Text with 4-tier fallback)
   window.copyToClipboardHtmlAndText = async function (plainText, htmlText) {
     if (!plainText && !htmlText) {
       throw new Error("No content to copy.");
     }
     const safeText = plainText || "";
     const safeHtml = htmlText || `<div>${window.escapeHtml(safeText).replace(/\n/g, "<br>")}</div>`;
+    let wroteSuccessfully = false;
 
+    // 1. Preferred Multi-MIME standard write (text/html + text/plain)
     if (navigator.clipboard && window.ClipboardItem && navigator.clipboard.write) {
       try {
         const clipboardItem = new ClipboardItem({
@@ -472,24 +474,54 @@
           "text/html": new Blob([safeHtml], { type: "text/html" })
         });
         await navigator.clipboard.write([clipboardItem]);
-        return true;
+        wroteSuccessfully = true;
       } catch (err) {
-        console.warn("ClipboardItem write failed, using fallback:", err);
+        console.warn("ClipboardItem write failed, attempting fallbacks:", err);
       }
     }
 
-    // Fallback using textarea for plain text
-    const textarea = document.createElement("textarea");
-    textarea.value = safeText;
-    textarea.style.position = "fixed";
-    textarea.style.left = "-9999px";
-    textarea.style.top = "0";
-    document.body.appendChild(textarea);
-    textarea.select();
-    const success = document.execCommand("copy");
-    textarea.remove();
-    if (!success) {
-      throw new Error("Clipboard copy command failed.");
+    // 2. Rich copy event fallback
+    if (!wroteSuccessfully) {
+      try {
+        const onCopy = (e) => {
+          e.preventDefault();
+          e.clipboardData.setData("text/plain", safeText);
+          e.clipboardData.setData("text/html", safeHtml);
+        };
+        document.addEventListener("copy", onCopy, { once: true });
+        wroteSuccessfully = document.execCommand("copy");
+      } catch (_) {}
+    }
+
+    // 3. Plain-text writeText fallback
+    if (!wroteSuccessfully && navigator.clipboard && navigator.clipboard.writeText) {
+      try {
+        await navigator.clipboard.writeText(safeText);
+        wroteSuccessfully = true;
+      } catch (_) {}
+    }
+
+    // 4. Focusable hidden textarea fallback
+    if (!wroteSuccessfully) {
+      try {
+        const textarea = document.createElement("textarea");
+        textarea.value = safeText;
+        textarea.setAttribute("readonly", "");
+        textarea.style.position = "fixed";
+        textarea.style.left = "-9999px";
+        textarea.style.top = "0";
+        textarea.style.opacity = "0";
+        document.body.appendChild(textarea);
+        textarea.focus();
+        textarea.select();
+        textarea.setSelectionRange(0, textarea.value.length);
+        wroteSuccessfully = document.execCommand("copy");
+        textarea.remove();
+      } catch (_) {}
+    }
+
+    if (!wroteSuccessfully) {
+      throw new Error("Unable to access clipboard. Please check browser permissions or click inside the window first.");
     }
     return true;
   };
