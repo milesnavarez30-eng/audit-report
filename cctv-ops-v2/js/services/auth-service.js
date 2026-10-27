@@ -23,6 +23,7 @@ window.CCTV_AUTH = (function () {
     maintenance: true,
     pending: true,
     followup: true,
+    unreported: true,
     masterlist: true,
     history: true,
     accounts: false,
@@ -43,6 +44,7 @@ window.CCTV_AUTH = (function () {
     maintenance: true,
     pending: true,
     followup: true,
+    unreported: true,
     masterlist: true,
     history: true,
     accounts: true,
@@ -65,6 +67,7 @@ window.CCTV_AUTH = (function () {
       maintenance: perms.maintenance !== undefined ? !!perms.maintenance : true,
       pending: perms.pending !== undefined ? !!perms.pending : true,
       followup: perms.followup !== undefined ? !!perms.followup : true,
+      unreported: perms.unreported !== undefined ? !!perms.unreported : true,
       masterlist: perms.masterlist !== undefined ? !!perms.masterlist : true,
       history: perms.history !== undefined ? !!perms.history : true,
       accounts: !!perms.accounts,
@@ -215,6 +218,10 @@ window.CCTV_AUTH = (function () {
       return currentRole;
     },
 
+    setLocalSession(user, profile) {
+      return notifyAuthChange(user, profile);
+    },
+
     isSuperAdmin() {
       if (!currentUser || !currentProfile) return false;
       return currentRole === "super_admin";
@@ -262,7 +269,10 @@ window.CCTV_AUTH = (function () {
     },
 
     canAccessWorkspace(wsKey) {
-      if (!currentUser || !currentProfile) return false;
+      if (!currentUser || !currentProfile) {
+        // In local standalone mode without active remote profile: allow operational workspaces, protect accounts
+        return wsKey !== "accounts";
+      }
       // Super Admin has universal workspace access
       if (this.isSuperAdmin()) return true;
 

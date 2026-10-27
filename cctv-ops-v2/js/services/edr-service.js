@@ -1269,6 +1269,14 @@ window.CCTV_EDR = (function () {
       return (edrReports || []).filter(r => !r.teamsCopied && !r.done).length;
     },
 
+    getUnauditedCount() {
+      return (edrReports || []).filter(r => !r.audited && !r.done).length;
+    },
+
+    getActionNeededCount() {
+      return (edrReports || []).filter(r => (!r.teamsCopied || !r.audited) && !r.done).length;
+    },
+
     async copyScreenshot(reportOrDataUrl) {
       let dataUrl = "";
       if (typeof reportOrDataUrl === "string") {

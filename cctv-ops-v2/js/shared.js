@@ -365,25 +365,30 @@
     containerEl.innerHTML = html;
   };
 
-  // Manila Live Operational Clock (Asia/Manila PHT)
+  // Operational Computer Clock (Local Workstation Time)
   window.initManilaClock = function () {
+    if (window.__manilaClockInterval) return;
     function updateClock() {
       try {
         const now = new Date();
-        const options = {
-          timeZone: "Asia/Manila",
+        const timeStr = now.toLocaleTimeString([], {
           hour: "2-digit",
           minute: "2-digit",
           second: "2-digit",
           hour12: true
-        };
-        const parts = new Intl.DateTimeFormat("en-US", options).format(now);
+        });
+        let tzName = "";
+        try {
+          const parts = new Intl.DateTimeFormat([], { timeZoneName: "short" }).formatToParts(now);
+          const tzPart = parts.find(p => p.type === "timeZoneName");
+          if (tzPart) tzName = tzPart.value;
+        } catch (_) {}
         const clockEl = document.getElementById("manilaClockText");
-        if (clockEl) clockEl.textContent = `${parts} PHT`;
+        if (clockEl) clockEl.textContent = tzName ? `${timeStr} ${tzName}` : timeStr;
       } catch (_) {}
     }
     updateClock();
-    setInterval(updateClock, 1000);
+    window.__manilaClockInterval = setInterval(updateClock, 1000);
   };
 
   // DataURL to PNG Blob Converter

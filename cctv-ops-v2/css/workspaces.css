@@ -1,4 +1,4 @@
-/**
+﻿/**
  * CCTV OPS V2 - Workspace-Specific Layouts & Grid Styles
  * Dark Mode Only, Compact, Professional SaaS Aesthetic
  */
@@ -3589,7 +3589,7 @@ table.mini-sheet tr.floor-break td {
 .edr-split-layout:not(.dispatch-expanded) #cardSavedEdrs {
   order: 2 !important;
   flex: 1 1 0% !important;
-  min-height: 200px !important;
+  min-height: 220px !important;
   max-height: none !important;
   display: flex !important;
   flex-direction: column !important;
@@ -3599,16 +3599,16 @@ table.mini-sheet tr.floor-break td {
 .edr-split-layout:not(.dispatch-expanded) #cardTeamsDispatch {
   order: 1 !important;
   flex: 0 0 auto !important;
-  min-height: clamp(260px, 34vh, 380px) !important;
-  max-height: clamp(260px, 38vh, 420px) !important;
+  min-height: clamp(140px, 20vh, 210px) !important;
+  max-height: clamp(160px, 24vh, 240px) !important;
   overflow: hidden !important;
 }
 
 /* Preview box fills available height in normal (non-expanded) Teams Dispatch */
 .edr-split-layout:not(.dispatch-expanded) #edrPreviewBox {
   flex: 1 1 auto !important;
-  min-height: 160px !important;
-  max-height: calc(clamp(260px, 38vh, 420px) - 80px) !important;
+  min-height: 50px !important;
+  max-height: calc(clamp(160px, 24vh, 240px) - 75px) !important;
   overflow-y: auto !important;
 }
 

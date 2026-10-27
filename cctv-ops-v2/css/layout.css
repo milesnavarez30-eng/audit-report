@@ -764,20 +764,32 @@
     padding: 8px;
     gap: 8px;
   }
+  .edr-split-column {
+    height: auto;
+    overflow: visible;
+  }
+  #colEdrDispatch {
+    min-height: 400px;
+    height: auto;
+    overflow: visible;
+  }
+  #cardSavedEdrs {
+    min-height: 280px !important;
+    flex-shrink: 0;
+  }
+  #edrListContainer {
+    min-height: 140px !important;
+    max-height: 50vh !important;
+    overflow-y: auto !important;
+  }
 }
 
 .edr-split-column {
   display: flex;
   flex-direction: column;
   height: 100%;
+  min-height: 0;
   overflow: hidden;
   gap: 8px;
   min-width: 0;
-}
-
-@media (max-width: 1100px) {
-  .edr-split-column {
-    height: auto;
-    overflow: visible;
-  }
 }

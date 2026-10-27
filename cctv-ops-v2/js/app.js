@@ -30,21 +30,24 @@
     }
   }
 
-  // Live Manila Clock
+  // Live Operational Computer Clock
   function updateManilaClock() {
     try {
       const now = new Date();
-      const options = {
-        timeZone: "Asia/Manila",
+      const timeStr = now.toLocaleTimeString([], {
         hour: "2-digit",
         minute: "2-digit",
         second: "2-digit",
         hour12: true
-      };
-      const formatter = new Intl.DateTimeFormat("en-US", options);
-      const parts = formatter.format(now);
+      });
+      let tzName = "";
+      try {
+        const parts = new Intl.DateTimeFormat([], { timeZoneName: "short" }).formatToParts(now);
+        const tzPart = parts.find(p => p.type === "timeZoneName");
+        if (tzPart) tzName = tzPart.value;
+      } catch (_) {}
       const clockEl = el("manilaClockText");
-      if (clockEl) clockEl.textContent = `${parts} PHT`;
+      if (clockEl) clockEl.textContent = tzName ? `${timeStr} ${tzName}` : timeStr;
     } catch (_) {}
   }
 
@@ -1227,10 +1230,10 @@
     const done = reports.filter(r => r.done).length;
 
     // Compact status counts
-    const notCopied = reports.filter(r => !r.teamsCopied).length;
-    const notAudited = reports.filter(r => !r.audited).length;
-    const complete = reports.filter(r => !!r.teamsCopied && !!r.audited).length;
-    const needsAction = reports.filter(r => !r.teamsCopied || !r.audited).length;
+    const notCopied = reports.filter(r => !r.teamsCopied && !r.done).length;
+    const notAudited = reports.filter(r => !r.audited && !r.done).length;
+    const complete = reports.filter(r => (!!r.teamsCopied && !!r.audited) || r.done).length;
+    const needsAction = reports.filter(r => (!r.teamsCopied || !r.audited) && !r.done).length;
 
     if (el("badgeTotalCount")) el("badgeTotalCount").textContent = total;
     if (el("badgeSelectedCount")) el("badgeSelectedCount").textContent = `${selected} selected`;
@@ -1269,13 +1272,13 @@
     // Filter display reports
     let displayReports = reports;
     if (currentEdrFilter === "needs_action") {
-      displayReports = reports.filter(r => !r.teamsCopied || !r.audited);
+      displayReports = reports.filter(r => (!r.teamsCopied || !r.audited) && !r.done);
     } else if (currentEdrFilter === "not_copied") {
-      displayReports = reports.filter(r => !r.teamsCopied);
+      displayReports = reports.filter(r => !r.teamsCopied && !r.done);
     } else if (currentEdrFilter === "not_audited") {
-      displayReports = reports.filter(r => !r.audited);
+      displayReports = reports.filter(r => !r.audited && !r.done);
     } else if (currentEdrFilter === "complete") {
-      displayReports = reports.filter(r => !!r.teamsCopied && !!r.audited);
+      displayReports = reports.filter(r => (!!r.teamsCopied && !!r.audited) || r.done);
     }
 
     // Update Delete Selected button
@@ -3003,6 +3006,9 @@
       }
     } else if (targetKey === "report") {
       renderCctvReportWorkspace();
+      if (typeof window.applyReportHeaderPolish === "function") {
+        window.applyReportHeaderPolish();
+      }
     } else if (targetKey === "conduct") {
       renderCodeOfConductWorkspace();
     } else if (targetKey === "masterlist") {
@@ -7874,6 +7880,12 @@ function doPost(e) {
     renderPendingList();
     updatePendingSummary();
     pending.checkDueNotifications(pendingReportsList, true);
+
+    pending.onChange(reports => {
+      pendingReportsList = Array.isArray(reports) ? reports : [];
+      renderPendingList();
+      updatePendingSummary();
+    });
   }
 
   function renderPendingWorkspace() {
@@ -10082,7 +10094,11 @@ function doPost(e) {
     });
 
     el("kpiCardEdrAction")?.addEventListener("click", () => {
+      currentEdrFilter = "needs_action";
       switchWorkspace("edr");
+      if (typeof window.CCTV_EDR?.getReports === "function") {
+        renderEdrList(window.CCTV_EDR.getReports());
+      }
     });
 
     // Needs Attention Navigation Handlers
@@ -10102,10 +10118,18 @@ function doPost(e) {
       switchWorkspace("unreported");
     });
     el("naChipEdrTeams")?.addEventListener("click", () => {
+      currentEdrFilter = "not_copied";
       switchWorkspace("edr");
+      if (typeof window.CCTV_EDR?.getReports === "function") {
+        renderEdrList(window.CCTV_EDR.getReports());
+      }
     });
     el("naChipEdrAudit")?.addEventListener("click", () => {
+      currentEdrFilter = "not_audited";
       switchWorkspace("edr");
+      if (typeof window.CCTV_EDR?.getReports === "function") {
+        renderEdrList(window.CCTV_EDR.getReports());
+      }
     });
 
     // Monthly Activity Selector Listener
@@ -10441,12 +10465,13 @@ function doPost(e) {
 
         tbodyDetails.innerHTML = detailsList.map((row, idx) => {
           let ageBadgeHtml = "";
-          if (row.ageCategory === ">48h") {
-            ageBadgeHtml = `<span class="age-badge age-48" title="${row.ageHours || 48}h old">>48h</span>`;
-          } else if (row.ageCategory === "24–48h") {
-            ageBadgeHtml = `<span class="age-badge age-24" title="${row.ageHours || 24}h old">24-48h</span>`;
-          } else if (row.ageCategory === "<24h" && row.parsedDate) {
-            ageBadgeHtml = `<span class="age-badge age-fresh">&lt;24h</span>`;
+          if (row.ageCategory === "≥2 days" || row.ageCategory === ">48h") {
+            const titleStr = row.ageDays != null ? `${row.ageDays} days old` : "≥2 days old";
+            ageBadgeHtml = `<span class="age-badge age-48" title="${titleStr}">≥2 days</span>`;
+          } else if (row.ageCategory === "1 day" || row.ageCategory === "24–48h") {
+            ageBadgeHtml = `<span class="age-badge age-24" title="1 day old">1 day</span>`;
+          } else if ((row.ageCategory === "Today" || row.ageCategory === "<24h") && row.parsedDate) {
+            ageBadgeHtml = `<span class="age-badge age-fresh" title="Incident today">Today</span>`;
           }
 
           return `
@@ -12226,8 +12251,14 @@ function doPost(e) {
     }
 
     // Manila clock ticker
-    updateManilaClock();
-    setInterval(updateManilaClock, 1000);
+    if (typeof window.initManilaClock === "function") {
+      window.initManilaClock();
+    } else {
+      updateManilaClock();
+      if (!window.__manilaClockInterval) {
+        window.__manilaClockInterval = setInterval(updateManilaClock, 1000);
+      }
+    }
 
     // Watch EDR updates
     edr.onChange(reports => {
@@ -12535,6 +12566,8 @@ function doPost(e) {
         loginModal.style.display = "none";
         loginModal.classList.add("hidden");
       }
+      const matrix = document.getElementById("jpMatrix");
+      if (matrix) matrix.replaceChildren();
       showAuthMessage("");
       if (loginPassword) loginPassword.value = "";
 
@@ -12703,6 +12736,11 @@ function doPost(e) {
     );
 
     const render = () => {
+      if (document.body.classList.contains("auth-unlocked") || !document.body.classList.contains("auth-locked")) {
+        matrix.replaceChildren();
+        return;
+      }
+
       const width = Math.max(window.innerWidth, 1920);
       const height = Math.max(window.innerHeight, 1080);
 
@@ -12720,6 +12758,8 @@ function doPost(e) {
 
       matrix.replaceChildren(fragment);
     };
+
+    window.__renderJapaneseMatrix = render;
 
     render();
 
@@ -12858,10 +12898,10 @@ function doPost(e) {
     clearTimeout(timer);
     timer = setTimeout(applyReportHeaderPolish, 40);
   }
+  window.applyReportHeaderPolish = applyReportHeaderPolish;
 
   document.addEventListener("DOMContentLoaded", scheduleApply);
   window.addEventListener("load", scheduleApply);
-  document.addEventListener("click", scheduleApply, true);
 
   setTimeout(applyReportHeaderPolish, 200);
   setTimeout(applyReportHeaderPolish, 700);

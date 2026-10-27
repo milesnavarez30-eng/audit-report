@@ -885,6 +885,11 @@ window.CCTV_AUDIT = (function () {
           if (typeof window.renderEdrList === "function" && typeof window.CCTV_EDR.getReports === "function") {
             window.renderEdrList(window.CCTV_EDR.getReports());
           }
+
+          // Promptly synchronize Dashboard metrics with newly audited EDRs
+          if (window.CCTV_DASHBOARD && typeof window.CCTV_DASHBOARD.syncLocalWorkspaces === "function") {
+            window.CCTV_DASHBOARD.syncLocalWorkspaces().catch(console.warn);
+          }
         }
       } catch (markErr) {
         console.warn("Could not mark source EDR as audited after copy:", markErr);

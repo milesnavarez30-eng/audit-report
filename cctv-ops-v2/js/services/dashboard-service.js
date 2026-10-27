@@ -34,7 +34,7 @@ window.CCTV_DASHBOARD = (function () {
       "Seth":     [171, 86, 108, 58, 62, 89, 99, 88, 66],
       "Wendie":   [100, 54, 28,  24, 19, 48, 64, 62, 33],
       "John Ric": [78,  75, 72,  42, 51, 43, 56, 46, 34],
-      "Miles":    [51,  71, 25,  52, 30, 35, 90, 55, 23],
+      "Miles":    [51,  71, 25,  52, 30, 35, 90, 55, 24],
       "Kenneth":  [57,  41, 24,  19, 23, 25, 37, 22, 20],
       "Reymart":  [46,  34, 23,  16, 5,   0,  0,  0,  0]
     },
@@ -130,20 +130,14 @@ window.CCTV_DASHBOARD = (function () {
   }
 
   /**
-   * Determine current date and time strictly in Asia/Manila (GMT+8) timezone
+   * Determine current date and time strictly in computer / browser local timezone
    */
-  function getManilaNow() {
-    try {
-      const manilaStr = new Date().toLocaleString("en-US", { timeZone: "Asia/Manila" });
-      const d = new Date(manilaStr);
-      return isNaN(d.getTime()) ? new Date() : d;
-    } catch (_) {
-      return new Date();
-    }
+  function getLocalNow() {
+    return new Date();
   }
 
   function getCurrentMonthInfo() {
-    const now = getManilaNow();
+    const now = getLocalNow();
     const monthIdx = now.getMonth();
     const year = now.getFullYear();
     const day = now.getDate();
@@ -165,25 +159,13 @@ window.CCTV_DASHBOARD = (function () {
   function parseTrackerDate(val) {
     if (!val) return null;
     if (val instanceof Date) {
-      try {
-        const str = val.toLocaleString("en-US", { timeZone: "Asia/Manila" });
-        const d = new Date(str);
-        if (isNaN(d.getTime())) return null;
-        return {
-          year: d.getFullYear(),
-          monthIdx: d.getMonth(),
-          day: d.getDate(),
-          formatted: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`
-        };
-      } catch (_) {
-        if (isNaN(val.getTime())) return null;
-        return {
-          year: val.getFullYear(),
-          monthIdx: val.getMonth(),
-          day: val.getDate(),
-          formatted: `${val.getFullYear()}-${String(val.getMonth() + 1).padStart(2, "0")}-${String(val.getDate()).padStart(2, "0")}`
-        };
-      }
+      if (isNaN(val.getTime())) return null;
+      return {
+        year: val.getFullYear(),
+        monthIdx: val.getMonth(),
+        day: val.getDate(),
+        formatted: `${val.getFullYear()}-${String(val.getMonth() + 1).padStart(2, "0")}-${String(val.getDate()).padStart(2, "0")}`
+      };
     }
     if (typeof val === "number" && !isNaN(val) && val > 40000) {
       // Excel serial date (e.g. 46288)
@@ -234,16 +216,28 @@ window.CCTV_DASHBOARD = (function () {
   }
 
   /**
-   * Safe NOC Status Normalizer
+   * Safe NOC Status Normalizer (Rule 3)
    */
   function normalizeNocStatus(val) {
-    if (val == null) return "UNKNOWN";
+    if (val == null) return "PENDING";
     const s = cleanVal(val).toUpperCase();
     if (s === "YES" || s.startsWith("YES")) return "YES";
     if (s === "NO" || s.startsWith("NO")) return "NO";
     if (s.includes("PENDING") || s === "P") return "PENDING";
     if (s.includes("DISPUTE") || s.includes("INVALID")) return "DISPUTED";
-    if (s === "") return "UNKNOWN";
+    if (s === "") return "PENDING"; // RULE 3: Blank / empty / whitespace => PENDING
+    return s;
+  }
+
+  function normalizeSiteName(site) {
+    if (!site) return "—";
+    const s = cleanVal(site).trim();
+    if (s.toUpperCase() === "MAA" || s.toLowerCase() === "maa site") return "Maa";
+    if (s.toLowerCase() === "mabini a" || s.toLowerCase() === "mabini site a") return "Mabini Site A";
+    if (s.toLowerCase() === "mabini b" || s.toLowerCase() === "mabini site b") return "Mabini Site B";
+    if (s.toLowerCase() === "ecoland" || s.toLowerCase() === "ecoland site") return "Ecoland";
+    if (s.toLowerCase() === "gensan" || s.toLowerCase() === "gensan site") return "Gensan";
+    if (s.toLowerCase() === "digos" || s.toLowerCase() === "digos site") return "Digos";
     return s;
   }
 
@@ -282,6 +276,9 @@ window.CCTV_DASHBOARD = (function () {
 
           if (isSamePeriod && !isLegacyFixture) {
             Object.assign(state, cached);
+            if (cached.needsAttention && typeof cached.needsAttention === "object") {
+              state.needsAttention = { ...cached.needsAttention };
+            }
             state.isStale = true;
             state.isFetching = false;
             return;
@@ -352,6 +349,7 @@ window.CCTV_DASHBOARD = (function () {
         teamStats: state.teamStats,
         pendingByTeam: state.pendingByTeam,
         pendingDetails: state.pendingDetails,
+        needsAttention: state.needsAttention,
         memberNocGraphs: state.memberNocGraphs,
         entireTeamGraph: state.entireTeamGraph,
         totalNocThisMonth: state.totalNocThisMonth,
@@ -445,10 +443,13 @@ window.CCTV_DASHBOARD = (function () {
       let no = parseNum(m.noThisMonth != null ? m.noThisMonth : m.no, 0);
       let pending = parseNum(m.pending, 0);
 
+      // Per-member Pending % = (pending / totalCurrentMonthNoc) * 100 (Rule 3 & Fix 3)
+      const memberTotalNoc = yes + no + pending;
       let pendingPct = "0.00%";
-      if (m.pendingPercent != null) {
-        pendingPct = typeof m.pendingPercent === "number" ? `${m.pendingPercent.toFixed(2)}%` : `${cleanVal(m.pendingPercent)}%`;
-        if (pendingPct.endsWith("%%")) pendingPct = pendingPct.slice(0, -1);
+      if (m.pendingPercent != null && typeof m.pendingPercent === "number" && m.pendingPercent <= 100) {
+        pendingPct = `${m.pendingPercent.toFixed(2)}%`;
+      } else if (memberTotalNoc > 0) {
+        pendingPct = `${((pending / memberTotalNoc) * 100).toFixed(2)}%`;
       } else if (reports > 0) {
         pendingPct = `${((pending / reports) * 100).toFixed(2)}%`;
       }
@@ -495,12 +496,18 @@ window.CCTV_DASHBOARD = (function () {
     state.totalNocThisMonth = parseNum(data.successfulNocThisMonth, 0);
     state.pendingReports = parseNum(data.pendingReports, 0);
 
-    if (data.pendingPercent != null || data.pendingPercentage != null) {
-      const rawPct = data.pendingPercent != null ? data.pendingPercent : data.pendingPercentage;
-      const numPct = typeof rawPct === "number" ? rawPct : parseFloat(cleanVal(rawPct));
-      state.pendingPercentage = !isNaN(numPct) ? `${numPct.toFixed(2)}%` : "0.00%";
-    } else if (state.overallReports && state.overallReports > 0) {
-      state.pendingPercentage = `${((state.pendingReports / state.overallReports) * 100).toFixed(2)}%`;
+    // Top-Level Pending % (Rule 2 & Fix 2)
+    // Denominator is strictly ALL NOC records in the CURRENT MONTH (YES + NO + Pending + Disputed)
+    const currentMonthYes = parseNum(data.successfulNocThisMonth, teamStatsList.reduce((acc, t) => acc + (t.yes || 0), 0));
+    const currentMonthNo = teamStatsList.reduce((acc, t) => acc + (t.no || 0), 0);
+    const currentMonthPending = state.pendingReports != null ? state.pendingReports : teamStatsList.reduce((acc, t) => acc + (t.pending || 0), 0);
+    const currentMonthDisputed = teamStatsList.reduce((acc, t) => acc + (t.disputed || 0), 0);
+
+    const totalNocCurrentMonth = currentMonthYes + currentMonthNo + currentMonthPending + currentMonthDisputed;
+    const effectiveDenominator = totalNocCurrentMonth > 0 ? totalNocCurrentMonth : (state.postedThisMonth || 0);
+
+    if (effectiveDenominator > 0 && currentMonthPending > 0) {
+      state.pendingPercentage = `${((currentMonthPending / effectiveDenominator) * 100).toFixed(2)}%`;
     } else {
       state.pendingPercentage = "0.00%";
     }
@@ -561,41 +568,41 @@ window.CCTV_DASHBOARD = (function () {
       monthlyData: entireTeamMonthlyData
     };
 
-    // Pending Details & Age Analysis in Asia/Manila
-    const nowManila = getManilaNow();
-    let pendingOlder24Count = 0;
-    let pendingOlder48Count = 0;
+    // Pending Details & Calendar-Age Analysis in Computer Local Time (Fix 5)
+    const nowLocal = getLocalNow();
+    const nowMidnight = new Date(nowLocal.getFullYear(), nowLocal.getMonth(), nowLocal.getDate()).getTime();
+    let pendingOlder24Count = 0; // Represents ≥1 calendar day
+    let pendingOlder48Count = 0; // Represents ≥2 calendar days
 
     if (Array.isArray(data.pendingDetails) && data.pendingDetails.length > 0) {
       state.pendingDetails = data.pendingDetails.map(item => {
         const rawDate = cleanVal(item.date || item.Date);
         const parsed = parseTrackerDate(rawDate);
-        let ageHours = null;
-        let ageCategory = "<24h";
+        let ageDays = null;
+        let ageCategory = "Today";
 
         if (parsed) {
-          const recTime = new Date(parsed.year, parsed.monthIdx, parsed.day).getTime();
-          const diffMs = nowManila.getTime() - recTime;
-          ageHours = Math.max(0, Math.floor(diffMs / (1000 * 3600)));
-          if (ageHours >= 48) {
-            ageCategory = ">48h";
+          const recMidnight = new Date(parsed.year, parsed.monthIdx, parsed.day).getTime();
+          ageDays = Math.max(0, Math.floor((nowMidnight - recMidnight) / (1000 * 86400)));
+          if (ageDays >= 2) {
+            ageCategory = "≥2 days";
             pendingOlder48Count++;
             pendingOlder24Count++;
-          } else if (ageHours >= 24) {
-            ageCategory = "24–48h";
+          } else if (ageDays >= 1) {
+            ageCategory = "1 day";
             pendingOlder24Count++;
           } else {
-            ageCategory = "<24h";
+            ageCategory = "Today";
           }
         }
 
         return {
           date: rawDate || "—",
           parsedDate: parsed,
-          ageHours,
+          ageDays,
           ageCategory,
           team: normalizeMemberName(item.team || item.name || item.Name),
-          site: cleanVal(item.site || item.SITE) || "—",
+          site: normalizeSiteName(item.site || item.SITE),
           status: cleanVal(item.status || item.noc || item.NOC) || "Pending",
           pendingReason: cleanVal(item.pendingReason || item.reason || "N/A"),
           remarks: cleanVal(item.remarks || item.Remarks),
@@ -606,11 +613,42 @@ window.CCTV_DASHBOARD = (function () {
       state.pendingDetails = [];
     }
 
-    // Month Breakdown (Infractions, Sites, Accounts)
+    // Month Breakdown (Infractions, Sites, Accounts) (Fix 8)
     if (data.breakdown && typeof data.breakdown === "object") {
+      let rawInfractions = Array.isArray(data.breakdown.infractions) ? data.breakdown.infractions : [];
+
+      // Check if rawInfractions erroneously contains Agent Names (from prior Apps Script mapping)
+      const isAgentNameLeak = rawInfractions.length > 0 && rawInfractions.some(it => {
+        const n = String(it.name || "").trim();
+        return n.includes("Caliguid") || n.includes("Tamayo") || n.includes("Manmano") || n.includes("Llamasarez");
+      });
+
+      if (isAgentNameLeak && state.pendingDetails.length > 0) {
+        // Derive real CCTV Reason Codes from pendingDetails until Apps Script is redeployed
+        const reasonCountMap = {};
+        state.pendingDetails.forEach(d => {
+          const r = cleanVal(d.pendingReason).toUpperCase();
+          if (r && r !== "N/A" && r !== "—") {
+            reasonCountMap[r] = (reasonCountMap[r] || 0) + 1;
+          }
+        });
+        const derived = Object.keys(reasonCountMap).map(k => ({ name: k, count: reasonCountMap[k] }));
+        derived.sort((a, b) => b.count - a.count);
+        rawInfractions = derived;
+      }
+
+      // Normalize site names (e.g. MAA -> Maa)
+      const siteCounts = {};
+      (Array.isArray(data.breakdown.sites) ? data.breakdown.sites : []).forEach(it => {
+        const normSite = normalizeSiteName(it.name);
+        siteCounts[normSite] = (siteCounts[normSite] || 0) + (it.count || 0);
+      });
+      const normSites = Object.keys(siteCounts).map(k => ({ name: k, count: siteCounts[k] }));
+      normSites.sort((a, b) => b.count - a.count);
+
       state.breakdown = {
-        infractions: Array.isArray(data.breakdown.infractions) ? data.breakdown.infractions : [],
-        sites: Array.isArray(data.breakdown.sites) ? data.breakdown.sites : [],
+        infractions: rawInfractions,
+        sites: normSites,
         accounts: Array.isArray(data.breakdown.accounts) ? data.breakdown.accounts : []
       };
       state.hasAuthoritativeBreakdown = (state.breakdown.infractions.length + state.breakdown.sites.length + state.breakdown.accounts.length) > 0;
@@ -698,11 +736,20 @@ window.CCTV_DASHBOARD = (function () {
         if (typeof edrService.getReports === "function") {
           edrList = edrService.getReports();
         }
+        if ((!Array.isArray(edrList) || edrList.length === 0) && typeof edrService.loadReports === "function") {
+          edrList = await edrService.loadReports();
+        }
         if (Array.isArray(edrList)) {
           const activeList = edrList.filter(r => !r.done);
-          const uncopied = activeList.filter(r => !r.teamsCopied).length;
-          const unaudited = activeList.filter(r => !r.audited).length;
-          const actionNeeded = activeList.filter(r => !r.teamsCopied || !r.audited).length;
+          const uncopied = typeof edrService.getUncopiedTeamsCount === "function"
+            ? edrService.getUncopiedTeamsCount()
+            : activeList.filter(r => !r.teamsCopied).length;
+          const unaudited = typeof edrService.getUnauditedCount === "function"
+            ? edrService.getUnauditedCount()
+            : activeList.filter(r => !r.audited).length;
+          const actionNeeded = typeof edrService.getActionNeededCount === "function"
+            ? edrService.getActionNeededCount()
+            : activeList.filter(r => !r.teamsCopied || !r.audited).length;
 
           state.edrUncopiedCount = uncopied;
           state.edrUnauditedCount = unaudited;
@@ -710,7 +757,7 @@ window.CCTV_DASHBOARD = (function () {
 
           // EDRs created today
           state.today.edrsCreatedToday = edrList.filter(r => {
-            const d = parseTrackerDate(r.createdAt || r.date);
+            const d = parseTrackerDate(r.date || r.createdAt);
             return d && d.formatted === todayFormatted;
           }).length;
         }
@@ -725,6 +772,14 @@ window.CCTV_DASHBOARD = (function () {
     state.needsAttention.edrTeamsPending = state.edrUncopiedCount || 0;
     state.needsAttention.edrAuditPending = state.edrUnauditedCount || 0;
 
+    // Update navigation rail badges if present
+    const railEdr = document.getElementById("railEdrBadge");
+    if (railEdr) {
+      const edrService = window.CCTV_EDR || window.edrService;
+      const count = typeof edrService?.getReports === "function" ? (edrService.getReports() || []).length : 0;
+      railEdr.textContent = count;
+    }
+
     emitChange();
   }
 
@@ -732,7 +787,7 @@ window.CCTV_DASHBOARD = (function () {
    * Fetch authoritative data from the dedicated Google Apps Script Web App
    */
   function fetchTrackerData(force = false) {
-    if (activeFetchPromise) {
+    if (activeFetchPromise && !force) {
       return activeFetchPromise;
     }
 
@@ -765,8 +820,15 @@ window.CCTV_DASHBOARD = (function () {
         try { controller.abort(); } catch (_) {}
       }, 45000);
 
+      let requestUrl = apiUrl.trim();
+      if (!requestUrl.endsWith(".json")) {
+        const tzOffset = new Date().getTimezoneOffset();
+        const sep = requestUrl.includes("?") ? "&" : "?";
+        requestUrl += `${sep}year=${monthInfo.year}&month=${monthInfo.monthIdx + 1}&date=${monthInfo.todayFormatted}&tzOffset=${tzOffset}`;
+      }
+
       try {
-        const resp = await fetch(apiUrl.trim(), {
+        const resp = await fetch(requestUrl, {
           method: "GET",
           mode: "cors",
           credentials: "omit",
@@ -870,6 +932,14 @@ window.CCTV_DASHBOARD = (function () {
       }
     }
 
+    // CCTV Audit change listener
+    const auditService = window.CCTV_AUDIT || window.auditService;
+    if (auditService && typeof auditService.onChange === "function") {
+      auditService.onChange(() => {
+        syncLocalWorkspaces().catch(console.warn);
+      });
+    }
+
     // Initial fetch from authoritative Google Sheets endpoint
     fetchTrackerData().catch(console.warn);
     startAutoRefresh();
@@ -954,7 +1024,7 @@ window.CCTV_DASHBOARD = (function () {
   return {
     init,
     fetchTrackerData,
-    refresh: () => (activeFetchPromise ? activeFetchPromise : fetchTrackerData(true)),
+    refresh: (force = true) => fetchTrackerData(force),
     syncLocalWorkspaces,
     startAutoRefresh,
     stopAutoRefresh,
@@ -962,6 +1032,7 @@ window.CCTV_DASHBOARD = (function () {
     getApiUrl: () => getDashboardTrackerApiUrl(),
     setApiUrl: (url) => {
       apiUrlOverride = (typeof url === "string" && url.trim()) ? url.trim() : null;
+      activeFetchPromise = null;
     },
     parseTrackerResponse,
     parseTrackerDate,

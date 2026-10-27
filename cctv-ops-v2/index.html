@@ -1325,10 +1325,10 @@
             </div>
           </div>
 
-          <!-- Manila Live Clock -->
-          <div class="manila-clock-pill" title="Asia/Manila (PHT) Operational Clock" data-tooltip="Manila Operational Clock" data-tooltip-pos="bottom">
+          <!-- Computer Local Operational Clock -->
+          <div class="manila-clock-pill" id="localClockPill" title="Local Workstation Clock" data-tooltip="Local Operational Clock" data-tooltip-pos="bottom">
             <span class="clock-live-indicator"></span>
-            <span id="manilaClockText">00:00:00 AM PHT</span>
+            <span id="manilaClockText">00:00:00 AM</span>
           </div>
 
           <!-- User Badge / Terminal -->
@@ -1419,14 +1419,14 @@
                 </div>
                 <div class="dashboard-kpi-val" id="kpiValPendingReports" style="color:var(--accent-amber,#fbbf24);">—</div>
                 <div class="dashboard-kpi-sub" id="kpiSubPendingReports">
-                  <span id="kpiValPendingPct">—</span> of all tracked reports
+                  <span id="kpiValPendingPct">—</span> of this month's NOC records
                 </div>
               </div>
 
               <!-- 4. Follow Up -->
               <div class="dashboard-kpi-card kpi-card-followup" id="kpiCardFollowUp" title="Click to view Follow Up workspace">
                 <div class="dashboard-kpi-label">
-                  <span>Follow Up</span>
+                  <span>Follow Up <span class="badge-local-queue" title="Stored on this workstation/browser.">LOCAL QUEUE</span></span>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
                 </div>
                 <div class="dashboard-kpi-val" id="kpiValFollowUp" style="color:#818cf8;">—</div>
@@ -1436,7 +1436,7 @@
               <!-- 5. Unreported -->
               <div class="dashboard-kpi-card kpi-card-unreported" id="kpiCardUnreported" title="Click to view Unreported workspace">
                 <div class="dashboard-kpi-label">
-                  <span>Unreported</span>
+                  <span>Unreported <span class="badge-local-queue" title="Stored on this workstation/browser.">LOCAL QUEUE</span></span>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
                 </div>
                 <div class="dashboard-kpi-val" id="kpiValUnreported" style="color:#f59e0b;">—</div>
@@ -1446,7 +1446,7 @@
               <!-- 6. EDR Action Needed -->
               <div class="dashboard-kpi-card kpi-card-edr" id="kpiCardEdrAction" title="Click to view EDR workspace">
                 <div class="dashboard-kpi-label">
-                  <span>EDR Action Needed</span>
+                  <span>EDR Action Needed <span class="badge-local-queue" title="Stored on this workstation/browser.">LOCAL QUEUE</span></span>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>
                 </div>
                 <div class="dashboard-kpi-val" id="kpiValEdrAction" style="color:#f43f5e;">—</div>
@@ -1468,13 +1468,13 @@
                   <span class="na-chip-count" id="naCountPending">—</span>
                   <span class="na-chip-label">Pending NOC</span>
                 </div>
-                <div class="na-chip" id="naChipPending24" data-action="scroll-pending" title="Pending records older than 24 hours">
+                <div class="na-chip" id="naChipPending24" data-action="scroll-pending" title="Pending records with incident date ≥1 day ago">
                   <span class="na-chip-count" id="naCountPending24">—</span>
-                  <span class="na-chip-label">>24h</span>
+                  <span class="na-chip-label">≥1 day</span>
                 </div>
-                <div class="na-chip" id="naChipPending48" data-action="scroll-pending" title="Pending records older than 48 hours">
+                <div class="na-chip" id="naChipPending48" data-action="scroll-pending" title="Pending records with incident date ≥2 days ago">
                   <span class="na-chip-count" id="naCountPending48">—</span>
-                  <span class="na-chip-label">>48h</span>
+                  <span class="na-chip-label">≥2 days</span>
                 </div>
                 <div class="na-chip" id="naChipFollowUp" data-action="goto-followup" title="Active Follow Up records">
                   <span class="na-chip-count" id="naCountFollowUp">—</span>
@@ -1613,15 +1613,15 @@
               <div class="dashboard-panel-body" style="padding: 12px 14px;">
                 <div class="today-metrics-grid">
                   <div class="today-metric-card">
-                    <span class="today-metric-label">Reports Today</span>
+                    <span class="today-metric-label">Reports (Incident Today)</span>
                     <strong class="today-metric-val" id="todayValReports">—</strong>
                   </div>
                   <div class="today-metric-card">
-                    <span class="today-metric-label">Successful NOC Today</span>
+                    <span class="today-metric-label">Successful NOC (Incident Today)</span>
                     <strong class="today-metric-val" id="todayValNoc" style="color:var(--accent-emerald,#10b981);">—</strong>
                   </div>
                   <div class="today-metric-card">
-                    <span class="today-metric-label">Pending Added Today</span>
+                    <span class="today-metric-label">Pending (Incident Today)</span>
                     <strong class="today-metric-val" id="todayValPending" style="color:var(--accent-amber,#fbbf24);">—</strong>
                   </div>
                   <div class="today-metric-card">
