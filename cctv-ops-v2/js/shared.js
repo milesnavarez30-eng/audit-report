@@ -310,7 +310,7 @@
     }
   };
 
-  // Global Keyboard listener for confirmation dialog
+  // Global Keyboard listener for confirmation dialog & modal dismissal
   document.addEventListener("keydown", (e) => {
     const modal = document.getElementById("modalAppConfirm");
     if (modal && !modal.hidden) {
@@ -320,6 +320,25 @@
       } else if (e.key === "Enter" && document.activeElement?.id === "btnConfirmDialogAccept") {
         e.preventDefault();
         window.handleConfirmDialog(true);
+      }
+      return;
+    }
+
+    if (e.key === "Escape") {
+      const openModals = Array.from(document.querySelectorAll(".modal-backdrop:not([hidden]), .modal:not([hidden])"));
+      if (openModals.length > 0) {
+        const topModal = openModals[openModals.length - 1];
+        if (topModal.id === "modalAuth" && (!window.CCTV_AUTH || !window.CCTV_AUTH.getUser())) {
+          return;
+        }
+        e.preventDefault();
+        const closeBtn = topModal.querySelector(".btn-close, .modal-close, [data-action='close'], #btnSubjectEditorCancel, #btnSubjectEditorClose, #btnMyAccountClose, #btnMyAccountDone, #btnCloseScreenshotViewer, #btnViewerCloseBottom, #btnCloseDocsSetup, #btnCloseTrackerSetup, #btnCloseMaintSetup");
+        if (closeBtn && typeof closeBtn.click === "function") {
+          closeBtn.click();
+        } else {
+          topModal.hidden = true;
+          topModal.classList.remove("is-visible");
+        }
       }
     }
   });

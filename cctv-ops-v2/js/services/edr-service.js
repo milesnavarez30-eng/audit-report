@@ -19,6 +19,8 @@ window.CCTV_EDR = (function () {
   let editingId = null;
   let listeners = [];
   let saveReportsTimer = null;
+  let lastEdrSubmitTime = 0;
+  let lastEdrSubmitSignature = "";
 
   function uid() {
     return "edr_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 8);
@@ -849,6 +851,21 @@ window.CCTV_EDR = (function () {
       if (cleanedData.defaultTl) cleanedData.defaultTl = stripRolePrefix(cleanedData.defaultTl);
 
       const targetId = editingId || (cleanedData.id && edrReports.some(r => r.id === cleanedData.id) ? cleanedData.id : null);
+      if (!targetId) {
+        const sig = [
+          cleanedData.date || "",
+          cleanedData.startTime || "",
+          cleanedData.site || "",
+          cleanedData.account || "",
+          cleanedData.agentName || cleanedData.subjectName || ""
+        ].join("|");
+        const now = Date.now();
+        if (sig === lastEdrSubmitSignature && (now - lastEdrSubmitTime < 2500)) {
+          return edrReports[0] || null;
+        }
+        lastEdrSubmitTime = now;
+        lastEdrSubmitSignature = sig;
+      }
       if (targetId) {
         const idx = edrReports.findIndex(r => r.id === targetId);
         if (idx !== -1) {
@@ -1237,12 +1254,14 @@ window.CCTV_EDR = (function () {
       if (wroteSuccessfully) {
         const copiedTimestamp = new Date().toISOString();
         for (const r of activeSelected) {
-          r.done = true;
-          r.doneAt = copiedTimestamp;
           r.teamsCopied = true;
           r.teamsCopiedAt = copiedTimestamp;
           r.selected = false;
           r.updatedAt = copiedTimestamp;
+          if (r.audited) {
+            r.done = true;
+            r.doneAt = copiedTimestamp;
+          }
         }
         await this.saveReports();
         notify();
@@ -1762,6 +1781,10 @@ window.CCTV_EDR = (function () {
       rep.audited = true;
       rep.auditedAt = timestamp || new Date().toISOString();
       rep.updatedAt = new Date().toISOString();
+      if (rep.teamsCopied) {
+        rep.done = true;
+        if (!rep.doneAt) rep.doneAt = rep.auditedAt;
+      }
       await this.saveReports();
       notify();
       return rep;
@@ -1782,6 +1805,10 @@ window.CCTV_EDR = (function () {
           rep.audited = true;
           if (!rep.auditedAt) rep.auditedAt = nowIso;
           rep.updatedAt = nowIso;
+          if (rep.teamsCopied) {
+            rep.done = true;
+            if (!rep.doneAt) rep.doneAt = nowIso;
+          }
           updatedCount++;
         }
       });

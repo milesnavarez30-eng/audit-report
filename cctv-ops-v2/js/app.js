@@ -2253,6 +2253,11 @@
       e.preventDefault();
       if (isSubmittingEdr) return;
       isSubmittingEdr = true;
+      const btnSubmit = el("btnEdrSubmit");
+      if (btnSubmit) {
+        btnSubmit.disabled = true;
+        btnSubmit.classList.add("is-busy");
+      }
       try {
         const currentSubjects = window.getMsSubjects ? window.getMsSubjects() : [];
         if (!currentSubjects.length) {
@@ -2268,10 +2273,32 @@
         showToast(err.message || "Failed to save EDR.", "error");
       } finally {
         isSubmittingEdr = false;
+        if (btnSubmit) {
+          btnSubmit.disabled = false;
+          btnSubmit.classList.remove("is-busy");
+        }
       }
     });
 
-    el("btnEdrClear")?.addEventListener("click", resetForm);
+    el("btnEdrClear")?.addEventListener("click", async () => {
+      const currentSubjects = window.getMsSubjects ? window.getMsSubjects() : [];
+      const incident = el("edrIncident")?.value?.trim();
+      const details = el("edrDetails")?.value?.trim();
+      const defaultTl = el("edrDefaultTl")?.value?.trim();
+      const omName = el("edrOmName")?.value?.trim();
+      if (currentSubjects.length > 0 || incident || details || defaultTl || omName) {
+        const ok = window.appConfirm
+          ? await window.appConfirm({
+              title: "Discard Unsaved EDR?",
+              message: "You have unsaved form entries. Are you sure you want to clear the form?",
+              confirmText: "Discard & Clear",
+              tone: "danger"
+            })
+          : confirm("Clear form and discard unsaved entries?");
+        if (!ok) return;
+      }
+      resetForm();
+    });
     el("btnEdrCancelEdit")?.addEventListener("click", resetForm);
 
     // Send to CCTV Audit (From Left Column Form Footer)
