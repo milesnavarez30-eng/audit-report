@@ -538,6 +538,10 @@ window.EDR_MULTI_SUBJECT = (function () {
     return report;
   }
 
+  if (typeof window !== "undefined") {
+    window.stripRolePrefix = stripRolePrefix;
+  }
+
   // ── Public API ────────────────────────────────────────────────────────────
 
   return {

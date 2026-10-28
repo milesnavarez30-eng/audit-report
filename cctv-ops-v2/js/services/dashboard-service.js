@@ -736,7 +736,7 @@ window.CCTV_DASHBOARD = (function () {
         if (typeof edrService.getReports === "function") {
           edrList = edrService.getReports();
         }
-        if ((!Array.isArray(edrList) || edrList.length === 0) && typeof edrService.loadReports === "function") {
+        if (!Array.isArray(edrList) && typeof edrService.loadReports === "function") {
           edrList = await edrService.loadReports();
         }
         if (Array.isArray(edrList)) {

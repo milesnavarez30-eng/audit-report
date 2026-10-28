@@ -520,6 +520,27 @@
   let msSubjects = []; // In-memory subject list for the current EDR being edited/created
 
   function initMultiSubjectEdr() {
+    // Universal Safe Role Prefix Stripper (guaranteed safe against unexported/cached modules)
+    function safeStripRolePrefix(name) {
+      if (window.CCTV_PEOPLE && typeof window.CCTV_PEOPLE.stripRolePrefix === "function") {
+        return window.CCTV_PEOPLE.stripRolePrefix(name || "");
+      }
+      if (window.EDR_MULTI_SUBJECT && typeof window.EDR_MULTI_SUBJECT.stripRolePrefix === "function") {
+        return window.EDR_MULTI_SUBJECT.stripRolePrefix(name || "");
+      }
+      return String(name || "")
+        .replace(/^(?:TL|OM|Agent)\b\s*[\u2014\u2013\-:]?\s*/i, "")
+        .replace(/\s+/g, " ")
+        .trim();
+    }
+
+    if (window.EDR_MULTI_SUBJECT && typeof window.EDR_MULTI_SUBJECT.stripRolePrefix !== "function") {
+      window.EDR_MULTI_SUBJECT.stripRolePrefix = safeStripRolePrefix;
+    }
+    if (window.CCTV_PEOPLE && typeof window.CCTV_PEOPLE.stripRolePrefix !== "function") {
+      window.CCTV_PEOPLE.stripRolePrefix = safeStripRolePrefix;
+    }
+
     const ms = window.EDR_MULTI_SUBJECT;
     if (!ms) {
       console.warn("[MultiSubject] EDR_MULTI_SUBJECT module not loaded.");
@@ -737,7 +758,7 @@
       el("subjectEditorName").value = subject ? subject.name : "";
 
       populateSubjectDropdowns();
-      const defaultTl = ms.stripRolePrefix(ms.clean(el("edrDefaultTl")?.value || ""));
+      const defaultTl = safeStripRolePrefix(ms.clean ? ms.clean(el("edrDefaultTl")?.value || "") : (el("edrDefaultTl")?.value || ""));
       const supInput = el("subjectEditorSupervisor");
       if (supInput) {
         supInput.placeholder = editorSubjectType === "Team Leader"
@@ -764,7 +785,7 @@
     }
 
     function saveSubjectEditor() {
-      const name = ms.stripRolePrefix(ms.clean(el("subjectEditorName")?.value || ""));
+      const name = safeStripRolePrefix(ms.clean ? ms.clean(el("subjectEditorName")?.value || "") : (el("subjectEditorName")?.value || ""));
       if (!name) {
         showToast("Please enter a subject name.", "warning");
         el("subjectEditorName")?.focus();
@@ -774,7 +795,7 @@
       const subjectId = el("subjectEditorId")?.value || "";
       const isNew = !subjectId;
 
-      const supervisorVal = ms.stripRolePrefix(ms.clean(el("subjectEditorSupervisor")?.value || ""));
+      const supervisorVal = safeStripRolePrefix(ms.clean ? ms.clean(el("subjectEditorSupervisor")?.value || "") : (el("subjectEditorSupervisor")?.value || ""));
       const infraction = el("subjectEditorInfraction")?.value || "";
 
       const subjectData = {
@@ -817,7 +838,7 @@
       if (supInput) {
         supInput.placeholder = "Team Leader / Supervisor...";
         if (!supInput.value.trim()) {
-          supInput.value = ms.stripRolePrefix(el("edrDefaultTl")?.value || "");
+          supInput.value = safeStripRolePrefix(el("edrDefaultTl")?.value || "");
         }
       }
     });
@@ -833,10 +854,10 @@
 
     // Option Management - Subject Editor Employee & Supervisor Buttons
     el("btnAddSubjectEmployeeOption")?.addEventListener("click", () => {
-      const curr = ms.stripRolePrefix(ms.clean(el("subjectEditorName")?.value || ""));
+      const curr = safeStripRolePrefix(ms.clean ? ms.clean(el("subjectEditorName")?.value || "") : (el("subjectEditorName")?.value || ""));
       const val = prompt("Add new employee/person to masterlist:", curr);
       if (val && val.trim()) {
-        const cleanVal = ms.stripRolePrefix(val.trim());
+        const cleanVal = safeStripRolePrefix(val.trim());
         const role = editorSubjectType === "Team Leader" ? "TL" : "Agent";
         const people = window.CCTV_PEOPLE;
         const res = people ? people.addCustomPerson(cleanVal, role) : { added: true, person: { name: cleanVal } };
@@ -847,7 +868,7 @@
     });
 
     el("btnRemoveSubjectEmployeeOption")?.addEventListener("click", () => {
-      const curr = ms.stripRolePrefix(ms.clean(el("subjectEditorName")?.value || ""));
+      const curr = safeStripRolePrefix(ms.clean ? ms.clean(el("subjectEditorName")?.value || "") : (el("subjectEditorName")?.value || ""));
       if (!curr) {
         showToast("Enter or select an employee name to remove.", "info");
         return;
@@ -866,11 +887,11 @@
     });
 
     el("btnAddSubjectSupervisorOption")?.addEventListener("click", () => {
-      const curr = ms.stripRolePrefix(ms.clean(el("subjectEditorSupervisor")?.value || ""));
+      const curr = safeStripRolePrefix(ms.clean ? ms.clean(el("subjectEditorSupervisor")?.value || "") : (el("subjectEditorSupervisor")?.value || ""));
       const defaultRole = editorSubjectType === "Team Leader" ? "OM" : "TL";
       const val = prompt(`Add new supervisor (${defaultRole}) to masterlist:`, curr);
       if (val && val.trim()) {
-        const cleanVal = ms.stripRolePrefix(val.trim());
+        const cleanVal = safeStripRolePrefix(val.trim());
         const people = window.CCTV_PEOPLE;
         const res = people ? people.addCustomPerson(cleanVal, defaultRole) : { added: true, person: { name: cleanVal } };
         populateSubjectDropdowns();
@@ -880,7 +901,7 @@
     });
 
     el("btnRemoveSubjectSupervisorOption")?.addEventListener("click", () => {
-      const curr = ms.stripRolePrefix(ms.clean(el("subjectEditorSupervisor")?.value || ""));
+      const curr = safeStripRolePrefix(ms.clean ? ms.clean(el("subjectEditorSupervisor")?.value || "") : (el("subjectEditorSupervisor")?.value || ""));
       if (!curr) {
         showToast("Enter or select a supervisor name to remove.", "info");
         return;
@@ -907,6 +928,12 @@
     // ── Add Single Subject button ─────────────────────────────────────────
 
     el("btnAddSubject")?.addEventListener("click", () => openSubjectEditor(null));
+    el("modalSubjectEditor")?.addEventListener("click", (e) => {
+      if (e.target === el("modalSubjectEditor")) closeSubjectEditor();
+    });
+    window.openSubjectEditor = openSubjectEditor;
+    window.closeSubjectEditor = closeSubjectEditor;
+    window.safeStripRolePrefix = safeStripRolePrefix;
 
     // ── Paste Multiple Names Modal ────────────────────────────────────────
 
@@ -934,7 +961,7 @@
         return;
       }
       const defaultInfraction = el("edrDefaultInfraction")?.value || "";
-      const dupeCount = names.filter(n => ms.isDuplicateName(msSubjects, ms.stripRolePrefix(n), defaultInfraction)).length;
+      const dupeCount = names.filter(n => (ms.isDuplicateName ? ms.isDuplicateName(msSubjects, safeStripRolePrefix(n), defaultInfraction) : false)).length;
       const newCount = names.length - dupeCount;
       preview.textContent = `${names.length} name${names.length !== 1 ? "s" : ""} detected${dupeCount ? ` (${dupeCount} already in list, ${newCount} new)` : ` — all new`}.`;
     });
@@ -947,14 +974,14 @@
         return;
       }
 
-      const defaultTl = ms.stripRolePrefix(ms.clean(el("edrDefaultTl")?.value || ""));
-      const defaultAccount = ms.clean(el("edrDefaultAccount")?.value || "");
+      const defaultTl = safeStripRolePrefix(ms.clean ? ms.clean(el("edrDefaultTl")?.value || "") : (el("edrDefaultTl")?.value || ""));
+      const defaultAccount = ms.clean ? ms.clean(el("edrDefaultAccount")?.value || "") : (el("edrDefaultAccount")?.value || "");
       const defaultInfraction = el("edrDefaultInfraction")?.value || "";
 
       let added = 0;
       let dupes = 0;
       names.forEach(rawName => {
-        const name = ms.stripRolePrefix(rawName);
+        const name = safeStripRolePrefix(rawName);
         if (!name) return;
         if (ms.isDuplicateName(msSubjects, name, defaultInfraction)) {
           dupes++;
