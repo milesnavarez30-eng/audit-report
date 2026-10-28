@@ -1,4 +1,4 @@
-﻿/**
+/**
  * CCTV OPS V2 - EDR Service
  * Full manual EDR workflow, IndexedDB persistence, Google Docs sync, and Teams plain-text copy
  */
@@ -673,16 +673,14 @@ window.CCTV_EDR = (function () {
 
     async loadReports() {
       try {
-        // 1. Primary V1 authoritative workspace: cctv_edr_workspace_v2 (store: 'state', key: 'current')
+        let reports = null;
+        let loadedState = null;
+
+        // 1. Primary authoritative workspace: cctv_edr_workspace_v2 (store: 'state', key: 'current')
         const workspace = await this.readWorkspaceDb();
         if (workspace && Array.isArray(workspace.reports)) {
-          edrReports = workspace.reports;
-          if (typeof workspace.facebookText === "string") {
-            currentFacebookText = workspace.facebookText;
-          }
-          if (workspace.form && typeof workspace.form === "object") {
-            currentFormDraft = workspace.form;
-          }
+          reports = workspace.reports;
+          loadedState = workspace;
         } else {
           // 2. Fallback check: cctv_pending_reports_v1
           let saved = await storage.idbGet(DB_NAME, STORE_NAME, STATE_KEY, 1, (db) => {
@@ -690,16 +688,37 @@ window.CCTV_EDR = (function () {
               db.createObjectStore(STORE_NAME);
             }
           });
-          edrReports = Array.isArray(saved) ? saved : [];
+          if (Array.isArray(saved)) {
+            reports = saved;
+          }
         }
+
+        if (loadedState) {
+          if (typeof loadedState.facebookText === "string" && !currentFacebookText) {
+            currentFacebookText = loadedState.facebookText;
+          }
+          if (loadedState.form && typeof loadedState.form === "object" && !currentFormDraft) {
+            currentFormDraft = loadedState.form;
+          }
+        }
+
+        edrReports = Array.isArray(reports) ? reports : [];
         edrReports = (edrReports || []).map(r => {
           if (!r) return r;
           if (r.audited === undefined) r.audited = false;
           if (r.auditedAt === undefined) r.auditedAt = null;
           if (r.teamsCopied === undefined) r.teamsCopied = false;
           if (r.teamsCopiedAt === undefined) r.teamsCopiedAt = null;
+          if (r.done === undefined) r.done = false;
           return r;
         });
+
+        // Ensure remote screenshots are loaded for reports with screenshotFileId
+        for (const rep of edrReports) {
+          if (!rep.screenshotData && rep.screenshotFileId) {
+            this.ensureRemoteScreenshot(rep).catch(() => {});
+          }
+        }
       } catch (err) {
         console.warn("Could not load EDRs from IndexedDB, fallback to empty list:", err);
         edrReports = [];
@@ -768,7 +787,14 @@ window.CCTV_EDR = (function () {
         saveReportsTimer = null;
       }
       try {
-        // 1. Authoritative write to cctv_edr_workspace_v2
+        // Guard against empty overwrite if database currently has valid records
+        if (!Array.isArray(edrReports) || edrReports.length === 0) {
+          const existing = await this.readWorkspaceDb();
+          if (existing && Array.isArray(existing.reports) && existing.reports.length > 0) {
+            edrReports = existing.reports;
+          }
+        }
+
         const workspaceState = {
           reports: edrReports,
           facebookText: currentFacebookText,
@@ -778,9 +804,11 @@ window.CCTV_EDR = (function () {
           accountOptions: this.getAccountNames(),
           savedAt: new Date().toISOString()
         };
+
+        // 1. Authoritative write to scoped workspace DB
         await this.writeWorkspaceDb(workspaceState);
 
-        // 2. Dual-save to cctv_pending_reports_v1 for backward compatibility
+        // 2. Dual-save to scoped cctv_pending_reports_v1 for backward compatibility
         await storage.idbSet(DB_NAME, STORE_NAME, edrReports, STATE_KEY, 1, (db) => {
           if (!db.objectStoreNames.contains(STORE_NAME)) {
             db.createObjectStore(STORE_NAME);
@@ -792,6 +820,57 @@ window.CCTV_EDR = (function () {
       notify();
     },
 
+    async restoreAuthorizedRecords(recordsToRestore) {
+      if (!Array.isArray(recordsToRestore) || recordsToRestore.length === 0) {
+        return { restored: 0, total: (edrReports || []).length };
+      }
+
+      await this.loadReports();
+
+      const existingMap = new Map((edrReports || []).map(r => [r.id, r]));
+      let addedCount = 0;
+      let updatedCount = 0;
+
+      for (const rec of recordsToRestore) {
+        if (!rec || !rec.id) continue;
+        const existing = existingMap.get(rec.id);
+        if (!existing) {
+          const safeRec = {
+            ...rec,
+            audited: rec.audited !== undefined ? rec.audited : false,
+            auditedAt: rec.auditedAt !== undefined ? rec.auditedAt : null,
+            teamsCopied: rec.teamsCopied !== undefined ? rec.teamsCopied : false,
+            teamsCopiedAt: rec.teamsCopiedAt !== undefined ? rec.teamsCopiedAt : null,
+            done: rec.done !== undefined ? rec.done : false
+          };
+          edrReports.push(safeRec);
+          existingMap.set(rec.id, safeRec);
+          addedCount++;
+        } else {
+          let changed = false;
+          if (!existing.screenshotData && rec.screenshotData) {
+            existing.screenshotData = rec.screenshotData;
+            changed = true;
+          }
+          if (!existing.screenshotFileId && rec.screenshotFileId) {
+            existing.screenshotFileId = rec.screenshotFileId;
+            changed = true;
+          }
+          if (changed) updatedCount++;
+        }
+      }
+
+      if (addedCount > 0 || updatedCount > 0) {
+        await this.saveReports();
+        notify();
+      }
+
+      return {
+        restored: addedCount,
+        updated: updatedCount,
+        total: edrReports.length
+      };
+    },
     saveReportsDebounced(delay = 150) {
       if (saveReportsTimer) clearTimeout(saveReportsTimer);
       saveReportsTimer = setTimeout(() => {
@@ -799,7 +878,6 @@ window.CCTV_EDR = (function () {
         this.saveReports().catch(console.error);
       }, delay);
     },
-
     // Draft Management
     getDraftForm() {
       return currentFormDraft ? { ...currentFormDraft } : null;

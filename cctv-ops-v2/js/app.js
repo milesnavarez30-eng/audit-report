@@ -1,4 +1,4 @@
-﻿/**
+/**
  * CCTV OPS V2 - Main Application Orchestrator & Prototype Controller
  */
 
@@ -13167,12 +13167,22 @@ function doPost(e) {
       }
       updateIntegrationStatusPills();
       restoreSorterDraft().catch(console.error);
+      if (typeof edr?.loadReports === "function") {
+        edr.loadReports().then(reps => {
+          if (typeof renderEdrList === "function") renderEdrList(reps);
+        }).catch(console.error);
+      }
     });
 
     // Initial auth check on app startup
     const initialAuth = await auth.init();
     const activeUser = (initialAuth && initialAuth.user) || auth?.getUser?.();
     const activeProfile = (initialAuth && initialAuth.profile) || auth?.getProfile?.();
+    if (typeof edr?.loadReports === "function") {
+      edr.loadReports().then(reps => {
+        if (typeof renderEdrList === "function") renderEdrList(reps);
+      }).catch(console.error);
+    }
     if (activeUser) {
       unlockApp(activeUser, activeProfile);
     } else {
