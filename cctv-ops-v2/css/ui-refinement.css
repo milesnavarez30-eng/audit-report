@@ -1,4 +1,4 @@
-﻿/**
+/**
  * CCTV OPS V2 - Professional UI Refinement Layer
  * ================================================
  * Presentation-only. All IDs, event wiring, data attributes: untouched.
@@ -3426,4 +3426,88 @@ body.edr-resizing-h {
 
 #modalDispatchFullscreen .modal-dialog {
   box-shadow: var(--shadow-lg, 0 10px 25px rgba(0, 0, 0, 0.5));
+}
+
+/* ==========================================================================
+   CCTV REPORT WORKSPACE REFINEMENTS
+   ========================================================================== */
+
+.cctv-autosave-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 7px;
+  border-radius: 10px;
+  font-size: 10px;
+  font-weight: 600;
+  font-family: var(--font-mono, monospace);
+  background: rgba(16, 185, 129, 0.12);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  margin-left: 8px;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.cctv-autosave-pill.saving {
+  background: rgba(245, 158, 11, 0.15);
+  color: #f59e0b;
+  border-color: rgba(245, 158, 11, 0.3);
+}
+
+.cctv-preset-btn {
+  font-size: 11px !important;
+  padding: 3px 8px !important;
+  border-radius: 4px !important;
+  background: var(--bg-surface-elevated, #1e293b) !important;
+  border: 1px solid var(--border-default, #334155) !important;
+  color: var(--text-secondary, #94a3b8) !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
+  white-space: nowrap !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+}
+
+.cctv-preset-btn:hover {
+  background: var(--bg-surface-hover, #2d3748) !important;
+  border-color: #22c3ff !important;
+  color: #ffffff !important;
+  transform: translateY(-1px);
+}
+
+.teams-preview-shot-img {
+  cursor: zoom-in;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.teams-preview-shot-img:hover {
+  transform: scale(1.02);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.45);
+  border-color: #14b8a6 !important;
+}
+
+.btn-copy-success {
+  background: #059669 !important;
+  border-color: #10b981 !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.45) !important;
+}
+
+@media (max-width: 1080px) {
+  .cctv-report-layout {
+    flex-direction: column !important;
+    overflow-y: auto !important;
+    height: auto !important;
+  }
+  .cctv-report-left-col,
+  .cctv-report-right-col {
+    min-width: 100% !important;
+    flex: none !important;
+    height: auto !important;
+  }
+  .cctv-preview-card {
+    min-height: 400px;
+  }
 }

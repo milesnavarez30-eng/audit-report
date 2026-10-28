@@ -9076,6 +9076,41 @@ function doPost(e) {
 
   let cctvReportLastGeneratedText = "";
 
+  let cctvReportAutosaveTimer = null;
+
+  function setReportAutosaveState(state) {
+    const pill = el("reportAutosavePill");
+    if (!pill) return;
+    if (state === "saving") {
+      pill.textContent = "\u23F3 Saving...";
+      pill.classList.add("saving");
+    } else if (state === "saved") {
+      clearTimeout(cctvReportAutosaveTimer);
+      cctvReportAutosaveTimer = setTimeout(() => {
+        pill.innerHTML = "&#x25cf; Saved locally";
+        pill.classList.remove("saving");
+      }, 250);
+    } else if (state === "error") {
+      pill.textContent = "\u26A0 Save error";
+      pill.classList.remove("saving");
+    }
+  }
+
+  function updateReportObservationStats() {
+    const obs = el("reportObservation")?.value || "";
+    const chars = obs.length;
+    const words = obs.trim() ? obs.trim().split(/\s+/).filter(Boolean).length : 0;
+    const countBadge = el("reportObsCountBadge");
+    if (countBadge) {
+      countBadge.innerHTML = `${chars} chars &bull; ${words} word${words === 1 ? '' : 's'}`;
+    }
+    const expStats = el("expandedReportStats");
+    if (expStats) {
+      const shotCount = Array.isArray(cctvReportDraft?.screenshots) ? cctvReportDraft.screenshots.length : 0;
+      expStats.innerHTML = `${chars} chars &bull; ${words} word${words === 1 ? '' : 's'} &bull; ${shotCount} screenshot${shotCount === 1 ? '' : 's'}`;
+    }
+  }
+
   function syncCctvReportFormFromDraft() {
     if (!cctvReportDraft) return;
     if (el("quickComposeText")) el("quickComposeText").value = cctvReportDraft.rawInput || "";
@@ -9085,6 +9120,8 @@ function doPost(e) {
     if (el("reportSite")) el("reportSite").value = cctvReportDraft.site || "";
     if (el("reportDateRange")) el("reportDateRange").value = cctvReportDraft.dateRange || "";
     if (el("reportClipUrl")) el("reportClipUrl").value = cctvReportDraft.clipUrl || "";
+    updateReportObservationStats();
+    setReportAutosaveState("saved");
   }
 
   function syncCctvReportDraftFromForm() {
@@ -9096,7 +9133,15 @@ function doPost(e) {
     cctvReportDraft.site = el("reportSite")?.value || "";
     cctvReportDraft.dateRange = el("reportDateRange")?.value || "";
     cctvReportDraft.clipUrl = el("reportClipUrl")?.value || "";
-    window.CCTV_REPORT_SERVICE.saveDraft(cctvReportDraft);
+    
+    setReportAutosaveState("saving");
+    const ok = window.CCTV_REPORT_SERVICE.saveDraft(cctvReportDraft);
+    if (ok !== false) {
+      setReportAutosaveState("saved");
+    } else {
+      setReportAutosaveState("error");
+    }
+    updateReportObservationStats();
   }
 
   function renderCctvReportPolicyBanner() {
@@ -9166,7 +9211,7 @@ function doPost(e) {
       const shotsHtml = cctvReportDraft.screenshots.map((s, idx) => {
         const src = typeof s === "string" ? s : (s.data || s.url || "");
         if (!src || !/^(data:image\/|https?:\/\/)/i.test(String(src).trim())) return "";
-        return `<img src="${esc(String(src).trim())}" class="teams-preview-shot-img" alt="CCTV Screenshot ${idx + 1}">`;
+        return `<img src="${esc(String(src).trim())}" class="teams-preview-shot-img" data-index="${idx}" alt="CCTV Screenshot ${idx + 1}" title="Click to inspect full resolution evidence" />`;
       }).filter(Boolean).join("");
       htmlParts.push(`<div class="teams-preview-shots" style="margin: 6px 0;">${shotsHtml}</div>`);
     }
@@ -9188,6 +9233,23 @@ function doPost(e) {
     }
 
     box.innerHTML = htmlParts.join("");
+
+    // Wire preview thumbnail click to open full-resolution screenshot viewer
+    box.querySelectorAll(".teams-preview-shot-img").forEach((img, i) => {
+      img.addEventListener("click", () => {
+        if (window.openFullScreenshotViewer) {
+          window.openFullScreenshotViewer(img.src, "CCTV Report Evidence", `Screenshot #${i + 1}`);
+        }
+      });
+    });
+
+    // Sync Plain Text view box
+    const plainBox = el("plainTextMessageText");
+    if (plainBox && window.CCTV_REPORT_SERVICE?.buildReportPlainText) {
+      plainBox.textContent = window.CCTV_REPORT_SERVICE.buildReportPlainText(cctvReportDraft);
+    }
+
+    updateReportObservationStats();
   }
 
   async function persistCctvReportScreenshots() {
@@ -9203,7 +9265,6 @@ function doPost(e) {
       console.warn("Could not persist CCTV Report screenshot changes:", err);
     }
   }
-
   function renderCctvReportScreenshots() {
     const gallery = el("reportShotGallery");
     const countEl = el("reportShotCount");
@@ -9626,12 +9687,8 @@ function doPost(e) {
     if (!window.CCTV_REPORT_SERVICE) return;
     cctvReportDraft = window.CCTV_REPORT_SERVICE.getDraft();
 
-    if (
-      typeof window.CCTV_REPORT_SERVICE.loadDraftScreenshots === "function"
-    ) {
-      Promise.resolve(
-        window.CCTV_REPORT_SERVICE.loadDraftScreenshots()
-      )
+    if (typeof window.CCTV_REPORT_SERVICE.loadDraftScreenshots === "function") {
+      Promise.resolve(window.CCTV_REPORT_SERVICE.loadDraftScreenshots())
         .then((storedScreenshots) => {
           if (Array.isArray(storedScreenshots)) {
             if (
@@ -9642,20 +9699,12 @@ function doPost(e) {
               cctvReportDraft.screenshots = storedScreenshots.slice();
             }
           }
-
           renderCctvReportScreenshots();
           updateCctvReportPreview();
         })
         .catch((error) => {
-          console.warn(
-            "Could not restore CCTV Report screenshots from IndexedDB:",
-            error
-          );
-
-          if (
-            !Array.isArray(cctvReportDraft.screenshots) ||
-            cctvReportDraft.screenshots.length === 0
-          ) {
+          console.warn("Could not restore CCTV Report screenshots from IndexedDB:", error);
+          if (!Array.isArray(cctvReportDraft.screenshots) || cctvReportDraft.screenshots.length === 0) {
             cctvReportDraft.screenshots = [];
           }
           renderCctvReportScreenshots();
@@ -9664,6 +9713,16 @@ function doPost(e) {
     } else {
       renderCctvReportScreenshots();
       updateCctvReportPreview();
+    }
+
+    // Helper: format today's date into standard MMMM d, yyyy
+    function getTodayFormattedDate() {
+      const now = new Date();
+      const monthNames = [
+        "January", "February", "March", "April", "May", "June",
+        "July", "August", "September", "October", "November", "December"
+      ];
+      return `${monthNames[now.getMonth()]} ${now.getDate()}, ${now.getFullYear()}`;
     }
 
     // Form field live binding
@@ -9682,6 +9741,319 @@ function doPost(e) {
         syncCctvReportDraftFromForm();
         updateCctvReportPreview();
       });
+    });
+
+    // Date "Today" button
+    el("btnReportDateToday")?.addEventListener("click", () => {
+      const todayStr = getTodayFormattedDate();
+      const input = el("reportDateRange");
+      if (input) {
+        input.value = todayStr;
+        syncCctvReportDraftFromForm();
+        updateCctvReportPreview();
+        showToast(`Date set to today: ${todayStr}`, "info");
+      }
+    });
+
+    // Quick Violation Preset Chips
+    const PRESETS = {
+      sleeping: {
+        notes: "Sleeping\n5:34:44 AM to 5:40:20 AM\nMabini Site A Ground Floor\n",
+        site: "Mabini Site A - Ground Floor",
+        name: "Sleeping"
+      },
+      unattended_pc: {
+        notes: "Unattended PC left powered on without shutting it down\n2:15:00 AM to 2:45:00 AM\nMAA - 5th Floor\n",
+        site: "MAA - 5th Floor",
+        name: "Unattended PC"
+      },
+      attire: {
+        notes: "Violating dress code / not visibly wearing company ID badge\n8:10:00 AM\nMabini Site A - Ground Floor\n",
+        site: "Mabini Site A - Ground Floor",
+        name: "Attire / ID"
+      },
+      phone: {
+        notes: "Unauthorized mobile phone usage on operations floor\n3:22:10 PM to 3:28:40 PM\nMabini Site B - Ground Floor\n",
+        site: "Mabini Site B - Ground Floor",
+        name: "Mobile Phone"
+      },
+      loafing: {
+        notes: "Loitering and engaging in non-work-related conversation\n1:12:00 AM to 1:26:00 AM\nEcoland Site\n",
+        site: "Ecoland Site",
+        name: "Loafing / Noise"
+      },
+      clean_desk: {
+        notes: "Improperly arranged workstation with chair not tucked in\n6:00:00 AM\nMAA - 4th Floor\n",
+        site: "MAA - 4th Floor",
+        name: "Clean Desk"
+      }
+    };
+
+    document.querySelectorAll("#reportPresetChips .cctv-preset-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const pKey = btn.dataset.preset;
+        const preset = PRESETS[pKey];
+        if (!preset) return;
+        const todayStr = getTodayFormattedDate();
+        const raw = preset.notes + todayStr;
+
+        if (el("quickComposeText")) el("quickComposeText").value = raw;
+        if (el("reportSite")) el("reportSite").value = preset.site;
+        if (el("reportDateRange")) el("reportDateRange").value = todayStr;
+
+        syncCctvReportDraftFromForm();
+        const generated = window.CCTV_REPORT_SERVICE.generateReport(raw, cctvReportDraft);
+        cctvReportDraft = { ...cctvReportDraft, ...generated };
+        cctvReportLastGeneratedText = cctvReportDraft.observation;
+        window.CCTV_REPORT_SERVICE.saveDraft(cctvReportDraft);
+        syncCctvReportFormFromDraft();
+        updateCctvReportPreview();
+        showToast(`Preset applied: ${preset.name}`, "success");
+      });
+    });
+
+    // Quick Code of Conduct Policy Selector
+    function setupQuickConductDropdown() {
+      const select = el("reportQuickConductSelect");
+      if (!select) return;
+      const conductSvc = window.CCTV_CONDUCT || window.codeOfConductService || window.CCTV_REPORT_SERVICE;
+      if (!conductSvc || typeof conductSvc.getCodeOfConduct !== "function") return;
+      const categories = conductSvc.getCodeOfConduct();
+      if (!Array.isArray(categories)) return;
+
+      select.innerHTML = '<option value="">-- Quick Select Code of Conduct Policy (Optional) --</option>';
+      categories.forEach(cat => {
+        const optgroup = document.createElement("optgroup");
+        optgroup.label = cat.category;
+        (cat.policies || []).forEach(pol => {
+          const opt = document.createElement("option");
+          opt.value = pol.num;
+          opt.textContent = `${pol.num} - ${pol.title} (${pol.severity})`;
+          optgroup.appendChild(opt);
+        });
+        select.appendChild(optgroup);
+      });
+
+      select.addEventListener("change", () => {
+        const num = select.value;
+        if (!num) {
+          if (cctvReportDraft) {
+            cctvReportDraft.referencedPolicy = null;
+            window.CCTV_REPORT_SERVICE.saveDraft(cctvReportDraft);
+            renderCctvReportPolicyBanner();
+            updateCctvReportPreview();
+          }
+          return;
+        }
+        let matched = null;
+        for (const cat of categories) {
+          const found = (cat.policies || []).find(p => p.num === num);
+          if (found) {
+            matched = { ...found, category: cat.category };
+            break;
+          }
+        }
+        if (matched && cctvReportDraft) {
+          cctvReportDraft.referencedPolicy = matched;
+          window.CCTV_REPORT_SERVICE.saveDraft(cctvReportDraft);
+          renderCctvReportPolicyBanner();
+          updateCctvReportPreview();
+          showToast(`Referenced Policy ${matched.num}: ${matched.title}`, "info");
+        }
+      });
+
+      el("btnApplyConductToObs")?.addEventListener("click", () => {
+        const pol = cctvReportDraft?.referencedPolicy;
+        if (!pol) {
+          showToast("Please select a policy from the dropdown first.", "warning");
+          return;
+        }
+        const obsEl = el("reportObservation");
+        if (!obsEl) return;
+        let obs = obsEl.value.trim();
+        const reminder = `Kindly file an NOC in accordance with the company COD (Policy ${pol.num} - ${pol.title}). Thank you.`;
+        if (!obs.includes(`Policy ${pol.num}`)) {
+          obs = obs.replace(/\bKindly file an NOC[^.\n]*\.?(?:\s*Thank you\.?)?/i, "").trim();
+          obs = (obs ? obs + " " : "") + reminder;
+          obsEl.value = obs;
+          syncCctvReportDraftFromForm();
+          updateCctvReportPreview();
+          showToast(`Inserted Policy ${pol.num} reminder into report.`, "success");
+        } else {
+          showToast(`Policy ${pol.num} reminder is already in report.`, "info");
+        }
+      });
+    }
+    setupQuickConductDropdown();
+
+    // Batch clear screenshots button
+    el("btnClearReportShots")?.addEventListener("click", async () => {
+      const shots = cctvReportDraft?.screenshots || [];
+      if (!shots.length) {
+        showToast("No screenshots to clear.", "info");
+        return;
+      }
+      const ok = await window.appConfirm({
+        title: "Clear All Screenshots?",
+        message: `Are you sure you want to remove all ${shots.length} screenshot${shots.length === 1 ? '' : 's'} from this report?`,
+        confirmText: "Clear All",
+        tone: "danger"
+      });
+      if (!ok) return;
+
+      if (typeof window.CCTV_REPORT_SERVICE?.clearDraftScreenshots === "function") {
+        try {
+          await window.CCTV_REPORT_SERVICE.clearDraftScreenshots();
+        } catch (error) {
+          console.warn("Could not clear CCTV Report screenshots from IndexedDB:", error);
+        }
+      }
+
+      cctvReportDraft.screenshots = [];
+      await persistCctvReportScreenshots();
+      renderCctvReportScreenshots();
+      updateCctvReportPreview();
+      showToast("All screenshots cleared from report.", "info");
+    });
+
+    // View Mode Switcher (Teams Card vs Monospace Plain Text)
+    let currentPreviewMode = "teams";
+    el("btnViewModeTeams")?.addEventListener("click", () => {
+      currentPreviewMode = "teams";
+      el("btnViewModeTeams")?.classList.add("active");
+      el("btnViewModePlain")?.classList.remove("active");
+      if (el("teamsMessageBox")) el("teamsMessageBox").style.display = "block";
+      if (el("plainTextMessageText")) el("plainTextMessageText").style.display = "none";
+    });
+
+    el("btnViewModePlain")?.addEventListener("click", () => {
+      currentPreviewMode = "plain";
+      el("btnViewModePlain")?.classList.add("active");
+      el("btnViewModeTeams")?.classList.remove("active");
+      if (el("teamsMessageBox")) el("teamsMessageBox").style.display = "none";
+      const plainBox = el("plainTextMessageText");
+      if (plainBox) {
+        plainBox.style.display = "block";
+        if (window.CCTV_REPORT_SERVICE?.buildReportPlainText) {
+          plainBox.textContent = window.CCTV_REPORT_SERVICE.buildReportPlainText(cctvReportDraft);
+        }
+      }
+    });
+
+    // Dedicated Copy Plain Text button
+    el("btnCopyPlainTextReport")?.addEventListener("click", async () => {
+      syncCctvReportDraftFromForm();
+      if (!cctvReportDraft?.observation && !cctvReportDraft?.personInvolved) {
+        showToast("Please enter report details before copying.", "error");
+        return;
+      }
+      const plainText = window.CCTV_REPORT_SERVICE.buildReportPlainText(cctvReportDraft);
+      let success = false;
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        try {
+          await navigator.clipboard.writeText(plainText);
+          success = true;
+        } catch (_) {}
+      }
+      if (!success) {
+        try {
+          const ta = document.createElement("textarea");
+          ta.value = plainText;
+          ta.style.position = "fixed";
+          ta.style.left = "-9999px";
+          document.body.appendChild(ta);
+          ta.select();
+          success = document.execCommand("copy");
+          ta.remove();
+        } catch (_) {}
+      }
+      const btn = el("btnCopyPlainTextReport");
+      const lbl = el("btnCopyPlainTextReportLabel");
+      if (btn && lbl) {
+        btn.classList.add("btn-copy-success");
+        lbl.textContent = "\u2713 Copied!";
+        setTimeout(() => {
+          btn.classList.remove("btn-copy-success");
+          lbl.textContent = "Copy Plain";
+        }, 2500);
+      }
+      showToast("Copied plain text report to clipboard!", "success");
+    });
+
+    // Download / Export report button
+    el("btnDownloadReport")?.addEventListener("click", () => {
+      syncCctvReportDraftFromForm();
+      if (!cctvReportDraft?.observation && !cctvReportDraft?.personInvolved) {
+        showToast("Please enter report details before exporting.", "error");
+        return;
+      }
+      const plainText = window.CCTV_REPORT_SERVICE.buildReportPlainText(cctvReportDraft);
+      const now = new Date();
+      const pad = (n) => String(n).padStart(2, "0");
+      const dateStr = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+      const filename = `CCTV_Report_${dateStr}.txt`;
+      const blob = new Blob([plainText], { type: "text/plain;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      showToast(`Report exported as ${filename}`, "success");
+    });
+
+    // Fullscreen Expanded Preview Modal handlers
+    function openExpandedReportModal() {
+      const modal = el("modalExpandedReportPreview");
+      const container = el("expandedReportContentContainer");
+      if (!modal || !container) return;
+      syncCctvReportDraftFromForm();
+      updateReportObservationStats();
+
+      if (currentPreviewMode === "plain") {
+        const text = window.CCTV_REPORT_SERVICE.buildReportPlainText(cctvReportDraft);
+        const safeText = String(text || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        container.innerHTML = `<pre style="margin:0; font-family:var(--font-mono,'Consolas',monospace); font-size:13px; line-height:1.65; white-space:pre-wrap; word-break:break-word; color:var(--text-primary); user-select:text;">${safeText}</pre>`;
+      } else {
+        const richHtml = window.CCTV_REPORT_SERVICE.buildReportHtml(cctvReportDraft);
+        container.innerHTML = `<div class="teams-message-box" style="margin:0; border:none; background:transparent; padding:0;">${richHtml}</div>`;
+        container.querySelectorAll("img").forEach((img, i) => {
+          img.style.cursor = "zoom-in";
+          img.addEventListener("click", () => {
+            if (window.openFullScreenshotViewer) {
+              window.openFullScreenshotViewer(img.src, "CCTV Report Evidence", `Screenshot #${i + 1}`);
+            }
+          });
+        });
+      }
+      modal.hidden = false;
+    }
+
+    function closeExpandedReportModal() {
+      const modal = el("modalExpandedReportPreview");
+      if (modal) modal.hidden = true;
+    }
+
+    el("btnExpandReportPreview")?.addEventListener("click", openExpandedReportModal);
+    el("btnCloseExpandedReportPreview")?.addEventListener("click", closeExpandedReportModal);
+    el("btnModalCloseExpandedReport")?.addEventListener("click", closeExpandedReportModal);
+    el("modalExpandedReportPreview")?.addEventListener("click", (e) => {
+      if (e.target === el("modalExpandedReportPreview")) closeExpandedReportModal();
+    });
+
+    el("btnModalCopyPlain")?.addEventListener("click", () => {
+      el("btnCopyPlainTextReport")?.click();
+    });
+    el("btnModalCopyAll")?.addEventListener("click", () => {
+      el("btnCopyAllReport")?.click();
+    });
+
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && el("modalExpandedReportPreview") && !el("modalExpandedReportPreview").hidden) {
+        closeExpandedReportModal();
+      }
     });
 
     async function handleCctvReportCompose(isRegen = false) {
@@ -9712,7 +10084,7 @@ function doPost(e) {
 
       const activeBtn = isRegen ? (btnRegen || btnGen) : (btnGen || btnRegen);
       if (activeBtn) {
-        activeBtn.innerHTML = '<span style="display:inline-block; margin-right:4px;">⏳</span> Generating...';
+        activeBtn.innerHTML = '<span style="display:inline-block; margin-right:4px;">\u23F3</span> Generating...';
       }
 
       try {
@@ -9835,12 +10207,13 @@ function doPost(e) {
       });
     }
 
-    // COPY ALL button
+    // COPY ALL button with feedback
     let isCopyingReport = false;
     el("btnCopyAllReport")?.addEventListener("click", async () => {
       if (isCopyingReport) return;
       isCopyingReport = true;
       const btn = el("btnCopyAllReport");
+      const btnLabel = el("btnCopyAllReportLabel");
       if (btn) btn.disabled = true;
       try {
         syncCctvReportDraftFromForm();
@@ -9856,6 +10229,16 @@ function doPost(e) {
         const clipMsg = res.hasClipLink
           ? ` and ${res.clipCount > 1 ? res.clipCount + ' clickable CCTV Clip links' : 'clickable CCTV Clip link'}`
           : "";
+        
+        if (btn && btnLabel) {
+          btn.classList.add("btn-copy-success");
+          btnLabel.textContent = "\u2713 COPIED ALL!";
+          setTimeout(() => {
+            btn.classList.remove("btn-copy-success");
+            btnLabel.textContent = "COPY ALL";
+          }, 2500);
+        }
+
         showToast(`Copied complete report${shotMsg}${clipMsg} for Microsoft Teams!`, "success");
       } catch (err) {
         console.error("Copy report error:", err);
@@ -13364,7 +13747,7 @@ function doPost(e) {
 
     decorateOne({
       title: "REPORT PREVIEW",
-      actions: ["Copy All"],
+      actions: ["Expand", "Copy Plain", "Export", "Copy All"],
       cardClass: "report-clean-card--preview"
     });
   }

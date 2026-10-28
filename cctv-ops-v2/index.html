@@ -2802,6 +2802,7 @@
                   <div class="card-title-wrap">
                     <svg class="icon icon-sm cctv-header-icon" viewBox="0 0 24 24" style="color:#22c3ff; width:15px; height:15px; flex-shrink:0;"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
                     <span class="card-title">CCTV REPORT</span>
+                    <span class="cctv-autosave-pill" id="reportAutosavePill" title="Local draft persistence state">&#x25cf; Saved locally</span>
                   </div>
                   <div class="card-actions">
                     <button type="button" class="btn btn-outline btn-sm" id="btnOpenConductFromReport" title="Open full Code of Conduct reference in separate workspace" style="gap:5px;">
@@ -2819,7 +2820,32 @@
                       <span class="badge badge-info" id="reportPolicyBadge">Policy</span>
                       <span id="reportPolicyTitle" style="color:var(--text-primary); font-weight:600;"></span>
                     </div>
-                    <button type="button" class="btn btn-ghost btn-xs" id="btnRemoveReportPolicy" title="Remove policy reference" style="padding:2px 6px; font-size:10px; color:var(--text-muted);">✕ Remove</button>
+                    <button type="button" class="btn btn-ghost btn-xs" id="btnRemoveReportPolicy" title="Remove policy reference" style="padding:2px 6px; font-size:10px; color:var(--text-muted);">&#x2715; Remove</button>
+                  </div>
+
+                  <!-- Quick Code of Conduct Policy Lookup Row -->
+                  <div class="report-policy-quick-row" style="display:flex; align-items:center; gap:8px; background:var(--bg-card); border:1px solid var(--border-default); border-radius:6px; padding:7px 10px;">
+                    <label for="reportQuickConductSelect" style="margin:0; font-size:11px; font-weight:700; color:var(--text-secondary); white-space:nowrap;">COD Policy:</label>
+                    <select class="form-control form-control-sm" id="reportQuickConductSelect" style="flex:1; font-size:11.5px; height:28px;">
+                      <option value="">-- Quick Select Code of Conduct Policy (Optional) --</option>
+                    </select>
+                    <button type="button" class="btn btn-outline btn-xs" id="btnApplyConductToObs" title="Insert standard COD reminder into observation" style="white-space:nowrap; padding:2px 8px; font-size:10.5px; height:26px;">+ Reminder</button>
+                  </div>
+
+                  <!-- Quick Violation Preset Chips -->
+                  <div class="cctv-preset-chips-container" style="display:flex; flex-direction:column; gap:5px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                      <span style="font-size:10.5px; font-weight:700; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.4px;">Quick Violation Presets</span>
+                      <span style="font-size:10.5px; color:var(--text-muted);">Auto-fills notes and generates report</span>
+                    </div>
+                    <div class="cctv-preset-chips" id="reportPresetChips" style="display:flex; flex-wrap:wrap; gap:6px;">
+                      <button type="button" class="btn btn-outline btn-xs cctv-preset-btn" data-preset="sleeping" title="Sleeping on duty">&#x1f4a4; Sleeping</button>
+                      <button type="button" class="btn btn-outline btn-xs cctv-preset-btn" data-preset="unattended_pc" title="Unattended PC left powered on">&#x1f5a5;&#xfe0f; Unattended PC</button>
+                      <button type="button" class="btn btn-outline btn-xs cctv-preset-btn" data-preset="attire" title="Dress code or visible ID badge">&#x1f454; Attire / ID</button>
+                      <button type="button" class="btn btn-outline btn-xs cctv-preset-btn" data-preset="phone" title="Mobile phone usage">&#x1f4f1; Mobile Phone</button>
+                      <button type="button" class="btn btn-outline btn-xs cctv-preset-btn" data-preset="loafing" title="Loafing, idling or noise">&#x1f5e3;&#xfe0f; Loafing / Noise</button>
+                      <button type="button" class="btn btn-outline btn-xs cctv-preset-btn" data-preset="clean_desk" title="Clean desk or untucked chair">&#x1f9f9; Clean Desk</button>
+                    </div>
                   </div>
 
                   <!-- Quick Compose Section -->
@@ -2842,7 +2868,10 @@
 
                   <!-- Editable Generated Report Textarea -->
                   <div class="form-group" style="margin-bottom:0;">
-                    <label class="form-label" for="reportObservation">Observation / Report Body <span class="required-dot">*</span></label>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                      <label class="form-label" for="reportObservation" style="margin-bottom:0;">Observation / Report Body <span class="required-dot" style="color:var(--accent-danger,#ef4444);">*</span></label>
+                      <span class="cctv-count-badge" id="reportObsCountBadge" style="font-family:var(--font-mono); font-size:10.5px; color:var(--text-muted);">0 chars &bull; 0 words</span>
+                    </div>
                     <textarea class="form-control" id="reportObservation" rows="4" placeholder="Report text will be generated here and remains fully editable..."></textarea>
                   </div>
 
@@ -2850,10 +2879,24 @@
                   <div class="form-row-2col">
                     <div class="form-group" style="margin-bottom:0;">
                       <label class="form-label" for="reportSite">Location</label>
-                      <input type="text" class="form-control" id="reportSite" placeholder="e.g. Mabini Site A - Ground Floor">
+                      <input type="text" class="form-control" id="reportSite" list="reportSiteDatalist" placeholder="e.g. Mabini Site A - Ground Floor">
+                      <datalist id="reportSiteDatalist">
+                        <option value="Mabini Site A - Ground Floor">
+                        <option value="Mabini Site A - 2nd Floor">
+                        <option value="Mabini Site B - Ground Floor">
+                        <option value="Mabini Site B - 2nd Floor">
+                        <option value="MAA - 4th Floor">
+                        <option value="MAA - 5th Floor">
+                        <option value="MAA - 6th Floor">
+                        <option value="Ecoland Site">
+                        <option value="Gensan Site">
+                      </datalist>
                     </div>
                     <div class="form-group" style="margin-bottom:0;">
-                      <label class="form-label" for="reportDateRange">Date</label>
+                      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                        <label class="form-label" for="reportDateRange" style="margin-bottom:0;">Date</label>
+                        <button type="button" class="btn btn-ghost btn-xs" id="btnReportDateToday" title="Set to today's date" style="padding:1px 6px; font-size:10.5px; height:auto; color:var(--accent-primary);">Today</button>
+                      </div>
                       <input type="text" class="form-control" id="reportDateRange" placeholder="e.g. September 10, 2026">
                     </div>
                   </div>
@@ -2873,13 +2916,16 @@
                   <div class="form-group" style="margin-bottom:0;">
                     <div class="report-section-header">
                       <label class="form-label" style="margin-bottom:0;">Screenshots (<span id="reportShotCount">0</span>)</label>
-                      <button type="button" class="btn btn-outline btn-xs" id="btnBrowseReportShot" style="gap:4px;">+ Add Screenshot</button>
+                      <div style="display:flex; gap:6px; align-items:center;">
+                        <button type="button" class="btn btn-ghost btn-xs" id="btnClearReportShots" title="Clear all screenshots from current report" style="color:var(--text-muted); font-size:10.5px; padding:2px 6px;">Clear All</button>
+                        <button type="button" class="btn btn-outline btn-xs" id="btnBrowseReportShot" style="gap:4px;">+ Add Screenshot</button>
+                      </div>
                       <input type="file" id="reportShotInput" accept="image/*" multiple hidden>
                     </div>
                     <div class="report-dropzone" id="reportDropzone">
                       <svg class="icon icon-md" viewBox="0 0 24 24" style="color:var(--accent-primary);"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
                       <div class="dropzone-text">
-                        <strong>Paste screenshot (Ctrl+V)</strong>, drag & drop image, or click <em>+ Add Screenshot</em>
+                        <strong>Paste screenshot (Ctrl+V)</strong>, drag &amp; drop image, or click <em>+ Add Screenshot</em>
                       </div>
                     </div>
                     <div class="report-shot-gallery" id="reportShotGallery"></div>
@@ -2897,19 +2943,36 @@
                       <span class="cctv-preview-accent-dot" style="width:8px; height:8px; border-radius:50%; background:#14b8a6; box-shadow:0 0 6px rgba(20,184,166,0.6); flex-shrink:0;"></span>
                       <span class="card-title">Report Preview</span>
                     </div>
+                    <div class="choice-segment" id="reportPreviewModeGroup" style="display:inline-flex; margin-left:6px;">
+                      <button type="button" class="choice-btn active" id="btnViewModeTeams" title="Formatted Microsoft Teams Card View" style="padding:2px 8px; font-size:11px; height:24px;">Teams</button>
+                      <button type="button" class="choice-btn" id="btnViewModePlain" title="Plain Monospace Text View" style="padding:2px 8px; font-size:11px; height:24px;">Plain Text</button>
+                    </div>
                   </div>
                   <div class="card-actions">
-                    <button type="button" class="btn btn-primary btn-sm" id="btnCopyAllReport" style="gap:6px;">
+                    <button type="button" class="btn btn-ghost btn-sm" id="btnExpandReportPreview" title="Expand preview to full screen" style="gap:4px; padding:3px 7px; height:28px;">
+                      <svg class="icon icon-sm" viewBox="0 0 24 24"><polyline points="15 3 21 3 21 9"></polyline><polyline points="9 21 3 21 3 15"></polyline><line x1="21" y1="3" x2="14" y2="10"></line><line x1="3" y1="21" x2="10" y2="14"></line></svg>
+                      <span>Expand</span>
+                    </button>
+                    <button type="button" class="btn btn-outline btn-sm" id="btnCopyPlainTextReport" title="Copy report as plain unformatted text" style="gap:4px; height:28px;">
+                      <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+                      <span id="btnCopyPlainTextReportLabel">Copy Plain</span>
+                    </button>
+                    <button type="button" class="btn btn-outline btn-sm" id="btnDownloadReport" title="Download report as .txt file" style="gap:4px; padding:3px 7px; height:28px;">
+                      <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                      <span>Export</span>
+                    </button>
+                    <button type="button" class="btn btn-primary btn-sm" id="btnCopyAllReport" style="gap:6px; height:28px;">
                       <svg class="icon icon-sm" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
-                      <strong>COPY ALL</strong>
+                      <strong id="btnCopyAllReportLabel">COPY ALL</strong>
                     </button>
                   </div>
                 </div>
 
-                <div class="card-body">
+                <div class="card-body" style="flex:1; overflow-y:auto; padding:14px; display:flex; flex-direction:column; gap:10px;">
                   <div class="teams-message-box" id="teamsMessageBox">
                     <!-- Live Teams formatted preview -->
                   </div>
+                  <pre class="plain-text-message-box" id="plainTextMessageText" style="display:none; margin:0; flex:1; min-height:220px; max-height:100%; overflow-y:auto; background:#18181b; border:1px solid var(--border-default); border-radius:6px; padding:14px; font-family:var(--font-mono,'Consolas',monospace); font-size:12px; line-height:1.6; white-space:pre-wrap; word-break:break-word; color:var(--text-primary); user-select:text;"></pre>
                 </div>
               </div>
             </div>
@@ -3539,6 +3602,35 @@
       <div class="modal-footer" style="justify-content:space-between;">
         <span style="font-size:11px; color:var(--text-muted);">Tip: Press <kbd style="padding:1px 5px; border-radius:3px; background:var(--bg-elevated); border:1px solid var(--border-default);">ESC</kbd> to close</span>
         <button type="button" class="btn btn-outline btn-sm" id="btnBottomCloseDispatchFullscreen">Close</button>
+      </div>
+    </div>
+  </div>
+  <!-- Fullscreen Expanded CCTV Report Preview Modal -->
+  <div class="modal-backdrop" id="modalExpandedReportPreview" hidden>
+    <div class="modal-dialog" style="max-width:840px; width:92vw; max-height:90vh; display:flex; flex-direction:column;">
+      <div class="modal-header" style="border-bottom:1px solid var(--border-subtle); padding:12px 18px; display:flex; justify-content:space-between; align-items:center;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span style="width:8px; height:8px; border-radius:50%; background:#14b8a6; box-shadow:0 0 6px rgba(20,184,166,0.6);"></span>
+          <h3 class="modal-title" style="margin:0; font-size:13px; font-weight:700; letter-spacing:0.4px;">CCTV REPORT PREVIEW (EXPANDED)</h3>
+        </div>
+        <button type="button" class="modal-close" id="btnCloseExpandedReportPreview" aria-label="Close">&times;</button>
+      </div>
+      <div class="modal-body" style="flex:1; overflow-y:auto; padding:18px; display:flex; flex-direction:column; gap:12px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; font-size:11.5px; color:var(--text-secondary);">
+          <span>Microsoft Teams dispatch payload with lossless screenshot inspection.</span>
+          <span id="expandedReportStats" style="font-family:var(--font-mono); font-size:11px;">0 chars &bull; 0 words</span>
+        </div>
+        <div id="expandedReportContentContainer" style="background:var(--bg-card,#131b2e); border:1px solid var(--border-default,#2a3348); border-radius:var(--radius-md,6px); padding:16px; overflow-y:auto; max-height:calc(80vh - 160px);">
+          <!-- Dynamic Teams or Plain text preview -->
+        </div>
+      </div>
+      <div class="modal-footer" style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid var(--border-subtle); padding:10px 18px;">
+        <span style="font-size:11px; color:var(--text-muted);">Tip: Press <kbd style="padding:1px 5px; border-radius:3px; background:var(--bg-elevated); border:1px solid var(--border-default);">ESC</kbd> to close</span>
+        <div style="display:flex; gap:8px; align-items:center;">
+          <button type="button" class="btn btn-outline btn-sm" id="btnModalCopyPlain">Copy Plain Text</button>
+          <button type="button" class="btn btn-primary btn-sm" id="btnModalCopyAll">COPY ALL</button>
+          <button type="button" class="btn btn-ghost btn-sm" id="btnModalCloseExpandedReport">Close</button>
+        </div>
       </div>
     </div>
   </div>
