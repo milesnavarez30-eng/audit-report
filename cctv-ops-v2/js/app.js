@@ -2059,6 +2059,8 @@
         });
       });
     });
+  
+    try { window.edrResizableWorkspace?.updateFullscreenModalContent(); } catch (_) {}
   }
 
   function closeMoreMenu(menu) {
@@ -2273,7 +2275,325 @@
   }
 
   // Initialize UI Events
+  
+  // ==========================================================================
+  // FULLY RESIZABLE EDR WORKSPACE CONTROLLER
+  // ==========================================================================
+  function initEdrResizableWorkspace() {
+    const STORAGE_KEY = "cctv_edr_layout_split_v2";
+    const DEFAULT_LEFT_PCT = 48;
+    const DEFAULT_TOP_PCT = 60;
+    const MIN_LEFT_PCT = 25;
+    const MAX_LEFT_PCT = 75;
+    const MIN_TOP_PCT = 20;
+    const MAX_TOP_PCT = 80;
+    const MIN_COL_PX = 280;
+    const MIN_ROW_PX = 140;
+
+    const layout = document.querySelector("#paneEdr .edr-split-layout");
+    const colForm = el("colEdrForm");
+    const colDispatch = el("colEdrDispatch");
+    const resizerV = el("edrResizerV");
+    const resizerH = el("edrResizerH");
+    const cardDispatch = el("cardTeamsDispatch");
+    const cardSaved = el("cardSavedEdrs");
+    const btnReset = el("btnResetEdrLayout");
+    const btnFullscreen = el("btnDispatchFullscreen");
+    const modalFullscreen = el("modalDispatchFullscreen");
+    const btnCloseFs = el("btnCloseDispatchFullscreen");
+    const btnBottomCloseFs = el("btnBottomCloseDispatchFullscreen");
+    const btnCopyFs = el("btnFullscreenCopyTeams");
+    const fsText = el("fullscreenDispatchText");
+    const fsCount = el("badgeFullscreenSelected");
+    const fsChars = el("fullscreenWordCount");
+
+    if (!layout || !resizerV || !resizerH) return;
+
+    let currentLeftPct = DEFAULT_LEFT_PCT;
+    let currentTopPct = DEFAULT_TOP_PCT;
+
+    // Load saved preferences from localStorage
+    function loadSavedProportions() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (typeof parsed.leftPct === "number" && !isNaN(parsed.leftPct)) {
+            currentLeftPct = Math.min(Math.max(parsed.leftPct, MIN_LEFT_PCT), MAX_LEFT_PCT);
+          }
+          if (typeof parsed.topPct === "number" && !isNaN(parsed.topPct)) {
+            currentTopPct = Math.min(Math.max(parsed.topPct, MIN_TOP_PCT), MAX_TOP_PCT);
+          }
+        }
+      } catch (err) {
+        console.warn("[EDR Resizer] Error reading stored dimensions:", err);
+      }
+      applyDimensions();
+    }
+
+    function saveProportions() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({
+          leftPct: parseFloat(currentLeftPct.toFixed(2)),
+          topPct: parseFloat(currentTopPct.toFixed(2))
+        }));
+      } catch (err) {
+        console.warn("[EDR Resizer] Error saving dimensions:", err);
+      }
+    }
+
+    function applyDimensions() {
+      layout.style.setProperty("--edr-left-width", currentLeftPct.toFixed(2) + "%");
+      colDispatch.style.setProperty("--edr-top-height", currentTopPct.toFixed(2) + "%");
+      if (resizerV) {
+        resizerV.setAttribute("aria-valuenow", Math.round(currentLeftPct).toString());
+      }
+      if (resizerH) {
+        resizerH.setAttribute("aria-valuenow", Math.round(currentTopPct).toString());
+      }
+    }
+
+    function resetLayout() {
+      currentLeftPct = DEFAULT_LEFT_PCT;
+      currentTopPct = DEFAULT_TOP_PCT;
+      applyDimensions();
+      saveProportions();
+      showToast("EDR layout reset to default proportions (48% / 60%).", "info");
+    }
+
+    // 1. Pointer Events: Vertical Resizer
+    let isDraggingV = false;
+    resizerV.addEventListener("pointerdown", (e) => {
+      if (e.button !== 0) return;
+      isDraggingV = true;
+      resizerV.setPointerCapture(e.pointerId);
+      resizerV.classList.add("is-dragging");
+      document.body.classList.add("edr-resizing-v");
+      e.preventDefault();
+    });
+
+    resizerV.addEventListener("pointermove", (e) => {
+      if (!isDraggingV) return;
+      const rect = layout.getBoundingClientRect();
+      if (rect.width <= 0) return;
+      const rawX = e.clientX - rect.left;
+      let pct = (rawX / rect.width) * 100;
+
+      // Enforce sensible minimum panel pixel constraints
+      const minPctByPx = (MIN_COL_PX / rect.width) * 100;
+      const maxPctByPx = ((rect.width - MIN_COL_PX) / rect.width) * 100;
+      const effectiveMin = Math.max(MIN_LEFT_PCT, minPctByPx);
+      const effectiveMax = Math.min(MAX_LEFT_PCT, maxPctByPx);
+
+      pct = Math.min(Math.max(pct, effectiveMin), effectiveMax);
+      currentLeftPct = pct;
+      applyDimensions();
+    });
+
+    function endDragV(e) {
+      if (!isDraggingV) return;
+      isDraggingV = false;
+      try { resizerV.releasePointerCapture(e.pointerId); } catch (_) {}
+      resizerV.classList.remove("is-dragging");
+      document.body.classList.remove("edr-resizing-v");
+      saveProportions();
+    }
+    resizerV.addEventListener("pointerup", endDragV);
+    resizerV.addEventListener("pointercancel", endDragV);
+
+    // Double-click vertical resizer to reset to 48%
+    resizerV.addEventListener("dblclick", () => {
+      currentLeftPct = DEFAULT_LEFT_PCT;
+      applyDimensions();
+      saveProportions();
+      showToast("Form width reset to 48%.", "info");
+    });
+
+    // Keyboard support for vertical resizer
+    resizerV.addEventListener("keydown", (e) => {
+      const step = e.shiftKey ? 5 : 2;
+      let handled = false;
+      if (e.key === "ArrowLeft") {
+        currentLeftPct = Math.max(currentLeftPct - step, MIN_LEFT_PCT);
+        handled = true;
+      } else if (e.key === "ArrowRight") {
+        currentLeftPct = Math.min(currentLeftPct + step, MAX_LEFT_PCT);
+        handled = true;
+      } else if (e.key === "Home") {
+        currentLeftPct = MIN_LEFT_PCT;
+        handled = true;
+      } else if (e.key === "End") {
+        currentLeftPct = MAX_LEFT_PCT;
+        handled = true;
+      } else if (e.key === "Enter" || e.key === " ") {
+        currentLeftPct = DEFAULT_LEFT_PCT;
+        handled = true;
+      }
+      if (handled) {
+        e.preventDefault();
+        applyDimensions();
+        saveProportions();
+      }
+    });
+
+    // 2. Pointer Events: Horizontal Resizer
+    let isDraggingH = false;
+    resizerH.addEventListener("pointerdown", (e) => {
+      if (e.button !== 0) return;
+      isDraggingH = true;
+      resizerH.setPointerCapture(e.pointerId);
+      resizerH.classList.add("is-dragging");
+      document.body.classList.add("edr-resizing-h");
+      e.preventDefault();
+    });
+
+    resizerH.addEventListener("pointermove", (e) => {
+      if (!isDraggingH) return;
+      const rect = colDispatch.getBoundingClientRect();
+      if (rect.height <= 0) return;
+      const rawY = e.clientY - rect.top;
+      let pct = (rawY / rect.height) * 100;
+
+      // Enforce sensible minimum panel pixel constraints
+      const minPctByPx = (MIN_ROW_PX / rect.height) * 100;
+      const maxPctByPx = ((rect.height - MIN_ROW_PX) / rect.height) * 100;
+      const effectiveMin = Math.max(MIN_TOP_PCT, minPctByPx);
+      const effectiveMax = Math.min(MAX_TOP_PCT, maxPctByPx);
+
+      pct = Math.min(Math.max(pct, effectiveMin), effectiveMax);
+      currentTopPct = pct;
+      applyDimensions();
+    });
+
+    function endDragH(e) {
+      if (!isDraggingH) return;
+      isDraggingH = false;
+      try { resizerH.releasePointerCapture(e.pointerId); } catch (_) {}
+      resizerH.classList.remove("is-dragging");
+      document.body.classList.remove("edr-resizing-h");
+      saveProportions();
+    }
+    resizerH.addEventListener("pointerup", endDragH);
+    resizerH.addEventListener("pointercancel", endDragH);
+
+    // Double-click horizontal resizer to reset to 60%
+    resizerH.addEventListener("dblclick", () => {
+      currentTopPct = DEFAULT_TOP_PCT;
+      applyDimensions();
+      saveProportions();
+      showToast("Teams Dispatch height reset to 60%.", "info");
+    });
+
+    // Keyboard support for horizontal resizer
+    resizerH.addEventListener("keydown", (e) => {
+      const step = e.shiftKey ? 5 : 2;
+      let handled = false;
+      if (e.key === "ArrowUp") {
+        currentTopPct = Math.max(currentTopPct - step, MIN_TOP_PCT);
+        handled = true;
+      } else if (e.key === "ArrowDown") {
+        currentTopPct = Math.min(currentTopPct + step, MAX_TOP_PCT);
+        handled = true;
+      } else if (e.key === "Home") {
+        currentTopPct = MIN_TOP_PCT;
+        handled = true;
+      } else if (e.key === "End") {
+        currentTopPct = MAX_TOP_PCT;
+        handled = true;
+      } else if (e.key === "Enter" || e.key === " ") {
+        currentTopPct = DEFAULT_TOP_PCT;
+        handled = true;
+      }
+      if (handled) {
+        e.preventDefault();
+        applyDimensions();
+        saveProportions();
+      }
+    });
+
+    // 3. Reset Button Action
+    btnReset?.addEventListener("click", resetLayout);
+
+    // 4. Fullscreen Dispatch Modal Logic
+    function getCleanDispatchText() {
+      const box = el("edrPreviewBox");
+      if (!box) return "No EDR preview available.";
+      const rawText = box.innerText || box.textContent || "";
+      return rawText.trim() || "Select active EDRs in the list to generate output.";
+    }
+
+    function updateFullscreenModalContent() {
+      if (!modalFullscreen || modalFullscreen.hidden) return;
+      const text = getCleanDispatchText();
+      if (fsText) fsText.textContent = text;
+      const selBadge = el("badgeSelectedCount");
+      if (fsCount && selBadge) fsCount.textContent = selBadge.textContent;
+      if (fsChars) fsChars.textContent = text.length + " chars";
+    }
+
+    function openFullscreen() {
+      if (!modalFullscreen) return;
+      updateFullscreenModalContent();
+      modalFullscreen.hidden = false;
+    }
+
+    function closeFullscreen() {
+      if (!modalFullscreen) return;
+      modalFullscreen.hidden = true;
+    }
+
+    btnFullscreen?.addEventListener("click", openFullscreen);
+    btnCloseFs?.addEventListener("click", closeFullscreen);
+    btnBottomCloseFs?.addEventListener("click", closeFullscreen);
+
+    modalFullscreen?.addEventListener("click", (e) => {
+      if (e.target === modalFullscreen) closeFullscreen();
+    });
+
+    window.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && modalFullscreen && !modalFullscreen.hidden) {
+        closeFullscreen();
+      }
+    });
+
+    btnCopyFs?.addEventListener("click", () => {
+      const copyAllBtn = el("btnCopyAllTeams");
+      if (copyAllBtn) {
+        copyAllBtn.click();
+      } else {
+        const text = getCleanDispatchText();
+        navigator.clipboard?.writeText(text).then(() => {
+          showToast("Copied dispatch output to clipboard.", "success");
+        }).catch(() => {
+          showToast("Failed to copy dispatch output.", "error");
+        });
+      }
+    });
+
+    // Expose controller globally for external integration and testing
+    window.edrResizableWorkspace = {
+      resetLayout,
+      openFullscreen,
+      closeFullscreen,
+      updateFullscreenModalContent,
+      setLeftWidth: (pct) => {
+        currentLeftPct = Math.min(Math.max(pct, MIN_LEFT_PCT), MAX_LEFT_PCT);
+        applyDimensions();
+        saveProportions();
+      },
+      setTopHeight: (pct) => {
+        currentTopPct = Math.min(Math.max(pct, MIN_TOP_PCT), MAX_TOP_PCT);
+        applyDimensions();
+        saveProportions();
+      },
+      getDimensions: () => ({ leftPct: currentLeftPct, topPct: currentTopPct })
+    };
+
+    // Initialize layout on startup
+    loadSavedProportions();
+  }
   function initEvents() {
+    initEdrResizableWorkspace();
     let isSubmittingEdr = false;
     // Form submit
     el("edrForm")?.addEventListener("submit", async (e) => {

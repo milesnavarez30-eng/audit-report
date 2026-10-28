@@ -3586,37 +3586,57 @@ table.mini-sheet tr.floor-break td {
   overflow: hidden !important;
 }
 
-.edr-split-layout:not(.dispatch-expanded) #cardSavedEdrs {
-  order: 2 !important;
+.edr-split-layout:not(.dispatch-expanded) #cardTeamsDispatch {
+  order: 1 !important;
+  flex: 0 0 var(--edr-top-height, 60%) !important;
+  height: var(--edr-top-height, 60%) !important;
+  min-height: 140px !important;
+  max-height: calc(100% - 140px - 8px) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+}
+
+.edr-split-layout:not(.dispatch-expanded) #cardTeamsDispatch .card-header {
+  flex: 0 0 auto !important;
+}
+
+.edr-split-layout:not(.dispatch-expanded) #cardTeamsDispatch .card-body {
   flex: 1 1 0% !important;
-  min-height: 220px !important;
+  min-height: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+}
+
+/* Preview box fills available vertical height inside Teams Dispatch card with independent scroll */
+.edr-split-layout:not(.dispatch-expanded) #edrPreviewBox {
+  flex: 1 1 0% !important;
+  min-height: 48px !important;
+  max-height: none !important;
+  overflow-y: auto !important;
+}
+
+.edr-split-layout:not(.dispatch-expanded) #cardSavedEdrs {
+  order: 3 !important;
+  flex: 1 1 0% !important;
+  min-height: 140px !important;
   max-height: none !important;
   display: flex !important;
   flex-direction: column !important;
   overflow: hidden !important;
 }
 
-.edr-split-layout:not(.dispatch-expanded) #cardTeamsDispatch {
-  order: 1 !important;
+.edr-split-layout:not(.dispatch-expanded) #cardSavedEdrs .card-header,
+.edr-split-layout:not(.dispatch-expanded) #cardSavedEdrs .edr-filter-bar {
   flex: 0 0 auto !important;
-  min-height: clamp(140px, 20vh, 210px) !important;
-  max-height: clamp(160px, 24vh, 240px) !important;
-  overflow: hidden !important;
 }
 
-/* Preview box fills available height in normal (non-expanded) Teams Dispatch */
-.edr-split-layout:not(.dispatch-expanded) #edrPreviewBox {
-  flex: 1 1 auto !important;
-  min-height: 50px !important;
-  max-height: calc(clamp(160px, 24vh, 240px) - 75px) !important;
-  overflow-y: auto !important;
-}
-
-/* Saved EDRs list container uses remaining vertical space with internal scroll */
+/* Saved EDRs list container uses remaining vertical space with independent scroll */
 .edr-split-layout:not(.dispatch-expanded) #edrListContainer {
   flex: 1 1 0% !important;
   overflow-y: auto !important;
-  min-height: 80px !important;
+  min-height: 60px !important;
 }
 
 /* Saved EDRs Header & Action Toolbar */

@@ -1,4 +1,4 @@
-/**
+﻿/**
  * CCTV OPS V2 - Shell & Workspace Layouts
  * Calm, balanced, premium SaaS split-view layout
  */
@@ -743,35 +743,99 @@
   display: none !important;
 }
 
-/* EDR Split-View Layout (Left Form, Right Dispatch & Saved Records) */
+/* EDR Split-View Layout (Fully Resizable Split-Pane Workspace) */
 .edr-split-layout {
-  display: grid;
-  grid-template-columns: minmax(320px, 1fr) minmax(350px, 1.08fr);
-  grid-template-rows: minmax(0, 1fr);
-  gap: 8px;
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  gap: 0;
   height: calc(100vh - var(--header-height));
   height: calc(100dvh - var(--header-height));
   padding: 8px 12px;
   overflow: hidden;
   box-sizing: border-box;
+  --edr-left-width: 48%;
+  --edr-top-height: 60%;
+}
+
+.edr-split-column {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  gap: 0;
+  min-width: 0;
+}
+
+#colEdrForm {
+  flex: 0 0 var(--edr-left-width, 48%);
+  width: var(--edr-left-width, 48%);
+  min-width: 280px;
+  max-width: calc(100% - 280px - 8px);
+  height: 100%;
+}
+
+#colEdrForm > .card {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+#colEdrForm .card-header,
+#colEdrForm .card-footer {
+  flex: 0 0 auto;
+}
+
+#colEdrForm .edr-form-scroll {
+  flex: 1 1 0%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  min-height: 0;
+  padding: 8px 10px;
+}
+
+#colEdrDispatch {
+  flex: 1 1 0%;
+  min-width: 280px;
+  height: 100%;
 }
 
 @media (max-width: 900px) {
   .edr-split-layout {
-    grid-template-columns: 1fr;
-    overflow-y: auto;
-    height: 100%;
-    padding: 8px;
-    gap: 8px;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow-y: auto !important;
+    height: 100% !important;
+    padding: 8px !important;
+    gap: 8px !important;
+  }
+  .edr-resizer-v,
+  .edr-resizer-h {
+    display: none !important;
   }
   .edr-split-column {
-    height: auto;
-    overflow: visible;
+    height: auto !important;
+    overflow: visible !important;
   }
+  #colEdrForm,
   #colEdrDispatch {
-    min-height: 400px;
-    height: auto;
-    overflow: visible;
+    width: 100% !important;
+    max-width: 100% !important;
+    flex: 0 0 auto !important;
+    height: auto !important;
+    min-height: auto !important;
+    overflow: visible !important;
+  }
+  #colEdrForm > .card {
+    height: auto !important;
+  }
+  #colEdrForm .edr-form-scroll {
+    overflow-y: visible !important;
+    height: auto !important;
+    max-height: none !important;
   }
   #cardSavedEdrs {
     min-height: 280px !important;
@@ -782,14 +846,4 @@
     max-height: 50vh !important;
     overflow-y: auto !important;
   }
-}
-
-.edr-split-column {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  min-height: 0;
-  overflow: hidden;
-  gap: 8px;
-  min-width: 0;
 }

@@ -1,4 +1,4 @@
-/**
+﻿/**
  * CCTV OPS V2 - Professional UI Refinement Layer
  * ================================================
  * Presentation-only. All IDs, event wiring, data attributes: untouched.
@@ -3295,4 +3295,135 @@ tbody tr:hover {
 .integration-pill.is-preview .status-dot {
   background: #f59e0b !important;
   box-shadow: 0 0 6px rgba(245, 158, 11, 0.6) !important;
+}
+
+/* ==========================================================================
+   FULLY RESIZABLE EDR WORKSPACE â€” DIVIDERS & ACCESSIBLE SPLIT CONTROLS
+   ========================================================================== */
+
+/* Draggable Vertical Divider (Left Form vs Right Dispatch) */
+.edr-resizer-v {
+  flex: 0 0 8px;
+  width: 8px;
+  cursor: col-resize;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+  z-index: 5;
+  background: transparent;
+  transition: background-color 0.15s ease;
+}
+
+.edr-resizer-v::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -4px;
+  right: -4px;
+}
+
+.edr-resizer-v .resizer-handle-line {
+  width: 2px;
+  height: 38px;
+  background: var(--border-default, #2a3348);
+  border-radius: 2px;
+  transition: all 0.2s ease;
+}
+
+.edr-resizer-v:hover,
+.edr-resizer-v:focus-visible,
+.edr-resizer-v.is-dragging {
+  background: rgba(59, 130, 246, 0.08);
+  outline: none;
+}
+
+.edr-resizer-v:hover .resizer-handle-line,
+.edr-resizer-v:focus-visible .resizer-handle-line,
+.edr-resizer-v.is-dragging .resizer-handle-line {
+  height: 68px;
+  background: var(--accent-primary, #3b82f6);
+  box-shadow: 0 0 8px rgba(59, 130, 246, 0.5);
+}
+
+/* Draggable Horizontal Divider (Teams Dispatch vs Saved Records) */
+.edr-resizer-h {
+  order: 2;
+  flex: 0 0 8px;
+  height: 8px;
+  cursor: row-resize;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+  z-index: 5;
+  background: transparent;
+  transition: background-color 0.15s ease;
+}
+
+.edr-resizer-h::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -4px;
+  bottom: -4px;
+}
+
+.edr-resizer-h .resizer-handle-line {
+  height: 2px;
+  width: 38px;
+  background: var(--border-default, #2a3348);
+  border-radius: 2px;
+  transition: all 0.2s ease;
+}
+
+.edr-resizer-h:hover,
+.edr-resizer-h:focus-visible,
+.edr-resizer-h.is-dragging {
+  background: rgba(59, 130, 246, 0.08);
+  outline: none;
+}
+
+.edr-resizer-h:hover .resizer-handle-line,
+.edr-resizer-h:focus-visible .resizer-handle-line,
+.edr-resizer-h.is-dragging .resizer-handle-line {
+  width: 68px;
+  background: var(--accent-primary, #3b82f6);
+  box-shadow: 0 0 8px rgba(59, 130, 246, 0.5);
+}
+
+/* Hide horizontal resizer when dispatch expanded is active */
+.edr-split-layout.dispatch-expanded .edr-resizer-v,
+.edr-split-layout.dispatch-expanded .edr-resizer-h {
+  display: none !important;
+}
+
+/* Active Drag State across Body */
+body.edr-resizing-v {
+  cursor: col-resize !important;
+  user-select: none !important;
+  -webkit-user-select: none !important;
+}
+
+body.edr-resizing-h {
+  cursor: row-resize !important;
+  user-select: none !important;
+  -webkit-user-select: none !important;
+}
+
+/* Fullscreen Dispatch Modal Enhancements */
+#modalDispatchFullscreen.modal-backdrop {
+  z-index: 9999;
+}
+
+#modalDispatchFullscreen .modal-dialog {
+  box-shadow: var(--shadow-lg, 0 10px 25px rgba(0, 0, 0, 0.5));
 }

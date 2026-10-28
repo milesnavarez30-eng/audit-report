@@ -1937,17 +1937,33 @@
               </div>
             </div>
 
+            <!-- Draggable Vertical Divider between Form and Right-side Panels -->
+            <div class="edr-resizer-v" id="edrResizerV" role="separator" tabindex="0"
+                 aria-orientation="vertical" aria-label="Resize EDR form and dispatch panels"
+                 aria-valuenow="48" aria-valuemin="25" aria-valuemax="75"
+                 title="Drag horizontally or use Left/Right arrow keys to resize (Home/End for min/max, double-click to reset)">
+              <div class="resizer-handle-line"></div>
+            </div>
+
             <!-- RIGHT COLUMN: Dispatch & Saved Records (~45% width) -->
             <div class="edr-split-column" id="colEdrDispatch">
 
               <!-- Top Panel: Dispatch & Teams Output -->
-              <div class="card" id="cardTeamsDispatch" style="flex: 0.72; min-height: 165px;">
+              <div class="card" id="cardTeamsDispatch">
                 <div class="card-header">
                   <div style="display:flex; align-items:center; gap:6px;">
                     <svg class="icon" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
                     <span class="card-title">Teams Dispatch</span>
                   </div>
                   <div class="card-actions">
+                    <button type="button" class="btn btn-outline btn-sm" id="btnResetEdrLayout" title="Reset workspace split layout to default proportions (48% / 60%)" style="gap:4px;">
+                      <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><polyline points="3 3 3 8 8 8"></polyline></svg>
+                      <span>Reset Layout</span>
+                    </button>
+                    <button type="button" class="btn btn-outline btn-sm" id="btnDispatchFullscreen" title="Open Teams Dispatch in full-screen modal" style="gap:4px;">
+                      <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path></svg>
+                      <span>Fullscreen</span>
+                    </button>
                     <button type="button" class="btn btn-outline btn-sm" id="btnToggleDispatchExpand" title="Toggle expanded dispatch preview layout" style="gap:4px;">
                       <svg class="icon icon-sm" id="iconDispatchExpand" viewBox="0 0 24 24"><polyline points="15 3 21 3 21 9"></polyline><polyline points="9 21 3 21 3 15"></polyline><line x1="21" y1="3" x2="14" y2="10"></line><line x1="3" y1="21" x2="10" y2="14"></line></svg>
                       <span id="labelDispatchExpand">Expand Preview</span>
@@ -1975,8 +1991,16 @@
                 </div>
               </div>
 
+              <!-- Draggable Horizontal Divider between Teams Dispatch and Saved Records -->
+              <div class="edr-resizer-h" id="edrResizerH" role="separator" tabindex="0"
+                   aria-orientation="horizontal" aria-label="Resize Teams Dispatch and Saved EDRs panels"
+                   aria-valuenow="60" aria-valuemin="20" aria-valuemax="80"
+                   title="Drag vertically or use Up/Down arrow keys to resize (Home/End for min/max, double-click to reset)">
+                <div class="resizer-handle-line"></div>
+              </div>
+
               <!-- Bottom Panel: Saved Records List -->
-              <div class="card" id="cardSavedEdrs" style="flex: 1.28; min-height: 320px;">
+              <div class="card" id="cardSavedEdrs">
                 <div class="card-header" style="padding:6px 12px; min-height:36px;">
                   <div class="card-header-left" style="display:flex; align-items:center; gap:6px;">
                     <span class="card-title">Saved EDRs</span>
@@ -3486,6 +3510,38 @@
     </main>
   </div>
 
+    <!-- Teams Dispatch Fullscreen Review Modal -->
+  <div class="modal-backdrop" id="modalDispatchFullscreen" hidden>
+    <div class="modal-dialog modal-dialog-lg" style="max-width:920px; width:94vw;">
+      <div class="modal-header">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <svg class="icon" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+          <h3 class="modal-title">Teams Dispatch Output â€” Full Screen</h3>
+          <span class="badge badge-info" id="badgeFullscreenSelected">0 selected</span>
+        </div>
+        <div style="display:flex; align-items:center; gap:6px;">
+          <button type="button" class="btn btn-primary btn-sm" id="btnFullscreenCopyTeams" style="gap:5px;">
+            <svg class="icon icon-sm" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+            <span>Copy for Teams</span>
+          </button>
+          <button type="button" class="btn btn-ghost btn-sm" id="btnCloseDispatchFullscreen" aria-label="Close">âœ•</button>
+        </div>
+      </div>
+      <div class="modal-body" style="padding:14px; display:flex; flex-direction:column; gap:10px;">
+        <div style="display:flex; align-items:center; justify-content:space-between; font-size:11.5px; color:var(--text-secondary);">
+          <span>Inspecting formatted dispatch payload ready for Microsoft Teams channel distribution.</span>
+          <span id="fullscreenWordCount" style="font-family:var(--font-mono); font-size:11px;">0 chars</span>
+        </div>
+        <div class="dispatch-fullscreen-content-box" style="flex:1; min-height:360px; max-height:calc(80vh - 160px); overflow-y:auto; background:var(--bg-card,#131b2e); border:1px solid var(--border-default,#2a3348); border-radius:var(--radius-md,6px); padding:16px;">
+          <pre id="fullscreenDispatchText" style="margin:0; font-family:var(--font-mono,'Consolas',monospace); font-size:12.5px; line-height:1.65; white-space:pre-wrap; word-break:break-word; color:var(--text-primary); user-select:text;">No EDRs selected.</pre>
+        </div>
+      </div>
+      <div class="modal-footer" style="justify-content:space-between;">
+        <span style="font-size:11px; color:var(--text-muted);">Tip: Press <kbd style="padding:1px 5px; border-radius:3px; background:var(--bg-elevated); border:1px solid var(--border-default);">ESC</kbd> to close</span>
+        <button type="button" class="btn btn-outline btn-sm" id="btnBottomCloseDispatchFullscreen">Close</button>
+      </div>
+    </div>
+  </div>
   <!-- Subject Editor Modal (Multi-Subject EDR) -->
   <div class="modal-backdrop" id="modalSubjectEditor" hidden>
     <div class="modal-dialog" style="max-width:460px;">
