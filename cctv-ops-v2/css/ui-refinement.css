@@ -3511,3 +3511,55 @@ body.edr-resizing-h {
     min-height: 400px;
   }
 }
+
+/* ==========================================================================
+   FOLLOW UP AGE & OVERDUE INDICATORS
+   ========================================================================== */
+.followup-age-pill {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 3px !important;
+  font-size: 9.5px !important;
+  font-weight: 700 !important;
+  padding: 1px 6px !important;
+  border-radius: 4px !important;
+  white-space: nowrap !important;
+  line-height: 1.4 !important;
+}
+
+.followup-age-pill.age-today {
+  background: rgba(16, 185, 129, 0.12) !important;
+  color: #34d399 !important;
+  border: 1px solid rgba(16, 185, 129, 0.25) !important;
+}
+
+.followup-age-pill.age-1d {
+  background: rgba(245, 158, 11, 0.12) !important;
+  color: #fbbf24 !important;
+  border: 1px solid rgba(245, 158, 11, 0.25) !important;
+}
+
+.followup-age-pill.age-overdue {
+  background: rgba(244, 63, 94, 0.15) !important;
+  color: #fb7185 !important;
+  border: 1px solid rgba(244, 63, 94, 0.35) !important;
+}
+
+/* ==========================================================================
+   CODE OF CONDUCT ACTIONS & CITATION
+   ========================================================================== */
+.coc-rule-card-footer {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  margin-top: 8px !important;
+  padding-top: 8px !important;
+  border-top: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.06)) !important;
+  gap: 8px !important;
+}
+
+.coc-rule-actions-cluster {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+}

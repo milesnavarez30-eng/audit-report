@@ -6949,6 +6949,15 @@ function doPost(e) {
   async function copyFullMaintenanceReportToSheets() {
     try {
       syncMaintenanceStateFromDom();
+      const hasContent = (maintenanceState.blocks || []).some(b => 
+        (b.lanesText && b.lanesText.trim()) || 
+        (Array.isArray(b.remarks) && b.remarks.some(r => String(r || '').trim())) || 
+        (Array.isArray(b.screenshots) && b.screenshots.length)
+      );
+      if (!hasContent) {
+        showToast("Please enter station issues or remarks before copying.", "warning");
+        return;
+      }
       const html = maintenance.maintenanceReportHtmlForSheets(maintenanceState);
       const text = maintenance.maintenanceReportPlainTextForSheets(maintenanceState);
 
@@ -6962,6 +6971,14 @@ function doPost(e) {
 
   async function sendMaintenanceReportToSheets() {
     syncMaintenanceStateFromDom();
+    const hasRows = (maintenanceState.blocks || []).some(b => {
+      const rows = maintenance.maintenanceRowsForSheets(b.lanesText || "");
+      return rows.length > 0;
+    });
+    if (!hasRows) {
+      showToast("No valid station rows found to send. Please enter maintenance data.", "warning");
+      return;
+    }
     const url = maintenance.getMaintenanceSheetsWebAppUrl();
     if (!url || !maintenance.isValidAppsScriptWebAppUrl(url)) {
       setMaintenanceStatusMessage("Please configure a valid Google Sheets Web App URL in Sheet Setup first.", "error");
@@ -8568,7 +8585,15 @@ function doPost(e) {
     }
 
     if (!filtered.length) {
-      listEl.innerHTML = '<div class="empty-state" style="padding:40px; text-align:center; color:var(--text-muted); font-size:12px;">No pending follow-up records.</div>';
+      let emptyMsg = "No follow-up records in queue.";
+      if (followupSearchQuery) {
+        emptyMsg = `No follow-up records matching "${window.escapeHtml(followupSearchQuery)}".`;
+      } else if (followupFilter === "resolved") {
+        emptyMsg = "No resolved follow-up records found.";
+      } else if (followupFilter === "open") {
+        emptyMsg = "No open follow-up records. All caught up!";
+      }
+      listEl.innerHTML = `<div class="empty-state" style="padding:40px; text-align:center; color:var(--text-muted); font-size:12px;">${emptyMsg}</div>`;
       return;
     }
 
@@ -8579,6 +8604,26 @@ function doPost(e) {
       const isSelected = report.id === followupSelectedId;
       const isExpanded = followupExpandedIds.has(report.id);
       const isResolved = report.status === "Resolved";
+
+      let agePillHtml = "";
+      if (!isResolved && report.date) {
+        try {
+          const recDate = new Date(report.date + (report.date.includes("T") ? "" : "T00:00:00"));
+          if (!isNaN(recDate.getTime())) {
+            const now = new Date();
+            const todayMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+            const recMidnight = new Date(recDate.getFullYear(), recDate.getMonth(), recDate.getDate()).getTime();
+            const ageDays = Math.floor((todayMidnight - recMidnight) / (1000 * 86400));
+            if (ageDays >= 2) {
+              agePillHtml = `<span class="followup-age-pill age-overdue" title="${ageDays} calendar days old - Attention recommended">&#x26a0;&#xfe0f; ${ageDays}d overdue</span>`;
+            } else if (ageDays === 1) {
+              agePillHtml = `<span class="followup-age-pill age-1d" title="1 day old">1d ago</span>`;
+            } else if (ageDays === 0) {
+              agePillHtml = `<span class="followup-age-pill age-today" title="Logged today">Today</span>`;
+            }
+          }
+        } catch (_) {}
+      }
 
       return `
         <article class="followup-report-card ${isSelected ? "is-selected" : ""} ${isResolved ? "is-resolved" : ""}" data-id="${window.escapeHtml(report.id)}" tabindex="0">
@@ -8592,6 +8637,7 @@ function doPost(e) {
                 <span class="followup-card-title" title="${window.escapeHtml(report.label || report.om || "Follow Up Report")}">${window.escapeHtml(report.label || report.om || "Follow Up Report")}</span>
                 <span class="followup-chip followup-chip-om" title="OM / Group Chat">${window.escapeHtml(report.om || "OM not set")}</span>
                 <span class="followup-chip followup-chip-date" title="Report Date">${window.escapeHtml(followup.formatDate(report.date))}</span>
+                ${agePillHtml}
                 <span class="followup-status-pill ${statusClass}">${window.escapeHtml(report.status || "Waiting for TL")}</span>
               </div>
 
@@ -8965,8 +9011,14 @@ function doPost(e) {
     }
 
     // Add button
+    let isAddingFollowup = false;
     el("followupAddBtn")?.addEventListener("click", async () => {
-      const om = String(el("followupOm")?.value || "").trim();
+      if (isAddingFollowup) return;
+      isAddingFollowup = true;
+      const addBtn = el("followupAddBtn");
+      if (addBtn) addBtn.disabled = true;
+      try {
+        const om = String(el("followupOm")?.value || "").trim();
       const date = el("followupDate")?.value || followup.todayLocal();
       if (!followupAddScreenshotData) {
         showFollowupMessage("Add the TL conversation screenshot first.", "error");
@@ -9000,6 +9052,10 @@ function doPost(e) {
       } catch (err) {
         showFollowupMessage("Could not save report.", "error");
         showToast("Could not save follow-up report.", "error");
+ }
+      } finally {
+        isAddingFollowup = false;
+        if (addBtn) addBtn.disabled = false;
       }
     });
 
@@ -10051,8 +10107,14 @@ function doPost(e) {
     });
 
     document.addEventListener("keydown", (e) => {
-      if (e.key === "Escape" && el("modalExpandedReportPreview") && !el("modalExpandedReportPreview").hidden) {
-        closeExpandedReportModal();
+      if (e.key === "Escape") {
+        if (el("modalExpandedReportPreview") && !el("modalExpandedReportPreview").hidden) {
+          closeExpandedReportModal();
+        }
+        const mDrafts = el("modalMaintenanceDrafts");
+        if (mDrafts && !mDrafts.hidden) mDrafts.hidden = true;
+        const mSetup = el("modalMaintenanceSheetSetup");
+        if (mSetup && !mSetup.hidden) mSetup.hidden = true;
       }
     });
 
@@ -10372,10 +10434,81 @@ function doPost(e) {
             <span class="coc-sev-badge ${sevClass}">${esc(pol.severity)}</span>
           </div>
           <div class="coc-rule-desc">${esc(pol.description)}</div>
-          <div class="coc-rule-section-tag" title="${esc(pol.sectionName)}">Section: ${esc(pol.sectionName)}</div>
+          <div class="coc-rule-card-footer">
+            <div class="coc-rule-section-tag" title="${esc(pol.sectionName)}" style="margin:0;">Section: ${esc(pol.sectionName)}</div>
+            <div class="coc-rule-actions-cluster">
+              <button type="button" class="btn btn-outline btn-xs coc-btn-copy-citation" data-pol-num="${esc(pol.num)}" title="Copy formatted policy citation">
+                Copy Citation
+              </button>
+              <button type="button" class="btn btn-primary btn-xs coc-btn-use-in-report" data-pol-num="${esc(pol.num)}" title="Reference in CCTV Report">
+                Use in Report
+              </button>
+            </div>
+          </div>
         </div>
       `;
     }).join("");
+
+    // Wire actions for policy cards
+    container.querySelectorAll(".coc-btn-copy-citation").forEach(btn => {
+      btn.addEventListener("click", async (e) => {
+        e.stopPropagation();
+        const pNum = btn.dataset.polNum;
+        const policy = flatPolicies.find(p => p.num === pNum);
+        if (!policy) return;
+        const citation = `Policy ${policy.num} - ${policy.title} (${policy.severity}): ${policy.description}`;
+        try {
+          if (navigator.clipboard?.writeText) {
+            await navigator.clipboard.writeText(citation);
+          } else {
+            const ta = document.createElement("textarea");
+            ta.value = citation;
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand("copy");
+            ta.remove();
+          }
+          const orig = btn.textContent;
+          btn.textContent = "\u2713 Copied!";
+          btn.classList.add("btn-copy-success");
+          setTimeout(() => {
+            btn.textContent = orig;
+            btn.classList.remove("btn-copy-success");
+          }, 2000);
+          showToast(`Copied Policy ${policy.num} citation to clipboard!`, "success");
+        } catch (_) {
+          showToast("Failed to copy citation.", "error");
+        }
+      });
+    });
+
+    container.querySelectorAll(".coc-btn-use-in-report").forEach(btn => {
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const pNum = btn.dataset.polNum;
+        const policy = flatPolicies.find(p => p.num === pNum);
+        if (!policy) return;
+        if (typeof window.setCctvReportReferencedPolicy === "function") {
+          window.setCctvReportReferencedPolicy(policy);
+        } else if (window.CCTV_REPORT_SERVICE) {
+          const draft = window.CCTV_REPORT_SERVICE.getDraft() || {};
+          draft.referencedPolicy = {
+            num: policy.num,
+            title: policy.title,
+            category: policy.sectionName,
+            severity: policy.severity
+          };
+          window.CCTV_REPORT_SERVICE.saveDraft(draft);
+          if (typeof window.setCctvReportDraft === "function") window.setCctvReportDraft(draft);
+          if (typeof window.syncCctvReportFormFromDraft === "function") window.syncCctvReportFormFromDraft();
+          if (typeof window.updateCctvReportPreview === "function") window.updateCctvReportPreview();
+        }
+        if (typeof window.switchWorkspace === "function") {
+          window.switchWorkspace("report");
+        }
+        showToast(`Policy ${policy.num} referenced in CCTV Report.`, "success");
+      });
+    });
   }
 
   function initCodeOfConductController() {

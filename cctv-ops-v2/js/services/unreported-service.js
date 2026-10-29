@@ -829,33 +829,45 @@
     if (isInitialized) return;
     isInitialized = true;
 
+    // Bind Top Button "+ Add Unreported" with duplicate click protection
+    let isAddingUnreported = false;
+    const btnAdd = document.getElementById("btnAddUnreported");
+    if (btnAdd) {
+      btnAdd.addEventListener("click", async () => {
+        if (isAddingUnreported) return;
+        isAddingUnreported = true;
+        btnAdd.disabled = true;
+        try {
+          if (!Array.isArray(itemsList)) itemsList = await loadItems();
+          const newItem = createItem();
+          itemsList.unshift(newItem);
+          activeCardId = newItem.id;
+          await saveItems(itemsList);
+          renderWorkspace();
+
+          // Scroll top card into view
+          const container = document.getElementById("unreportedCardsList");
+          const firstCard = container?.querySelector(".unreported-card");
+          if (firstCard) {
+            firstCard.scrollIntoView({ behavior: "smooth", block: "nearest" });
+          }
+          if (typeof window.showToast === "function") {
+            window.showToast("New unreported item added.", "info");
+          }
+        } finally {
+          setTimeout(() => {
+            isAddingUnreported = false;
+            btnAdd.disabled = false;
+          }, 350);
+        }
+      });
+    }
+
     try {
       itemsList = await loadItems();
     } catch (e) {
       console.warn("Could not load initial unreported items:", e);
       itemsList = [];
-    }
-
-    // Bind Top Button "+ Add Unreported"
-    const btnAdd = document.getElementById("btnAddUnreported");
-    if (btnAdd) {
-      btnAdd.addEventListener("click", async () => {
-        const newItem = createItem();
-        itemsList.unshift(newItem);
-        activeCardId = newItem.id;
-        await saveItems(itemsList);
-        renderWorkspace();
-
-        // Scroll top card into view
-        const container = document.getElementById("unreportedCardsList");
-        const firstCard = container?.querySelector(".unreported-card");
-        if (firstCard) {
-          firstCard.scrollIntoView({ behavior: "smooth", block: "nearest" });
-        }
-        if (typeof window.showToast === "function") {
-          window.showToast("New unreported item added.", "info");
-        }
-      });
     }
 
     initGlobalPaste();
