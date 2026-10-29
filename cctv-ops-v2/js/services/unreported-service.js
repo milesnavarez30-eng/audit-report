@@ -553,6 +553,9 @@
         item.activeShotIndex = Math.max(0, Math.min(item.activeShotIndex, item.screenshots.length - 1));
         await saveItems(itemsList);
         renderWorkspace();
+        if (window.historyService?.captureIfChanged) {
+          await window.historyService.captureIfChanged("unreported", `Removed screenshot from unreported item: ${item.remarks?.slice(0, 25) || "item"}`);
+        }
         if (typeof window.showToast === "function") {
           window.showToast("Screenshot removed.", "info");
         }
@@ -586,6 +589,9 @@
         item.activeShotIndex = Math.max(0, Math.min(item.activeShotIndex, item.screenshots.length - 1));
         await saveItems(itemsList);
         renderWorkspace();
+        if (window.historyService?.captureIfChanged) {
+          await window.historyService.captureIfChanged("unreported", `Removed screenshot from unreported item: ${item.remarks?.slice(0, 25) || "item"}`);
+        }
         if (typeof window.showToast === "function") {
           window.showToast("Screenshot removed.", "info");
         }
@@ -656,11 +662,15 @@
           : window.confirm("Delete this unreported item permanently?");
         if (!ok) return;
 
+        const deletedItem = itemsList.find(x => x.id === id);
         itemsList = itemsList.filter(x => x.id !== id);
         if (activeCardId === id) activeCardId = "";
         removeCollapsedId(id);
         await saveItems(itemsList);
         renderWorkspace();
+        if (window.historyService?.captureIfChanged) {
+          await window.historyService.captureIfChanged("unreported", `Deleted unreported item: ${deletedItem?.remarks?.slice(0, 25) || "item"}`);
+        }
         if (typeof window.showToast === "function") {
           window.showToast("Unreported item deleted.", "info");
         }

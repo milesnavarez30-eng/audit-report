@@ -781,7 +781,10 @@ window.CCTV_EDR = (function () {
       }
     },
 
-    async saveReports() {
+    async saveReports(optionalReports) {
+      if (Array.isArray(optionalReports)) {
+        edrReports = optionalReports;
+      }
       if (saveReportsTimer) {
         clearTimeout(saveReportsTimer);
         saveReportsTimer = null;

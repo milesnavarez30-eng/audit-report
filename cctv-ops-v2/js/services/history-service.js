@@ -368,11 +368,18 @@
           label: "CCTV Audit",
           snapshot: async () => ({ entries: clone(audit.getEntries?.() || []) }),
           restore: async (snap) => {
-            if (Array.isArray(snap?.entries)) {
+            const list = Array.isArray(snap?.entries) ? snap.entries : (Array.isArray(snap) ? snap : null);
+            if (Array.isArray(list)) {
               if (typeof audit.restoreEntries === "function") {
-                audit.restoreEntries(snap.entries);
+                audit.restoreEntries(list);
               } else if (typeof audit.saveEntries === "function") {
-                await audit.saveEntries(snap.entries);
+                await audit.saveEntries(list);
+              }
+              if (typeof window.renderAuditTable === "function") {
+                window.renderAuditTable();
+              }
+              if (typeof window.renderGuardStatus === "function") {
+                window.renderGuardStatus();
               }
             }
           }
@@ -385,11 +392,15 @@
           label: "EDR",
           snapshot: async () => ({ reports: clone(edr.getReports?.() || []) }),
           restore: async (snap) => {
-            if (Array.isArray(snap?.reports)) {
+            const list = Array.isArray(snap?.reports) ? snap.reports : (Array.isArray(snap) ? snap : null);
+            if (Array.isArray(list)) {
               if (typeof edr.restoreReports === "function") {
-                await edr.restoreReports(snap.reports);
+                await edr.restoreReports(list);
               } else if (typeof edr.saveReports === "function") {
-                await edr.saveReports(snap.reports);
+                await edr.saveReports(list);
+              }
+              if (typeof window.renderEdrList === "function") {
+                window.renderEdrList(edr.getReports?.() || list);
               }
             }
           }
@@ -401,8 +412,12 @@
           label: "AI Sorter",
           snapshot: async () => ({ rows: clone(window.sorterService.getSortedRows?.() || []) }),
           restore: async (snap) => {
-            if (Array.isArray(snap?.rows) && window.sorterService.setSortedRows) {
-              window.sorterService.setSortedRows(snap.rows);
+            const list = Array.isArray(snap?.rows) ? snap.rows : (Array.isArray(snap) ? snap : null);
+            if (Array.isArray(list) && window.sorterService.setSortedRows) {
+              window.sorterService.setSortedRows(list);
+              if (typeof window.renderSorterTable === "function") {
+                window.renderSorterTable();
+              }
             }
           }
         };
@@ -411,10 +426,18 @@
       if (!ad.maintenanceReport && window.maintenanceService) {
         ad.maintenanceReport = {
           label: "Maintenance Report",
-          snapshot: async () => ({ blocks: clone(window.maintenanceService.getBlocks?.() || []) }),
+          snapshot: async () => ({ blocks: clone(window.maintenanceService.getBlocks?.() || (window.maintenanceState?.blocks ? clone(window.maintenanceState.blocks) : [])) }),
           restore: async (snap) => {
-            if (Array.isArray(snap?.blocks) && window.maintenanceService.saveBlocks) {
-              await window.maintenanceService.saveBlocks(snap.blocks);
+            const blocks = Array.isArray(snap?.blocks) ? snap.blocks : (Array.isArray(snap) ? snap : null);
+            if (Array.isArray(blocks)) {
+              if (window.maintenanceService.saveBlocks) {
+                await window.maintenanceService.saveBlocks(blocks);
+              }
+              if (typeof window.loadMaintenanceDraftInitial === "function") {
+                await window.loadMaintenanceDraftInitial();
+              } else if (typeof window.renderMaintenanceBlocks === "function") {
+                window.renderMaintenanceBlocks();
+              }
             }
           }
         };
@@ -433,8 +456,14 @@
             return [];
           },
           restore: async (snap) => {
-            if (Array.isArray(snap) && window.pendingService.saveReports) {
-              await window.pendingService.saveReports(snap);
+            const list = Array.isArray(snap) ? snap : (Array.isArray(snap?.reports) ? snap.reports : null);
+            if (Array.isArray(list) && window.pendingService.saveReports) {
+              await window.pendingService.saveReports(list);
+              if (typeof window.loadPendingReportsInitial === "function") {
+                await window.loadPendingReportsInitial();
+              } else if (typeof window.renderPendingList === "function") {
+                window.renderPendingList();
+              }
             }
           }
         };
@@ -453,8 +482,14 @@
             return [];
           },
           restore: async (snap) => {
-            if (Array.isArray(snap) && window.followupService.saveReports) {
-              await window.followupService.saveReports(snap);
+            const list = Array.isArray(snap) ? snap : (Array.isArray(snap?.reports) ? snap.reports : null);
+            if (Array.isArray(list) && window.followupService.saveReports) {
+              await window.followupService.saveReports(list);
+              if (typeof window.loadFollowupReportsInitial === "function") {
+                await window.loadFollowupReportsInitial();
+              } else if (typeof window.renderFollowupList === "function") {
+                window.renderFollowupList();
+              }
             }
           }
         };
@@ -518,8 +553,9 @@
             return clone(items);
           },
           restore: async (snap) => {
-            if (Array.isArray(snap) && window.unreportedService.saveItems) {
-              await window.unreportedService.saveItems(clone(snap));
+            const list = Array.isArray(snap) ? snap : (Array.isArray(snap?.items) ? snap.items : null);
+            if (Array.isArray(list) && window.unreportedService.saveItems) {
+              await window.unreportedService.saveItems(clone(list));
               window.unreportedService.renderWorkspace?.();
             }
           }
@@ -631,6 +667,12 @@
       await this._loadTimeline();
       await this.initializeBaselines();
       this._bindGlobalDomListeners();
+      this._notify();
+    }
+
+    async reload() {
+      await this._loadTimeline();
+      await this.initializeBaselines();
       this._notify();
     }
 
@@ -1150,6 +1192,7 @@
 
       // 3. Take live snapshot of current workspace
       const currentRaw = await this.takeSnapshot(canonical);
+      await ensureMediaLoaded(currentRaw);
       let current = decompressMedia(clone(currentRaw));
       const before = decompressMedia(clone(entry.before));
       const after = decompressMedia(clone(entry.after));
@@ -1160,10 +1203,12 @@
 
       // 4. Targeted merge by workspace
       if (canonical === "audit") {
-        const currentEntries = Array.isArray(current?.entries) ? current.entries : [];
+        const currentEntries = Array.isArray(current?.entries) ? current.entries : (Array.isArray(current) ? current : []);
         const currentIds = new Set(currentEntries.map(historyItemIdentity));
-        const afterIds = new Set((after?.entries || []).map(historyItemIdentity));
-        const deleted = (before?.entries || []).filter(e => !afterIds.has(historyItemIdentity(e)));
+        const afterList = Array.isArray(after?.entries) ? after.entries : (Array.isArray(after) ? after : []);
+        const afterIds = new Set(afterList.map(historyItemIdentity));
+        const beforeList = Array.isArray(before?.entries) ? before.entries : (Array.isArray(before) ? before : []);
+        const deleted = beforeList.filter(e => !afterIds.has(historyItemIdentity(e)));
 
         const missing = deleted.filter(e => !currentIds.has(historyItemIdentity(e)));
         if (deleted.length > 0 && missing.length === 0) {
@@ -1173,15 +1218,19 @@
             currentEntries.push(clone(e));
             currentIds.add(historyItemIdentity(e));
           });
-          current.entries = currentEntries;
+          current = typeof current === "object" && current !== null && !Array.isArray(current)
+            ? { ...current, entries: currentEntries }
+            : { entries: currentEntries };
           restoredCount += missing.length;
           desc = `${restoredCount} CCTV Audit ${restoredCount === 1 ? "entry" : "entries"}`;
         }
       } else if (canonical === "edr") {
-        const currentReports = Array.isArray(current?.reports) ? current.reports : [];
+        const currentReports = Array.isArray(current?.reports) ? current.reports : (Array.isArray(current) ? current : []);
         const currentIds = new Set(currentReports.map(historyItemIdentity));
-        const afterIds = new Set((after?.reports || []).map(historyItemIdentity));
-        const deleted = (before?.reports || []).filter(r => !afterIds.has(historyItemIdentity(r)));
+        const afterList = Array.isArray(after?.reports) ? after.reports : (Array.isArray(after) ? after : []);
+        const afterIds = new Set(afterList.map(historyItemIdentity));
+        const beforeList = Array.isArray(before?.reports) ? before.reports : (Array.isArray(before) ? before : []);
+        const deleted = beforeList.filter(r => !afterIds.has(historyItemIdentity(r)));
 
         const missing = deleted.filter(r => !currentIds.has(historyItemIdentity(r)));
         if (deleted.length > 0 && missing.length === 0) {
@@ -1191,7 +1240,9 @@
             currentReports.push(clone(r));
             currentIds.add(historyItemIdentity(r));
           });
-          current.reports = currentReports;
+          current = typeof current === "object" && current !== null && !Array.isArray(current)
+            ? { ...current, reports: currentReports }
+            : { reports: currentReports };
           restoredCount += missing.length;
           desc = `${restoredCount} EDR ${restoredCount === 1 ? "report" : "reports"}`;
         }
@@ -1490,15 +1541,20 @@
         return { success: false, restoredCount: 0, reason: "nothing-to-restore" };
       }
 
+      // Record pre-restore state in lastSnapshots so captureIfChanged detects the change
+      this.lastSnapshots[canonical] = compressMedia(clone(currentRaw));
+
       // 6. Mutate workspace through adapter
       this.suppress = true;
       try {
         await adapter.restore(decompressMedia(clone(current)));
+      } catch (err) {
+        console.error("Workspace adapter restore failed:", err);
+        return { success: false, restoredCount: 0, reason: "adapter-error", error: err.message };
       } finally {
         this.suppress = false;
       }
 
-      this.lastSnapshots[canonical] = compressMedia(clone(current));
       await this.captureIfChanged(
         canonical,
         `Restored ${desc || "deleted data"} · ${entry.action}`

@@ -545,11 +545,22 @@ window.CCTV_AUDIT = (function () {
         index = entryList.findIndex(e => e.id === indexOrId || e.sourceEdrId === indexOrId);
       }
       if (index >= 0 && index < entryList.length) {
-        entryList.splice(index, 1);
+        const removed = entryList.splice(index, 1)[0];
         if (editingIndex === index) editingIndex = -1;
         else if (editingIndex > index) editingIndex--;
         saveEntries();
+        if (typeof window !== "undefined") {
+          if (typeof window.renderAuditTable === "function") {
+            window.renderAuditTable();
+          }
+          if (typeof window.renderGuardStatus === "function") {
+            window.renderGuardStatus();
+          }
+          window.dispatchEvent(new CustomEvent("cctv-audit-updated", { detail: { count: entryList.length, removed } }));
+        }
+        return removed;
       }
+      return null;
     },
 
     restoreEntries(entries) {
@@ -558,6 +569,15 @@ window.CCTV_AUDIT = (function () {
       editingIndex = -1;
       sortEntries();
       saveEntries();
+      if (typeof window !== "undefined") {
+        if (typeof window.renderAuditTable === "function") {
+          window.renderAuditTable();
+        }
+        if (typeof window.renderGuardStatus === "function") {
+          window.renderGuardStatus();
+        }
+        window.dispatchEvent(new CustomEvent("cctv-audit-updated", { detail: { count: entryList.length } }));
+      }
       return entryList.length;
     },
 

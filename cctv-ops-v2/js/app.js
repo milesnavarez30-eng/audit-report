@@ -1863,7 +1863,11 @@
           tone: "danger"
         });
         if (ok) {
-          edr.deleteReport(id);
+          await edr.deleteReport(id);
+          renderEdrList(edr.getReports());
+          if (window.historyService?.captureIfChanged) {
+            await window.historyService.captureIfChanged("edr", `Deleted EDR record: ${report.subjectName || "record"}`);
+          }
           showToast("EDR record deleted.", "info");
         }
       });
@@ -2727,6 +2731,10 @@
       if (!confirmed) return;
 
       const deletedCount = await edr.deleteSelectedReports();
+      renderEdrList(edr.getReports());
+      if (window.historyService?.captureIfChanged) {
+        await window.historyService.captureIfChanged("edr", `Deleted ${deletedCount} selected EDR record(s)`);
+      }
       showToast(`${deletedCount} Saved EDR${deletedCount === 1 ? '' : 's'} deleted.`, "success");
     });
 
@@ -3708,6 +3716,10 @@
             audit.deleteEntry(entryId);
           } else {
             audit.deleteEntry(origIdx);
+          }
+          renderAuditTable();
+          if (window.historyService?.captureIfChanged) {
+            await window.historyService.captureIfChanged("audit", `Deleted CCTV Audit entry: ${rep?.agentName || rep?.tlName || "entry"}`);
           }
           showToast("Audit entry deleted.", "info");
         }
@@ -6274,6 +6286,9 @@ function doPost(e) {
         block.screenshots.splice(shotIdx, 1);
         renderBlockScreenshots(block.id);
         queueMaintenanceAutosave();
+        if (window.historyService?.captureIfChanged) {
+          window.historyService.captureIfChanged("maintenanceReport", "Removed screenshot from Maintenance Block");
+        }
         showToast("Screenshot removed.", "info");
       });
       item.appendChild(removeBtn);
@@ -7802,6 +7817,7 @@ function doPost(e) {
     window.setMaintenanceState = (st) => { maintenanceState = st; };
     window.renderMaintenanceBlocks = renderMaintenanceBlocks;
     window.renderBlockScreenshots = renderBlockScreenshots;
+    window.loadMaintenanceDraftInitial = loadMaintenanceDraftInitial;
     window.addScreenshotsToBlock = addScreenshotsToBlock;
     window.downloadMaintenancePdf = downloadMaintenancePdf;
     window.getMaintenanceCompressionQueue = () => maintenanceImageCompressionQueue;
@@ -8263,6 +8279,9 @@ function doPost(e) {
         await pending.saveReports(pendingReportsList);
         renderPendingList();
         updatePendingSummary();
+        if (window.historyService?.captureIfChanged) {
+          await window.historyService.captureIfChanged("pending", `Deleted Pending report: ${report.label || "report"}`);
+        }
         showToast("Pending report deleted.", "info");
       });
       actions.appendChild(delBtn);
@@ -8455,6 +8474,9 @@ function doPost(e) {
         console.error("Request permission error:", err);
       }
     });
+
+    window.renderPendingList = renderPendingList;
+    window.loadPendingReportsInitial = loadPendingReportsInitial;
   }
 
   // =========================================================================
@@ -8842,6 +8864,9 @@ function doPost(e) {
         if (followupSelectedId === report.id) followupSelectedId = "";
         await followup.saveReports(followupReportsList);
         renderFollowupList();
+        if (window.historyService?.captureIfChanged) {
+          await window.historyService.captureIfChanged("followup", `Deleted Follow Up report: ${report.label || "report"}`);
+        }
         showToast("Follow-up report deleted.", "info");
       });
     });
@@ -12170,16 +12195,25 @@ function doPost(e) {
       const timeline = history.getTimeline();
       if (!timeline.selectedId) return;
 
-      const res = await history.restoreSelectedEntry(timeline.selectedId);
-      if (res && res.success && res.restoredCount > 0) {
-        const desc = res.description || (res.restoredCount + " deleted item" + (res.restoredCount === 1 ? "" : "s"));
-        showToast("Restored " + desc + ".", "success");
-      } else if (res && res.reason === "already-restored") {
-        showToast("Deleted data is already restored.", "info");
-      } else {
-        showToast("No deleted data to restore from this change.", "info");
+      restoreBtn.disabled = true;
+      try {
+        const res = await history.restoreSelectedEntry(timeline.selectedId);
+        if (res && res.success && res.restoredCount > 0) {
+          const desc = res.description || (res.restoredCount + " deleted item" + (res.restoredCount === 1 ? "" : "s"));
+          showToast("Restored " + desc + ".", "success");
+        } else if (res && res.reason === "already-restored") {
+          showToast("Deleted data is already restored.", "info");
+        } else if (res && res.reason === "adapter-error") {
+          showToast(`Restore failed: ${res.error || "workspace restore error"}`, "error");
+        } else {
+          showToast("No deleted data to restore from this change.", "info");
+        }
+      } catch (err) {
+        console.error("Restore error:", err);
+        showToast(`Restore failed: ${err.message}`, "error");
+      } finally {
+        renderTimeline();
       }
-      renderTimeline();
     });
 
     clearBtn?.addEventListener("click", async () => {
@@ -13687,6 +13721,9 @@ function doPost(e) {
         edr.loadReports().then(reps => {
           if (typeof renderEdrList === "function") renderEdrList(reps);
         }).catch(console.error);
+      }
+      if (typeof window.historyService?.reload === "function") {
+        window.historyService.reload().catch(console.error);
       }
     });
 
