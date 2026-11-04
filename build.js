@@ -187,3 +187,4 @@ console.log(`Total files: ${manifest.length}`);
 console.log(`Total size:  ${(totalBytes / 1024).toFixed(1)} KB (${(totalBytes / (1024 * 1024)).toFixed(2)} MB)`);
 console.log('Build verification: PASSED (Zero sensitive files detected)');
 console.log('----------------------------------------------------');
+

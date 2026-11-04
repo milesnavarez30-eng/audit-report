@@ -33,3 +33,4 @@ export default {
     return new Response("Static asset binding ASSETS not configured", { status: 500 });
   }
 };
+
