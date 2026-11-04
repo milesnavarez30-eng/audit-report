@@ -420,7 +420,7 @@
       window.__manilaTimeSyncInterval = setInterval(syncNetworkPhTime, 10 * 60 * 1000);
     }
 
-    const phFormatter = new Intl.DateTimeFormat("en-US", {
+    const phTimeFormatter = new Intl.DateTimeFormat("en-US", {
       timeZone: "Asia/Manila",
       hour: "2-digit",
       minute: "2-digit",
@@ -428,17 +428,36 @@
       hour12: true
     });
 
+    const phDateFormatter = new Intl.DateTimeFormat("en-US", {
+      timeZone: "Asia/Manila",
+      weekday: "long",
+      month: "short",
+      day: "numeric",
+      year: "numeric"
+    });
+
     function updateClock() {
       try {
         const phDate = new Date(Date.now() + phTimeOffsetMs);
-        const timeStr = phFormatter.format(phDate);
+        const timeStr = phTimeFormatter.format(phDate);
+        const dateStr = phDateFormatter.format(phDate);
+
         const clockEl = document.getElementById("manilaClockText");
         if (clockEl) {
           clockEl.textContent = `${timeStr} PHT`;
         }
-        const pill = document.getElementById("localClockPill");
-        if (pill) {
-          pill.title = `Philippine Standard Time (UTC+8)${phTimeSynced ? " â€¢ Network Synced" : ""}`;
+
+        const dateEl = document.getElementById("manilaClockDate");
+        if (dateEl) {
+          dateEl.textContent = dateStr;
+        }
+
+        const widget = document.getElementById("sidebarClockWidget");
+        if (widget) {
+          const syncLabel = phTimeSynced ? " \u2022 Network Synced" : "";
+          const tooltip = `Philippine Standard Time (UTC+8): ${timeStr} PHT \u2022 ${dateStr}${syncLabel}`;
+          widget.title = tooltip;
+          widget.setAttribute("data-tooltip", tooltip);
         }
       } catch (_) {}
     }

@@ -45,8 +45,23 @@
         second: "2-digit",
         hour12: true
       }).format(now);
+      const dateStr = new Intl.DateTimeFormat("en-US", {
+        timeZone: "Asia/Manila",
+        weekday: "long",
+        month: "short",
+        day: "numeric",
+        year: "numeric"
+      }).format(now);
       const clockEl = el("manilaClockText");
       if (clockEl) clockEl.textContent = `${timeStr} PHT`;
+      const dateEl = el("manilaClockDate");
+      if (dateEl) dateEl.textContent = dateStr;
+      const widgetEl = el("sidebarClockWidget");
+      if (widgetEl) {
+        const tooltip = `Philippine Standard Time (UTC+8): ${timeStr} PHT \u2022 ${dateStr}`;
+        widgetEl.title = tooltip;
+        widgetEl.setAttribute("data-tooltip", tooltip);
+      }
     } catch (_) {}
   }
 

@@ -1130,6 +1130,24 @@
       </div>
 
       <nav class="rail-menu" role="tablist" aria-label="Workspaces">
+        <!-- Philippine Standard Time Clock Widget -->
+        <div class="sidebar-clock-widget" id="sidebarClockWidget" title="Philippine Standard Time (UTC+8)" data-tooltip="Philippine Standard Time (UTC+8)" data-tooltip-pos="right" aria-label="Philippine Standard Time">
+          <div class="sidebar-clock-compact-indicator" aria-hidden="true">
+            <svg class="sidebar-clock-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <polyline points="12 6 12 12 16 14"></polyline>
+            </svg>
+            <span class="clock-live-indicator"></span>
+          </div>
+          <div class="sidebar-clock-content">
+            <div class="sidebar-clock-time-row">
+              <span class="clock-live-indicator" aria-hidden="true"></span>
+              <span class="sidebar-clock-time" id="manilaClockText">00:00:00 AM PHT</span>
+            </div>
+            <div class="sidebar-clock-date" id="manilaClockDate">Wednesday, Nov 4, 2026</div>
+          </div>
+        </div>
+
         <div class="rail-section-label">Workspaces</div>
 
         <!-- 0. Operations Dashboard Workspace Tab -->
@@ -1342,12 +1360,6 @@
               <span class="status-dot"></span>
               <span class="status-label">Google Sheets Maint: <strong class="status-val" id="valGoogleSheets">Checking...</strong></span>
             </div>
-          </div>
-
-          <!-- Computer Local Operational Clock -->
-          <div class="manila-clock-pill" id="localClockPill" title="Local Workstation Clock" data-tooltip="Local Operational Clock" data-tooltip-pos="bottom">
-            <span class="clock-live-indicator"></span>
-            <span id="manilaClockText">00:00:00 AM</span>
           </div>
 
           <!-- User Badge / Terminal -->
