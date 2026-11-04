@@ -3901,3 +3901,94 @@ body.edr-resizing-h {
   align-items: center !important;
   gap: 6px !important;
 }
+
+/* CCTV OPS - GLOBAL EMPTY HEADER REMOVAL */
+
+/* Desktop and tablet: remove empty header completely */
+@media (min-width: 768px) {
+    .app-main > .top-appbar {
+        display: none !important;
+    }
+}
+
+/* Mobile: preserve menu access without an empty header */
+@media (max-width: 767px) {
+    .app-main {
+        position: relative;
+    }
+
+    .app-main > .top-appbar {
+        display: block !important;
+        position: absolute !important;
+        top: 8px !important;
+        left: 8px !important;
+        width: 0 !important;
+        height: 0 !important;
+        min-height: 0 !important;
+        padding: 0 !important;
+        border: none !important;
+        background: transparent !important;
+        z-index: 400 !important;
+    }
+
+    .app-main > .top-appbar > .appbar-right,
+    .app-main > .top-appbar > .topbar-progress-line {
+        display: none !important;
+    }
+
+    .app-main > .top-appbar .btn-mobile-nav-toggle {
+        display: inline-flex !important;
+        position: absolute !important;
+        top: 0;
+        left: 0;
+        background: var(--bg-surface, #161b22);
+    }
+
+    .app-main > .workspace-viewport {
+        padding-top: 44px !important;
+    }
+}
+
+/* CCTV OPS GLOBAL EMPTY TOPBAR FIX */
+
+/* Remove empty top header from all desktop workspaces */
+@media (min-width: 768px) {
+    .app-main > .top-appbar {
+        display: none !important;
+    }
+}
+
+/* Preserve mobile navigation without full header */
+@media (max-width: 767px) {
+    .app-main {
+        position: relative;
+    }
+
+    .app-main > .top-appbar {
+        display: flex !important;
+        position: absolute !important;
+        top: 8px !important;
+        left: 8px !important;
+        width: 40px !important;
+        height: 40px !important;
+        min-height: 0 !important;
+        padding: 0 !important;
+        border: none !important;
+        background: transparent !important;
+        z-index: 400 !important;
+    }
+
+    .app-main > .top-appbar > .appbar-right,
+    .app-main > .top-appbar > .topbar-progress-line {
+        display: none !important;
+    }
+
+    .app-main > .top-appbar .appbar-left,
+    .app-main > .top-appbar .btn-mobile-nav-toggle {
+        display: inline-flex !important;
+    }
+
+    .app-main > .workspace-viewport {
+        padding-top: 44px !important;
+    }
+}
