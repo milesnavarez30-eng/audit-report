@@ -1944,6 +1944,7 @@
 
     el("edrFormTitle").textContent = "Update EDR";
     el("btnEdrSubmitText").textContent = "Update EDR";
+    if (el("btnSendFormToAuditText")) el("btnSendFormToAuditText").textContent = "Update & Send to Audit";
     el("btnEdrCancelEdit").style.display = "inline-flex";
   }
 
@@ -1965,8 +1966,43 @@
     if (window.clearEdrClipLinks) window.clearEdrClipLinks();
     el("edrFormTitle").textContent = "Manual EDR Entry";
     el("btnEdrSubmitText").textContent = "Save EDR";
+    if (el("btnSendFormToAuditText")) el("btnSendFormToAuditText").textContent = "Save & Send to Audit";
     el("btnEdrCancelEdit").style.display = "none";
     edr.clearDraftForm().catch(() => {});
+  }
+
+  function applyEdrPartialReset(shared) {
+    edr.setEditingId(null);
+    if (el("edrTimeObserved")) el("edrTimeObserved").value = "";
+    if (el("edrIncident")) el("edrIncident").value = "";
+    if (el("edrDetails")) el("edrDetails").value = "";
+    if (el("edrActionRemarks")) el("edrActionRemarks").value = "";
+    if (window.clearMsSubjects) window.clearMsSubjects();
+    if (window.clearEdrScreenshots) window.clearEdrScreenshots();
+    else if (window.setCctvScreenshot) window.setCctvScreenshot("");
+    if (window.clearEdrClipLinks) window.clearEdrClipLinks();
+
+    // Re-apply preserved shared fields
+    if (shared.site && el("edrSite")) el("edrSite").value = shared.site;
+    if (shared.date && el("edrDate")) el("edrDate").value = shared.date;
+    if (shared.om && el("edrOmName")) el("edrOmName").value = shared.om;
+    if (shared.defaultTl && el("edrDefaultTl")) el("edrDefaultTl").value = shared.defaultTl;
+    if (shared.defaultAccount && el("edrDefaultAccount")) el("edrDefaultAccount").value = shared.defaultAccount;
+    if (shared.defaultInfraction && el("edrDefaultInfraction")) el("edrDefaultInfraction").value = shared.defaultInfraction;
+
+    // Ensure draft storage does not retain stale incident data
+    edr.clearDraftForm().catch(() => {});
+
+    el("edrFormTitle").textContent = "Manual EDR Entry";
+    el("btnEdrSubmitText").textContent = "Save EDR";
+    if (el("btnSendFormToAuditText")) el("btnSendFormToAuditText").textContent = "Save & Send to Audit";
+    el("btnEdrCancelEdit").style.display = "none";
+
+    setTimeout(() => {
+      const timeField = el("edrTimeObserved");
+      if (timeField) timeField.focus();
+      else el("btnAddSubject")?.focus();
+    }, 50);
   }
 
   // Draft Autosave & Restore
@@ -2598,6 +2634,23 @@
   }
   function initEvents() {
     initEdrResizableWorkspace();
+
+    // Initialize & persist Keep Shared Details preference for EDR
+    const chkEdrKeepShared = el("chkEdrKeepShared");
+    if (chkEdrKeepShared) {
+      try {
+        const saved = localStorage.getItem("cctv_edr_keep_shared");
+        if (saved !== null) {
+          chkEdrKeepShared.checked = saved === "true";
+        }
+      } catch (_) {}
+      chkEdrKeepShared.addEventListener("change", () => {
+        try {
+          localStorage.setItem("cctv_edr_keep_shared", String(chkEdrKeepShared.checked));
+        } catch (_) {}
+      });
+    }
+
     let isSubmittingEdr = false;
     // Form submit
     el("edrForm")?.addEventListener("submit", async (e) => {
@@ -2616,9 +2669,27 @@
           return;
         }
         const data = getFormData();
+        const wasEditing = !!edr.getEditingReport();
+        const keepShared = !wasEditing && !!el("chkEdrKeepShared")?.checked;
+        const sharedDetails = keepShared ? {
+          site: el("edrSite")?.value || "",
+          date: el("edrDate")?.value || "",
+          om: el("edrOmName")?.value || "",
+          defaultTl: el("edrDefaultTl")?.value || "",
+          defaultAccount: el("edrDefaultAccount")?.value || "",
+          defaultInfraction: el("edrDefaultInfraction")?.value || ""
+        } : null;
+
+        console.log("[EDR_SUBMIT] calling createOrUpdate with keepShared=", keepShared);
         await edr.createOrUpdate(data);
-        resetForm();
-        showToast("EDR saved successfully.", "success");
+
+        if (keepShared && sharedDetails) {
+          applyEdrPartialReset(sharedDetails);
+          showToast("EDR saved. Shared details preserved for next entry.", "success");
+        } else {
+          resetForm();
+          showToast("EDR saved successfully.", "success");
+        }
       } catch (err) {
         console.error(err);
         showToast(err.message || "Failed to save EDR.", "error");
@@ -2675,8 +2746,22 @@
           return;
         }
         const data = getFormData();
+        const keepShared = !!el("chkEdrKeepShared")?.checked;
+        const sharedDetails = keepShared ? {
+          site: el("edrSite")?.value || "",
+          date: el("edrDate")?.value || "",
+          om: el("edrOmName")?.value || "",
+          defaultTl: el("edrDefaultTl")?.value || "",
+          defaultAccount: el("edrDefaultAccount")?.value || "",
+          defaultInfraction: el("edrDefaultInfraction")?.value || ""
+        } : null;
+
         const saved = await edr.createOrUpdate(data);
-        resetForm();
+        if (keepShared && sharedDetails) {
+          applyEdrPartialReset(sharedDetails);
+        } else {
+          resetForm();
+        }
         if (saved) {
           await sendSingleReportToAudit(saved);
         }
@@ -3903,6 +3988,22 @@
     initAuditDropdowns();
     setupAuditOptionManagement();
 
+    // Initialize & persist Keep Shared Details preference for CCTV Audit
+    const chkAuditKeepShared = el("chkAuditKeepShared");
+    if (chkAuditKeepShared) {
+      try {
+        const saved = localStorage.getItem("cctv_audit_keep_shared");
+        if (saved !== null) {
+          chkAuditKeepShared.checked = saved === "true";
+        }
+      } catch (_) {}
+      chkAuditKeepShared.addEventListener("change", () => {
+        try {
+          localStorage.setItem("cctv_audit_keep_shared", String(chkAuditKeepShared.checked));
+        } catch (_) {}
+      });
+    }
+
     // Form submission
     el("auditForm")?.addEventListener("submit", (e) => {
       e.preventDefault();
@@ -3921,16 +4022,49 @@
         remarks: el("auditRemarks")?.value ? el("auditRemarks").value.trim() : ""
       };
 
-      if (auditEditingIndex >= 0) {
+      const isEditing = auditEditingIndex >= 0;
+      const keepShared = !isEditing && !!el("chkAuditKeepShared")?.checked;
+      const sharedDetails = keepShared ? {
+        date: el("auditDate")?.value || "",
+        site: el("auditSite")?.value || "",
+        tl: el("auditTlName")?.value || "",
+        om: el("auditOmName")?.value || "",
+        account: el("auditAccount")?.value || ""
+      } : null;
+
+      if (isEditing) {
         audit.setEditingIndex(auditEditingIndex);
         audit.addEntry(entryData);
         showToast("Audit entry updated.", "success");
+        resetAuditForm();
       } else {
         audit.addEntry(entryData);
-        showToast("Audit entry added to Data Output Grid.", "success");
-      }
+        if (keepShared && sharedDetails) {
+          auditEditingIndex = -1;
+          if (el("auditAgentName")) el("auditAgentName").value = "";
+          if (el("auditRemarks")) el("auditRemarks").value = "";
+          if (el("auditReasonCode")) el("auditReasonCode").selectedIndex = 0;
+          if (el("auditNoc")) el("auditNoc").value = "YES";
 
-      resetAuditForm();
+          if (sharedDetails.date && el("auditDate")) el("auditDate").value = sharedDetails.date;
+          if (sharedDetails.site && el("auditSite")) el("auditSite").value = sharedDetails.site;
+          if (sharedDetails.tl && el("auditTlName")) el("auditTlName").value = sharedDetails.tl;
+          if (sharedDetails.om && el("auditOmName")) el("auditOmName").value = sharedDetails.om;
+          if (sharedDetails.account && el("auditAccount")) el("auditAccount").value = sharedDetails.account;
+
+          const submitBtn = el("btnAuditSubmitText");
+          if (submitBtn) submitBtn.textContent = "Add Entry to List";
+          renderAuditTable();
+
+          setTimeout(() => {
+            el("auditAgentName")?.focus();
+          }, 50);
+          showToast("Audit entry added. Shared details preserved for next entry.", "success");
+        } else {
+          resetAuditForm();
+          showToast("Audit entry added to Data Output Grid.", "success");
+        }
+      }
     });
 
     // Clear form
@@ -9035,6 +9169,22 @@ function doPost(e) {
       });
     }
 
+    // Initialize & persist Keep OM & Date preference for Follow Up
+    const chkFollowupKeepShared = el("chkFollowupKeepShared");
+    if (chkFollowupKeepShared) {
+      try {
+        const saved = localStorage.getItem("cctv_followup_keep_shared");
+        if (saved !== null) {
+          chkFollowupKeepShared.checked = saved === "true";
+        }
+      } catch (_) {}
+      chkFollowupKeepShared.addEventListener("change", () => {
+        try {
+          localStorage.setItem("cctv_followup_keep_shared", String(chkFollowupKeepShared.checked));
+        } catch (_) {}
+      });
+    }
+
     // Add button
     let isAddingFollowup = false;
     el("followupAddBtn")?.addEventListener("click", async () => {
@@ -9044,40 +9194,55 @@ function doPost(e) {
       if (addBtn) addBtn.disabled = true;
       try {
         const om = String(el("followupOm")?.value || "").trim();
-      const date = el("followupDate")?.value || followup.todayLocal();
-      if (!followupAddScreenshotData) {
-        showFollowupMessage("Add the TL conversation screenshot first.", "error");
-        showToast("Add the TL conversation screenshot first.", "error");
-        return;
-      }
-      if (!om) {
-        showFollowupMessage("Select or type the OM / group chat.", "error");
-        showToast("Select or type the OM / group chat.", "error");
-        el("followupOm")?.focus();
-        return;
-      }
+        const date = el("followupDate")?.value || followup.todayLocal();
+        if (!followupAddScreenshotData) {
+          showFollowupMessage("Add the TL conversation screenshot first.", "error");
+          showToast("Add the TL conversation screenshot first.", "error");
+          return;
+        }
+        if (!om) {
+          showFollowupMessage("Select or type the OM / group chat.", "error");
+          showToast("Select or type the OM / group chat.", "error");
+          el("followupOm")?.focus();
+          return;
+        }
 
-      const newReport = followup.createReport({
-        date,
-        om,
-        label: el("followupLabel")?.value,
-        cctvLink: el("followupCctvLink")?.value,
-        status: el("followupStatus")?.value || "Waiting for TL",
-        remarks: el("followupRemarks")?.value,
-        screenshotData: followupAddScreenshotData
-      });
+        const newReport = followup.createReport({
+          date,
+          om,
+          label: el("followupLabel")?.value,
+          cctvLink: el("followupCctvLink")?.value,
+          status: el("followupStatus")?.value || "Waiting for TL",
+          remarks: el("followupRemarks")?.value,
+          screenshotData: followupAddScreenshotData
+        });
 
-      followupReportsList.unshift(newReport);
-      try {
-        await followup.saveReports(followupReportsList);
-        clearFollowupAddForm();
-        renderFollowupList();
-        showFollowupMessage("Follow-up report saved.", "success");
-        showToast("Follow-up report saved.", "success");
-      } catch (err) {
-        showFollowupMessage("Could not save report.", "error");
-        showToast("Could not save follow-up report.", "error");
- }
+        followupReportsList.unshift(newReport);
+        try {
+          await followup.saveReports(followupReportsList);
+          const keepShared = !!el("chkFollowupKeepShared")?.checked;
+          const preservedOm = keepShared ? om : "";
+          const preservedDate = keepShared ? date : "";
+
+          clearFollowupAddForm();
+
+          if (keepShared) {
+            if (preservedOm && el("followupOm")) el("followupOm").value = preservedOm;
+            if (preservedDate && el("followupDate")) el("followupDate").value = preservedDate;
+            setTimeout(() => {
+              el("followupLabel")?.focus();
+            }, 50);
+            showFollowupMessage("Follow-up report saved. OM and Date kept for next report.", "success");
+            showToast("Follow-up report saved. OM & Date preserved.", "success");
+          } else {
+            showFollowupMessage("Follow-up report saved.", "success");
+            showToast("Follow-up report saved.", "success");
+          }
+          renderFollowupList();
+        } catch (err) {
+          showFollowupMessage("Could not save report.", "error");
+          showToast("Could not save follow-up report.", "error");
+        }
       } finally {
         isAddingFollowup = false;
         if (addBtn) addBtn.disabled = false;
@@ -9107,8 +9272,11 @@ function doPost(e) {
       renderFollowupList();
     });
 
+    window.setFollowupAddScreenshot = setFollowupAddScreenshot;
+    window.clearFollowupAddForm = clearFollowupAddForm;
     window.renderFollowupList = renderFollowupList;
     window.loadFollowupReportsInitial = loadFollowupReportsInitial;
+    window.getFollowupReports = () => followupReportsList.slice();
   }
 
   // =========================================================================

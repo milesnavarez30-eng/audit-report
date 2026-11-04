@@ -1922,15 +1922,21 @@
                 </div>
 
                 <!-- Form Action Bar -->
-                <div class="card-footer">
-                  <button type="button" class="btn btn-outline btn-sm" id="btnEdrCancelEdit" style="display:none;">Cancel Edit</button>
+                <div class="card-footer" style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;">
+                  <div style="display:flex; align-items:center; gap:8px;">
+                    <button type="button" class="btn btn-outline btn-sm" id="btnEdrCancelEdit" style="display:none;">Cancel Edit</button>
+                    <label class="form-check-inline" style="display:inline-flex; align-items:center; gap:5px; font-size:11px; color:var(--text-secondary); cursor:pointer; user-select:none; margin:0;" title="Preserve Site, Date, Dedicated OM, Default TL and Account for next EDR entry">
+                      <input type="checkbox" id="chkEdrKeepShared" style="cursor:pointer; accent-color:var(--accent-primary);">
+                      <span>Keep shared details</span>
+                    </label>
+                  </div>
                   <div style="display:flex; align-items:center; gap:6px; margin-left:auto; flex-wrap:wrap;">
                     <button type="submit" form="edrForm" class="btn btn-primary btn-sm" id="btnEdrSubmit">
                       <svg class="icon icon-sm" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
                       <span id="btnEdrSubmitText">Save EDR</span>
                     </button>
-                    <button type="button" class="btn btn-outline btn-sm" id="btnSendFormToAudit" title="Send current EDR to CCTV Audit">
-                      Send to CCTV Audit
+                    <button type="button" class="btn btn-outline btn-sm" id="btnSendFormToAudit" title="Save current form entry and stage directly to CCTV Audit">
+                      <span id="btnSendFormToAuditText">Save & Send to Audit</span>
                     </button>
                   </div>
                 </div>
@@ -1968,8 +1974,8 @@
                       <svg class="icon icon-sm" id="iconDispatchExpand" viewBox="0 0 24 24"><polyline points="15 3 21 3 21 9"></polyline><polyline points="9 21 3 21 3 15"></polyline><line x1="21" y1="3" x2="14" y2="10"></line><line x1="3" y1="21" x2="10" y2="14"></line></svg>
                       <span id="labelDispatchExpand">Expand Preview</span>
                     </button>
-                    <button type="button" class="btn btn-outline btn-sm" id="btnSendSelectedToAudit" title="Send selected EDR to CCTV Audit">
-                      Send to CCTV Audit
+                    <button type="button" class="btn btn-outline btn-sm" id="btnSendSelectedToAudit" title="Send selected saved EDR to CCTV Audit">
+                      Send Selected to Audit
                     </button>
                     <button type="button" class="btn btn-primary btn-sm" id="btnCopyAllTeams">
                       <svg class="icon icon-sm" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
@@ -2162,11 +2168,17 @@
                     <input type="text" id="auditRemarks" class="form-control" placeholder="Observations, coaching, supervisor response..." required>
                   </div>
 
-                  <div class="audit-form-buttons">
-                    <button type="button" class="btn btn-ghost btn-sm" id="btnAuditClearForm">Clear Form</button>
-                    <button type="submit" class="btn btn-primary btn-sm" id="btnAuditSubmit">
-                      <span id="btnAuditSubmitText">Add Entry to List</span>
-                    </button>
+                  <div class="audit-form-buttons" style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;">
+                    <label class="form-check-inline" style="display:inline-flex; align-items:center; gap:5px; font-size:11px; color:var(--text-secondary); cursor:pointer; user-select:none; margin-right:auto;" title="Preserve Date, Site, TL, OM, and Account for consecutive audit entries">
+                      <input type="checkbox" id="chkAuditKeepShared" style="cursor:pointer; accent-color:var(--accent-primary);">
+                      <span>Keep shared details</span>
+                    </label>
+                    <div style="display:flex; align-items:center; gap:6px;">
+                      <button type="button" class="btn btn-ghost btn-sm" id="btnAuditClearForm">Clear Form</button>
+                      <button type="submit" class="btn btn-primary btn-sm" id="btnAuditSubmit">
+                        <span id="btnAuditSubmitText">Add Entry to List</span>
+                      </button>
+                    </div>
                   </div>
                 </div>
               </form>
@@ -2714,9 +2726,15 @@
 
                 <div style="display:flex; flex-direction:column; gap:6px;">
                   <textarea id="followupRemarks" class="form-control form-control-sm" rows="3" placeholder="Remarks / TL Reply (e.g., TL disputed the report. Need OM verification)..." style="resize:vertical;"></textarea>
-                  <div style="display:flex; align-items:center; justify-content:flex-end; gap:8px;">
-                    <button type="button" class="btn btn-ghost btn-sm" id="followupClearBtn">Clear Form</button>
-                    <button type="button" class="btn btn-primary btn-sm" id="followupAddBtn">Add Follow Up Report</button>
+                  <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;">
+                    <label class="form-check-inline" style="display:inline-flex; align-items:center; gap:5px; font-size:11px; color:var(--text-secondary); cursor:pointer; user-select:none; margin-right:auto;" title="Preserve OM and Date for consecutive follow-up reports">
+                      <input type="checkbox" id="chkFollowupKeepShared" style="cursor:pointer; accent-color:var(--accent-primary);">
+                      <span>Keep OM & Date</span>
+                    </label>
+                    <div style="display:flex; align-items:center; gap:6px;">
+                      <button type="button" class="btn btn-ghost btn-sm" id="followupClearBtn">Clear Form</button>
+                      <button type="button" class="btn btn-primary btn-sm" id="followupAddBtn">Add Follow Up Report</button>
+                    </div>
                   </div>
                 </div>
               </div>
