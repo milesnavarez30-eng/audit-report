@@ -1,4 +1,4 @@
-/**
+﻿/**
  * CCTV OPS V2 - Main Application Orchestrator & Prototype Controller
  */
 
@@ -1137,21 +1137,58 @@
   function updateViewerImage() {
     const img = el("screenshotViewerImg");
     const titleEl = el("screenshotViewerTitle");
+    const badgeEl = el("screenshotViewerBadge");
     const metaEl = el("screenshotViewerMeta");
+    const prevBtn = el("btnViewerPrev");
+    const nextBtn = el("btnViewerNext");
+    const navPrevBtn = el("btnViewerNavPrev");
+    const navNextBtn = el("btnViewerNavNext");
+    const reorderBox = el("viewerReorderContainer");
+    const moveSelect = el("viewerMoveToSelect");
+
+    const count = viewerShots.length;
     const cur = viewerShots[viewerIndex];
-    if (img) img.src = cur || "";
+    const src = typeof cur === "string" ? cur : (cur?.data || cur?.url || "");
+
+    if (img) img.src = src || "";
     if (titleEl) {
-      if (viewerShots.length > 1) {
-        titleEl.textContent = `${viewerTitleBase} (${viewerIndex + 1}/${viewerShots.length})`;
+      titleEl.textContent = viewerTitleBase || "CCTV Incident Evidence";
+    }
+    if (badgeEl) {
+      if (count > 0) {
+        badgeEl.textContent = `Screenshot ${viewerIndex + 1} of ${count}`;
       } else {
-        titleEl.textContent = viewerTitleBase;
+        badgeEl.textContent = "Screenshot";
       }
     }
     if (metaEl) {
-      if (viewerShots.length > 1) {
-        metaEl.textContent = `${viewerMetaBase} • Image ${viewerIndex + 1} of ${viewerShots.length} (Use ← / → keys)`;
+      if (count > 1) {
+        metaEl.textContent = `${viewerMetaBase} â€¢ Image ${viewerIndex + 1} of ${count} (Use â† / â†’ keys)`;
       } else {
         metaEl.textContent = viewerMetaBase;
+      }
+    }
+
+    const hasMultiple = count > 1;
+    if (prevBtn) prevBtn.style.display = hasMultiple ? "inline-flex" : "none";
+    if (nextBtn) nextBtn.style.display = hasMultiple ? "inline-flex" : "none";
+    if (navPrevBtn) navPrevBtn.style.display = hasMultiple ? "flex" : "none";
+    if (navNextBtn) navNextBtn.style.display = hasMultiple ? "flex" : "none";
+
+    // Populate position dropdown in viewer
+    if (reorderBox && moveSelect) {
+      if (hasMultiple && typeof cctvReportDraft !== "undefined" && cctvReportDraft && Array.isArray(cctvReportDraft.screenshots) && cctvReportDraft.screenshots.length === count) {
+        reorderBox.style.display = "inline-flex";
+        moveSelect.innerHTML = "";
+        for (let i = 0; i < count; i++) {
+          const opt = document.createElement("option");
+          opt.value = String(i);
+          opt.textContent = `#${i + 1}`;
+          if (i === viewerIndex) opt.selected = true;
+          moveSelect.appendChild(opt);
+        }
+      } else {
+        reorderBox.style.display = "none";
       }
     }
   }
@@ -3186,6 +3223,55 @@
           showToast("CCTV screenshot copied to clipboard as PNG image.", "success");
         } catch (err) {
           showToast(err.message || "Failed to copy screenshot.", "error");
+        }
+      }
+    });
+
+    // Previous & Next Screenshot Navigation in Fullscreen Viewer
+    el("btnViewerPrev")?.addEventListener("click", () => {
+      if (viewerShots.length > 1) {
+        viewerIndex = (viewerIndex - 1 + viewerShots.length) % viewerShots.length;
+        updateViewerImage();
+      }
+    });
+    el("btnViewerNavPrev")?.addEventListener("click", () => {
+      if (viewerShots.length > 1) {
+        viewerIndex = (viewerIndex - 1 + viewerShots.length) % viewerShots.length;
+        updateViewerImage();
+      }
+    });
+    el("btnViewerNext")?.addEventListener("click", () => {
+      if (viewerShots.length > 1) {
+        viewerIndex = (viewerIndex + 1) % viewerShots.length;
+        updateViewerImage();
+      }
+    });
+    el("btnViewerNavNext")?.addEventListener("click", () => {
+      if (viewerShots.length > 1) {
+        viewerIndex = (viewerIndex + 1) % viewerShots.length;
+        updateViewerImage();
+      }
+    });
+
+    // Direct Reorder from Fullscreen Viewer
+    el("viewerMoveToSelect")?.addEventListener("change", async (e) => {
+      const targetPos = parseInt(e.target.value, 10);
+      if (!isNaN(targetPos) && targetPos !== viewerIndex && typeof cctvReportDraft !== "undefined" && cctvReportDraft && Array.isArray(cctvReportDraft.screenshots)) {
+        try {
+          const [moved] = cctvReportDraft.screenshots.splice(viewerIndex, 1);
+          cctvReportDraft.screenshots.splice(targetPos, 0, moved);
+          viewerShots = cctvReportDraft.screenshots;
+          viewerIndex = targetPos;
+          await persistCctvReportScreenshots();
+          renderCctvReportScreenshots();
+          updateCctvReportPreview();
+          updateViewerImage();
+          if (window.historyService?.captureIfChanged) {
+            window.historyService.captureIfChanged("report", `Reordered screenshot to position #${targetPos + 1}`);
+          }
+          showToast(`Screenshot moved to position #${targetPos + 1}.`, "info");
+        } catch (err) {
+          showToast("Failed to save screenshot order.", "error");
         }
       }
     });
@@ -9318,7 +9404,6 @@ function doPost(e) {
     }
     syncCctvReportFormFromDraft();
     renderCctvReportScreenshots();
-    renderCctvReportPolicyBanner();
     updateCctvReportPreview();
   }
 
@@ -9459,7 +9544,11 @@ function doPost(e) {
       const shotsHtml = cctvReportDraft.screenshots.map((s, idx) => {
         const src = typeof s === "string" ? s : (s.data || s.url || "");
         if (!src || !/^(data:image\/|https?:\/\/)/i.test(String(src).trim())) return "";
-        return `<img src="${esc(String(src).trim())}" class="teams-preview-shot-img" data-index="${idx}" alt="CCTV Screenshot ${idx + 1}" title="Click to inspect full resolution evidence" />`;
+        return `
+          <div class="teams-preview-shot-wrapper" style="position:relative; display:inline-block; margin:2px;">
+            <span class="teams-preview-shot-badge">#${idx + 1}</span>
+            <img src="${esc(String(src).trim())}" class="teams-preview-shot-img" data-index="${idx}" alt="CCTV Screenshot ${idx + 1}" title="Click to inspect full resolution evidence" />
+          </div>`;
       }).filter(Boolean).join("");
       htmlParts.push(`<div class="teams-preview-shots" style="margin: 6px 0;">${shotsHtml}</div>`);
     }
@@ -9483,10 +9572,11 @@ function doPost(e) {
     box.innerHTML = htmlParts.join("");
 
     // Wire preview thumbnail click to open full-resolution screenshot viewer
-    box.querySelectorAll(".teams-preview-shot-img").forEach((img, i) => {
+    box.querySelectorAll(".teams-preview-shot-img").forEach((img) => {
       img.addEventListener("click", () => {
-        if (window.openFullScreenshotViewer) {
-          window.openFullScreenshotViewer(img.src, "CCTV Report Evidence", `Screenshot #${i + 1}`);
+        const idx = parseInt(img.dataset.index, 10) || 0;
+        if (window.openScreenshotViewer) {
+          window.openScreenshotViewer(cctvReportDraft.screenshots, "CCTV Report Evidence", "Full Resolution Screenshot", idx);
         }
       });
     });
@@ -9534,16 +9624,29 @@ function doPost(e) {
       const src = typeof shot === "string" ? shot : (shot.data || shot.url || "");
       const isFirst = idx === 0;
       const isLast = idx === count - 1;
+
+      // Position options
+      let posOptions = "";
+      for (let p = 0; p < count; p++) {
+        posOptions += `<option value="${p}" ${p === idx ? 'selected' : ''}>#${p + 1}</option>`;
+      }
+
       return `
         <div class="report-shot-item" data-index="${idx}" draggable="true" title="Drag to reorder or click to preview">
-          <span class="report-shot-badge">${idx + 1}</span>
+          <span class="report-shot-badge">#${idx + 1}</span>
+          <button type="button" class="report-shot-remove" data-index="${idx}" title="Remove screenshot">&times;</button>
           <img src="${src}" alt="Screenshot ${idx + 1}" draggable="false">
           <div class="report-shot-actions" onclick="event.stopPropagation();">
-            <button type="button" class="report-shot-move-btn btn-move-first" data-index="${idx}" ${isFirst ? 'disabled' : ''} title="Move to first position">|&#9664;</button>
-            <button type="button" class="report-shot-move-btn btn-move-left" data-index="${idx}" ${isFirst ? 'disabled' : ''} title="Move left">&#9664;</button>
-            <button type="button" class="report-shot-move-btn btn-move-right" data-index="${idx}" ${isLast ? 'disabled' : ''} title="Move right">&#9654;</button>
-            <button type="button" class="report-shot-move-btn btn-move-last" data-index="${idx}" ${isLast ? 'disabled' : ''} title="Move to last position">&#9654;|</button>
-            <button type="button" class="report-shot-remove" data-index="${idx}" title="Remove screenshot">&times;</button>
+            <div style="display:flex; align-items:center; gap:3px;">
+              <span style="font-size:10px; color:var(--text-muted); font-weight:600;">Pos:</span>
+              <select class="report-shot-pos-select" data-index="${idx}" title="Move directly to position">
+                ${posOptions}
+              </select>
+            </div>
+            <div style="display:flex; align-items:center; gap:2px;">
+              <button type="button" class="report-shot-move-btn btn-move-left" data-index="${idx}" ${isFirst ? 'disabled' : ''} title="Move left">&#9664;</button>
+              <button type="button" class="report-shot-move-btn btn-move-right" data-index="${idx}" ${isLast ? 'disabled' : ''} title="Move right">&#9654;</button>
+            </div>
           </div>
         </div>
       `;
@@ -9567,13 +9670,17 @@ function doPost(e) {
         if (dragSrcIdx < cctvReportDraft.screenshots.length - 1) {
           const [moved] = cctvReportDraft.screenshots.splice(dragSrcIdx, 1);
           cctvReportDraft.screenshots.push(moved);
-          await persistCctvReportScreenshots();
-          renderCctvReportScreenshots();
-          updateCctvReportPreview();
-          if (window.historyService?.captureIfChanged) {
-            window.historyService.captureIfChanged("report", "Moved screenshot to last position");
+          try {
+            await persistCctvReportScreenshots();
+            renderCctvReportScreenshots();
+            updateCctvReportPreview();
+            if (window.historyService?.captureIfChanged) {
+              window.historyService.captureIfChanged("report", "Moved screenshot to last position");
+            }
+            showToast(`Screenshot moved to last position (${cctvReportDraft.screenshots.length}).`, "info");
+          } catch (_) {
+            showToast("Failed to save screenshot order.", "error");
           }
-          showToast(`Screenshot moved to last position (${cctvReportDraft.screenshots.length}).`, "info");
         }
         dragSrcIdx = null;
       }
@@ -9584,11 +9691,32 @@ function doPost(e) {
       const shot = cctvReportDraft.screenshots[idx];
       const src = typeof shot === "string" ? shot : (shot.data || shot.url || "");
 
-      // Click thumbnail to view full image
+      // Click thumbnail to view full image in viewer with all screenshots
       item.addEventListener("click", (e) => {
-        if (e.target.closest("button") || e.target.closest(".report-shot-actions")) return;
-        if (window.openFullScreenshotViewer) {
-          window.openFullScreenshotViewer(src, "CCTV Report Evidence", `Screenshot #${idx + 1}`);
+        if (e.target.closest("button") || e.target.closest(".report-shot-actions") || e.target.closest("select")) return;
+        if (window.openScreenshotViewer) {
+          window.openScreenshotViewer(cctvReportDraft.screenshots, "CCTV Report Evidence", "Full Resolution Screenshot", idx);
+        }
+      });
+
+      // Direct Position Selector Change
+      item.querySelector(".report-shot-pos-select")?.addEventListener("change", async (e) => {
+        e.stopPropagation();
+        const targetIdx = parseInt(e.target.value, 10);
+        if (!isNaN(targetIdx) && targetIdx !== idx) {
+          try {
+            const [moved] = cctvReportDraft.screenshots.splice(idx, 1);
+            cctvReportDraft.screenshots.splice(targetIdx, 0, moved);
+            await persistCctvReportScreenshots();
+            renderCctvReportScreenshots();
+            updateCctvReportPreview();
+            if (window.historyService?.captureIfChanged) {
+              window.historyService.captureIfChanged("report", `Moved screenshot to position #${targetIdx + 1}`);
+            }
+            showToast(`Screenshot moved to position #${targetIdx + 1}.`, "info");
+          } catch (err) {
+            showToast("Failed to save screenshot order.", "error");
+          }
         }
       });
 
@@ -9639,98 +9767,82 @@ function doPost(e) {
         if (dragSrcIdx !== null && !isNaN(dragSrcIdx) && !isNaN(targetIdx)) {
           let targetInsert = isAfter ? targetIdx + 1 : targetIdx;
           if (dragSrcIdx !== targetInsert && !(dragSrcIdx === targetInsert - 1 && isAfter)) {
-            const [moved] = cctvReportDraft.screenshots.splice(dragSrcIdx, 1);
-            if (dragSrcIdx < targetInsert) {
-              targetInsert--;
+            try {
+              const [moved] = cctvReportDraft.screenshots.splice(dragSrcIdx, 1);
+              if (dragSrcIdx < targetInsert) {
+                targetInsert--;
+              }
+              cctvReportDraft.screenshots.splice(targetInsert, 0, moved);
+              await persistCctvReportScreenshots();
+              renderCctvReportScreenshots();
+              updateCctvReportPreview();
+              if (window.historyService?.captureIfChanged) {
+                window.historyService.captureIfChanged("report", "Reordered screenshots in report");
+              }
+              showToast(`Screenshot inserted at position #${targetInsert + 1}.`, "info");
+            } catch (err) {
+              showToast("Failed to save screenshot order.", "error");
             }
-            cctvReportDraft.screenshots.splice(targetInsert, 0, moved);
-            await persistCctvReportScreenshots();
-            renderCctvReportScreenshots();
-            updateCctvReportPreview();
-            if (window.historyService?.captureIfChanged) {
-              window.historyService.captureIfChanged("report", "Reordered screenshots in report");
-            }
-            showToast(`Screenshot inserted at position ${targetInsert + 1}.`, "info");
           }
         }
         dragSrcIdx = null;
       });
 
-      // Accessible Move to First
-      item.querySelector(".btn-move-first")?.addEventListener("click", async (e) => {
-        e.stopPropagation();
-        if (idx > 0) {
-          const [moved] = cctvReportDraft.screenshots.splice(idx, 1);
-          cctvReportDraft.screenshots.unshift(moved);
-          await persistCctvReportScreenshots();
-          renderCctvReportScreenshots();
-          updateCctvReportPreview();
-          if (window.historyService?.captureIfChanged) {
-            window.historyService.captureIfChanged("report", "Moved screenshot to first position");
-          }
-          showToast("Screenshot moved to first position.", "info");
-        }
-      });
-
-      // Accessible Move Left
+      // Move Left
       item.querySelector(".btn-move-left")?.addEventListener("click", async (e) => {
         e.stopPropagation();
         if (idx > 0) {
-          const [moved] = cctvReportDraft.screenshots.splice(idx, 1);
-          cctvReportDraft.screenshots.splice(idx - 1, 0, moved);
-          await persistCctvReportScreenshots();
-          renderCctvReportScreenshots();
-          updateCctvReportPreview();
-          if (window.historyService?.captureIfChanged) {
-            window.historyService.captureIfChanged("report", "Moved screenshot left");
+          try {
+            const [moved] = cctvReportDraft.screenshots.splice(idx, 1);
+            cctvReportDraft.screenshots.splice(idx - 1, 0, moved);
+            await persistCctvReportScreenshots();
+            renderCctvReportScreenshots();
+            updateCctvReportPreview();
+            if (window.historyService?.captureIfChanged) {
+              window.historyService.captureIfChanged("report", "Moved screenshot left");
+            }
+            showToast(`Screenshot moved to position #${idx}.`, "info");
+          } catch (err) {
+            showToast("Failed to save screenshot order.", "error");
           }
-          showToast(`Screenshot moved to position ${idx}.`, "info");
         }
       });
 
-      // Accessible Move Right
+      // Move Right
       item.querySelector(".btn-move-right")?.addEventListener("click", async (e) => {
         e.stopPropagation();
         if (idx < cctvReportDraft.screenshots.length - 1) {
-          const [moved] = cctvReportDraft.screenshots.splice(idx, 1);
-          cctvReportDraft.screenshots.splice(idx + 1, 0, moved);
-          await persistCctvReportScreenshots();
-          renderCctvReportScreenshots();
-          updateCctvReportPreview();
-          if (window.historyService?.captureIfChanged) {
-            window.historyService.captureIfChanged("report", "Moved screenshot right");
+          try {
+            const [moved] = cctvReportDraft.screenshots.splice(idx, 1);
+            cctvReportDraft.screenshots.splice(idx + 1, 0, moved);
+            await persistCctvReportScreenshots();
+            renderCctvReportScreenshots();
+            updateCctvReportPreview();
+            if (window.historyService?.captureIfChanged) {
+              window.historyService.captureIfChanged("report", "Moved screenshot right");
+            }
+            showToast(`Screenshot moved to position #${idx + 2}.`, "info");
+          } catch (err) {
+            showToast("Failed to save screenshot order.", "error");
           }
-          showToast(`Screenshot moved to position ${idx + 2}.`, "info");
-        }
-      });
-
-      // Accessible Move to Last
-      item.querySelector(".btn-move-last")?.addEventListener("click", async (e) => {
-        e.stopPropagation();
-        if (idx < cctvReportDraft.screenshots.length - 1) {
-          const [moved] = cctvReportDraft.screenshots.splice(idx, 1);
-          cctvReportDraft.screenshots.push(moved);
-          await persistCctvReportScreenshots();
-          renderCctvReportScreenshots();
-          updateCctvReportPreview();
-          if (window.historyService?.captureIfChanged) {
-            window.historyService.captureIfChanged("report", "Moved screenshot to last position");
-          }
-          showToast(`Screenshot moved to last position (${cctvReportDraft.screenshots.length}).`, "info");
         }
       });
 
       // Remove button
       item.querySelector(".report-shot-remove")?.addEventListener("click", async (e) => {
         e.stopPropagation();
-        cctvReportDraft.screenshots.splice(idx, 1);
-        await persistCctvReportScreenshots();
-        renderCctvReportScreenshots();
-        updateCctvReportPreview();
-        if (window.historyService?.captureIfChanged) {
-          window.historyService.captureIfChanged("report", "Removed screenshot from report");
+        try {
+          cctvReportDraft.screenshots.splice(idx, 1);
+          await persistCctvReportScreenshots();
+          renderCctvReportScreenshots();
+          updateCctvReportPreview();
+          if (window.historyService?.captureIfChanged) {
+            window.historyService.captureIfChanged("report", "Removed screenshot from report");
+          }
+          showToast("Screenshot removed.", "info");
+        } catch (err) {
+          showToast("Failed to update screenshots.", "error");
         }
-        showToast("Screenshot removed.", "info");
       });
     });
   }
@@ -10003,136 +10115,7 @@ function doPost(e) {
       }
     });
 
-    // Quick Violation Preset Chips
-    const PRESETS = {
-      sleeping: {
-        notes: "Sleeping\n5:34:44 AM to 5:40:20 AM\nMabini Site A Ground Floor\n",
-        site: "Mabini Site A - Ground Floor",
-        name: "Sleeping"
-      },
-      unattended_pc: {
-        notes: "Unattended PC left powered on without shutting it down\n2:15:00 AM to 2:45:00 AM\nMAA - 5th Floor\n",
-        site: "MAA - 5th Floor",
-        name: "Unattended PC"
-      },
-      attire: {
-        notes: "Violating dress code / not visibly wearing company ID badge\n8:10:00 AM\nMabini Site A - Ground Floor\n",
-        site: "Mabini Site A - Ground Floor",
-        name: "Attire / ID"
-      },
-      phone: {
-        notes: "Unauthorized mobile phone usage on operations floor\n3:22:10 PM to 3:28:40 PM\nMabini Site B - Ground Floor\n",
-        site: "Mabini Site B - Ground Floor",
-        name: "Mobile Phone"
-      },
-      loafing: {
-        notes: "Loitering and engaging in non-work-related conversation\n1:12:00 AM to 1:26:00 AM\nEcoland Site\n",
-        site: "Ecoland Site",
-        name: "Loafing / Noise"
-      },
-      clean_desk: {
-        notes: "Improperly arranged workstation with chair not tucked in\n6:00:00 AM\nMAA - 4th Floor\n",
-        site: "MAA - 4th Floor",
-        name: "Clean Desk"
-      }
-    };
-
-    document.querySelectorAll("#reportPresetChips .cctv-preset-btn").forEach(btn => {
-      btn.addEventListener("click", () => {
-        const pKey = btn.dataset.preset;
-        const preset = PRESETS[pKey];
-        if (!preset) return;
-        const todayStr = getTodayFormattedDate();
-        const raw = preset.notes + todayStr;
-
-        if (el("quickComposeText")) el("quickComposeText").value = raw;
-        if (el("reportSite")) el("reportSite").value = preset.site;
-        if (el("reportDateRange")) el("reportDateRange").value = todayStr;
-
-        syncCctvReportDraftFromForm();
-        const generated = window.CCTV_REPORT_SERVICE.generateReport(raw, cctvReportDraft);
-        cctvReportDraft = { ...cctvReportDraft, ...generated };
-        cctvReportLastGeneratedText = cctvReportDraft.observation;
-        window.CCTV_REPORT_SERVICE.saveDraft(cctvReportDraft);
-        syncCctvReportFormFromDraft();
-        updateCctvReportPreview();
-        showToast(`Preset applied: ${preset.name}`, "success");
-      });
-    });
-
-    // Quick Code of Conduct Policy Selector
-    function setupQuickConductDropdown() {
-      const select = el("reportQuickConductSelect");
-      if (!select) return;
-      const conductSvc = window.CCTV_CONDUCT || window.codeOfConductService || window.CCTV_REPORT_SERVICE;
-      if (!conductSvc || typeof conductSvc.getCodeOfConduct !== "function") return;
-      const categories = conductSvc.getCodeOfConduct();
-      if (!Array.isArray(categories)) return;
-
-      select.innerHTML = '<option value="">-- Quick Select Code of Conduct Policy (Optional) --</option>';
-      categories.forEach(cat => {
-        const optgroup = document.createElement("optgroup");
-        optgroup.label = cat.category;
-        (cat.policies || []).forEach(pol => {
-          const opt = document.createElement("option");
-          opt.value = pol.num;
-          opt.textContent = `${pol.num} - ${pol.title} (${pol.severity})`;
-          optgroup.appendChild(opt);
-        });
-        select.appendChild(optgroup);
-      });
-
-      select.addEventListener("change", () => {
-        const num = select.value;
-        if (!num) {
-          if (cctvReportDraft) {
-            cctvReportDraft.referencedPolicy = null;
-            window.CCTV_REPORT_SERVICE.saveDraft(cctvReportDraft);
-            renderCctvReportPolicyBanner();
-            updateCctvReportPreview();
-          }
-          return;
-        }
-        let matched = null;
-        for (const cat of categories) {
-          const found = (cat.policies || []).find(p => p.num === num);
-          if (found) {
-            matched = { ...found, category: cat.category };
-            break;
-          }
-        }
-        if (matched && cctvReportDraft) {
-          cctvReportDraft.referencedPolicy = matched;
-          window.CCTV_REPORT_SERVICE.saveDraft(cctvReportDraft);
-          renderCctvReportPolicyBanner();
-          updateCctvReportPreview();
-          showToast(`Referenced Policy ${matched.num}: ${matched.title}`, "info");
-        }
-      });
-
-      el("btnApplyConductToObs")?.addEventListener("click", () => {
-        const pol = cctvReportDraft?.referencedPolicy;
-        if (!pol) {
-          showToast("Please select a policy from the dropdown first.", "warning");
-          return;
-        }
-        const obsEl = el("reportObservation");
-        if (!obsEl) return;
-        let obs = obsEl.value.trim();
-        const reminder = `Kindly file an NOC in accordance with the company COD (Policy ${pol.num} - ${pol.title}). Thank you.`;
-        if (!obs.includes(`Policy ${pol.num}`)) {
-          obs = obs.replace(/\bKindly file an NOC[^.\n]*\.?(?:\s*Thank you\.?)?/i, "").trim();
-          obs = (obs ? obs + " " : "") + reminder;
-          obsEl.value = obs;
-          syncCctvReportDraftFromForm();
-          updateCctvReportPreview();
-          showToast(`Inserted Policy ${pol.num} reminder into report.`, "success");
-        } else {
-          showToast(`Policy ${pol.num} reminder is already in report.`, "info");
-        }
-      });
-    }
-    setupQuickConductDropdown();
+    // Quick Violation Presets and Quick COD dropdown removed per simplification specification.
 
     // Batch clear screenshots button
     el("btnClearReportShots")?.addEventListener("click", async () => {
@@ -10318,11 +10301,12 @@ function doPost(e) {
       }
 
       const currentObs = el("reportObservation")?.value || "";
-      if (isRegen && cctvReportLastGeneratedText && currentObs !== cctvReportLastGeneratedText) {
+      // Protect manual edits from accidental overwrite
+      if (cctvReportLastGeneratedText && currentObs !== cctvReportLastGeneratedText && currentObs.trim()) {
         const ok = await window.appConfirm({
           title: "Overwrite Manual Edits?",
-          message: "You have manually edited the report body. Regenerating will replace your manual edits with a freshly parsed report from Quick Compose. Proceed?",
-          confirmText: "Regenerate",
+          message: "You have manually edited the report body. Generating will replace your manual edits with a freshly composed report from Quick Compose. Proceed?",
+          confirmText: isRegen ? "Regenerate" : "Generate",
           tone: "warning"
         });
         if (!ok) return;
@@ -10349,6 +10333,29 @@ function doPost(e) {
         window.CCTV_REPORT_SERVICE.saveDraft(cctvReportDraft);
         syncCctvReportFormFromDraft();
         updateCctvReportPreview();
+
+        // Flag location / date conflicts to operator without silent overwrites
+        if (generated.locationConflict) {
+          showToast(`Location conflict: Notes mentioned "${generated.locationConflict.detected}", preserved entered "${generated.locationConflict.entered}".`, "info");
+        }
+        if (generated.dateConflict) {
+          showToast(`Date conflict: Notes mentioned "${generated.dateConflict.detected}", preserved entered "${generated.dateConflict.entered}".`, "info");
+        }
+
+        // Inline status badge for AI vs Standard Generation
+        const statusBadge = el("cctvReportStatusBadge");
+        if (statusBadge) {
+          statusBadge.style.display = "inline-flex";
+          if (generated.aiUsed) {
+            statusBadge.className = "badge badge-success";
+            statusBadge.textContent = "AI Enhanced (Gemini)";
+            statusBadge.title = `Generated using ${generated.aiModel || "Gemini"}`;
+          } else {
+            statusBadge.className = "badge badge-neutral";
+            statusBadge.textContent = "Standard Generation";
+            statusBadge.title = generated.aiError || "Rule-based standard generation fallback";
+          }
+        }
 
         if (generated.aiUsed) {
           showToast(isRegen ? "Report regenerated with AI." : "Report generated with AI.", "success");
@@ -10381,35 +10388,23 @@ function doPost(e) {
       switchWorkspace("conduct");
     });
 
-    // Remove referenced policy button
-    el("btnRemoveReportPolicy")?.addEventListener("click", () => {
-      if (!cctvReportDraft) return;
-      cctvReportDraft.referencedPolicy = null;
-      window.CCTV_REPORT_SERVICE.saveDraft(cctvReportDraft);
-      renderCctvReportPolicyBanner();
-      updateCctvReportPreview();
-      showToast("Policy reference removed from report.", "info");
-    });
+    // Removed policy banner button listener.
 
     // Reset button
     el("btnResetCctvReport")?.addEventListener("click", async () => {
       const ok = await window.appConfirm({
         title: "Reset CCTV Report?",
-        message: "Discard current report draft and reset fields to standard template?",
+        message: "Discard current report draft and reset fields to an empty blank draft?",
         confirmText: "Reset Draft",
         tone: "danger"
       });
       if (!ok) return;
-      if (
-        typeof window.CCTV_REPORT_SERVICE.clearDraftScreenshots === "function"
-      ) {
+
+      if (typeof window.CCTV_REPORT_SERVICE?.clearDraftScreenshots === "function") {
         try {
           await window.CCTV_REPORT_SERVICE.clearDraftScreenshots();
         } catch (error) {
-          console.warn(
-            "Could not clear CCTV Report screenshots:",
-            error
-          );
+          console.warn("Could not clear CCTV Report screenshots:", error);
         }
       }
 
@@ -10417,9 +10412,10 @@ function doPost(e) {
       cctvReportLastGeneratedText = "";
       syncCctvReportFormFromDraft();
       renderCctvReportScreenshots();
-      renderCctvReportPolicyBanner();
       updateCctvReportPreview();
-      showToast("Report composer reset to template.", "info");
+      const statusBadge = el("cctvReportStatusBadge");
+      if (statusBadge) statusBadge.style.display = "none";
+      showToast("Report composer reset to blank draft.", "info");
     });
 
     // Screenshot file input & browse button

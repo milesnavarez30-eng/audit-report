@@ -2832,48 +2832,14 @@
                 </div>
 
                 <div class="card-body" style="flex:1; overflow-y:auto; padding:14px; display:flex; flex-direction:column; gap:12px;">
-                  <!-- Referenced Policy Banner (when transferred from Code of Conduct) -->
-                  <div class="cctv-policy-banner" id="reportPolicyBanner" style="display:none; padding:8px 12px; background:rgba(99,102,241,0.12); border:1px solid rgba(99,102,241,0.3); border-radius:4px; align-items:center; justify-content:space-between; font-size:11.5px;">
-                    <div style="display:flex; align-items:center; gap:8px;">
-                      <span class="badge badge-info" id="reportPolicyBadge">Policy</span>
-                      <span id="reportPolicyTitle" style="color:var(--text-primary); font-weight:600;"></span>
-                    </div>
-                    <button type="button" class="btn btn-ghost btn-xs" id="btnRemoveReportPolicy" title="Remove policy reference" style="padding:2px 6px; font-size:10px; color:var(--text-muted);">&#x2715; Remove</button>
-                  </div>
-
-                  <!-- Quick Code of Conduct Policy Lookup Row -->
-                  <div class="report-policy-quick-row" style="display:flex; align-items:center; gap:8px; background:var(--bg-card); border:1px solid var(--border-default); border-radius:6px; padding:7px 10px;">
-                    <label for="reportQuickConductSelect" style="margin:0; font-size:11px; font-weight:700; color:var(--text-secondary); white-space:nowrap;">COD Policy:</label>
-                    <select class="form-control form-control-sm" id="reportQuickConductSelect" style="flex:1; font-size:11.5px; height:28px;">
-                      <option value="">-- Quick Select Code of Conduct Policy (Optional) --</option>
-                    </select>
-                    <button type="button" class="btn btn-outline btn-xs" id="btnApplyConductToObs" title="Insert standard COD reminder into observation" style="white-space:nowrap; padding:2px 8px; font-size:10.5px; height:26px;">+ Reminder</button>
-                  </div>
-
-                  <!-- Quick Violation Preset Chips -->
-                  <div class="cctv-preset-chips-container" style="display:flex; flex-direction:column; gap:5px;">
-                    <div style="display:flex; justify-content:space-between; align-items:center;">
-                      <span style="font-size:10.5px; font-weight:700; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.4px;">Quick Violation Presets</span>
-                      <span style="font-size:10.5px; color:var(--text-muted);">Auto-fills notes and generates report</span>
-                    </div>
-                    <div class="cctv-preset-chips" id="reportPresetChips" style="display:flex; flex-wrap:wrap; gap:6px;">
-                      <button type="button" class="btn btn-outline btn-xs cctv-preset-btn" data-preset="sleeping" title="Sleeping on duty">&#x1f4a4; Sleeping</button>
-                      <button type="button" class="btn btn-outline btn-xs cctv-preset-btn" data-preset="unattended_pc" title="Unattended PC left powered on">&#x1f5a5;&#xfe0f; Unattended PC</button>
-                      <button type="button" class="btn btn-outline btn-xs cctv-preset-btn" data-preset="attire" title="Dress code or visible ID badge">&#x1f454; Attire / ID</button>
-                      <button type="button" class="btn btn-outline btn-xs cctv-preset-btn" data-preset="phone" title="Mobile phone usage">&#x1f4f1; Mobile Phone</button>
-                      <button type="button" class="btn btn-outline btn-xs cctv-preset-btn" data-preset="loafing" title="Loafing, idling or noise">&#x1f5e3;&#xfe0f; Loafing / Noise</button>
-                      <button type="button" class="btn btn-outline btn-xs cctv-preset-btn" data-preset="clean_desk" title="Clean desk or untucked chair">&#x1f9f9; Clean Desk</button>
-                    </div>
-                  </div>
-
                   <!-- Quick Compose Section -->
                   <div class="quick-compose-box" style="background:var(--bg-card); border:1px solid var(--border-default); border-radius:6px; padding:12px; display:flex; flex-direction:column; gap:8px;">
                     <div style="display:flex; justify-content:space-between; align-items:center;">
                       <label class="form-label" for="quickComposeText" style="margin-bottom:0; font-weight:700; color:var(--text-primary);">Quick Compose</label>
-                      <span style="font-size:11px; color:var(--text-muted);">Enter raw notes (violation, timestamps, site, date)</span>
+                      <span style="font-size:11px; color:var(--text-muted);">Enter raw notes in natural English or Bisaya-English</span>
                     </div>
-                    <textarea class="form-control" id="quickComposeText" rows="3" placeholder="Sleeping&#10;5:34:44 AM to 5:40:20 AM&#10;Mabini Site A Ground Floor&#10;09-10-26" style="font-family:var(--font-mono); font-size:12px; resize:vertical;"></textarea>
-                    <div style="display:flex; gap:8px; align-items:center;">
+                    <textarea class="form-control" id="quickComposeText" rows="3" placeholder="Sleeping&#10;5:34:44 AM to 5:40:20 AM&#10;Mabini Site A&#10;Sept 10" style="font-family:var(--font-mono); font-size:12px; resize:vertical;"></textarea>
+                    <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
                       <button type="button" class="btn btn-primary btn-sm" id="btnGenerateReport" style="gap:6px;">
                         <svg class="icon icon-sm" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
                         <strong>Generate Report</strong>
@@ -2881,6 +2847,7 @@
                       <button type="button" class="btn btn-ghost btn-sm" id="btnRegenerateReport" title="Regenerate report from Quick Compose notes">
                         Regenerate
                       </button>
+                      <span id="cctvReportStatusBadge" class="badge" style="display:none; font-size:10.5px; padding:2px 8px; margin-left:auto;"></span>
                     </div>
                   </div>
 
@@ -3769,18 +3736,28 @@
       <div class="modal-header">
         <div style="display:flex; align-items:center; gap:8px;">
           <h3 class="modal-title" id="screenshotViewerTitle">CCTV Incident Evidence</h3>
-          <span class="badge badge-warning" id="screenshotViewerBadge">CCTV Screenshot</span>
+          <span class="badge badge-warning" id="screenshotViewerBadge">Screenshot 1 of 1</span>
         </div>
         <div style="display:flex; align-items:center; gap:6px;">
+          <button type="button" class="btn btn-ghost btn-sm" id="btnViewerPrev" title="Previous screenshot (Left Arrow)">&#9664; Prev</button>
+          <button type="button" class="btn btn-ghost btn-sm" id="btnViewerNext" title="Next screenshot (Right Arrow)">Next &#9654;</button>
           <button type="button" class="btn btn-ghost btn-sm" id="btnViewerCopyScreenshot" title="Copy screenshot to clipboard as PNG">Copy SS</button>
-          <button type="button" class="btn btn-ghost btn-sm" id="btnCloseScreenshotViewer">✕</button>
+          <button type="button" class="btn btn-ghost btn-sm" id="btnCloseScreenshotViewer">&#x2715;</button>
         </div>
       </div>
-      <div class="modal-screenshot-body">
+      <div class="modal-screenshot-body" style="position:relative; display:flex; align-items:center; justify-content:center; min-height:240px;">
+        <button type="button" class="btn-viewer-nav btn-viewer-prev" id="btnViewerNavPrev" title="Previous Screenshot" aria-label="Previous Screenshot">&#9664;</button>
         <img id="screenshotViewerImg" class="modal-screenshot-img" src="" alt="CCTV Incident Screenshot">
+        <button type="button" class="btn-viewer-nav btn-viewer-next" id="btnViewerNavNext" title="Next Screenshot" aria-label="Next Screenshot">&#9654;</button>
       </div>
-      <div class="modal-footer" style="justify-content:space-between;">
-        <span style="font-size:11px; color:var(--text-muted);" id="screenshotViewerMeta">Full Resolution Screenshot</span>
+      <div class="modal-footer" style="justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+        <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+          <span style="font-size:11px; color:var(--text-muted);" id="screenshotViewerMeta">Full Resolution Screenshot</span>
+          <div id="viewerReorderContainer" style="display:none; align-items:center; gap:6px;">
+            <label for="viewerMoveToSelect" style="font-size:11px; font-weight:600; color:var(--text-secondary); margin:0;">Move to position:</label>
+            <select id="viewerMoveToSelect" class="form-control form-control-sm" style="width:75px; height:26px; padding:2px 6px; font-size:11px; font-family:var(--font-mono);"></select>
+          </div>
+        </div>
         <button type="button" class="btn btn-outline btn-sm" id="btnViewerCloseBottom">Close</button>
       </div>
     </div>

@@ -291,15 +291,70 @@ window.CCTV_REPORT_SERVICE = (function () {
   }
   // Raw Bisaya-English dictionary substitutions
   const BISAYA_ENGLISH_MAP = [
+    // Sleeping / Dozing
     { regex: /\bhantod\s+nakatulog\b/gi, replacement: "dozing off and eventually falling asleep" },
+    { regex: /\bnakatulog\s+sa\s+station\b/gi, replacement: "sleeping at the workstation" },
+    { regex: /\bnakatulog\b/gi, replacement: "sleeping" },
+    { regex: /\bnatulog\b/gi, replacement: "sleeping" },
+    { regex: /\bkatulgon\b/gi, replacement: "dozing off" },
+    { regex: /\bnagpiyong\b/gi, replacement: "with eyes closed / sleeping" },
+    { regex: /\bnagduka\b/gi, replacement: "dozing off" },
+    { regex: /\bnaka[\s-]?idlip\b/gi, replacement: "sleeping" },
+
+    // Phone usage
+    { regex: /\bnag[\s-]?cellphone\b/gi, replacement: "using a mobile phone" },
+    { regex: /\bnaggunit\s+(?:ug\s+)?(?:cellphone|phone|cp)\b/gi, replacement: "holding and using a mobile phone" },
+    { regex: /\bnaggamit\s+(?:ug\s+)?(?:cellphone|phone|cp)\b/gi, replacement: "using a mobile phone" },
+    { regex: /\bnag[\s-]?cp\b/gi, replacement: "using a mobile phone" },
+
+    // Video / Browsing
     { regex: /\bgatan-?aw\s+ug\s+video\b/gi, replacement: "watching a video" },
-    { regex: /\bgina\s+hide\b/gi, replacement: "hiding the window at times" },
+    { regex: /\bgitan-?aw\s+ang\s+video\b/gi, replacement: "watching a video" },
+    { regex: /\btan-?aw\s+(?:ug\s+)?(?:movie|salida|youtube|video)\b/gi, replacement: "watching video" },
+    { regex: /\bgina[\s-]?hide\b/gi, replacement: "hiding the window at times" },
+    { regex: /\bga[\s-]?pop[\s-]?up\b/gi, replacement: "popping up on the screen" },
+
+    // Computer / PC
     { regex: /\bgipaandar\s+ang\s+pc\b/gi, replacement: "using and turning on the PC" },
     { regex: /\bwala\s+gi-?shutdown\b/gi, replacement: "without shutting it down" },
-    { regex: /\bgipasagdan\s+lang\s+andar\b/gi, replacement: "left it powered on and running" },
-    { regex: /\bga\s+pop\s+up\b/gi, replacement: "popping up on the screen" },
-    { regex: /\bga\s+chitchat\b/gi, replacement: "engaging in non-work-related conversation" },
-    { regex: /\bchitchatting\b/gi, replacement: "engaging in non-work-related conversation" }
+    { regex: /\bwala\s+gipatay\s+ang\s+pc\b/gi, replacement: "without shutting down the PC" },
+    { regex: /\bwala\s+gi-?off\s+ang\s+pc\b/gi, replacement: "without turning off the PC" },
+    { regex: /\bgipasagdan\s+lang\s+(?:nga\s+)?andar\b/gi, replacement: "left it powered on and running" },
+    { regex: /\bdili\s+(?:iya|iyaha)\s+pc\b/gi, replacement: "using an unassigned PC" },
+    { regex: /\blain\s+pc\s+ang\s+gigamit\b/gi, replacement: "using a PC that is not assigned" },
+
+    // Chitchat / Loafing / Grouping
+    { regex: /\bga[\s-]?chitchat\b/gi, replacement: "engaging in non-work-related conversation" },
+    { regex: /\bchitchatting\b/gi, replacement: "engaging in non-work-related conversation" },
+    { regex: /\bnag[\s-]?chika\b/gi, replacement: "engaging in non-work-related conversation" },
+    { regex: /\bnag[\s-]?tabi\b/gi, replacement: "engaging in non-work-related conversation" },
+    { regex: /\bnag[\s-]?storya(?:hay)?\b/gi, replacement: "engaging in non-work-related conversation" },
+    { regex: /\bnag[\s-]?istorya(?:hay)?\b/gi, replacement: "engaging in non-work-related conversation" },
+    { regex: /\bsaba\s+kaayo\b/gi, replacement: "making disruptive noise" },
+    { regex: /\bnag[\s-]?(?:tapok|tipok|pundok)\b/gi, replacement: "gathering and idling" },
+
+    // Workstation / Movement
+    { regex: /\bnanaog\b/gi, replacement: "left the operations floor" },
+    { regex: /\bwala\s+sa\s+(?:station|pwesto|seat)\b/gi, replacement: "away from the assigned workstation" },
+    { regex: /\bnaglakaw[\s-]lakaw\b/gi, replacement: "wandering/loitering" },
+    { regex: /\bnaglaroy[\s-]laroy\b/gi, replacement: "wandering/loitering" },
+
+    // Food / Drink
+    { regex: /\bnag[\s-]?kaon\b/gi, replacement: "eating food" },
+    { regex: /\bnangaon\b/gi, replacement: "eating food" },
+    { regex: /\bnanindim\b/gi, replacement: "consuming food" },
+    { regex: /\bnag[\s-]?inom\b/gi, replacement: "consuming a beverage" },
+
+    // Attire / ID
+    { regex: /\bwala\s+nag[\s-]?id\b/gi, replacement: "not visibly wearing company ID badge" },
+    { regex: /\bwalay\s+(?:company\s+)?id\b/gi, replacement: "not visibly wearing company ID badge" },
+    { regex: /\bnaka[\s-]?tsinelas\b/gi, replacement: "wearing slippers/open-toed footwear" },
+    { regex: /\bnaka[\s-]?slippers\b/gi, replacement: "wearing slippers" },
+    { regex: /\bnaka[\s-]?sando\b/gi, replacement: "wearing sleeveless attire" },
+
+    // Hardware / Monitor / Camera
+    { regex: /\bgi[\s-]?(?:tabonan|tabunan|babagan)\s+ang\s+monitor\b/gi, replacement: "covering/obstructing the monitor" },
+    { regex: /\bgi[\s-]?(?:hikap|lihok|tuyok)\s+ang\s+camera\b/gi, replacement: "tampering with or adjusting the camera" }
   ];
 
   // --- NORMALIZATION & MIGRATION UTILITIES ---
@@ -331,10 +386,10 @@ window.CCTV_REPORT_SERVICE = (function () {
   function getDefaultDraft() {
     return {
       greeting: "Good morning TLs,",
-      observation: "Observed an agent sleeping from 5:34:44 AM to 5:40:20 AM, with a total duration of approximately 5 minutes. Kindly file an NOC in accordance with the company COD. Thank you.",
+      observation: "",
       personInvolved: "",
-      site: "Mabini Site A - Ground Floor",
-      dateRange: "September 10, 2026",
+      site: "",
+      dateRange: "",
       clipUrl: "",
       screenshots: [],
       referencedPolicy: null,
@@ -349,6 +404,20 @@ window.CCTV_REPORT_SERVICE = (function () {
 
       if (raw) {
         const parsed = JSON.parse(raw);
+
+        // Safely strip legacy placeholder dummy data from older versions
+        if (parsed && typeof parsed === "object") {
+          const sampleObs = "Observed an agent sleeping from 5:34:44 AM to 5:40:20 AM, with a total duration of approximately 5 minutes. Kindly file an NOC in accordance with the company COD. Thank you.";
+          if (parsed.observation === sampleObs) {
+            parsed.observation = "";
+          }
+          if (parsed.site === "Mabini Site A - Ground Floor" && !parsed.rawInput && (!parsed.screenshots || parsed.screenshots.length === 0)) {
+            parsed.site = "";
+          }
+          if (parsed.dateRange === "September 10, 2026" && !parsed.rawInput && (!parsed.screenshots || parsed.screenshots.length === 0)) {
+            parsed.dateRange = "";
+          }
+        }
 
         const currentScreenshots =
           (inMemoryDraftScreenshots && inMemoryDraftScreenshots.length > 0)
@@ -531,10 +600,11 @@ window.CCTV_REPORT_SERVICE = (function () {
     // 2. Extract Location
     let detectedLocation = "";
     const sitePatterns = [
-      /\b(Mabini\s+Site\s+[AB])(?:\s*[\u2013\u2014-]\s*|\s+)(Ground|1st|2nd|3rd|4th|5th|6th)?\s*(Floor)?\b/i,
-      /\b(MAA)(?:\s*[\u2013\u2014-]\s*|\s+)(4th|5th|6th)?\s*(Floor)?\b/i,
+      /\b(Mabini\s+Site\s+[AB])(?:\s*[\u2013\u2014-]\s*|\s+)?(Ground|1st|2nd|3rd|4th|5th|6th)?\s*(Floor)?\b/i,
+      /\b(MAA)(?:\s*[\u2013\u2014-]\s*|\s+)?(4th|5th|6th)?\s*(Floor)?\b/i,
       /\b(Ecoland(?:\s+Site)?)\b/i,
-      /\b(Gensan(?:\s+Site)?)\b/i
+      /\b(Gensan(?:\s+Site)?)\b/i,
+      /\b(Shaw(?:\s+Site)?)\b/i
     ];
 
     for (const pattern of sitePatterns) {
@@ -542,15 +612,17 @@ window.CCTV_REPORT_SERVICE = (function () {
       if (sMatch) {
         if (sMatch[1].toLowerCase().includes("mabini")) {
           const site = sMatch[1].replace(/\s+/g, " ");
-          const floor = sMatch[2] ? `${sMatch[2]} Floor` : "Ground Floor";
-          detectedLocation = `${site} - ${floor}`;
+          const floor = sMatch[2] ? ` - ${sMatch[2]} Floor` : "";
+          detectedLocation = `${site}${floor}`;
         } else if (sMatch[1].toUpperCase() === "MAA") {
-          const floor = sMatch[2] ? `${sMatch[2]} Floor` : "5th Floor";
-          detectedLocation = `MAA - ${floor}`;
+          const floor = sMatch[2] ? ` - ${sMatch[2]} Floor` : "";
+          detectedLocation = `MAA${floor}`;
         } else if (sMatch[1].toLowerCase().includes("ecoland")) {
           detectedLocation = "Ecoland Site";
         } else if (sMatch[1].toLowerCase().includes("gensan")) {
           detectedLocation = "Gensan Site";
+        } else if (sMatch[1].toLowerCase().includes("shaw")) {
+          detectedLocation = "Shaw Site";
         }
         text = text.replace(sMatch[0], " ");
         break;
@@ -561,6 +633,23 @@ window.CCTV_REPORT_SERVICE = (function () {
     let detectedDate = "";
     let isOvernightDate = false;
     const intervals = [];
+
+    // Calendar validation helper to guard against impossible dates
+    function isValidDateComponents(mIdx, day, yr = null) {
+      if (mIdx < 0 || mIdx > 11) return false;
+      const d = parseInt(day, 10);
+      if (isNaN(d) || d < 1) return false;
+      const daysInMonth = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+      if (d > daysInMonth[mIdx]) return false;
+      if (mIdx === 1 && d === 29 && yr) {
+        const y = parseInt(yr, 10);
+        if (!isNaN(y)) {
+          const isLeap = (y % 4 === 0 && y % 100 !== 0) || (y % 400 === 0);
+          if (!isLeap) return false;
+        }
+      }
+      return true;
+    }
 
     // Special Pattern 0: Time + Date until Time + Date
     // e.g. "2:39:12 PM Sept 12 until 7:47:17 AM Sept 13"
@@ -573,30 +662,35 @@ window.CCTV_REPORT_SERVICE = (function () {
       const endTime = odtMatch[4].trim();
       const m2 = odtMatch[5] || m1;
       const d2 = odtMatch[6];
-      const year = odtMatch[7] || "2026";
+      const year = odtMatch[7] || null;
 
       const mIdx1 = MONTH_ABBR[m1.toLowerCase().replace(".", "")];
       const monthFullName1 = mIdx1 !== undefined ? MONTH_NAMES[mIdx1] : m1;
       const mIdx2 = MONTH_ABBR[m2.toLowerCase().replace(".", "")];
       const monthFullName2 = mIdx2 !== undefined ? MONTH_NAMES[mIdx2] : m2;
 
-      if (monthFullName1 === monthFullName2) {
-        detectedDate = `${monthFullName1} ${d1}-${d2}, ${year}`;
-      } else {
-        detectedDate = `${monthFullName1} ${d1} - ${monthFullName2} ${d2}, ${year}`;
+      if (mIdx1 !== undefined && mIdx2 !== undefined && isValidDateComponents(mIdx1, d1, year) && isValidDateComponents(mIdx2, d2, year)) {
+        const yearSuffix = year ? `, ${year}` : "";
+        if (monthFullName1 === monthFullName2) {
+          detectedDate = `${monthFullName1} ${d1}-${d2}${yearSuffix}`;
+        } else {
+          detectedDate = `${monthFullName1} ${d1} - ${monthFullName2} ${d2}${yearSuffix}`;
+        }
+        isOvernightDate = true;
+
+        const phraseYear1 = year ? `, ${year}` : "";
+        const phraseYear2 = year ? `, ${year}` : "";
+        intervals.push({
+          start: startTime,
+          end: endTime,
+          overnightPhrase: `from ${startTime} on ${monthFullName1} ${d1}${phraseYear1}, until ${endTime} on ${monthFullName2} ${d2}${phraseYear2}`
+        });
+
+        text = text.replace(odtMatch[0], " ");
       }
-      isOvernightDate = true;
-
-      intervals.push({
-        start: startTime,
-        end: endTime,
-        overnightPhrase: `from ${startTime} on ${monthFullName1} ${d1}, ${year}, until ${endTime} on ${monthFullName2} ${d2}, ${year}`
-      });
-
-      text = text.replace(odtMatch[0], " ");
     }
 
-    // Pattern A: Overnight Sept 12-13, 2026 or Sept 12 until Sept 13
+    // Pattern A: Overnight Sept 12-13 or Sept 12 until Sept 13
     if (!detectedDate) {
       const overnightPattern = /\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Sept|October|November|December)[a-z]*\.?\s+(\d{1,2})(?:st|nd|rd|th)?\s*(?:[\u2013\u2014-]|to|until)\s*(?:(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Sept|October|November|December)[a-z]*\.?\s+)?(\d{1,2})(?:st|nd|rd|th)?(?!\s*:),?\s*(\d{4})?\b/i;
       const overMatch = text.match(overnightPattern);
@@ -604,45 +698,52 @@ window.CCTV_REPORT_SERVICE = (function () {
         const m1 = overMatch[1];
         const d1 = overMatch[2];
         const d2 = overMatch[4];
-        const year = overMatch[5] || "2026";
+        const year = overMatch[5] || null;
         const mIdx = MONTH_ABBR[m1.toLowerCase().replace(".", "")];
-        const monthFullName = mIdx !== undefined ? MONTH_NAMES[mIdx] : m1;
-        detectedDate = `${monthFullName} ${d1}-${d2}, ${year}`;
-        isOvernightDate = true;
-        text = text.replace(overMatch[0], " ");
+        if (mIdx !== undefined && isValidDateComponents(mIdx, d1, year) && isValidDateComponents(mIdx, d2, year)) {
+          const monthFullName = MONTH_NAMES[mIdx];
+          const yearSuffix = year ? `, ${year}` : "";
+          detectedDate = `${monthFullName} ${d1}-${d2}${yearSuffix}`;
+          isOvernightDate = true;
+          text = text.replace(overMatch[0], " ");
+        }
       }
     }
 
-    // Pattern B: Numeric date MM-DD-YY or MM/DD/YYYY or MM-DD-YYYY
+    // Pattern B: Numeric date MM-DD-YY, MM/DD/YYYY, or MM-DD (never invent a year if omitted)
     if (!detectedDate) {
-      const numDatePattern = /\b(\d{1,2})[-/](\d{1,2})[-/](\d{2,4})\b/;
+      const numDatePattern = /\b(\d{1,2})[-/](\d{1,2})(?:[-/](\d{2,4}))?\b/;
       const numMatch = text.match(numDatePattern);
       if (numMatch) {
         const monthNum = parseInt(numMatch[1], 10);
         const dayNum = parseInt(numMatch[2], 10);
-        let yearNum = parseInt(numMatch[3], 10);
-        if (yearNum < 100) yearNum += 2000;
-        if (monthNum >= 1 && monthNum <= 12) {
-          detectedDate = `${MONTH_NAMES[monthNum - 1]} ${dayNum}, ${yearNum}`;
-        } else {
-          detectedDate = numMatch[0];
+        let yearNum = numMatch[3] ? parseInt(numMatch[3], 10) : null;
+        if (yearNum !== null && yearNum < 100) yearNum += 2000;
+        if (monthNum >= 1 && monthNum <= 12 && isValidDateComponents(monthNum - 1, dayNum, yearNum)) {
+          if (yearNum) {
+            detectedDate = `${MONTH_NAMES[monthNum - 1]} ${dayNum}, ${yearNum}`;
+          } else {
+            detectedDate = `${MONTH_NAMES[monthNum - 1]} ${dayNum}`;
+          }
+          text = text.replace(numMatch[0], " ");
         }
-        text = text.replace(numMatch[0], " ");
       }
     }
 
-    // Pattern C: Standard Single readable date Sept 10, 2026
+    // Pattern C: Standard Single readable date Sept 10 (never invent 2026 if omitted)
     if (!detectedDate) {
       const singleDatePattern = /\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Sept|October|November|December)[a-z]*\.?\s+(\d{1,2})(?:st|nd|rd|th)?(?!\s*:),?\s*(\d{4})?\b/i;
       const singleMatch = text.match(singleDatePattern);
       if (singleMatch) {
         const m1 = singleMatch[1];
         const d1 = singleMatch[2];
-        const year = singleMatch[3] || "2026";
+        const year = singleMatch[3] || null;
         const mIdx = MONTH_ABBR[m1.toLowerCase().replace(".", "")];
-        const monthFullName = mIdx !== undefined ? MONTH_NAMES[mIdx] : m1;
-        detectedDate = `${monthFullName} ${d1}, ${year}`;
-        text = text.replace(singleMatch[0], " ");
+        if (mIdx !== undefined && isValidDateComponents(mIdx, d1, year)) {
+          const monthFullName = MONTH_NAMES[mIdx];
+          detectedDate = year ? `${monthFullName} ${d1}, ${year}` : `${monthFullName} ${d1}`;
+          text = text.replace(singleMatch[0], " ");
+        }
       }
     }
 
@@ -672,6 +773,23 @@ window.CCTV_REPORT_SERVICE = (function () {
         start: rawTimes[0],
         end: rawTimes[1]
       });
+    }
+
+    // Cross-midnight detection from interval times when only a single date is given
+    if (intervals.length === 1 && !isOvernightDate) {
+      const sSec = parseTimeSeconds(intervals[0].start);
+      const eSec = parseTimeSeconds(intervals[0].end);
+      if (sSec !== null && eSec !== null && eSec < sSec) {
+        isOvernightDate = true;
+        // If detectedDate is a single day (e.g. "September 12" or "September 12, 2026"), expand to overnight range
+        const singleDayMatch = detectedDate.match(/^([A-Za-z]+)\s+(\d{1,2})(,\s*\d{4})?$/);
+        if (singleDayMatch) {
+          const monthName = singleDayMatch[1];
+          const d1Num = parseInt(singleDayMatch[2], 10);
+          const yrPart = singleDayMatch[3] || "";
+          detectedDate = `${monthName} ${d1Num}-${d1Num + 1}${yrPart}`;
+        }
+      }
     }
 
     // 5. Clean remaining observation text & Bisaya substitutions
@@ -713,18 +831,19 @@ window.CCTV_REPORT_SERVICE = (function () {
     const notesLower = (rawInput + " " + parsed.cleanNotes).toLowerCase();
 
     // Violation Classification
-    const isSleeping = /sleep|nakatulog|tulog|doz/i.test(notesLower);
-    const isDozingToSleep = /doz|hantod\s+nakatulog|eventually\s+fall/i.test(notesLower);
-    const isDressCode = /dress\s*code|no\s*id|sleeveless|open-?toe|slippers|jersey|piercing|hoodie|cap\b/i.test(notesLower);
-    const isLoitering = /loiter|wasting\s+time|idling|wandering/i.test(notesLower);
-    const isChitchat = /chitchat|conversation|noise|shout/i.test(notesLower);
-    const isUnassignedPc = /unassigned\s*pc|pc\s+(?:that\s+)?is\s+not\s+(?:his|hers|theirs|assigned)|not\s+assigned/i.test(notesLower);
-    const isPcLeftOn = /shut\s*down|left\s+(?:it\s+)?(?:running|on|powered\s+on)|powered\s+on|pc\s+left\s+on/i.test(notesLower);
-    const isFoodDrink = /eat|eating|candy|food|drink|consume/i.test(notesLower);
+    const isSleeping = /sleep|nakatulog|tulog|doz|katulgon|nagpiyong|nagduka|idlip/i.test(notesLower);
+    const isDozingToSleep = /doz|hantod\s+nakatulog|eventually\s+fall|katulgon/i.test(notesLower);
+    const isDressCode = /dress\s*code|no\s*id|walay\s+id|sleeveless|open-?toe|slippers|tsinelas|jersey|piercing|hoodie|cap\b/i.test(notesLower);
+    const isLoitering = /loiter|wasting\s+time|idling|wandering|laroy|lakaw\s*lakaw|pundok|tapok|tipok|away\s+from\s+station/i.test(notesLower);
+    const isChitchat = /chitchat|conversation|noise|shout|chika|tabi|storya|saba/i.test(notesLower);
+    const isUnassignedPc = /unassigned\s*pc|pc\s+(?:that\s+)?is\s+not\s+(?:his|hers|theirs|assigned)|not\s+assigned|dili\s+iya\s+pc|lain\s+pc/i.test(notesLower);
+    const isPcLeftOn = /shut\s*down|left\s+(?:it\s+)?(?:running|on|powered\s+on)|powered\s+on|pc\s+left\s+on|wala\s+gipatay|wala\s+gi-?off/i.test(notesLower);
+    const isFoodDrink = /eat|eating|candy|food|drink|consume|kaon|nangaon|inom/i.test(notesLower);
     const isCleanliness = /clean|dusty|dirty|unclean|housekeeping|wiped|chair\s+not\s+tucked/i.test(notesLower);
-    const isInternetVideo = /video|youtube|browsing|minimized|window|google\s+images|movie/i.test(notesLower);
-    const isMonitorObstruct = /obstruct|cover\s+(?:the\s+)?monitor|covering\s+monitor/i.test(notesLower);
-    const isCameraAdjust = /camera|blind\s*spot|tilt/i.test(notesLower);
+    const isInternetVideo = /video|youtube|browsing|minimized|window|google\s+images|movie|salida/i.test(notesLower);
+    const isPhone = /cellphone|mobile\s*phone|phone|cp\b|gunit\s+phone/i.test(notesLower);
+    const isMonitorObstruct = /obstruct|cover\s+(?:the\s+)?monitor|covering\s+monitor|tabonan\s+ang\s+monitor|tabunan\s+ang\s+monitor/i.test(notesLower);
+    const isCameraAdjust = /camera|blind\s*spot|tilt|hikap\s+ang\s+camera|lihok\s+ang\s+camera/i.test(notesLower);
 
     // Build Time Description
     let timePhrase = "";
@@ -750,7 +869,10 @@ window.CCTV_REPORT_SERVICE = (function () {
       const intervalDescriptions = [];
       let combinedMins = 0;
       parsed.intervals.forEach(inv => {
-        const m = calculateDurationWholeMinutes(inv.start, inv.end, false);
+        const sSec = parseTimeSeconds(inv.start);
+        const eSec = parseTimeSeconds(inv.end);
+        const isCrossMidnight = (sSec !== null && eSec !== null && eSec < sSec);
+        const m = calculateDurationWholeMinutes(inv.start, inv.end, isCrossMidnight);
         if (m !== null) combinedMins += m;
         intervalDescriptions.push(`from ${inv.start} to ${inv.end} (${formatWholeMinuteDuration(m || 0)})`);
       });
@@ -800,6 +922,10 @@ window.CCTV_REPORT_SERVICE = (function () {
 
       incidentNarrative = `Observed an agent ${dressDetail} ${timePhrase}.`;
       actionRequest = `Kindly remind the agent to adhere to the company dress code policy in accordance with the company COD. Thank you.`;
+
+    } else if (isPhone) {
+      incidentNarrative = `Observed an agent using a mobile phone on the operations floor ${timePhrase}.`;
+      actionRequest = `Kindly file an NOC in accordance with the company COD. Thank you.`;
 
     } else if (isInternetVideo) {
       if (/hide|hidden|reappear/i.test(notesLower)) {
@@ -857,22 +983,51 @@ window.CCTV_REPORT_SERVICE = (function () {
     // Combine incident narrative and action request
     const fullObservation = `${incidentNarrative} ${actionRequest}`.trim();
 
-    // Final Location: Keep existing operator-entered location if already provided.
-    // If empty, populate from detected Location. Never invent fictitious locations.
+    // Final Location:
+    // 1. If explicit location was detected in current notes, use it.
+    // 2. If operator manually entered a location and notes had a different location, preserve operator's value and flag conflict.
+    // 3. If notes had no location, keep operator's entered location (if any), but NEVER invent or reuse from previous unrelated reports.
     let finalLocation = "";
-    if (parsed.detectedLocation) {
-      finalLocation = normalizeCctvReportText(parsed.detectedLocation);
-    } else if (existingDraft.site && String(existingDraft.site).trim()) {
-      finalLocation = normalizeCctvReportText(String(existingDraft.site).trim());
+    let locationConflict = null;
+    const operatorEnteredSite = (existingDraft.site || "").trim();
+    const detectedSite = (parsed.detectedLocation || "").trim();
+
+    if (operatorEnteredSite && detectedSite) {
+      if (operatorEnteredSite.toLowerCase() === detectedSite.toLowerCase()) {
+        finalLocation = operatorEnteredSite;
+      } else {
+        finalLocation = operatorEnteredSite;
+        locationConflict = {
+          entered: operatorEnteredSite,
+          detected: detectedSite
+        };
+      }
+    } else if (detectedSite) {
+      finalLocation = detectedSite;
+    } else if (operatorEnteredSite) {
+      finalLocation = operatorEnteredSite;
     }
 
-    // Final Date: Keep existing operator-entered date if already provided.
-    // If empty, populate from detected Date. Never invent fictitious dates.
+    // Final Date:
     let finalDate = "";
-    if (parsed.detectedDate) {
-      finalDate = normalizeCctvReportText(parsed.detectedDate);
-    } else if (existingDraft.dateRange && String(existingDraft.dateRange).trim()) {
-      finalDate = normalizeCctvReportText(String(existingDraft.dateRange).trim());
+    let dateConflict = null;
+    const operatorEnteredDate = (existingDraft.dateRange || "").trim();
+    const detectedDate = (parsed.detectedDate || "").trim();
+
+    if (operatorEnteredDate && detectedDate) {
+      if (operatorEnteredDate.toLowerCase() === detectedDate.toLowerCase()) {
+        finalDate = operatorEnteredDate;
+      } else {
+        finalDate = operatorEnteredDate;
+        dateConflict = {
+          entered: operatorEnteredDate,
+          detected: detectedDate
+        };
+      }
+    } else if (detectedDate) {
+      finalDate = detectedDate;
+    } else if (operatorEnteredDate) {
+      finalDate = operatorEnteredDate;
     }
 
     // Final Clip URLs
@@ -893,7 +1048,9 @@ window.CCTV_REPORT_SERVICE = (function () {
       rawInput: rawInput,
       durationText: durationText,
       totalMinutes: totalMinutes,
-      classification: isSleeping ? "SLEEPING" : (isInternetVideo ? "BROWSING" : (isDressCode ? "DRESS CODE" : ""))
+      classification: isSleeping ? "SLEEPING" : (isInternetVideo ? "BROWSING" : (isDressCode ? "DRESS CODE" : (isPhone ? "PHONE USAGE" : ""))),
+      locationConflict,
+      dateConflict
     });
   }
 
@@ -1177,18 +1334,23 @@ window.CCTV_REPORT_SERVICE = (function () {
     }
 
     const durationDirective = fallback.durationText
-      ? `4. State the duration using the phrase: ', with a total duration of ${fallback.durationText}.'`
-      : "4. If a duration is calculated or present in the notes, preserve it accurately.";
+      ? `State the duration using the phrase: ', with a total duration of ${fallback.durationText}.'`
+      : "If a duration is present in the notes, preserve it accurately.";
 
     const aiPrompt = [
-      "You are a professional CCTV operations reporting assistant. Generate only the objective factual observation narrative for a CCTV incident report.",
-      "Requirements:",
-      "1. Start with 'Observed an agent' (or 'Observed' if referring to an unattended PC or hardware condition).",
-      "2. State the observed activity concisely, objectively, and professionally.",
+      "You are a professional CCTV operations reporting assistant for an enterprise operations center.",
+      "Your task is to generate ONLY the objective, factual observation narrative for a CCTV incident report based on the provided raw notes.",
+      "",
+      "Strict Guidelines:",
+      "1. Start the narrative with 'Observed an agent' (or 'Observed' if referring strictly to an unattended PC, equipment, or facility condition).",
+      "2. Write in concise, objective, neutral, and professional English. The raw notes may be in informal English, Taglish, or Bisaya-English (e.g. 'natulog', 'nag cellphone', 'nagtapok', 'wala gi-off ang pc').",
       "3. Preserve exact timestamps if provided in the notes.",
-      durationDirective,
-      "5. Do NOT include Location, Date, or action requests (such as NOC or reminder requests) in this observation body.",
-      "6. Do NOT invent facts, names, violations, or timestamps not present in the notes.",
+      `4. ${durationDirective}`,
+      "5. Do NOT include Location, Date, or action requests (such as NOC, COD, or reminder requests) in this observation body - those are managed separately.",
+      "6. Do NOT invent names, employee IDs, locations, dates, floors, activities, or policy violations not present in the notes.",
+      "7. Avoid exaggerated, emotional, or accusatory phrasing (e.g. use 'sleeping' or 'dozing off' rather than 'grossly negligent').",
+      "8. If notes are incomplete or ambiguous, state only what is directly observable.",
+      "9. Return ONLY the plain text observation narrative, with no quotes, markdown formatting, greetings, or extra explanations.",
       "",
       "Raw Notes:",
       String(rawInput || "").trim()
@@ -1281,9 +1443,11 @@ window.CCTV_REPORT_SERVICE = (function () {
   }
 
   return {
+    getDefaultDraft,
     getDraft,
     saveDraft,
     resetDraft,
+    calculateDurationWholeMinutes,
     loadDraftScreenshots,
     saveDraftScreenshots,
     clearDraftScreenshots,
