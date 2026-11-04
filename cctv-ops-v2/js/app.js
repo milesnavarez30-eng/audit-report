@@ -1988,7 +1988,7 @@
     if (shared.om && el("edrOmName")) el("edrOmName").value = shared.om;
     if (shared.defaultTl && el("edrDefaultTl")) el("edrDefaultTl").value = shared.defaultTl;
     if (shared.defaultAccount && el("edrDefaultAccount")) el("edrDefaultAccount").value = shared.defaultAccount;
-    if (shared.defaultInfraction && el("edrDefaultInfraction")) el("edrDefaultInfraction").value = shared.defaultInfraction;
+    if (el("edrDefaultInfraction")) el("edrDefaultInfraction").value = "";
 
     // Ensure draft storage does not retain stale incident data
     edr.clearDraftForm().catch(() => {});
@@ -2680,7 +2680,6 @@
           defaultInfraction: el("edrDefaultInfraction")?.value || ""
         } : null;
 
-        console.log("[EDR_SUBMIT] calling createOrUpdate with keepShared=", keepShared);
         await edr.createOrUpdate(data);
 
         if (keepShared && sharedDetails) {
