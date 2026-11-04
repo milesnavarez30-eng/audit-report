@@ -1,4 +1,4 @@
-﻿/**
+/**
  * CCTV OPS V2 - Main Application Orchestrator & Prototype Controller
  */
 
@@ -30,24 +30,23 @@
     }
   }
 
-  // Live Operational Computer Clock
+  // Live Operational Philippine Time Clock
   function updateManilaClock() {
     try {
+      if (typeof window.initManilaClock === "function") {
+        window.initManilaClock();
+        return;
+      }
       const now = new Date();
-      const timeStr = now.toLocaleTimeString([], {
+      const timeStr = new Intl.DateTimeFormat("en-US", {
+        timeZone: "Asia/Manila",
         hour: "2-digit",
         minute: "2-digit",
         second: "2-digit",
         hour12: true
-      });
-      let tzName = "";
-      try {
-        const parts = new Intl.DateTimeFormat([], { timeZoneName: "short" }).formatToParts(now);
-        const tzPart = parts.find(p => p.type === "timeZoneName");
-        if (tzPart) tzName = tzPart.value;
-      } catch (_) {}
+      }).format(now);
       const clockEl = el("manilaClockText");
-      if (clockEl) clockEl.textContent = tzName ? `${timeStr} ${tzName}` : timeStr;
+      if (clockEl) clockEl.textContent = `${timeStr} PHT`;
     } catch (_) {}
   }
 
@@ -13753,6 +13752,7 @@ function doPost(e) {
         if (el("userNameText")) el("userNameText").textContent = profile?.display_name || profile?.username || "Operator";
         const roleLabel = profile?.role === "super_admin" ? "Super Admin" : (profile?.role === "admin" ? "Admin" : "User");
         if (el("userRoleText")) el("userRoleText").textContent = roleLabel;
+        if (el("railUserMeta")) el("railUserMeta").textContent = roleLabel;
         if (el("userAvatarText")) el("userAvatarText").textContent = (profile?.username || "U")[0].toUpperCase();
       }
 
@@ -13843,21 +13843,33 @@ function doPost(e) {
       });
     }
 
-    // Bind topbar logout button
+    // Bind logout buttons (sidebar footer primary, topbar compatibility fallback)
+    const handleSignOutAction = async () => {
+      try {
+        await auth.signOut();
+      } catch (err) {
+        console.warn("Sign out error:", err);
+      }
+      if (typeof window._clearTransientCredential === "function") {
+        window._clearTransientCredential();
+      }
+      lockApp();
+      showToast("Signed out safely.", "info");
+    };
+
     if (btnLogoutTop) {
-      btnLogoutTop.addEventListener("click", async () => {
-        try {
-          await auth.signOut();
-        } catch (err) {
-          console.warn("Sign out error:", err);
-        }
-        if (typeof window._clearTransientCredential === "function") {
-          window._clearTransientCredential();
-        }
-        lockApp();
-        showToast("Signed out safely.", "info");
-      });
+      btnLogoutTop.addEventListener("click", handleSignOutAction);
     }
+    el("btnSidebarLogout")?.addEventListener("click", handleSignOutAction);
+
+    // Sidebar My Account action
+    el("btnSidebarMyAccount")?.addEventListener("click", () => {
+      if (window.CCTV_MY_ACCOUNT && typeof window.CCTV_MY_ACCOUNT.open === "function") {
+        window.CCTV_MY_ACCOUNT.open();
+      } else if (auth && typeof auth.canAccessWorkspace === "function" && auth.canAccessWorkspace("accounts")) {
+        switchWorkspace("accounts");
+      }
+    });
 
     // User profile menu button -> Opens My Account
     el("btnUserMenu")?.addEventListener("click", () => {

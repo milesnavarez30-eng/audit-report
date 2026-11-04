@@ -1,4 +1,4 @@
-﻿/**
+/**
  * CCTV OPS V2 - Shared Runtime Utilities
  * Toasts, Confirmations, Clipboard, Manila Clock & Media Handlers
  */
@@ -384,28 +384,65 @@
     containerEl.innerHTML = html;
   };
 
-  // Operational Computer Clock (Local Workstation Time)
+  // Live Operational Philippine Time Clock (Asia/Manila, UTC+8)
+  let phTimeOffsetMs = 0;
+  let phTimeSynced = false;
+
+  async function syncNetworkPhTime() {
+    try {
+      const t0 = performance.now();
+      const response = await fetch(window.location.href, {
+        method: "HEAD",
+        cache: "no-store"
+      });
+      const t1 = performance.now();
+      const serverDateHeader = response.headers.get("Date");
+      if (serverDateHeader) {
+        const serverEpoch = new Date(serverDateHeader).getTime();
+        if (!isNaN(serverEpoch)) {
+          const latency = (t1 - t0) / 2;
+          phTimeOffsetMs = (serverEpoch + latency) - Date.now();
+          phTimeSynced = true;
+        }
+      }
+    } catch (_) {
+      // Safe fallback: retains offset 0 and formats client clock in Asia/Manila
+    }
+  }
+
+  window.syncNetworkPhTime = syncNetworkPhTime;
+
   window.initManilaClock = function () {
     if (window.__manilaClockInterval) return;
+
+    syncNetworkPhTime();
+    if (!window.__manilaTimeSyncInterval) {
+      window.__manilaTimeSyncInterval = setInterval(syncNetworkPhTime, 10 * 60 * 1000);
+    }
+
+    const phFormatter = new Intl.DateTimeFormat("en-US", {
+      timeZone: "Asia/Manila",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: true
+    });
+
     function updateClock() {
       try {
-        const now = new Date();
-        const timeStr = now.toLocaleTimeString([], {
-          hour: "2-digit",
-          minute: "2-digit",
-          second: "2-digit",
-          hour12: true
-        });
-        let tzName = "";
-        try {
-          const parts = new Intl.DateTimeFormat([], { timeZoneName: "short" }).formatToParts(now);
-          const tzPart = parts.find(p => p.type === "timeZoneName");
-          if (tzPart) tzName = tzPart.value;
-        } catch (_) {}
+        const phDate = new Date(Date.now() + phTimeOffsetMs);
+        const timeStr = phFormatter.format(phDate);
         const clockEl = document.getElementById("manilaClockText");
-        if (clockEl) clockEl.textContent = tzName ? `${timeStr} ${tzName}` : timeStr;
+        if (clockEl) {
+          clockEl.textContent = `${timeStr} PHT`;
+        }
+        const pill = document.getElementById("localClockPill");
+        if (pill) {
+          pill.title = `Philippine Standard Time (UTC+8)${phTimeSynced ? " â€¢ Network Synced" : ""}`;
+        }
       } catch (_) {}
     }
+
     updateClock();
     window.__manilaClockInterval = setInterval(updateClock, 1000);
   };

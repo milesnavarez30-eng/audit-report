@@ -43,6 +43,7 @@
   function init() {
     // Bind buttons
     el("btnOpenMyAccount")?.addEventListener("click", openModal);
+    el("btnSidebarMyAccount")?.addEventListener("click", openModal);
     el("btnAdminSubnavMyAccount")?.addEventListener("click", openModal);
     el("btnMyAccountClose")?.addEventListener("click", closeModal);
     el("btnMyAccountDone")?.addEventListener("click", closeModal);

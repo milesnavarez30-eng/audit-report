@@ -1274,9 +1274,30 @@
           </svg>
           <span class="nav-label">Accounts</span>
         </button>
-
-
       </nav>
+
+      <!-- Sidebar Footer User & System Actions -->
+      <div class="rail-user-actions" id="railUserActions">
+        <!-- My Account Action Button -->
+        <button type="button" class="rail-action-btn" id="btnSidebarMyAccount" title="My Account & Profile" data-tooltip="My Account" data-tooltip-pos="right" aria-label="My Account">
+          <svg class="rail-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+            <circle cx="12" cy="7" r="4"></circle>
+          </svg>
+          <span class="rail-action-label">My Account</span>
+          <span class="rail-action-meta" id="railUserMeta">Operator</span>
+        </button>
+
+        <!-- Logout Action Button -->
+        <button type="button" class="rail-action-btn rail-action-logout" id="btnSidebarLogout" title="Sign Out" data-tooltip="Sign Out" data-tooltip-pos="right" aria-label="Sign Out">
+          <svg class="rail-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+            <polyline points="16 17 21 12 16 7"></polyline>
+            <line x1="21" y1="12" x2="9" y2="12"></line>
+          </svg>
+          <span class="rail-action-label">Logout</span>
+        </button>
+      </div>
 
       <div class="rail-footer">
         <span class="rail-version">V2.0.0-beta</span>
