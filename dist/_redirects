@@ -1,0 +1,4 @@
+﻿# Cloudflare Redirects for CCTV OPS V2
+/                  /cctv-ops-v2/  302
+/cctv-ops-v2       /cctv-ops-v2/  301
+/cctv-ops-v2/*     /cctv-ops-v2/index.html  200

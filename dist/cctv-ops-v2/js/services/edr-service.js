@@ -1,0 +1,1925 @@
+/**
+ * CCTV OPS V2 - EDR Service
+ * Full manual EDR workflow, IndexedDB persistence, Google Docs sync, and Teams plain-text copy
+ */
+
+window.CCTV_EDR = (function () {
+  "use strict";
+
+  const cfg = window.CCTV_V2_CONFIG;
+  const storage = window.CCTV_STORAGE;
+  const DB_NAME = cfg.DATABASES.PENDING_REPORTS;
+  const STORE_NAME = "state";
+  const STATE_KEY = "reports";
+
+  let edrReports = [];
+  let currentScreenshotData = "";
+  let currentFacebookText = "";
+  let currentFormDraft = null;
+  let editingId = null;
+  let listeners = [];
+  let saveReportsTimer = null;
+  let lastEdrSubmitTime = 0;
+  let lastEdrSubmitSignature = "";
+
+  function uid() {
+    return "edr_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 8);
+  }
+
+  function clean(val) {
+    return String(val == null ? "" : val).replace(/\s+/g, " ").trim();
+  }
+
+  function todayLocal() {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, "0");
+    const day = String(now.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  }
+
+  function formatDate(dateStr) {
+    if (!dateStr) return "";
+    try {
+      const parts = dateStr.split("-");
+      if (parts.length === 3) {
+        const d = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+        return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+      }
+    } catch (_) {}
+    return dateStr;
+  }
+
+  function formatFacebookDate(dateStr) {
+    try {
+      const d = new Date(dateStr + "T00:00:00");
+      return d.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+    } catch (_) {
+      return dateStr;
+    }
+  }
+
+  function safeUrl(value) {
+    let raw = clean(value);
+    if (!raw) return "";
+    if (!/^https?:\/\//i.test(raw)) {
+      raw = "https://" + raw;
+    }
+    try {
+      const parsed = new URL(raw);
+      if (!/^https?:$/i.test(parsed.protocol)) return "";
+      return parsed.href;
+    } catch (_) {
+      return "";
+    }
+  }
+
+  function supervisorOutputLabel(report) {
+    return report.supervisorRole === "OM" ? "OM" : "Team Leader";
+  }
+
+  function subjectOutputLabel(report) {
+    return report.subjectType === "Team Leader" ? "Team Leader" : "Agent/s";
+  }
+
+  // Exact V1 Site & Auditor Normalization
+  function normalizeTrackerSite(raw) {
+    if (typeof window.normalizeTrackerSite === "function" && window.normalizeTrackerSite !== normalizeTrackerSite) {
+      return window.normalizeTrackerSite(raw);
+    }
+    const text = String(raw || "").trim().toLowerCase();
+    if (
+      text.includes("mabini site b") || 
+      text.includes("site b") || 
+      text === "mabini_b" ||
+      (text.includes("mabini") && (text.includes("3rd") || text.includes("4th")))
+    ) {
+      return "Mabini Site B";
+    }
+    if (
+      text.includes("mabini site a") || 
+      text.includes("site a") || 
+      text === "mabini_a" ||
+      text.includes("mabini a") ||
+      (text.includes("mabini") && (text.includes("1st") || text.includes("2nd") || text.includes("1f") || text.includes("2f")))
+    ) {
+      return "Mabini Site A";
+    }
+    if (text.includes("maa") || text.startsWith("maa_")) return "Maa";
+    if (text.includes("gensan")) return "Gensan";
+    if (text.includes("ecoland")) return "Ecoland";
+    if (text.includes("digos")) return "Digos";
+    if (text.includes("cdo")) return "CDO";
+    return raw ? raw.trim() : "Mabini Site A";
+  }
+  if (!window.normalizeTrackerSite) window.normalizeTrackerSite = normalizeTrackerSite;
+
+  function normalizeAuditorName(raw) {
+    if (typeof window.normalizeAuditorName === "function" && window.normalizeAuditorName !== normalizeAuditorName) {
+      return window.normalizeAuditorName(raw);
+    }
+    if (raw && typeof raw === "object") {
+      raw = raw.name || raw.display_name || raw.username || raw.full_name || "";
+    }
+    const text = String(raw || "").trim().toLowerCase();
+    if (text.includes("miles") || text.includes("mico")) return "Miles";
+    if (text.includes("wendie") || text.includes("amor")) return "Wendie";
+    if (text.includes("seth")) return "Seth";
+    if (text.includes("john ric") || text === "jr" || text.includes("john")) return "John Ric";
+    if (text.includes("kenneth")) return "Kenneth";
+    return raw ? String(raw).trim().split(/\s+/)[0] : "Miles";
+  }
+  if (!window.normalizeAuditorName) window.normalizeAuditorName = normalizeAuditorName;
+
+  // Exact V1 Field Mappers for CCTV Audit
+  function auditSiteFromEdr(site) {
+    const value = String(site || "").trim();
+    return normalizeTrackerSite(value);
+  }
+
+  function auditReasonFromEdr(report) {
+    const text = [
+      report?.incident,
+      report?.action
+    ].filter(Boolean).join(" ").toUpperCase();
+
+    const rules = [
+      [/SLEEP|SLEEPING/, "SLEEPING"],
+      [/DRESS\s*CODE|UNIFORM|ATTIRE/, "DRESS CODE"],
+      [/BROWS|BROWSER|WEBSITE/, "BROWSING"],
+      [/WASTING\s*TIME|IDLE|LOITER/, "WASTING TIME"],
+      [/NON[-\s]*WOF|NON\s*WOF/, "BRINGING NON-WOF"],
+      [/EAT|FOOD|MEAL/, "EATING"],
+      [/HOUSE\s*KEEP|HOUSEKEEP|CLEANLINESS/, "IMPROPER HOUSE KEEPING"],
+      [/TAMPER|EQUIPMENT/, "EQUIPMENT TAMPERING"],
+      [/\bPDA\b|PUBLIC DISPLAY/, "PDA"],
+      [/DISORDER|DISRUPT/, "DISORDERLY CONDUCT"],
+      [/SMART\s*PHONE|SMARTPHONE|CELLPHONE|MOBILE\s*PHONE|PHONE/, "USING SMARTPHONE"],
+      [/THEFT|STEAL/, "THEFT"],
+      [/SELL|VEND/, "SELLING"]
+    ];
+
+    for (const [pattern, reason] of rules) {
+      if (pattern.test(text)) return reason;
+    }
+
+    return "OTHER / EDR";
+  }
+
+  function ensureAuditDropdownValue(selectId, value) {
+    const text = String(value || "").trim();
+    if (!text || text === "N/A") return;
+
+    const ms = window.masterlistService;
+    if (ms) {
+      // Route through unified registry so EDR and CCTV Audit share one source of truth
+      if (selectId === "site") ms.addSite(text);
+      else if (selectId === "omName") ms.addDedicatedOm(text);
+      else if (selectId === "account") ms.addAccount(text);
+      else if (selectId === "reasonCode") ms.addReason(text);
+      // masterlistService._saveMasterOptions() is called inside each add method
+      return;
+    }
+
+    // Fallback: legacy flat-array storage
+    const storageKey = `cctv_dropdown_${selectId}`;
+    let list = storage.getItem(storageKey, []);
+    if (!Array.isArray(list)) list = [];
+    if (!list.includes(text)) {
+      list.push(text);
+      list.sort((a, b) => a.localeCompare(b));
+      storage.setItem(storageKey, list);
+    }
+  }
+
+  function stripRolePrefix(name) {
+    if (window.CCTV_PEOPLE?.stripRolePrefix) {
+      return window.CCTV_PEOPLE.stripRolePrefix(name);
+    }
+    return String(name || "")
+      .replace(/^(?:TL|OM|Agent)\b\s*[\u2014\u2013\-:]?\s*/i, "")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+
+  function auditSharedFieldsFromEdr(report) {
+    // RULE 7: EDR Employee/Agent -> CCTV Audit Agent
+    //         EDR TL/Supervisor -> CCTV Audit TL
+    // Explicit EDR values win. Role prefixes are UI-only and stripped.
+    const firstSubj = (Array.isArray(report?.subjects) && report.subjects.length > 0) ? report.subjects[0] : null;
+    const rawAgent = report?.subjectName || report?.agentName || firstSubj?.name || "";
+    const rawTl = report?.supervisorName || report?.tlName || firstSubj?.supervisorName || report?.defaultTl || "";
+    const rawOm = report?.omName || (report?.supervisorRole === "OM" ? (report?.supervisorName || firstSubj?.supervisorName) : "") || "";
+
+    const agentName = stripRolePrefix(clean(rawAgent)) || "N/A";
+    const tlName = stripRolePrefix(clean(rawTl)) || "N/A";
+    const omName = stripRolePrefix(clean(rawOm)) || "N/A";
+
+    const rawDate = report?.date || new Date().toISOString().slice(0, 10);
+    const dateObj = new Date(`${rawDate}T00:00:00`);
+    const months = [
+      "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+      "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+    ];
+
+    const currentAuditor = window.normalizeAuditorName ? window.normalizeAuditorName(
+      window.CCTV_ACCOUNT_CONTEXT?.profile?.display_name ||
+      window.CCTV_ACCOUNT_CONTEXT?.profile?.username ||
+      window.CCTV_AUTH?.getProfile?.()?.display_name ||
+      window.CCTV_AUTH?.getProfile?.()?.username ||
+      "Miles"
+    ) : "Miles";
+
+    return {
+      rawDate,
+      year: dateObj.getFullYear(),
+      month: months[dateObj.getMonth()],
+      formattedDate: `${dateObj.getMonth() + 1}/${dateObj.getDate()}/${dateObj.getFullYear()}`,
+      auditorName: currentAuditor,
+      name: currentAuditor,
+      omName,
+      site: auditSiteFromEdr(report?.site),
+      tlName,
+      agentName,
+      cleanAccount: report?.account || "N/A",
+      reasonCode: auditReasonFromEdr(report)
+    };
+  }
+
+  // Global CCTV Audit Bridge (Reused from V1)
+  window.cctvAuditBridge = {
+    findByEdrId(edrId) {
+      const entryList = storage.getItem(cfg.KEYS.ENTRY_LIST, []);
+      return (Array.isArray(entryList) && entryList.find(entry => entry.sourceEdrId === edrId)) || null;
+    },
+
+    hasEdr(edrId) {
+      const entryList = storage.getItem(cfg.KEYS.ENTRY_LIST, []);
+      return Array.isArray(entryList) && entryList.some(entry => entry.sourceEdrId === edrId);
+    },
+
+    countSentFromEdr() {
+      const entryList = storage.getItem(cfg.KEYS.ENTRY_LIST, []);
+      return Array.isArray(entryList) ? entryList.filter(entry => !!entry.sourceEdrId).length : 0;
+    },
+
+    sendFromEdr(report) {
+      if (!report?.id) {
+        throw new Error("EDR record is missing an ID.");
+      }
+
+      const shared = auditSharedFieldsFromEdr(report);
+
+      ensureAuditDropdownValue("site", shared.site);
+      ensureAuditDropdownValue("omName", shared.omName);
+      ensureAuditDropdownValue("account", shared.cleanAccount);
+      ensureAuditDropdownValue("reasonCode", shared.reasonCode);
+
+      let entryList = storage.getItem(cfg.KEYS.ENTRY_LIST, []);
+      if (!Array.isArray(entryList)) entryList = [];
+
+      const existingIndex = entryList.findIndex(
+        entry => entry.sourceEdrId === report.id
+      );
+
+      if (existingIndex === -1) {
+        const entry = {
+          ...shared,
+          noc: "Pending",
+          remarks: String(report.action || report.incident || "N/A").trim() || "N/A",
+          sourceEdrId: report.id,
+          sourceEdrUpdatedAt: report.updatedAt || "",
+          sourceEdrReasonAuto: true
+        };
+
+        entryList.push(entry);
+        entryList.sort((a, b) => new Date(a.rawDate || a.date) - new Date(b.rawDate || b.date));
+        storage.setItem(cfg.KEYS.ENTRY_LIST, entryList);
+
+        return { action: "created", entry };
+      }
+
+      const previous = entryList[existingIndex];
+
+      entryList[existingIndex] = {
+        ...previous,
+        ...shared,
+        noc: previous.noc || "Pending",
+        remarks: previous.remarks || "N/A",
+        reasonCode:
+          previous.sourceEdrReasonAuto === false
+            ? previous.reasonCode
+            : shared.reasonCode,
+        sourceEdrId: report.id,
+        sourceEdrUpdatedAt: report.updatedAt || "",
+        sourceEdrReasonAuto: previous.sourceEdrReasonAuto !== false
+      };
+
+      entryList.sort((a, b) => new Date(a.rawDate || a.date) - new Date(b.rawDate || b.date));
+      storage.setItem(cfg.KEYS.ENTRY_LIST, entryList);
+
+      return {
+        action: "updated",
+        entry: entryList[existingIndex]
+      };
+    }
+  };
+
+  function escapeHtml(value) {
+    return String(value == null ? "" : value)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
+
+  function reportPlainText(report) {
+    if (window.EDR_MULTI_SUBJECT) {
+      const msText = window.EDR_MULTI_SUBJECT.buildMultiSubjectTeamsText(report);
+      if (msText) return msText;
+    }
+    const topLine = [report.site, "CCTV", report.account].filter(Boolean).join(" | ");
+    const lines = [
+      topLine,
+      `Date: ${formatDate(report.date)}`,
+      `Time Observed: ${report.timeObserved || report.timeStart || ""}`,
+      `${supervisorOutputLabel(report)}: ${report.supervisorName || ""}`,
+      `${subjectOutputLabel(report)}: ${report.subjectName || ""}`,
+      `Account/Campaign: ${report.account || ""}`,
+      `Incident: ${report.incident || ""}`,
+      `Action Taken/Remarks: ${report.action || ""}`
+    ];
+
+    const links = Array.isArray(report.clipLinks) && report.clipLinks.length
+      ? report.clipLinks
+      : (report.clipLink ? [report.clipLink] : []);
+
+    links.forEach((link, idx) => {
+      const label = links.length > 1 ? `CCTV Clip ${idx + 1}` : "CCTV Clip";
+      lines.push(`${label}: Click here! (${link})`);
+    });
+
+    return lines.join("\n");
+  }
+
+  function reportTeamsHtml(report) {
+    if (window.EDR_MULTI_SUBJECT) {
+      const msHtml = window.EDR_MULTI_SUBJECT.buildMultiSubjectTeamsHtml(report);
+      if (msHtml) return msHtml;
+    }
+    const topLine = [report.site, "CCTV", report.account].filter(Boolean).join(" | ");
+    const links = Array.isArray(report.clipLinks) && report.clipLinks.length
+      ? report.clipLinks
+      : (report.clipLink ? [report.clipLink] : []);
+
+    const clipLines = links.map((link, idx) => {
+      const clipUrl = safeUrl(link);
+      if (!clipUrl) return "";
+      const label = links.length > 1 ? `CCTV Clip ${idx + 1}` : "CCTV Clip";
+      return `<div>${label}: <a href="${escapeHtml(clipUrl)}">Click here!</a></div>`;
+    }).filter(Boolean);
+
+    const lines = [
+      `<div>${escapeHtml(topLine)}</div>`,
+      `<div>Date: ${escapeHtml(formatDate(report.date))}</div>`,
+      `<div>Time Observed: ${escapeHtml(report.timeObserved || report.timeStart || "")}</div>`,
+      `<div>${escapeHtml(supervisorOutputLabel(report))}: ${escapeHtml(report.supervisorName || "")}</div>`,
+      `<div>${escapeHtml(subjectOutputLabel(report))}: ${escapeHtml(report.subjectName || "")}</div>`,
+      `<div>Account/Campaign: ${escapeHtml(report.account || "")}</div>`,
+      `<div>Incident: ${escapeHtml(report.incident || "")}</div>`,
+      `<div>Action Taken/Remarks: ${escapeHtml(report.action || "")}</div>`
+    ];
+    clipLines.forEach(c => lines.push(c));
+
+    return lines.join("");
+  }
+
+  function compressClipboardImage(dataUrl) {
+    if (!dataUrl || !String(dataUrl).startsWith("data:image/")) return Promise.resolve("");
+    return new Promise(resolve => {
+      const image = new Image();
+      image.onload = () => {
+        const maxWidth = 800;
+        const maxHeight = 600;
+        const scale = Math.min(1, maxWidth / image.naturalWidth, maxHeight / image.naturalHeight);
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.max(1, Math.round(image.naturalWidth * scale));
+        canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
+        const context = canvas.getContext("2d");
+        context.drawImage(image, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL("image/png"));
+      };
+      image.onerror = () => resolve("");
+      image.src = dataUrl;
+    });
+  }
+
+  async function reportTeamsClipboardHtml(report) {
+    const rawShots = Array.isArray(report.screenshots) && report.screenshots.length
+      ? report.screenshots
+      : (report.screenshotData ? [report.screenshotData] : []);
+
+    const compressedShots = (await Promise.all(rawShots.map(compressClipboardImage))).filter(Boolean);
+    const imagesHtml = compressedShots
+      .map(s => `<div><img src="${escapeHtml(s)}" alt="CCTV Screenshot" style="max-width:800px;display:block;"></div>`)
+      .join("");
+
+    const body = reportTeamsHtml(report);
+    const clipMarker = '<div>CCTV Clip';
+    const clipIndex = body.indexOf(clipMarker);
+    return clipIndex === -1
+      ? `${body}${imagesHtml}`
+      : `${body.slice(0, clipIndex)}${imagesHtml}${body.slice(clipIndex)}`;
+  }
+
+  function buildTeamsHtml(facebookText = "") {
+    const activeSelected = edrReports.filter(r => r.selected && !r.done);
+    if (!activeSelected.length) return "";
+
+    const dividerHtml = '<div><br>────────────────────────────────────────<br><br></div>';
+    const edrBodyHtml = activeSelected.map(r => reportTeamsHtml(r)).join(dividerHtml);
+
+    let fbHtml = "";
+    const fb = String(facebookText || "").trim();
+    if (fb) {
+      const fbDate = formatFacebookDate(todayLocal());
+      const fbLines = fb.split(/\n+/).map(l => clean(l)).filter(Boolean).map(line => {
+        const u = safeUrl(line);
+        return u
+          ? `<div><a href="${escapeHtml(u)}">${escapeHtml(line)}</a></div>`
+          : `<div>${escapeHtml(line)}</div>`;
+      }).join("");
+
+      fbHtml = `${activeSelected.length ? dividerHtml : ""}<div><strong>Facebook shared post ${escapeHtml(fbDate)}</strong></div>${fbLines}`;
+    }
+
+    return `<div style="font-family:Arial,sans-serif;font-size:10pt;color:#111;line-height:1.4;">${edrBodyHtml}${fbHtml}</div>`.trim();
+  }
+
+  async function buildTeamsClipboardHtml(reports, facebookText = "") {
+    const dividerHtml = '<div style="margin:0;padding:0;line-height:1;">────────────────────────────────────────</div>';
+    const edrBodyHtml = (await Promise.all(reports.map(reportTeamsClipboardHtml))).join(dividerHtml);
+    const fb = String(facebookText || "").trim();
+    let fbHtml = "";
+    if (fb) {
+      const fbDate = formatFacebookDate(todayLocal());
+      const fbLines = fb.split(/\n+/).map(l => clean(l)).filter(Boolean).map(line => {
+        const u = safeUrl(line);
+        return u
+          ? `<div><a href="${escapeHtml(u)}">${escapeHtml(line)}</a></div>`
+          : `<div>${escapeHtml(line)}</div>`;
+      }).join("");
+      fbHtml = `${dividerHtml}<div style="margin:0;padding:0;"><strong>Facebook Shared Post:</strong></div>${fbLines}`;
+    }
+    const fragment = `<div style="font-family:Arial,sans-serif;font-size:10pt;color:#111;line-height:1.2;margin:0;padding:0;">${edrBodyHtml}${fbHtml}</div>`;
+    return `<!DOCTYPE html><html><body><!--StartFragment-->${fragment}<!--EndFragment--></body></html>`;
+  }
+
+  async function dataUrlToPngBlob(dataUrl) {
+    if (!dataUrl || typeof dataUrl !== "string" || !dataUrl.startsWith("data:image/")) {
+      return null;
+    }
+    try {
+      const res = await fetch(dataUrl);
+      const blob = await res.blob();
+      if (blob.type === "image/png") {
+        return blob;
+      }
+      return await new Promise((resolve) => {
+        const img = new Image();
+        img.crossOrigin = "anonymous";
+        img.onload = () => {
+          const canvas = document.createElement("canvas");
+          canvas.width = img.naturalWidth || img.width;
+          canvas.height = img.naturalHeight || img.height;
+          const ctx = canvas.getContext("2d");
+          ctx.drawImage(img, 0, 0);
+          canvas.toBlob(b => resolve(b), "image/png");
+        };
+        img.onerror = () => resolve(null);
+        img.src = dataUrl;
+      });
+    } catch (err) {
+      console.warn("dataUrlToPngBlob error:", err);
+      return null;
+    }
+  }
+
+  function reportHtml(report, includeImage = true) {
+    const topLine = [report.site, "CCTV", report.account].filter(Boolean).join(" | ");
+
+    const shots = includeImage
+      ? (Array.isArray(report.screenshots) && report.screenshots.length
+          ? report.screenshots
+          : (report.screenshotData ? [report.screenshotData] : []))
+      : [];
+
+    const screenshotsHtml = shots.length
+      ? `<div class="edr-preview-shots" style="display:flex; flex-wrap:wrap; gap:8px; margin:8px 0 6px 0;">` +
+        shots.map((shot, idx) =>
+          `<div class="edr-preview-shot" style="position:relative; flex:0 0 auto;">` +
+          `<img src="${shot}" alt="CCTV Screenshot ${idx + 1}" style="max-width:100%; max-height:220px; border-radius:4px; border:1px solid var(--border-default); display:block; object-fit:contain; cursor:pointer;" data-shot-idx="${idx}" title="Click to view full screenshot">` +
+          `</div>`
+        ).join("") +
+        `</div>`
+      : "";
+
+    const links = Array.isArray(report.clipLinks) && report.clipLinks.length
+      ? report.clipLinks
+      : (report.clipLink ? [report.clipLink] : []);
+
+    const clipsHtml = links.map((link, idx) => {
+      const clipUrl = safeUrl(link);
+      if (!clipUrl) return "";
+      const label = links.length > 1 ? `CCTV Clip ${idx + 1}:` : "CCTV Clip:";
+      return `<div class="edr-preview-line edr-preview-clip" style="margin-top:4px;"><strong>${escapeHtml(label)}</strong> <a href="${clipUrl}" target="_blank" rel="noopener noreferrer">Click here!</a></div>`;
+    }).join("");
+
+    let subjectLinesHtml = "";
+    if (window.EDR_MULTI_SUBJECT && Array.isArray(report.subjects) && report.subjects.length > 0) {
+      const subjects = report.subjects;
+      const allSameTl = subjects.every(s => s.supervisorName === subjects[0].supervisorName);
+      const allSameAccount = subjects.every(s => s.account === subjects[0].account);
+      const allSameInfraction = subjects.every(s => s.infraction === subjects[0].infraction);
+      if (allSameTl && allSameAccount && allSameInfraction) {
+        const agentNames = subjects.map(s => escapeHtml(s.name)).join(", ");
+        const isAllTl = subjects.every(s => s.type === "Team Leader");
+        const tlHeader = (!isAllTl && subjects[0].supervisorName)
+          ? `<div class="edr-preview-line"><strong>Team Leader:</strong> ${escapeHtml(subjects[0].supervisorName || "")}</div>`
+          : (isAllTl && subjects[0].supervisorName && subjects[0].supervisorName.toLowerCase() !== subjects[0].name.toLowerCase()
+              ? `<div class="edr-preview-line"><strong>Supervisor:</strong> ${escapeHtml(subjects[0].supervisorName)}</div>`
+              : "");
+        subjectLinesHtml = `
+          ${tlHeader}
+          <div class="edr-preview-line"><strong>${isAllTl ? "Team Leaders" : "Agents"}:</strong> ${agentNames}</div>
+          <div class="edr-preview-line"><strong>Account/Campaign:</strong> ${escapeHtml(subjects[0].account || "")}</div>
+          ${subjects[0].infraction ? `<div class="edr-preview-line"><strong>Infraction:</strong> ${escapeHtml(subjects[0].infraction)}</div>` : ""}
+        `;
+      } else {
+        const isAllTl = subjects.every(s => s.type === "Team Leader");
+        const isAllAgent = subjects.every(s => s.type !== "Team Leader");
+        const listHeader = isAllTl ? "Team Leaders:" : (isAllAgent ? "Agents:" : "Subjects:");
+        const subList = subjects.map(s => {
+          const parts = [escapeHtml(s.name)];
+          if (s.supervisorName && (s.type !== "Team Leader" || s.supervisorName.toLowerCase() !== s.name.toLowerCase())) {
+            parts.push(escapeHtml(s.supervisorName));
+          }
+          if (s.account) parts.push(escapeHtml(s.account));
+          if (s.infraction) parts.push(escapeHtml(s.infraction));
+          return `<div>${parts.join(" &mdash; ")}</div>`;
+        }).join("");
+        subjectLinesHtml = `
+          <div class="edr-preview-line" style="margin-top:4px;"><strong>${listHeader}</strong></div>
+          <div style="font-size:11.5px; line-height:1.4; padding-left:4px;">${subList}</div>
+        `;
+      }
+    } else {
+      const isTlLegacy = report.subjectType === "Team Leader";
+      const supLegacy = report.supervisorName || "";
+      const showSup = !isTlLegacy || (supLegacy && supLegacy.toLowerCase() !== (report.subjectName || "").toLowerCase());
+      subjectLinesHtml = `
+        ${showSup ? `<div class="edr-preview-line"><strong>${escapeHtml(supervisorOutputLabel(report))}:</strong> ${escapeHtml(supLegacy)}</div>` : ""}
+        <div class="edr-preview-line"><strong>${escapeHtml(subjectOutputLabel(report))}:</strong> ${escapeHtml(report.subjectName || "")}</div>
+        <div class="edr-preview-line"><strong>Account/Campaign:</strong> ${escapeHtml(report.account || "")}</div>
+      `;
+    }
+
+    return `<div class="edr-preview-card" data-edr-id="${escapeHtml(report.id)}" style="padding:10px 12px; font-size:12px; line-height:1.45;">` +
+      `<div style="font-weight:700; color:var(--accent-primary); margin-bottom:5px;">${escapeHtml(topLine)}</div>` +
+      `<div class="edr-preview-line"><strong>Date:</strong> ${escapeHtml(formatDate(report.date))}</div>` +
+      `<div class="edr-preview-line"><strong>Time Observed:</strong> ${escapeHtml(report.timeObserved || report.timeStart || "")}</div>` +
+      subjectLinesHtml +
+      `<div class="edr-preview-line"><strong>Incident:</strong> ${escapeHtml(report.incident || "")}</div>` +
+      `<div class="edr-preview-line"><strong>Action Taken/Remarks:</strong> ${escapeHtml(report.action || "")}</div>` +
+      screenshotsHtml +
+      clipsHtml +
+    `</div>`;
+  }
+
+  function notify() {
+    listeners.forEach(fn => {
+      try { fn(edrReports); } catch (e) { console.error(e); }
+    });
+  }
+
+  return {
+    async init() {
+      await this.loadReports();
+      for (const rep of edrReports) {
+        if (rep.selected && !rep.done && !rep.screenshotData && rep.screenshotFileId) {
+          this.ensureRemoteScreenshot(rep).catch(() => {});
+        }
+      }
+      return edrReports;
+    },
+
+    onChange(fn) {
+      if (typeof fn === "function") {
+        listeners.push(fn);
+        fn(edrReports);
+      }
+    },
+
+    subscribe(fn) {
+      if (typeof fn === "function") {
+        listeners.push(fn);
+        fn(edrReports);
+      }
+      return () => {
+        listeners = listeners.filter(f => f !== fn);
+      };
+    },
+
+    getReports() {
+      return edrReports;
+    },
+
+    getReport(id) {
+      return edrReports.find(r => r.id === id) || null;
+    },
+
+    getAllReports() {
+      return [...(edrReports || [])];
+    },
+
+    addBulkReports(reports) {
+      if (Array.isArray(reports)) {
+        reports.forEach(r => edrReports.push(r));
+        notify();
+      }
+    },
+
+    async restoreReports(reports) {
+      if (!Array.isArray(reports)) return 0;
+      edrReports = JSON.parse(JSON.stringify(reports));
+      editingId = null;
+      await this.saveReports();
+      notify();
+      return edrReports.length;
+    },
+
+    notify() {
+      notify();
+    },
+
+    getEditingReport() {
+      return editingId ? edrReports.find(r => r.id === editingId) : null;
+    },
+
+    setEditingId(id) {
+      editingId = id;
+    },
+
+    async loadReports() {
+      try {
+        let reports = null;
+        let loadedState = null;
+
+        // 1. Primary authoritative workspace: cctv_edr_workspace_v2 (store: 'state', key: 'current')
+        const workspace = await this.readWorkspaceDb();
+        if (workspace && Array.isArray(workspace.reports)) {
+          reports = workspace.reports;
+          loadedState = workspace;
+        } else {
+          // 2. Fallback check: cctv_pending_reports_v1
+          let saved = await storage.idbGet(DB_NAME, STORE_NAME, STATE_KEY, 1, (db) => {
+            if (!db.objectStoreNames.contains(STORE_NAME)) {
+              db.createObjectStore(STORE_NAME);
+            }
+          });
+          if (Array.isArray(saved)) {
+            reports = saved;
+          }
+        }
+
+        if (loadedState) {
+          if (typeof loadedState.facebookText === "string" && !currentFacebookText) {
+            currentFacebookText = loadedState.facebookText;
+          }
+          if (loadedState.form && typeof loadedState.form === "object" && !currentFormDraft) {
+            currentFormDraft = loadedState.form;
+          }
+        }
+
+        edrReports = Array.isArray(reports) ? reports : [];
+        edrReports = (edrReports || []).map(r => {
+          if (!r) return r;
+          if (r.audited === undefined) r.audited = false;
+          if (r.auditedAt === undefined) r.auditedAt = null;
+          if (r.teamsCopied === undefined) r.teamsCopied = false;
+          if (r.teamsCopiedAt === undefined) r.teamsCopiedAt = null;
+          if (r.done === undefined) r.done = false;
+          return r;
+        });
+
+        // Ensure remote screenshots are loaded for reports with screenshotFileId
+        for (const rep of edrReports) {
+          if (!rep.screenshotData && rep.screenshotFileId) {
+            this.ensureRemoteScreenshot(rep).catch(() => {});
+          }
+        }
+      } catch (err) {
+        console.warn("Could not load EDRs from IndexedDB, fallback to empty list:", err);
+        edrReports = [];
+      }
+      notify();
+      return edrReports;
+    },
+
+    async openWorkspaceDb() {
+      const dbName = cfg.DATABASES.EDR || "cctv_edr_workspace_v2";
+      return new Promise((resolve, reject) => {
+        const req = indexedDB.open(dbName, 1);
+        req.onupgradeneeded = () => {
+          const db = req.result;
+          if (!db.objectStoreNames.contains("state")) {
+            db.createObjectStore("state", { keyPath: "key" });
+          }
+        };
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+      });
+    },
+
+    async readWorkspaceDb() {
+      try {
+        const db = await this.openWorkspaceDb();
+        return new Promise((resolve) => {
+          const tx = db.transaction("state", "readonly");
+          const req = tx.objectStore("state").get("current");
+          req.onsuccess = () => {
+            const val = req.result ? req.result.value : null;
+            resolve(val);
+          };
+          req.onerror = () => resolve(null);
+          tx.oncomplete = () => db.close();
+        });
+      } catch (err) {
+        console.warn("readWorkspaceDb error:", err);
+        return null;
+      }
+    },
+
+    async writeWorkspaceDb(stateObj) {
+      try {
+        const db = await this.openWorkspaceDb();
+        return new Promise((resolve, reject) => {
+          const tx = db.transaction("state", "readwrite");
+          tx.objectStore("state").put({ key: "current", value: stateObj });
+          tx.oncomplete = () => {
+            db.close();
+            resolve(true);
+          };
+          tx.onerror = () => {
+            db.close();
+            reject(tx.error);
+          };
+        });
+      } catch (err) {
+        console.error("writeWorkspaceDb error:", err);
+      }
+    },
+
+    async saveReports(optionalReports) {
+      if (Array.isArray(optionalReports)) {
+        edrReports = optionalReports;
+      }
+      if (saveReportsTimer) {
+        clearTimeout(saveReportsTimer);
+        saveReportsTimer = null;
+      }
+      try {
+        // Guard against empty overwrite if database currently has valid records
+        if (!Array.isArray(edrReports) || edrReports.length === 0) {
+          const existing = await this.readWorkspaceDb();
+          if (existing && Array.isArray(existing.reports) && existing.reports.length > 0) {
+            edrReports = existing.reports;
+          }
+        }
+
+        const workspaceState = {
+          reports: edrReports,
+          facebookText: currentFacebookText,
+          form: currentFormDraft,
+          tlOptions: this.getTeamLeaderNames(),
+          omOptions: this.getOmNames(),
+          accountOptions: this.getAccountNames(),
+          savedAt: new Date().toISOString()
+        };
+
+        // 1. Authoritative write to scoped workspace DB
+        await this.writeWorkspaceDb(workspaceState);
+
+        // 2. Dual-save to scoped cctv_pending_reports_v1 for backward compatibility
+        await storage.idbSet(DB_NAME, STORE_NAME, edrReports, STATE_KEY, 1, (db) => {
+          if (!db.objectStoreNames.contains(STORE_NAME)) {
+            db.createObjectStore(STORE_NAME);
+          }
+        });
+      } catch (err) {
+        console.error("Could not persist EDRs to IndexedDB:", err);
+      }
+      notify();
+    },
+
+    async restoreAuthorizedRecords(recordsToRestore) {
+      if (!Array.isArray(recordsToRestore) || recordsToRestore.length === 0) {
+        return { restored: 0, total: (edrReports || []).length };
+      }
+
+      await this.loadReports();
+
+      const existingMap = new Map((edrReports || []).map(r => [r.id, r]));
+      let addedCount = 0;
+      let updatedCount = 0;
+
+      for (const rec of recordsToRestore) {
+        if (!rec || !rec.id) continue;
+        const existing = existingMap.get(rec.id);
+        if (!existing) {
+          const safeRec = {
+            ...rec,
+            audited: rec.audited !== undefined ? rec.audited : false,
+            auditedAt: rec.auditedAt !== undefined ? rec.auditedAt : null,
+            teamsCopied: rec.teamsCopied !== undefined ? rec.teamsCopied : false,
+            teamsCopiedAt: rec.teamsCopiedAt !== undefined ? rec.teamsCopiedAt : null,
+            done: rec.done !== undefined ? rec.done : false
+          };
+          edrReports.push(safeRec);
+          existingMap.set(rec.id, safeRec);
+          addedCount++;
+        } else {
+          let changed = false;
+          if (!existing.screenshotData && rec.screenshotData) {
+            existing.screenshotData = rec.screenshotData;
+            changed = true;
+          }
+          if (!existing.screenshotFileId && rec.screenshotFileId) {
+            existing.screenshotFileId = rec.screenshotFileId;
+            changed = true;
+          }
+          if (changed) updatedCount++;
+        }
+      }
+
+      if (addedCount > 0 || updatedCount > 0) {
+        await this.saveReports();
+        notify();
+      }
+
+      return {
+        restored: addedCount,
+        updated: updatedCount,
+        total: edrReports.length
+      };
+    },
+    saveReportsDebounced(delay = 150) {
+      if (saveReportsTimer) clearTimeout(saveReportsTimer);
+      saveReportsTimer = setTimeout(() => {
+        saveReportsTimer = null;
+        this.saveReports().catch(console.error);
+      }, delay);
+    },
+    // Draft Management
+    getDraftForm() {
+      return currentFormDraft ? { ...currentFormDraft } : null;
+    },
+
+    async saveDraftForm(formData) {
+      currentFormDraft = { ...formData };
+      await this.saveReports();
+    },
+
+    async clearDraftForm() {
+      currentFormDraft = null;
+      this.saveReportsDebounced(250);
+    },
+
+    getFacebookText() {
+      return currentFacebookText || "";
+    },
+
+    async saveFacebookText(text) {
+      currentFacebookText = String(text || "");
+      await this.saveReports();
+    },
+
+    async saveReport(data) {
+      return this.createOrUpdate(data);
+    },
+
+    async createOrUpdate(data) {
+      let saved = null;
+      // Strip UI-only role prefixes from all stored fields
+      const cleanedData = { ...data };
+      if (Array.isArray(cleanedData.subjects)) {
+        cleanedData.subjects = cleanedData.subjects.map(s => ({
+          ...s,
+          name: stripRolePrefix(s.name),
+          supervisorName: stripRolePrefix(s.supervisorName)
+        }));
+        if (!cleanedData.subjectName && cleanedData.subjects.length > 0) {
+          cleanedData.subjectName = cleanedData.subjects.map(s => s.name).join(", ");
+        }
+        if (!cleanedData.supervisorName && cleanedData.subjects.length > 0) {
+          cleanedData.supervisorName = cleanedData.subjects[0].supervisorName || cleanedData.defaultTl || "";
+        }
+      }
+      if (cleanedData.subjectName) cleanedData.subjectName = stripRolePrefix(cleanedData.subjectName);
+      if (cleanedData.supervisorName) cleanedData.supervisorName = stripRolePrefix(cleanedData.supervisorName);
+      if (cleanedData.omName) cleanedData.omName = stripRolePrefix(cleanedData.omName);
+      if (cleanedData.defaultTl) cleanedData.defaultTl = stripRolePrefix(cleanedData.defaultTl);
+
+      const targetId = editingId || (cleanedData.id && edrReports.some(r => r.id === cleanedData.id) ? cleanedData.id : null);
+      if (!targetId) {
+        const sig = [
+          cleanedData.date || "",
+          cleanedData.startTime || "",
+          cleanedData.site || "",
+          cleanedData.account || "",
+          cleanedData.agentName || cleanedData.subjectName || ""
+        ].join("|");
+        const now = Date.now();
+        if (sig === lastEdrSubmitSignature && (now - lastEdrSubmitTime < 2500)) {
+          return edrReports[0] || null;
+        }
+        lastEdrSubmitTime = now;
+        lastEdrSubmitSignature = sig;
+      }
+      if (targetId) {
+        const idx = edrReports.findIndex(r => r.id === targetId);
+        if (idx !== -1) {
+          const oldShots = edrReports[idx].screenshots || (edrReports[idx].screenshotData ? [edrReports[idx].screenshotData] : []);
+          const newShots = cleanedData.screenshots || (cleanedData.screenshotData ? [cleanedData.screenshotData] : []);
+          const screenshotChanged = (cleanedData.screenshotData !== edrReports[idx].screenshotData) ||
+            (JSON.stringify(newShots) !== JSON.stringify(oldShots));
+
+          // Preserve historical audited completion flag and teams status across edits
+          const existingAudited = (cleanedData && typeof cleanedData.audited === "boolean") ? cleanedData.audited : (edrReports[idx].audited ?? false);
+          const existingAuditedAt = (cleanedData && cleanedData.auditedAt !== undefined) ? cleanedData.auditedAt : (edrReports[idx].auditedAt ?? null);
+          const existingTeamsCopied = (cleanedData && typeof cleanedData.teamsCopied === "boolean") ? cleanedData.teamsCopied : (edrReports[idx].teamsCopied ?? false);
+          const existingTeamsCopiedAt = (cleanedData && cleanedData.teamsCopiedAt !== undefined) ? cleanedData.teamsCopiedAt : (edrReports[idx].teamsCopiedAt ?? null);
+
+          edrReports[idx] = {
+            ...edrReports[idx],
+            ...cleanedData,
+            id: targetId, // preserve exact record ID across edits
+            audited: existingAudited,
+            auditedAt: existingAuditedAt,
+            teamsCopied: existingTeamsCopied,
+            teamsCopiedAt: existingTeamsCopiedAt,
+            screenshotChanged,
+            updatedAt: new Date().toISOString()
+          };
+          saved = edrReports[idx];
+        }
+        editingId = null;
+      } else {
+        const newShots = cleanedData.screenshots || (cleanedData.screenshotData ? [cleanedData.screenshotData] : []);
+        const newId = uid();
+        saved = {
+          ...cleanedData,
+          id: newId, // brand-new record identity guaranteed
+          selected: true,
+          done: false,
+          doneAt: "",
+          audited: false,
+          auditedAt: null,
+          teamsCopied: false,
+          teamsCopiedAt: null,
+          cloudSynced: false,
+          screenshotChanged: newShots.length > 0,
+          screenshotFileId: "",
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        };
+        edrReports.unshift(saved);
+      }
+
+      await this.saveReports();
+
+      // Authoritative Masterlist option persistence for any newly entered values
+      if (window.masterlistService) {
+        try {
+          const meta = { site: data.site, account: data.account, om: data.omName };
+          if (data.supervisorName) {
+            window.masterlistService.addRespondent(data.supervisorName, data.supervisorRole || "Team Leader", meta);
+          }
+          if (data.omName) {
+            window.masterlistService.addDedicatedOm(data.omName, meta);
+          }
+          if (data.account) {
+            window.masterlistService.addAccount(data.account, meta);
+          }
+        } catch (e) {
+          console.warn("Auto-persisting EDR options to Masterlist encountered error:", e);
+        }
+      }
+
+      // Auto sync with Google Docs if connected
+      if (saved && this.isValidDocsUrl(this.getDocsUrl())) {
+        this.syncReportToGoogleDocs(saved).catch(err => console.warn("Google Docs auto-sync failed:", err));
+      }
+
+      return saved;
+    },
+
+    async deleteReport(id) {
+      edrReports = edrReports.filter(r => r.id !== id);
+      if (editingId === id) editingId = null;
+      await this.saveReports();
+
+      // Delete from Google Docs if connected
+      if (this.isValidDocsUrl(this.getDocsUrl())) {
+        this.deleteReportFromGoogleDocs(id).catch(err => console.warn("Google Docs delete failed:", err));
+      }
+    },
+
+    async deleteSelectedReports() {
+      const toDelete = edrReports.filter(r => r.selected);
+      if (!toDelete.length) return 0;
+      const idsToDelete = toDelete.map(r => r.id);
+      edrReports = edrReports.filter(r => !r.selected);
+      if (idsToDelete.includes(editingId)) editingId = null;
+      await this.saveReports();
+      notify();
+
+      if (this.isValidDocsUrl(this.getDocsUrl())) {
+        for (const id of idsToDelete) {
+          this.deleteReportFromGoogleDocs(id).catch(err => console.warn("Google Docs delete failed:", err));
+        }
+      }
+      return toDelete.length;
+    },
+
+    toggleSelect(id, selected) {
+      const rep = edrReports.find(r => r.id === id);
+      if (rep) {
+        rep.selected = typeof selected === "boolean" ? selected : !rep.selected;
+        notify();
+        this.saveReportsDebounced(150);
+        if (rep.selected && !rep.screenshotData && rep.screenshotFileId) {
+          this.ensureRemoteScreenshot(rep).then(() => notify()).catch(() => {});
+        }
+      }
+    },
+
+    selectAll(select = true) {
+      for (const r of edrReports) {
+        r.selected = select;
+      }
+      notify();
+      this.saveReportsDebounced(150);
+      if (select) {
+        for (const r of edrReports) {
+          if (!r.screenshotData && r.screenshotFileId) {
+            this.ensureRemoteScreenshot(r).then(() => notify()).catch(() => {});
+          }
+        }
+      }
+    },
+
+    async toggleDone(id) {
+      const rep = edrReports.find(r => r.id === id);
+      if (rep) {
+        rep.done = !rep.done;
+        rep.doneAt = rep.done ? new Date().toISOString() : "";
+        if (rep.done) rep.selected = false;
+        rep.updatedAt = new Date().toISOString();
+        await this.saveReports();
+        notify();
+        if (this.isValidDocsUrl(this.getDocsUrl())) {
+          this.syncReportToGoogleDocs(rep).catch(() => {});
+        }
+        return rep;
+      }
+      return null;
+    },
+
+    // Saved Report Screenshot Modifiers
+    async attachScreenshotToReport(id, dataUrl) {
+      const rep = edrReports.find(r => r.id === id);
+      if (!rep) throw new Error("Report not found.");
+      if (!Array.isArray(rep.screenshots)) {
+        rep.screenshots = rep.screenshotData ? [rep.screenshotData] : [];
+      }
+      if (dataUrl) rep.screenshots.push(dataUrl);
+      rep.screenshotData = rep.screenshots[0] || dataUrl || "";
+      rep.screenshotChanged = true;
+      rep.updatedAt = new Date().toISOString();
+      await this.saveReports();
+      if (this.isValidDocsUrl(this.getDocsUrl())) {
+        await this.syncReportToGoogleDocs(rep);
+      }
+      return rep;
+    },
+
+    async replaceScreenshotOnReport(id, dataUrl) {
+      const rep = edrReports.find(r => r.id === id);
+      if (!rep) throw new Error("Report not found.");
+      rep.screenshots = dataUrl ? [dataUrl] : [];
+      rep.screenshotData = dataUrl || "";
+      rep.screenshotFileId = "";
+      rep.screenshotChanged = true;
+      rep.updatedAt = new Date().toISOString();
+      await this.saveReports();
+      if (this.isValidDocsUrl(this.getDocsUrl())) {
+        await this.syncReportToGoogleDocs(rep);
+      }
+      return rep;
+    },
+
+    async removeScreenshotFromReport(id) {
+      const rep = edrReports.find(r => r.id === id);
+      if (!rep) throw new Error("Report not found.");
+      rep.screenshots = [];
+      rep.screenshotData = "";
+      rep.screenshotFileId = "";
+      rep.screenshotChanged = true;
+      rep.updatedAt = new Date().toISOString();
+      await this.saveReports();
+      if (this.isValidDocsUrl(this.getDocsUrl())) {
+        await this.syncReportToGoogleDocs(rep);
+      }
+      return rep;
+    },
+
+    buildTeamsOutput(facebookText = "") {
+      const activeSelected = edrReports.filter(r => r.selected && !r.done);
+      const divider = "────────────────────────────────────────";
+
+      const body = activeSelected.map(r => reportPlainText(r)).join(`\n${divider}\n`);
+      let result = body;
+
+      const fb = String(facebookText || currentFacebookText || "").trim();
+      if (fb) {
+        if (result) result += `\n${divider}\n`;
+        const fbDate = formatFacebookDate(todayLocal());
+        result += `Facebook shared post ${fbDate}\n${fb}`;
+      }
+
+      return result.trim();
+    },
+
+    buildTeamsHtml(facebookText = "") {
+      return buildTeamsHtml(facebookText || currentFacebookText);
+    },
+
+    generateTeamsHtml(reports, facebookText = "") {
+      const active = Array.isArray(reports) ? reports : edrReports.filter(r => r.selected && !r.done);
+      if (!active.length) return "";
+      const dividerHtml = '<div><br>────────────────────────────────────────<br><br></div>';
+      const edrBodyHtml = active.map(r => reportTeamsHtml(r)).join(dividerHtml);
+      let fbHtml = "";
+      const fb = String(facebookText || "").trim();
+      if (fb) {
+        const fbDate = formatFacebookDate(todayLocal());
+        const fbLines = fb.split(/\n+/).map(l => clean(l)).filter(Boolean).map(line => {
+          const u = safeUrl(line);
+          return u
+            ? `<div><a href="${escapeHtml(u)}">${escapeHtml(line)}</a></div>`
+            : `<div>${escapeHtml(line)}</div>`;
+        }).join("");
+        fbHtml = `<div><br><strong>Facebook shared post ${escapeHtml(fbDate)}</strong></div>${fbLines}`;
+      }
+      return `<div style="font-family:Arial,sans-serif;font-size:10pt;color:#111;line-height:1.4;">${edrBodyHtml}${fbHtml}</div>`.trim();
+    },
+
+    generateTeamsPlainText(reports, facebookText = "") {
+      const active = Array.isArray(reports) ? reports : edrReports.filter(r => r.selected && !r.done);
+      const divider = "\n────────────────────────────────────────\n";
+      const body = active.map(r => reportPlainText(r)).join(divider);
+      let result = body;
+      const fb = String(facebookText || "").trim();
+      if (fb) {
+        if (result) result += "\n────────────────────────────────────────\n";
+        const fbDate = formatFacebookDate(todayLocal());
+        result += `Facebook shared post ${fbDate}\n${fb}`;
+      }
+      return result.trim();
+    },
+
+    buildAuditRowFromEdr(report, auditor = "Miles") {
+      const parts = String(report.date || "").split("-");
+      const year = parts[0] || new Date().getFullYear().toString();
+      const month = parts[1] ? String(parseInt(parts[1], 10)) : String(new Date().getMonth() + 1);
+      const formattedDate = parts.length === 3 ? `${month}/${parts[2]}/${year}` : report.date;
+      return {
+        rawDate: report.date || "",
+        year,
+        month,
+        formattedDate,
+        auditorName: auditor,
+        name: auditor,
+        omName: report.dedicatedOm || (report.supervisorRole === "OM" ? report.supervisorName : "") || "",
+        site: report.site || "",
+        tlName: report.supervisorRole === "Team Leader" ? report.supervisorName : "",
+        agentName: report.subjectName || "",
+        account: report.account || "",
+        cleanAccount: report.account || "General",
+        reasonCode: "SLEEPING",
+        noc: "Pending",
+        remarks: report.action || report.incident || "",
+        sourceEdrId: report.id
+      };
+    },
+
+    buildPreviewHtml(facebookText = "") {
+      const activeSelected = edrReports.filter(r => r.selected && !r.done);
+      const fb = String(facebookText || currentFacebookText || "").trim();
+      if (!activeSelected.length && !fb) {
+        return '<div style="color:var(--text-muted); font-size:12px; padding:16px 12px; text-align:center;">Create or select active EDRs above to generate the Teams-ready output.</div>';
+      }
+
+      const divider = '<div class="edr-preview-divider" style="padding:8px 12px; color:var(--text-muted); font-family:var(--font-mono); font-size:11px; letter-spacing:1px; user-select:none; opacity:0.75;">────────────────────────────────────────</div>';
+      let html = activeSelected.map(r => reportHtml(r, true)).join(divider);
+      if (fb) {
+        const fbDate = formatFacebookDate(todayLocal());
+        const links = fb.split(/\n+/).filter(Boolean).map(line => {
+          const u = safeUrl(line);
+          return u
+            ? `<div><a href="${u}" target="_blank" rel="noopener noreferrer">${escapeHtml(line)}</a></div>`
+            : `<div>${escapeHtml(line)}</div>`;
+        }).join("");
+
+        const fbDivider = activeSelected.length ? divider : "";
+        html += `
+          ${fbDivider}
+          <div style="padding:10px 12px; font-size:12px; line-height:1.45;">
+            <div style="font-weight:700; color:var(--accent-primary); margin-bottom:5px;">Facebook shared post ${escapeHtml(fbDate)}</div>
+            ${links}
+          </div>
+        `;
+      }
+      return html;
+    },
+
+    /**
+     * Copy All to Microsoft Teams Clipboard
+      * Multi-MIME with text/plain and compact text/html containing inline images.
+     */
+    async copyAllToTeams(facebookText = "") {
+      const activeSelected = edrReports.filter(r => r.selected && !r.done);
+      if (!activeSelected.length) {
+        throw new Error("No active selected EDRs to copy.");
+      }
+
+      // Ensure remote screenshots are loaded
+      for (const report of activeSelected) {
+        if (!report.screenshotData && (!report.screenshots || !report.screenshots.length) && report.screenshotFileId) {
+          await this.ensureRemoteScreenshot(report);
+        }
+      }
+
+      const fb = facebookText || currentFacebookText;
+      const plainText = this.buildTeamsOutput(fb);
+      const safePlainText = plainText.replace(/data:image\/[a-zA-Z0-9.+-]+;base64,[A-Za-z0-9+/=]+/g, "").trim();
+      const richHtml = await buildTeamsClipboardHtml(activeSelected, fb);
+
+      let wroteSuccessfully = false;
+
+      // Clean multi-MIME write: text/plain + text/html ONLY
+      if (window.ClipboardItem && navigator.clipboard && navigator.clipboard.write) {
+        try {
+          const clipboardData = {
+            "text/plain": new Blob([safePlainText], { type: "text/plain" }),
+            "text/html": new Blob([richHtml], { type: "text/html" })
+          };
+          await navigator.clipboard.write([
+            new ClipboardItem(clipboardData)
+          ]);
+          wroteSuccessfully = true;
+        } catch (err) {
+          console.warn("ClipboardItem write failed, attempting text fallback:", err);
+        }
+      }
+
+      // Rich copy event fallback
+      if (!wroteSuccessfully) {
+        try {
+          const onCopy = (e) => {
+            e.preventDefault();
+            e.clipboardData.setData("text/plain", safePlainText);
+            e.clipboardData.setData("text/html", richHtml);
+          };
+          document.addEventListener("copy", onCopy, { once: true });
+          wroteSuccessfully = document.execCommand("copy");
+        } catch (_) {}
+      }
+
+      if (!wroteSuccessfully) {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          try {
+            await navigator.clipboard.writeText(safePlainText);
+            wroteSuccessfully = true;
+          } catch (_) {
+            // Fallback to hidden textarea execCommand
+          }
+        }
+        if (!wroteSuccessfully) {
+          try {
+            const ta = document.createElement("textarea");
+            ta.value = safePlainText;
+            ta.style.position = "fixed";
+            ta.style.left = "-9999px";
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand("copy");
+            ta.remove();
+            wroteSuccessfully = true;
+          } catch (_) {}
+        }
+      }
+
+      if (!wroteSuccessfully) {
+        throw new Error("Unable to copy EDR to clipboard. Please check browser permissions or focus the document.");
+      }
+
+      const copiedTimestamp = new Date().toISOString();
+      for (const r of activeSelected) {
+        r.teamsCopied = true;
+        r.teamsCopiedAt = copiedTimestamp;
+        r.selected = false;
+        r.updatedAt = copiedTimestamp;
+        if (r.audited) {
+          r.done = true;
+          r.doneAt = copiedTimestamp;
+        }
+      }
+      await this.saveReports();
+      notify();
+
+      const totalScreenshotsCount = activeSelected.reduce((acc, r) => {
+        const count = Array.isArray(r.screenshots) && r.screenshots.length
+          ? r.screenshots.length
+          : (r.screenshotData ? 1 : 0);
+        return acc + count;
+      }, 0);
+
+      return {
+        count: activeSelected.length,
+        hasScreenshot: totalScreenshotsCount > 0,
+        richHtml,
+        plainText: safePlainText,
+        wroteSuccessfully,
+        inlineScreenshotCount: totalScreenshotsCount
+      };
+    },
+
+    getUncopiedTeamsCount() {
+      return (edrReports || []).filter(r => !r.teamsCopied && !r.done).length;
+    },
+
+    getUnauditedCount() {
+      return (edrReports || []).filter(r => !r.audited && !r.done).length;
+    },
+
+    getActionNeededCount() {
+      return (edrReports || []).filter(r => (!r.teamsCopied || !r.audited) && !r.done).length;
+    },
+
+    async copyScreenshot(reportOrDataUrl) {
+      let dataUrl = "";
+      if (typeof reportOrDataUrl === "string") {
+        dataUrl = reportOrDataUrl;
+      } else if (reportOrDataUrl && (reportOrDataUrl.screenshotData || (Array.isArray(reportOrDataUrl.screenshots) && reportOrDataUrl.screenshots.length))) {
+        dataUrl = reportOrDataUrl.screenshotData || reportOrDataUrl.screenshots[0];
+      } else if (reportOrDataUrl && reportOrDataUrl.screenshotFileId) {
+        await this.ensureRemoteScreenshot(reportOrDataUrl);
+        dataUrl = reportOrDataUrl.screenshotData || (reportOrDataUrl.screenshots && reportOrDataUrl.screenshots[0]) || "";
+      } else {
+        const sel = edrReports.find(r => r.selected && !r.done && (r.screenshotData || (Array.isArray(r.screenshots) && r.screenshots.length) || r.screenshotFileId));
+        if (sel) {
+          if (!sel.screenshotData && (!sel.screenshots || !sel.screenshots.length) && sel.screenshotFileId) {
+            await this.ensureRemoteScreenshot(sel);
+          }
+          dataUrl = sel.screenshotData || (sel.screenshots && sel.screenshots[0]) || "";
+        }
+      }
+
+      if (!dataUrl) {
+        throw new Error("No screenshot found to copy.");
+      }
+
+      const pngBlob = await dataUrlToPngBlob(dataUrl);
+      if (!pngBlob) {
+        throw new Error("Failed to process screenshot as PNG image.");
+      }
+
+      if (!window.ClipboardItem || !navigator.clipboard || !navigator.clipboard.write) {
+        throw new Error("Browser clipboard does not support native image copying.");
+      }
+
+      await navigator.clipboard.write([
+        new ClipboardItem({
+          "image/png": pngBlob
+        })
+      ]);
+
+      return true;
+    },
+
+    dataUrlToBlob(dataUrl) {
+      return dataUrlToPngBlob(dataUrl);
+    },
+
+    getTeamLeaderNames() {
+      return window.getTeamLeaderNames ? window.getTeamLeaderNames() : (cfg.DEFAULTS.TLS || []);
+    },
+
+    getOmNames() {
+      return window.getOmNames ? window.getOmNames() : (cfg.DEFAULTS.OMS || []);
+    },
+
+    getAccountNames() {
+      return window.getAccountNames ? window.getAccountNames() : (cfg.DEFAULTS.ACCOUNTS || []);
+    },
+
+    // Option Management (Role-aware People Registry)
+    addSupervisorOption(role, name, meta = {}) {
+      if (window.CCTV_PEOPLE?.addCustomPerson) {
+        return window.CCTV_PEOPLE.addCustomPerson(name, role, meta).added;
+      }
+      if (window.masterlistService) {
+        return window.masterlistService.addRespondent(name, role, meta).added;
+      }
+      if (window.addCustomOption) {
+        return window.addCustomOption(role === "OM" ? "oms" : "tls", name, meta);
+      }
+      return false;
+    },
+
+    removeSupervisorOption(role, name) {
+      if (window.CCTV_PEOPLE?.removeCustomPerson) {
+        return window.CCTV_PEOPLE.removeCustomPerson(name, role).success;
+      }
+      if (window.masterlistService) {
+        return window.masterlistService.removeRespondent(name, role);
+      }
+      if (window.removeCustomOption) {
+        return window.removeCustomOption(role === "OM" ? "oms" : "tls", name);
+      }
+      return false;
+    },
+
+    addEmployeeOption(name, role = "Agent", meta = {}) {
+      if (window.CCTV_PEOPLE?.addCustomPerson) {
+        return window.CCTV_PEOPLE.addCustomPerson(name, role, meta).added;
+      }
+      if (window.masterlistService?.addAgent) {
+        return window.masterlistService.addAgent(name, meta).added;
+      }
+      return false;
+    },
+
+    removeEmployeeOption(name, role = "Agent") {
+      if (window.CCTV_PEOPLE?.removeCustomPerson) {
+        return window.CCTV_PEOPLE.removeCustomPerson(name, role).success;
+      }
+      if (window.masterlistService?.removeAgent) {
+        return window.masterlistService.removeAgent(name);
+      }
+      return false;
+    },
+
+    addDedicatedOmOption(name, meta = {}) {
+      if (window.masterlistService) {
+        return window.masterlistService.addDedicatedOm(name, meta).added;
+      }
+      if (window.addCustomOption) {
+        return window.addCustomOption("oms", name, meta);
+      }
+      return false;
+    },
+
+    removeDedicatedOmOption(name) {
+      if (window.masterlistService) {
+        return window.masterlistService.removeDedicatedOm(name);
+      }
+      if (window.removeCustomOption) {
+        return window.removeCustomOption("oms", name);
+      }
+      return false;
+    },
+
+    addAccountOption(name, meta = {}) {
+      if (window.masterlistService) {
+        return window.masterlistService.addAccount(name, meta).added;
+      }
+      if (window.addCustomOption) {
+        return window.addCustomOption("accounts", name, meta);
+      }
+      return false;
+    },
+
+    removeAccountOption(name) {
+      if (window.masterlistService) {
+        return window.masterlistService.removeAccount(name);
+      }
+      if (window.removeCustomOption) {
+        return window.removeCustomOption("accounts", name);
+      }
+      return false;
+    },
+
+    // Google Docs Receiver Web App Integration (V1 JSONP & POST Parity)
+    getDocsUrl() {
+      return String(localStorage.getItem(cfg.KEYS.EDR_DOCS_URL) || "").trim();
+    },
+
+    setDocsUrl(url) {
+      const cleanUrl = String(url || "").trim();
+      localStorage.setItem(cfg.KEYS.EDR_DOCS_URL, cleanUrl);
+      return cleanUrl;
+    },
+
+    clearDocsUrl() {
+      localStorage.removeItem(cfg.KEYS.EDR_DOCS_URL);
+    },
+
+    isValidDocsUrl(value) {
+      return /^https:\/\/script\.google\.com\/macros\/s\/[^/]+\/exec(?:\?.*)?$/i.test(
+        String(value || "").trim()
+      );
+    },
+
+    edrDocsJsonp(params = {}, overrideUrl = "") {
+      const url = String(overrideUrl || this.getDocsUrl()).trim();
+
+      if (!this.isValidDocsUrl(url)) {
+        return Promise.reject(new Error("Google Docs Web App URL is not configured."));
+      }
+
+      return new Promise((resolve, reject) => {
+        const callbackName =
+          "__edrDocsCb_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 7);
+
+        const query = new URLSearchParams({
+          ...params,
+          callback: callbackName,
+          _: String(Date.now())
+        });
+
+        const script = document.createElement("script");
+        let timeoutId = null;
+
+        function cleanup() {
+          clearTimeout(timeoutId);
+          script.remove();
+          try { delete window[callbackName]; } catch (_) { window[callbackName] = undefined; }
+        }
+
+        window[callbackName] = payload => {
+          cleanup();
+
+          if (!payload || payload.ok === false) {
+            reject(new Error(payload?.error || "Google Docs sync request failed."));
+            return;
+          }
+
+          resolve(payload);
+        };
+
+        script.onerror = () => {
+          cleanup();
+          reject(new Error("Could not reach the Google Docs Apps Script Web App."));
+        };
+
+        timeoutId = setTimeout(() => {
+          cleanup();
+          reject(new Error("Google Docs sync timed out."));
+        }, 20000);
+
+        script.src = url + (url.includes("?") ? "&" : "?") + query.toString();
+        document.head.appendChild(script);
+      });
+    },
+
+    async testDocsConnection(urlOverride = "") {
+      const typedUrl = String(urlOverride || this.getDocsUrl()).trim();
+
+      if (!this.isValidDocsUrl(typedUrl)) {
+        throw new Error("Web App URL must end in /exec.");
+      }
+
+      const payload = await this.edrDocsJsonp({ action: "ping" }, typedUrl);
+      return payload;
+    },
+
+    cloudRecordPayload(report) {
+      const clipLinks = Array.isArray(report.clipLinks) && report.clipLinks.length
+        ? report.clipLinks
+        : (report.clipLink ? [report.clipLink] : []);
+      const screenshots = Array.isArray(report.screenshots) && report.screenshots.length
+        ? report.screenshots
+        : (report.screenshotData ? [report.screenshotData] : []);
+
+      return {
+        id: report.id,
+        site: report.site || "",
+        date: report.date || "",
+        timeObserved: report.timeObserved || report.timeStart || "",
+        timeStart: report.timeObserved || report.timeStart || "",
+        timeEnd: "",
+        supervisorRole: report.supervisorRole || "Team Leader",
+        supervisorName: report.supervisorName || "",
+        omName: report.omName || "",
+        subjectType: report.subjectType || "Agent/s",
+        subjectName: report.subjectName || "",
+        account: report.account || "",
+        incident: report.incident || "",
+        action: report.action || "",
+        clipLink: report.clipLink || (clipLinks[0] || ""),
+        clipLinks: clipLinks,
+        screenshotData: report.screenshotData || (screenshots[0] || ""),
+        screenshots: screenshots,
+        screenshotChanged: !!report.screenshotChanged,
+        screenshotFileId: report.screenshotFileId || "",
+        done: !!report.done,
+        doneAt: report.doneAt || "",
+        audited: !!report.audited,
+        auditedAt: report.auditedAt || "",
+        createdAt: report.createdAt || "",
+        updatedAt: new Date().toISOString()
+      };
+    },
+
+    normalizeCloudRecord(record) {
+      const clipLinks = Array.isArray(record.clipLinks) && record.clipLinks.length
+        ? record.clipLinks
+        : (record.clipLink ? [record.clipLink] : []);
+      const screenshots = Array.isArray(record.screenshots) && record.screenshots.length
+        ? record.screenshots
+        : (record.screenshotData ? [record.screenshotData] : []);
+
+      return {
+        id: record.id || uid(),
+        selected: false,
+        done: !!record.done,
+        doneAt: record.doneAt || "",
+        audited: !!record.audited,
+        auditedAt: record.auditedAt || "",
+        expanded: false,
+        cloudSynced: true,
+        screenshotData: record.screenshotData || (screenshots[0] || ""),
+        screenshots: screenshots,
+        screenshotFileId: record.screenshotFileId || "",
+        screenshotChanged: false,
+        site: record.site || "Mabini Site A - 1st Floor",
+        date: record.date || "",
+        timeObserved: record.timeObserved || record.timeStart || "",
+        timeStart: record.timeObserved || record.timeStart || "",
+        timeEnd: record.timeEnd || "",
+        supervisorRole: record.supervisorRole || "Team Leader",
+        supervisorName: record.supervisorName || "",
+        omName: record.omName || "",
+        subjectType: record.subjectType || "Agent/s",
+        subjectName: record.subjectName || "",
+        account: record.account || "",
+        incident: record.incident || "",
+        action: record.action || "",
+        clipLink: record.clipLink || (clipLinks[0] || ""),
+        clipLinks: clipLinks,
+        createdAt: record.createdAt || "",
+        updatedAt: record.updatedAt || ""
+      };
+    },
+
+    async loadSavedEdrsFromDocs() {
+      const url = this.getDocsUrl();
+      if (!this.isValidDocsUrl(url)) {
+        throw new Error("Google Docs Web App URL is not configured or invalid.");
+      }
+
+      const payload = await this.edrDocsJsonp({
+        action: "list",
+        limit: "250"
+      });
+
+      const remote = Array.isArray(payload.records)
+        ? payload.records.map(r => this.normalizeCloudRecord(r))
+        : [];
+
+      const localMap = new Map(edrReports.map(item => [item.id, item]));
+      const merged = [];
+
+      remote.forEach(remoteItem => {
+        const local = localMap.get(remoteItem.id);
+        if (local) {
+          merged.push({
+            ...remoteItem,
+            ...local,
+            screenshotFileId: local.screenshotFileId || remoteItem.screenshotFileId || "",
+            cloudSynced: true
+          });
+          localMap.delete(remoteItem.id);
+        } else {
+          merged.push(remoteItem);
+        }
+      });
+
+      // Keep unsynced local entries
+      localMap.forEach(local => merged.push(local));
+
+      edrReports = merged;
+      await this.saveReports();
+      return { count: remote.length, total: edrReports.length };
+    },
+
+    async fetchFullCloudRecord(id) {
+      const payload = await this.edrDocsJsonp({
+        action: "get",
+        id
+      });
+
+      if (!payload.record) {
+        throw new Error("Saved EDR was not found in Google Docs.");
+      }
+
+      return this.normalizeCloudRecord(payload.record);
+    },
+
+    async ensureRemoteScreenshot(report) {
+      if (!report || report.screenshotData || (Array.isArray(report.screenshots) && report.screenshots.length) || !report.screenshotFileId) {
+        return report;
+      }
+
+      if (!this.isValidDocsUrl(this.getDocsUrl())) {
+        return report;
+      }
+
+      try {
+        const full = await this.fetchFullCloudRecord(report.id);
+        if (full.screenshotData || (Array.isArray(full.screenshots) && full.screenshots.length)) {
+          report.screenshotData = full.screenshotData || (full.screenshots && full.screenshots[0]) || "";
+          report.screenshots = Array.isArray(full.screenshots) && full.screenshots.length
+            ? full.screenshots
+            : (full.screenshotData ? [full.screenshotData] : []);
+          await this.saveReports();
+        }
+        return report;
+      } catch (err) {
+        console.warn("ensureRemoteScreenshot failed:", err);
+        return report;
+      }
+    },
+
+    async syncReportToGoogleDocs(report) {
+      const url = this.getDocsUrl();
+      if (!this.isValidDocsUrl(url)) {
+        return { success: false, reason: "Google Docs Web App URL is not configured." };
+      }
+
+      try {
+        const payload = {
+          action: "upsertEdr",
+          record: this.cloudRecordPayload(report)
+        };
+
+        await fetch(url, {
+          method: "POST",
+          mode: "no-cors",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify(payload)
+        });
+
+        report.screenshotChanged = false;
+        report.cloudSynced = true;
+        await this.saveReports();
+        return { success: true };
+      } catch (err) {
+        console.warn("Google Docs upsert failed:", err);
+        report.cloudSynced = false;
+        return { success: false, error: err };
+      }
+    },
+
+    async deleteReportFromGoogleDocs(id) {
+      const url = this.getDocsUrl();
+      if (!this.isValidDocsUrl(url)) return false;
+
+      try {
+        await fetch(url, {
+          method: "POST",
+          mode: "no-cors",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify({
+            action: "deleteEdr",
+            id
+          })
+        });
+        return true;
+      } catch (err) {
+        console.warn("Google Docs delete failed:", err);
+        return false;
+      }
+    },
+
+    // Single-report CCTV Audit Export: Stages EDR into CCTV Audit WITHOUT marking as audited
+    sendReportToAudit(report) {
+      if (!report) throw new Error("No report specified.");
+      if (!window.cctvAuditBridge?.sendFromEdr) {
+        throw new Error("CCTV Audit bridge is not ready.");
+      }
+      const result = window.cctvAuditBridge.sendFromEdr(report);
+      notify();
+      return result;
+    },
+
+    // Multi-report CCTV Audit Export: Stages EDRs into CCTV Audit WITHOUT marking as audited
+    sendReportsToAudit(reports) {
+      const list = Array.isArray(reports) ? reports : [reports];
+      if (!list.length) throw new Error("No reports specified.");
+      if (!window.cctvAuditBridge?.sendFromEdr) {
+        throw new Error("CCTV Audit bridge is not ready.");
+      }
+      let created = 0;
+      let updated = 0;
+      list.forEach(rep => {
+        const result = window.cctvAuditBridge.sendFromEdr(rep);
+        if (result?.action === "created") created++;
+        else updated++;
+      });
+      notify();
+      return { count: list.length, created, updated };
+    },
+
+    /**
+     * Historical completion check for Saved EDR
+     * Independent of CCTV Audit Data Output Grid row presence.
+     */
+    isReportInAudit(reportId) {
+      const rep = (edrReports || []).find(r => r.id === reportId);
+      return !!(rep && rep.audited);
+    },
+
+    /**
+     * Explicitly mark Saved EDR record as Audited
+     * Persists audited=true and auditedAt timestamp
+     */
+    async markAsAudited(reportId, timestamp = null) {
+      const rep = (edrReports || []).find(r => r.id === reportId);
+      if (!rep) return null;
+      rep.audited = true;
+      rep.auditedAt = timestamp || new Date().toISOString();
+      rep.updatedAt = new Date().toISOString();
+      if (rep.teamsCopied) {
+        rep.done = true;
+        if (!rep.doneAt) rep.doneAt = rep.auditedAt;
+      }
+      await this.saveReports();
+      notify();
+      return rep;
+    },
+
+    /**
+     * Bulk mark multiple Saved EDR records as Audited
+     * Persists audited=true and auditedAt timestamp in a single save
+     */
+    async markMultipleAsAudited(reportIds, timestamp = null) {
+      const idList = Array.isArray(reportIds) ? reportIds.filter(Boolean) : [reportIds].filter(Boolean);
+      if (!idList.length) return 0;
+      const ids = new Set(idList);
+      const nowIso = timestamp || new Date().toISOString();
+      let updatedCount = 0;
+      (edrReports || []).forEach(rep => {
+        if (ids.has(rep.id)) {
+          rep.audited = true;
+          if (!rep.auditedAt) rep.auditedAt = nowIso;
+          rep.updatedAt = nowIso;
+          if (rep.teamsCopied) {
+            rep.done = true;
+            if (!rep.doneAt) rep.doneAt = nowIso;
+          }
+          updatedCount++;
+        }
+      });
+      if (updatedCount > 0) {
+        await this.saveReports();
+        notify();
+      }
+      return updatedCount;
+    },
+
+    /**
+     * Explicit "Undo Audited" action
+     * The ONLY action that clears audited=false and clears auditedAt.
+     */
+    async undoAudited(reportId) {
+      const rep = (edrReports || []).find(r => r.id === reportId);
+      if (!rep) return null;
+      rep.audited = false;
+      rep.auditedAt = null;
+      rep.updatedAt = new Date().toISOString();
+      await this.saveReports();
+      if (window.CCTV_AUDIT && typeof window.CCTV_AUDIT.clearEdrCopiedStatus === "function") {
+        try {
+          window.CCTV_AUDIT.clearEdrCopiedStatus(reportId);
+        } catch (_) {}
+      }
+      notify();
+      return rep;
+    }
+  };
+})();

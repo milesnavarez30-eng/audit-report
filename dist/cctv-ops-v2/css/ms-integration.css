@@ -1,0 +1,1100 @@
+/**
+ * CCTV OPS V2 - Microsoft Integration (Outlook & Teams)
+ * Universal Font: Inter
+ * Cohesive with CCTV OPS Dark Theme & Design Tokens
+ */
+
+/* Microsoft Header / Toolbar */
+.ms-workspace-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border-default);
+  min-height: 48px;
+  gap: 12px;
+  flex-shrink: 0;
+  font-family: var(--font-sans, 'Inter', sans-serif);
+}
+
+.ms-header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.ms-header-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ms-header-title svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+.ms-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ms-account-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: var(--bg-surface-elevated);
+  border: 1px solid var(--border-default);
+  padding: 3px 8px;
+  border-radius: 16px;
+  font-size: 11px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--trans-fast, 0.15s ease);
+}
+
+.ms-account-pill:hover {
+  border-color: var(--border-hover);
+  color: var(--text-primary);
+}
+
+.ms-account-avatar {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #0078d4;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.ms-account-pill.is-anonymous .ms-account-avatar {
+  background: var(--border-default);
+  color: var(--text-muted);
+}
+
+/* =========================================================================
+   OUTLOOK WORKSPACE LAYOUT
+   ========================================================================= */
+.outlook-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  font-family: var(--font-sans, 'Inter', sans-serif);
+}
+
+.outlook-split-layout {
+  display: grid;
+  grid-template-columns: 360px 1fr;
+  flex: 1;
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+  background: var(--bg-surface);
+}
+
+@media (max-width: 900px) {
+  .outlook-split-layout {
+    grid-template-columns: 1fr;
+  }
+  .outlook-split-layout.mobile-reading-active .outlook-inbox-col {
+    display: none;
+  }
+  .outlook-split-layout:not(.mobile-reading-active) .outlook-reading-col,
+  .outlook-split-layout:not(.mobile-reading-active) .outlook-composer-col {
+    display: none;
+  }
+}
+
+/* Inbox Column */
+.outlook-inbox-col {
+  border-right: 1px solid var(--border-default);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  background: var(--bg-surface);
+}
+
+.outlook-inbox-toolbar {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border-default);
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.outlook-search-wrap {
+  position: relative;
+  flex: 1;
+}
+
+.outlook-search-input {
+  width: 100%;
+  padding: 6px 10px 6px 28px;
+  font-size: 11.5px;
+  background: var(--bg-input);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm, 4px);
+  color: var(--text-primary);
+  font-family: inherit;
+  outline: none;
+}
+
+.outlook-search-input:focus {
+  border-color: var(--accent-primary);
+}
+
+.outlook-search-icon {
+  position: absolute;
+  left: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 13px;
+  height: 13px;
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+.outlook-filter-chips {
+  padding: 6px 12px;
+  display: flex;
+  gap: 6px;
+  border-bottom: 1px solid var(--border-subtle, rgba(255,255,255,0.05));
+  background: var(--bg-surface-elevated);
+}
+
+.outlook-filter-chip {
+  font-size: 10.5px;
+  padding: 2px 8px;
+  border-radius: 12px;
+  background: transparent;
+  border: 1px solid var(--border-default);
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-weight: 500;
+  transition: all var(--trans-fast, 0.15s ease);
+}
+
+.outlook-filter-chip.active {
+  background: rgba(56, 189, 248, 0.12);
+  border-color: rgba(56, 189, 248, 0.4);
+  color: #38bdf8;
+}
+
+.outlook-message-list {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.outlook-msg-item {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border-subtle, rgba(255,255,255,0.04));
+  cursor: pointer;
+  transition: background var(--trans-fast, 0.15s ease);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.outlook-msg-item:hover {
+  background: var(--bg-surface-elevated);
+}
+
+.outlook-msg-item.active {
+  background: rgba(56, 189, 248, 0.08);
+  border-left: 3px solid #38bdf8;
+}
+
+.outlook-msg-item.is-unread {
+  font-weight: 600;
+}
+
+.outlook-msg-item.is-unread .outlook-msg-subject {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.outlook-msg-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.outlook-msg-sender {
+  font-size: 12px;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.unread-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #38bdf8;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.outlook-msg-time {
+  font-size: 10.5px;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.outlook-msg-subject {
+  font-size: 12px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.outlook-msg-preview {
+  font-size: 11px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.3;
+}
+
+.outlook-msg-badges {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.outlook-attachment-icon {
+  width: 11px;
+  height: 11px;
+  color: var(--text-muted);
+}
+
+/* Reading Pane Column */
+.outlook-reading-col {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  background: var(--bg-surface);
+  position: relative;
+}
+
+.outlook-reading-header {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border-default);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: var(--bg-surface);
+  flex-shrink: 0;
+}
+
+.outlook-reading-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.outlook-btn-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.outlook-reading-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.outlook-reading-subject {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+  line-height: 1.3;
+}
+
+.outlook-reading-from {
+  font-size: 12px;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.outlook-reading-from strong {
+  color: var(--text-primary);
+}
+
+.outlook-reading-to {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.outlook-reading-body {
+  flex: 1;
+  padding: 18px 20px;
+  overflow-y: auto;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-secondary);
+  background: var(--bg-surface);
+}
+
+/* Sanitized body content styles */
+.outlook-sanitized-body {
+  color: var(--text-secondary);
+  word-break: break-word;
+}
+
+.outlook-sanitized-body a {
+  color: #38bdf8;
+  text-decoration: underline;
+}
+
+.outlook-sanitized-body img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 4px;
+}
+
+.outlook-reading-attachments {
+  padding: 10px 16px;
+  border-top: 1px solid var(--border-default);
+  background: var(--bg-surface-elevated);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.outlook-att-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.outlook-att-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.outlook-att-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 4px;
+  background: var(--bg-input);
+  border: 1px solid var(--border-default);
+  font-size: 11.5px;
+  color: var(--text-primary);
+}
+
+.outlook-att-item svg {
+  width: 13px;
+  height: 13px;
+  color: var(--text-muted);
+}
+
+/* Composer Column / Overlay */
+.outlook-composer-col {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  background: var(--bg-surface);
+}
+
+.outlook-composer-header {
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border-default);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.outlook-composer-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.outlook-composer-form {
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: 1;
+  min-height: 0;
+}
+
+.outlook-composer-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.outlook-composer-label {
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--text-muted);
+  width: 50px;
+  flex-shrink: 0;
+}
+
+.outlook-composer-input {
+  flex: 1;
+  padding: 6px 10px;
+  font-size: 12px;
+  background: var(--bg-input);
+  border: 1px solid var(--border-default);
+  border-radius: 4px;
+  color: var(--text-primary);
+  font-family: inherit;
+  outline: none;
+}
+
+.outlook-composer-input:focus {
+  border-color: var(--accent-primary);
+}
+
+.outlook-composer-body-area {
+  flex: 1;
+  min-height: 200px;
+  display: flex;
+  flex-direction: column;
+}
+
+.outlook-composer-textarea {
+  width: 100%;
+  flex: 1;
+  padding: 10px 12px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  background: var(--bg-input);
+  border: 1px solid var(--border-default);
+  border-radius: 4px;
+  color: var(--text-primary);
+  font-family: inherit;
+  resize: none;
+  outline: none;
+}
+
+.outlook-composer-textarea:focus {
+  border-color: var(--accent-primary);
+}
+
+.outlook-composer-actions {
+  padding: 10px 16px;
+  border-top: 1px solid var(--border-default);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.outlook-empty-pane {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--text-muted);
+  gap: 10px;
+  padding: 20px;
+  text-align: center;
+}
+
+.outlook-empty-pane svg {
+  width: 36px;
+  height: 36px;
+  opacity: 0.4;
+}
+
+/* =========================================================================
+   MICROSOFT TEAMS WORKSPACE LAYOUT
+   ========================================================================= */
+.teams-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  font-family: var(--font-sans, 'Inter', sans-serif);
+}
+
+.teams-split-layout {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  flex: 1;
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+  background: var(--bg-surface);
+}
+
+@media (max-width: 860px) {
+  .teams-split-layout {
+    grid-template-columns: 1fr;
+  }
+  .teams-split-layout.mobile-chat-active .teams-nav-col {
+    display: none;
+  }
+  .teams-split-layout:not(.mobile-chat-active) .teams-main-col {
+    display: none;
+  }
+}
+
+.teams-nav-col {
+  border-right: 1px solid var(--border-default);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  background: var(--bg-surface);
+}
+
+.teams-nav-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border-default);
+  background: var(--bg-surface-elevated);
+}
+
+.teams-nav-tab-btn {
+  flex: 1;
+  padding: 10px 8px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all var(--trans-fast, 0.15s ease);
+}
+
+.teams-nav-tab-btn:hover {
+  color: var(--text-primary);
+}
+
+.teams-nav-tab-btn.active {
+  color: #6264a7; /* Teams signature purple */
+  border-bottom-color: #6264a7;
+  background: var(--bg-surface);
+}
+
+.teams-list-scroll {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.teams-chat-item, .teams-channel-item {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border-subtle, rgba(255,255,255,0.04));
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: background var(--trans-fast, 0.15s ease);
+}
+
+.teams-chat-item:hover, .teams-channel-item:hover {
+  background: var(--bg-surface-elevated);
+}
+
+.teams-chat-item.active, .teams-channel-item.active {
+  background: rgba(98, 100, 167, 0.12);
+  border-left: 3px solid #6264a7;
+}
+
+.teams-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #464775;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.teams-chat-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.teams-chat-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.teams-chat-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.teams-chat-time {
+  font-size: 10px;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.teams-chat-preview {
+  font-size: 11px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.teams-team-group {
+  margin-bottom: 4px;
+}
+
+.teams-team-header {
+  padding: 8px 12px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255,255,255,0.02);
+}
+
+.teams-channel-item {
+  padding-left: 28px;
+}
+
+/* Teams Main / Message Area */
+.teams-main-col {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  background: var(--bg-surface);
+}
+
+.teams-main-header {
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border-default);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--bg-surface);
+  flex-shrink: 0;
+}
+
+.teams-active-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.teams-active-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.teams-thread-container {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-height: 0;
+}
+
+.teams-msg-bubble-wrap {
+  display: flex;
+  gap: 10px;
+  max-width: 85%;
+}
+
+.teams-msg-bubble-wrap.is-me {
+  align-self: flex-end;
+  flex-direction: row-reverse;
+}
+
+.teams-msg-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #6264a7;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.teams-msg-content-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.teams-msg-header {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 10.5px;
+  color: var(--text-muted);
+}
+
+.teams-msg-sender {
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.teams-msg-bubble {
+  background: var(--bg-surface-elevated);
+  border: 1px solid var(--border-default);
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 12.5px;
+  color: var(--text-primary);
+  line-height: 1.45;
+  word-break: break-word;
+}
+
+.teams-msg-bubble-wrap.is-me .teams-msg-bubble {
+  background: rgba(98, 100, 167, 0.18);
+  border-color: rgba(98, 100, 167, 0.4);
+}
+
+.teams-composer-bar {
+  padding: 12px 16px;
+  border-top: 1px solid var(--border-default);
+  background: var(--bg-surface);
+  display: flex;
+  gap: 8px;
+  align-items: flex-end;
+  flex-shrink: 0;
+}
+
+.teams-composer-input {
+  flex: 1;
+  padding: 8px 12px;
+  font-size: 12.5px;
+  background: var(--bg-input);
+  border: 1px solid var(--border-default);
+  border-radius: 6px;
+  color: var(--text-primary);
+  font-family: inherit;
+  resize: none;
+  min-height: 38px;
+  max-height: 120px;
+  outline: none;
+}
+
+.teams-composer-input:focus {
+  border-color: #6264a7;
+}
+
+.teams-btn-send {
+  background: #6264a7;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 38px;
+  flex-shrink: 0;
+  transition: opacity var(--trans-fast, 0.15s ease);
+}
+
+.teams-btn-send:hover {
+  opacity: 0.9;
+}
+
+.teams-btn-send:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Diagnostic / Notice Banner */
+.ms-notice-banner {
+  padding: 8px 12px;
+  background: rgba(245, 158, 11, 0.1);
+  border-bottom: 1px solid rgba(245, 158, 11, 0.25);
+  color: #fbbf24;
+  font-size: 11.5px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ms-notice-banner.is-error {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.25);
+  color: #f87171;
+}
+
+.ms-notice-banner svg {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
+/* =========================================================================
+   MICROSOFT STATE VIEW (Unconfigured / Ready / Connected / Error)
+   ========================================================================= */
+.ms-state-view {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  width: 100%;
+  height: 100%;
+  padding: 32px 16px;
+  background: var(--bg-surface);
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+
+.ms-state-card {
+  width: 100%;
+  max-width: 540px;
+  background: var(--bg-surface-elevated);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md, 8px);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+  font-family: var(--font-sans, 'Inter', sans-serif);
+}
+
+.ms-state-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.ms-state-title-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ms-state-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ms-state-subtitle {
+  font-size: 12.5px;
+  color: var(--text-secondary);
+  line-height: 1.45;
+}
+
+.ms-status-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 9px;
+  border-radius: 12px;
+  white-space: nowrap;
+}
+
+.ms-status-chip.status-unconfigured {
+  background: rgba(245, 158, 11, 0.12);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.ms-status-chip.status-ready {
+  background: rgba(56, 189, 248, 0.12);
+  color: #38bdf8;
+  border: 1px solid rgba(56, 189, 248, 0.3);
+}
+
+.ms-status-chip.status-connected {
+  background: rgba(52, 211, 153, 0.12);
+  color: #34d399;
+  border: 1px solid rgba(52, 211, 153, 0.3);
+}
+
+.ms-status-chip.status-error {
+  background: rgba(239, 68, 68, 0.12);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.ms-state-info-box {
+  background: var(--bg-input);
+  border: 1px solid var(--border-default);
+  border-radius: 6px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.ms-info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.ms-info-label {
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.ms-info-val {
+  color: var(--text-primary);
+  font-weight: 600;
+  text-align: right;
+  word-break: break-all;
+}
+
+.ms-uri-display {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(0, 0, 0, 0.25);
+  padding: 5px 8px;
+  border-radius: 4px;
+  border: 1px solid var(--border-default);
+  font-family: var(--font-mono, monospace);
+  font-size: 11px;
+  color: #38bdf8;
+  word-break: break-all;
+}
+
+.ms-uri-display code {
+  flex: 1;
+}
+
+.ms-state-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+
+.ms-disabled-note {
+  font-size: 11px;
+  color: #fbbf24;
+  margin-top: -4px;
+}
+
+/* =========================================================================
+   MICROSOFT WORKSPACE HEADER & MODE INDICATOR
+   ========================================================================= */
+.ms-workspace-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  background: var(--bg-surface-elevated, #131823);
+  border-bottom: 1px solid var(--border-default, rgba(255, 255, 255, 0.08));
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.ms-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.ms-header-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary, #f1f5f9);
+}
+
+.ms-header-title svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+.ms-mode-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-secondary, #94a3b8);
+  background: rgba(255, 255, 255, 0.04);
+  padding: 3px 8px;
+  border-radius: 4px;
+  border: 1px solid var(--border-default, rgba(255, 255, 255, 0.08));
+  white-space: nowrap;
+}
+
+.ms-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+

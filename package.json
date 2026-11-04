@@ -1,0 +1,9 @@
+{
+  "name": "audit-report",
+  "version": "2.0.0",
+  "private": true,
+  "description": "CCTV OPS V2 Static Assets and Cloudflare Worker",
+  "scripts": {
+    "build": "node build.js"
+  }
+}

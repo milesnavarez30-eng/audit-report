@@ -1,0 +1,14128 @@
+/**
+ * CCTV OPS V2 - Main Application Orchestrator & Prototype Controller
+ */
+
+(function () {
+  "use strict";
+
+  const cfg = window.CCTV_V2_CONFIG;
+  const storage = window.CCTV_STORAGE;
+  const edr = window.CCTV_EDR;
+  const audit = window.CCTV_AUDIT;
+  const auth = window.CCTV_AUTH;
+  const sorter = window.sorterService;
+  const maintenance = window.maintenanceService;
+  const pending = window.pendingService;
+  const followup = window.followupService;
+
+  let currentScreenshots = [];  // Array of base64 data URLs
+  let currentClipLinks = [];    // Array of clip link strings
+  let supervisorRole = "Team Leader";
+  let subjectType = "Agent/s";
+
+  // Elements
+  const el = id => document.getElementById(id);
+
+  // Centralized Global Toast Manager Delegation
+  function showToast(message, type = "info", opts) {
+    if (typeof window.showToast === "function") {
+      return window.showToast(message, type, opts);
+    }
+  }
+
+  // Live Operational Philippine Time Clock
+  function updateManilaClock() {
+    try {
+      if (typeof window.initManilaClock === "function") {
+        window.initManilaClock();
+        return;
+      }
+      const now = new Date();
+      const timeStr = new Intl.DateTimeFormat("en-US", {
+        timeZone: "Asia/Manila",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: true
+      }).format(now);
+      const dateStr = new Intl.DateTimeFormat("en-US", {
+        timeZone: "Asia/Manila",
+        weekday: "long",
+        month: "short",
+        day: "numeric",
+        year: "numeric"
+      }).format(now);
+      const clockEl = el("manilaClockText");
+      if (clockEl) clockEl.textContent = `${timeStr} PHT`;
+      const dateEl = el("manilaClockDate");
+      if (dateEl) dateEl.textContent = dateStr;
+      const widgetEl = el("sidebarClockWidget");
+      if (widgetEl) {
+        const tooltip = `Philippine Standard Time (UTC+8): ${timeStr} PHT \u2022 ${dateStr}`;
+        widgetEl.title = tooltip;
+        widgetEl.setAttribute("data-tooltip", tooltip);
+      }
+    } catch (_) {}
+  }
+
+  // Populate Dropdown Options
+  function populateRespondentList(role) {
+    const respList = el("listRespondents");
+    const input = el("edrSupervisorName");
+    if (!respList || !input) return;
+
+    const people = window.CCTV_PEOPLE;
+    const cleanFn = (v) => (people?.stripRolePrefix ? people.stripRolePrefix(v) : (v || "")).trim();
+    const seen = new Set();
+    const unique = [];
+
+    if (people && typeof people.getSupervisorOptions === "function") {
+      const sups = people.getSupervisorOptions();
+      sups.forEach(s => {
+        const c = cleanFn(s.name);
+        const k = c.toLowerCase();
+        if (k && !seen.has(k)) {
+          seen.add(k);
+          unique.push(c);
+        }
+      });
+      input.placeholder = role === "OM" ? "Search OM / Supervisor..." : "Search Team Leader / Supervisor...";
+    } else {
+      const names = role === "OM" ? edr.getOmNames() : edr.getTeamLeaderNames();
+      names.forEach(n => {
+        const c = cleanFn(n);
+        const k = c.toLowerCase();
+        if (k && !seen.has(k)) {
+          seen.add(k);
+          unique.push(c);
+        }
+      });
+      input.placeholder = role === "OM" ? "Search OM..." : "Search Team Leader...";
+    }
+    respList.innerHTML = unique.map(n => `<option value="${n}"></option>`).join("");
+  }
+
+  function initFormDropdowns() {
+    // Site select
+    const siteSelect = el("edrSite");
+    const sites = storage.getItem(cfg.KEYS.DROPDOWN_SITE, cfg.DEFAULTS.SITES);
+    if (siteSelect) {
+      siteSelect.innerHTML = sites.map(s => `<option value="${s}">${s}</option>`).join("");
+    }
+
+    // OM datalist (dedicated OM field)
+    const omList = el("listOms");
+    const oms = edr.getOmNames();
+    if (omList) {
+      const cleanFn = (v) => (window.CCTV_PEOPLE?.stripRolePrefix ? window.CCTV_PEOPLE.stripRolePrefix(v) : (v || "")).trim();
+      const seen = new Set();
+      const uniqueOms = [];
+      oms.forEach(o => {
+        const c = cleanFn(o);
+        const k = c.toLowerCase();
+        if (k && !seen.has(k)) {
+          seen.add(k);
+          uniqueOms.push(c);
+        }
+      });
+      omList.innerHTML = uniqueOms.map(o => `<option value="${o}"></option>`).join("");
+    }
+
+    // Respondent datalist (TL / OM / Supervisor)
+    populateRespondentList(supervisorRole);
+
+    // Subject datalists (Agents, TLs, custom people)
+    const subjTlList = el("listSubjectTls");
+    const subjEmpList = el("listSubjectEmployees");
+    const people = window.CCTV_PEOPLE;
+    const cleanFn = (v) => (people?.stripRolePrefix ? people.stripRolePrefix(v) : (v || "")).trim();
+    const seen = new Set();
+    const uniqueEmps = [];
+
+    if (people && typeof people.getEmployeeOptions === "function") {
+      const emps = people.getEmployeeOptions();
+      emps.forEach(e => {
+        const c = cleanFn(e.name);
+        const k = c.toLowerCase();
+        if (k && !seen.has(k)) {
+          seen.add(k);
+          uniqueEmps.push(c);
+        }
+      });
+    } else {
+      const tls = edr.getTeamLeaderNames();
+      tls.forEach(t => {
+        const c = cleanFn(t);
+        const k = c.toLowerCase();
+        if (k && !seen.has(k)) {
+          seen.add(k);
+          uniqueEmps.push(c);
+        }
+      });
+    }
+    const empHtml = uniqueEmps.map(n => `<option value="${n}"></option>`).join("");
+    if (subjTlList) subjTlList.innerHTML = empHtml;
+    if (subjEmpList) subjEmpList.innerHTML = empHtml;
+
+    // Account / Campaign datalist
+    const accList = el("listAccounts");
+    const accounts = edr.getAccountNames();
+    if (accList && Array.isArray(accounts)) {
+      accList.innerHTML = accounts.map(a => `<option value="${a}"></option>`).join("");
+    }
+
+    // Date default
+    const dateInput = el("edrDate");
+    if (dateInput && !dateInput.value) {
+      const today = new Date().toISOString().slice(0, 10);
+      dateInput.value = today;
+    }
+
+    // Facebook date tag
+    const fbTag = el("fbDateTag");
+    if (fbTag) {
+      const now = new Date();
+      fbTag.textContent = now.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+    }
+
+    // Ensure EDR datalists stay synchronized with Masterlist
+    if (window.masterlistService && !window.__edrMasterlistSubscribed) {
+      window.__edrMasterlistSubscribed = true;
+      window.masterlistService.subscribe(() => {
+        initFormDropdowns();
+        populateRespondentList(supervisorRole);
+      });
+    }
+  }
+
+  // Segmented Choice Buttons
+  function initChoiceButtons() {
+    const btnTl = el("btnRoleTl");
+    const btnOm = el("btnRoleOm");
+    const respInput = el("edrSupervisorName");
+
+    if (btnTl && btnOm) {
+      btnTl.addEventListener("click", () => {
+        if (supervisorRole === "Team Leader") return;
+        btnTl.classList.add("active");
+        btnOm.classList.remove("active");
+        supervisorRole = "Team Leader";
+        populateRespondentList("Team Leader");
+      });
+
+      btnOm.addEventListener("click", () => {
+        if (supervisorRole === "OM") return;
+        btnOm.classList.add("active");
+        btnTl.classList.remove("active");
+        supervisorRole = "OM";
+        populateRespondentList("OM");
+      });
+    }
+
+    const btnAgent = el("btnSubjAgent");
+    const btnSubjTl = el("btnSubjTl");
+    const subjInput = el("edrSubjectName");
+
+    if (btnAgent && btnSubjTl) {
+      btnAgent.addEventListener("click", () => {
+        btnAgent.classList.add("active");
+        btnSubjTl.classList.remove("active");
+        subjectType = "Agent/s";
+        if (subjInput) {
+          subjInput.placeholder = "Employee name (Agent, TL, etc.)...";
+          subjInput.setAttribute("list", "listSubjectEmployees");
+        }
+      });
+      btnSubjTl.addEventListener("click", () => {
+        btnSubjTl.classList.add("active");
+        btnAgent.classList.remove("active");
+        subjectType = "Team Leader";
+        if (subjInput) {
+          subjInput.placeholder = "Search Team Leader / Employee...";
+          subjInput.setAttribute("list", "listSubjectEmployees");
+        }
+      });
+    }
+  }
+
+  // Multi-Screenshot Upload, Paste & Drop
+  function initScreenshotDropzone() {
+    const zone = el("dropzoneScreenshot");
+    const fileInput = el("fileScreenshot");
+    const dropText = el("dropText");
+    const strip = el("edrShotPreviewStrip");
+    const btnAddMore = el("btnAddMoreShot");
+
+    if (!zone) return;
+
+    // Click dropzone -> open file picker
+    zone.addEventListener("click", () => fileInput.click());
+
+    // "Add Screenshot" button also triggers file picker
+    btnAddMore?.addEventListener("click", () => fileInput.click());
+
+    // Helper to read a file as DataURL sequentially
+    function readFileAsDataUrl(file) {
+      return new Promise((resolve) => {
+        if (!file || !file.type.startsWith("image/")) return resolve(null);
+        const reader = new FileReader();
+        reader.onload = (evt) => {
+          if (evt.target?.result) {
+            currentScreenshots.push(evt.target.result);
+          }
+          resolve();
+        };
+        reader.onerror = () => resolve(null);
+        reader.readAsDataURL(file);
+      });
+    }
+
+    // File input change (supports multiple, sequentially preserves order)
+    fileInput.addEventListener("change", async (e) => {
+      const files = Array.from(e.target.files || []);
+      for (const file of files) {
+        await readFileAsDataUrl(file);
+      }
+      fileInput.value = "";
+      renderShotStrip();
+      updateLivePreview();
+      scheduleDraftSave();
+    });
+
+    // Drag and Drop
+    zone.addEventListener("dragover", (e) => {
+      e.preventDefault();
+      zone.classList.add("drag-over");
+    });
+
+    zone.addEventListener("dragleave", () => {
+      zone.classList.remove("drag-over");
+    });
+
+    zone.addEventListener("drop", async (e) => {
+      e.preventDefault();
+      zone.classList.remove("drag-over");
+      const files = Array.from(e.dataTransfer.files || []).filter(f => f.type.startsWith("image/"));
+      for (const file of files) {
+        await readFileAsDataUrl(file);
+      }
+      renderShotStrip();
+      updateLivePreview();
+      scheduleDraftSave();
+    });
+
+    // Central Paste Router registration for EDR workspace
+    if (window.CCTV_PASTE_ROUTER) {
+      window.CCTV_PASTE_ROUTER.register("edr", async (files) => {
+        if (!files || !files.length) return;
+        const file = files[0];
+        await readFileAsDataUrl(file);
+        renderShotStrip();
+        updateLivePreview();
+        scheduleDraftSave();
+        if (window.historyService?.captureIfChanged) {
+          await window.historyService.captureIfChanged("edr", "Pasted screenshot into EDR draft");
+        }
+        showToast("Screenshot pasted from clipboard.", "success");
+      });
+    }
+
+    function extractScreenshotSource(item) {
+      if (!item) return "";
+      if (typeof item === "string") {
+        const trimmed = item.trim();
+        if (trimmed.startsWith("{") && trimmed.endsWith("}")) {
+          try {
+            const parsed = JSON.parse(trimmed);
+            return extractScreenshotSource(parsed);
+          } catch (_) {}
+        }
+        return trimmed;
+      }
+      if (typeof item === "object") {
+        return extractScreenshotSource(item.src || item.dataUrl || item.url || item.data || item.image || "");
+      }
+      return "";
+    }
+
+    function isValidScreenshotSource(src) {
+      if (typeof src !== "string" || !src) return false;
+      return /^(data:image\/[a-zA-Z0-9+.-]+;base64,|blob:|https?:\/\/)/i.test(src.trim());
+    }
+
+    function renderShotStrip() {
+      if (!strip) return;
+
+      // Extract and sanitize valid sources safely
+      const validScreenshots = currentScreenshots
+        .map(extractScreenshotSource)
+        .filter(isValidScreenshotSource);
+
+      if (validScreenshots.length === 0) {
+        strip.style.display = "none";
+        strip.innerHTML = "";
+        if (dropText) dropText.textContent = "Drop image, Ctrl+V, or click to add screenshots";
+        return;
+      }
+
+      strip.style.display = "flex";
+      if (dropText) {
+        dropText.textContent = `${validScreenshots.length} screenshot${validScreenshots.length > 1 ? 's' : ''} added`;
+      }
+
+      // Safe DOM construction: clear previous nodes without innerHTML payload injection
+      strip.innerHTML = "";
+
+      validScreenshots.forEach((src, idx) => {
+        const container = document.createElement("div");
+        container.style.position = "relative";
+        container.style.flexShrink = "0";
+
+        const img = document.createElement("img");
+        img.src = src;
+        img.alt = `Screenshot ${idx + 1}`;
+        img.title = "Click to view full screenshot";
+        img.style.height = "60px";
+        img.style.width = "auto";
+        img.style.maxWidth = "100px";
+        img.style.objectFit = "cover";
+        img.style.borderRadius = "4px";
+        img.style.border = "1px solid var(--border-default)";
+        img.style.cursor = "pointer";
+        img.style.display = "block";
+        img.addEventListener("click", () => {
+          openScreenshotViewer(validScreenshots, `Screenshot ${idx + 1} of ${validScreenshots.length}`, "EDR Evidence", idx);
+        });
+
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.textContent = "×";
+        btn.title = "Remove";
+        btn.dataset.idx = String(idx);
+        btn.style.position = "absolute";
+        btn.style.top = "-5px";
+        btn.style.right = "-5px";
+        btn.style.width = "16px";
+        btn.style.height = "16px";
+        btn.style.borderRadius = "50%";
+        btn.style.border = "none";
+        btn.style.background = "var(--accent-danger, #ef4444)";
+        btn.style.color = "#ffffff";
+        btn.style.fontSize = "12px";
+        btn.style.lineHeight = "1";
+        btn.style.cursor = "pointer";
+        btn.style.display = "flex";
+        btn.style.alignItems = "center";
+        btn.style.justifyContent = "center";
+        btn.style.padding = "0";
+        btn.style.overflow = "hidden";
+        btn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          currentScreenshots.splice(idx, 1);
+          renderShotStrip();
+          updateLivePreview();
+          scheduleDraftSave();
+        });
+
+        container.appendChild(img);
+        container.appendChild(btn);
+        strip.appendChild(container);
+      });
+    }
+    // Expose clear function
+    window.clearEdrScreenshots = function () {
+      currentScreenshots = [];
+      renderShotStrip();
+    };
+
+    window.getEdrScreenshots = function () {
+      return currentScreenshots.slice();
+    };
+
+    // Expose set function for backward compat (single screenshot restore)
+    window.setCctvScreenshot = function (dataUrl) {
+      if (dataUrl) {
+        currentScreenshots = [dataUrl];
+      } else {
+        currentScreenshots = [];
+      }
+      renderShotStrip();
+      updateLivePreview();
+    };
+
+    // Expose set-many for edit mode
+    window.setCctvScreenshots = function (arr) {
+      currentScreenshots = Array.isArray(arr) ? arr.filter(Boolean) : [];
+      renderShotStrip();
+      updateLivePreview();
+    };
+  }
+
+  // Multi-Link field management
+  function initMultiLinkField() {
+    const list = el("edrLinksList");
+    const btnAdd = el("btnAddMoreLink");
+    if (!list || !btnAdd) return;
+
+    function updateRemoveBtns() {
+      const rows = list.querySelectorAll(".edr-link-row");
+      rows.forEach((row, i) => {
+        const btn = row.querySelector(".edr-remove-link-btn");
+        if (btn) btn.style.display = rows.length > 1 ? "inline-flex" : "none";
+      });
+    }
+
+    function addLinkRow(value = "") {
+      const row = document.createElement("div");
+      row.className = "edr-link-row";
+      row.style.cssText = "display:flex; align-items:center; gap:4px;";
+      row.innerHTML = `<input type="url" class="form-control edr-clip-link-input" placeholder="https://drive.google.com/..." style="flex:1;" value="${window.escapeHtml ? window.escapeHtml(value) : value.replace(/"/g,'&quot;')}">
+        <button type="button" class="btn btn-ghost btn-sm edr-remove-link-btn" style="flex-shrink:0; padding:0 6px; color:var(--accent-danger);">&times;</button>`;
+      row.querySelector(".edr-remove-link-btn").addEventListener("click", () => {
+        row.remove();
+        updateRemoveBtns();
+        scheduleDraftSave();
+      });
+      row.querySelector("input").addEventListener("input", scheduleDraftSave);
+      list.appendChild(row);
+      updateRemoveBtns();
+    }
+
+    btnAdd.addEventListener("click", () => {
+      addLinkRow();
+    });
+
+    // Wire existing first row's remove btn and autosave
+    const firstRow = list.querySelector(".edr-link-row");
+    if (firstRow) {
+      firstRow.querySelector(".edr-remove-link-btn")?.addEventListener("click", () => {
+        // Don't remove if it's the last one; just clear it
+        const rows = list.querySelectorAll(".edr-link-row");
+        if (rows.length > 1) { firstRow.remove(); updateRemoveBtns(); scheduleDraftSave(); }
+        else { firstRow.querySelector("input").value = ""; scheduleDraftSave(); }
+      });
+      firstRow.querySelector("input")?.addEventListener("input", scheduleDraftSave);
+    }
+    updateRemoveBtns();
+
+    // Expose getters/setters
+    window.getEdrClipLinks = function () {
+      return Array.from(list.querySelectorAll(".edr-clip-link-input"))
+        .map(i => i.value.trim())
+        .filter(Boolean);
+    };
+
+    window.setEdrClipLinks = function (links) {
+      // Clear existing rows
+      list.innerHTML = "";
+      const arr = Array.isArray(links) ? links : (links ? [links] : [""]);
+      if (arr.length === 0) arr.push("");
+      arr.forEach(v => addLinkRow(v));
+      updateRemoveBtns();
+    };
+
+    window.clearEdrClipLinks = function () {
+      list.innerHTML = "";
+      addLinkRow();
+      updateRemoveBtns();
+    };
+  }
+
+  // ── Multi-Subject EDR Controller ─────────────────────────────────────────
+  // Prototype implementation of multi-subject entry within a single EDR form.
+
+  let msSubjects = []; // In-memory subject list for the current EDR being edited/created
+
+  function initMultiSubjectEdr() {
+    // Universal Safe Role Prefix Stripper (guaranteed safe against unexported/cached modules)
+    function safeStripRolePrefix(name) {
+      if (window.CCTV_PEOPLE && typeof window.CCTV_PEOPLE.stripRolePrefix === "function") {
+        return window.CCTV_PEOPLE.stripRolePrefix(name || "");
+      }
+      if (window.EDR_MULTI_SUBJECT && typeof window.EDR_MULTI_SUBJECT.stripRolePrefix === "function") {
+        return window.EDR_MULTI_SUBJECT.stripRolePrefix(name || "");
+      }
+      return String(name || "")
+        .replace(/^(?:TL|OM|Agent)\b\s*[\u2014\u2013\-:]?\s*/i, "")
+        .replace(/\s+/g, " ")
+        .trim();
+    }
+
+    if (window.EDR_MULTI_SUBJECT && typeof window.EDR_MULTI_SUBJECT.stripRolePrefix !== "function") {
+      window.EDR_MULTI_SUBJECT.stripRolePrefix = safeStripRolePrefix;
+    }
+    if (window.CCTV_PEOPLE && typeof window.CCTV_PEOPLE.stripRolePrefix !== "function") {
+      window.CCTV_PEOPLE.stripRolePrefix = safeStripRolePrefix;
+    }
+
+    const ms = window.EDR_MULTI_SUBJECT;
+    if (!ms) {
+      console.warn("[MultiSubject] EDR_MULTI_SUBJECT module not loaded.");
+      return;
+    }
+
+    // ── Infraction Dropdown Population ────────────────────────────────────
+
+    function populateInfractionDropdowns() {
+      const infractions = ms.getInfractions();
+      const options = ["", ...infractions];
+      const optHtml = opt => `<option value="${ms.escHtml(opt)}">${ms.escHtml(opt || "— none —")}</option>`;
+      const optHtmlSelect = opt => `<option value="${ms.escHtml(opt)}">${ms.escHtml(opt || "— select —")}</option>`;
+
+      const defaultSel = el("edrDefaultInfraction");
+      if (defaultSel) {
+        const prev = defaultSel.value;
+        defaultSel.innerHTML = options.map(optHtmlSelect).join("");
+        if (infractions.includes(prev)) defaultSel.value = prev;
+      }
+
+      const editorSel = el("subjectEditorInfraction");
+      if (editorSel) {
+        const prev = editorSel.value;
+        editorSel.innerHTML = ["", ...infractions].map(optHtml).join("");
+        if (infractions.includes(prev)) editorSel.value = prev;
+      }
+    }
+
+    // ── Respondents and Account Datalists (for default bar + modal) ───────
+
+    function populateSubjectDropdowns() {
+      const people = window.CCTV_PEOPLE;
+      const accounts = edr.getAccountNames();
+      const accHtml = (accounts || []).map(a => `<option value="${ms.escHtml(a)}"></option>`).join("");
+
+      const cleanFn = (v) => (ms?.stripRolePrefix ? ms.stripRolePrefix(v) : (v || "")).trim();
+
+      const tlSeen = new Set();
+      const uniqueTls = [];
+      if (people && typeof people.getSupervisorOptions === "function") {
+        const sups = people.getSupervisorOptions();
+        sups.forEach(s => {
+          const c = cleanFn(s.name);
+          const k = c.toLowerCase();
+          if (k && !tlSeen.has(k)) {
+            tlSeen.add(k);
+            uniqueTls.push(c);
+          }
+        });
+      } else {
+        const tls = edr.getTeamLeaderNames();
+        (tls || []).forEach(t => {
+          const c = cleanFn(t);
+          const k = c.toLowerCase();
+          if (k && !tlSeen.has(k)) {
+            tlSeen.add(k);
+            uniqueTls.push(c);
+          }
+        });
+      }
+      const tlHtml = uniqueTls.map(t => `<option value="${ms.escHtml(t)}"></option>`).join("");
+
+      const empSeen = new Set();
+      const uniqueEmps = [];
+      if (people && typeof people.getEmployeeOptions === "function") {
+        const emps = people.getEmployeeOptions();
+        emps.forEach(e => {
+          const c = cleanFn(e.name);
+          const k = c.toLowerCase();
+          if (k && !empSeen.has(k)) {
+            empSeen.add(k);
+            uniqueEmps.push(c);
+          }
+        });
+      } else {
+        const tls = edr.getTeamLeaderNames();
+        (tls || []).forEach(t => {
+          const c = cleanFn(t);
+          const k = c.toLowerCase();
+          if (k && !empSeen.has(k)) {
+            empSeen.add(k);
+            uniqueEmps.push(c);
+          }
+        });
+      }
+      const empHtml = uniqueEmps.map(e => `<option value="${ms.escHtml(e)}"></option>`).join("");
+
+      // Default bar datalists
+      const defTl = el("listRespondentsDefault");
+      if (defTl) defTl.innerHTML = tlHtml;
+      const defAcc = el("listAccountsDefault");
+      if (defAcc) defAcc.innerHTML = accHtml;
+
+      // Editor modal datalists
+      const editorTl = el("listRespondentsSubjEditor");
+      if (editorTl) editorTl.innerHTML = tlHtml;
+      const editorAcc = el("listAccountsSubjEditor");
+      if (editorAcc) editorAcc.innerHTML = accHtml;
+
+      const editorEmp = el("listSubjectEmployees");
+      if (editorEmp) editorEmp.innerHTML = empHtml;
+      const subjTls = el("listSubjectTls");
+      if (subjTls) subjTls.innerHTML = empHtml;
+
+      populateInfractionDropdowns();
+    }
+
+    // ── Subject List Rendering ────────────────────────────────────────────
+
+    function renderSubjectList() {
+      const list = el("edrSubjectList");
+      const emptyEl = el("edrSubjectEmpty");
+      const countBadge = el("edrSubjectCountBadge");
+
+      if (!list) return;
+
+      // Count badge
+      if (countBadge) {
+        countBadge.textContent = `${msSubjects.length} subject${msSubjects.length !== 1 ? "s" : ""}`;
+      }
+
+      if (msSubjects.length === 0) {
+        // Show empty state
+        list.innerHTML = "";
+        const empty = document.createElement("div");
+        empty.className = "edr-subject-empty";
+        empty.id = "edrSubjectEmpty";
+        empty.textContent = "No subjects added yet. Use the buttons below to add.";
+        list.appendChild(empty);
+        return;
+      }
+
+      // Remove old empty placeholder if it was a child
+      const oldEmpty = list.querySelector(".edr-subject-empty");
+      if (oldEmpty) oldEmpty.remove();
+
+      // Diff render: remove deleted rows, add new ones
+      const existingRows = list.querySelectorAll(".edr-subject-row");
+      const existingIds = Array.from(existingRows).map(r => r.dataset.sid);
+      const currentIds = msSubjects.map(s => s.id);
+
+      // Remove rows for deleted subjects
+      existingRows.forEach(row => {
+        if (!currentIds.includes(row.dataset.sid)) row.remove();
+      });
+
+      // Update or insert rows
+      msSubjects.forEach((s, i) => {
+        let row = list.querySelector(`.edr-subject-row[data-sid="${s.id}"]`);
+        const displaySup = s.supervisorName || "";
+        const metaParts = [displaySup, s.account, s.infraction].filter(Boolean);
+        const metaText = metaParts.join(" · ");
+        const tagClass = s.type === "Team Leader" ? "tag-tl" : "tag-agent";
+        const tagLabel = s.type === "Team Leader" ? "TL" : "Agent";
+
+        if (!row) {
+          row = document.createElement("div");
+          row.className = "edr-subject-row";
+          row.dataset.sid = s.id;
+          list.appendChild(row);
+        }
+
+        row.innerHTML = `
+          <span class="edr-subject-row-num">${i + 1}</span>
+          <span class="edr-subject-type-tag ${tagClass}">${tagLabel}</span>
+          <div class="edr-subject-row-info">
+            <div class="edr-subject-name">${ms.escHtml(s.name)}</div>
+            ${metaText ? `<div class="edr-subject-meta">${ms.escHtml(metaText)}</div>` : ""}
+          </div>
+          <button type="button" class="edr-subject-btn-edit" data-sid="${ms.escHtml(s.id)}" title="Edit subject">Edit</button>
+          <button type="button" class="edr-subject-btn-remove" data-sid="${ms.escHtml(s.id)}" title="Remove subject">&times;</button>
+        `;
+
+        // Wire buttons
+        row.querySelector(".edr-subject-btn-edit").addEventListener("click", () => openSubjectEditor(s.id));
+        row.querySelector(".edr-subject-btn-remove").addEventListener("click", () => {
+          msSubjects = msSubjects.filter(x => x.id !== s.id);
+          renderSubjectList();
+          syncLegacyHiddenFields();
+          scheduleDraftSave();
+        });
+      });
+    }
+
+    // Sync the hidden legacy fields from subjects
+    function syncLegacyHiddenFields() {
+      const nameEl = el("edrSubjectName");
+      const accEl = el("edrAccount");
+      const supEl = el("edrSupervisorName");
+      const defTl = ms.clean(el("edrDefaultTl")?.value || "");
+      const firstSubjectTl = msSubjects.length > 0 ? (msSubjects[0].supervisorName || "") : "";
+      if (nameEl) nameEl.value = msSubjects.map(s => s.name).join(", ");
+      if (accEl) accEl.value = msSubjects.length > 0 ? (msSubjects[0].account || "") : (el("edrDefaultAccount")?.value || "");
+      if (supEl) supEl.value = defTl || firstSubjectTl || supEl.value || "";
+    }
+
+    // ── Subject Editor Modal ─────────────────────────────────────────────
+
+    let editorSubjectType = "Agent";
+
+    function openSubjectEditor(subjectId = null) {
+      const modal = el("modalSubjectEditor");
+      if (!modal) return;
+
+      const isNew = !subjectId;
+      const subject = subjectId ? msSubjects.find(s => s.id === subjectId) : null;
+
+      editorSubjectType = subject ? subject.type : "Agent";
+      el("btnSubjEditorAgent").classList.toggle("active", editorSubjectType === "Agent");
+      el("btnSubjEditorTl").classList.toggle("active", editorSubjectType === "Team Leader");
+
+      el("subjectEditorTitle").textContent = isNew ? "Add Subject" : "Edit Subject";
+      el("subjectEditorId").value = subjectId || "";
+      el("subjectEditorName").value = subject ? subject.name : "";
+
+      populateSubjectDropdowns();
+      const defaultTl = safeStripRolePrefix(ms.clean ? ms.clean(el("edrDefaultTl")?.value || "") : (el("edrDefaultTl")?.value || ""));
+      const supInput = el("subjectEditorSupervisor");
+      if (supInput) {
+        supInput.placeholder = editorSubjectType === "Team Leader"
+          ? "OM / Supervisor (e.g. Irene Fuentes or Self)..."
+          : "Team Leader / Supervisor...";
+        supInput.value = subject ? (subject.supervisorName || defaultTl) : defaultTl;
+      }
+
+      el("subjectEditorAccount").value = subject ? subject.account : (el("edrDefaultAccount")?.value || "");
+      populateInfractionDropdowns();
+
+      const defaultInfraction = el("edrDefaultInfraction")?.value || "";
+      const subjectInfraction = subject ? subject.infraction : defaultInfraction;
+      const editorInfSel = el("subjectEditorInfraction");
+      if (editorInfSel) editorInfSel.value = subjectInfraction;
+
+      modal.hidden = false;
+      setTimeout(() => el("subjectEditorName")?.focus(), 80);
+    }
+
+    function closeSubjectEditor() {
+      const modal = el("modalSubjectEditor");
+      if (modal) modal.hidden = true;
+    }
+
+    function saveSubjectEditor() {
+      const name = safeStripRolePrefix(ms.clean ? ms.clean(el("subjectEditorName")?.value || "") : (el("subjectEditorName")?.value || ""));
+      if (!name) {
+        showToast("Please enter a subject name.", "warning");
+        el("subjectEditorName")?.focus();
+        return;
+      }
+
+      const subjectId = el("subjectEditorId")?.value || "";
+      const isNew = !subjectId;
+
+      const supervisorVal = safeStripRolePrefix(ms.clean ? ms.clean(el("subjectEditorSupervisor")?.value || "") : (el("subjectEditorSupervisor")?.value || ""));
+      const infraction = el("subjectEditorInfraction")?.value || "";
+
+      const subjectData = {
+        id: subjectId || ms.uid(),
+        type: editorSubjectType,
+        name,
+        supervisorName: supervisorVal,
+        account: ms.clean(el("subjectEditorAccount")?.value || ""),
+        infraction
+      };
+
+      if (isNew) {
+        // Allow multiple incidents for same person on same day if infraction is distinct
+        if (ms.isDuplicateName(msSubjects, name, infraction)) {
+          showToast(`"${name}" already has an entry for "${infraction || 'unspecified infraction'}".`, "info");
+          return;
+        }
+        msSubjects.push(subjectData);
+        showToast(`"${name}" added as ${editorSubjectType}.`, "success");
+      } else {
+        const idx = msSubjects.findIndex(s => s.id === subjectId);
+        if (idx >= 0) {
+          msSubjects[idx] = subjectData;
+          showToast(`"${name}" updated.`, "success");
+        }
+      }
+
+      renderSubjectList();
+      syncLegacyHiddenFields();
+      scheduleDraftSave();
+      closeSubjectEditor();
+    }
+
+    // Subject type toggle inside editor
+    el("btnSubjEditorAgent")?.addEventListener("click", () => {
+      editorSubjectType = "Agent";
+      el("btnSubjEditorAgent").classList.add("active");
+      el("btnSubjEditorTl").classList.remove("active");
+      const supInput = el("subjectEditorSupervisor");
+      if (supInput) {
+        supInput.placeholder = "Team Leader / Supervisor...";
+        if (!supInput.value.trim()) {
+          supInput.value = safeStripRolePrefix(el("edrDefaultTl")?.value || "");
+        }
+      }
+    });
+    el("btnSubjEditorTl")?.addEventListener("click", () => {
+      editorSubjectType = "Team Leader";
+      el("btnSubjEditorTl").classList.add("active");
+      el("btnSubjEditorAgent").classList.remove("active");
+      const supInput = el("subjectEditorSupervisor");
+      if (supInput) {
+        supInput.placeholder = "OM / Supervisor (e.g. Irene Fuentes or Self)...";
+      }
+    });
+
+    // Option Management - Subject Editor Employee & Supervisor Buttons
+    el("btnAddSubjectEmployeeOption")?.addEventListener("click", () => {
+      const curr = safeStripRolePrefix(ms.clean ? ms.clean(el("subjectEditorName")?.value || "") : (el("subjectEditorName")?.value || ""));
+      const val = prompt("Add new employee/person to masterlist:", curr);
+      if (val && val.trim()) {
+        const cleanVal = safeStripRolePrefix(val.trim());
+        const role = editorSubjectType === "Team Leader" ? "TL" : "Agent";
+        const people = window.CCTV_PEOPLE;
+        const res = people ? people.addCustomPerson(cleanVal, role) : { added: true, person: { name: cleanVal } };
+        populateSubjectDropdowns();
+        if (el("subjectEditorName")) el("subjectEditorName").value = cleanVal;
+        showToast(res.added ? `Added "${cleanVal}" to people registry.` : `"${cleanVal}" is already registered.`, res.added ? "success" : "info");
+      }
+    });
+
+    el("btnRemoveSubjectEmployeeOption")?.addEventListener("click", () => {
+      const curr = safeStripRolePrefix(ms.clean ? ms.clean(el("subjectEditorName")?.value || "") : (el("subjectEditorName")?.value || ""));
+      if (!curr) {
+        showToast("Enter or select an employee name to remove.", "info");
+        return;
+      }
+      if (confirm(`Remove custom person "${curr}" from options? Historical records remain safe.`)) {
+        const people = window.CCTV_PEOPLE;
+        const res = people ? people.removeCustomPerson(curr) : { removed: true };
+        if (res.removed) {
+          populateSubjectDropdowns();
+          if (el("subjectEditorName")) el("subjectEditorName").value = "";
+          showToast(`Removed "${curr}". Historical records remain intact.`, "info");
+        } else {
+          showToast(res.error || `Could not remove "${curr}".`, "warning");
+        }
+      }
+    });
+
+    el("btnAddSubjectSupervisorOption")?.addEventListener("click", () => {
+      const curr = safeStripRolePrefix(ms.clean ? ms.clean(el("subjectEditorSupervisor")?.value || "") : (el("subjectEditorSupervisor")?.value || ""));
+      const defaultRole = editorSubjectType === "Team Leader" ? "OM" : "TL";
+      const val = prompt(`Add new supervisor (${defaultRole}) to masterlist:`, curr);
+      if (val && val.trim()) {
+        const cleanVal = safeStripRolePrefix(val.trim());
+        const people = window.CCTV_PEOPLE;
+        const res = people ? people.addCustomPerson(cleanVal, defaultRole) : { added: true, person: { name: cleanVal } };
+        populateSubjectDropdowns();
+        if (el("subjectEditorSupervisor")) el("subjectEditorSupervisor").value = cleanVal;
+        showToast(res.added ? `Added "${cleanVal}" as ${defaultRole}.` : `"${cleanVal}" is already registered.`, res.added ? "success" : "info");
+      }
+    });
+
+    el("btnRemoveSubjectSupervisorOption")?.addEventListener("click", () => {
+      const curr = safeStripRolePrefix(ms.clean ? ms.clean(el("subjectEditorSupervisor")?.value || "") : (el("subjectEditorSupervisor")?.value || ""));
+      if (!curr) {
+        showToast("Enter or select a supervisor name to remove.", "info");
+        return;
+      }
+      if (confirm(`Remove custom supervisor "${curr}" from options? Historical records remain safe.`)) {
+        const people = window.CCTV_PEOPLE;
+        const res = people ? people.removeCustomPerson(curr) : { removed: true };
+        if (res.removed) {
+          populateSubjectDropdowns();
+          if (el("subjectEditorSupervisor")) el("subjectEditorSupervisor").value = "";
+          showToast(`Removed "${curr}". Historical records remain intact.`, "info");
+        } else {
+          showToast(res.error || `Could not remove "${curr}".`, "warning");
+        }
+      }
+    });
+
+    // Editor modal buttons
+    el("btnSubjectEditorSave")?.addEventListener("click", saveSubjectEditor);
+    el("btnSubjectEditorCancel")?.addEventListener("click", closeSubjectEditor);
+    el("btnSubjectEditorClose")?.addEventListener("click", closeSubjectEditor);
+    el("subjectEditorName")?.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); saveSubjectEditor(); } });
+
+    // ── Add Single Subject button ─────────────────────────────────────────
+
+    el("btnAddSubject")?.addEventListener("click", () => openSubjectEditor(null));
+    el("modalSubjectEditor")?.addEventListener("click", (e) => {
+      if (e.target === el("modalSubjectEditor")) closeSubjectEditor();
+    });
+    window.openSubjectEditor = openSubjectEditor;
+    window.closeSubjectEditor = closeSubjectEditor;
+    window.safeStripRolePrefix = safeStripRolePrefix;
+
+    // ── Paste Multiple Names Modal ────────────────────────────────────────
+
+    function openPasteNamesModal() {
+      const modal = el("modalPasteNames");
+      if (!modal) return;
+      el("pasteNamesInput").value = "";
+      el("pasteNamesPreview").textContent = "";
+      modal.hidden = false;
+      setTimeout(() => el("pasteNamesInput")?.focus(), 80);
+    }
+
+    function closePasteNamesModal() {
+      const modal = el("modalPasteNames");
+      if (modal) modal.hidden = true;
+    }
+
+    el("pasteNamesInput")?.addEventListener("input", () => {
+      const text = el("pasteNamesInput")?.value || "";
+      const names = ms.parseNamesPaste(text);
+      const preview = el("pasteNamesPreview");
+      if (!preview) return;
+      if (!names.length) {
+        preview.textContent = "";
+        return;
+      }
+      const defaultInfraction = el("edrDefaultInfraction")?.value || "";
+      const dupeCount = names.filter(n => (ms.isDuplicateName ? ms.isDuplicateName(msSubjects, safeStripRolePrefix(n), defaultInfraction) : false)).length;
+      const newCount = names.length - dupeCount;
+      preview.textContent = `${names.length} name${names.length !== 1 ? "s" : ""} detected${dupeCount ? ` (${dupeCount} already in list, ${newCount} new)` : ` — all new`}.`;
+    });
+
+    function confirmPasteNames() {
+      const text = el("pasteNamesInput")?.value || "";
+      const names = ms.parseNamesPaste(text);
+      if (!names.length) {
+        showToast("No names found. Please paste some names.", "warning");
+        return;
+      }
+
+      const defaultTl = safeStripRolePrefix(ms.clean ? ms.clean(el("edrDefaultTl")?.value || "") : (el("edrDefaultTl")?.value || ""));
+      const defaultAccount = ms.clean ? ms.clean(el("edrDefaultAccount")?.value || "") : (el("edrDefaultAccount")?.value || "");
+      const defaultInfraction = el("edrDefaultInfraction")?.value || "";
+
+      let added = 0;
+      let dupes = 0;
+      names.forEach(rawName => {
+        const name = safeStripRolePrefix(rawName);
+        if (!name) return;
+        if (ms.isDuplicateName(msSubjects, name, defaultInfraction)) {
+          dupes++;
+          return;
+        }
+        msSubjects.push({
+          id: ms.uid(),
+          type: "Agent",
+          name,
+          supervisorName: defaultTl,
+          account: defaultAccount,
+          infraction: defaultInfraction
+        });
+        added++;
+      });
+
+      renderSubjectList();
+      syncLegacyHiddenFields();
+      scheduleDraftSave();
+      closePasteNamesModal();
+
+      if (added > 0 && dupes > 0) {
+        showToast(`Added ${added} new subject${added !== 1 ? "s" : ""}. ${dupes} duplicate${dupes !== 1 ? "s" : ""} skipped.`, "success");
+      } else if (added > 0) {
+        showToast(`Added ${added} subject${added !== 1 ? "s" : ""}.`, "success");
+      } else {
+        showToast("All names were already in the subject list.", "info");
+      }
+    }
+
+    el("btnPasteMultipleNames")?.addEventListener("click", openPasteNamesModal);
+    el("btnPasteNamesClose")?.addEventListener("click", closePasteNamesModal);
+    el("btnPasteNamesCancel")?.addEventListener("click", closePasteNamesModal);
+    el("btnPasteNamesConfirm")?.addEventListener("click", confirmPasteNames);
+
+    // ── Apply Defaults to All ─────────────────────────────────────────────
+
+    el("btnApplyDefaultsToAll")?.addEventListener("click", () => {
+      if (!msSubjects.length) {
+        showToast("No subjects to apply defaults to.", "info");
+        return;
+      }
+      const defaultTl = ms.clean(el("edrDefaultTl")?.value || "");
+      const defaultAccount = ms.clean(el("edrDefaultAccount")?.value || "");
+      const defaultInfraction = el("edrDefaultInfraction")?.value || "";
+
+      msSubjects = msSubjects.map(s => {
+        const isSelfTl = s.type === "Team Leader" && defaultTl.toLowerCase() === s.name.toLowerCase();
+        return {
+          ...s,
+          supervisorName: isSelfTl ? s.supervisorName : (defaultTl || s.supervisorName),
+          account: defaultAccount || s.account,
+          infraction: defaultInfraction || s.infraction
+        };
+      });
+
+      renderSubjectList();
+      syncLegacyHiddenFields();
+      scheduleDraftSave();
+      showToast(`Defaults applied to ${msSubjects.length} subject${msSubjects.length !== 1 ? "s" : ""}.`, "success");
+    });
+
+    // ── Infraction Option Management ──────────────────────────────────────
+
+    el("btnAddInfractionOption")?.addEventListener("click", () => {
+      const curr = el("edrDefaultInfraction")?.value || "";
+      const val = prompt("Add new infraction to masterlist:", curr);
+      if (val && val.trim()) {
+        const res = ms.addInfraction(val.trim());
+        populateInfractionDropdowns();
+        const defaultSel = el("edrDefaultInfraction");
+        if (defaultSel) defaultSel.value = res.canonical || val.trim();
+        showToast(res.added ? `Added "${res.canonical || val.trim()}" to infraction list.` : `"${val.trim()}" already in list.`, res.added ? "success" : "info");
+      }
+    });
+
+    el("btnRemoveInfractionOption")?.addEventListener("click", () => {
+      const curr = el("edrDefaultInfraction")?.value;
+      if (!curr) {
+        showToast("Select an infraction to remove.", "info");
+        return;
+      }
+      if (confirm(`Remove "${curr}" from infraction options?`)) {
+        ms.removeInfraction(curr);
+        populateInfractionDropdowns();
+        showToast(`Removed "${curr}". Historical records remain safe.`, "info");
+      }
+    });
+
+    // ── Account Option Management (Multi-Subject Bar) ─────────────────────
+
+    el("btnAddAccountOptionMs")?.addEventListener("click", () => {
+      const curr = el("edrDefaultAccount")?.value?.trim() || "";
+      const val = prompt("Add new Account / Campaign to masterlist:", curr);
+      if (val && val.trim()) {
+        const res = window.masterlistService
+          ? window.masterlistService.addAccount(val.trim())
+          : { added: false, canonical: val.trim() };
+        populateSubjectDropdowns();
+        if (el("edrDefaultAccount")) el("edrDefaultAccount").value = res.canonical || val.trim();
+        showToast(res.added ? `Added "${res.canonical || val.trim()}".` : `"${val.trim()}" already in list.`, res.added ? "success" : "info");
+      }
+    });
+
+    el("btnRemoveAccountOptionMs")?.addEventListener("click", () => {
+      const curr = el("edrDefaultAccount")?.value?.trim();
+      if (!curr) {
+        showToast("Enter an Account to remove.", "info");
+        return;
+      }
+      if (confirm(`Remove "${curr}" from Account/Campaign options?`)) {
+        if (window.masterlistService) window.masterlistService.removeAccount(curr);
+        populateSubjectDropdowns();
+        if (el("edrDefaultAccount")) el("edrDefaultAccount").value = "";
+        showToast(`Removed "${curr}". Historical records remain safe.`, "info");
+      }
+    });
+
+    // ── Masterlist sync ───────────────────────────────────────────────────
+
+    if (window.masterlistService && !window.__msEdrMasterlistSubscribed) {
+      window.__msEdrMasterlistSubscribed = true;
+      window.masterlistService.subscribe(() => {
+        populateSubjectDropdowns();
+      });
+    }
+
+    // ── Expose functions used by form submit and reset ─────────────────────
+
+    window.getMsSubjects = () => msSubjects.slice();
+    window.setMsSubjects = (subjects) => {
+      msSubjects = Array.isArray(subjects) ? subjects.map(s => ({ ...s })) : [];
+      renderSubjectList();
+      syncLegacyHiddenFields();
+    };
+    window.clearMsSubjects = () => {
+      msSubjects = [];
+      renderSubjectList();
+      syncLegacyHiddenFields();
+    };
+
+    // Initial population
+    populateSubjectDropdowns();
+    renderSubjectList();
+  }
+
+
+  let viewerShots = [];
+  let viewerIndex = 0;
+  let viewerTitleBase = "";
+  let viewerMetaBase = "";
+
+  function updateViewerImage() {
+    const img = el("screenshotViewerImg");
+    const titleEl = el("screenshotViewerTitle");
+    const badgeEl = el("screenshotViewerBadge");
+    const metaEl = el("screenshotViewerMeta");
+    const prevBtn = el("btnViewerPrev");
+    const nextBtn = el("btnViewerNext");
+    const navPrevBtn = el("btnViewerNavPrev");
+    const navNextBtn = el("btnViewerNavNext");
+    const reorderBox = el("viewerReorderContainer");
+    const moveSelect = el("viewerMoveToSelect");
+
+    const count = viewerShots.length;
+    const cur = viewerShots[viewerIndex];
+    const src = typeof cur === "string" ? cur : (cur?.data || cur?.url || "");
+
+    if (img) img.src = src || "";
+    if (titleEl) {
+      titleEl.textContent = viewerTitleBase || "CCTV Incident Evidence";
+    }
+    if (badgeEl) {
+      if (count > 0) {
+        badgeEl.textContent = `Screenshot ${viewerIndex + 1} of ${count}`;
+      } else {
+        badgeEl.textContent = "Screenshot";
+      }
+    }
+    if (metaEl) {
+      if (count > 1) {
+        metaEl.textContent = `${viewerMetaBase} â€¢ Image ${viewerIndex + 1} of ${count} (Use â† / â†’ keys)`;
+      } else {
+        metaEl.textContent = viewerMetaBase;
+      }
+    }
+
+    const hasMultiple = count > 1;
+    if (prevBtn) prevBtn.style.display = hasMultiple ? "inline-flex" : "none";
+    if (nextBtn) nextBtn.style.display = hasMultiple ? "inline-flex" : "none";
+    if (navPrevBtn) navPrevBtn.style.display = hasMultiple ? "flex" : "none";
+    if (navNextBtn) navNextBtn.style.display = hasMultiple ? "flex" : "none";
+
+    // Populate position dropdown in viewer
+    if (reorderBox && moveSelect) {
+      if (hasMultiple && typeof cctvReportDraft !== "undefined" && cctvReportDraft && Array.isArray(cctvReportDraft.screenshots) && cctvReportDraft.screenshots.length === count) {
+        reorderBox.style.display = "inline-flex";
+        moveSelect.innerHTML = "";
+        for (let i = 0; i < count; i++) {
+          const opt = document.createElement("option");
+          opt.value = String(i);
+          opt.textContent = `#${i + 1}`;
+          if (i === viewerIndex) opt.selected = true;
+          moveSelect.appendChild(opt);
+        }
+      } else {
+        reorderBox.style.display = "none";
+      }
+    }
+  }
+
+  function openScreenshotViewer(dataUrlOrArray, title, meta, initialIndex = 0) {
+    const list = Array.isArray(dataUrlOrArray)
+      ? dataUrlOrArray.filter(Boolean)
+      : (dataUrlOrArray ? [dataUrlOrArray] : []);
+
+    if (!list.length) {
+      showToast("No screenshot image to display.", "info");
+      return;
+    }
+    const modal = el("modalScreenshotViewer");
+    if (!modal) return;
+
+    viewerShots = list;
+    viewerIndex = Math.max(0, Math.min(initialIndex, list.length - 1));
+    viewerTitleBase = title || "CCTV Incident Evidence";
+    viewerMetaBase = meta || "Full Resolution Screenshot";
+
+    updateViewerImage();
+    modal.hidden = false;
+  }
+
+  function closeScreenshotViewer() {
+    const modal = el("modalScreenshotViewer");
+    const img = el("screenshotViewerImg");
+    if (modal) modal.hidden = true;
+    if (img) img.src = "";
+    viewerShots = [];
+    viewerIndex = 0;
+  }
+
+  window.openScreenshotViewer = openScreenshotViewer;
+  window.closeScreenshotViewer = closeScreenshotViewer;
+
+  window.addEventListener("keydown", (e) => {
+    const modal = el("modalScreenshotViewer");
+    if (!modal || modal.hidden || viewerShots.length <= 1) return;
+    if (e.key === "ArrowLeft") {
+      viewerIndex = (viewerIndex - 1 + viewerShots.length) % viewerShots.length;
+      updateViewerImage();
+    } else if (e.key === "ArrowRight") {
+      viewerIndex = (viewerIndex + 1) % viewerShots.length;
+      updateViewerImage();
+    }
+  });
+
+  // Helper to format ISO YYYY-MM-DD to "Sep 9, 2026" or preserve custom date text
+  function formatDisplayDate(dateStr) {
+    if (!dateStr) return "No Date";
+    const str = String(dateStr).trim();
+    const m = /^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(str);
+    if (m) {
+      const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+      const monthIdx = parseInt(m[2], 10) - 1;
+      const month = months[monthIdx] || m[2];
+      const day = parseInt(m[3], 10);
+      return `${month} ${day}, ${m[1]}`;
+    }
+    return str;
+  }
+
+  function formatLastEdited(isoStr) {
+    if (!isoStr) return "";
+    try {
+      const d = new Date(isoStr);
+      if (isNaN(d.getTime())) return "";
+      const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+      const month = months[d.getMonth()];
+      const day = d.getDate();
+      const year = d.getFullYear();
+      let hours = d.getHours();
+      const minutes = String(d.getMinutes()).padStart(2, "0");
+      const ampm = hours >= 12 ? "PM" : "AM";
+      hours = hours % 12;
+      hours = hours ? hours : 12;
+      return `Edited: ${month} ${day}, ${year}  -  ${hours}:${minutes} ${ampm}`;
+    } catch (_) {
+      return "";
+    }
+  }
+
+  let currentEdrFilter = "all";
+
+  // Render EDR Cards in Column 2
+  function renderEdrList(rawReports) {
+    const listContainer = el("edrListContainer");
+    if (!listContainer) return;
+
+    // Consistently sort records by observed/report date ascending (earliest first, oldest at top, newest at bottom)
+    const reports = [...(rawReports || [])].sort((a, b) => {
+      const dateA = a.date || "";
+      const dateB = b.date || "";
+      const cmp = dateA.localeCompare(dateB);
+      if (cmp !== 0) return cmp;
+      return String(a.id || "").localeCompare(String(b.id || ""));
+    });
+
+    const total = reports.length;
+    const selected = reports.filter(r => r.selected).length;
+    const done = reports.filter(r => r.done).length;
+
+    // Compact status counts
+    const notCopied = reports.filter(r => !r.teamsCopied && !r.done).length;
+    const notAudited = reports.filter(r => !r.audited && !r.done).length;
+    const complete = reports.filter(r => (!!r.teamsCopied && !!r.audited) || r.done).length;
+    const needsAction = reports.filter(r => (!r.teamsCopied || !r.audited) && !r.done).length;
+
+    if (el("badgeTotalCount")) el("badgeTotalCount").textContent = total;
+    if (el("badgeSelectedCount")) el("badgeSelectedCount").textContent = `${selected} selected`;
+    if (el("badgeDoneCount")) el("badgeDoneCount").textContent = `${done} done`;
+    if (el("railEdrBadge")) el("railEdrBadge").textContent = total;
+    window.CCTV_DASHBOARD?.syncLocalWorkspaces?.();
+
+    // Update compact filter pill count badges
+    if (el("pillCountAll")) el("pillCountAll").textContent = total;
+    if (el("pillCountNeedsAction")) el("pillCountNeedsAction").textContent = needsAction;
+    if (el("pillCountNotCopied")) el("pillCountNotCopied").textContent = notCopied;
+    if (el("pillCountNotAudited")) el("pillCountNotAudited").textContent = notAudited;
+    if (el("pillCountComplete")) el("pillCountComplete").textContent = complete;
+
+    // Update compact status summary stats
+    if (el("statNotCopied")) el("statNotCopied").textContent = notCopied;
+    if (el("statNotAudited")) el("statNotAudited").textContent = notAudited;
+    if (el("statComplete")) el("statComplete").textContent = complete;
+
+    // Synchronize active filter pill styling
+    document.querySelectorAll(".edr-filter-pill").forEach(p => {
+      p.classList.toggle("active", (p.dataset.filter || "all") === currentEdrFilter);
+    });
+
+    // Wire filter button listeners once
+    if (!listContainer._filterBound) {
+      document.querySelectorAll(".edr-filter-pill").forEach(btn => {
+        btn.addEventListener("click", () => {
+          currentEdrFilter = btn.dataset.filter || "all";
+          renderEdrList(window.CCTV_EDR.getReports());
+        });
+      });
+      listContainer._filterBound = true;
+    }
+
+    // Filter display reports
+    let displayReports = reports;
+    if (currentEdrFilter === "needs_action") {
+      displayReports = reports.filter(r => (!r.teamsCopied || !r.audited) && !r.done);
+    } else if (currentEdrFilter === "not_copied") {
+      displayReports = reports.filter(r => !r.teamsCopied && !r.done);
+    } else if (currentEdrFilter === "not_audited") {
+      displayReports = reports.filter(r => !r.audited && !r.done);
+    } else if (currentEdrFilter === "complete") {
+      displayReports = reports.filter(r => (!!r.teamsCopied && !!r.audited) || r.done);
+    }
+
+    // Update Delete Selected button
+    const btnDel = el("btnDeleteSelectedEdr");
+    const btnDelText = el("btnDeleteSelectedEdrText");
+    if (btnDel) {
+      btnDel.disabled = selected === 0;
+      if (btnDelText) {
+        btnDelText.textContent = selected > 0 ? `Delete Selected (${selected})` : "Delete Selected";
+      }
+    }
+
+    // Clean up any detached or open more-menus in document.body
+    document.querySelectorAll("body > .record-dropdown-menu").forEach(menu => {
+      closeMoreMenu(menu);
+      menu.remove();
+    });
+
+    if (!listContainer._scrollBound) {
+      listContainer.addEventListener("scroll", () => {
+        document.querySelectorAll(".record-dropdown-menu.is-open").forEach(closeMoreMenu);
+      }, { passive: true });
+      listContainer._scrollBound = true;
+    }
+
+    if (!reports.length) {
+      listContainer.innerHTML = '<div style="color:var(--text-muted); font-size:11.5px; text-align:center; padding:30px 10px;">No EDR records found. Complete the form on the left to save an incident.</div>';
+      listContainer._lastFilter = currentEdrFilter;
+      updateLivePreview();
+      return;
+    }
+
+    if (!displayReports.length) {
+      const filterLabel = currentEdrFilter === "needs_action" ? "Needs Action" : (currentEdrFilter === "not_copied" ? "Not Copied" : (currentEdrFilter === "not_audited" ? "Not Audited" : "Complete"));
+      listContainer.innerHTML = `<div style="color:var(--text-muted); font-size:11.5px; text-align:center; padding:30px 10px;">No Saved EDRs match filter “${filterLabel}”.</div>`;
+      listContainer._lastFilter = currentEdrFilter;
+      updateLivePreview();
+      return;
+    }
+
+    const existingCards = listContainer.querySelectorAll(".record-row");
+    const existingIds = Array.from(existingCards).map(c => c.dataset.id);
+    const newIds = displayReports.map(r => r.id);
+    // Fast-path: only update selection/done state when IDs and filter are identical AND
+    // no report content has changed (updatedAt fingerprint).
+    const isSameStructure = (listContainer._lastFilter === currentEdrFilter) &&
+      existingIds.length === newIds.length &&
+      existingIds.every((id, i) => {
+        if (id !== newIds[i]) return false;
+        const card = listContainer.querySelector(`.record-row[data-id="${id}"]`);
+        return card && card.dataset.updatedAt === (displayReports[i].updatedAt || "");
+      });
+
+    if (isSameStructure) {
+      displayReports.forEach((r, idx) => {
+        const card = listContainer.querySelector(`.record-row[data-id="${r.id}"]`) || existingCards[idx];
+        if (!card) return;
+        const isDone = !!r.done;
+        const isSelected = !!r.selected;
+        card.classList.toggle("is-selected", isSelected);
+        card.classList.toggle("is-done", isDone);
+        const chk = card.querySelector(".edr-check");
+        if (chk) {
+          chk.checked = isSelected;
+          chk.disabled = false;
+        }
+        const doneBtn = card.querySelector(".btn-done-toggle");
+        if (doneBtn) {
+          doneBtn.textContent = isDone ? "Reopen" : "Done";
+          doneBtn.title = isDone ? "Reopen EDR" : "Mark as Done";
+          doneBtn.classList.toggle("is-done-btn", isDone);
+        }
+        const isAudited = !!r.audited;
+        const auditBtn = card.querySelector(".btn-audit-send");
+        if (auditBtn) {
+          auditBtn.title = "Send to CCTV Audit";
+          const longLbl = auditBtn.querySelector(".label-long");
+          const shortLbl = auditBtn.querySelector(".label-short");
+          if (longLbl) longLbl.textContent = "Send to Audit";
+          if (shortLbl) shortLbl.textContent = "Audit";
+        }
+        let chipsWrap = card.querySelector(".status-chips-wrap");
+        if (!chipsWrap) {
+          chipsWrap = document.createElement("span");
+          chipsWrap.className = "status-chips-wrap";
+          card.querySelector(".record-main-line")?.appendChild(chipsWrap);
+        }
+        let doneChip = card.querySelector(".chip-done");
+        if (isDone && !doneChip && chipsWrap) {
+          const chip = document.createElement("span");
+          chip.className = "status-chip chip-done";
+          chip.title = "Completed";
+          chip.textContent = "DONE";
+          chipsWrap.appendChild(chip);
+        } else if (!isDone && doneChip) {
+          doneChip.remove();
+        }
+
+        // TEAMS tag: ALWAYS present
+        const isTeamsCopied = !!r.teamsCopied;
+        const teamsTitle = isTeamsCopied
+          ? (r.teamsCopiedAt ? `TEAMS: Copied (${formatLastEdited(r.teamsCopiedAt)})` : "TEAMS: Copied")
+          : "TEAMS: Not Copied";
+        let teamsChip = card.querySelector(".chip-teams");
+        if (!teamsChip && chipsWrap) {
+          teamsChip = document.createElement("span");
+          chipsWrap.appendChild(teamsChip);
+        }
+        if (teamsChip) {
+          teamsChip.className = `status-chip chip-teams ${isTeamsCopied ? 'is-copied' : 'is-not-copied'}`;
+          teamsChip.textContent = isTeamsCopied ? "TEAMS: Copied" : "TEAMS: Not Copied";
+          teamsChip.title = teamsTitle;
+        }
+
+        // AUDIT tag: ALWAYS present
+        const auditTitle = isAudited
+          ? (r.auditedAt ? `AUDIT: Audited (${formatLastEdited(r.auditedAt)})` : "AUDIT: Audited")
+          : "AUDIT: Not Audited";
+        let auditChip = card.querySelector(".chip-audit");
+        if (!auditChip && chipsWrap) {
+          auditChip = document.createElement("span");
+          chipsWrap.appendChild(auditChip);
+        }
+        if (auditChip) {
+          auditChip.className = `status-chip chip-audit ${isAudited ? 'is-audited' : 'is-not-audited'}`;
+          auditChip.textContent = isAudited ? "AUDIT: Audited" : "AUDIT: Not Audited";
+          auditChip.title = auditTitle;
+        }
+      });
+      updateLivePreview();
+      return;
+    }
+
+    listContainer._lastFilter = currentEdrFilter;
+    const esc = window.escapeHtml || (s => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g, '&#39;'));
+
+    listContainer.innerHTML = displayReports.map((r) => {
+      const isDone = !!r.done;
+      const isSelected = !!r.selected;
+      const isAudited = !!r.audited;
+      const isLinked = isAudited;
+      const shots = Array.isArray(r.screenshots) && r.screenshots.length
+        ? r.screenshots
+        : (r.screenshotData ? [r.screenshotData] : []);
+      const hasRealImage = shots.length > 0;
+      const hasRemoteOnly = !hasRealImage && !!r.screenshotFileId;
+      const hasShot = hasRealImage || hasRemoteOnly;
+      const formattedDate = formatDisplayDate(r.date);
+      const lastEditedText = r.updatedAt ? formatLastEdited(r.updatedAt) : "";
+      const roleShort = (r.supervisorRole === 'Operations Manager' || r.supervisorRole === 'OM') ? 'OM' : (r.supervisorRole === 'Team Leader' || r.supervisorRole === 'TL' ? 'TL' : (r.supervisorRole || 'TL'));
+
+      // Multi-subject normalization
+      const subjects = (Array.isArray(r.subjects) && r.subjects.length)
+        ? r.subjects
+        : (r.subjectName ? [{ id: 'legacy_0', type: r.subjectType === 'Team Leader' ? 'Team Leader' : 'Agent', name: r.subjectName, supervisorName: r.supervisorName, account: r.account, infraction: '' }] : []);
+
+      const isMultiSubject = subjects.length > 1;
+      const agentCount = subjects.filter(s => s.type !== 'Team Leader').length;
+      const tlCount = subjects.filter(s => s.type === 'Team Leader').length;
+      let countLabel = '';
+      if (agentCount > 0 && tlCount > 0) {
+        countLabel = `${subjects.length} SUBJECTS`;
+      } else if (tlCount > 0) {
+        countLabel = `${tlCount} TEAM LEADER${tlCount > 1 ? 'S' : ''}`;
+      } else {
+        countLabel = `${agentCount} AGENT${agentCount > 1 ? 'S' : ''}`;
+      }
+      const displayMax = 3;
+      const previewNames = subjects.slice(0, displayMax).map(s => s.name).join(', ') + (subjects.length > displayMax ? ` +${subjects.length - displayMax}` : '');
+
+      // Status chips: SS, TEAMS (always), AUDIT (always), DONE, DOCS
+      const chips = [];
+      if (hasShot) {
+        const ssLabel = shots.length > 1 ? `SS (${shots.length})` : "SS";
+        chips.push(`<span class="status-chip chip-ss" title="${shots.length > 1 ? `${shots.length} screenshots attached` : 'Screenshot attached'}">${ssLabel}</span>`);
+      }
+
+      // 1. TEAMS Status Chip - ALWAYS present
+      const isTeamsCopied = !!r.teamsCopied;
+      const teamsTitle = isTeamsCopied
+        ? (r.teamsCopiedAt ? `TEAMS: Copied (${formatLastEdited(r.teamsCopiedAt)})` : 'TEAMS: Copied')
+        : 'TEAMS: Not Copied';
+      chips.push(`<span class="status-chip chip-teams ${isTeamsCopied ? 'is-copied' : 'is-not-copied'}" title="${esc(teamsTitle)}">${isTeamsCopied ? 'TEAMS: Copied' : 'TEAMS: Not Copied'}</span>`);
+
+      // 2. AUDIT Status Chip - ALWAYS present
+      const auditTitle = isAudited
+        ? (r.auditedAt ? `AUDIT: Audited (${formatLastEdited(r.auditedAt)})` : 'AUDIT: Audited')
+        : 'AUDIT: Not Audited';
+      chips.push(`<span class="status-chip chip-audit ${isAudited ? 'is-audited' : 'is-not-audited'}" title="${esc(auditTitle)}">${isAudited ? 'AUDIT: Audited' : 'AUDIT: Not Audited'}</span>`);
+
+      if (isDone) {
+        chips.push('<span class="status-chip chip-done" title="Completed">DONE</span>');
+      }
+      if (hasRemoteOnly || r.docsSynced) {
+        chips.push('<span class="status-chip chip-docs" title="Synced to Google Docs">DOCS</span>');
+      }
+      const chipsHtml = chips.length ? `<span class="status-chips-wrap">${chips.join('')}</span>` : '';
+
+      return `
+        <div class="record-row ${isSelected ? 'is-selected' : ''} ${isDone ? 'is-done' : ''}" data-id="${esc(r.id)}" data-updated-at="${esc(r.updatedAt || '')}">
+          <div class="record-main-line">
+            <div class="record-anchor-group">
+              <label class="record-select-col" style="cursor:pointer;" title="Select record">
+                <input type="checkbox" class="edr-check" data-id="${esc(r.id)}" ${isSelected ? 'checked' : ''} style="cursor:pointer;">
+              </label>
+              <span class="record-date">${esc(formattedDate)}</span>
+              ${r.site ? `
+                <span class="record-sep">·</span>
+                <span class="record-site" title="${esc(r.site)}">${esc(r.site)}</span>
+              ` : ''}
+            </div>
+            ${chipsHtml}
+          </div>
+
+          <div class="record-sub-line">
+            <div class="record-meta-group">
+              ${isMultiSubject ? `
+                <div class="edr-card-subject-pill-wrap">
+                  <button type="button" class="edr-card-subject-toggle" data-id="${esc(r.id)}" title="Click to view all ${subjects.length} subjects">
+                    <span class="edr-subj-pill-label">${esc(countLabel)}</span>
+                    <span class="edr-subj-pill-chevron">▾</span>
+                  </button>
+                  <span class="edr-subj-pill-names" title="${esc(subjects.map(s => s.name).join(', '))}">${esc(previewNames)}</span>
+                </div>
+              ` : `
+                <span class="meta-item meta-account" title="${esc(r.account || 'General')}">${esc(r.account || 'General')}</span>
+                <span class="meta-sep">·</span>
+                ${(r.subjectType === 'Team Leader' || subjects[0]?.type === 'Team Leader') ? `
+                  <span class="meta-item meta-resp" title="Team Leader: ${esc(r.subjectName || r.supervisorName || 'N/A')}">
+                    <span class="sub-label">TL:</span> <strong>${esc(r.subjectName || r.supervisorName || 'N/A')}</strong>
+                  </span>
+                ` : `
+                  <span class="meta-item meta-resp" title="${esc(r.supervisorRole || 'TL')}: ${esc(r.supervisorName || 'N/A')}">
+                    <span class="sub-label">${esc(roleShort)}:</span> <strong>${esc(r.supervisorName || 'N/A')}</strong>
+                  </span>
+                  ${r.subjectName ? `
+                    <span class="meta-sep">·</span>
+                    <span class="meta-item meta-subj" title="Subject: ${esc(r.subjectName)}"><span class="sub-label">Subj:</span> ${esc(r.subjectName)}</span>
+                  ` : ''}
+                `}
+              `}
+              ${lastEditedText ? `
+                <span class="meta-sep meta-sep-time">·</span>
+                <span class="meta-item meta-time" title="${esc(lastEditedText)}">${esc(lastEditedText)}</span>
+              ` : ''}
+            </div>
+
+            <div class="record-actions">
+              ${hasShot ? `
+                <button type="button" class="btn-action btn-shot-view" title="View CCTV screenshot${shots.length > 1 ? 's' : ''}">View SS${shots.length > 1 ? ` (${shots.length})` : ''}</button>
+              ` : `
+                <button type="button" class="btn-action btn-shot-add" title="Add screenshot">Add SS</button>
+              `}
+            <button type="button" class="btn-action btn-audit-send" title="Send to CCTV Audit">
+              <span class="label-long">Send to Audit</span>
+              <span class="label-short">Audit</span>
+            </button>
+            <button type="button" class="btn-action btn-done-toggle ${isDone ? 'is-done-btn' : ''}" title="${isDone ? 'Reopen EDR' : 'Mark as Done'}">
+              ${isDone ? 'Reopen' : 'Done'}
+            </button>
+            <button type="button" class="btn-action btn-edit" title="Edit EDR">Edit</button>
+
+            <!-- Compact More Menu for Screenshot, Audit & Deletion Actions -->
+            <div class="record-more-menu-wrap">
+              <button type="button" class="btn-action btn-more-trigger" title="More options">...</button>
+              <div class="record-dropdown-menu">
+                ${isAudited ? `
+                  <button type="button" class="dropdown-item btn-action-undo-audit text-warning" title="Clear Audited status for this EDR">
+                    <svg class="dropdown-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="1 4 1 10 7 10"></polyline>
+                      <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+                    </svg>
+                    <span>Undo Audited</span>
+                  </button>
+                  <div class="dropdown-divider"></div>
+                ` : `
+                  <button type="button" class="dropdown-item btn-action-mark-audit" title="Mark this EDR as Audited">
+                    <svg class="dropdown-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                    <span>Mark as Audited</span>
+                  </button>
+                  <div class="dropdown-divider"></div>
+                `}
+                ${hasShot ? `
+                  <button type="button" class="dropdown-item btn-action-copy btn-shot-copy">
+                    <svg class="dropdown-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                    </svg>
+                    <span>Copy SS</span>
+                  </button>
+                  <button type="button" class="dropdown-item btn-action-replace btn-shot-replace">
+                    <svg class="dropdown-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                      <polyline points="17 8 12 3 7 8"></polyline>
+                      <line x1="12" y1="3" x2="12" y2="15"></line>
+                    </svg>
+                    <span>Replace SS</span>
+                  </button>
+                  <button type="button" class="dropdown-item btn-action-remove btn-shot-remove text-danger">
+                    <svg class="dropdown-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="3 6 5 6 21 6"></polyline>
+                      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    </svg>
+                    <span>Remove SS</span>
+                  </button>
+                  <div class="dropdown-divider"></div>
+                ` : ''}
+                <button type="button" class="dropdown-item btn-action-delete btn-delete text-danger">
+                  <svg class="dropdown-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="3 6 5 6 21 6"></polyline>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    <line x1="10" y1="11" x2="10" y2="17"></line>
+                    <line x1="14" y1="11" x2="14" y2="17"></line>
+                  </svg>
+                  <span>Delete EDR</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        ${isMultiSubject ? `
+          <div class="edr-card-expanded-subjects" id="edrCardExpanded_${esc(r.id)}" style="display:none;">
+            ${subjects.map(s => {
+              const isSelfTl = s.type === 'Team Leader' && s.supervisorName && s.supervisorName.toLowerCase() === s.name.toLowerCase();
+              const displaySup = isSelfTl ? '' : s.supervisorName;
+              const metaParts = [displaySup, s.account, s.infraction].filter(Boolean);
+              const metaStr = metaParts.join(' · ');
+              return `
+                <div class="edr-card-expanded-row">
+                  <div class="edr-card-expanded-name">${esc(s.name)}</div>
+                  ${metaStr ? `<div class="edr-card-expanded-meta">${esc(metaStr)}</div>` : ''}
+                </div>
+              `;
+            }).join('')}
+          </div>
+        ` : ''}
+      </div>
+    `;
+    }).join("");
+
+    // Attach Event Listeners to Cards
+    listContainer.querySelectorAll(".record-row").forEach(card => {
+      const id = card.dataset.id;
+      const report = reports.find(r => r.id === id);
+      if (!report) return;
+
+      // Multi-subject expansion toggle
+      card.querySelectorAll(".edr-card-subject-toggle").forEach(btn => {
+        btn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const targetId = btn.dataset.id;
+          const container = card.querySelector(`#edrCardExpanded_${targetId}`);
+          const chevron = btn.querySelector(".edr-subj-pill-chevron");
+          if (!container) return;
+          const isHidden = container.style.display === "none";
+          container.style.display = isHidden ? "flex" : "none";
+          if (chevron) chevron.textContent = isHidden ? "▴" : "▾";
+          btn.classList.toggle("is-expanded", isHidden);
+        });
+      });
+
+      const chk = card.querySelector(".edr-check");
+      if (chk) {
+        const handleToggle = (e) => {
+          e.stopPropagation();
+          edr.toggleSelect(id, chk.checked);
+          card.classList.toggle("is-selected", chk.checked);
+          updateLivePreview();
+        };
+        chk.addEventListener("change", handleToggle);
+      }
+
+      // Approved EDR Selection: clicking anywhere on the card body toggles selection, and clicking the checkbox directly also toggles it
+      card.style.cursor = "pointer";
+      card.addEventListener("click", (e) => {
+        if (!chk) return;
+        // Do not intercept clicks on buttons, more menu, subject toggles, or the checkbox/label itself
+        if (e.target.closest(".record-actions") ||
+            e.target.closest(".record-more-menu-wrap") ||
+            e.target.closest(".edr-card-subject-toggle") ||
+            e.target.closest(".edr-card-expanded-subjects") ||
+            e.target.closest(".record-select-col") ||
+            e.target.closest("button") ||
+            e.target.closest("a") ||
+            e.target.closest("input")) {
+          return; // let those handlers fire natively
+        }
+        // Toggle selection
+        const newChecked = !chk.checked;
+        chk.checked = newChecked;
+        edr.toggleSelect(id, newChecked);
+        card.classList.toggle("is-selected", newChecked);
+        updateLivePreview();
+      });
+
+      // View SS
+      const triggerView = async () => {
+        if (!report.screenshotData && (!report.screenshots || !report.screenshots.length) && report.screenshotFileId) {
+          showToast("Loading remote screenshot...", "info");
+          await edr.ensureRemoteScreenshot(report);
+        }
+        const activeShots = Array.isArray(report.screenshots) && report.screenshots.length
+          ? report.screenshots
+          : (report.screenshotData ? [report.screenshotData] : []);
+
+        if (!activeShots.length) {
+          showToast("No screenshot available.", "info");
+          return;
+        }
+
+        openScreenshotViewer(
+          activeShots,
+          `${report.site || 'Site'}  -  ${report.account || 'EDR'}`,
+          `Observed: ${report.date || ''} ${report.timeObserved || ''}  -  Supervisor: ${report.supervisorName || 'N/A'}`
+        );
+      };
+
+      // Add SS
+      const triggerAdd = () => {
+        const picker = document.createElement("input");
+        picker.type = "file";
+        picker.accept = "image/*";
+        picker.multiple = true;
+        picker.onchange = async () => {
+          const files = Array.from(picker.files || []);
+          if (!files.length) return;
+          for (const file of files) {
+            await new Promise(resolve => {
+              const reader = new FileReader();
+              reader.onload = async (evt) => {
+                try {
+                  await edr.attachScreenshotToReport(id, evt.target.result);
+                } catch (err) {
+                  console.warn("attachScreenshotToReport error:", err);
+                }
+                resolve();
+              };
+              reader.readAsDataURL(file);
+            });
+          }
+          showToast("Screenshot(s) attached to saved EDR.", "success");
+        };
+        picker.click();
+      };
+
+      // Replace SS
+      const triggerReplace = () => {
+        const picker = document.createElement("input");
+        picker.type = "file";
+        picker.accept = "image/*";
+        picker.onchange = async () => {
+          const file = picker.files?.[0];
+          if (!file) return;
+          const reader = new FileReader();
+          reader.onload = async (evt) => {
+            try {
+              await edr.replaceScreenshotOnReport(id, evt.target.result);
+              showToast("Screenshot replaced on saved EDR.", "success");
+            } catch (err) {
+              showToast(err.message || "Failed to replace screenshot.", "error");
+            }
+          };
+          reader.readAsDataURL(file);
+        };
+        picker.click();
+      };
+
+      card.querySelector(".btn-shot-view")?.addEventListener("click", triggerView);
+      card.querySelector(".btn-shot-add")?.addEventListener("click", triggerAdd);
+
+      // Copy SS (in More menu)
+      card.querySelector(".btn-shot-copy")?.addEventListener("click", async (e) => {
+        e.stopPropagation();
+        closeMoreMenu(moreMenu);
+        try {
+          await edr.copyScreenshot(report);
+          showToast("CCTV screenshot copied to clipboard as PNG image.", "success");
+        } catch (err) {
+          showToast(err.message || "Failed to copy screenshot.", "error");
+        }
+      });
+
+      card.querySelector(".btn-audit-send")?.addEventListener("click", () => {
+        sendSingleReportToAudit(report);
+      });
+
+      card.querySelector(".btn-action-undo-audit")?.addEventListener("click", async (e) => {
+        e.stopPropagation();
+        closeMoreMenu(moreMenu);
+        await edr.undoAudited(id);
+        showToast("AUDIT: Audited status removed.", "info");
+      });
+
+      card.querySelector(".btn-action-mark-audit")?.addEventListener("click", async (e) => {
+        e.stopPropagation();
+        closeMoreMenu(moreMenu);
+        await edr.markAsAudited(id);
+        showToast("AUDIT: Marked as Audited.", "success");
+      });
+
+      card.querySelector(".btn-done-toggle")?.addEventListener("click", () => {
+        edr.toggleDone(id);
+      });
+
+      card.querySelector(".btn-edit")?.addEventListener("click", () => {
+        populateFormForEdit(report);
+      });
+
+      // More Menu Toggle
+      const moreBtn = card.querySelector(".btn-more-trigger");
+      const moreMenu = card.querySelector(".record-dropdown-menu");
+      moreBtn?.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const isOpen = moreMenu?.classList.contains("is-open");
+        document.querySelectorAll(".record-dropdown-menu.is-open").forEach(closeMoreMenu);
+        if (!isOpen && moreMenu) {
+          openMoreMenu(moreMenu, moreBtn, moreMenu.parentElement);
+        }
+      });
+
+      // Replace SS (in More menu)
+      card.querySelector(".btn-action-replace")?.addEventListener("click", (e) => {
+        e.stopPropagation();
+        closeMoreMenu(moreMenu);
+        triggerReplace();
+      });
+
+      // Remove SS (in More menu)
+      card.querySelector(".btn-action-remove")?.addEventListener("click", async (e) => {
+        e.stopPropagation();
+        closeMoreMenu(moreMenu);
+        const ok = await window.appConfirm({
+          title: "Remove Screenshot",
+          message: "Remove CCTV screenshot evidence from this saved EDR?",
+          confirmText: "Remove Screenshot",
+          tone: "danger"
+        });
+        if (ok) {
+          await edr.removeScreenshotFromReport(id);
+          showToast("CCTV screenshot removed.", "info");
+        }
+      });
+
+      // Delete EDR (in More menu)
+      card.querySelector(".btn-action-delete")?.addEventListener("click", async (e) => {
+        e.stopPropagation();
+        closeMoreMenu(moreMenu);
+        const ok = await window.appConfirm({
+          title: "Delete EDR Record",
+          message: `Permanently delete EDR record for ${report.subjectName || 'this employee'}?`,
+          confirmText: "Delete Record",
+          tone: "danger"
+        });
+        if (ok) {
+          await edr.deleteReport(id);
+          renderEdrList(edr.getReports());
+          if (window.historyService?.captureIfChanged) {
+            await window.historyService.captureIfChanged("edr", `Deleted EDR record: ${report.subjectName || "record"}`);
+          }
+          showToast("EDR record deleted.", "info");
+        }
+      });
+    });
+
+    // Global listener for closing dropdowns on outside click
+    if (!window._edrMoreMenuGlobalBound) {
+      document.addEventListener("click", (e) => {
+        if (!e.target.closest(".record-more-menu-wrap") && !e.target.closest(".record-dropdown-menu")) {
+          document.querySelectorAll(".record-dropdown-menu.is-open").forEach(closeMoreMenu);
+        }
+      });
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+          document.querySelectorAll(".record-dropdown-menu.is-open").forEach(closeMoreMenu);
+        }
+      });
+      window._edrMoreMenuGlobalBound = true;
+    }
+
+    updateLivePreview();
+  }
+
+  // Edit Mode
+  function populateFormForEdit(report) {
+    edr.setEditingId(report.id);
+    el("edrSite").value = report.site || "";
+    el("edrDate").value = report.date || "";
+    el("edrTimeObserved").value = report.timeObserved || report.timeStart || "";
+
+    supervisorRole = report.supervisorRole || "Team Leader";
+    if (supervisorRole === "OM") {
+      el("btnRoleOm").classList.add("active");
+      el("btnRoleTl").classList.remove("active");
+      populateRespondentList("OM");
+    } else {
+      el("btnRoleTl").classList.add("active");
+      el("btnRoleOm").classList.remove("active");
+      populateRespondentList("Team Leader");
+    }
+    el("edrSupervisorName").value = report.supervisorName || "";
+    el("edrOmName").value = report.omName || "";
+
+    subjectType = report.subjectType || "Agent/s";
+    // Restore multi-subject list from report
+    if (window.setMsSubjects && window.EDR_MULTI_SUBJECT) {
+      const subjects = window.EDR_MULTI_SUBJECT.normalizeSubjects(report);
+      window.setMsSubjects(subjects);
+    }
+    // Also set default bar to first subject's values for convenience
+    const firstSubject = (Array.isArray(report.subjects) && report.subjects.length) ? report.subjects[0] : null;
+    if (el("edrDefaultTl")) el("edrDefaultTl").value = report.defaultTl || (firstSubject?.supervisorName) || report.supervisorName || "";
+    if (el("edrDefaultAccount")) el("edrDefaultAccount").value = report.defaultAccount || (firstSubject?.account) || report.account || "";
+    if (el("edrDefaultInfraction")) el("edrDefaultInfraction").value = report.defaultInfraction || (firstSubject?.infraction) || "";
+
+    el("edrIncident").value = report.incident || "";
+    el("edrActionRemarks").value = report.action || "";
+    // Restore clip links
+    if (window.setEdrClipLinks) {
+      const links = Array.isArray(report.clipLinks) && report.clipLinks.length
+        ? report.clipLinks
+        : (report.clipLink ? [report.clipLink] : [""]);
+      window.setEdrClipLinks(links);
+    }
+
+    // Restore screenshots
+    if (window.setCctvScreenshots) {
+      window.setCctvScreenshots(
+        Array.isArray(report.screenshots) && report.screenshots.length
+          ? report.screenshots
+          : (report.screenshotData ? [report.screenshotData] : [])
+      );
+    }
+
+    el("edrFormTitle").textContent = "Update EDR";
+    el("btnEdrSubmitText").textContent = "Update EDR";
+    if (el("btnSendFormToAuditText")) el("btnSendFormToAuditText").textContent = "Update & Send to Audit";
+    el("btnEdrCancelEdit").style.display = "inline-flex";
+  }
+
+  function resetForm() {
+    edr.setEditingId(null);
+    el("edrForm").reset();
+    if (el("edrDefaultTl")) el("edrDefaultTl").value = "";
+    if (el("edrDefaultAccount")) el("edrDefaultAccount").value = "";
+    if (el("edrDefaultInfraction")) el("edrDefaultInfraction").value = "";
+    supervisorRole = "Team Leader";
+    el("btnRoleTl")?.classList.add("active");
+    el("btnRoleOm")?.classList.remove("active");
+    subjectType = "Agent/s";
+    // Clear multi-subject list
+    if (window.clearMsSubjects) window.clearMsSubjects();
+    initFormDropdowns();
+    if (window.clearEdrScreenshots) window.clearEdrScreenshots();
+    else if (window.setCctvScreenshot) window.setCctvScreenshot("");
+    if (window.clearEdrClipLinks) window.clearEdrClipLinks();
+    el("edrFormTitle").textContent = "Manual EDR Entry";
+    el("btnEdrSubmitText").textContent = "Save EDR";
+    if (el("btnSendFormToAuditText")) el("btnSendFormToAuditText").textContent = "Save & Send to Audit";
+    el("btnEdrCancelEdit").style.display = "none";
+    edr.clearDraftForm().catch(() => {});
+  }
+
+  function applyEdrPartialReset(shared) {
+    edr.setEditingId(null);
+    if (el("edrTimeObserved")) el("edrTimeObserved").value = "";
+    if (el("edrIncident")) el("edrIncident").value = "";
+    if (el("edrDetails")) el("edrDetails").value = "";
+    if (el("edrActionRemarks")) el("edrActionRemarks").value = "";
+    if (window.clearMsSubjects) window.clearMsSubjects();
+    if (window.clearEdrScreenshots) window.clearEdrScreenshots();
+    else if (window.setCctvScreenshot) window.setCctvScreenshot("");
+    if (window.clearEdrClipLinks) window.clearEdrClipLinks();
+
+    // Re-apply preserved shared fields
+    if (shared.site && el("edrSite")) el("edrSite").value = shared.site;
+    if (shared.date && el("edrDate")) el("edrDate").value = shared.date;
+    if (shared.om && el("edrOmName")) el("edrOmName").value = shared.om;
+    if (shared.defaultTl && el("edrDefaultTl")) el("edrDefaultTl").value = shared.defaultTl;
+    if (shared.defaultAccount && el("edrDefaultAccount")) el("edrDefaultAccount").value = shared.defaultAccount;
+    if (el("edrDefaultInfraction")) el("edrDefaultInfraction").value = "";
+
+    // Ensure draft storage does not retain stale incident data
+    edr.clearDraftForm().catch(() => {});
+
+    el("edrFormTitle").textContent = "Manual EDR Entry";
+    el("btnEdrSubmitText").textContent = "Save EDR";
+    if (el("btnSendFormToAuditText")) el("btnSendFormToAuditText").textContent = "Save & Send to Audit";
+    el("btnEdrCancelEdit").style.display = "none";
+
+    setTimeout(() => {
+      const timeField = el("edrTimeObserved");
+      if (timeField) timeField.focus();
+      else el("btnAddSubject")?.focus();
+    }, 50);
+  }
+
+  // Draft Autosave & Restore
+  let draftTimer = null;
+  function scheduleDraftSave() {
+    clearTimeout(draftTimer);
+    draftTimer = setTimeout(() => {
+      const editing = edr.getEditingReport();
+      if (!editing) {
+        edr.saveDraftForm(getFormData());
+      }
+    }, 500);
+  }
+
+  function restoreDraftForm() {
+    const draft = edr.getDraftForm();
+    if (!draft) return;
+    if (!draft.incident && !draft.subjectName && !draft.account && !draft.screenshotData && !(Array.isArray(draft.screenshots) && draft.screenshots.length)) return;
+
+    if (draft.site && el("edrSite")) el("edrSite").value = draft.site;
+    if (draft.date && el("edrDate")) el("edrDate").value = draft.date;
+    if (draft.timeObserved && el("edrTimeObserved")) el("edrTimeObserved").value = draft.timeObserved;
+
+    supervisorRole = draft.supervisorRole === "OM" ? "OM" : "Team Leader";
+    if (supervisorRole === "OM") {
+      el("btnRoleOm")?.classList.add("active");
+      el("btnRoleTl")?.classList.remove("active");
+    } else {
+      el("btnRoleTl")?.classList.add("active");
+      el("btnRoleOm")?.classList.remove("active");
+    }
+    populateRespondentList(supervisorRole);
+    if (draft.supervisorName && el("edrSupervisorName")) el("edrSupervisorName").value = draft.supervisorName;
+    if (draft.omName && el("edrOmName")) el("edrOmName").value = draft.omName;
+    if (el("edrDefaultTl")) el("edrDefaultTl").value = draft.defaultTl || draft.supervisorName || "";
+    if (el("edrDefaultAccount")) el("edrDefaultAccount").value = draft.defaultAccount || draft.account || "";
+    if (el("edrDefaultInfraction") && draft.defaultInfraction) el("edrDefaultInfraction").value = draft.defaultInfraction;
+
+    subjectType = draft.subjectType === "Team Leader" ? "Team Leader" : "Agent/s";
+    // Restore multi-subject list from draft
+    if (window.setMsSubjects && window.EDR_MULTI_SUBJECT && Array.isArray(draft.subjects) && draft.subjects.length) {
+      window.setMsSubjects(window.EDR_MULTI_SUBJECT.normalizeSubjects(draft));
+    } else if (draft.subjectName) {
+      // Legacy single-subject draft compat
+      if (window.setMsSubjects && window.EDR_MULTI_SUBJECT) {
+        window.setMsSubjects(window.EDR_MULTI_SUBJECT.normalizeSubjects(draft));
+      }
+    }
+    if (draft.incident && el("edrIncident")) el("edrIncident").value = draft.incident;
+    if (draft.action && el("edrActionRemarks")) el("edrActionRemarks").value = draft.action;
+    // Restore clip links
+    if (window.setEdrClipLinks) {
+      const links = Array.isArray(draft.clipLinks) && draft.clipLinks.length
+        ? draft.clipLinks
+        : (draft.clipLink ? [draft.clipLink] : null);
+      if (links) window.setEdrClipLinks(links);
+    }
+    // Restore screenshots
+    if (window.setCctvScreenshots) {
+      const shots = Array.isArray(draft.screenshots) && draft.screenshots.length
+        ? draft.screenshots
+        : (draft.screenshotData ? [draft.screenshotData] : null);
+      if (shots) window.setCctvScreenshots(shots);
+    }
+  }
+
+  // Update Live Preview in Column 3 - uses rich HTML so screenshots are visible
+  function updateLivePreview() {
+    const previewBox = el("edrPreviewBox");
+    if (!previewBox) return;
+    const fbText = el("edrFacebookText")?.value || "";
+    const html = edr.buildPreviewHtml(fbText);
+    previewBox.innerHTML = html;
+
+    // Attach click handlers to preview images for full resolution viewing
+    previewBox.querySelectorAll(".edr-preview-card").forEach(card => {
+      const id = card.dataset.edrId;
+      const rep = edr.getReport(id);
+      if (!rep) return;
+      const shots = Array.isArray(rep.screenshots) && rep.screenshots.length
+        ? rep.screenshots
+        : (rep.screenshotData ? [rep.screenshotData] : []);
+      if (!shots.length) return;
+
+      card.querySelectorAll(".edr-preview-shots img").forEach(img => {
+        img.addEventListener("click", () => {
+          const idx = parseInt(img.dataset.shotIdx, 10) || 0;
+          openScreenshotViewer(
+            shots,
+            `${rep.site || 'Site'} - ${rep.account || 'EDR'}`,
+            `Observed: ${rep.date || ''} ${rep.timeObserved || ''}`,
+            idx
+          );
+        });
+      });
+    });
+  
+    try { window.edrResizableWorkspace?.updateFullscreenModalContent(); } catch (_) {}
+  }
+
+  function closeMoreMenu(menu) {
+    if (!menu) return;
+    menu.classList.remove("is-open");
+    const owner = menu._edrMenuOwner;
+    if (owner && menu.parentElement !== owner) owner.appendChild(menu);
+    menu._edrMenuOwner = null;
+    menu.style.position = "";
+    menu.style.left = "";
+    menu.style.top = "";
+    menu.style.right = "";
+    menu.style.zIndex = "";
+  }
+
+  function openMoreMenu(menu, trigger, owner) {
+    if (!menu || !trigger || !owner) return;
+    menu._edrMenuOwner = owner;
+    document.body.appendChild(menu);
+    menu.classList.add("is-open");
+    const triggerRect = trigger.getBoundingClientRect();
+    const menuRect = menu.getBoundingClientRect();
+    const gap = 4;
+    const openUpward = triggerRect.bottom + gap + menuRect.height > window.innerHeight;
+    const left = Math.max(8, Math.min(triggerRect.right - menuRect.width, window.innerWidth - menuRect.width - 8));
+    const top = openUpward
+      ? Math.max(8, triggerRect.top - menuRect.height - gap)
+      : Math.min(window.innerHeight - menuRect.height - 8, triggerRect.bottom + gap);
+    menu.style.position = "fixed";
+    menu.style.left = `${left}px`;
+    menu.style.top = `${top}px`;
+    menu.style.right = "auto";
+    menu.style.zIndex = "10000";
+  }
+
+  function getFormData() {
+    const ms = window.EDR_MULTI_SUBJECT;
+    const cleanFn = (v) => {
+      if (window.CCTV_PEOPLE && typeof window.CCTV_PEOPLE.stripRolePrefix === "function") {
+        return window.CCTV_PEOPLE.stripRolePrefix(v || "");
+      }
+      if (ms && typeof ms.stripRolePrefix === "function") {
+        return ms.stripRolePrefix(v || "");
+      }
+      return String(v || "").trim();
+    };
+
+    const currentSubjects = (window.getMsSubjects ? window.getMsSubjects() : []).map(s => ({
+      ...s,
+      name: cleanFn(s.name),
+      supervisorName: cleanFn(s.supervisorName)
+    }));
+
+    // Sync legacy hidden fields from subjects
+    const subjectNames = currentSubjects.map(s => s.name).join(", ");
+    const defaultTl = cleanFn(el("edrDefaultTl") ? el("edrDefaultTl").value : "");
+    const defaultAccount = el("edrDefaultAccount") ? el("edrDefaultAccount").value.trim() : "";
+    const defaultInfraction = el("edrDefaultInfraction") ? el("edrDefaultInfraction").value : "";
+    const firstSubjectAccount = currentSubjects.length > 0 ? (currentSubjects[0].account || "") : "";
+    const firstSubjectTl = currentSubjects.length > 0 ? (currentSubjects[0].supervisorName || "") : "";
+
+    // Authoritative TL / Supervisor resolution:
+    // If all subjects have the same supervisor and it's non-empty, use that.
+    // Otherwise use defaultTl, or first subject TL, or hidden input.
+    const allSameTl = currentSubjects.length > 0 && currentSubjects.every(s => s.supervisorName === currentSubjects[0].supervisorName);
+    const resolvedSupervisor = (allSameTl && firstSubjectTl)
+      ? firstSubjectTl
+      : (defaultTl || firstSubjectTl || cleanFn(el("edrSupervisorName")?.value) || "");
+
+    return {
+      site: el("edrSite").value,
+      date: el("edrDate").value,
+      timeObserved: el("edrTimeObserved").value,
+      timeStart: el("edrTimeObserved").value,
+      supervisorRole: supervisorRole,
+      supervisorName: resolvedSupervisor,
+      omName: cleanFn(el("edrOmName")?.value || ""),
+      defaultTl,
+      defaultAccount,
+      defaultInfraction,
+      // Multi-subject: include subjects array
+      subjects: currentSubjects,
+      // Legacy compat: drive from subjects if available
+      subjectType: currentSubjects.length > 0
+        ? (currentSubjects[0].type === "Team Leader" ? "Team Leader" : "Agent/s")
+        : subjectType,
+      subjectName: subjectNames || cleanFn(el("edrSubjectName")?.value || ""),
+      account: firstSubjectAccount || defaultAccount || el("edrAccount").value,
+      incident: el("edrIncident").value,
+      action: el("edrActionRemarks").value,
+      // Multi-link: collect all filled link inputs
+      clipLinks: window.getEdrClipLinks ? window.getEdrClipLinks() : [],
+      clipLink: window.getEdrClipLinks ? (window.getEdrClipLinks()[0] || "") : "",
+      // Multi-screenshot: store array + first as screenshotData for compat
+      screenshots: currentScreenshots.slice(),
+      screenshotData: currentScreenshots[0] || ""
+    };
+  }
+
+  async function sendSingleReportToAudit(report) {
+    if (!report) {
+      showToast("No EDR report specified.", "error");
+      return;
+    }
+    try {
+      // Multi-subject fan-out: use EDR_MULTI_SUBJECT.fanOutToAudit if subjects exist
+      const ms = window.EDR_MULTI_SUBJECT;
+      const hasSubjects = Array.isArray(report.subjects) && report.subjects.length > 0;
+      if (ms && hasSubjects) {
+        const res = ms.fanOutToAudit(report);
+        renderEdrList(edr.getReports());
+        if (typeof renderAuditTable === "function") renderAuditTable();
+        const subjectWord = res.total === 1 ? "subject" : "subjects";
+        if (res.created > 0 && res.skipped > 0) {
+          showToast(`Sent ${res.created} new audit row(s) for ${res.total} ${subjectWord}. ${res.skipped} already in grid (kept).`, "success");
+        } else if (res.created > 0) {
+          showToast(`Added ${res.created} audit row(s) for ${res.total} ${subjectWord}. NOC starts as Pending.`, "success");
+        } else {
+          showToast(`All ${res.total} subject(s) already in Audit Grid. Existing NOC/Remarks kept.`, "info");
+        }
+      } else {
+        // Legacy single-subject path
+        const result = edr.sendReportToAudit(report);
+        renderEdrList(edr.getReports());
+        if (typeof renderAuditTable === "function") renderAuditTable();
+        if (result.action === "created") {
+          showToast("Added to CCTV Audit Data Output Grid. NOC starts as Pending; Remarks can be edited anytime.", "success");
+        } else {
+          showToast("CCTV Audit Data Output Grid entry updated. Existing NOC and Remarks were kept.", "info");
+        }
+      }
+    } catch (err) {
+      console.error(err);
+      showToast(err.message || "Could not send EDR to CCTV Audit.", "error");
+    }
+  }
+
+  async function sendSelectedReportsToAudit(selectedReports) {
+    const reports = Array.isArray(selectedReports) ? selectedReports : [selectedReports];
+    if (!reports.length) {
+      showToast("Select at least one EDR to send to CCTV Audit.", "warning");
+      return;
+    }
+
+    const ms = window.EDR_MULTI_SUBJECT;
+    let totalCreated = 0;
+    let totalUpdated = 0;
+    let totalSubjects = 0;
+
+    for (const rep of reports) {
+      try {
+        const hasSubjects = Array.isArray(rep.subjects) && rep.subjects.length > 0;
+        if (ms && hasSubjects) {
+          // Multi-subject fan-out
+          const res = ms.fanOutToAudit(rep);
+          totalCreated += res.created;
+          totalUpdated += res.skipped;
+          totalSubjects += res.total;
+        } else {
+          // Legacy path
+          const res = edr.sendReportToAudit(rep);
+          if (res && res.action === "created") totalCreated++;
+          else totalUpdated++;
+        }
+      } catch (err) {
+        console.error("sendReportToAudit error for EDR:", rep.id, err);
+      }
+    }
+
+    renderEdrList(edr.getReports());
+    if (typeof renderAuditTable === "function") renderAuditTable();
+
+    if (totalSubjects > 0) {
+      // Multi-subject result
+      const parts = [];
+      if (totalCreated > 0) parts.push(`${totalCreated} new audit row${totalCreated > 1 ? "s" : ""}`);
+      if (totalUpdated > 0) parts.push(`${totalUpdated} already in grid (kept)`);
+      showToast(`Sent ${reports.length} EDR(s) → ${parts.join(", ")}.`, totalCreated > 0 ? "success" : "info");
+    } else if (totalCreated > 0 && totalUpdated > 0) {
+      showToast(`Sent ${totalCreated} EDR(s) to CCTV Audit (${totalUpdated} updated).`, "success");
+    } else if (totalCreated > 0) {
+      showToast(`Sent ${totalCreated} EDR(s) to CCTV Audit. NOC starts as Pending.`, "success");
+    } else if (totalUpdated > 0) {
+      showToast(`Updated ${totalUpdated} existing record(s) in CCTV Audit.`, "info");
+    } else {
+      showToast("Selected EDRs processed for CCTV Audit.", "info");
+    }
+  }
+
+  async function sendSingleReportToDocs(report) {
+    if (!report) {
+      showToast("No EDR report specified.", "error");
+      return;
+    }
+    const docsUrl = edr.getDocsUrl();
+    if (!docsUrl) {
+      el("modalDocsSetup").hidden = false;
+      showToast("Connect Google Docs first to sync reports.", "info");
+      return;
+    }
+    try {
+      const res = await edr.syncToGoogleDocs(report);
+      if (res && res.success) {
+        showToast("EDR sent to Google Docs successfully.", "success");
+      } else {
+        showToast(res?.reason || "Failed to send to Google Docs.", "error");
+      }
+    } catch (err) {
+      console.error(err);
+      showToast(err.message || "Failed to sync to Google Docs.", "error");
+    }
+  }
+
+  // Initialize UI Events
+  
+  // ==========================================================================
+  // FULLY RESIZABLE EDR WORKSPACE CONTROLLER
+  // ==========================================================================
+  function initEdrResizableWorkspace() {
+    const STORAGE_KEY = "cctv_edr_layout_split_v2";
+    const DEFAULT_LEFT_PCT = 48;
+    const DEFAULT_TOP_PCT = 60;
+    const MIN_LEFT_PCT = 25;
+    const MAX_LEFT_PCT = 75;
+    const MIN_TOP_PCT = 20;
+    const MAX_TOP_PCT = 80;
+    const MIN_COL_PX = 280;
+    const MIN_ROW_PX = 140;
+
+    const layout = document.querySelector("#paneEdr .edr-split-layout");
+    const colForm = el("colEdrForm");
+    const colDispatch = el("colEdrDispatch");
+    const resizerV = el("edrResizerV");
+    const resizerH = el("edrResizerH");
+    const cardDispatch = el("cardTeamsDispatch");
+    const cardSaved = el("cardSavedEdrs");
+    const btnReset = el("btnResetEdrLayout");
+    const btnFullscreen = el("btnDispatchFullscreen");
+    const modalFullscreen = el("modalDispatchFullscreen");
+    const btnCloseFs = el("btnCloseDispatchFullscreen");
+    const btnBottomCloseFs = el("btnBottomCloseDispatchFullscreen");
+    const btnCopyFs = el("btnFullscreenCopyTeams");
+    const fsText = el("fullscreenDispatchText");
+    const fsCount = el("badgeFullscreenSelected");
+    const fsChars = el("fullscreenWordCount");
+
+    if (!layout || !resizerV || !resizerH) return;
+
+    let currentLeftPct = DEFAULT_LEFT_PCT;
+    let currentTopPct = DEFAULT_TOP_PCT;
+
+    // Load saved preferences from localStorage
+    function loadSavedProportions() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (typeof parsed.leftPct === "number" && !isNaN(parsed.leftPct)) {
+            currentLeftPct = Math.min(Math.max(parsed.leftPct, MIN_LEFT_PCT), MAX_LEFT_PCT);
+          }
+          if (typeof parsed.topPct === "number" && !isNaN(parsed.topPct)) {
+            currentTopPct = Math.min(Math.max(parsed.topPct, MIN_TOP_PCT), MAX_TOP_PCT);
+          }
+        }
+      } catch (err) {
+        console.warn("[EDR Resizer] Error reading stored dimensions:", err);
+      }
+      applyDimensions();
+    }
+
+    function saveProportions() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({
+          leftPct: parseFloat(currentLeftPct.toFixed(2)),
+          topPct: parseFloat(currentTopPct.toFixed(2))
+        }));
+      } catch (err) {
+        console.warn("[EDR Resizer] Error saving dimensions:", err);
+      }
+    }
+
+    function applyDimensions() {
+      layout.style.setProperty("--edr-left-width", currentLeftPct.toFixed(2) + "%");
+      colDispatch.style.setProperty("--edr-top-height", currentTopPct.toFixed(2) + "%");
+      if (resizerV) {
+        resizerV.setAttribute("aria-valuenow", Math.round(currentLeftPct).toString());
+      }
+      if (resizerH) {
+        resizerH.setAttribute("aria-valuenow", Math.round(currentTopPct).toString());
+      }
+    }
+
+    function resetLayout() {
+      currentLeftPct = DEFAULT_LEFT_PCT;
+      currentTopPct = DEFAULT_TOP_PCT;
+      applyDimensions();
+      saveProportions();
+      showToast("EDR layout reset to default proportions (48% / 60%).", "info");
+    }
+
+    // 1. Pointer Events: Vertical Resizer
+    let isDraggingV = false;
+    resizerV.addEventListener("pointerdown", (e) => {
+      if (e.button !== 0) return;
+      isDraggingV = true;
+      resizerV.setPointerCapture(e.pointerId);
+      resizerV.classList.add("is-dragging");
+      document.body.classList.add("edr-resizing-v");
+      e.preventDefault();
+    });
+
+    resizerV.addEventListener("pointermove", (e) => {
+      if (!isDraggingV) return;
+      const rect = layout.getBoundingClientRect();
+      if (rect.width <= 0) return;
+      const rawX = e.clientX - rect.left;
+      let pct = (rawX / rect.width) * 100;
+
+      // Enforce sensible minimum panel pixel constraints
+      const minPctByPx = (MIN_COL_PX / rect.width) * 100;
+      const maxPctByPx = ((rect.width - MIN_COL_PX) / rect.width) * 100;
+      const effectiveMin = Math.max(MIN_LEFT_PCT, minPctByPx);
+      const effectiveMax = Math.min(MAX_LEFT_PCT, maxPctByPx);
+
+      pct = Math.min(Math.max(pct, effectiveMin), effectiveMax);
+      currentLeftPct = pct;
+      applyDimensions();
+    });
+
+    function endDragV(e) {
+      if (!isDraggingV) return;
+      isDraggingV = false;
+      try { resizerV.releasePointerCapture(e.pointerId); } catch (_) {}
+      resizerV.classList.remove("is-dragging");
+      document.body.classList.remove("edr-resizing-v");
+      saveProportions();
+    }
+    resizerV.addEventListener("pointerup", endDragV);
+    resizerV.addEventListener("pointercancel", endDragV);
+
+    // Double-click vertical resizer to reset to 48%
+    resizerV.addEventListener("dblclick", () => {
+      currentLeftPct = DEFAULT_LEFT_PCT;
+      applyDimensions();
+      saveProportions();
+      showToast("Form width reset to 48%.", "info");
+    });
+
+    // Keyboard support for vertical resizer
+    resizerV.addEventListener("keydown", (e) => {
+      const step = e.shiftKey ? 5 : 2;
+      let handled = false;
+      if (e.key === "ArrowLeft") {
+        currentLeftPct = Math.max(currentLeftPct - step, MIN_LEFT_PCT);
+        handled = true;
+      } else if (e.key === "ArrowRight") {
+        currentLeftPct = Math.min(currentLeftPct + step, MAX_LEFT_PCT);
+        handled = true;
+      } else if (e.key === "Home") {
+        currentLeftPct = MIN_LEFT_PCT;
+        handled = true;
+      } else if (e.key === "End") {
+        currentLeftPct = MAX_LEFT_PCT;
+        handled = true;
+      } else if (e.key === "Enter" || e.key === " ") {
+        currentLeftPct = DEFAULT_LEFT_PCT;
+        handled = true;
+      }
+      if (handled) {
+        e.preventDefault();
+        applyDimensions();
+        saveProportions();
+      }
+    });
+
+    // 2. Pointer Events: Horizontal Resizer
+    let isDraggingH = false;
+    resizerH.addEventListener("pointerdown", (e) => {
+      if (e.button !== 0) return;
+      isDraggingH = true;
+      resizerH.setPointerCapture(e.pointerId);
+      resizerH.classList.add("is-dragging");
+      document.body.classList.add("edr-resizing-h");
+      e.preventDefault();
+    });
+
+    resizerH.addEventListener("pointermove", (e) => {
+      if (!isDraggingH) return;
+      const rect = colDispatch.getBoundingClientRect();
+      if (rect.height <= 0) return;
+      const rawY = e.clientY - rect.top;
+      let pct = (rawY / rect.height) * 100;
+
+      // Enforce sensible minimum panel pixel constraints
+      const minPctByPx = (MIN_ROW_PX / rect.height) * 100;
+      const maxPctByPx = ((rect.height - MIN_ROW_PX) / rect.height) * 100;
+      const effectiveMin = Math.max(MIN_TOP_PCT, minPctByPx);
+      const effectiveMax = Math.min(MAX_TOP_PCT, maxPctByPx);
+
+      pct = Math.min(Math.max(pct, effectiveMin), effectiveMax);
+      currentTopPct = pct;
+      applyDimensions();
+    });
+
+    function endDragH(e) {
+      if (!isDraggingH) return;
+      isDraggingH = false;
+      try { resizerH.releasePointerCapture(e.pointerId); } catch (_) {}
+      resizerH.classList.remove("is-dragging");
+      document.body.classList.remove("edr-resizing-h");
+      saveProportions();
+    }
+    resizerH.addEventListener("pointerup", endDragH);
+    resizerH.addEventListener("pointercancel", endDragH);
+
+    // Double-click horizontal resizer to reset to 60%
+    resizerH.addEventListener("dblclick", () => {
+      currentTopPct = DEFAULT_TOP_PCT;
+      applyDimensions();
+      saveProportions();
+      showToast("Teams Dispatch height reset to 60%.", "info");
+    });
+
+    // Keyboard support for horizontal resizer
+    resizerH.addEventListener("keydown", (e) => {
+      const step = e.shiftKey ? 5 : 2;
+      let handled = false;
+      if (e.key === "ArrowUp") {
+        currentTopPct = Math.max(currentTopPct - step, MIN_TOP_PCT);
+        handled = true;
+      } else if (e.key === "ArrowDown") {
+        currentTopPct = Math.min(currentTopPct + step, MAX_TOP_PCT);
+        handled = true;
+      } else if (e.key === "Home") {
+        currentTopPct = MIN_TOP_PCT;
+        handled = true;
+      } else if (e.key === "End") {
+        currentTopPct = MAX_TOP_PCT;
+        handled = true;
+      } else if (e.key === "Enter" || e.key === " ") {
+        currentTopPct = DEFAULT_TOP_PCT;
+        handled = true;
+      }
+      if (handled) {
+        e.preventDefault();
+        applyDimensions();
+        saveProportions();
+      }
+    });
+
+    // 3. Reset Button Action
+    btnReset?.addEventListener("click", resetLayout);
+
+    // 4. Fullscreen Dispatch Modal Logic
+    function getCleanDispatchText() {
+      const box = el("edrPreviewBox");
+      if (!box) return "No EDR preview available.";
+      const rawText = box.innerText || box.textContent || "";
+      return rawText.trim() || "Select active EDRs in the list to generate output.";
+    }
+
+    function updateFullscreenModalContent() {
+      if (!modalFullscreen || modalFullscreen.hidden) return;
+      const text = getCleanDispatchText();
+      if (fsText) fsText.textContent = text;
+      const selBadge = el("badgeSelectedCount");
+      if (fsCount && selBadge) fsCount.textContent = selBadge.textContent;
+      if (fsChars) fsChars.textContent = text.length + " chars";
+    }
+
+    function openFullscreen() {
+      if (!modalFullscreen) return;
+      updateFullscreenModalContent();
+      modalFullscreen.hidden = false;
+    }
+
+    function closeFullscreen() {
+      if (!modalFullscreen) return;
+      modalFullscreen.hidden = true;
+    }
+
+    btnFullscreen?.addEventListener("click", openFullscreen);
+    btnCloseFs?.addEventListener("click", closeFullscreen);
+    btnBottomCloseFs?.addEventListener("click", closeFullscreen);
+
+    modalFullscreen?.addEventListener("click", (e) => {
+      if (e.target === modalFullscreen) closeFullscreen();
+    });
+
+    window.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && modalFullscreen && !modalFullscreen.hidden) {
+        closeFullscreen();
+      }
+    });
+
+    btnCopyFs?.addEventListener("click", () => {
+      const copyAllBtn = el("btnCopyAllTeams");
+      if (copyAllBtn) {
+        copyAllBtn.click();
+      } else {
+        const text = getCleanDispatchText();
+        navigator.clipboard?.writeText(text).then(() => {
+          showToast("Copied dispatch output to clipboard.", "success");
+        }).catch(() => {
+          showToast("Failed to copy dispatch output.", "error");
+        });
+      }
+    });
+
+    // Expose controller globally for external integration and testing
+    window.edrResizableWorkspace = {
+      resetLayout,
+      openFullscreen,
+      closeFullscreen,
+      updateFullscreenModalContent,
+      setLeftWidth: (pct) => {
+        currentLeftPct = Math.min(Math.max(pct, MIN_LEFT_PCT), MAX_LEFT_PCT);
+        applyDimensions();
+        saveProportions();
+      },
+      setTopHeight: (pct) => {
+        currentTopPct = Math.min(Math.max(pct, MIN_TOP_PCT), MAX_TOP_PCT);
+        applyDimensions();
+        saveProportions();
+      },
+      getDimensions: () => ({ leftPct: currentLeftPct, topPct: currentTopPct })
+    };
+
+    // Initialize layout on startup
+    loadSavedProportions();
+  }
+  function initEvents() {
+    initEdrResizableWorkspace();
+
+    // Initialize & persist Keep Shared Details preference for EDR
+    const chkEdrKeepShared = el("chkEdrKeepShared");
+    if (chkEdrKeepShared) {
+      try {
+        const saved = localStorage.getItem("cctv_edr_keep_shared");
+        if (saved !== null) {
+          chkEdrKeepShared.checked = saved === "true";
+        }
+      } catch (_) {}
+      chkEdrKeepShared.addEventListener("change", () => {
+        try {
+          localStorage.setItem("cctv_edr_keep_shared", String(chkEdrKeepShared.checked));
+        } catch (_) {}
+      });
+    }
+
+    let isSubmittingEdr = false;
+    // Form submit
+    el("edrForm")?.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      if (isSubmittingEdr) return;
+      isSubmittingEdr = true;
+      const btnSubmit = el("btnEdrSubmit");
+      if (btnSubmit) {
+        btnSubmit.disabled = true;
+        btnSubmit.classList.add("is-busy");
+      }
+      try {
+        const currentSubjects = window.getMsSubjects ? window.getMsSubjects() : [];
+        if (!currentSubjects.length) {
+          showToast("Please add at least one subject to the EDR.", "warning");
+          return;
+        }
+        const data = getFormData();
+        const wasEditing = !!edr.getEditingReport();
+        const keepShared = !wasEditing && !!el("chkEdrKeepShared")?.checked;
+        const sharedDetails = keepShared ? {
+          site: el("edrSite")?.value || "",
+          date: el("edrDate")?.value || "",
+          om: el("edrOmName")?.value || "",
+          defaultTl: el("edrDefaultTl")?.value || "",
+          defaultAccount: el("edrDefaultAccount")?.value || "",
+          defaultInfraction: el("edrDefaultInfraction")?.value || ""
+        } : null;
+
+        await edr.createOrUpdate(data);
+
+        if (keepShared && sharedDetails) {
+          applyEdrPartialReset(sharedDetails);
+          showToast("EDR saved. Shared details preserved for next entry.", "success");
+        } else {
+          resetForm();
+          showToast("EDR saved successfully.", "success");
+        }
+      } catch (err) {
+        console.error(err);
+        showToast(err.message || "Failed to save EDR.", "error");
+      } finally {
+        isSubmittingEdr = false;
+        if (btnSubmit) {
+          btnSubmit.disabled = false;
+          btnSubmit.classList.remove("is-busy");
+        }
+      }
+    });
+
+    el("btnEdrClear")?.addEventListener("click", async () => {
+      const currentSubjects = window.getMsSubjects ? window.getMsSubjects() : [];
+      const incident = el("edrIncident")?.value?.trim();
+      const details = el("edrDetails")?.value?.trim();
+      const defaultTl = el("edrDefaultTl")?.value?.trim();
+      const omName = el("edrOmName")?.value?.trim();
+      if (currentSubjects.length > 0 || incident || details || defaultTl || omName) {
+        const ok = window.appConfirm
+          ? await window.appConfirm({
+              title: "Discard Unsaved EDR?",
+              message: "You have unsaved form entries. Are you sure you want to clear the form?",
+              confirmText: "Discard & Clear",
+              tone: "danger"
+            })
+          : confirm("Clear form and discard unsaved entries?");
+        if (!ok) return;
+      }
+      resetForm();
+    });
+    el("btnEdrCancelEdit")?.addEventListener("click", resetForm);
+
+    // Send to CCTV Audit (From Left Column Form Footer)
+    el("btnSendFormToAudit")?.addEventListener("click", async () => {
+      const editing = edr.getEditingReport();
+      if (editing) {
+        const data = getFormData();
+        const updated = await edr.createOrUpdate(data);
+        resetForm();
+        await sendSingleReportToAudit(updated || editing);
+        return;
+      }
+
+      const form = el("edrForm");
+      const currentSubjects = window.getMsSubjects ? window.getMsSubjects() : [];
+      if (el("edrIncident")?.value || el("edrDefaultTl")?.value || el("edrSupervisorName")?.value || currentSubjects.length > 0) {
+        if (!currentSubjects.length) {
+          showToast("Please add at least one subject before sending to CCTV Audit.", "warning");
+          return;
+        }
+        if (!form.checkValidity()) {
+          form.reportValidity();
+          return;
+        }
+        const data = getFormData();
+        const keepShared = !!el("chkEdrKeepShared")?.checked;
+        const sharedDetails = keepShared ? {
+          site: el("edrSite")?.value || "",
+          date: el("edrDate")?.value || "",
+          om: el("edrOmName")?.value || "",
+          defaultTl: el("edrDefaultTl")?.value || "",
+          defaultAccount: el("edrDefaultAccount")?.value || "",
+          defaultInfraction: el("edrDefaultInfraction")?.value || ""
+        } : null;
+
+        const saved = await edr.createOrUpdate(data);
+        if (keepShared && sharedDetails) {
+          applyEdrPartialReset(sharedDetails);
+        } else {
+          resetForm();
+        }
+        if (saved) {
+          await sendSingleReportToAudit(saved);
+        }
+        return;
+      }
+
+      const selected = edr.getReports().filter(r => r.selected && !r.done);
+      if (selected.length >= 1) {
+        await sendSelectedReportsToAudit(selected);
+        return;
+      }
+
+      showToast("Complete the EDR form or select at least one saved record from the list.", "info");
+    });
+
+    // Send to CCTV Audit (From Right Column Teams Dispatch Header)
+    el("btnSendSelectedToAudit")?.addEventListener("click", async () => {
+      const selected = edr.getReports().filter(r => r.selected && !r.done);
+      if (selected.length >= 1) {
+        await sendSelectedReportsToAudit(selected);
+        return;
+      }
+
+      const editing = edr.getEditingReport();
+      if (editing) {
+        await sendSelectedReportsToAudit([editing]);
+        return;
+      }
+
+      showToast("Select at least one EDR from the saved list to send to CCTV Audit.", "info");
+    });
+
+    // Select all / Clear selection
+    el("btnSelectAll")?.addEventListener("click", () => edr.selectAll(true));
+    el("btnUnselectAll")?.addEventListener("click", () => edr.selectAll(false));
+
+    // Bulk Delete Selected Saved EDRs
+    el("btnDeleteSelectedEdr")?.addEventListener("click", async () => {
+      const reports = edr.getReports() || [];
+      const selected = reports.filter(r => r.selected);
+      const count = selected.length;
+      if (!count) return;
+
+      const confirmed = await window.appConfirm({
+        title: "Delete Selected Saved EDRs?",
+        message: `Are you sure you want to permanently delete the ${count} selected Saved EDR${count === 1 ? '' : 's'}? This action cannot be undone.`,
+        confirmText: `Delete ${count === 1 ? 'EDR' : count + ' EDRs'}`,
+        cancelText: "Cancel",
+        tone: "danger"
+      });
+
+      if (!confirmed) return;
+
+      const deletedCount = await edr.deleteSelectedReports();
+      renderEdrList(edr.getReports());
+      if (window.historyService?.captureIfChanged) {
+        await window.historyService.captureIfChanged("edr", `Deleted ${deletedCount} selected EDR record(s)`);
+      }
+      showToast(`${deletedCount} Saved EDR${deletedCount === 1 ? '' : 's'} deleted.`, "success");
+    });
+
+    // Facebook textarea input
+    el("edrFacebookText")?.addEventListener("input", updateLivePreview);
+
+    // Copy All Teams Button
+    let isCopyingTeams = false;
+    el("btnCopyAllTeams")?.addEventListener("click", async () => {
+      if (isCopyingTeams) return;
+      isCopyingTeams = true;
+      const btn = el("btnCopyAllTeams");
+      if (btn) btn.disabled = true;
+      try {
+        const fb = el("edrFacebookText")?.value || "";
+        const res = await edr.copyAllToTeams(fb);
+        const imageText = res.inlineScreenshotCount
+          ? ` with ${res.inlineScreenshotCount} inline screenshot${res.inlineScreenshotCount === 1 ? "" : "s"}`
+          : "";
+        showToast(`Copied ${res.count} complete EDR report(s)${imageText} for Teams.`, "success");
+      } catch (err) {
+        showToast(err.message || "Failed to copy.", "error");
+      } finally {
+        isCopyingTeams = false;
+        if (btn) btn.disabled = false;
+      }
+    });
+
+    // Send EDR directly to Microsoft Teams Dialog
+    el("btnSendEdrToTeams")?.addEventListener("click", async () => {
+      try {
+        const previewBox = el("edrPreviewBox");
+        const text = previewBox ? (previewBox.innerText || previewBox.textContent || "") : "";
+        if (!text.trim() || text.includes("Select active EDRs in the list")) {
+          showToast("Please select active EDRs before sending to Teams.", "warning");
+          return;
+        }
+        if (window.CCTV_TEAMS_SHARE) {
+          window.CCTV_TEAMS_SHARE.open({
+            reportType: "End of the Day Report (EDR)",
+            plainContent: text,
+            htmlContent: previewBox.innerHTML
+          });
+        }
+      } catch (err) {
+        showToast(`Error preparing EDR for Teams: ${err.message}`, "error");
+      }
+    });
+
+    // Expand / Collapse Teams Dispatch Review Mode
+    function setDispatchExpanded(expanded) {
+      const layout = document.querySelector("#paneEdr .edr-split-layout");
+      if (!layout) return;
+      if (expanded) {
+        layout.classList.add("dispatch-expanded");
+      } else {
+        layout.classList.remove("dispatch-expanded");
+      }
+      const isExpanded = layout.classList.contains("dispatch-expanded");
+      const btn = el("btnToggleDispatchExpand");
+      const label = el("labelDispatchExpand");
+      const icon = el("iconDispatchExpand");
+      if (label) label.textContent = isExpanded ? "Collapse Preview" : "Expand Preview";
+      if (btn) {
+        btn.classList.toggle("btn-active", isExpanded);
+        btn.setAttribute("aria-expanded", isExpanded ? "true" : "false");
+        btn.title = isExpanded ? "Restore standard split view" : "Expand preview for inspection";
+      }
+      if (icon) {
+        if (isExpanded) {
+          icon.innerHTML = '<polyline points="4 14 10 14 10 20"></polyline><polyline points="20 10 14 10 14 4"></polyline><line x1="14" y1="10" x2="21" y2="3"></line><line x1="3" y1="21" x2="10" y2="14"></line>';
+        } else {
+          icon.innerHTML = '<polyline points="15 3 21 3 21 9"></polyline><polyline points="9 21 3 21 3 15"></polyline><line x1="21" y1="3" x2="14" y2="10"></line><line x1="3" y1="21" x2="10" y2="14"></line>';
+        }
+      }
+    }
+    window.setDispatchExpanded = setDispatchExpanded;
+
+    el("btnToggleDispatchExpand")?.addEventListener("click", () => {
+      const layout = document.querySelector("#paneEdr .edr-split-layout");
+      if (!layout) return;
+      setDispatchExpanded(!layout.classList.contains("dispatch-expanded"));
+    });
+
+    // Reload Saved EDRs from Google Docs
+    el("btnReloadDocs")?.addEventListener("click", async () => {
+      const btn = el("btnReloadDocs");
+      try {
+        window.setButtonBusy(btn, true, "Reloading...");
+        window.setGlobalProgress(true);
+        showToast("Loading saved EDRs from Google Docs...", "info");
+        const res = await edr.loadSavedEdrsFromDocs();
+        showToast(`Loaded ${res.count} saved EDR(s) from Google Docs.`, "success");
+      } catch (err) {
+        showToast(err.message || "Failed to load from Google Docs.", "error");
+      } finally {
+        window.setButtonBusy(btn, false);
+        window.setGlobalProgress(false);
+      }
+    });
+
+    // Option Management - Respondent (TL/OM)
+    el("btnAddSupervisorOption")?.addEventListener("click", () => {
+      const curr = el("edrSupervisorName")?.value.trim();
+      const val = prompt(`Add new ${supervisorRole} to masterlist:`, curr);
+      if (val && val.trim()) {
+        const site = el("edrSite")?.value;
+        const account = el("edrAccount")?.value;
+        const om = el("edrOmName")?.value;
+        const res = window.masterlistService
+          ? window.masterlistService.addRespondent(val.trim(), supervisorRole, { site, account, om })
+          : { added: edr.addSupervisorOption(supervisorRole, val.trim(), { site, account, om }), canonical: val.trim() };
+        initFormDropdowns();
+        populateRespondentList(supervisorRole);
+        el("edrSupervisorName").value = res.canonical || val.trim();
+        showToast(res.added ? `Added "${res.canonical || val.trim()}" to ${supervisorRole} masterlist.` : `"${res.canonical || val.trim()}" is already in list.`, res.added ? "success" : "info");
+      }
+    });
+
+    el("btnRemoveSupervisorOption")?.addEventListener("click", () => {
+      const curr = el("edrSupervisorName")?.value.trim();
+      if (!curr) {
+        showToast(`Select or type a ${supervisorRole} name to remove.`, "info");
+        return;
+      }
+      if (confirm(`Remove "${curr}" from the ${supervisorRole} masterlist options?`)) {
+        if (window.masterlistService) {
+          window.masterlistService.removeRespondent(curr, supervisorRole);
+        } else {
+          edr.removeSupervisorOption(supervisorRole, curr);
+        }
+        initFormDropdowns();
+        populateRespondentList(supervisorRole);
+        el("edrSupervisorName").value = "";
+        showToast(`Removed "${curr}" from active ${supervisorRole} options. Historical records remain safe.`, "info");
+      }
+    });
+
+    // Option Management - Dedicated OM
+    el("btnAddDedicatedOmOption")?.addEventListener("click", () => {
+      const curr = el("edrOmName")?.value.trim();
+      const val = prompt("Add new Dedicated OM to masterlist:", curr);
+      if (val && val.trim()) {
+        const site = el("edrSite")?.value;
+        const res = window.masterlistService
+          ? window.masterlistService.addDedicatedOm(val.trim(), { site })
+          : { added: edr.addDedicatedOmOption(val.trim(), { site }), canonical: val.trim() };
+        initFormDropdowns();
+        el("edrOmName").value = res.canonical || val.trim();
+        showToast(res.added ? `Added "${res.canonical || val.trim()}" to Dedicated OM masterlist.` : `"${res.canonical || val.trim()}" is already in list.`, res.added ? "success" : "info");
+      }
+    });
+
+    el("btnRemoveDedicatedOmOption")?.addEventListener("click", () => {
+      const curr = el("edrOmName")?.value.trim();
+      if (!curr) {
+        showToast("Select or type a Dedicated OM name to remove.", "info");
+        return;
+      }
+      if (confirm(`Remove "${curr}" from the Dedicated OM masterlist options?`)) {
+        if (window.masterlistService) {
+          window.masterlistService.removeDedicatedOm(curr);
+        } else {
+          edr.removeDedicatedOmOption(curr);
+        }
+        initFormDropdowns();
+        el("edrOmName").value = "";
+        showToast(`Removed "${curr}" from active Dedicated OM options. Historical records remain safe.`, "info");
+      }
+    });
+
+    // Option Management - Account / Campaign
+    el("btnAddAccountOption")?.addEventListener("click", () => {
+      const curr = el("edrAccount")?.value.trim();
+      const val = prompt("Add new Account / Campaign to masterlist:", curr);
+      if (val && val.trim()) {
+        const site = el("edrSite")?.value;
+        const res = window.masterlistService
+          ? window.masterlistService.addAccount(val.trim(), { site })
+          : { added: edr.addAccountOption(val.trim(), { site }), canonical: val.trim() };
+        initFormDropdowns();
+        el("edrAccount").value = res.canonical || val.trim();
+        showToast(res.added ? `Added "${res.canonical || val.trim()}" to Campaign masterlist.` : `"${res.canonical || val.trim()}" is already in list.`, res.added ? "success" : "info");
+      }
+    });
+
+    el("btnRemoveAccountOption")?.addEventListener("click", () => {
+      const curr = el("edrAccount")?.value.trim();
+      if (!curr) {
+        showToast("Select or type an Account / Campaign to remove.", "info");
+        return;
+      }
+      if (confirm(`Remove "${curr}" from the Campaign masterlist options?`)) {
+        if (window.masterlistService) {
+          window.masterlistService.removeAccount(curr);
+        } else {
+          edr.removeAccountOption(curr);
+        }
+        initFormDropdowns();
+        el("edrAccount").value = "";
+        showToast(`Removed "${curr}" from active Campaign options. Historical records remain safe.`, "info");
+      }
+    });
+
+    // Auto-persist new values typed into EDR inputs
+    const handleSupervisorInputChange = () => {
+      const input = el("edrSupervisorName");
+      const cleanFn = v => (window.CCTV_PEOPLE && typeof window.CCTV_PEOPLE.stripRolePrefix === "function") ? window.CCTV_PEOPLE.stripRolePrefix(v) : (v || "").trim();
+      const rawVal = cleanFn(input?.value);
+      if (input && input.value !== rawVal) input.value = rawVal;
+      if (!rawVal || !window.masterlistService) return;
+      const roleType = supervisorRole === "OM" ? "oms" : "tls";
+      const canonical = window.masterlistService.findCanonical(roleType, rawVal);
+      if (canonical) {
+        if (canonical.toLowerCase() === rawVal.toLowerCase() && canonical !== rawVal) {
+          window.masterlistService.addRespondent(rawVal, supervisorRole);
+        } else if (canonical !== input.value) {
+          input.value = canonical;
+        }
+      } else {
+        const site = el("edrSite")?.value;
+        const account = el("edrAccount")?.value;
+        const om = el("edrOmName")?.value;
+        const res = window.masterlistService.addRespondent(rawVal, supervisorRole, { site, account, om });
+        if (res && res.added) {
+          initFormDropdowns();
+          populateRespondentList(supervisorRole);
+          input.value = res.canonical || rawVal;
+        }
+      }
+    };
+    el("edrSupervisorName")?.addEventListener("change", handleSupervisorInputChange);
+
+    // Option Management - Default TL / Supervisor (Multi-Subject Bar)
+    el("btnAddSupervisorOptionMs")?.addEventListener("click", () => {
+      const cleanFn = v => (window.CCTV_PEOPLE && typeof window.CCTV_PEOPLE.stripRolePrefix === "function") ? window.CCTV_PEOPLE.stripRolePrefix(v) : (v || "").trim();
+      const curr = cleanFn(el("edrDefaultTl")?.value);
+      const val = prompt("Add new Team Leader to masterlist:", curr);
+      if (val && val.trim()) {
+        const cleanVal = cleanFn(val.trim());
+        const site = el("edrSite")?.value;
+        const account = el("edrDefaultAccount")?.value || el("edrAccount")?.value;
+        const om = el("edrOmName")?.value;
+        const res = window.masterlistService
+          ? window.masterlistService.addRespondent(cleanVal, "Team Leader", { site, account, om })
+          : { added: edr.addSupervisorOption("Team Leader", cleanVal, { site, account, om }), canonical: cleanVal };
+        initFormDropdowns();
+        if (typeof populateSubjectDropdowns === "function") populateSubjectDropdowns();
+        if (el("edrDefaultTl")) el("edrDefaultTl").value = res.canonical || cleanVal;
+        if (el("edrSupervisorName")) el("edrSupervisorName").value = res.canonical || cleanVal;
+        showToast(res.added ? `Added "${res.canonical || cleanVal}" to Team Leader masterlist.` : `"${res.canonical || cleanVal}" is already in list.`, res.added ? "success" : "info");
+      }
+    });
+
+    el("btnRemoveSupervisorOptionMs")?.addEventListener("click", () => {
+      const cleanFn = v => (window.CCTV_PEOPLE && typeof window.CCTV_PEOPLE.stripRolePrefix === "function") ? window.CCTV_PEOPLE.stripRolePrefix(v) : (v || "").trim();
+      const curr = cleanFn(el("edrDefaultTl")?.value);
+      if (!curr) {
+        showToast("Select or type a Team Leader name to remove.", "info");
+        return;
+      }
+      if (confirm(`Remove "${curr}" from the Team Leader masterlist options?`)) {
+        if (window.masterlistService) {
+          window.masterlistService.removeRespondent(curr, "Team Leader");
+        } else {
+          edr.removeSupervisorOption("Team Leader", curr);
+        }
+        initFormDropdowns();
+        if (typeof populateSubjectDropdowns === "function") populateSubjectDropdowns();
+        if (el("edrDefaultTl")) el("edrDefaultTl").value = "";
+        if (el("edrSupervisorName")) el("edrSupervisorName").value = "";
+        showToast(`Removed "${curr}" from active Team Leader options. Historical records remain safe.`, "info");
+      }
+    });
+
+    const handleDefaultTlInputChange = () => {
+      const input = el("edrDefaultTl");
+      const cleanFn = v => (window.CCTV_PEOPLE && typeof window.CCTV_PEOPLE.stripRolePrefix === "function") ? window.CCTV_PEOPLE.stripRolePrefix(v) : (v || "").trim();
+      const rawVal = cleanFn(input?.value);
+      if (input && input.value !== rawVal) input.value = rawVal;
+      if (el("edrSupervisorName")) el("edrSupervisorName").value = rawVal || "";
+      if (!rawVal || !window.masterlistService) return;
+      const canonical = window.masterlistService.findCanonical("tls", rawVal);
+      if (canonical) {
+        if (canonical.toLowerCase() === rawVal.toLowerCase() && canonical !== rawVal) {
+          window.masterlistService.addRespondent(rawVal, "Team Leader");
+        } else if (canonical !== input.value) {
+          input.value = canonical;
+        }
+      } else {
+        const site = el("edrSite")?.value;
+        const account = el("edrDefaultAccount")?.value || el("edrAccount")?.value;
+        const om = el("edrOmName")?.value;
+        const res = window.masterlistService.addRespondent(rawVal, "Team Leader", { site, account, om });
+        if (res && res.added) {
+          if (typeof populateSubjectDropdowns === "function") populateSubjectDropdowns();
+          input.value = res.canonical || rawVal;
+        }
+      }
+    };
+    el("edrDefaultTl")?.addEventListener("change", handleDefaultTlInputChange);
+    el("edrDefaultTl")?.addEventListener("input", () => {
+      const cleanFn = v => (window.CCTV_PEOPLE && typeof window.CCTV_PEOPLE.stripRolePrefix === "function") ? window.CCTV_PEOPLE.stripRolePrefix(v) : (v || "").trim();
+      if (el("edrSupervisorName")) el("edrSupervisorName").value = cleanFn(el("edrDefaultTl")?.value) || "";
+      updateLivePreview();
+      scheduleDraftSave();
+    });
+
+    const handleOmInputChange = () => {
+      const input = el("edrOmName");
+      const rawVal = input?.value?.trim();
+      if (!rawVal || !window.masterlistService) return;
+      const canonical = window.masterlistService.findCanonical("oms", rawVal);
+      if (canonical) {
+        if (canonical.toLowerCase() === rawVal.toLowerCase() && canonical !== rawVal) {
+          window.masterlistService.addDedicatedOm(rawVal);
+        } else if (canonical !== input.value) {
+          input.value = canonical;
+        }
+      } else {
+        const site = el("edrSite")?.value;
+        const res = window.masterlistService.addDedicatedOm(rawVal, { site });
+        if (res && res.added) {
+          initFormDropdowns();
+          input.value = res.canonical || rawVal;
+        }
+      }
+    };
+    el("edrOmName")?.addEventListener("change", handleOmInputChange);
+
+    const handleAccountInputChange = () => {
+      const input = el("edrAccount");
+      const rawVal = input?.value?.trim();
+      if (!rawVal || !window.masterlistService) return;
+      const canonical = window.masterlistService.findCanonical("accounts", rawVal);
+      if (canonical) {
+        if (canonical.toLowerCase() === rawVal.toLowerCase() && canonical !== rawVal) {
+          // User explicitly typed a casing variation: update display override
+          window.masterlistService.addAccount(rawVal);
+        } else if (canonical !== input.value) {
+          input.value = canonical;
+        }
+      } else {
+        const site = el("edrSite")?.value;
+        const res = window.masterlistService.addAccount(rawVal, { site });
+        if (res && res.added) {
+          initFormDropdowns();
+          input.value = res.canonical || rawVal;
+        }
+      }
+    };
+    el("edrAccount")?.addEventListener("change", handleAccountInputChange);
+
+    // Modal Screenshot Viewer Events
+    el("btnCloseScreenshotViewer")?.addEventListener("click", closeScreenshotViewer);
+    el("btnViewerCloseBottom")?.addEventListener("click", closeScreenshotViewer);
+    el("modalScreenshotViewer")?.addEventListener("click", (e) => {
+      if (e.target === el("modalScreenshotViewer")) closeScreenshotViewer();
+    });
+    el("btnViewerCopyScreenshot")?.addEventListener("click", async () => {
+      const img = el("screenshotViewerImg");
+      if (img && img.src) {
+        try {
+          await edr.copyScreenshot(img.src);
+          showToast("CCTV screenshot copied to clipboard as PNG image.", "success");
+        } catch (err) {
+          showToast(err.message || "Failed to copy screenshot.", "error");
+        }
+      }
+    });
+
+    // Previous & Next Screenshot Navigation in Fullscreen Viewer
+    el("btnViewerPrev")?.addEventListener("click", () => {
+      if (viewerShots.length > 1) {
+        viewerIndex = (viewerIndex - 1 + viewerShots.length) % viewerShots.length;
+        updateViewerImage();
+      }
+    });
+    el("btnViewerNavPrev")?.addEventListener("click", () => {
+      if (viewerShots.length > 1) {
+        viewerIndex = (viewerIndex - 1 + viewerShots.length) % viewerShots.length;
+        updateViewerImage();
+      }
+    });
+    el("btnViewerNext")?.addEventListener("click", () => {
+      if (viewerShots.length > 1) {
+        viewerIndex = (viewerIndex + 1) % viewerShots.length;
+        updateViewerImage();
+      }
+    });
+    el("btnViewerNavNext")?.addEventListener("click", () => {
+      if (viewerShots.length > 1) {
+        viewerIndex = (viewerIndex + 1) % viewerShots.length;
+        updateViewerImage();
+      }
+    });
+
+    // Direct Reorder from Fullscreen Viewer
+    el("viewerMoveToSelect")?.addEventListener("change", async (e) => {
+      const targetPos = parseInt(e.target.value, 10);
+      if (!isNaN(targetPos) && targetPos !== viewerIndex && typeof cctvReportDraft !== "undefined" && cctvReportDraft && Array.isArray(cctvReportDraft.screenshots)) {
+        try {
+          const [moved] = cctvReportDraft.screenshots.splice(viewerIndex, 1);
+          cctvReportDraft.screenshots.splice(targetPos, 0, moved);
+          viewerShots = cctvReportDraft.screenshots;
+          viewerIndex = targetPos;
+          await persistCctvReportScreenshots();
+          renderCctvReportScreenshots();
+          updateCctvReportPreview();
+          updateViewerImage();
+          if (window.historyService?.captureIfChanged) {
+            window.historyService.captureIfChanged("report", `Reordered screenshot to position #${targetPos + 1}`);
+          }
+          showToast(`Screenshot moved to position #${targetPos + 1}.`, "info");
+        } catch (err) {
+          showToast("Failed to save screenshot order.", "error");
+        }
+      }
+    });
+
+    // Google Docs Dialog Setup
+    el("btnOpenDocsSetup")?.addEventListener("click", () => {
+      el("inputDocsUrl").value = edr.getDocsUrl();
+      el("modalDocsSetup").hidden = false;
+    });
+
+    el("btnCloseDocsSetup")?.addEventListener("click", () => {
+      el("modalDocsSetup").hidden = true;
+    });
+
+    el("btnCancelDocsSetup")?.addEventListener("click", () => {
+      el("modalDocsSetup").hidden = true;
+    });
+
+    el("btnTestDocsSetup")?.addEventListener("click", async () => {
+      const url = el("inputDocsUrl")?.value;
+      try {
+        showToast("Testing Google Docs connection...", "info");
+        const res = await edr.testDocsConnection(url);
+        showToast(`Connected to "${res.documentName || "EDR Google Doc"}".`, "success");
+        el("edrDocsUrlHint").textContent = `Connected: ${res.documentName || "EDR Doc"}`;
+        el("edrDocsUrlHint").className = "docs-url-hint valid";
+      } catch (err) {
+        showToast(err.message || "Connection test failed.", "error");
+        el("edrDocsUrlHint").textContent = err.message || "Connection test failed.";
+        el("edrDocsUrlHint").className = "docs-url-hint invalid";
+      }
+    });
+
+    el("btnClearDocsSetup")?.addEventListener("click", () => {
+      edr.clearDocsUrl();
+      el("inputDocsUrl").value = "";
+      el("modalDocsSetup").hidden = true;
+      if (el("edrDocsStatusText")) el("edrDocsStatusText").textContent = "Local Storage";
+      el("edrDocsUrlHint").textContent = "URL must end in /exec.";
+      el("edrDocsUrlHint").className = "docs-url-hint";
+      updateIntegrationStatusPills();
+      showToast("Google Docs connection disconnected.", "info");
+    });
+
+    el("btnSaveDocsSetup")?.addEventListener("click", async () => {
+      const url = el("inputDocsUrl").value.trim();
+      if (!edr.isValidDocsUrl(url)) {
+        showToast("Invalid Web App URL. Must end in /exec.", "error");
+        return;
+      }
+      try {
+        showToast("Testing and connecting...", "info");
+        const testRes = await edr.testDocsConnection(url);
+        edr.setDocsUrl(url);
+        el("modalDocsSetup").hidden = true;
+        if (el("edrDocsStatusText")) el("edrDocsStatusText").textContent = "Docs Connected";
+        updateIntegrationStatusPills();
+        showToast(`Connected to "${testRes.documentName || "EDR Doc"}". Loading saved EDRs...`, "success");
+        await edr.loadSavedEdrsFromDocs();
+      } catch (err) {
+        showToast(`Connection failed: ${err.message}`, "error");
+      }
+    });
+
+    // Form inputs: attach autosave
+    [
+      "edrSite",
+      "edrDate",
+      "edrTimeObserved",
+      "edrSupervisorName",
+      "edrOmName",
+      "edrSubjectName",
+      "edrAccount",
+      "edrIncident",
+      "edrActionRemarks"
+    ].forEach(id => {
+      el(id)?.addEventListener("input", scheduleDraftSave);
+      el(id)?.addEventListener("change", scheduleDraftSave);
+    });
+
+    // Auth Modal
+    el("btnUserMenu")?.addEventListener("click", () => {
+      el("modalAuth").hidden = false;
+    });
+    el("btnCloseAuth")?.addEventListener("click", () => {
+      el("modalAuth").hidden = true;
+    });
+
+    el("formSignIn")?.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const u = el("loginUser").value;
+      const p = el("loginPass").value;
+      try {
+        await auth.signIn(u, p);
+        el("modalAuth").hidden = true;
+        showToast(`Signed in as ${u}`, "success");
+      } catch (err) {
+        el("authErrorMsg").style.display = "block";
+        el("authErrorMsg").textContent = err.message || "Sign in failed";
+      }
+    });
+  }
+
+  // =========================================================================
+  // WORKSPACE NAVIGATION SYSTEM
+  // =========================================================================
+  let currentWorkspace = "dashboard";
+
+  const WORKSPACES = {
+    dashboard: {
+      tabId: "tabDashboard",
+      paneId: "paneDashboard",
+      title: "Operations Dashboard",
+      subtitle: ""
+    },
+    report: {
+      tabId: "tabCctvReport",
+      paneId: "paneCctvReport",
+      title: "CCTV Report",
+      subtitle: ""
+    },
+    conduct: {
+      tabId: "tabConduct",
+      paneId: "paneConduct",
+      title: "Code of Conduct",
+      subtitle: ""
+    },
+    edr: {
+      tabId: "tabEdr",
+      paneId: "paneEdr",
+      title: "End of the Day Report",
+      subtitle: ""
+    },
+    audit: {
+      tabId: "tabAudit",
+      paneId: "paneAudit",
+      title: "CCTV Audit",
+      subtitle: ""
+    },
+    trackers: {
+      tabId: "tabTrackers",
+      paneId: "paneTrackers",
+      title: "Trackers",
+      subtitle: ""
+    },
+    sorter: {
+      tabId: "tabSorter",
+      paneId: "paneSorter",
+      title: "AI Sorter",
+      subtitle: ""
+    },
+    maintenance: {
+      tabId: "tabMaintenance",
+      paneId: "paneMaintenance",
+      title: "Maintenance",
+      subtitle: ""
+    },
+    followup: {
+      tabId: "tabFollowup",
+      paneId: "paneFollowup",
+      title: "Follow Up Reports",
+      subtitle: ""
+    },
+    unreported: {
+      tabId: "tabUnreported",
+      paneId: "paneUnreported",
+      title: "Unreported",
+      subtitle: ""
+    },
+    pending: {
+      tabId: "tabPending",
+      paneId: "panePending",
+      title: "Pending Reports",
+      subtitle: ""
+    },
+    masterlist: {
+      tabId: "tabMasterlist",
+      paneId: "paneMasterlist",
+      title: "Masterlist",
+      subtitle: ""
+    },
+    history: {
+      tabId: "tabHistory",
+      paneId: "paneHistory",
+      title: "Activity History",
+      subtitle: ""
+    },
+    accounts: {
+      tabId: "tabAccounts",
+      paneId: "paneAccounts",
+      title: "Account Management",
+      subtitle: ""
+    }
+  };
+
+  function getCurrentWorkspace() {
+    return currentWorkspace || "dashboard";
+  }
+  window.getCurrentWorkspace = getCurrentWorkspace;
+
+  function switchWorkspace(targetKey) {
+    if (targetKey === "cctv") targetKey = "report";
+    if (!WORKSPACES[targetKey]) return;
+    if (auth && typeof auth.canAccessWorkspace === "function" && !auth.canAccessWorkspace(targetKey)) {
+      showToast("Access restricted: You do not have permission to access this workspace.", "warning");
+      return;
+    }
+
+    currentWorkspace = targetKey;
+    window.getCurrentWorkspace = () => currentWorkspace;
+
+    try {
+      sessionStorage.setItem("cctv_active_workspace", targetKey);
+      const curUrl = new URL(window.location.href);
+      if (curUrl.searchParams.get("workspace") !== targetKey) {
+        curUrl.searchParams.set("workspace", targetKey);
+        window.history.replaceState({ workspace: targetKey }, "", curUrl.toString());
+      }
+    } catch (_) {}
+
+    // Update nav rail buttons
+    Object.entries(WORKSPACES).forEach(([key, ws]) => {
+      const tabBtn = el(ws.tabId);
+      const paneEl = el(ws.paneId);
+      const isActive = key === targetKey;
+
+      if (tabBtn) {
+        tabBtn.classList.toggle("active", isActive);
+        tabBtn.setAttribute("aria-selected", isActive ? "true" : "false");
+      }
+      if (paneEl) {
+        paneEl.hidden = !isActive;
+        paneEl.classList.toggle("active", isActive);
+        paneEl.style.display = isActive ? "" : "none";
+      }
+    });
+
+    // Close mobile navigation drawer if open
+    el("navRail")?.classList.remove("mobile-open");
+    el("navRailBackdrop")?.classList.remove("is-visible");
+
+    // Update topbar titles
+    const titleEl = document.querySelector(".workspace-main-title");
+    const subBadge = document.querySelector(".workspace-title-wrap .badge");
+    if (titleEl) titleEl.textContent = WORKSPACES[targetKey].title;
+    if (subBadge) {
+      const sub = WORKSPACES[targetKey].subtitle || "";
+      subBadge.textContent = sub;
+      subBadge.style.display = sub ? "inline-flex" : "none";
+    }
+
+    // Activate hooks
+    if (targetKey === "edr") {
+      // Cleanly ensure EDR is ready in standard view
+    } else {
+      if (typeof window.setDispatchExpanded === "function") {
+        window.setDispatchExpanded(false);
+      }
+    }
+
+    if (targetKey === "dashboard") {
+      renderDashboardWorkspace();
+      window.CCTV_DASHBOARD?.syncLocalWorkspaces?.();
+    } else if (targetKey === "audit") {
+      renderAuditTable();
+      renderGuardStatus();
+    } else if (targetKey === "trackers") {
+      renderTrackersWorkspace();
+    } else if (targetKey === "sorter") {
+      renderSorterWorkspace();
+    } else if (targetKey === "maintenance") {
+      renderMaintenanceWorkspace();
+    } else if (targetKey === "pending") {
+      renderPendingWorkspace();
+    } else if (targetKey === "followup") {
+      renderFollowupWorkspace();
+    } else if (targetKey === "unreported") {
+      if (window.unreportedService && typeof window.unreportedService.renderWorkspace === "function") {
+        window.unreportedService.renderWorkspace();
+      }
+    } else if (targetKey === "report") {
+      renderCctvReportWorkspace();
+      if (typeof window.applyReportHeaderPolish === "function") {
+        window.applyReportHeaderPolish();
+      }
+    } else if (targetKey === "conduct") {
+      renderCodeOfConductWorkspace();
+    } else if (targetKey === "masterlist") {
+      renderMasterlistWorkspace();
+    } else if (targetKey === "history") {
+      renderHistoryWorkspace();
+    } else if (targetKey === "accounts") {
+      if (typeof window._renderAccountsWorkspaceFn === 'function') {
+        window._renderAccountsWorkspaceFn();
+      }
+    }
+
+    if (targetKey !== "accounts") {
+      if (typeof window._clearTransientCredential === "function") {
+        window._clearTransientCredential();
+      }
+    }
+  }
+
+  window.switchWorkspace = switchWorkspace;
+
+  function initWorkspaceNavigation() {
+    Object.keys(WORKSPACES).forEach(wsKey => {
+      const btn = el(WORKSPACES[wsKey].tabId);
+      if (btn) {
+        btn.addEventListener("click", () => switchWorkspace(wsKey));
+      }
+    });
+
+    // Mobile nav hamburger toggle
+    el("btnMobileNavToggle")?.addEventListener("click", () => {
+      const rail = el("navRail");
+      const backdrop = el("navRailBackdrop");
+      if (!rail) return;
+      const isOpen = rail.classList.toggle("mobile-open");
+      backdrop?.classList.toggle("is-visible", isOpen);
+    });
+
+    // Tap backdrop to close mobile drawer
+    el("navRailBackdrop")?.addEventListener("click", () => {
+      el("navRail")?.classList.remove("mobile-open");
+      el("navRailBackdrop")?.classList.remove("is-visible");
+    });
+
+    function isRailVisuallyCollapsed() {
+      const rail = el("navRail");
+      if (!rail) return false;
+      if (rail.classList.contains("collapsed")) return true;
+      if (window.innerWidth >= 768 && window.innerWidth <= 1023 && !rail.classList.contains("user-expanded")) {
+        return true;
+      }
+      return false;
+    }
+
+    function updateRailToggleState(isCollapsed) {
+      const btn = el("btnToggleRail");
+      if (!btn) return;
+      const labelText = isCollapsed ? "Expand sidebar" : "Collapse sidebar";
+      btn.title = labelText;
+      btn.setAttribute("data-tooltip", labelText);
+      btn.setAttribute("aria-label", labelText);
+      const icon = btn.querySelector(".collapse-btn-icon");
+      if (icon) {
+        icon.innerHTML = isCollapsed
+          ? '<polyline points="9 18 15 12 9 6"></polyline>'
+          : '<polyline points="15 18 9 12 15 6"></polyline>';
+      }
+      const textSpan = btn.querySelector(".collapse-btn-text");
+      if (textSpan) {
+        textSpan.textContent = isCollapsed ? "Expand" : "Collapse";
+      }
+    }
+    window.updateRailToggleState = updateRailToggleState;
+
+    // Keep toggle button label in sync with viewport changes under zoom or resize
+    window.addEventListener("resize", () => {
+      updateRailToggleState(isRailVisuallyCollapsed());
+    });
+
+    // Rail collapse toggle (desktop & tablet)
+    el("btnToggleRail")?.addEventListener("click", () => {
+      const rail = el("navRail");
+      if (rail) {
+        const currentlyCollapsed = isRailVisuallyCollapsed();
+        const willBeCollapsed = !currentlyCollapsed;
+        rail.classList.toggle("collapsed", willBeCollapsed);
+        rail.classList.toggle("user-expanded", !willBeCollapsed);
+        updateRailToggleState(willBeCollapsed);
+      }
+    });
+
+    const initialRail = el("navRail");
+    if (initialRail) {
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get("rail") === "collapsed") {
+        initialRail.classList.add("collapsed");
+        initialRail.classList.remove("user-expanded");
+      }
+      if (urlParams.get("edr") === "expanded" && typeof window.setDispatchExpanded === "function") {
+        window.setDispatchExpanded(true);
+      }
+      updateRailToggleState(isRailVisuallyCollapsed());
+    }
+  }
+
+  // =========================================================================
+  // CCTV AUDIT CONTROLLER
+  // =========================================================================
+  let auditEditingIndex = -1;
+
+  function initAuditDropdowns() {
+    const ms = window.masterlistService;
+
+    // Audit Sites — prefer masterlistService, fall back to legacy cctv_dropdown_site
+    const siteSelect = el("auditSite");
+    if (siteSelect) {
+      const sites = ms ? ms.getSites() : storage.getItem(cfg.KEYS.DROPDOWN_SITE, cfg.DEFAULTS.SITES);
+      const current = siteSelect.value;
+      siteSelect.innerHTML = sites.map(s => `<option value="${s}">${s}</option>`).join("");
+      if (current && sites.includes(current)) siteSelect.value = current;
+    }
+
+    // Audit OM — prefer masterlistService
+    const omSelect = el("auditOmName");
+    if (omSelect) {
+      const oms = ms ? ms.getOms() : storage.getItem(cfg.KEYS.DROPDOWN_OM, cfg.DEFAULTS.OMS);
+      const current = omSelect.value;
+      omSelect.innerHTML = oms.map(o => `<option value="${o}">${o}</option>`).join("");
+      if (current && oms.includes(current)) omSelect.value = current;
+    }
+
+    // Audit Account — prefer masterlistService (SHARED with EDR)
+    const accSelect = el("auditAccount");
+    if (accSelect) {
+      const accs = ms ? ms.getAccounts() : storage.getItem(cfg.KEYS.DROPDOWN_ACCOUNT, cfg.DEFAULTS.ACCOUNTS);
+      const current = accSelect.value;
+      accSelect.innerHTML = accs.map(a => `<option value="${a}">${a}</option>`).join("");
+      if (current && accs.includes(current)) accSelect.value = current;
+    }
+
+    // Audit Reason Code — prefer masterlistService
+    const reasonSelect = el("auditReasonCode");
+    if (reasonSelect) {
+      const reasons = ms ? ms.getReasons() : storage.getItem(cfg.KEYS.DROPDOWN_REASON, cfg.DEFAULTS.REASON_CODES);
+      const current = reasonSelect.value;
+      reasonSelect.innerHTML = reasons.map(r => `<option value="${r}">${r}</option>`).join("");
+      if (current && reasons.includes(current)) reasonSelect.value = current;
+    }
+
+    // Audit TL datalist
+    const tlList = el("listAuditTls");
+    if (tlList) {
+      const tls = edr.getTeamLeaderNames();
+      tlList.innerHTML = tls.map(t => `<option value="${t}"></option>`).join("");
+    }
+
+    // Audit Date default
+    const dateInput = el("auditDate");
+    if (dateInput && !dateInput.value) {
+      dateInput.value = new Date().toISOString().slice(0, 10);
+    }
+  }
+
+  function renderAuditTable() {
+    const tableBody = el("auditTableBody");
+    const emptyNotice = el("auditEmptyNotice");
+    if (!tableBody) return;
+
+    const rawEntries = audit.getEntries();
+
+    // Update Badges
+    const totalBadge = el("auditTotalRowsBadge");
+    if (totalBadge) {
+      totalBadge.textContent = `${rawEntries.length} ${rawEntries.length === 1 ? "row" : "rows"}`;
+    }
+
+    const linkedCount = rawEntries.filter(e => e.sourceEdrId).length;
+    const linkedBadge = el("auditLinkedBadge");
+    if (linkedBadge) {
+      linkedBadge.textContent = `${linkedCount} from EDR`;
+    }
+
+    const railBadge = el("railAuditBadge");
+    if (railBadge) {
+      railBadge.textContent = rawEntries.length;
+      if (rawEntries.length > 0) {
+        railBadge.style.setProperty("display", "inline-flex", "important");
+      } else {
+        railBadge.style.setProperty("display", "none", "important");
+      }
+    }
+
+    if (!rawEntries.length) {
+      tableBody.innerHTML = "";
+      if (emptyNotice) emptyNotice.style.display = "block";
+      return;
+    }
+
+    if (emptyNotice) emptyNotice.style.display = "none";
+
+    function getAuditSortDate(entry) {
+      if (!entry) return "";
+      const raw = entry.rawDate || entry.auditDate || "";
+      if (/^\d{4}-\d{2}-\d{2}/.test(raw)) return raw;
+      const fmt = entry.formattedDate || "";
+      const parts = fmt.split("/");
+      if (parts.length === 3) {
+        const m = parts[0].padStart(2, "0");
+        const d = parts[1].padStart(2, "0");
+        const y = parts[2].length === 4 ? parts[2] : `20${parts[2]}`;
+        return `${y}-${m}-${d}`;
+      }
+      return raw || fmt;
+    }
+
+    // Consistently sort records by audit date ascending, preserving stable order when equal
+    const sortedItems = rawEntries.map((entry, origIdx) => ({
+      entry,
+      origIdx,
+      sortDate: getAuditSortDate(entry)
+    })).sort((a, b) => {
+      const cmp = a.sortDate.localeCompare(b.sortDate);
+      if (cmp !== 0) return cmp;
+      return a.origIdx - b.origIdx;
+    });
+
+    tableBody.innerHTML = sortedItems.map((item, displayIdx) => {
+      const { entry, origIdx } = item;
+      const rowNum = displayIdx + 1;
+      const dateDisplay = entry.formattedDate || entry.rawDate || "-";
+      const auditor = entry.name || entry.auditorName || "Miles";
+      const nocLower = String(entry.noc || "").toLowerCase();
+      let nocBadgeClass = "badge-info";
+      if (nocLower === "yes") nocBadgeClass = "badge-success";
+      else if (nocLower === "no") nocBadgeClass = "badge-danger";
+      else if (nocLower === "pending") nocBadgeClass = "badge-warning";
+      else if (nocLower === "disputed") nocBadgeClass = "badge-neutral";
+
+      const hasEdr = !!entry.sourceEdrId;
+      const isEditing = auditEditingIndex === origIdx;
+
+      return `
+        <tr class="audit-row ${isEditing ? 'is-editing' : ''}" data-idx="${origIdx}" data-id="${entry.id || ''}">
+          <td style="text-align:center; font-family:var(--font-mono); font-size:10.5px; color:var(--text-dim);">${rowNum}</td>
+          <td style="font-weight:600; color:#38bdf8; white-space:nowrap;">${window.escapeHtml(dateDisplay)}</td>
+          <td style="white-space:nowrap; color:var(--text-secondary);">${window.escapeHtml(auditor)}</td>
+          <td style="white-space:nowrap; font-weight:500;">
+            ${window.escapeHtml(entry.site || "")}
+            ${hasEdr ? '<span class="badge badge-info" style="font-size:8px; padding:1px 4px; margin-left:4px;" title="Linked from EDR">EDR</span>' : ''}
+          </td>
+          <td style="white-space:nowrap; font-weight:600; color:var(--text-primary);">${window.escapeHtml(entry.tlName || "")}</td>
+          <td style="white-space:nowrap;">${window.escapeHtml(entry.agentName || "")}</td>
+          <td style="white-space:nowrap; color:var(--text-secondary);">${window.escapeHtml(entry.omName || "")}</td>
+          <td style="white-space:nowrap; color:var(--text-secondary);">${window.escapeHtml(entry.cleanAccount || "")}</td>
+          <td style="white-space:nowrap;"><span class="badge badge-neutral" style="font-size:9.5px;">${window.escapeHtml(entry.reasonCode || "")}</span></td>
+          <td style="text-align:center;"><span class="badge ${nocBadgeClass}" style="font-size:9.5px;">${window.escapeHtml(entry.noc || "Pending")}</span></td>
+          <td style="max-width:220px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${window.escapeHtml(entry.remarks || "")}">${window.escapeHtml(entry.remarks || "")}</td>
+          <td style="text-align:center; white-space:nowrap;">
+            <div style="display:inline-flex; align-items:center; gap:2px;">
+              <button type="button" class="btn btn-ghost btn-sm btn-copy-audit-row" data-idx="${origIdx}" title="Copy this row for Tracker (Arial 10pt / TSV)" style="padding:2px 5px; height:24px;">
+                <svg class="icon icon-sm" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+              </button>
+              <button type="button" class="btn btn-ghost btn-sm btn-edit-audit" data-idx="${origIdx}" title="Edit this entry" style="padding:2px 5px; height:24px;">
+                <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+              </button>
+              <button type="button" class="btn btn-ghost btn-sm btn-delete-audit text-danger" data-idx="${origIdx}" data-id="${entry.id || ''}" title="Delete this entry" style="padding:2px 5px; height:24px;">
+                <svg class="icon icon-sm" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+              </button>
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join("");
+
+    // Wire Row Copy buttons
+    tableBody.querySelectorAll(".btn-copy-audit-row").forEach(btn => {
+      btn.addEventListener("click", async (e) => {
+        e.stopPropagation();
+        const origIdx = parseInt(btn.getAttribute("data-idx"), 10);
+        const rep = rawEntries[origIdx];
+        if (!rep) return;
+        try {
+          await audit.copyAuditForTracker([rep]);
+          if (typeof renderEdrList === "function" && window.CCTV_EDR) {
+            renderEdrList(window.CCTV_EDR.getReports());
+          }
+          showToast("Row copied for Tracker (Arial 10pt formatted).", "success");
+        } catch (err) {
+          showToast(err.message || "Failed to copy row.", "error");
+        }
+      });
+    });
+
+    // Wire Row Click Selection
+    tableBody.querySelectorAll(".audit-row").forEach(row => {
+      row.addEventListener("click", (e) => {
+        if (e.target.closest("button") || e.target.closest("a")) return;
+        tableBody.querySelectorAll(".audit-row.is-selected").forEach(r => {
+          if (r !== row) r.classList.remove("is-selected");
+        });
+        row.classList.toggle("is-selected");
+      });
+    });
+
+    // Wire Edit buttons
+    tableBody.querySelectorAll(".btn-edit-audit").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const idx = parseInt(btn.getAttribute("data-idx"), 10);
+        editAuditEntry(idx);
+      });
+    });
+
+    // Wire Delete buttons
+    tableBody.querySelectorAll(".btn-delete-audit").forEach(btn => {
+      btn.addEventListener("click", async () => {
+        const origIdx = parseInt(btn.getAttribute("data-idx"), 10);
+        const entryId = btn.getAttribute("data-id");
+        const rep = rawEntries[origIdx] || (entryId ? rawEntries.find(e => e.id === entryId) : null);
+        const agreed = await window.appConfirm({
+          title: "Delete Audit Entry?",
+          message: `Delete audit entry for ${rep?.agentName || rep?.tlName || "entry"} (${rep?.site || ""})?`,
+          confirmText: "Delete",
+          tone: "danger"
+        });
+        if (agreed) {
+          if (entryId) {
+            audit.deleteEntry(entryId);
+          } else {
+            audit.deleteEntry(origIdx);
+          }
+          renderAuditTable();
+          if (window.historyService?.captureIfChanged) {
+            await window.historyService.captureIfChanged("audit", `Deleted CCTV Audit entry: ${rep?.agentName || rep?.tlName || "entry"}`);
+          }
+          showToast("Audit entry deleted.", "info");
+        }
+      });
+    });
+  }
+
+  function editAuditEntry(index) {
+    const entries = audit.getEntries();
+    const entry = entries[index];
+    if (!entry) return;
+
+    auditEditingIndex = index;
+
+    if (el("auditDate")) el("auditDate").value = entry.rawDate || "";
+    if (el("auditSite")) {
+      const sVal = entry.site || "";
+      const siteSelect = el("auditSite");
+      const matched = Array.from(siteSelect.options).find(o => 
+        o.value === sVal || 
+        o.value.startsWith(sVal) || 
+        (window.normalizeTrackerSite && window.normalizeTrackerSite(o.value) === window.normalizeTrackerSite(sVal))
+      );
+      if (matched) {
+        siteSelect.value = matched.value;
+      } else {
+        siteSelect.value = sVal;
+      }
+    }
+    if (el("auditTlName")) el("auditTlName").value = entry.tlName || "";
+    if (el("auditAgentName")) el("auditAgentName").value = entry.agentName || "";
+    if (el("auditOmName")) el("auditOmName").value = entry.omName || "";
+    if (el("auditAccount")) el("auditAccount").value = entry.cleanAccount || "";
+    if (el("auditReasonCode")) el("auditReasonCode").value = entry.reasonCode || "";
+    if (el("auditNoc")) el("auditNoc").value = entry.noc || "YES";
+    if (el("auditRemarks")) el("auditRemarks").value = entry.remarks || "";
+
+    const submitBtn = el("btnAuditSubmitText");
+    if (submitBtn) submitBtn.textContent = "Update Entry";
+
+    el("auditForm")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    renderAuditTable();
+  }
+
+  function resetAuditForm() {
+    auditEditingIndex = -1;
+    el("auditForm")?.reset();
+    const dateInput = el("auditDate");
+    if (dateInput) dateInput.value = new Date().toISOString().slice(0, 10);
+    const submitBtn = el("btnAuditSubmitText");
+    if (submitBtn) submitBtn.textContent = "Add Entry to List";
+    renderAuditTable();
+  }
+
+  // Audit Option Management (+ / -) — now routes through masterlistService for unified persistence
+  function setupAuditOptionManagement() {
+    const ms = () => window.masterlistService;
+
+    // Generic add handler using masterlistService when available, falling back to legacy storage
+    function addOpt(cat, storageKey, defaultArray, selectId, label) {
+      const val = prompt(`Enter new ${label}:`);
+      if (!val || !val.trim()) return;
+      const clean = val.trim().replace(/\s+/g, " ");
+      const msInst = ms();
+
+      if (msInst) {
+        // Route through the unified registry
+        let res;
+        if (cat === "sites") res = msInst.addSite(clean);
+        else if (cat === "oms") res = msInst.addDedicatedOm(clean);
+        else if (cat === "reasons") res = msInst.addReason(clean);
+        else res = msInst.addAccount(clean); // "accounts" (CCTV Audit Account = same as EDR Account)
+
+        // Verify persistence
+        const saved = localStorage.getItem("cctv_master_options_v2");
+        const ok = !!saved && JSON.parse(saved).added?.[cat]?.some(x =>
+          x.toLowerCase().replace(/\s+/g, " ") === clean.toLowerCase().replace(/\s+/g, " ")
+        );
+        if (!ok && !res.exists) {
+          showToast(`Failed to persist "${clean}". Please try again.`, "error");
+          return;
+        }
+
+        initAuditDropdowns();
+        if (el(selectId)) el(selectId).value = res.canonical || clean;
+        showToast(
+          res.added ? `Added "${res.canonical || clean}" to ${label} list.` : `"${res.canonical || clean}" is already in the list.`,
+          res.added ? "success" : "info"
+        );
+      } else {
+        // Legacy flat-array fallback
+        const current = storage.getItem(storageKey, defaultArray);
+        if (!current.some(c => c.toLowerCase() === clean.toLowerCase())) {
+          current.push(clean);
+          current.sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base" }));
+          storage.setItem(storageKey, current);
+          initAuditDropdowns();
+          if (el(selectId)) el(selectId).value = clean;
+          showToast(`Added "${clean}" to ${label} list.`, "success");
+        } else {
+          showToast(`"${clean}" is already in the list.`, "info");
+        }
+      }
+    }
+
+    async function removeOpt(cat, storageKey, defaultArray, selectId, label) {
+      const select = el(selectId);
+      const val = select ? select.value : "";
+      if (!val) {
+        showToast(`Please select a ${label} to remove.`, "info");
+        return;
+      }
+      const agreed = await window.appConfirm({
+        title: `Remove ${label}?`,
+        message: `Remove "${val}" from saved ${label} options? Historical records will NOT be changed.`,
+        confirmText: "Remove",
+        tone: "danger"
+      });
+      if (!agreed) return;
+
+      const msInst = ms();
+      if (msInst) {
+        if (cat === "sites") msInst.removeSite(val);
+        else if (cat === "oms") msInst.removeDedicatedOm(val);
+        else if (cat === "reasons") msInst.removeReason(val);
+        else msInst.removeAccount(val);
+
+        initAuditDropdowns();
+        showToast(`Removed "${val}" from ${label} list. Historical records are safe.`, "info");
+      } else {
+        let current = storage.getItem(storageKey, defaultArray);
+        current = current.filter(c => c.toLowerCase() !== val.toLowerCase());
+        storage.setItem(storageKey, current);
+        initAuditDropdowns();
+        showToast(`Removed "${val}" from ${label} list.`, "info");
+      }
+    }
+
+    // Site
+    el("btnAddAuditSite")?.addEventListener("click", () => {
+      addOpt("sites", cfg.KEYS.DROPDOWN_SITE, cfg.DEFAULTS.SITES, "auditSite", "Site");
+    });
+    el("btnRemoveAuditSite")?.addEventListener("click", () => {
+      removeOpt("sites", cfg.KEYS.DROPDOWN_SITE, cfg.DEFAULTS.SITES, "auditSite", "Site");
+    });
+
+    // OM
+    el("btnAddAuditOm")?.addEventListener("click", () => {
+      addOpt("oms", cfg.KEYS.DROPDOWN_OM, cfg.DEFAULTS.OMS, "auditOmName", "OM");
+    });
+    el("btnRemoveAuditOm")?.addEventListener("click", () => {
+      removeOpt("oms", cfg.KEYS.DROPDOWN_OM, cfg.DEFAULTS.OMS, "auditOmName", "OM");
+    });
+
+    // Account — SHARED with EDR, routes through masterlistService
+    el("btnAddAuditAccount")?.addEventListener("click", () => {
+      addOpt("accounts", cfg.KEYS.DROPDOWN_ACCOUNT, cfg.DEFAULTS.ACCOUNTS, "auditAccount", "Account / Campaign");
+    });
+    el("btnRemoveAuditAccount")?.addEventListener("click", () => {
+      removeOpt("accounts", cfg.KEYS.DROPDOWN_ACCOUNT, cfg.DEFAULTS.ACCOUNTS, "auditAccount", "Account / Campaign");
+    });
+
+    // Reason
+    el("btnAddAuditReason")?.addEventListener("click", () => {
+      addOpt("reasons", cfg.KEYS.DROPDOWN_REASON, cfg.DEFAULTS.REASON_CODES, "auditReasonCode", "CCTV Reason");
+    });
+    el("btnRemoveAuditReason")?.addEventListener("click", () => {
+      removeOpt("reasons", cfg.KEYS.DROPDOWN_REASON, cfg.DEFAULTS.REASON_CODES, "auditReasonCode", "CCTV Reason");
+    });
+
+    // Subscribe CCTV Audit dropdowns to masterlist changes (so adding from EDR/Masterlist reflects here too)
+    if (window.masterlistService && !window.__auditMasterlistSubscribed) {
+      window.__auditMasterlistSubscribed = true;
+      window.masterlistService.subscribe(() => {
+        initAuditDropdowns();
+      });
+    }
+  }
+
+  function initAuditEvents() {
+    initAuditDropdowns();
+    setupAuditOptionManagement();
+
+    // Initialize & persist Keep Shared Details preference for CCTV Audit
+    const chkAuditKeepShared = el("chkAuditKeepShared");
+    if (chkAuditKeepShared) {
+      try {
+        const saved = localStorage.getItem("cctv_audit_keep_shared");
+        if (saved !== null) {
+          chkAuditKeepShared.checked = saved === "true";
+        }
+      } catch (_) {}
+      chkAuditKeepShared.addEventListener("change", () => {
+        try {
+          localStorage.setItem("cctv_audit_keep_shared", String(chkAuditKeepShared.checked));
+        } catch (_) {}
+      });
+    }
+
+    // Form submission
+    el("auditForm")?.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const dateVal = el("auditDate")?.value ? el("auditDate").value.trim() : "";
+
+      const entryData = {
+        rawDate: dateVal,
+        site: el("auditSite")?.value || "",
+        tlName: el("auditTlName")?.value ? el("auditTlName").value.trim() : "",
+        agentName: el("auditAgentName")?.value ? el("auditAgentName").value.trim() : "",
+        omName: el("auditOmName")?.value || "",
+        account: el("auditAccount")?.value || "",
+        cleanAccount: el("auditAccount")?.value || "",
+        reasonCode: el("auditReasonCode")?.value || "SLEEPING",
+        noc: el("auditNoc")?.value || "YES",
+        remarks: el("auditRemarks")?.value ? el("auditRemarks").value.trim() : ""
+      };
+
+      const isEditing = auditEditingIndex >= 0;
+      const keepShared = !isEditing && !!el("chkAuditKeepShared")?.checked;
+      const sharedDetails = keepShared ? {
+        date: el("auditDate")?.value || "",
+        site: el("auditSite")?.value || "",
+        tl: el("auditTlName")?.value || "",
+        om: el("auditOmName")?.value || "",
+        account: el("auditAccount")?.value || ""
+      } : null;
+
+      if (isEditing) {
+        audit.setEditingIndex(auditEditingIndex);
+        audit.addEntry(entryData);
+        showToast("Audit entry updated.", "success");
+        resetAuditForm();
+      } else {
+        audit.addEntry(entryData);
+        if (keepShared && sharedDetails) {
+          auditEditingIndex = -1;
+          if (el("auditAgentName")) el("auditAgentName").value = "";
+          if (el("auditRemarks")) el("auditRemarks").value = "";
+          if (el("auditReasonCode")) el("auditReasonCode").selectedIndex = 0;
+          if (el("auditNoc")) el("auditNoc").value = "YES";
+
+          if (sharedDetails.date && el("auditDate")) el("auditDate").value = sharedDetails.date;
+          if (sharedDetails.site && el("auditSite")) el("auditSite").value = sharedDetails.site;
+          if (sharedDetails.tl && el("auditTlName")) el("auditTlName").value = sharedDetails.tl;
+          if (sharedDetails.om && el("auditOmName")) el("auditOmName").value = sharedDetails.om;
+          if (sharedDetails.account && el("auditAccount")) el("auditAccount").value = sharedDetails.account;
+
+          const submitBtn = el("btnAuditSubmitText");
+          if (submitBtn) submitBtn.textContent = "Add Entry to List";
+          renderAuditTable();
+
+          setTimeout(() => {
+            el("auditAgentName")?.focus();
+          }, 50);
+          showToast("Audit entry added. Shared details preserved for next entry.", "success");
+        } else {
+          resetAuditForm();
+          showToast("Audit entry added to Data Output Grid.", "success");
+        }
+      }
+    });
+
+    // Clear form
+    el("btnAuditClearForm")?.addEventListener("click", resetAuditForm);
+
+    // Clear All
+    el("btnAuditClearAll")?.addEventListener("click", async () => {
+      const agreed = await window.appConfirm({
+        title: "Clear All Audit Rows?",
+        message: "Are you sure you want to clear all CCTV Audit rows? This cannot be undone.",
+        confirmText: "Clear All",
+        tone: "danger"
+      });
+      if (agreed) {
+        audit.clearAllEntries();
+        resetAuditForm();
+        showToast("All CCTV Audit rows cleared.", "info");
+      }
+    });
+
+    // Copy for Tracker (Arial 10pt formatted)
+    let isCopyingAuditData = false;
+    el("btnAuditCopyTracker")?.addEventListener("click", async () => {
+      if (isCopyingAuditData) return;
+      isCopyingAuditData = true;
+      const btn = el("btnAuditCopyTracker");
+      if (btn) btn.disabled = true;
+      try {
+        await audit.copyAuditForTracker();
+        if (typeof renderEdrList === "function" && window.CCTV_EDR) {
+          renderEdrList(window.CCTV_EDR.getReports());
+        }
+        showToast("Audit data copied for Tracker (Arial 10pt formatted).", "success");
+      } catch (err) {
+        showToast(err.message || "Failed to copy audit data.", "error");
+      } finally {
+        isCopyingAuditData = false;
+        if (btn) btn.disabled = false;
+      }
+    });
+  }
+
+  // =========================================================================
+  // LIVE TRACKER SPREADSHEET CONTROLLER
+  // =========================================================================
+  let liveTrackerGrid = null;
+
+  function initLiveTrackerController() {
+    // Deprecated in favor of authoritative TRACKERS -> CCTV Audit workspace.
+    // Early exit eliminates unnecessary 3,584-row background fetching, rendering, and sync loops.
+    return;
+
+    function populateAuditorFilter() {
+      const select = el("liveTrackerAuditorFilter");
+      if (!select || !window.CCTV_LIVE_TRACKER) return;
+      const current = window.CCTV_LIVE_TRACKER.getAuditorFilter();
+      const auditors = window.CCTV_LIVE_TRACKER.getUniqueAuditors();
+      const totalCount = window.CCTV_LIVE_TRACKER.getTotalRowCount();
+
+      const options = [
+        `<option value="all">All Records (${totalCount} rows)</option>`,
+        `<option value="my">My Records Only</option>`
+      ];
+      auditors.forEach(a => {
+        options.push(`<option value="${a.toLowerCase()}">${a}</option>`);
+      });
+      select.innerHTML = options.join("");
+      select.value = current;
+    }
+
+    // Update status UI
+    function updateTrackerStatus(syncStatus) {
+      const rowCount = window.CCTV_LIVE_TRACKER.getRowCount();
+      const totalCount = window.CCTV_LIVE_TRACKER.getTotalRowCount();
+      const countBadge = el("liveTrackerRowCountBadge");
+      if (countBadge) {
+        countBadge.textContent = rowCount !== totalCount 
+          ? `${rowCount} of ${totalCount} rows` 
+          : `${rowCount} ${rowCount === 1 ? "row" : "rows"}`;
+      }
+
+      // Dataset source status badge
+      const dataState = window.CCTV_LIVE_TRACKER.getDataState?.() || {};
+      const stateBadge = el("liveTrackerDataStateBadge");
+      if (stateBadge) {
+        if (dataState.unsavedCount > 0) {
+          stateBadge.textContent = `Unsynced edits (${dataState.unsavedCount})`;
+          stateBadge.className = "badge badge-local";
+          stateBadge.title = "Local modifications pending sync to Google Sheet";
+        } else if (dataState.source === "live") {
+          stateBadge.textContent = `${totalCount} ROWS • LIVE SHEET • CONNECTED`;
+          stateBadge.className = "badge badge-live";
+          stateBadge.title = `Authoritative dataset loaded from shared ${dataState.sheetName || "AUDIT 2026"} Google Sheet`;
+        } else if (dataState.source === "cached") {
+          stateBadge.textContent = `${totalCount} ROWS • CACHED SNAPSHOT`;
+          stateBadge.className = "badge badge-cached";
+          stateBadge.title = "Local cached snapshot of shared Google Sheet";
+        } else if (dataState.source === "error" || syncStatus.error) {
+          stateBadge.textContent = `API ERROR: ${syncStatus.error || dataState.lastError || "Failed to load"}`;
+          stateBadge.className = "badge badge-danger";
+          stateBadge.title = syncStatus.error || dataState.lastError || "Failed to load Google Sheet";
+        } else if (dataState.source === "connecting") {
+          stateBadge.textContent = "CONNECTING TO GOOGLE SHEET...";
+          stateBadge.className = "badge badge-info";
+          stateBadge.title = "Connecting to shared Google Sheet...";
+        } else {
+          stateBadge.textContent = "Ready";
+          stateBadge.className = "badge badge-neutral";
+          stateBadge.title = "Live Tracker ready";
+        }
+      }
+
+      const syncBadge = el("liveTrackerSyncBadge");
+      if (syncBadge) {
+        if (syncStatus.state === "saving") {
+          syncBadge.textContent = "Saving...";
+          syncBadge.className = "badge badge-info";
+        } else if (syncStatus.state === "unsaved") {
+          syncBadge.textContent = `Unsaved (${syncStatus.unsavedCount})`;
+          syncBadge.className = "badge badge-warning";
+        } else if (syncStatus.state === "conflict") {
+          syncBadge.textContent = "Conflict";
+          syncBadge.className = "badge badge-danger";
+        } else if (syncStatus.state === "saved") {
+          syncBadge.textContent = "Saved";
+          syncBadge.className = "badge badge-success";
+        } else if (dataState.source === "live") {
+          syncBadge.textContent = "Read-Only";
+          syncBadge.className = "badge badge-success";
+          syncBadge.title = "Google Sheet writes disabled (Read-only mode)";
+        } else if (dataState.source === "error" || syncStatus.error) {
+          syncBadge.textContent = "Disconnected";
+          syncBadge.className = "badge badge-danger";
+        } else {
+          syncBadge.textContent = "Idle";
+          syncBadge.className = "badge badge-neutral";
+        }
+      }
+
+      const syncTime = el("liveTrackerSyncTime");
+      if (syncTime) {
+        if (syncStatus.error || dataState.lastError) {
+          syncTime.textContent = `Error: ${syncStatus.error || dataState.lastError}`;
+          syncTime.style.color = "var(--accent-danger)";
+        } else if (dataState.source === "live") {
+          syncTime.textContent = `Live Connected (${new Date(dataState.lastFetchTime || Date.now()).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })})`;
+          syncTime.style.color = "var(--text-muted)";
+        } else if (dataState.source === "connecting") {
+          syncTime.textContent = "Fetching shared Google Sheet...";
+          syncTime.style.color = "var(--text-muted)";
+        } else if (dataState.source === "cached") {
+          syncTime.textContent = "Cached snapshot";
+          syncTime.style.color = "var(--text-muted)";
+        } else {
+          syncTime.textContent = "Idle";
+          syncTime.style.color = "var(--text-muted)";
+        }
+      }
+
+      // Old live tracker rail badge removed to prevent overriding DATA OUTPUT GRID staged count
+
+      const undoBtn = el("btnTrackerUndo");
+      if (undoBtn) undoBtn.disabled = !window.CCTV_LIVE_TRACKER.canUndo();
+      const redoBtn = el("btnTrackerRedo");
+      if (redoBtn) redoBtn.disabled = !window.CCTV_LIVE_TRACKER.canRedo();
+    }
+
+    window.CCTV_LIVE_TRACKER.subscribeSync(updateTrackerStatus);
+    window.CCTV_LIVE_TRACKER.subscribe(() => {
+      populateAuditorFilter();
+      updateTrackerStatus(window.CCTV_LIVE_TRACKER.getSyncStatus());
+    });
+    populateAuditorFilter();
+    updateTrackerStatus(window.CCTV_LIVE_TRACKER.getSyncStatus());
+
+    // Auditor Filter change
+    el("liveTrackerAuditorFilter")?.addEventListener("change", (e) => {
+      const val = e.target.value;
+      window.CCTV_LIVE_TRACKER.setAuditorFilter(val);
+      const count = window.CCTV_LIVE_TRACKER.getRowCount();
+      showToast(`Filter applied: showing ${count} rows.`, "info");
+    });
+
+    // Find in Sheet button
+    el("btnTrackerFind")?.addEventListener("click", () => {
+      if (liveTrackerGrid) {
+        liveTrackerGrid.openFind();
+      }
+    });
+
+    // Refresh from Google Sheet button
+    el("btnTrackerRefresh")?.addEventListener("click", async () => {
+      showToast("Fetching entire shared AUDIT 2026 sheet...", "info");
+      const res = await window.CCTV_LIVE_TRACKER.fetchSharedSheetData(true);
+      if (res && res.success) {
+        showToast(`Loaded ${res.count} shared records from Google Sheets.`, "success");
+        populateAuditorFilter();
+      } else {
+        showToast("Failed to fetch shared sheet: " + (res?.error || "Network error"), "error");
+      }
+    });
+
+    // Toolbar Buttons
+    el("btnTrackerAddRow")?.addEventListener("click", () => {
+      window.CCTV_LIVE_TRACKER.insertRow();
+      showToast("New row added.", "info");
+    });
+
+    el("btnTrackerInsertByDate")?.addEventListener("click", async () => {
+      const today = new Date().toISOString().split("T")[0];
+      const targetDate = prompt("Enter target date for chronological insertion (YYYY-MM-DD):", today);
+      if (targetDate && targetDate.trim()) {
+        const res = window.CCTV_LIVE_TRACKER.insertRowByDate({ date: targetDate.trim() });
+        showToast(`Row inserted at position #${res.index + 1} based on date ${targetDate.trim()}.`, "success");
+      }
+    });
+
+    el("btnTrackerUndo")?.addEventListener("click", () => {
+      if (window.CCTV_LIVE_TRACKER.undo()) {
+        showToast("Undone.", "info");
+      }
+    });
+
+    el("btnTrackerRedo")?.addEventListener("click", () => {
+      if (window.CCTV_LIVE_TRACKER.redo()) {
+        showToast("Redone.", "info");
+      }
+    });
+
+    let isCopyingTrackerRows = false;
+    el("btnTrackerCopyAll")?.addEventListener("click", async () => {
+      if (isCopyingTrackerRows) return;
+      isCopyingTrackerRows = true;
+      const btn = el("btnTrackerCopyAll");
+      if (btn) btn.disabled = true;
+      try {
+        const rows = window.CCTV_LIVE_TRACKER.getRows();
+        const cols = window.CCTV_LIVE_TRACKER.getColumns();
+        if (!rows.length) {
+          showToast("No tracker rows to copy.", "info");
+          return;
+        }
+        const lines = rows.map(r => cols.map(c => r[c.key] || "").join("\t"));
+        const tsv = lines.join("\r\n");
+        await window.copyToClipboardHtmlAndText(tsv, `<pre>${window.escapeHtml(tsv)}</pre>`);
+        showToast(`Copied ${rows.length} rows formatted for Google Sheets.`, "success");
+      } catch (err) {
+        showToast("Failed to copy rows: " + err.message, "error");
+      } finally {
+        isCopyingTrackerRows = false;
+        if (btn) btn.disabled = false;
+      }
+    });
+
+    let isSyncingTracker = false;
+    el("btnTrackerSyncNow")?.addEventListener("click", async () => {
+      if (isSyncingTracker) return;
+      const settings = window.CCTV_LIVE_TRACKER.getSettings();
+      if (!settings.webAppUrl) {
+        showToast("Please configure your Google Sheets Apps Script URL in Setup first.", "warning");
+        el("modalTrackerSetup").hidden = false;
+        return;
+      }
+      isSyncingTracker = true;
+      const btn = el("btnTrackerSyncNow");
+      if (btn) btn.disabled = true;
+      showToast("Syncing with Google Sheets...", "info");
+      try {
+        const res = await window.CCTV_LIVE_TRACKER.triggerImmediateSync();
+        if (res && res.readOnly) {
+          // info toast was already triggered
+        } else if (res && res.success === false) {
+          showToast(res.error || "Sync failed. Local edits safely preserved.", "error");
+        } else {
+          showToast("Sync with Google Sheets completed successfully.", "success");
+        }
+      } catch (err) {
+        showToast(err.message || "Failed to sync with Google Sheets.", "error");
+      } finally {
+        isSyncingTracker = false;
+        if (btn) btn.disabled = false;
+      }
+    });
+
+    el("btnTrackerClearAll")?.addEventListener("click", async () => {
+      const agreed = await window.appConfirm({
+        title: "Clear Live Tracker?",
+        message: "Are you sure you want to clear all rows in the Live Tracker? This cannot be undone.",
+        confirmText: "Clear All",
+        tone: "danger"
+      });
+      if (agreed) {
+        window.CCTV_LIVE_TRACKER.clearAllRows();
+        showToast("Tracker rows cleared.", "info");
+      }
+    });
+
+    // Sheet Setup Modal
+    const TRACKER_APPS_SCRIPT_SAMPLE = `function doGet(e) {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+  var data = sheet.getDataRange().getValues();
+  return ContentService.createTextOutput(JSON.stringify({ status: "success", rows: data }))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+function doPost(e) {
+  try {
+    var payload = JSON.parse(e.postData.contents);
+    var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+    var lastRow = sheet.getLastRow();
+    var conflicts = [];
+
+    if (payload.action === "batch_sync_tracker" && Array.isArray(payload.updates)) {
+      payload.updates.forEach(function(u) {
+        var values = [
+          u.values.year || "",
+          u.values.month || "",
+          u.values.date || "",
+          u.values.auditor || u.values.name || "",
+          u.values.om || "",
+          u.values.site || "",
+          u.values.tl || "",
+          u.values.agent || "",
+          u.values.account || "",
+          u.values.reason || "",
+          u.values.noc || "",
+          u.values.remarks || ""
+        ];
+
+        if (u.isNew) {
+          var targetRow = (typeof u.index === 'number' && u.index >= 0) ? u.index + 2 : lastRow + 1;
+          if (targetRow <= lastRow) {
+            sheet.insertRowBefore(targetRow);
+            sheet.getRange(targetRow, 1, 1, values.length).setValues([values]);
+          } else {
+            sheet.appendRow(values);
+          }
+        } else {
+          var targetRow = u.index + 2;
+          if (targetRow <= sheet.getLastRow()) {
+            var current = sheet.getRange(targetRow, 1, 1, values.length).getValues()[0];
+            var currentFp = current.map(function(c) { return String(c || '').trim(); }).join('||');
+            if (u.fingerprint && currentFp !== u.fingerprint) {
+              conflicts.push({ uid: u.uid, serverValues: current });
+              return;
+            }
+            sheet.getRange(targetRow, 1, 1, values.length).setValues([values]);
+          } else {
+            sheet.appendRow(values);
+          }
+        }
+      });
+    }
+
+    return ContentService.createTextOutput(JSON.stringify({ success: true, conflicts: conflicts }))
+      .setMimeType(ContentService.MimeType.JSON);
+  } catch (err) {
+    return ContentService.createTextOutput(JSON.stringify({ success: false, error: err.toString() }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}`;
+
+    el("btnTrackerSetup")?.addEventListener("click", () => {
+      const settings = window.CCTV_LIVE_TRACKER.getSettings();
+      if (el("trackerSheetWebAppUrl")) {
+        el("trackerSheetWebAppUrl").value = settings.webAppUrl || "";
+      }
+      if (el("trackerAppsScriptCode")) {
+        el("trackerAppsScriptCode").value = TRACKER_APPS_SCRIPT_SAMPLE;
+      }
+      el("modalTrackerSetup").hidden = false;
+    });
+
+    el("btnCopyTrackerAppsScript")?.addEventListener("click", () => {
+      if (el("trackerAppsScriptCode")) {
+        navigator.clipboard.writeText(TRACKER_APPS_SCRIPT_SAMPLE).then(() => {
+          showToast("Apps Script code copied to clipboard.", "success");
+        }).catch(() => {
+          el("trackerAppsScriptCode").select();
+          showToast("Selected code. Press Ctrl+C to copy.", "info");
+        });
+      }
+    });
+
+    el("btnCloseTrackerSetup")?.addEventListener("click", () => {
+      el("modalTrackerSetup").hidden = true;
+    });
+    el("btnCancelTrackerSetup")?.addEventListener("click", () => {
+      el("modalTrackerSetup").hidden = true;
+    });
+
+    el("btnSaveTrackerSetup")?.addEventListener("click", () => {
+      const url = el("trackerSheetWebAppUrl")?.value.trim() || "";
+      window.CCTV_LIVE_TRACKER.saveSettings({ webAppUrl: url });
+      el("modalTrackerSetup").hidden = true;
+      if (url) {
+        showToast("Google Sheets Live Tracker URL saved!", "success");
+        window.CCTV_LIVE_TRACKER.triggerImmediateSync();
+      } else {
+        showToast("Google Sheets sync URL disconnected.", "info");
+      }
+    });
+  }
+
+  // =========================================================================
+  // SMART AUDIT GUARD CONTROLLER
+  // =========================================================================
+  function renderGuardStatus() {
+    const rows = audit.getTrackerRows();
+    const snap = audit.getTrackerSnapshot();
+    const analysis = audit.getTrackerAnalysis();
+
+    const countBadge = el("guardRecordCountBadge");
+    if (countBadge) countBadge.textContent = `${rows.length} records`;
+
+    const statusBadge = el("guardStatusBadge");
+    if (statusBadge) {
+      statusBadge.textContent = rows.length ? "Active Snapshot" : "Idle";
+      statusBadge.className = rows.length ? "badge badge-success" : "badge badge-info";
+    }
+
+    const syncText = el("guardLastSyncText");
+    if (syncText) {
+      syncText.textContent = snap
+        ? `Snapshot: ${snap.syncedAt ? new Date(snap.syncedAt).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }) : "Active"} (${rows.length} rows)`
+        : "No snapshot loaded";
+    }
+
+    const issuesBox = el("guardIssuesBox");
+    if (!issuesBox) return;
+
+    if (!rows.length) {
+      issuesBox.style.display = "none";
+      issuesBox.innerHTML = "";
+      return;
+    }
+
+    issuesBox.style.display = "flex";
+
+    if (!analysis.issues.length) {
+      issuesBox.innerHTML = `
+        <div style="background:rgba(16,185,129,0.08); border:1px solid rgba(16,185,129,0.25); border-radius:var(--radius-sm); padding:8px 12px; font-size:11.5px; color:#34d399; display:flex; align-items:center; gap:8px;">
+          <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+          <span><strong>All rows verified clean.</strong> 0 duplicates, spelling issues, or invalid values detected.</span>
+        </div>
+      `;
+      return;
+    }
+
+    // Render issue items
+    issuesBox.innerHTML = analysis.issues.map(iss => {
+      const isDanger = iss.level === "danger";
+      const badgeClass = isDanger ? "badge-danger" : "badge-warning";
+      const borderCol = isDanger ? "rgba(239,68,68,0.25)" : "rgba(245,158,11,0.25)";
+      const bgCol = isDanger ? "rgba(239,68,68,0.06)" : "rgba(245,158,11,0.06)";
+
+      return `
+        <div style="background:${bgCol}; border:1px solid ${borderCol}; border-radius:var(--radius-sm); padding:8px 12px; font-size:11px; display:flex; flex-direction:column; gap:3px;">
+          <div style="display:flex; align-items:center; gap:6px;">
+            <span class="badge ${badgeClass}" style="font-size:8.5px; text-transform:uppercase;">${window.escapeHtml(iss.type)}</span>
+            <strong style="color:var(--text-primary); font-size:11.5px;">${window.escapeHtml(iss.title)}</strong>
+          </div>
+          <div style="color:var(--text-secondary);">${window.escapeHtml(iss.detail)}</div>
+          ${iss.suggestion ? `<div style="color:#38bdf8; font-weight:600; margin-top:2px;">&rarr; ${window.escapeHtml(iss.suggestion)}</div>` : ''}
+        </div>
+      `;
+    }).join("");
+  }
+
+  function initSmartAuditGuard() {
+    // Import Button & File Input
+    el("btnGuardUpload")?.addEventListener("click", () => {
+      el("fileGuardUpload")?.click();
+    });
+
+    el("fileGuardUpload")?.addEventListener("change", async (e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+
+      showToast(`Importing ${file.name}...`, "info");
+      try {
+        const reader = new FileReader();
+        reader.onload = async (evt) => {
+          try {
+            const data = new Uint8Array(evt.target.result);
+            const wb = window.XLSX.read(data, { type: "array" });
+            const res = await audit.importTrackerWorkbook(wb);
+            showToast(`Loaded ${res.rowsCount} rows from tracker. ${res.issuesCount} issue(s) flagged.`, res.issuesCount ? "info" : "success");
+            renderGuardStatus();
+          } catch (err) {
+            showToast(`Import error: ${err.message}`, "error");
+          }
+        };
+        reader.readAsArrayBuffer(file);
+      } catch (err) {
+        showToast(`Failed to read file: ${err.message}`, "error");
+      }
+      e.target.value = "";
+    });
+
+    // Paste Modal
+    el("btnGuardPaste")?.addEventListener("click", () => {
+      el("txtGuardPaste").value = "";
+      el("modalGuardPaste").hidden = false;
+    });
+
+    el("btnCloseGuardPaste")?.addEventListener("click", () => {
+      el("modalGuardPaste").hidden = true;
+    });
+    el("btnCancelGuardPaste")?.addEventListener("click", () => {
+      el("modalGuardPaste").hidden = true;
+    });
+
+    el("btnSubmitGuardPaste")?.addEventListener("click", async () => {
+      const text = el("txtGuardPaste")?.value || "";
+      if (!text.trim()) {
+        showToast("Please paste rows before submitting.", "info");
+        return;
+      }
+      try {
+        const res = await audit.pasteTrackerRows(text, false);
+        el("modalGuardPaste").hidden = true;
+        showToast(`Loaded ${res.rowsCount} rows. ${res.issuesCount} issue(s) flagged.`, res.issuesCount ? "info" : "success");
+        renderGuardStatus();
+      } catch (err) {
+        showToast(`Paste failed: ${err.message}`, "error");
+      }
+    });
+
+    el("btnGuardMergePasted")?.addEventListener("click", async () => {
+      const text = el("txtGuardPaste")?.value || "";
+      if (!text.trim()) {
+        showToast("Please paste rows before merging.", "info");
+        return;
+      }
+      try {
+        const res = await audit.pasteTrackerRows(text, true);
+        el("modalGuardPaste").hidden = true;
+        showToast(`Merged ${res.rowsCount} rows. ${res.issuesCount} issue(s) flagged.`, res.issuesCount ? "info" : "success");
+        renderGuardStatus();
+      } catch (err) {
+        showToast(`Merge failed: ${err.message}`, "error");
+      }
+    });
+
+    // Clear Snapshot
+    el("btnGuardClear")?.addEventListener("click", async () => {
+      const agreed = await window.appConfirm({
+        title: "Clear Tracker Snapshot?",
+        message: "Clear imported tracker rows from memory? (Your actual Google Sheet and saved audit entries will NOT be affected)",
+        confirmText: "Clear Snapshot",
+        tone: "danger"
+      });
+      if (agreed) {
+        await audit.clearTrackerSnapshot();
+        renderGuardStatus();
+        showToast("Tracker snapshot cleared.", "info");
+      }
+    });
+  }
+
+  // =========================================================================
+  // AI SORTER & INTERACTIVE MINI-SHEET SPREADSHEET GRID CONTROLLER
+  // =========================================================================
+  let sorterParsedRows = [];
+  let sorterAssignedRows = [];
+  let sorterAssignments = new Map();
+  let miniSheetSelectedRows = new Set();
+  let miniSheetSelectionAnchor = null;
+  let miniSheetCellSelection = null;
+  let miniSheetCellAnchor = null;
+  let miniSheetCellFocus = null;
+  let miniSheetCellDragging = false;
+  let miniSheetFindMatches = [];
+  let miniSheetFindCursor = -1;
+  let miniSheetKeyboardActive = false;
+  let sorterAutosaveTimer = null;
+
+  function showSorterMessage(text, type = "info") {
+    const msgEl = el("maintenanceMessage");
+    if (!msgEl) return;
+    msgEl.textContent = text;
+    msgEl.className = `maintenance-message ${type}`;
+    msgEl.style.display = "flex";
+  }
+
+  function hideSorterMessage() {
+    const msgEl = el("maintenanceMessage");
+    if (!msgEl) return;
+    msgEl.textContent = "";
+    msgEl.style.display = "none";
+  }
+
+  function saveSorterDraftDebounced(delay = 400) {
+    if (sorterAutosaveTimer) {
+      clearTimeout(sorterAutosaveTimer);
+    }
+    if (delay <= 0) {
+      sorterAutosaveTimer = null;
+      persistSorterDraftNow();
+      return;
+    }
+    sorterAutosaveTimer = setTimeout(() => {
+      sorterAutosaveTimer = null;
+      persistSorterDraftNow();
+    }, delay);
+  }
+
+  function persistSorterDraftNow() {
+    if (!sorter || typeof sorter.saveDraft !== "function") return;
+    const rawText = el("maintenanceInput")?.value || "";
+    const hasRows = sorterAssignedRows && sorterAssignedRows.length > 0;
+    const hasRaw = rawText.trim().length > 0;
+
+    // If both rows and raw input are empty, clear any persisted draft
+    if (!hasRows && !hasRaw) {
+      sorter.clearDraft?.().catch(console.error);
+      return;
+    }
+
+    const draft = {
+      rawText,
+      assignedRows: sorterAssignedRows,
+      parsedRows: sorterParsedRows,
+      assignments: Array.from(sorterAssignments.entries()),
+      selectedRows: Array.from(miniSheetSelectedRows),
+      searchQuery: el("miniSheetFindTlInput")?.value || ""
+    };
+
+    sorter.saveDraft(draft).catch(err => {
+      console.warn("Autosave sorter draft failed:", err);
+    });
+  }
+
+  async function clearSorterDraft() {
+    if (sorterAutosaveTimer) {
+      clearTimeout(sorterAutosaveTimer);
+      sorterAutosaveTimer = null;
+    }
+    try {
+      await sorter?.clearDraft?.();
+    } catch (err) {
+      console.warn("Could not clear sorter draft:", err);
+    }
+  }
+
+  async function restoreSorterDraft() {
+    if (!sorter || typeof sorter.loadDraft !== "function") return false;
+    try {
+      const draft = await sorter.loadDraft();
+      if (!draft) return false;
+
+      const hasRaw = typeof draft.rawText === "string" && draft.rawText.trim().length > 0;
+      const hasRows = Array.isArray(draft.assignedRows) && draft.assignedRows.length > 0;
+
+      if (!hasRaw && !hasRows) return false;
+
+      if (hasRaw && el("maintenanceInput")) {
+        el("maintenanceInput").value = draft.rawText;
+      }
+
+      if (hasRows) {
+        sorterAssignedRows = draft.assignedRows.map(r => ({ ...r }));
+        sorterParsedRows = Array.isArray(draft.parsedRows) && draft.parsedRows.length
+          ? draft.parsedRows.map(r => ({ ...r }))
+          : sorterAssignedRows.map(r => ({ ...r }));
+
+        if (Array.isArray(draft.assignments) && draft.assignments.length) {
+          sorterAssignments = new Map(draft.assignments);
+        } else if (typeof sorter.buildAssignments === "function") {
+          sorterAssignments = sorter.buildAssignments(sorterParsedRows);
+        }
+
+        if (Array.isArray(draft.selectedRows) && draft.selectedRows.length > 0) {
+          miniSheetSelectedRows = new Set(draft.selectedRows);
+          miniSheetSelectionAnchor = draft.selectedRows[0];
+        }
+
+        if (draft.searchQuery && el("miniSheetFindTlInput")) {
+          el("miniSheetFindTlInput").value = draft.searchQuery;
+          highlightMiniSheetFindMatchesRealtime(draft.searchQuery);
+        }
+
+        renderSorterRows(sorterAssignedRows);
+        updateMiniSheetSelectionUi();
+
+        const reviewCount = sorterAssignedRows.filter(r => r.floor === sorter.FLOOR.REVIEW).length;
+        const recognizedCount = sorterAssignedRows.length - reviewCount;
+        const gfCount = sorterAssignedRows.filter(r => r.floor === sorter.FLOOR.GROUND).length;
+        const f1Count = sorterAssignedRows.filter(r => r.floor === sorter.FLOOR.FIRST).length;
+        const f2Count = sorterAssignedRows.filter(r => r.floor === sorter.FLOOR.SECOND).length;
+
+        if (el("overallRowCount")) el("overallRowCount").textContent = `${sorterAssignedRows.length} rows`;
+        if (el("miniSheetRowCount")) el("miniSheetRowCount").textContent = `${sorterAssignedRows.length} rows`;
+        if (el("sorterGfCount")) el("sorterGfCount").textContent = `GF: ${gfCount}`;
+        if (el("sorter1fCount")) el("sorter1fCount").textContent = `1F: ${f1Count}`;
+        if (el("sorter2fCount")) el("sorter2fCount").textContent = `2F: ${f2Count}`;
+        if (el("sorterReviewCount")) el("sorterReviewCount").textContent = `Review: ${reviewCount}`;
+
+        const emptyNotice = el("maintenanceEmpty");
+        if (emptyNotice) emptyNotice.style.display = "none";
+
+        showSorterMessage(`Restored working session (${sorterAssignedRows.length} rows) from local draft.`, "info");
+        return true;
+      } else if (hasRaw) {
+        showSorterMessage("Restored pasted report text from local draft.", "info");
+        return true;
+      }
+    } catch (err) {
+      console.warn("Could not restore AI Sorter draft:", err);
+    }
+    return false;
+  }
+
+  function renderSorterWorkspace() {
+    const emptyNotice = el("maintenanceEmpty");
+    if (emptyNotice) {
+      emptyNotice.style.display = sorterAssignedRows.length ? "none" : "block";
+    }
+    if (sorterAssignedRows.length) {
+      renderSorterRows(sorterAssignedRows, true);
+      updateMiniSheetSelectionUi();
+    }
+  }
+
+  function analyzeMaintenance(scrollToResults = true) {
+    const raw = (el("maintenanceInput")?.value || "").trim();
+    if (!raw) {
+      showSorterMessage("Paste your maintenance report first.", "error");
+      return;
+    }
+
+    try {
+      hideSorterMessage();
+      const rows = sorter.parseReport(raw);
+      const assignments = sorter.buildAssignments(rows);
+      const assignedRows = sorter.assignRows(rows, assignments);
+
+      sorterParsedRows = rows;
+      sorterAssignments = assignments;
+      sorterAssignedRows = assignedRows;
+
+      renderSorterRows(assignedRows);
+      window.historyService?.captureIfChanged("aiSorter", "Analyzed maintenance report");
+
+      const reviewCount = assignedRows.filter(r => r.floor === sorter.FLOOR.REVIEW).length;
+      const recognizedCount = assignedRows.length - reviewCount;
+
+      const gfCount = assignedRows.filter(r => r.floor === sorter.FLOOR.GROUND).length;
+      const f1Count = assignedRows.filter(r => r.floor === sorter.FLOOR.FIRST).length;
+      const f2Count = assignedRows.filter(r => r.floor === sorter.FLOOR.SECOND).length;
+
+      if (el("overallRowCount")) el("overallRowCount").textContent = `${assignedRows.length} rows`;
+      if (el("sorterGfCount")) el("sorterGfCount").textContent = `GF: ${gfCount}`;
+      if (el("sorter1fCount")) el("sorter1fCount").textContent = `1F: ${f1Count}`;
+      if (el("sorter2fCount")) el("sorter2fCount").textContent = `2F: ${f2Count}`;
+      if (el("sorterReviewCount")) el("sorterReviewCount").textContent = `Review: ${reviewCount}`;
+
+      const msg = `Reference-aware sort complete: ${assignedRows.length} rows. ${recognizedCount} were assigned to a floor${reviewCount ? `; ${reviewCount} need review.` : "."}`;
+      showSorterMessage(msg, reviewCount ? "info" : "success");
+      saveSorterDraftDebounced(0);
+
+      if (scrollToResults && el("aiSorterTableWrapper")) {
+        el("aiSorterTableWrapper").scrollIntoView({ behavior: "smooth", block: "nearest" });
+      }
+    } catch (err) {
+      showSorterMessage(err.message || "Unable to read the report.", "error");
+    }
+  }
+
+  function renderSorterRows(rows, skipMiniSheet = false) {
+    const tbodyCompat = el("maintenanceOutputTable")?.querySelector("tbody");
+    if (tbodyCompat) {
+      let previousFloor = null;
+      tbodyCompat.innerHTML = rows.map((row, rowIndex) => {
+        const isFloorBreak = previousFloor !== null && previousFloor !== row.floor;
+        previousFloor = row.floor;
+        return `
+          <tr class="${isFloorBreak ? "floor-break" : ""}" data-floor="${window.escapeHtml(row.floor)}" data-row-index="${rowIndex}">
+            <td>${window.escapeHtml(row.timestamp || "")}</td>
+            <td>${window.escapeHtml(row.date || "")}</td>
+            <td>${window.escapeHtml(sorter.displayTLValue(row.tl))}</td>
+            <td>${window.escapeHtml(row.account || "")}</td>
+            <td>${window.escapeHtml(row.site || "")}</td>
+            <td><strong>${window.escapeHtml(row.station || "")}</strong></td>
+            <td>${window.escapeHtml(row.issue || "")}</td>
+          </tr>
+        `;
+      }).join("");
+    }
+
+    const emptyNotice = el("maintenanceEmpty");
+    if (emptyNotice) {
+      emptyNotice.style.display = rows.length ? "none" : "block";
+    }
+
+    if (!skipMiniSheet) {
+      renderMiniSheet(rows);
+    }
+  }
+
+  function renderMiniSheet(rows) {
+    const sheet = el("maintenanceMiniSheet");
+    if (!sheet) return;
+
+    miniSheetSelectedRows = new Set(
+      [...miniSheetSelectedRows].filter(index => index >= 0 && index < rows.length)
+    );
+
+    const tbody = sheet.querySelector("tbody");
+    if (!tbody) return;
+
+    const fields = sorter.MINI_SHEET_FIELDS;
+
+    let previousFloor = null;
+    const filledRowsHtml = rows.map((row, rowIndex) => {
+      const isFloorBreak = previousFloor !== null && previousFloor !== row.floor;
+      previousFloor = row.floor;
+
+      const displayValues = {
+        timestamp: row.timestamp || "",
+        date: row.date || "",
+        tl: sorter.displayTLValue(row.tl),
+        account: row.account || "",
+        site: row.site || "",
+        station: row.station || "",
+        issue: row.issue || ""
+      };
+
+      return `
+        <tr data-row-index="${rowIndex}" class="${miniSheetSelectedRows.has(rowIndex) ? "selected-row" : ""} ${isFloorBreak ? "floor-break" : ""}">
+          <th class="mini-sheet-row-number" scope="row" title="Click to select row. Shift+Click = range, Ctrl+Click = toggle.">${rowIndex + 2}</th>
+          ${fields.map((field, colIndex) => `
+            <td
+              contenteditable="true"
+              spellcheck="false"
+              data-row-index="${rowIndex}"
+              data-col-index="${colIndex}"
+              data-field="${field}"
+              aria-label="Row ${rowIndex + 2} ${field}">
+              ${window.escapeHtml(displayValues[field])}
+            </td>
+          `).join("")}
+        </tr>
+      `;
+    }).join("");
+
+    const minimumVisibleRows = 32;
+    const blankCount = Math.max(8, minimumVisibleRows - rows.length);
+    const blankRowsHtml = Array.from({ length: blankCount }, (_, i) => {
+      const rowNumber = rows.length + i + 2;
+      return `
+        <tr class="mini-sheet-blank-row">
+          <th class="mini-sheet-row-number" scope="row">${rowNumber}</th>
+          ${fields.map(() => `<td aria-hidden="true"></td>`).join("")}
+        </tr>
+      `;
+    }).join("");
+
+    tbody.innerHTML = filledRowsHtml + blankRowsHtml;
+
+    if (el("miniSheetRowCount")) {
+      el("miniSheetRowCount").textContent = `${rows.length} row${rows.length === 1 ? "" : "s"}`;
+    }
+
+    tbody.querySelectorAll(".mini-sheet-row-number").forEach(rowHeader => {
+      rowHeader.addEventListener("mousedown", event => {
+        if (event.button !== 0) return;
+        event.preventDefault();
+        const tr = rowHeader.closest("tr");
+        if (!tr || tr.dataset.rowIndex == null) return;
+        setMiniSheetKeyboardActive(true);
+        selectMiniSheetRow(Number(tr.dataset.rowIndex), event);
+      });
+      rowHeader.addEventListener("click", event => {
+        if (event.button !== 0) return;
+        event.preventDefault();
+      });
+    });
+
+    tbody.querySelectorAll('td[contenteditable="true"]').forEach(cell => {
+      cell.addEventListener("mousedown", event => {
+        if (event.button !== 0) return;
+        if (cell.dataset.editing === "true") return;
+
+        event.preventDefault();
+        setMiniSheetKeyboardActive(true);
+
+        const point = {
+          row: Number(cell.dataset.rowIndex),
+          col: Number(cell.dataset.colIndex)
+        };
+
+        miniSheetSelectedRows.clear();
+        miniSheetSelectionAnchor = null;
+
+        if (event.shiftKey && miniSheetCellAnchor) {
+          setMiniSheetCellSelection(miniSheetCellAnchor, point);
+        } else {
+          miniSheetCellAnchor = point;
+          setMiniSheetCellSelection(point, point);
+        }
+
+        miniSheetCellDragging = true;
+        sheet.classList.add("cell-range-dragging");
+      });
+
+      cell.addEventListener("mouseenter", () => {
+        if (!miniSheetCellDragging || !miniSheetCellAnchor) return;
+        setMiniSheetCellSelection(miniSheetCellAnchor, {
+          row: Number(cell.dataset.rowIndex),
+          col: Number(cell.dataset.colIndex)
+        });
+      });
+
+      cell.addEventListener("dblclick", event => {
+        event.preventDefault();
+        const point = {
+          row: Number(cell.dataset.rowIndex),
+          col: Number(cell.dataset.colIndex)
+        };
+        miniSheetCellAnchor = point;
+        setMiniSheetCellSelection(point, point);
+        beginMiniSheetCellEdit(cell);
+      });
+
+      cell.addEventListener("keydown", event => {
+        if (event.key === "Enter" && !event.shiftKey) {
+          event.preventDefault();
+          cell.blur();
+        }
+        if (event.key === "Escape") {
+          event.preventDefault();
+          cell.blur();
+        }
+      });
+
+      cell.addEventListener("blur", () => {
+        cell.classList.remove("cell-editing");
+        delete cell.dataset.editing;
+
+        const rowIndex = Number(cell.dataset.rowIndex);
+        const field = cell.dataset.field;
+        const row = sorterAssignedRows[rowIndex];
+        if (!row || !field) return;
+
+        const value = cell.textContent
+          .replace(/\u00a0/g, " ")
+          .replace(/\s+/g, " ")
+          .trim();
+
+        row[field] = value;
+        if (field === "tl") {
+          row.tlNames = sorter.extractTLNames(value);
+        }
+
+        renderSorterRows(sorterAssignedRows, true);
+        window.historyService?.scheduleCapture("aiSorter", `Edited ${field} in AI Sorter`, 400);
+        saveSorterDraftDebounced(400);
+      });
+    });
+
+    updateMiniSheetSelectionUi();
+    highlightMiniSheetFindMatches();
+  }
+
+  function beginMiniSheetCellEdit(cell) {
+    if (!cell) return;
+    miniSheetCellDragging = false;
+    cell.classList.add("cell-editing");
+    cell.dataset.editing = "true";
+    cell.focus();
+
+    const selection = window.getSelection();
+    const range = document.createRange();
+    range.selectNodeContents(cell);
+    range.collapse(false);
+    selection.removeAllRanges();
+    selection.addRange(range);
+  }
+
+  // --- Missing Helpers for Global Keyboard Shortcut Handler ---
+
+  /**
+   * Moves cell selection by arrow keys (item 5-8 parity with V1)
+   */
+  function handleMiniSheetArrowNavigation(event) {
+    if (!miniSheetCellSelection && !miniSheetSelectedRows.size) return;
+    event.preventDefault();
+
+    const numRows = sorterAssignedRows.length;
+    const numCols = sorter.MINI_SHEET_FIELDS.length;
+
+    if (miniSheetCellSelection) {
+      // Move cell selection
+      let { startRow, startCol } = miniSheetCellSelection;
+      if (event.key === "ArrowUp")    startRow = Math.max(0, startRow - 1);
+      if (event.key === "ArrowDown")  startRow = Math.min(numRows - 1, startRow + 1);
+      if (event.key === "ArrowLeft")  startCol = Math.max(0, startCol - 1);
+      if (event.key === "ArrowRight") startCol = Math.min(numCols - 1, startCol + 1);
+
+      const point = { row: startRow, col: startCol };
+      miniSheetCellAnchor = point;
+      miniSheetCellFocus = point;
+      setMiniSheetCellSelection(point, point);
+
+      // Scroll cell into view
+      const targetCell = el("maintenanceMiniSheet")?.querySelector(
+        `td[data-row-index="${startRow}"][data-col-index="${startCol}"]`
+      );
+      targetCell?.scrollIntoView({ block: "nearest", inline: "nearest" });
+    } else if (miniSheetSelectedRows.size) {
+      // Move row selection
+      const sorted = [...miniSheetSelectedRows].sort((a, b) => a - b);
+      let newIndex;
+      if (event.key === "ArrowUp")   newIndex = Math.max(0, sorted[0] - 1);
+      if (event.key === "ArrowDown") newIndex = Math.min(numRows - 1, sorted[sorted.length - 1] + 1);
+      if (newIndex === undefined) return;
+      miniSheetSelectedRows.clear();
+      miniSheetSelectedRows.add(newIndex);
+      miniSheetSelectionAnchor = newIndex;
+      updateMiniSheetSelectionUi();
+    }
+  }
+
+  /**
+   * Paste clipboard text into the current cell-range selection
+   */
+  function pasteIntoMiniSheetCellSelection(text) {
+    if (!miniSheetCellSelection || !text) return;
+    const lines = text.split(/\r?\n/).filter(l => l.trim() !== "");
+    const { startRow, startCol } = miniSheetCellSelection;
+    const fields = sorter.MINI_SHEET_FIELDS;
+
+    lines.forEach((line, lineIdx) => {
+      const cols = line.split("\t");
+      cols.forEach((val, colIdx) => {
+        const rowIdx = startRow + lineIdx;
+        const colI = startCol + colIdx;
+        if (rowIdx >= sorterAssignedRows.length || colI >= fields.length) return;
+        const row = sorterAssignedRows[rowIdx];
+        if (!row) return;
+        const field = fields[colI];
+        row[field] = val.trim();
+        if (field === "tl") row.tlNames = sorter.extractTLNames(val.trim());
+      });
+    });
+
+    renderSorterRows(sorterAssignedRows);
+    window.historyService?.captureIfChanged("aiSorter", "Pasted into cells in AI Sorter");
+    saveSorterDraftDebounced(300);
+    showToast("Pasted into selected cells.", "success");
+  }
+
+  /**
+   * Append TSV rows from clipboard into the mini sheet (Ctrl+V when rows active)
+   */
+  function pasteRowsIntoMiniSheet(text) {
+    if (!text) return;
+    const newRows = sorter.parseMiniSheetClipboardRows(text);
+    if (!newRows || !newRows.length) {
+      showSorterMessage("Clipboard does not contain readable maintenance rows.", "error");
+      return;
+    }
+    const start = sorterAssignedRows.length;
+    sorterAssignedRows.push(...newRows);
+    // Select newly pasted rows
+    miniSheetSelectedRows.clear();
+    for (let i = start; i < sorterAssignedRows.length; i++) {
+      miniSheetSelectedRows.add(i);
+    }
+    miniSheetSelectionAnchor = start;
+    renderSorterRows(sorterAssignedRows);
+    window.historyService?.captureIfChanged("aiSorter", `Pasted ${newRows.length} rows into AI Sorter`);
+    saveSorterDraftDebounced(300);
+    setTimeout(() => {
+      el("maintenanceMiniSheet")?.querySelector(`tr[data-row-index="${start}"]`)
+        ?.scrollIntoView({ behavior: "smooth", block: "center", inline: "nearest" });
+    }, 60);
+    showToast(`${newRows.length} pasted row(s) added to AI Sorter.`, "success");
+  }
+
+  // ----------------------------------------------------------------
+
+  function normalizeMiniSheetCellRange(a, b) {
+    if (!a || !b) return null;
+    return {
+      startRow: Math.min(a.row, b.row),
+      endRow: Math.max(a.row, b.row),
+      startCol: Math.min(a.col, b.col),
+      endCol: Math.max(a.col, b.col)
+    };
+  }
+
+  function hasMiniSheetCellSelection() {
+    return !!miniSheetCellSelection;
+  }
+
+  function miniSheetCellSelectionCount() {
+    if (!miniSheetCellSelection) return 0;
+    const rows = miniSheetCellSelection.endRow - miniSheetCellSelection.startRow + 1;
+    const cols = miniSheetCellSelection.endCol - miniSheetCellSelection.startCol + 1;
+    return Math.max(0, rows * cols);
+  }
+
+  function clearMiniSheetCellSelection(updateUi = true) {
+    miniSheetCellSelection = null;
+    miniSheetCellAnchor = null;
+    miniSheetCellFocus = null;
+    miniSheetCellDragging = false;
+
+    const sheet = el("maintenanceMiniSheet");
+    if (sheet) {
+      sheet.classList.remove("cell-range-dragging");
+      sheet.querySelectorAll("td.cell-range-selected, td.cell-range-active, td.sheet-cell-active")
+        .forEach(cell => cell.classList.remove("cell-range-selected", "cell-range-active", "sheet-cell-active"));
+    }
+
+    if (updateUi) updateMiniSheetSelectionUi();
+  }
+
+  function updateMiniSheetCellSelectionUi() {
+    const sheet = el("maintenanceMiniSheet");
+    if (!sheet) return;
+
+    sheet.querySelectorAll("td.cell-range-selected, td.cell-range-active, td.sheet-cell-active")
+      .forEach(cell => cell.classList.remove("cell-range-selected", "cell-range-active", "sheet-cell-active"));
+
+    if (!miniSheetCellSelection) return;
+
+    const { startRow, endRow, startCol, endCol } = miniSheetCellSelection;
+
+    sheet.querySelectorAll('tbody td[data-row-index][data-col-index]').forEach(cell => {
+      const row = Number(cell.dataset.rowIndex);
+      const col = Number(cell.dataset.colIndex);
+      const inside = row >= startRow && row <= endRow && col >= startCol && col <= endCol;
+      if (inside) {
+        cell.classList.add("cell-range-selected");
+      }
+    });
+
+    const activeRow = (miniSheetCellFocus && Number.isInteger(miniSheetCellFocus.row)) ? miniSheetCellFocus.row : startRow;
+    const activeCol = (miniSheetCellFocus && Number.isInteger(miniSheetCellFocus.col)) ? miniSheetCellFocus.col : startCol;
+
+    const activeCell = sheet.querySelector(
+      `tbody td[data-row-index="${activeRow}"][data-col-index="${activeCol}"]`
+    ) || sheet.querySelector(
+      `tbody td[data-row-index="${startRow}"][data-col-index="${startCol}"]`
+    );
+    if (activeCell) {
+      activeCell.classList.add("cell-range-active", "sheet-cell-active");
+    }
+  }
+
+  function setMiniSheetCellSelection(anchor, current = anchor) {
+    if (!anchor || !current) return;
+    const range = normalizeMiniSheetCellRange(anchor, current);
+    if (!range) return;
+    miniSheetCellSelection = range;
+    updateMiniSheetCellSelectionUi();
+    updateMiniSheetSelectionUi();
+  }
+
+  function selectedMiniSheetIndexes() {
+    return [...miniSheetSelectedRows]
+      .filter(index => Number.isInteger(index) && index >= 0 && index < sorterAssignedRows.length)
+      .sort((a, b) => a - b);
+  }
+
+  function selectMiniSheetRow(rowIndex, event = {}) {
+    if (!Number.isInteger(rowIndex) || rowIndex < 0 || rowIndex >= sorterAssignedRows.length) {
+      return;
+    }
+
+    clearMiniSheetCellSelection(false);
+
+    const isToggle = !!(event.ctrlKey || event.metaKey);
+    const isRange = !!event.shiftKey;
+
+    if (isRange && miniSheetSelectionAnchor !== null) {
+      const start = Math.min(miniSheetSelectionAnchor, rowIndex);
+      const end = Math.max(miniSheetSelectionAnchor, rowIndex);
+      if (!isToggle) miniSheetSelectedRows.clear();
+      for (let i = start; i <= end; i++) {
+        miniSheetSelectedRows.add(i);
+      }
+    } else if (isToggle) {
+      if (miniSheetSelectedRows.has(rowIndex)) {
+        miniSheetSelectedRows.delete(rowIndex);
+      } else {
+        miniSheetSelectedRows.add(rowIndex);
+      }
+      miniSheetSelectionAnchor = rowIndex;
+    } else {
+      miniSheetSelectedRows.clear();
+      miniSheetSelectedRows.add(rowIndex);
+      miniSheetSelectionAnchor = rowIndex;
+    }
+
+    setMiniSheetKeyboardActive(true);
+    updateMiniSheetSelectionUi();
+  }
+
+  function selectAllMiniSheetRows() {
+    if (!sorterAssignedRows.length) {
+      showToast("There are no rows to select.", "info");
+      return;
+    }
+
+    miniSheetSelectedRows.clear();
+    sorterAssignedRows.forEach((_, index) => miniSheetSelectedRows.add(index));
+    miniSheetSelectionAnchor = 0;
+    setMiniSheetKeyboardActive(true);
+    updateMiniSheetSelectionUi();
+    showToast(`${sorterAssignedRows.length} rows selected.`, "info");
+  }
+
+  function selectSameTlMiniSheetRows() {
+    const indexes = selectedMiniSheetIndexes();
+    if (!indexes.length) {
+      showToast("Select a row first, then use Select Same TL.", "error");
+      return;
+    }
+
+    const sourceRow = sorterAssignedRows[indexes[0]];
+    if (!sourceRow) return;
+
+    const targetNames = sorter.extractTLNames(sourceRow.tl)
+      .map(name => sorter.normalizeReferenceText(name))
+      .filter(Boolean);
+
+    if (!targetNames.length) {
+      showToast("The selected row has no Team Leader name to match.", "error");
+      return;
+    }
+
+    miniSheetSelectedRows.clear();
+    sorterAssignedRows.forEach((row, index) => {
+      const rowNames = sorter.extractTLNames(row.tl)
+        .map(name => sorter.normalizeReferenceText(name))
+        .filter(Boolean);
+
+      const matches = targetNames.some(target => rowNames.some(name => name === target));
+      if (matches) miniSheetSelectedRows.add(index);
+    });
+
+    miniSheetSelectionAnchor = indexes[0];
+    setMiniSheetKeyboardActive(true);
+    updateMiniSheetSelectionUi();
+
+    const shown = sorter.displayTLValue(sourceRow.tl) || "same TL";
+    showToast(`${miniSheetSelectedRows.size} row(s) selected for ${shown}.`, "success");
+  }
+
+  function clearMiniSheetSelection() {
+    miniSheetSelectedRows.clear();
+    miniSheetSelectionAnchor = null;
+    clearMiniSheetCellSelection(false);
+    updateMiniSheetSelectionUi();
+  }
+
+  function clearAnyMiniSheetSelection() {
+    if (hasMiniSheetCellSelection()) {
+      clearMiniSheetCellSelection();
+      return;
+    }
+    clearMiniSheetSelection();
+  }
+
+  function updateMiniSheetSelectionUi() {
+    const indexes = selectedMiniSheetIndexes();
+    const rowCount = indexes.length;
+    const cellCount = miniSheetCellSelectionCount();
+    const hasCells = cellCount > 0;
+
+    const selectedCount = el("miniSheetSelectedCount");
+    if (selectedCount) {
+      selectedCount.textContent = hasCells
+        ? `${cellCount} cell${cellCount === 1 ? "" : "s"} selected`
+        : `${rowCount} selected`;
+    }
+
+    const copyButton = el("miniSheetCopyRowsBtn");
+    const cutButton = el("miniSheetCutRowsBtn");
+    const clearButton = el("miniSheetClearSelectionBtn");
+
+    if (copyButton) copyButton.disabled = !hasCells && rowCount === 0;
+    if (cutButton) cutButton.disabled = !hasCells && rowCount === 0;
+    if (clearButton) clearButton.disabled = !hasCells && rowCount === 0;
+
+    [
+      "miniSheetToReportBtn",
+      "miniSheetRemoveRowBtn",
+      "miniSheetSelectSameTlBtn"
+    ].forEach(id => {
+      const button = el(id);
+      if (button) button.disabled = rowCount === 0;
+    });
+
+    const tbody = el("maintenanceMiniSheet")?.querySelector("tbody");
+    if (tbody) {
+      tbody.querySelectorAll("tr").forEach((tr, rowIndex) => {
+        const targetRowIndex = tr.dataset.rowIndex != null ? Number(tr.dataset.rowIndex) : rowIndex;
+        const isSelected = miniSheetSelectedRows.has(targetRowIndex);
+        tr.classList.toggle("selected-row", isSelected);
+      });
+    }
+
+    updateMiniSheetCellSelectionUi();
+  }
+
+  async function copyMiniSheetSelection() {
+    if (hasMiniSheetCellSelection()) {
+      const text = sorter.selectedMiniSheetCellTsv(sorterAssignedRows, miniSheetCellSelection);
+      const ok = await window.copyToClipboardHtmlAndText(text, `<pre>${window.escapeHtml(text)}</pre>`);
+      showToast(
+        ok ? `${miniSheetCellSelectionCount()} selected cell(s) copied.` : "Could not copy the selected cells.",
+        ok ? "success" : "error"
+      );
+      return;
+    }
+
+    const indexes = selectedMiniSheetIndexes();
+    if (!indexes.length) {
+      showToast("Select one or more rows first.", "error");
+      return;
+    }
+
+    const tsv = sorter.selectedMiniSheetTsv(sorterAssignedRows, indexes, false);
+    const ok = await window.copyToClipboardHtmlAndText(tsv, `<pre>${window.escapeHtml(tsv)}</pre>`);
+    showToast(
+      ok ? `${indexes.length} selected row(s) copied. Ready to paste.` : "Could not copy the selected rows.",
+      ok ? "success" : "error"
+    );
+  }
+
+  async function cutMiniSheetSelection() {
+    if (hasMiniSheetCellSelection()) {
+      const text = sorter.selectedMiniSheetCellTsv(sorterAssignedRows, miniSheetCellSelection);
+      const ok = await window.copyToClipboardHtmlAndText(text, `<pre>${window.escapeHtml(text)}</pre>`);
+      if (!ok) {
+        showToast("Could not copy the selected cells, so nothing was cleared.", "error");
+        return;
+      }
+
+      const count = miniSheetCellSelectionCount();
+      const { startRow, endRow, startCol, endCol } = miniSheetCellSelection;
+
+      for (let r = startRow; r <= endRow; r++) {
+        const row = sorterAssignedRows[r];
+        if (!row) continue;
+        for (let c = startCol; c <= endCol; c++) {
+          const field = sorter.MINI_SHEET_FIELDS[c];
+          if (!field) continue;
+          row[field] = "";
+          if (field === "tl") row.tlNames = [];
+        }
+      }
+
+      renderSorterRows(sorterAssignedRows);
+      if (window.historyService?.captureIfChanged) {
+        await window.historyService.captureIfChanged("aiSorter", `Cut ${count} cell(s) in AI Sorter`);
+      }
+      saveSorterDraftDebounced(300);
+      showToast(`${count} cell(s) cut to clipboard.`, "success");
+      return;
+    }
+
+    const indexes = selectedMiniSheetIndexes();
+    if (!indexes.length) {
+      showToast("Select one or more rows first.", "error");
+      return;
+    }
+
+    const tsv = sorter.selectedMiniSheetTsv(sorterAssignedRows, indexes, false);
+    const ok = await window.copyToClipboardHtmlAndText(tsv, `<pre>${window.escapeHtml(tsv)}</pre>`);
+    if (!ok) {
+      showToast("Could not copy the selected rows, so nothing was removed.", "error");
+      return;
+    }
+
+    [...indexes].sort((a, b) => b - a).forEach(index => {
+      sorterAssignedRows.splice(index, 1);
+    });
+
+    miniSheetSelectedRows.clear();
+    miniSheetSelectionAnchor = null;
+    renderSorterRows(sorterAssignedRows);
+    if (window.historyService?.captureIfChanged) {
+      await window.historyService.captureIfChanged("aiSorter", `Cut ${indexes.length} row(s) in AI Sorter`);
+    }
+    saveSorterDraftDebounced(300);
+    showToast(`${indexes.length} row(s) cut to clipboard and removed from the Mini Sheet.`, "success");
+  }
+
+  async function removeSelectedMiniSheetRows() {
+    const indexes = selectedMiniSheetIndexes();
+    if (!indexes.length) {
+      showToast("Select one or more rows first.", "error");
+      return;
+    }
+
+    const approved = await window.appConfirm({
+      title: "Remove selected rows?",
+      message: `Remove ${indexes.length} selected row${indexes.length === 1 ? "" : "s"} from the current sorted result?`,
+      confirmText: "Remove",
+      tone: "danger"
+    });
+
+    if (!approved) return;
+
+    [...indexes].sort((a, b) => b - a).forEach(index => {
+      sorterAssignedRows.splice(index, 1);
+    });
+
+    miniSheetSelectedRows.clear();
+    miniSheetSelectionAnchor = null;
+    renderSorterRows(sorterAssignedRows);
+    if (window.historyService?.captureIfChanged) {
+      await window.historyService.captureIfChanged("aiSorter", `Removed ${indexes.length} row(s) from AI Sorter`);
+    }
+    saveSorterDraftDebounced(300);
+    showToast("Selected Mini Sheet rows were removed.", "info");
+  }
+
+  function sendSelectedMiniSheetRowsToMaintenanceReport() {
+    const indexes = selectedMiniSheetIndexes();
+    if (!indexes.length) {
+      showToast("Select one or more rows first.", "error");
+      return;
+    }
+
+    const tsv = sorter.selectedMiniSheetTsv(sorterAssignedRows, indexes, false);
+    const sourceTl = sorter.displayTLValue(sorterAssignedRows[indexes[0]]?.tl || "");
+
+    if (typeof window.addMaintenanceSorterRowsToReport === "function") {
+      window.addMaintenanceSorterRowsToReport(tsv, {
+        rowCount: indexes.length,
+        sourceTl
+      });
+    } else {
+      window.__pendingMaintenanceRows = {
+        tsv,
+        rowCount: indexes.length,
+        sourceTl
+      };
+    }
+
+    showToast(`${indexes.length} selected row(s) sent directly to Maintenance Report.`, "success");
+    switchWorkspace("maintenance");
+  }
+
+  function normalizeMiniSheetFindText(value) {
+    return String(value || "").toLowerCase().replace(/\s+/g, " ").trim();
+  }
+
+  function highlightMiniSheetFindMatchesRealtime(query) {
+    const sheet = el("maintenanceMiniSheet");
+    if (!sheet) return;
+
+    const tbody = sheet.querySelector("tbody");
+    if (!tbody) return;
+
+    tbody.querySelectorAll(".sheet-cell-match").forEach(cell => cell.classList.remove("sheet-cell-match"));
+
+    const normalized = normalizeMiniSheetFindText(query);
+    miniSheetFindMatches = [];
+
+    if (!normalized) {
+      tbody.querySelectorAll("tr[data-row-index]").forEach(tr => {
+        tr.classList.remove("find-match", "find-current", "sheet-row-match");
+      });
+      if (el("miniSheetFindNextBtn")) el("miniSheetFindNextBtn").disabled = true;
+      miniSheetFindCursor = -1;
+      return;
+    }
+
+    sorterAssignedRows.forEach((row, rowIndex) => {
+      const tr = tbody.querySelector(`tr[data-row-index="${rowIndex}"]`);
+      if (!tr) return;
+
+      let rowHasMatch = false;
+
+      sorter.MINI_SHEET_FIELDS.forEach((field, colIndex) => {
+        let val = field === "tl" ? sorter.displayTLValue(row.tl) : (row[field] != null ? String(row[field]) : "");
+        const cellText = normalizeMiniSheetFindText(val);
+        if (cellText.includes(normalized)) {
+          rowHasMatch = true;
+          const cell = tr.querySelector(`td[data-col-index="${colIndex}"]`);
+          if (cell) cell.classList.add("sheet-cell-match");
+        }
+      });
+
+      if (rowHasMatch) {
+        miniSheetFindMatches.push(rowIndex);
+        tr.classList.add("find-match", "sheet-row-match");
+      } else {
+        tr.classList.remove("find-match", "find-current", "sheet-row-match");
+      }
+    });
+
+    if (el("miniSheetFindNextBtn")) {
+      el("miniSheetFindNextBtn").disabled = miniSheetFindMatches.length <= 1;
+    }
+
+    if (miniSheetFindMatches.length > 0) {
+      if (miniSheetFindCursor < 0 || miniSheetFindCursor >= miniSheetFindMatches.length) {
+        miniSheetFindCursor = 0;
+      }
+      updateCurrentFindMatchHighlight();
+    } else {
+      miniSheetFindCursor = -1;
+    }
+  }
+
+  function updateCurrentFindMatchHighlight() {
+    const tbody = el("maintenanceMiniSheet")?.querySelector("tbody");
+    if (!tbody) return;
+    tbody.querySelectorAll("tr.find-current").forEach(tr => tr.classList.remove("find-current"));
+    if (miniSheetFindCursor >= 0 && miniSheetFindCursor < miniSheetFindMatches.length) {
+      const rowIndex = miniSheetFindMatches[miniSheetFindCursor];
+      const tr = tbody.querySelector(`tr[data-row-index="${rowIndex}"]`);
+      if (tr) tr.classList.add("find-current");
+    }
+  }
+
+  function highlightMiniSheetFindMatches() {
+    const input = el("miniSheetFindTlInput");
+    highlightMiniSheetFindMatchesRealtime(input?.value || "");
+  }
+
+  function scrollToCurrentMiniSheetFindMatch() {
+    if (miniSheetFindCursor < 0 || miniSheetFindCursor >= miniSheetFindMatches.length) return;
+    const rowIndex = miniSheetFindMatches[miniSheetFindCursor];
+    const row = el("maintenanceMiniSheet")?.querySelector(`tr[data-row-index="${rowIndex}"]`);
+    if (row) {
+      row.scrollIntoView({ behavior: "smooth", block: "center", inline: "nearest" });
+    }
+  }
+
+  function findTeamLeaderInMiniSheet() {
+    const input = el("miniSheetFindTlInput");
+    const query = input?.value || "";
+
+    highlightMiniSheetFindMatchesRealtime(query);
+
+    if (!miniSheetFindMatches.length) {
+      const trimmed = query.trim();
+      if (!trimmed) {
+        showToast("Type a search term first (TL, Account, Site, Station, etc.).", "info");
+        input?.focus();
+      } else {
+        showToast(`No matches found for "${trimmed}".`, "error");
+      }
+      return;
+    }
+
+    miniSheetSelectedRows.clear();
+    miniSheetFindMatches.forEach(index => miniSheetSelectedRows.add(index));
+    miniSheetSelectionAnchor = miniSheetFindMatches[0];
+    miniSheetFindCursor = 0;
+
+    updateMiniSheetSelectionUi();
+    updateCurrentFindMatchHighlight();
+    scrollToCurrentMiniSheetFindMatch();
+
+    input?.blur();
+    setMiniSheetKeyboardActive(true);
+
+    const count = miniSheetFindMatches.length;
+    showToast(`${count} row(s) matched and selected.`, "success");
+  }
+
+  function findNextTeamLeaderMatch() {
+    if (!miniSheetFindMatches.length) {
+      findTeamLeaderInMiniSheet();
+      return;
+    }
+
+    miniSheetFindCursor = (miniSheetFindCursor + 1) % miniSheetFindMatches.length;
+    updateCurrentFindMatchHighlight();
+    scrollToCurrentMiniSheetFindMatch();
+    el("miniSheetFindTlInput")?.blur();
+    setMiniSheetKeyboardActive(true);
+    showToast(`Match ${miniSheetFindCursor + 1} of ${miniSheetFindMatches.length}.`, "info");
+  }
+
+  function setMiniSheetKeyboardActive(active) {
+    miniSheetKeyboardActive = !!active;
+    const card = el("maintenanceMiniSheet")?.closest(".mini-sheet-card");
+    if (card) {
+      card.classList.toggle("keyboard-active", miniSheetKeyboardActive);
+    }
+  }
+
+  async function copySorted() {
+    if (!sorterAssignedRows.length) {
+      showSorterMessage("Sort a report first before copying.", "error");
+      return;
+    }
+
+    const text = sorter.rowsToTSV(sorterAssignedRows);
+    const ok = await window.copyToClipboardHtmlAndText(text, `<pre>${window.escapeHtml(text)}</pre>`);
+    showToast(
+      ok ? "Sorted report copied. You can paste it directly into Google Sheets." : "Copy failed. Please try again.",
+      ok ? "success" : "error"
+    );
+  }
+
+  function clearMaintenance() {
+    clearSorterDraft();
+    const input = el("maintenanceInput");
+    if (input) input.value = "";
+    sorterParsedRows = [];
+    sorterAssignedRows = [];
+    sorterAssignments = new Map();
+    miniSheetSelectedRows.clear();
+    miniSheetSelectionAnchor = null;
+    miniSheetCellSelection = null;
+    miniSheetCellAnchor = null;
+    miniSheetCellFocus = null;
+    miniSheetFindMatches = [];
+    miniSheetFindCursor = -1;
+    setMiniSheetKeyboardActive(false);
+
+    if (el("miniSheetFindTlInput")) el("miniSheetFindTlInput").value = "";
+    if (el("miniSheetFindNextBtn")) el("miniSheetFindNextBtn").disabled = true;
+    highlightMiniSheetFindMatchesRealtime("");
+
+    const tbodyCompat = el("maintenanceOutputTable")?.querySelector("tbody");
+    if (tbodyCompat) tbodyCompat.innerHTML = "";
+    const tbodyMini = el("maintenanceMiniSheet")?.querySelector("tbody");
+    if (tbodyMini) tbodyMini.innerHTML = "";
+
+    if (el("miniSheetRowCount")) el("miniSheetRowCount").textContent = "0 rows";
+    if (el("overallRowCount")) el("overallRowCount").textContent = "0 rows";
+    if (el("sorterGfCount")) el("sorterGfCount").textContent = "GF: 0";
+    if (el("sorter1fCount")) el("sorter1fCount").textContent = "1F: 0";
+    if (el("sorter2fCount")) el("sorter2fCount").textContent = "2F: 0";
+    if (el("sorterReviewCount")) el("sorterReviewCount").textContent = "Review: 0";
+
+    const emptyNotice = el("maintenanceEmpty");
+    if (emptyNotice) emptyNotice.style.display = "block";
+
+    updateMiniSheetSelectionUi();
+    hideSorterMessage();
+  }
+
+  async function clearAllMiniSheetWorkspace() {
+    if (!sorterAssignedRows.length && !String(el("maintenanceInput")?.value || "").trim()) {
+      showToast("The sorter workspace is already empty.", "info");
+      return;
+    }
+
+    const approved = await window.appConfirm({
+      title: "Clear AI Sorter workspace?",
+      message: "Clear the pasted report and every sorted Mini Sheet row?",
+      confirmText: "Clear Workspace",
+      tone: "danger"
+    });
+
+    if (!approved) return;
+
+    clearMaintenance();
+    showToast("AI Sorter cleared. Paste your next maintenance report.", "info");
+  }
+
+  // TL Floor Assignments Modal
+  function renderTlSummaryTable() {
+    const tbody = el("tlSummaryTable")?.querySelector("tbody");
+    if (!tbody) return;
+
+    const overrides = sorter.loadOverrides();
+    const hidden = new Set(sorter.loadHiddenTLs());
+    const edits = sorter.loadTLNameEdits();
+
+    const entries = [...sorterAssignments.entries()]
+      .filter(([name]) => !hidden.has(name))
+      .sort((a, b) => {
+        const aName = edits[a[0]] || a[0];
+        const bName = edits[b[0]] || b[0];
+        return aName.localeCompare(bName, undefined, { sensitivity: "base" });
+      });
+
+    if (!entries.length) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="3" style="text-align:center; color:var(--text-muted); padding:18px;">
+            No Team Leaders in the assignment list. Analyze a report first.
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
+    tbody.innerHTML = entries.map(([name, item]) => {
+      const detected = item.floor || sorter.FLOOR.REVIEW;
+      const manual = overrides[name] || "";
+      const shownName = edits[name] || name;
+
+      return `
+        <tr>
+          <td>
+            <input
+              type="text"
+              class="form-control form-control-sm tl-name-editor"
+              data-original-tl="${encodeURIComponent(name)}"
+              value="${window.escapeHtml(shownName)}"
+              autocomplete="off"
+              spellcheck="false"
+              aria-label="Edit Team Leader name">
+          </td>
+          <td>
+            <select
+              class="form-control form-control-sm tl-floor-editor"
+              data-original-tl="${encodeURIComponent(name)}"
+              aria-label="Floor assignment for ${window.escapeHtml(shownName)}">
+              <option value="" ${manual === "" ? "selected" : ""}>Auto - ${window.escapeHtml(detected)}</option>
+              <option value="${sorter.FLOOR.GROUND}" ${manual === sorter.FLOOR.GROUND ? "selected" : ""}>Ground Floor</option>
+              <option value="${sorter.FLOOR.FIRST}" ${manual === sorter.FLOOR.FIRST ? "selected" : ""}>1st Floor</option>
+              <option value="${sorter.FLOOR.SECOND}" ${manual === sorter.FLOOR.SECOND ? "selected" : ""}>2nd Floor</option>
+            </select>
+          </td>
+          <td style="text-align:center;">
+            <button
+              type="button"
+              class="btn btn-danger-ghost btn-sm tl-row-remove"
+              data-original-tl="${encodeURIComponent(name)}">
+              Remove
+            </button>
+          </td>
+        </tr>
+      `;
+    }).join("");
+
+    tbody.querySelectorAll(".tl-floor-editor").forEach(select => {
+      select.addEventListener("change", function () {
+        const originalName = decodeURIComponent(this.getAttribute("data-original-tl") || "");
+        const data = sorter.loadOverrides();
+        if (this.value) data[originalName] = this.value;
+        else delete data[originalName];
+        sorter.saveOverrides(data);
+        if (el("maintenanceInput")?.value.trim()) {
+          analyzeMaintenance(false);
+        } else {
+          saveSorterDraftDebounced(300);
+        }
+      });
+    });
+
+    tbody.querySelectorAll(".tl-name-editor").forEach(input => {
+      const saveName = function () {
+        const originalName = decodeURIComponent(this.getAttribute("data-original-tl") || "");
+        const newName = this.value.replace(/\s+/g, " ").trim();
+        const data = sorter.loadTLNameEdits();
+        if (newName && newName !== originalName) data[originalName] = newName;
+        else delete data[originalName];
+        sorter.saveTLNameEdits(data);
+        if (sorterAssignedRows.length) renderSorterRows(sorterAssignedRows);
+        saveSorterDraftDebounced(300);
+      };
+
+      input.addEventListener("change", saveName);
+      input.addEventListener("keydown", function (e) {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          this.blur();
+        }
+      });
+    });
+
+    tbody.querySelectorAll(".tl-row-remove").forEach(button => {
+      button.addEventListener("click", async function () {
+        const originalName = decodeURIComponent(this.getAttribute("data-original-tl") || "");
+        const shownName = sorter.getEditedTLName(originalName);
+
+        const approved = await window.appConfirm({
+          title: "Remove Team Leader?",
+          message: `Remove "${shownName}" from the Team Leader Assignment list?`,
+          confirmText: "Remove",
+          tone: "danger"
+        });
+
+        if (!approved) return;
+
+        const hiddenNames = new Set(sorter.loadHiddenTLs());
+        hiddenNames.add(originalName);
+        sorter.saveHiddenTLs([...hiddenNames]);
+        renderTlSummaryTable();
+        saveSorterDraftDebounced(300);
+        showToast(`${shownName} removed from assignment list.`, "info");
+      });
+    });
+  }
+
+  function initSorterController() {
+    // History adapter binding for AI Sorter undo/redo transactions
+    sorter.getSortedRows = () => (sorterAssignedRows || []).map(r => ({ ...r }));
+    sorter.setSortedRows = (rows) => {
+      sorterAssignedRows = Array.isArray(rows) ? rows.map(r => ({ ...r })) : [];
+      renderSorterRows(sorterAssignedRows);
+      updateMiniSheetSelectionUi();
+      saveSorterDraftDebounced(400);
+    };
+    if (window.sorterService) {
+      window.sorterService.getSortedRows = sorter.getSortedRows;
+      window.sorterService.setSortedRows = sorter.setSortedRows;
+    }
+
+    // Debounced draft autosave on raw textarea input
+    el("maintenanceInput")?.addEventListener("input", () => {
+      saveSorterDraftDebounced(500);
+    });
+
+    // Flush any pending draft save before unload
+    window.addEventListener("beforeunload", () => {
+      if (sorterAutosaveTimer) {
+        clearTimeout(sorterAutosaveTimer);
+        sorterAutosaveTimer = null;
+        persistSorterDraftNow();
+      }
+    });
+
+    // Automatically check and restore unfinished draft on app initialization
+    restoreSorterDraft().catch(console.error);
+
+    el("maintenanceSortBtn")?.addEventListener("click", () => {
+      miniSheetSelectedRows.clear();
+      miniSheetSelectionAnchor = null;
+      miniSheetCellSelection = null;
+      miniSheetCellAnchor = null;
+      miniSheetCellFocus = null;
+      miniSheetFindMatches = [];
+      miniSheetFindCursor = -1;
+
+      if (el("miniSheetFindTlInput")) el("miniSheetFindTlInput").value = "";
+      if (el("miniSheetFindNextBtn")) el("miniSheetFindNextBtn").disabled = true;
+
+      analyzeMaintenance(true);
+    });
+
+    el("maintenanceCopyBtn")?.addEventListener("click", copySorted);
+    el("maintenanceClearBtn")?.addEventListener("click", async () => {
+      if (!String(el("maintenanceInput")?.value || "").trim() && !sorterAssignedRows.length) {
+        showToast("The AI Sorter is already empty.", "info");
+        return;
+      }
+      const approved = await window.appConfirm({
+        title: "Clear Maintenance AI Sorter?",
+        message: "The pasted report and current sorted workspace will be cleared.",
+        confirmText: "Clear Report",
+        tone: "danger"
+      });
+      if (approved) clearMaintenance();
+    });
+
+    el("maintenanceResetAssignmentsBtn")?.addEventListener("click", async () => {
+      const approved = await window.appConfirm({
+        title: "Reset Team Leader assignments?",
+        message: "Saved TL floors, edited names, and removed assignment rows will be reset.",
+        confirmText: "Reset",
+        tone: "danger"
+      });
+      if (!approved) return;
+
+      sorter.resetAssignments();
+      if (el("maintenanceInput")?.value.trim()) analyzeMaintenance(false);
+      showToast("Team Leader Assignment was reset. Auto-learning will be used again.", "info");
+    });
+
+    el("btnOpenTlAssignments")?.addEventListener("click", () => {
+      renderTlSummaryTable();
+      el("modalTlAssignments").hidden = false;
+    });
+
+    el("btnCloseTlAssignments")?.addEventListener("click", () => {
+      el("modalTlAssignments").hidden = true;
+    });
+
+    el("btnDoneTlAssignments")?.addEventListener("click", () => {
+      el("modalTlAssignments").hidden = true;
+    });
+
+    el("btnModalResetTlAssignments")?.addEventListener("click", async () => {
+      const approved = await window.appConfirm({
+        title: "Reset Team Leader assignments?",
+        message: "Reset all saved TL floor overrides, edited names, and hidden assignments?",
+        confirmText: "Reset All",
+        tone: "danger"
+      });
+      if (!approved) return;
+      sorter.resetAssignments();
+      renderTlSummaryTable();
+      if (el("maintenanceInput")?.value.trim()) analyzeMaintenance(false);
+      showToast("Assignments reset.", "info");
+    });
+
+    el("miniSheetSelectAllBtn")?.addEventListener("click", selectAllMiniSheetRows);
+    el("miniSheetRemoveRowBtn")?.addEventListener("click", removeSelectedMiniSheetRows);
+    el("miniSheetSelectSameTlBtn")?.addEventListener("click", selectSameTlMiniSheetRows);
+    el("miniSheetCopyRowsBtn")?.addEventListener("click", () => copyMiniSheetSelection().catch(console.error));
+    el("miniSheetCutRowsBtn")?.addEventListener("click", () => cutMiniSheetSelection().catch(console.error));
+    el("miniSheetToReportBtn")?.addEventListener("click", sendSelectedMiniSheetRowsToMaintenanceReport);
+    el("miniSheetClearSelectionBtn")?.addEventListener("click", clearAnyMiniSheetSelection);
+    el("miniSheetFindTlBtn")?.addEventListener("click", findTeamLeaderInMiniSheet);
+    el("miniSheetFindNextBtn")?.addEventListener("click", findNextTeamLeaderMatch);
+    el("miniSheetClearAllBtn")?.addEventListener("click", clearAllMiniSheetWorkspace);
+
+    const miniSheetFindInput = el("miniSheetFindTlInput");
+    if (miniSheetFindInput) {
+      miniSheetFindInput.addEventListener("keydown", event => {
+        if (event.key === "Enter") {
+          event.preventDefault();
+          event.stopPropagation();
+          findTeamLeaderInMiniSheet();
+          // KEYBOARD TRANSFER FIX:
+          // findTeamLeaderInMiniSheet() calls input.blur() + setMiniSheetKeyboardActive(true),
+          // but document.activeElement may not update synchronously within the same event loop
+          // tick. To guarantee Ctrl+X fires correctly without requiring a mouse click,
+          // we also give focus to the minisheet table immediately.
+          const sheet = el("maintenanceMiniSheet");
+          if (sheet) {
+            if (!sheet.hasAttribute("tabindex")) sheet.setAttribute("tabindex", "-1");
+            sheet.focus({ preventScroll: true });
+          }
+        }
+        if (event.key === "Escape") {
+          event.preventDefault();
+          event.currentTarget.value = "";
+          miniSheetFindMatches = [];
+          miniSheetFindCursor = -1;
+          highlightMiniSheetFindMatchesRealtime("");
+          if (el("miniSheetFindNextBtn")) el("miniSheetFindNextBtn").disabled = true;
+        }
+      });
+
+      miniSheetFindInput.addEventListener("input", event => {
+        highlightMiniSheetFindMatchesRealtime(event.target.value);
+      });
+
+      miniSheetFindInput.addEventListener("focus", () => {
+        setMiniSheetKeyboardActive(false);
+        clearMiniSheetCellSelection(true);
+        const activeEditing = el("maintenanceMiniSheet")?.querySelector("td.cell-editing, td[data-editing='true']");
+        if (activeEditing) activeEditing.blur();
+      });
+    }
+
+    // Table focus & outside click listener (mirrors V1 lines 23700-23730)
+    document.addEventListener("mousedown", (event) => {
+      if (currentWorkspace !== "sorter") return;
+
+      const isInsideFindBar = !!event.target.closest?.(".mini-sheet-findbar");
+      if (isInsideFindBar) {
+        setMiniSheetKeyboardActive(false);
+        clearMiniSheetCellSelection(true);
+        return;
+      }
+
+      const isInsideTable = !!event.target.closest?.("#maintenanceMiniSheet");
+      if (isInsideTable) {
+        setMiniSheetKeyboardActive(true);
+        return;
+      }
+
+      const isInsideActions = !!event.target.closest?.(".mini-sheet-actions, .ai-sorter-toolbar, .mini-sheet-header, .mini-sheet-footer");
+      if (isInsideActions) {
+        // Keep current selection active so action buttons operate properly
+        return;
+      }
+
+      // Clicked outside table and toolbar -> clear keyboard active and cell selection
+      setMiniSheetKeyboardActive(false);
+      clearMiniSheetCellSelection(true);
+
+      // If clicked outside the entire sheet card, clear row selection as well
+      if (!event.target.closest?.(".mini-sheet-card, #maintenanceMiniSheetCard, .card")) {
+        miniSheetSelectedRows.clear();
+        miniSheetSelectionAnchor = null;
+        updateMiniSheetSelectionUi();
+      }
+    });
+
+    document.addEventListener("mouseup", () => {
+      if (!miniSheetCellDragging) return;
+      miniSheetCellDragging = false;
+      el("maintenanceMiniSheet")?.classList.remove("cell-range-dragging");
+    });
+
+    // =========================================================================
+    // GLOBAL KEYBOARD SHORTCUTS: AI SORTER (items 5-8)
+    // Mirrors V1 lines 23840-23967 exactly
+    // =========================================================================
+    document.addEventListener("keydown", (event) => {
+      if (currentWorkspace !== "sorter") return;
+
+      const active = document.activeElement;
+      const isFindInput = active && active === el("miniSheetFindTlInput");
+      const hasSelection = (miniSheetSelectedRows.size > 0) || hasMiniSheetCellSelection();
+      const inTypingField = active && /^(INPUT|TEXTAREA|SELECT)$/i.test(active.tagName) &&
+        !active.closest("#maintenanceMiniSheet") &&
+        // Special case: don't block shortcuts when find input handed off to minisheet
+        !(isFindInput && hasSelection);
+      if (inTypingField) return;
+
+      const editingCell = active && active.matches &&
+        active.matches('#maintenanceMiniSheet td[contenteditable="true"]') &&
+        active.dataset.editing === "true";
+
+      // Ctrl+F: Focus find bar
+      if ((event.ctrlKey || event.metaKey) && !event.shiftKey && event.key.toLowerCase() === "f") {
+        if (editingCell) active.blur();
+        event.preventDefault();
+        setMiniSheetKeyboardActive(false);
+        clearMiniSheetCellSelection(true);
+        const findInput = el("miniSheetFindTlInput");
+        if (findInput) { findInput.focus(); findInput.select(); }
+        return;
+      }
+
+      // F3: Find next match
+      if (event.key === "F3" && !editingCell) {
+        event.preventDefault();
+        setMiniSheetKeyboardActive(true);
+        findNextTeamLeaderMatch();
+        return;
+      }
+
+      // Ctrl+C: Copy selected rows / cells
+      // When rows or cells are selected in sorter and user is not editing a cell, copy them
+      if ((event.ctrlKey || event.metaKey) && !event.shiftKey && event.key.toLowerCase() === "c") {
+        if (!hasSelection) return;
+        if (editingCell) return;
+        event.preventDefault();
+        copyMiniSheetSelection().catch(console.error);
+        return;
+      }
+
+      // Ctrl+X: Cut selected rows / cells
+      // When rows or cells are selected in sorter and user is not editing a cell, cut them
+      if ((event.ctrlKey || event.metaKey) && !event.shiftKey && event.key.toLowerCase() === "x") {
+        if (!hasSelection) return;
+        if (editingCell) return;
+        event.preventDefault();
+        cutMiniSheetSelection().catch(console.error);
+        return;
+      }
+
+      // Arrow keys when mini-sheet keyboard active
+      if (miniSheetKeyboardActive &&
+          ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(event.key) &&
+          !editingCell) {
+        handleMiniSheetArrowNavigation(event);
+        return;
+      }
+
+      if (!miniSheetKeyboardActive) return;
+      if (editingCell) return;
+
+      // Ctrl+A: Select all rows
+      if ((event.ctrlKey || event.metaKey) && !event.shiftKey && event.key.toLowerCase() === "a") {
+        event.preventDefault();
+        selectAllMiniSheetRows();
+        return;
+      }
+
+      // Ctrl+Shift+M: Send to Maintenance report
+      if ((event.ctrlKey || event.metaKey) && event.shiftKey && event.key.toLowerCase() === "m") {
+        if (!miniSheetSelectedRows.size) return;
+        event.preventDefault();
+        sendSelectedMiniSheetRowsToMaintenanceReport();
+        return;
+      }
+
+      // Delete / Backspace: Clear cells or remove rows
+      if (event.key === "Delete" || event.key === "Backspace") {
+        if (hasMiniSheetCellSelection()) {
+          event.preventDefault();
+          const { startRow, endRow, startCol, endCol } = miniSheetCellSelection;
+          for (let r = startRow; r <= endRow; r++) {
+            const row = sorterAssignedRows[r];
+            if (!row) continue;
+            for (let c = startCol; c <= endCol; c++) {
+              const field = sorter.MINI_SHEET_FIELDS[c];
+              if (!field) continue;
+              row[field] = "";
+              if (field === "tl") row.tlNames = [];
+            }
+          }
+          renderSorterRows(sorterAssignedRows);
+          if (window.historyService?.captureIfChanged) {
+            window.historyService.captureIfChanged("aiSorter", "Cleared selected cell(s) in AI Sorter");
+          }
+          saveSorterDraftDebounced(300);
+          showToast("Selected cells cleared.", "info");
+          return;
+        }
+        if (miniSheetSelectedRows.size) {
+          event.preventDefault();
+          removeSelectedMiniSheetRows();
+          return;
+        }
+      }
+      // Enter: Begin editing top-left selected cell
+      if (event.key === "Enter") {
+        if (hasMiniSheetCellSelection()) {
+          event.preventDefault();
+          const { startRow, startCol } = miniSheetCellSelection;
+          const cell = el("maintenanceMiniSheet")?.querySelector(
+            `td[data-row-index="${startRow}"][data-col-index="${startCol}"]`
+          );
+          if (cell) beginMiniSheetCellEdit(cell);
+        } else if (miniSheetSelectedRows.size) {
+          event.preventDefault();
+          const sorted = [...miniSheetSelectedRows].sort((a, b) => a - b);
+          const firstRow = sorted[0];
+          const cell = el("maintenanceMiniSheet")?.querySelector(
+            `td[data-row-index="${firstRow}"][data-col-index="0"]`
+          );
+          if (cell) beginMiniSheetCellEdit(cell);
+        }
+        return;
+      }
+      // Escape: Clear selection
+      if (event.key === "Escape") {
+        if (!hasMiniSheetCellSelection() && !miniSheetSelectedRows.size) return;
+        event.preventDefault();
+        clearAnyMiniSheetSelection();
+        return;
+      }
+    });
+
+    // Ctrl+V paste for AI Sorter: routes clipboard rows into mini sheet
+    document.addEventListener("paste", (event) => {
+      if (currentWorkspace !== "sorter") return;
+      if (!miniSheetKeyboardActive) return;
+      const active = document.activeElement;
+      if (active && /^(INPUT|TEXTAREA|SELECT)$/i.test(active.tagName) &&
+          !active.closest("#maintenanceMiniSheet")) return;
+      const editingCell = active && active.matches &&
+        active.matches('#maintenanceMiniSheet td[contenteditable="true"]') &&
+        active.dataset.editing === "true";
+      if (editingCell) return;
+      const text = event.clipboardData?.getData("text/plain") || "";
+      if (!text.trim()) return;
+      event.preventDefault();
+      if (hasMiniSheetCellSelection()) {
+        pasteIntoMiniSheetCellSelection(text);
+        return;
+      }
+      pasteRowsIntoMiniSheet(text);
+    });
+  }
+
+  // =========================================================================
+  // WORKSPACE 4: MAINTENANCE REPORT & MULTI-BLOCK CANVAS CONTROLLER
+  // =========================================================================
+  let maintenanceState = {
+    date: "",
+
+    destinationKey: "mabini_a",
+    title: "Mabini Site A - 1st & 2nd Floor",
+    blocks: []
+  };
+  let maintenanceAutosaveTimer = null;
+  let activePasteBlockId = null;
+
+  function setMaintenanceStatusMessage(text, type = "info") {
+    const msgEl = el("simpleEodMessage");
+    if (!msgEl) return;
+    if (!text) {
+      msgEl.style.display = "none";
+      msgEl.textContent = "";
+      return;
+    }
+    msgEl.textContent = text;
+    msgEl.className = `maintenance-message ${type}`;
+    msgEl.style.display = "flex";
+  }
+
+  function updateMaintenanceAutosaveIndicator(statusText, className = "saved") {
+    const statusEl = el("simpleEodAutosaveStatus");
+    if (!statusEl) return;
+    statusEl.className = `maintenance-autosave-status ${className}`;
+    statusEl.textContent = statusText;
+  }
+
+  function queueMaintenanceAutosave() {
+    updateMaintenanceAutosaveIndicator("Saving...", "saving");
+    if (window.historyService?.scheduleCapture) {
+      window.historyService.scheduleCapture("maintenanceReport", "Updated maintenance report", 800);
+    }
+    if (maintenanceAutosaveTimer) clearTimeout(maintenanceAutosaveTimer);
+    maintenanceAutosaveTimer = setTimeout(async () => {
+      try {
+        await maintenance.saveDraft(maintenanceState);
+        const now = new Date();
+        const timeStr = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+        updateMaintenanceAutosaveIndicator(`Auto-saved (${timeStr})`, "saved");
+      } catch (err) {
+        console.error("Autosave draft error:", err);
+        updateMaintenanceAutosaveIndicator("Autosave error", "error");
+      }
+    }, 600);
+  }
+
+  function renderMaintenanceWorkspace() {
+    if (!maintenanceState.blocks.length) {
+      loadMaintenanceDraftInitial();
+    } else {
+      syncMaintenanceHeaderUi();
+      renderMaintenanceBlocks();
+    }
+    checkMaintenanceSheetsConnectionState();
+  }
+
+  function syncMaintenanceHeaderUi() {
+    const destSelect = el("simpleEodDestination");
+    if (destSelect && maintenanceState.destinationKey) {
+      destSelect.value = maintenanceState.destinationKey;
+    }
+    const dateInput = el("simpleEodDate");
+    if (dateInput) {
+      if (!maintenanceState.date) {
+        maintenanceState.date = maintenance.todayLocal();
+      }
+      dateInput.value = maintenanceState.date;
+    }
+    const siteInput = el("simpleEodSite");
+    if (siteInput && maintenanceState.title) {
+      siteInput.value = maintenanceState.title;
+    }
+  }
+
+  async function loadMaintenanceDraftInitial() {
+    try {
+      const saved = await maintenance.loadDraft();
+      if (saved && Array.isArray(saved.blocks) && saved.blocks.length > 0) {
+        maintenanceState = {
+          date: saved.date || maintenance.todayLocal(),
+          destinationKey: saved.destinationKey || "mabini_a",
+          title: saved.title || maintenance.MAINTENANCE_DESTINATIONS[saved.destinationKey]?.label || "Mabini Site A - 1st & 2nd Floor",
+          blocks: saved.blocks
+        };
+      } else {
+        maintenanceState = {
+          date: maintenance.todayLocal(),
+          destinationKey: "mabini_a",
+          title: maintenance.MAINTENANCE_DESTINATIONS["mabini_a"].label,
+          blocks: [maintenance.makeBlock()]
+        };
+      }
+    } catch (err) {
+      console.warn("Failed to load initial maintenance draft:", err);
+      maintenanceState = {
+        date: maintenance.todayLocal(),
+        destinationKey: "mabini_a",
+        title: maintenance.MAINTENANCE_DESTINATIONS["mabini_a"].label,
+        blocks: [maintenance.makeBlock()]
+      };
+    }
+    syncMaintenanceHeaderUi();
+    renderMaintenanceBlocks();
+
+    if (window.__pendingMaintenanceRows) {
+      const pending = window.__pendingMaintenanceRows;
+      window.__pendingMaintenanceRows = null;
+      if (typeof window.addMaintenanceSorterRowsToReport === "function") {
+        window.addMaintenanceSorterRowsToReport(pending.tsv, pending);
+      }
+    }
+  }
+
+  function normalizeMaintenanceBlockId(value) {
+    if (value == null) return "";
+    let str = typeof value === "object" && value !== null && value.id ? String(value.id) : String(value);
+    str = str.trim();
+    if (str.startsWith("block_")) {
+      str = str.slice(6);
+    } else if (str.startsWith("proof_zone_")) {
+      str = str.slice(11);
+    }
+    return str;
+  }
+
+  let maintenanceImageCompressionQueue = Promise.resolve();
+
+  function renderBlockScreenshots(blockId) {
+    const canonicalId = normalizeMaintenanceBlockId(blockId);
+    const block = maintenanceState.blocks.find(b => normalizeMaintenanceBlockId(b.id) === canonicalId);
+    if (!block) return;
+    const proofZone = document.getElementById(`proof_zone_${block.id}`);
+    if (!proofZone) return;
+
+    const proofBadge = proofZone.querySelector(".badge");
+    const proofCount = (block.screenshots || []).length;
+    if (proofBadge) {
+      proofBadge.textContent = `${proofCount} ${proofCount === 1 ? "Screenshot" : "Screenshots"}`;
+    }
+
+    let gridEl = proofZone.querySelector(".eod-proof-grid");
+    if (!gridEl) {
+      gridEl = document.createElement("div");
+      gridEl.className = "eod-proof-grid";
+      proofZone.appendChild(gridEl);
+    }
+    gridEl.innerHTML = "";
+
+    const blockIndex = maintenanceState.blocks.indexOf(block);
+
+    (block.screenshots || []).forEach((shot, shotIdx) => {
+      const item = document.createElement("div");
+      item.className = "eod-proof-item";
+
+      const src = maintenance.maintenanceScreenshotSource(shot, "thumbnail");
+
+      const img = document.createElement("img");
+      img.src = src;
+      img.alt = `Proof Screenshot ${shotIdx + 1}`;
+      img.title = "Click to view full resolution";
+      img.addEventListener("click", () => {
+        const fullSrc = maintenance.maintenanceScreenshotSource(shot, "full");
+        openScreenshotViewer(fullSrc, `Proof Screenshot - Block #${blockIndex + 1}`, `Image ${shotIdx + 1} of ${block.screenshots.length}`);
+      });
+      item.appendChild(img);
+
+      if (shot && shot.isProcessing) {
+        const statusOverlay = document.createElement("div");
+        statusOverlay.style.position = "absolute";
+        statusOverlay.style.bottom = "3px";
+        statusOverlay.style.right = "3px";
+        statusOverlay.style.background = "rgba(15, 23, 42, 0.82)";
+        statusOverlay.style.color = "#93c5fd";
+        statusOverlay.style.fontSize = "8.5px";
+        statusOverlay.style.fontWeight = "600";
+        statusOverlay.style.padding = "1px 4px";
+        statusOverlay.style.borderRadius = "3px";
+        statusOverlay.style.pointerEvents = "none";
+        statusOverlay.textContent = "Optimizing...";
+        item.appendChild(statusOverlay);
+      }
+
+      const removeBtn = document.createElement("button");
+      removeBtn.type = "button";
+      removeBtn.className = "eod-proof-remove";
+      removeBtn.title = "Remove screenshot";
+      removeBtn.innerHTML = "x";
+      removeBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        if (shot && shot.thumbnail && /^blob:/i.test(shot.thumbnail)) {
+          try { URL.revokeObjectURL(shot.thumbnail); } catch (_) {}
+        }
+        block.screenshots.splice(shotIdx, 1);
+        renderBlockScreenshots(block.id);
+        queueMaintenanceAutosave();
+        if (window.historyService?.captureIfChanged) {
+          window.historyService.captureIfChanged("maintenanceReport", "Removed screenshot from Maintenance Block");
+        }
+        showToast("Screenshot removed.", "info");
+      });
+      item.appendChild(removeBtn);
+
+      gridEl.appendChild(item);
+    });
+  }
+
+  async function addScreenshotsToBlock(block, files) {
+    if (!block || !files || !files.length) return;
+    if (!Array.isArray(block.screenshots)) block.screenshots = [];
+
+    const fileList = Array.from(files).filter(f => f && (f.type?.startsWith("image/") || typeof f === "string" || f instanceof Blob));
+    if (!fileList.length) return;
+
+    updateMaintenanceAutosaveIndicator("Processing images...", "saving");
+
+    // 1. Instant preview: generate immediate blob/thumbnail URLs so UI responds instantly (<20ms)
+    const placeholders = [];
+    for (const file of fileList) {
+      let previewUrl = "";
+      if (file instanceof Blob) {
+        try {
+          previewUrl = URL.createObjectURL(file);
+        } catch (_) {
+          previewUrl = "";
+        }
+      } else if (typeof file === "string") {
+        previewUrl = file;
+      }
+
+      const tempPlaceholder = {
+        id: "shot_" + Date.now() + "_" + Math.random().toString(36).slice(2, 7),
+        dataUrl: previewUrl,
+        thumbnail: previewUrl,
+        isTemp: true,
+        isProcessing: true,
+        file: file
+      };
+      block.screenshots.push(tempPlaceholder);
+      placeholders.push(tempPlaceholder);
+    }
+
+    // Render immediately - no page wipe, no input reset
+    renderBlockScreenshots(block.id);
+
+    // 2. Asynchronous background queue: optimize without blocking main thread
+    maintenanceImageCompressionQueue = maintenanceImageCompressionQueue.then(async () => {
+      for (const placeholder of placeholders) {
+        try {
+          const compressed = await maintenance.compressImage(placeholder.file);
+          const currentIdx = block.screenshots.indexOf(placeholder);
+          if (currentIdx !== -1) {
+            if (placeholder.thumbnail && /^blob:/i.test(placeholder.thumbnail)) {
+              try { URL.revokeObjectURL(placeholder.thumbnail); } catch (_) {}
+            }
+            block.screenshots[currentIdx] = compressed;
+          }
+        } catch (err) {
+          console.error("Screenshot compression error:", err);
+          // Fallback if canvas compression fails: read as data URL
+          try {
+            if (placeholder.file instanceof Blob) {
+              const dataUrl = await new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = reject;
+                reader.readAsDataURL(placeholder.file);
+              });
+              const currentIdx = block.screenshots.indexOf(placeholder);
+              if (currentIdx !== -1) {
+                block.screenshots[currentIdx] = {
+                  id: placeholder.id,
+                  dataUrl: dataUrl,
+                  thumbnail: dataUrl,
+                  width: 1280,
+                  height: 720,
+                  aspectRatio: 16 / 9,
+                  format: "image/jpeg"
+                };
+              }
+            }
+          } catch (_) {
+            const currentIdx = block.screenshots.indexOf(placeholder);
+            if (currentIdx !== -1) block.screenshots.splice(currentIdx, 1);
+          }
+        }
+      }
+      renderBlockScreenshots(block.id);
+      queueMaintenanceAutosave();
+      showToast("Screenshot proof added.", "success");
+    }).catch(err => {
+      console.error("Background compression queue error:", err);
+      renderBlockScreenshots(block.id);
+    });
+  }
+
+  function renderMaintenanceBlocks() {
+    const container = el("simpleEodBlocks");
+    if (!container) return;
+
+    container.innerHTML = "";
+
+    maintenanceState.blocks.forEach((block, index) => {
+      const blockEl = document.createElement("div");
+      blockEl.className = "eod-block-card" + (block.dataHidden ? " is-hidden-report" : "");
+      blockEl.id = `block_${block.id}`;
+      blockEl.dataset.blockId = block.id;
+      blockEl.addEventListener("click", () => {
+        if (!block.dataHidden) {
+          activePasteBlockId = block.id;
+          document.querySelectorAll(".eod-block-card.is-active-target").forEach(c => c.classList.remove("is-active-target"));
+          blockEl.classList.add("is-active-target");
+        }
+      });
+
+      // Header row
+      const headerRow = document.createElement("div");
+      headerRow.className = "eod-block-head";
+
+      const titleWrap = document.createElement("div");
+      titleWrap.style.display = "flex";
+      titleWrap.style.alignItems = "center";
+      titleWrap.style.gap = "8px";
+
+      const titleSpan = document.createElement("span");
+      titleSpan.className = "eod-block-title";
+      titleSpan.textContent = `Report Section ${index + 1}`;
+
+      titleWrap.appendChild(titleSpan);
+
+      if (block.dataHidden) {
+        const hiddenBadge = document.createElement("span");
+        hiddenBadge.className = "badge";
+        hiddenBadge.style.background = "rgba(245, 158, 11, 0.18)";
+        hiddenBadge.style.color = "#f59e0b";
+        hiddenBadge.style.border = "1px solid rgba(245, 158, 11, 0.45)";
+        hiddenBadge.style.fontSize = "10px";
+        hiddenBadge.style.fontWeight = "700";
+        hiddenBadge.style.letterSpacing = "0.5px";
+        hiddenBadge.textContent = "HIDDEN REPORT";
+        titleWrap.appendChild(hiddenBadge);
+
+        const rowsCount = maintenance.maintenanceRowsForSheets(block.lanesText || "").length;
+        const shotCount = (block.screenshots || []).length;
+        const summarySpan = document.createElement("span");
+        summarySpan.style.fontSize = "11.5px";
+        summarySpan.style.color = "var(--text-muted)";
+        summarySpan.textContent = `(${rowsCount} row${rowsCount === 1 ? "" : "s"}  -  ${shotCount} screenshot${shotCount === 1 ? "" : "s"})`;
+        titleWrap.appendChild(summarySpan);
+      }
+
+      const actionsWrap = document.createElement("div");
+      actionsWrap.className = "eod-block-actions";
+
+      // --- Hide Report / Show Report toggle button ---
+      const toggleBtn = document.createElement("button");
+      toggleBtn.type = "button";
+      if (block.dataHidden) {
+        toggleBtn.className = "btn btn-primary btn-sm";
+        toggleBtn.textContent = "Show Report";
+        toggleBtn.title = "Show report content";
+        toggleBtn.style.fontWeight = "600";
+      } else {
+        toggleBtn.className = "btn btn-outline btn-sm";
+        toggleBtn.textContent = "Hide Report";
+        toggleBtn.title = "Hide report content";
+      }
+      toggleBtn.addEventListener("click", () => {
+        block.dataHidden = !block.dataHidden;
+        if (block.dataHidden && activePasteBlockId === block.id) {
+          const nextVisible = maintenanceState.blocks.find(b => b.id !== block.id && !b.dataHidden);
+          activePasteBlockId = nextVisible ? nextVisible.id : null;
+        } else if (!block.dataHidden) {
+          activePasteBlockId = block.id;
+        }
+        renderMaintenanceBlocks();
+        queueMaintenanceAutosave();
+        if (window.historyService?.captureIfChanged) {
+          window.historyService.captureIfChanged("maintenanceReport", block.dataHidden ? `Hid Section ${index + 1}` : `Showed Section ${index + 1}`);
+        }
+      });
+      actionsWrap.appendChild(toggleBtn);
+
+      // Remove block button
+      if (maintenanceState.blocks.length > 1) {
+        const removeBtn = document.createElement("button");
+        removeBtn.type = "button";
+        removeBtn.className = "btn btn-danger-ghost btn-sm";
+        removeBtn.textContent = "Remove Section";
+        removeBtn.addEventListener("click", async () => {
+          const ok = await window.appConfirm({
+            title: `Remove Report Section ${index + 1}?`,
+            message: "Remove this section and its incident issues, remarks, and screenshots?",
+            confirmText: "Remove",
+            tone: "danger"
+          });
+          if (!ok) return;
+          maintenanceState.blocks.splice(index, 1);
+          renderMaintenanceBlocks();
+          queueMaintenanceAutosave();
+          if (window.historyService?.captureIfChanged) {
+            await window.historyService.captureIfChanged("maintenanceReport", `Removed Section ${index + 1}`);
+          }
+          showToast(`Report Section ${index + 1} removed.`, "info");
+        });
+        actionsWrap.appendChild(removeBtn);
+      }
+
+      headerRow.appendChild(titleWrap);
+      headerRow.appendChild(actionsWrap);
+      blockEl.appendChild(headerRow);
+
+      // Content wrapper - hidden when block.dataHidden is true
+      const contentWrapper = document.createElement("div");
+      contentWrapper.className = "eod-block-content";
+      if (block.dataHidden) {
+        contentWrapper.style.display = "none";
+      }
+
+      // Desktop side-by-side grid
+      const grid = document.createElement("div");
+      grid.className = "maintenance-incident-action-grid";
+
+      // Left column: Lanes / Incidents
+      const leftCol = document.createElement("div");
+      leftCol.className = "form-group";
+      leftCol.style.marginBottom = "0";
+      leftCol.style.display = "flex";
+      leftCol.style.flexDirection = "column";
+      leftCol.style.gap = "4px";
+
+      const leftHead = document.createElement("div");
+      leftHead.className = "maintenance-col-head";
+
+      const leftLabel = document.createElement("label");
+      leftLabel.className = "form-label";
+      leftLabel.textContent = "Station Issues / Incident (Lanes)";
+      leftHead.appendChild(leftLabel);
+
+      const parsedRows = maintenance.maintenanceRowsForSheets(block.lanesText || "");
+      const rowsBadge = document.createElement("span");
+      rowsBadge.className = "maintenance-count-badge";
+      rowsBadge.textContent = `${parsedRows.length} ${parsedRows.length === 1 ? "row" : "rows"}`;
+      leftHead.appendChild(rowsBadge);
+
+      leftCol.appendChild(leftHead);
+
+      const lanesArea = document.createElement("textarea");
+      lanesArea.className = "form-control eod-lanes-textarea";
+      lanesArea.rows = 5;
+      lanesArea.style.flex = "1";
+      lanesArea.style.minHeight = "125px";
+      lanesArea.placeholder = "Paste station rows or enter incident issues (TSV format from Sorter or manual)...";
+      lanesArea.value = block.lanesText || "";
+      lanesArea.addEventListener("focus", () => {
+        activePasteBlockId = block.id;
+      });
+      lanesArea.addEventListener("input", () => {
+        block.lanesText = lanesArea.value;
+        const count = maintenance.maintenanceRowsForSheets(block.lanesText || "").length;
+        rowsBadge.textContent = `${count} ${count === 1 ? "row" : "rows"}`;
+        const detected = maintenance.detectMaintenanceDestinationFromRows(block.lanesText);
+        if (detected && detected !== maintenanceState.destinationKey && maintenance.MAINTENANCE_DESTINATIONS[detected]) {
+          maintenanceState.destinationKey = detected;
+          maintenanceState.title = maintenance.MAINTENANCE_DESTINATIONS[detected].label;
+          syncMaintenanceHeaderUi();
+          showToast(`Destination auto-detected: ${maintenanceState.title}`, "info");
+        }
+        queueMaintenanceAutosave();
+      });
+      leftCol.appendChild(lanesArea);
+
+      const lanesHint = document.createElement("div");
+      lanesHint.className = "maintenance-lanes-hint";
+      lanesHint.textContent = "TSV Format: Timestamp, Date, TL, Account, Site, Station No., Station Issue";
+      leftCol.appendChild(lanesHint);
+
+      grid.appendChild(leftCol);
+
+      // Right column: Action Taken / Remarks
+      const rightCol = document.createElement("div");
+      rightCol.className = "form-group";
+      rightCol.style.marginBottom = "0";
+      rightCol.style.display = "flex";
+      rightCol.style.flexDirection = "column";
+      rightCol.style.gap = "4px";
+
+      const rightHead = document.createElement("div");
+      rightHead.className = "maintenance-col-head";
+
+      const rightLabel = document.createElement("label");
+      rightLabel.className = "form-label";
+      rightLabel.textContent = "Action Taken / Remarks";
+      rightHead.appendChild(rightLabel);
+
+      if (block.selectedPreset) {
+        const presetBadge = document.createElement("span");
+        presetBadge.className = "maintenance-preset-active-badge";
+        presetBadge.textContent = "Preset Active";
+        rightHead.appendChild(presetBadge);
+      }
+      rightCol.appendChild(rightHead);
+
+      const remarksArea = document.createElement("textarea");
+      remarksArea.className = "form-control eod-remarks-textarea";
+      remarksArea.rows = 5;
+      remarksArea.style.flex = "1";
+      remarksArea.style.minHeight = "125px";
+      const manualVal = Array.isArray(block.remarks) ? block.remarks.join("\n") : (block.remarks || "");
+      remarksArea.value = manualVal;
+      remarksArea.placeholder = block.selectedPreset
+        ? `[Active preset: "${block.selectedPreset}"] (Leave empty to use preset, or type to override)...`
+        : "Enter action taken or remarks (one per line)...";
+      remarksArea.addEventListener("focus", () => {
+        activePasteBlockId = block.id;
+      });
+      remarksArea.addEventListener("input", () => {
+        const raw = remarksArea.value || "";
+        const lines = raw.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+        block.remarks = lines.length ? lines : [""];
+        if (block.selectedPreset && (!lines.length || lines.join("\n") !== block.selectedPreset)) {
+          const allChoices = maintenance.getQuickRemarks ? maintenance.getQuickRemarks() : [];
+          block.selectedPreset = allChoices.find(c => c === lines.join("\n")) || "";
+        }
+        queueMaintenanceAutosave();
+      });
+      rightCol.appendChild(remarksArea);
+
+      // --- Quick Choice Presets Container ---
+      const presetContainer = document.createElement("div");
+      presetContainer.className = "maint-preset-container";
+
+      // Chips row with integrated + Add Choice
+      const chipsRow = document.createElement("div");
+      chipsRow.className = "maint-preset-chips";
+      chipsRow.setAttribute("role", "group");
+      chipsRow.setAttribute("aria-label", "Quick Remark Choices");
+
+      const availableChoices = maintenance.getQuickRemarks ? maintenance.getQuickRemarks() : [];
+      const renderChoices = [...availableChoices];
+      if (block.selectedPreset && !renderChoices.includes(block.selectedPreset)) {
+        renderChoices.push(block.selectedPreset);
+      }
+
+      renderChoices.forEach(choiceText => {
+        const isSelected = block.selectedPreset === choiceText;
+        const isDefault = Array.isArray(maintenance.DEFAULT_QUICK_REMARKS) && maintenance.DEFAULT_QUICK_REMARKS.includes(choiceText);
+
+        const chipBtn = document.createElement("button");
+        chipBtn.type = "button";
+        chipBtn.className = "maint-preset-chip" + (isSelected ? " is-selected" : "");
+        chipBtn.setAttribute("aria-pressed", isSelected ? "true" : "false");
+        chipBtn.title = isSelected ? "Active preset (Click to deselect)" : `Select preset: "${choiceText}"`;
+
+        const indicator = document.createElement("span");
+        indicator.className = "maint-preset-chip-indicator";
+        chipBtn.appendChild(indicator);
+
+        const textSpan = document.createElement("span");
+        textSpan.className = "maint-preset-chip-text";
+        textSpan.textContent = choiceText;
+        chipBtn.appendChild(textSpan);
+
+        // Delete button for custom choices only
+        if (!isDefault) {
+          const delBtn = document.createElement("span");
+          delBtn.className = "maint-preset-chip-del";
+          delBtn.setAttribute("role", "button");
+          delBtn.setAttribute("tabindex", "0");
+          delBtn.setAttribute("aria-label", `Delete choice ${choiceText}`);
+          delBtn.title = "Delete this choice";
+          delBtn.textContent = "x";
+          delBtn.addEventListener("click", async (e) => {
+            e.stopPropagation();
+            const ok = await window.appConfirm({
+              title: "Delete Choice?",
+              message: `Remove "${choiceText}" from quick remark choices?`,
+              confirmText: "Delete",
+              tone: "danger"
+            });
+            if (!ok) return;
+            maintenance.deleteQuickRemark(choiceText);
+            renderMaintenanceBlocks();
+            showToast("Choice deleted.", "info");
+          });
+          delBtn.addEventListener("keydown", (e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              delBtn.click();
+            }
+          });
+          chipBtn.appendChild(delBtn);
+        }
+
+        chipBtn.addEventListener("click", () => {
+          if (block.selectedPreset === choiceText) {
+            block.selectedPreset = "";
+            block.remarks = [""];
+            showToast("Preset deselected.", "info");
+          } else {
+            block.selectedPreset = choiceText;
+            block.remarks = [choiceText];
+            showToast(`Selected preset: "${choiceText}"`, "info");
+          }
+          renderMaintenanceBlocks();
+          queueMaintenanceAutosave();
+        });
+
+        chipsRow.appendChild(chipBtn);
+      });
+
+      // + Add Choice button seamlessly attached at the end of chips
+      const addChoiceTrigger = document.createElement("button");
+      addChoiceTrigger.type = "button";
+      addChoiceTrigger.className = "maint-preset-add-btn";
+      addChoiceTrigger.textContent = "+ Add Choice";
+      addChoiceTrigger.title = "Add new custom remark choice";
+      chipsRow.appendChild(addChoiceTrigger);
+
+      presetContainer.appendChild(chipsRow);
+
+      // Inline Add Form
+      const inlineForm = document.createElement("div");
+      inlineForm.className = "maint-preset-inline-form";
+      inlineForm.style.display = "none";
+
+      const inlineInput = document.createElement("input");
+      inlineInput.type = "text";
+      inlineInput.className = "maint-preset-inline-input";
+      inlineInput.placeholder = "Type new remark choice...";
+      inlineInput.maxLength = 140;
+
+      const inlineSaveBtn = document.createElement("button");
+      inlineSaveBtn.type = "button";
+      inlineSaveBtn.className = "btn btn-primary btn-sm";
+      inlineSaveBtn.style.padding = "2px 8px";
+      inlineSaveBtn.style.fontSize = "10.5px";
+      inlineSaveBtn.textContent = "Add";
+
+      const inlineCancelBtn = document.createElement("button");
+      inlineCancelBtn.type = "button";
+      inlineCancelBtn.className = "btn btn-ghost btn-sm";
+      inlineCancelBtn.style.padding = "2px 6px";
+      inlineCancelBtn.style.fontSize = "10.5px";
+      inlineCancelBtn.textContent = "Cancel";
+
+      inlineForm.appendChild(inlineInput);
+      inlineForm.appendChild(inlineSaveBtn);
+      inlineForm.appendChild(inlineCancelBtn);
+      presetContainer.appendChild(inlineForm);
+
+      addChoiceTrigger.addEventListener("click", () => {
+        const isHidden = inlineForm.style.display === "none";
+        inlineForm.style.display = isHidden ? "flex" : "none";
+        if (isHidden) {
+          inlineInput.value = "";
+          inlineInput.focus();
+        }
+      });
+
+      const handleAddChoiceSubmit = () => {
+        const text = (inlineInput.value || "").trim();
+        if (!text) {
+          showToast("Choice cannot be empty.", "error");
+          inlineInput.focus();
+          return;
+        }
+        const res = maintenance.addQuickRemark(text);
+        if (!res.ok) {
+          showToast(res.error, "error");
+          inlineInput.focus();
+          return;
+        }
+        block.selectedPreset = text;
+        block.remarks = [text];
+        inlineForm.style.display = "none";
+        renderMaintenanceBlocks();
+        queueMaintenanceAutosave();
+        showToast("Quick choice added.", "success");
+      };
+
+      inlineSaveBtn.addEventListener("click", handleAddChoiceSubmit);
+      inlineInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          handleAddChoiceSubmit();
+        } else if (e.key === "Escape") {
+          inlineForm.style.display = "none";
+        }
+      });
+      inlineCancelBtn.addEventListener("click", () => {
+        inlineForm.style.display = "none";
+      });
+
+      rightCol.appendChild(presetContainer);
+      grid.appendChild(rightCol);
+
+      contentWrapper.appendChild(grid);
+
+      // Screenshot Proof Zone (REQUIRED)
+      const proofZone = document.createElement("div");
+      proofZone.className = "eod-proof-zone";
+      proofZone.id = `proof_zone_${block.id}`;
+
+      const proofHeader = document.createElement("div");
+      proofHeader.className = "eod-proof-header";
+
+      const proofTitleWrap = document.createElement("div");
+      proofTitleWrap.style.display = "flex";
+      proofTitleWrap.style.alignItems = "center";
+      proofTitleWrap.style.gap = "6px";
+
+      const proofTitle = document.createElement("span");
+      proofTitle.style.fontWeight = "600";
+      proofTitle.style.fontSize = "11px";
+      proofTitle.style.color = "var(--text-secondary)";
+      proofTitle.textContent = "Proof Screenshots";
+
+      const proofCount = (block.screenshots || []).length;
+      const proofBadge = document.createElement("span");
+      proofBadge.className = "badge badge-neutral";
+      proofBadge.textContent = `${proofCount} ${proofCount === 1 ? "Screenshot" : "Screenshots"}`;
+
+      proofTitleWrap.appendChild(proofTitle);
+      proofTitleWrap.appendChild(proofBadge);
+
+      const proofActions = document.createElement("div");
+      proofActions.style.display = "flex";
+      proofActions.style.alignItems = "center";
+      proofActions.style.gap = "6px";
+
+      const fileInput = document.createElement("input");
+      fileInput.type = "file";
+      fileInput.accept = "image/*";
+      fileInput.multiple = true;
+      fileInput.style.display = "none";
+      fileInput.addEventListener("change", async () => {
+        if (!fileInput.files || !fileInput.files.length) return;
+        await addScreenshotsToBlock(block, fileInput.files);
+        fileInput.value = "";
+      });
+      proofActions.appendChild(fileInput);
+
+      const addProofBtn = document.createElement("button");
+      addProofBtn.type = "button";
+      addProofBtn.className = "btn btn-outline btn-sm";
+      addProofBtn.innerHTML = `<svg class="icon icon-sm" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg> <span>Add Screenshot</span>`;
+      addProofBtn.addEventListener("click", () => fileInput.click());
+      proofActions.appendChild(addProofBtn);
+
+      proofHeader.appendChild(proofTitleWrap);
+      proofHeader.appendChild(proofActions);
+      proofZone.appendChild(proofHeader);
+
+      const dropNotice = document.createElement("div");
+      dropNotice.className = "eod-proof-drop-hint";
+      dropNotice.style.fontSize = "10.5px";
+      dropNotice.style.color = "var(--text-dim)";
+      dropNotice.style.padding = "4px 0";
+      dropNotice.textContent = "Browse, drag & drop image files, or press Ctrl+V to paste screenshot here.";
+      proofZone.appendChild(dropNotice);
+
+      proofZone.dataset.blockId = block.id;
+      proofZone.addEventListener("click", () => {
+        if (!block.dataHidden) {
+          activePasteBlockId = block.id;
+          document.querySelectorAll(".eod-block-card.is-active-target").forEach(c => c.classList.remove("is-active-target"));
+          blockEl.classList.add("is-active-target");
+        }
+      });
+
+      const gridEl = document.createElement("div");
+      gridEl.className = "eod-proof-grid";
+      proofZone.appendChild(gridEl);
+
+      // Drag and drop handlers for proofZone
+      proofZone.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        proofZone.classList.add("drag-over");
+      });
+      proofZone.addEventListener("dragleave", () => {
+        proofZone.classList.remove("drag-over");
+      });
+      proofZone.addEventListener("drop", async (e) => {
+        e.preventDefault();
+        proofZone.classList.remove("drag-over");
+        if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length) {
+          await addScreenshotsToBlock(block, e.dataTransfer.files);
+        }
+      });
+
+      contentWrapper.appendChild(proofZone);
+      blockEl.appendChild(contentWrapper);
+
+      container.appendChild(blockEl);
+
+      // Render block screenshots initially
+      renderBlockScreenshots(block.id);
+    });
+  }
+
+
+
+  async function checkMaintenanceSheetsConnectionState() {
+    const pill = el("maintenanceSheetConnectionState");
+    if (!pill) return;
+    const url = maintenance.getMaintenanceSheetsWebAppUrl();
+    if (!url || !maintenance.isValidAppsScriptWebAppUrl(url)) {
+      pill.className = "maintenance-sheet-connection-state is-unchecked";
+      pill.textContent = "Sheets: Not Connected";
+      return;
+    }
+    pill.className = "maintenance-sheet-connection-state is-healthy";
+    pill.textContent = "Sheets: Ready";
+  }
+
+  function syncMaintenanceStateFromDom() {
+    const destSelect = el("simpleEodDestination");
+    if (destSelect && destSelect.value) maintenanceState.destinationKey = destSelect.value;
+    const dateInput = el("simpleEodDate");
+    if (dateInput && dateInput.value) maintenanceState.date = dateInput.value;
+    const siteInput = el("simpleEodSite");
+    if (siteInput && siteInput.value) maintenanceState.title = siteInput.value;
+
+    maintenanceState.blocks.forEach(block => {
+      const blockEl = document.getElementById(`block_${block.id}`);
+      if (!blockEl) return;
+      const lanesArea = blockEl.querySelector("textarea.eod-lanes-textarea");
+      const remarksArea = blockEl.querySelector("textarea.eod-remarks-textarea");
+
+      if (lanesArea) {
+        block.lanesText = lanesArea.value;
+      }
+      if (remarksArea) {
+        const raw = (remarksArea.value || "").trim();
+        if (raw) {
+          block.remarks = raw.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+          if (block.selectedPreset && block.remarks.join("\n") !== block.selectedPreset) {
+            const allChoices = maintenance.getQuickRemarks ? maintenance.getQuickRemarks() : [];
+            block.selectedPreset = allChoices.find(c => c === block.remarks.join("\n")) || "";
+          }
+        } else if (block.selectedPreset) {
+          block.remarks = [block.selectedPreset];
+        } else {
+          block.remarks = [""];
+        }
+      }
+    });
+  }
+
+  function openMaintenancePrintPreview() {
+    syncMaintenanceStateFromDom();
+    const html = maintenance.maintenanceReportHtmlForSheets(maintenanceState);
+    const printWindow = window.open("", "_blank");
+    if (printWindow) {
+      printWindow.document.open();
+      printWindow.document.write(html);
+      printWindow.document.close();
+      printWindow.focus();
+      setTimeout(() => {
+        try {
+          printWindow.print();
+        } catch (e) {
+          console.warn("Print trigger error:", e);
+        }
+      }, 350);
+    } else {
+      window.print();
+    }
+  }
+
+  async function copyFullMaintenanceReportToSheets() {
+    try {
+      syncMaintenanceStateFromDom();
+      const hasContent = (maintenanceState.blocks || []).some(b => 
+        (b.lanesText && b.lanesText.trim()) || 
+        (Array.isArray(b.remarks) && b.remarks.some(r => String(r || '').trim())) || 
+        (Array.isArray(b.screenshots) && b.screenshots.length)
+      );
+      if (!hasContent) {
+        showToast("Please enter station issues or remarks before copying.", "warning");
+        return;
+      }
+      const html = maintenance.maintenanceReportHtmlForSheets(maintenanceState);
+      const text = maintenance.maintenanceReportPlainTextForSheets(maintenanceState);
+
+      await window.copyToClipboardHtmlAndText(text, html);
+      showToast("Full Maintenance Report copied (Arial 10pt formatted for Google Sheets).", "success");
+    } catch (err) {
+      console.error("Failed to copy report:", err);
+      showToast(`Copy failed: ${err.message}`, "error");
+    }
+  }
+
+  async function sendMaintenanceReportToSheets() {
+    syncMaintenanceStateFromDom();
+    const hasRows = (maintenanceState.blocks || []).some(b => {
+      const rows = maintenance.maintenanceRowsForSheets(b.lanesText || "");
+      return rows.length > 0;
+    });
+    if (!hasRows) {
+      showToast("No valid station rows found to send. Please enter maintenance data.", "warning");
+      return;
+    }
+    const url = maintenance.getMaintenanceSheetsWebAppUrl();
+    if (!url || !maintenance.isValidAppsScriptWebAppUrl(url)) {
+      setMaintenanceStatusMessage("Please configure a valid Google Sheets Web App URL in Sheet Setup first.", "error");
+      el("modalMaintenanceSheetSetup").hidden = false;
+      return;
+    }
+
+    const sendBtn = el("simpleEodSendSheetsBtn");
+    const origBtnHtml = sendBtn ? sendBtn.innerHTML : "";
+    if (sendBtn) {
+      sendBtn.disabled = true;
+      sendBtn.classList.add("is-busy");
+      sendBtn.innerHTML = `<span class="btn-spinner" aria-hidden="true"></span><span>Sending...</span>`;
+    }
+
+    setMaintenanceStatusMessage("Submitting report to Google Sheets...", "info");
+
+    const totalScreenshots = (maintenanceState.blocks || []).reduce(
+      (sum, b) => sum + (Array.isArray(b.screenshots) ? b.screenshots.length : 0),
+      0
+    );
+
+    // Register hooks for background evidence upload
+    window.onMaintenanceEvidenceComplete = (count) => {
+      setMaintenanceStatusMessage(`Report and all ${count} screenshot evidence successfully attached in Google Sheets!`, "success");
+    };
+    window.onMaintenanceEvidenceError = (err) => {
+      setMaintenanceStatusMessage(`Report was logged to Sheets, but screenshot evidence failed to attach: ${err.message || err}. You may retry sending.`, "warning");
+    };
+
+    try {
+      const result = await maintenance.sendMaintenanceReportToGoogleSheets(url, maintenanceState, (p) => {
+        if (p.stage === "chunks") {
+          setMaintenanceStatusMessage(`Uploading report chunk ${p.index} of ${p.total}...`, "info");
+        } else if (p.stage === "committing") {
+          setMaintenanceStatusMessage("Committing report to Google Sheets...", "info");
+        }
+      });
+
+      if (result && (result.ok === true || result.success === true)) {
+        if (totalScreenshots > 0) {
+          setMaintenanceStatusMessage(`Report logged to Google Sheets! Uploading ${totalScreenshots} screenshot evidence in background...`, "info");
+          showToast(`Report logged to Google Sheets! Attaching ${totalScreenshots} screenshot(s)...`, "info");
+        } else {
+          setMaintenanceStatusMessage(`Report successfully logged to Google Sheets! (${result.rowsLogged || "OK"})`, "success");
+          showToast("Maintenance Report uploaded to Google Sheets!", "success");
+        }
+      } else {
+        throw new Error(result?.error || "Apps Script returned failure");
+      }
+    } catch (err) {
+      console.error("Send to Sheets failed:", err);
+      setMaintenanceStatusMessage(`Google Sheets upload failed: ${err.message}`, "error");
+      showToast(`Upload failed: ${err.message}`, "error");
+    } finally {
+      if (sendBtn) {
+        sendBtn.disabled = false;
+        sendBtn.classList.remove("is-busy");
+        if (origBtnHtml) sendBtn.innerHTML = origBtnHtml;
+      }
+    }
+  }
+
+  async function downloadMaintenancePdf() {
+    const pdfBtn = el("simpleEodPdfBtn");
+    const originalText = pdfBtn?.textContent || "Download PDF";
+
+    try {
+      syncMaintenanceStateFromDom();
+
+      const JsPdf = window.jspdf?.jsPDF;
+
+      if (!JsPdf) {
+        throw new Error("jsPDF library is unavailable.");
+      }
+
+      if (!maintenance?.maintenanceRowsForSheets) {
+        throw new Error("Maintenance PDF helpers are unavailable.");
+      }
+
+      if (pdfBtn) {
+        pdfBtn.disabled = true;
+        pdfBtn.textContent = "Generating...";
+      }
+
+      showToast("Generating PDF...", "info");
+
+      // Allow button state to paint before PDF work starts.
+      await new Promise(resolve =>
+        requestAnimationFrame(() => requestAnimationFrame(resolve))
+      );
+
+      // Await any pending background image compression queue so full resolution data is ready
+      if (maintenanceImageCompressionQueue) {
+        try {
+          await maintenanceImageCompressionQueue;
+        } catch (_) {}
+      }
+
+      const doc = new JsPdf({
+        orientation: "portrait",
+        unit: "mm",
+        format: "a4",
+        compress: true
+      });
+
+      if (typeof doc.autoTable !== "function") {
+        throw new Error("jsPDF AutoTable is unavailable.");
+      }
+
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const pageHeight = doc.internal.pageSize.getHeight();
+
+      const marginX = 8;
+      const marginBottom = 10;
+
+      const state = maintenanceState || {};
+      const blocks = Array.isArray(state.blocks) ? state.blocks : [];
+
+      // Await pending compression queue and ensure no screenshot remains a raw blob URL
+      if (maintenanceImageCompressionQueue) {
+        try {
+          await maintenanceImageCompressionQueue;
+        } catch (_) {}
+      }
+
+      for (const b of blocks) {
+        if (Array.isArray(b.screenshots)) {
+          for (let sIdx = 0; sIdx < b.screenshots.length; sIdx++) {
+            const shot = b.screenshots[sIdx];
+            const src = maintenance.maintenanceScreenshotSource?.(shot, "full") || "";
+            if (/^blob:/i.test(src) && shot?.file instanceof Blob) {
+              try {
+                const comp = await maintenance.compressImage(shot.file);
+                b.screenshots[sIdx] = comp;
+              } catch (_) {
+                try {
+                  const dataUrl = await new Promise((res, rej) => {
+                    const r = new FileReader();
+                    r.onload = () => res(r.result);
+                    r.onerror = rej;
+                    r.readAsDataURL(shot.file);
+                  });
+                  b.screenshots[sIdx] = {
+                    id: shot.id || "shot_" + Date.now(),
+                    dataUrl,
+                    thumbnail: dataUrl,
+                    width: 1280,
+                    height: 720,
+                    aspectRatio: 16 / 9,
+                    format: "image/jpeg"
+                  };
+                } catch (_) {}
+              }
+            }
+          }
+        }
+      }
+
+      const cleanTitle = String(
+        state.title || "Maintenance Report"
+      )
+        .replace(/\s*Maintenance\s+Report\s*$/i, "")
+        .trim();
+
+      const reportDate = state.date || "";
+      const titleText = reportDate
+        ? `${cleanTitle} (${reportDate})`
+        : cleanTitle;
+
+      const headers = [
+        "TIMESTAMP",
+        "DATE",
+        "TL",
+        "ACCOUNT",
+        "SITE",
+        "STATION NO.",
+        "STATION ISSUE"
+      ];
+
+      let y = 12;
+
+      function addPageIfNeeded(requiredHeight = 15) {
+        if (y + requiredHeight > pageHeight - marginBottom) {
+          doc.addPage();
+          y = 12;
+        }
+      }
+
+      function addDocumentTitle() {
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(11);
+        doc.setTextColor(17, 24, 39);
+
+        doc.text(titleText, marginX, y);
+
+        y += 8;
+      }
+
+      addDocumentTitle();
+
+      for (let blockIndex = 0; blockIndex < blocks.length; blockIndex++) {
+        const block = blocks[blockIndex] || {};
+
+        const rows = maintenance.maintenanceRowsForSheets(
+          block.lanesText || ""
+        );
+        addPageIfNeeded(10);
+
+        if (rows.length) {
+          doc.autoTable({
+            startY: y,
+
+            head: [headers],
+            body: rows,
+
+            theme: "grid",
+
+            margin: {
+              left: marginX,
+              right: marginX,
+              bottom: 10
+            },
+
+            styles: {
+              font: "helvetica",
+              fontSize: 5.6,
+              cellPadding: 0.8,
+              overflow: "linebreak",
+              valign: "middle",
+
+              textColor: [31, 41, 55],
+
+              lineColor: [203, 213, 225],
+              lineWidth: 0.15
+            },
+
+            headStyles: {
+              fillColor: [49, 73, 95],
+              textColor: [255, 255, 255],
+
+              fontStyle: "bold",
+              fontSize: 5.5,
+
+              halign: "center",
+              valign: "middle",
+
+              cellPadding: 0.9
+            },
+
+            columnStyles: {
+              0: { cellWidth: 19, halign: "center" },
+              1: { cellWidth: 15, halign: "center" },
+              2: { cellWidth: 31 },
+              3: { cellWidth: 21, halign: "center" },
+              4: { cellWidth: 24, halign: "center" },
+              5: { cellWidth: 22, halign: "center" },
+              6: { cellWidth: "auto" }
+            },
+
+            rowPageBreak: "avoid",
+
+            didDrawPage: function () {
+              doc.setFont("helvetica", "normal");
+              doc.setFontSize(6);
+              doc.setTextColor(100, 116, 139);
+
+              const pageNumber =
+                doc.internal.getNumberOfPages();
+
+              doc.text(
+                String(pageNumber),
+                pageWidth - marginX,
+                pageHeight - 5,
+                { align: "right" }
+              );
+            }
+          });
+
+          y = (doc.lastAutoTable?.finalY || y) + 5;
+        }
+        else {
+          doc.setFont("helvetica", "italic");
+          doc.setFontSize(7);
+          doc.setTextColor(100, 116, 139);
+
+          doc.text(
+            "No station issues recorded for this section.",
+            marginX,
+            y + 3
+          );
+
+          y += 9;
+        }
+
+
+        // ====================================================
+        // SCREENSHOTS
+        // ====================================================
+
+        const screenshots = Array.isArray(block.screenshots)
+          ? block.screenshots
+          : [];
+
+        const imageItems = screenshots
+          .map(shot => {
+            const src = maintenance.maintenanceScreenshotSource?.(shot, "full") || "";
+            return {
+              src,
+              shot,
+              aspectRatio: (typeof shot === "object" && shot && shot.aspectRatio)
+                ? shot.aspectRatio
+                : (shot?.width && shot?.height ? shot.width / shot.height : null),
+              format: (typeof shot === "object" && shot?.format && shot.format.includes("png")) ? "PNG" : "JPEG"
+            };
+          })
+          .filter(item => /^data:image\//i.test(item.src) || /^blob:/i.test(item.src));
+
+        if (imageItems.length) {
+          addPageIfNeeded(12);
+
+          const gap = 4;
+          const maxImageWidth = 82;
+          const maxImageHeight = 46;
+
+          let x = marginX;
+
+          for (const item of imageItems) {
+            let imageWidth = maxImageWidth;
+            let imageHeight = maxImageHeight;
+
+            let ratio = item.aspectRatio;
+            if (!ratio) {
+              try {
+                const props = doc.getImageProperties(item.src);
+                if (props?.width && props?.height) {
+                  ratio = props.width / props.height;
+                }
+              } catch (_) {}
+            }
+
+            if (ratio) {
+              imageWidth = Math.min(
+                maxImageWidth,
+                maxImageHeight * ratio
+              );
+              imageHeight = imageWidth / ratio;
+            }
+
+            if (x + imageWidth > pageWidth - marginX) {
+              x = marginX;
+              y += maxImageHeight + gap;
+            }
+
+            if (y + imageHeight > pageHeight - 12) {
+              doc.addPage();
+              y = 12;
+              x = marginX;
+            }
+
+            try {
+              doc.addImage(
+                item.src,
+                item.format,
+                x,
+                y,
+                imageWidth,
+                imageHeight,
+                undefined,
+                "FAST"
+              );
+            }
+            catch (_) {
+              try {
+                doc.addImage(
+                  item.src,
+                  "JPEG",
+                  x,
+                  y,
+                  imageWidth,
+                  imageHeight,
+                  undefined,
+                  "FAST"
+                );
+              } catch (_) {}
+            }
+
+            x += imageWidth + gap;
+          }
+
+          y += maxImageHeight + 7;
+        }
+
+
+        // ====================================================
+        // REMARKS
+        // ====================================================
+
+        const remarks =
+          maintenance.getEffectiveBlockRemarks?.(block) || [];
+
+        if (remarks.length) {
+          const remarkText = remarks.join(" | ");
+
+          const wrapped = doc.splitTextToSize(
+            remarkText,
+            pageWidth - (marginX * 2) - 8
+          );
+
+          const boxHeight = Math.max(
+            12,
+            7 + (wrapped.length * 3.5)
+          );
+
+          addPageIfNeeded(boxHeight + 5);
+
+          doc.setFillColor(240, 253, 244);
+          doc.setDrawColor(34, 197, 94);
+
+          doc.roundedRect(
+            marginX,
+            y,
+            pageWidth - (marginX * 2),
+            boxHeight,
+            1,
+            1,
+            "FD"
+          );
+
+          doc.setFont("helvetica", "bold");
+          doc.setFontSize(7);
+          doc.setTextColor(22, 101, 52);
+
+          doc.text("Remarks:", marginX + 3, y + 4);
+
+          doc.setFont("helvetica", "normal");
+          doc.setFontSize(7);
+
+          doc.text(
+            wrapped,
+            marginX + 3,
+            y + 8
+          );
+
+          y += boxHeight + 6;
+        }
+
+
+        // Space between report sections.
+        y += 3;
+      }
+
+
+      // ======================================================
+      // SAVE
+      // ======================================================
+
+      const safeTitle = String(
+        state.title || "Maintenance"
+      )
+        .replace(/[<>:"/\\|?*]+/g, "-")
+        .replace(/\s+/g, " ")
+        .trim();
+
+      const fileName =
+        `${safeTitle} - ${state.date || "report"}.pdf`;
+
+      doc.save(fileName);
+
+      showToast(
+        "PDF downloaded successfully.",
+        "success"
+      );
+
+    } catch (err) {
+      console.error(
+        "Direct Maintenance PDF generation failed:",
+        err
+      );
+
+      showToast(
+        err?.message || "Could not generate PDF.",
+        "error"
+      );
+
+    } finally {
+      if (pdfBtn) {
+        pdfBtn.disabled = false;
+        pdfBtn.textContent = originalText;
+      }
+    }
+  }
+  async function renderMaintenanceDraftsList() {
+    const listEl = el("maintenanceDraftList");
+    if (!listEl) return;
+    listEl.innerHTML = "";
+    try {
+      const drafts = await maintenance.getNamedDrafts();
+      if (!drafts || !drafts.length) {
+        listEl.innerHTML = `<div style="font-size:11.5px; color:var(--text-muted); text-align:center; padding:18px 0;">No saved named drafts yet. Enter a name above to save one.</div>`;
+        return;
+      }
+      drafts.forEach(d => {
+        const item = document.createElement("div");
+        item.style.display = "flex";
+        item.style.alignItems = "center";
+        item.style.justifyContent = "space-between";
+        item.style.padding = "7px 10px";
+        item.style.background = "var(--bg-surface)";
+        item.style.border = "1px solid var(--border-default)";
+        item.style.borderRadius = "var(--radius-sm)";
+        item.style.gap = "8px";
+
+        const info = document.createElement("div");
+        info.style.display = "flex";
+        info.style.flexDirection = "column";
+        info.style.gap = "2px";
+
+        const name = document.createElement("span");
+        name.style.fontSize = "12px";
+        name.style.fontWeight = "600";
+        name.style.color = "var(--text-primary)";
+        name.textContent = d.name || "Untitled Draft";
+
+        const meta = document.createElement("span");
+        meta.style.fontSize = "10.5px";
+        meta.style.color = "var(--text-muted)";
+        const dDate = d.data?.date || "No date";
+        const blocksCount = d.data?.blocks?.length || 0;
+        meta.textContent = `${d.savedAt || ""}  -  ${dDate}  -  ${blocksCount} block(s)`;
+
+        info.appendChild(name);
+        info.appendChild(meta);
+
+        const btns = document.createElement("div");
+        btns.style.display = "flex";
+        btns.style.alignItems = "center";
+        btns.style.gap = "6px";
+
+        const loadBtn = document.createElement("button");
+        loadBtn.type = "button";
+        loadBtn.className = "btn btn-primary btn-sm";
+        loadBtn.textContent = "Load";
+        loadBtn.addEventListener("click", async () => {
+          const ok = await window.appConfirm({
+            title: `Load draft "${d.name}"?`,
+            message: "Replace current working report with this saved snapshot?",
+            confirmText: "Load Draft"
+          });
+          if (!ok) return;
+          const loaded = await maintenance.loadNamedDraft(d.id);
+          if (loaded && loaded.data) {
+            maintenanceState = {
+              date: loaded.data.date || maintenance.todayLocal(),
+              destinationKey: loaded.data.destinationKey || "mabini_a",
+              title: loaded.data.title || maintenance.MAINTENANCE_DESTINATIONS[loaded.data.destinationKey]?.label || "Mabini Site A - 1st & 2nd Floor",
+              blocks: loaded.data.blocks || [maintenance.makeBlock()]
+            };
+            syncMaintenanceHeaderUi();
+            renderMaintenanceBlocks();
+            queueMaintenanceAutosave();
+            el("modalMaintenanceDrafts").hidden = true;
+            showToast(`Draft "${d.name}" loaded.`, "success");
+          }
+        });
+
+        const delBtn = document.createElement("button");
+        delBtn.type = "button";
+        delBtn.className = "btn btn-danger-ghost btn-sm";
+        delBtn.textContent = "Delete";
+        delBtn.addEventListener("click", async () => {
+          const ok = await window.appConfirm({
+            title: `Delete draft "${d.name}"?`,
+            message: "This snapshot will be permanently deleted from this device.",
+            confirmText: "Delete",
+            tone: "danger"
+          });
+          if (!ok) return;
+          await maintenance.deleteNamedDraft(d.id);
+          renderMaintenanceDraftsList();
+          showToast("Draft deleted.", "info");
+        });
+
+        btns.appendChild(loadBtn);
+        btns.appendChild(delBtn);
+
+        item.appendChild(info);
+        item.appendChild(btns);
+        listEl.appendChild(item);
+      });
+    } catch (err) {
+      console.error("Error loading named drafts:", err);
+      listEl.innerHTML = `<div style="font-size:11.5px; color:#f87171;">Error loading drafts: ${err.message}</div>`;
+    }
+  }
+
+  function initMaintenanceController() {
+    // Wire maintenanceService getBlocks and saveBlocks for History undo/redo support (items 11 & 12)
+    maintenance.getBlocks = () => {
+      return (maintenanceState.blocks || []).map(b => ({ ...b }));
+    };
+    maintenance.saveBlocks = async (blocks) => {
+      maintenanceState.blocks = Array.isArray(blocks) && blocks.length
+        ? blocks.map(b => ({ ...b }))
+        : [maintenance.makeBlock()];
+      renderMaintenanceBlocks();
+      queueMaintenanceAutosave();
+      return maintenanceState.blocks;
+    };
+
+    // Destination selector
+    el("simpleEodDestination")?.addEventListener("change", (e) => {
+      const destKey = e.target.value;
+      if (maintenance.MAINTENANCE_DESTINATIONS[destKey]) {
+        maintenanceState.destinationKey = destKey;
+        maintenanceState.title = maintenance.MAINTENANCE_DESTINATIONS[destKey].label;
+        const siteInput = el("simpleEodSite");
+        if (siteInput) siteInput.value = maintenanceState.title;
+        queueMaintenanceAutosave();
+      }
+    });
+
+    // Date selector
+    el("simpleEodDate")?.addEventListener("change", (e) => {
+      maintenanceState.date = e.target.value;
+      queueMaintenanceAutosave();
+    });
+
+    // Add Block
+    el("simpleEodAddBtn")?.addEventListener("click", () => {
+      maintenanceState.blocks.push(maintenance.makeBlock());
+      renderMaintenanceBlocks();
+      queueMaintenanceAutosave();
+      showToast(`Added Block #${maintenanceState.blocks.length}.`, "info");
+    });
+
+    // Save to Drafts (opens modal with name prompt)
+    el("simpleEodSaveBtn")?.addEventListener("click", () => {
+      const modal = el("modalMaintenanceDrafts");
+      if (modal) {
+        modal.hidden = false;
+        const nameInput = el("maintenanceDraftName");
+        if (nameInput) {
+          const dest = maintenance.MAINTENANCE_DESTINATIONS[maintenanceState.destinationKey]?.label || "Report";
+          nameInput.value = `${dest} - ${maintenanceState.date || maintenance.todayLocal()}`;
+          nameInput.focus();
+        }
+        renderMaintenanceDraftsList();
+      }
+    });
+
+    // View Drafts
+    el("simpleEodDraftsBtn")?.addEventListener("click", () => {
+      const modal = el("modalMaintenanceDrafts");
+      if (modal) {
+        modal.hidden = false;
+        renderMaintenanceDraftsList();
+      }
+    });
+
+    // Save Named Draft button in modal
+    el("btnSaveNamedDraft")?.addEventListener("click", async () => {
+      const nameInput = el("maintenanceDraftName");
+      const name = (nameInput?.value || "").trim();
+      if (!name) {
+        showToast("Please enter a name for the draft.", "error");
+        return;
+      }
+      try {
+        await maintenance.saveNamedDraft(name, maintenanceState);
+        showToast(`Draft "${name}" saved!`, "success");
+        if (nameInput) nameInput.value = "";
+        renderMaintenanceDraftsList();
+      } catch (err) {
+        console.error("Save named draft failed:", err);
+        showToast(`Save failed: ${err.message}`, "error");
+      }
+    });
+
+    el("btnCloseMaintenanceDrafts")?.addEventListener("click", () => {
+      el("modalMaintenanceDrafts").hidden = true;
+    });
+
+    el("btnDoneMaintenanceDrafts")?.addEventListener("click", () => {
+      el("modalMaintenanceDrafts").hidden = true;
+    });
+
+    // Copy to Sheets
+    el("simpleEodCopySheetsBtn")?.addEventListener("click", copyFullMaintenanceReportToSheets);
+
+    // Send to Sheets
+    el("simpleEodSendSheetsBtn")?.addEventListener("click", sendMaintenanceReportToSheets);
+
+    // Sheet Setup
+    el("simpleEodSheetSetupBtn")?.addEventListener("click", () => {
+      const modal = el("modalMaintenanceSheetSetup");
+      if (modal) {
+        modal.hidden = false;
+        const urlInput = el("maintenanceSheetWebAppUrl");
+        if (urlInput) urlInput.value = maintenance.getMaintenanceSheetsWebAppUrl();
+        const testRes = el("maintenanceSheetTestResult");
+        if (testRes) {
+          testRes.textContent = "";
+          testRes.className = "maintenance-sheet-test-result";
+        }
+      }
+    });
+
+    el("btnCloseMaintenanceSheetSetup")?.addEventListener("click", () => {
+      el("modalMaintenanceSheetSetup").hidden = true;
+    });
+
+    el("btnTestMaintenanceSheet")?.addEventListener("click", async () => {
+      const urlInput = el("maintenanceSheetWebAppUrl");
+      const url = (urlInput?.value || "").trim();
+      const testRes = el("maintenanceSheetTestResult");
+      if (!maintenance.isValidAppsScriptWebAppUrl(url)) {
+        if (testRes) {
+          testRes.textContent = "Invalid Apps Script Web App URL. Must end with /exec";
+          testRes.style.color = "#f87171";
+        }
+        return;
+      }
+      if (testRes) {
+        testRes.textContent = "Testing connection...";
+        testRes.style.color = "var(--text-muted)";
+      }
+      try {
+        const res = await maintenance.testMaintenanceSheetsConnection(url, maintenanceState.destinationKey);
+        if (res && (res.ok === true || res.success === true)) {
+          if (testRes) {
+            testRes.textContent = `Connection successful! Destination: ${res.destinationLabel || res.destination || "OK"}`;
+            testRes.style.color = "#4ade80";
+          }
+        } else {
+          throw new Error(res?.error || "Invalid response from Apps Script");
+        }
+      } catch (err) {
+        if (testRes) {
+          testRes.textContent = `Connection failed: ${err.message}`;
+          testRes.style.color = "#f87171";
+        }
+      }
+    });
+
+    el("btnSaveMaintenanceSheet")?.addEventListener("click", () => {
+      const urlInput = el("maintenanceSheetWebAppUrl");
+      const url = (urlInput?.value || "").trim();
+      if (!maintenance.isValidAppsScriptWebAppUrl(url)) {
+        showToast("Enter a valid Apps Script URL ending in /exec", "error");
+        return;
+      }
+      maintenance.saveMaintenanceSheetSetup(url);
+      checkMaintenanceSheetsConnectionState();
+      el("modalMaintenanceSheetSetup").hidden = true;
+      showToast("Google Sheets Web App connected!", "success");
+    });
+
+    el("btnClearMaintenanceSheet")?.addEventListener("click", () => {
+      maintenance.clearMaintenanceSheetSetup();
+      checkMaintenanceSheetsConnectionState();
+      el("modalMaintenanceSheetSetup").hidden = true;
+      showToast("Google Sheets Web App disconnected.", "info");
+    });
+
+    // Preview / Print
+    el("simpleEodPreviewBtn")?.addEventListener("click", openMaintenancePrintPreview);
+
+    // Download PDF
+    el("simpleEodPdfBtn")?.addEventListener("click", downloadMaintenancePdf);
+
+    // Clear All
+    el("simpleEodClearBtn")?.addEventListener("click", async () => {
+      const ok = await window.appConfirm({
+        title: "Clear entire Maintenance Report?",
+        message: "Reset all blocks, station issues, remarks, and screenshots in the working report?",
+        confirmText: "Clear All",
+        tone: "danger"
+      });
+      if (!ok) return;
+
+      maintenanceState = {
+        date: maintenance.todayLocal(),
+        destinationKey: "mabini_a",
+        title: maintenance.MAINTENANCE_DESTINATIONS["mabini_a"].label,
+        blocks: [maintenance.makeBlock()]
+      };
+      await maintenance.clearAllDraft();
+      syncMaintenanceHeaderUi();
+      renderMaintenanceBlocks();
+      showToast("Maintenance Report cleared.", "info");
+    });
+
+    // Expose Global Bridge for AI Sorter
+    window.addMaintenanceSorterRowsToReport = function (tsv, meta = {}) {
+      if (!maintenanceState.blocks || !maintenanceState.blocks.length) {
+        maintenanceState.blocks = [maintenance.makeBlock()];
+      }
+
+      let target = maintenanceState.blocks.find(b => !b.lanesText.trim());
+      if (!target) {
+        target = maintenance.makeBlock();
+        maintenanceState.blocks.push(target);
+      }
+
+      target.lanesText = (target.lanesText ? target.lanesText + "\n" : "") + String(tsv || "").trim();
+
+      const detected = maintenance.detectMaintenanceDestinationFromRows(target.lanesText);
+      if (detected && maintenance.MAINTENANCE_DESTINATIONS[detected]) {
+        maintenanceState.destinationKey = detected;
+        maintenanceState.title = maintenance.MAINTENANCE_DESTINATIONS[detected].label;
+        syncMaintenanceHeaderUi();
+      }
+
+      renderMaintenanceBlocks();
+      queueMaintenanceAutosave();
+    };
+
+    window.syncMaintenanceStateFromDom = syncMaintenanceStateFromDom;
+    window.getMaintenanceState = () => maintenanceState;
+    window.setMaintenanceState = (st) => { maintenanceState = st; };
+    window.renderMaintenanceBlocks = renderMaintenanceBlocks;
+    window.renderBlockScreenshots = renderBlockScreenshots;
+    window.loadMaintenanceDraftInitial = loadMaintenanceDraftInitial;
+    window.addScreenshotsToBlock = addScreenshotsToBlock;
+    window.downloadMaintenancePdf = downloadMaintenancePdf;
+    window.getMaintenanceCompressionQueue = () => maintenanceImageCompressionQueue;
+
+    // =========================================================================
+    // GLOBAL PASTE HANDLER: Maintenance workspace (item 9)
+    // =========================================================================
+    // Central Paste Router registration for Maintenance workspace
+    // Routes Ctrl+V screenshot paste to active block in Maintenance
+    // =========================================================================
+    if (window.CCTV_PASTE_ROUTER) {
+      window.CCTV_PASTE_ROUTER.register("maintenance", async (files, event) => {
+        if (!files || !files.length) return;
+
+        let targetBlock = null;
+
+        // Priority 1: Block containing paste event target or activeElement
+        const pasteElement = event?.target || document.activeElement;
+        const cardEl = pasteElement?.closest ? pasteElement.closest(".eod-block, .eod-block-card, [data-block-id]") : null;
+        if (cardEl) {
+          const rawId = cardEl.dataset?.blockId || cardEl.id;
+          const canonicalId = normalizeMaintenanceBlockId(rawId);
+          if (canonicalId) {
+            const found = maintenanceState.blocks.find(b => !b.dataHidden && normalizeMaintenanceBlockId(b.id) === canonicalId);
+            if (found) targetBlock = found;
+          }
+        }
+
+        // Priority 2: activePasteBlockId
+        if (!targetBlock && activePasteBlockId) {
+          const canonicalActive = normalizeMaintenanceBlockId(activePasteBlockId);
+          const found = maintenanceState.blocks.find(b => !b.dataHidden && normalizeMaintenanceBlockId(b.id) === canonicalActive);
+          if (found) targetBlock = found;
+        }
+
+        // Priority 3: First visible block fallback
+        if (!targetBlock) {
+          targetBlock = maintenanceState.blocks.find(b => !b.dataHidden);
+        }
+
+        // Hidden blocks must never receive a screenshot
+        if (!targetBlock || targetBlock.dataHidden) {
+          showToast("No visible block found to receive screenshot.", "info");
+          return;
+        }
+
+        activePasteBlockId = targetBlock.id;
+        document.querySelectorAll(".eod-block-card.is-active-target").forEach(c => c.classList.remove("is-active-target"));
+        const targetEl = document.getElementById(`block_${targetBlock.id}`);
+        if (targetEl) targetEl.classList.add("is-active-target");
+
+        await addScreenshotsToBlock(targetBlock, files);
+        if (window.historyService?.captureIfChanged) {
+          window.historyService.captureIfChanged("maintenance", `Added screenshot to Block #${maintenanceState.blocks.indexOf(targetBlock) + 1}`);
+        }
+      });
+    }
+
+    // =========================================================================
+    // GLOBAL KEYBOARD: Maintenance Universal Shortcuts
+    // =========================================================================
+    document.addEventListener("keydown", async (event) => {
+      if (currentWorkspace !== "maintenance") return;
+      const active = document.activeElement;
+      // Guard: when cursor is inside normal text field (input, textarea, contenteditable),
+      // preserve normal text editing behavior where expected.
+      const inTypingField = active && (/^(INPUT|TEXTAREA|SELECT)$/i.test(active.tagName) || active.isContentEditable);
+      if (inTypingField) return;
+
+      const key = event.key ? event.key.toLowerCase() : "";
+      const isCtrlOrMeta = !!(event.ctrlKey || event.metaKey);
+
+      // Target block for shortcuts: active block or first visible block
+      const targetBlock = (activePasteBlockId ? maintenanceState.blocks.find(b => !b.dataHidden && normalizeMaintenanceBlockId(b.id) === normalizeMaintenanceBlockId(activePasteBlockId)) : null) ||
+        maintenanceState.blocks.find(b => !b.dataHidden);
+
+      // Ctrl+A: Select All lanes text in active block
+      if (isCtrlOrMeta && !event.shiftKey && key === "a") {
+        if (!targetBlock) return;
+        event.preventDefault();
+        const blockEl = document.getElementById(`block_${targetBlock.id}`);
+        const lanesArea = blockEl?.querySelector("textarea.eod-lanes-textarea");
+        if (lanesArea) {
+          lanesArea.focus();
+          lanesArea.select();
+        }
+        return;
+      }
+
+      // Ctrl+C: Copy selected maintenance data where applicable
+      if (isCtrlOrMeta && !event.shiftKey && key === "c") {
+        if (!targetBlock || !targetBlock.lanesText) return;
+        event.preventDefault();
+        try {
+          await navigator.clipboard.writeText(targetBlock.lanesText);
+          showToast(`Copied lanes data from Block #${maintenanceState.blocks.indexOf(targetBlock) + 1}.`, "success");
+        } catch (_) {}
+        return;
+      }
+
+      // Ctrl+X: Cut selected editable maintenance data where safe
+      if (isCtrlOrMeta && !event.shiftKey && key === "x") {
+        if (!targetBlock || !targetBlock.lanesText) return;
+        event.preventDefault();
+        try {
+          await navigator.clipboard.writeText(targetBlock.lanesText);
+          targetBlock.lanesText = "";
+          renderMaintenanceBlocks();
+          queueMaintenanceAutosave();
+          if (window.historyService?.captureIfChanged) {
+            await window.historyService.captureIfChanged("maintenanceReport", `Cut lanes data in Block #${maintenanceState.blocks.indexOf(targetBlock) + 1}`);
+          }
+          showToast("Lanes data cut to clipboard.", "success");
+        } catch (_) {}
+        return;
+      }
+
+      // Ctrl+F: Focus destination selector or filter
+      if (isCtrlOrMeta && !event.shiftKey && key === "f") {
+        event.preventDefault();
+        const destSelect = el("simpleEodDestination");
+        if (destSelect) destSelect.focus();
+        return;
+      }
+
+      // Delete/Backspace: Clear selected block's lanes data
+      if (key === "delete" || key === "backspace") {
+        if (!targetBlock || !targetBlock.lanesText) return;
+        event.preventDefault();
+        targetBlock.lanesText = "";
+        renderMaintenanceBlocks();
+        queueMaintenanceAutosave();
+        if (window.historyService?.captureIfChanged) {
+          await window.historyService.captureIfChanged("maintenanceReport", `Cleared lanes in Block #${maintenanceState.blocks.indexOf(targetBlock) + 1}`);
+        }
+        showToast("Block lanes data cleared.", "info");
+        return;
+      }
+
+      // Escape: Clear active block selection
+      if (key === "escape") {
+        activePasteBlockId = null;
+        document.querySelectorAll(".eod-block-card.is-active-target").forEach(c => c.classList.remove("is-active-target"));
+        return;
+      }
+
+      // ArrowUp / ArrowDown: Navigate between blocks
+      if (key === "arrowup" || key === "arrowdown") {
+        event.preventDefault();
+        const visibleBlocks = maintenanceState.blocks.filter(b => !b.dataHidden);
+        if (!visibleBlocks.length) return;
+        const curIdx = visibleBlocks.findIndex(b => normalizeMaintenanceBlockId(b.id) === normalizeMaintenanceBlockId(activePasteBlockId));
+        let nextIdx = 0;
+        if (key === "arrowup") {
+          nextIdx = curIdx <= 0 ? visibleBlocks.length - 1 : curIdx - 1;
+        } else {
+          nextIdx = curIdx < 0 || curIdx >= visibleBlocks.length - 1 ? 0 : curIdx + 1;
+        }
+        activePasteBlockId = visibleBlocks[nextIdx].id;
+        document.querySelectorAll(".eod-block-card.is-active-target").forEach(c => c.classList.remove("is-active-target"));
+        const blockEl = document.getElementById(`block_${activePasteBlockId}`);
+        blockEl?.classList.add("is-active-target");
+        blockEl?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        showToast(`Selected Block #${maintenanceState.blocks.indexOf(visibleBlocks[nextIdx]) + 1}.`, "info");
+        return;
+      }
+    });
+  }
+
+  // =========================================================================
+  // WORKSPACE 5: PENDING REPORTS & FOLLOW-UP CONTROLLER
+  // =========================================================================
+  let pendingReportsList = [];
+  let pendingAddScreenshotData = "";
+
+  function updatePendingSummary() {
+    const total = pendingReportsList.length;
+    const followup = pendingReportsList.filter(pending.isFollowupDue).length;
+    const email = pendingReportsList.filter(pending.isEmailDue).length;
+    const attention = pendingReportsList.filter(r => pending.isFollowupDue(r) || pending.isEmailDue(r)).length;
+
+    if (el("pendingTotalCount")) el("pendingTotalCount").textContent = String(total);
+    if (el("pendingFollowupCount")) el("pendingFollowupCount").textContent = String(followup);
+    if (el("pendingEmailCount")) el("pendingEmailCount").textContent = String(email);
+    if (el("pendingQueueCountBadge")) el("pendingQueueCountBadge").textContent = `${total} items`;
+
+    const railBadge = el("railPendingBadge");
+    if (railBadge) {
+      railBadge.textContent = String(attention || total);
+      railBadge.style.display = total ? "inline-flex" : "none";
+    }
+
+    const banner = el("pendingDueBanner");
+    if (banner) {
+      if (!attention) {
+        banner.hidden = true;
+        banner.innerHTML = "";
+      } else {
+        banner.hidden = false;
+        const pieces = [];
+        if (followup) {
+          pieces.push(`<strong>${followup}</strong> report${followup === 1 ? "" : "s"} need follow-up (1+ day)`);
+        }
+        if (email) {
+          pieces.push(`<strong>${email}</strong> report${email === 1 ? "" : "s"} reached 4 days - send email`);
+        }
+        banner.innerHTML = `<svg class="icon icon-sm" viewBox="0 0 24 24" style="stroke:currentColor; flex-shrink:0;"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg> <span>${pieces.join("  -  ")}</span>`;
+      }
+    }
+
+    const alertStatus = el("pendingAlertStatus");
+    if (alertStatus) {
+      if (!("Notification" in window)) {
+        alertStatus.textContent = "Browser alerts unavailable";
+      } else if (Notification.permission === "granted") {
+        alertStatus.textContent = "Browser alerts enabled";
+      } else {
+        alertStatus.textContent = "In-app alerts active";
+      }
+    }
+  }
+
+  function refreshPendingOmOptions() {
+    const list = el("pendingOmOptions");
+    if (!list) return;
+
+    const masterOms = (cfg.OM_OPTIONS || []).slice();
+    const reportOms = pendingReportsList.map(r => String(r.om || "").trim()).filter(Boolean);
+    const unique = [...new Set([...masterOms, ...reportOms])].sort((a, b) => a.localeCompare(b));
+
+    list.innerHTML = unique.map(val => `<option value="${val}"></option>`).join("");
+  }
+
+  function renderPendingList() {
+    refreshPendingOmOptions();
+    const listEl = el("pendingReportList");
+    if (!listEl) return;
+
+    if (!pendingReportsList.length) {
+      listEl.innerHTML = `<div style="text-align:center; padding:48px 12px; font-size:12px; color:var(--text-muted);">No pending reports in queue. Use the form on the left to add one.</div>`;
+      return;
+    }
+
+    listEl.innerHTML = "";
+
+    const sorted = pendingReportsList.slice().sort((a, b) => {
+      const aEmail = pending.isEmailDue(a) ? 1 : 0;
+      const bEmail = pending.isEmailDue(b) ? 1 : 0;
+      if (aEmail !== bEmail) return bEmail - aEmail;
+
+      const aFollow = pending.isFollowupDue(a) ? 1 : 0;
+      const bFollow = pending.isFollowupDue(b) ? 1 : 0;
+      if (aFollow !== bFollow) return bFollow - aFollow;
+
+      return pending.reportDateStart(a) - pending.reportDateStart(b);
+    });
+
+    sorted.forEach(report => {
+      const card = document.createElement("div");
+      card.className = "pending-card";
+      card.dataset.id = report.id;
+
+      const thumbBtn = document.createElement("button");
+      thumbBtn.type = "button";
+      thumbBtn.className = `pending-card-thumb-btn ${report.screenshotData ? "" : "no-image"}`;
+      thumbBtn.title = report.screenshotData ? "Click to view full screenshot" : "No screenshot attached";
+      if (report.screenshotData) {
+        const img = document.createElement("img");
+        img.src = report.screenshotData;
+        img.alt = "Pending proof";
+        thumbBtn.appendChild(img);
+        thumbBtn.addEventListener("click", () => {
+          openScreenshotViewer(report.screenshotData, "Pending Incident Evidence", `${report.label || "Report"}  -  OM: ${report.om || "N/A"}`);
+        });
+      } else {
+        thumbBtn.disabled = true;
+        thumbBtn.textContent = "No SS";
+      }
+      card.appendChild(thumbBtn);
+
+      const body = document.createElement("div");
+      body.className = "pending-card-body";
+
+      const titleRow = document.createElement("div");
+      titleRow.className = "pending-card-title-row";
+
+      const labelInput = document.createElement("input");
+      labelInput.type = "text";
+      labelInput.className = "pending-card-label-input";
+      labelInput.value = report.label || "";
+      labelInput.placeholder = "Report / Agent Name";
+      labelInput.title = "Click to edit report/agent label";
+      labelInput.addEventListener("change", async (e) => {
+        report.label = e.target.value.trim();
+        report.updatedAt = new Date().toISOString();
+        await pending.saveReports(pendingReportsList);
+        updatePendingSummary();
+      });
+      titleRow.appendChild(labelInput);
+
+      const statusWrap = document.createElement("div");
+      statusWrap.style.display = "flex";
+      statusWrap.style.alignItems = "center";
+      statusWrap.style.gap = "6px";
+
+      if (pending.isEmailDue(report)) {
+        const chip = document.createElement("span");
+        chip.className = "pending-status-chip pending-status-email";
+        chip.textContent = "Send Email";
+        statusWrap.appendChild(chip);
+      } else if (pending.isFollowupDue(report)) {
+        const chip = document.createElement("span");
+        chip.className = "pending-status-chip pending-status-followup";
+        chip.textContent = "Need Follow-up";
+        statusWrap.appendChild(chip);
+      } else {
+        const chip = document.createElement("span");
+        chip.className = "pending-status-chip pending-status-waiting";
+        chip.textContent = "Waiting";
+        statusWrap.appendChild(chip);
+      }
+      titleRow.appendChild(statusWrap);
+      body.appendChild(titleRow);
+
+      const metaRow = document.createElement("div");
+      metaRow.className = "pending-card-meta";
+      const ageStr = pending.ageText(pending.reportAgeMs(report));
+      metaRow.textContent = `Reported ${report.reportDate || "N/A"}  -  Age ${ageStr}  -  Pending ${ageStr}`;
+      body.appendChild(metaRow);
+
+      const grid = document.createElement("div");
+      grid.className = "pending-card-inputs-grid";
+
+      const omWrap = document.createElement("div");
+      omWrap.className = "form-group";
+      omWrap.style.marginBottom = "0";
+      const omLabel = document.createElement("label");
+      omLabel.className = "form-label";
+      omLabel.textContent = "OM";
+      const omInput = document.createElement("input");
+      omInput.type = "text";
+      omInput.className = "form-control form-control-sm";
+      omInput.setAttribute("list", "pendingOmOptions");
+      omInput.value = report.om || "";
+      omInput.placeholder = "OM Name";
+      omInput.addEventListener("change", async (e) => {
+        report.om = e.target.value.trim();
+        report.updatedAt = new Date().toISOString();
+        await pending.saveReports(pendingReportsList);
+        refreshPendingOmOptions();
+      });
+      omWrap.appendChild(omLabel);
+      omWrap.appendChild(omInput);
+      grid.appendChild(omWrap);
+
+      const teamsWrap = document.createElement("div");
+      teamsWrap.className = "form-group";
+      teamsWrap.style.marginBottom = "0";
+      const teamsLabel = document.createElement("label");
+      teamsLabel.className = "form-label";
+      teamsLabel.textContent = "Teams Conversation";
+      const teamsRow = document.createElement("div");
+      teamsRow.style.display = "flex";
+      teamsRow.style.gap = "4px";
+
+      const teamsInput = document.createElement("input");
+      teamsInput.type = "url";
+      teamsInput.className = "form-control form-control-sm";
+      teamsInput.value = report.teamsLink || "";
+      teamsInput.placeholder = "Teams Link...";
+      teamsInput.addEventListener("change", async (e) => {
+        report.teamsLink = e.target.value.trim();
+        report.updatedAt = new Date().toISOString();
+        await pending.saveReports(pendingReportsList);
+        renderPendingList();
+      });
+
+      const openBtn = document.createElement("button");
+      openBtn.type = "button";
+      openBtn.className = "btn btn-outline btn-sm";
+      openBtn.textContent = "Open";
+      const validTeamsUrl = pending.safeUrl(report.teamsLink);
+      openBtn.disabled = !validTeamsUrl;
+      openBtn.addEventListener("click", () => {
+        if (validTeamsUrl) {
+          window.open(validTeamsUrl, "_blank", "noopener,noreferrer");
+        }
+      });
+
+      teamsRow.appendChild(teamsInput);
+      teamsRow.appendChild(openBtn);
+      teamsWrap.appendChild(teamsLabel);
+      teamsWrap.appendChild(teamsRow);
+      grid.appendChild(teamsWrap);
+
+      const remarksWrap = document.createElement("div");
+      remarksWrap.className = "form-group";
+      remarksWrap.style.marginBottom = "0";
+      const remarksLabel = document.createElement("label");
+      remarksLabel.className = "form-label";
+      remarksLabel.textContent = "Remarks";
+      const remarksArea = document.createElement("textarea");
+      remarksArea.className = "form-control form-control-sm";
+      remarksArea.rows = 2;
+      remarksArea.placeholder = "Enter status or remarks...";
+      remarksArea.value = report.remarks || "";
+      remarksArea.addEventListener("change", async (e) => {
+        report.remarks = e.target.value.trim();
+        report.updatedAt = new Date().toISOString();
+        await pending.saveReports(pendingReportsList);
+      });
+      remarksWrap.appendChild(remarksLabel);
+      remarksWrap.appendChild(remarksArea);
+      grid.appendChild(remarksWrap);
+
+      body.appendChild(grid);
+
+      const actions = document.createElement("div");
+      actions.className = "pending-card-actions";
+
+      const replaceBtn = document.createElement("button");
+      replaceBtn.type = "button";
+      replaceBtn.className = "btn btn-outline btn-sm";
+      replaceBtn.textContent = "Replace SS";
+      replaceBtn.addEventListener("click", () => {
+        const fileInput = document.createElement("input");
+        fileInput.type = "file";
+        fileInput.accept = "image/*";
+        fileInput.addEventListener("change", async () => {
+          if (!fileInput.files || !fileInput.files.length) return;
+          try {
+            report.screenshotData = await pending.compressImage(fileInput.files[0]);
+            report.updatedAt = new Date().toISOString();
+            await pending.saveReports(pendingReportsList);
+            renderPendingList();
+            showToast("Screenshot replaced successfully.", "success");
+          } catch (err) {
+            console.error("Replace screenshot failed:", err);
+            showToast(`Replace failed: ${err.message}`, "error");
+          }
+        });
+        fileInput.click();
+      });
+      actions.appendChild(replaceBtn);
+
+      const delBtn = document.createElement("button");
+      delBtn.type = "button";
+      delBtn.className = "btn btn-danger-ghost btn-sm";
+      delBtn.textContent = "Delete";
+      delBtn.addEventListener("click", async () => {
+        const ok = await window.appConfirm({
+          title: "Delete pending report?",
+          message: `Remove "${report.label || "this report"}"? Use this when the NOC is already resolved or submitted.`,
+          confirmText: "Delete",
+          tone: "danger"
+        });
+        if (!ok) return;
+        pendingReportsList = pendingReportsList.filter(item => item.id !== report.id);
+        await pending.saveReports(pendingReportsList);
+        renderPendingList();
+        updatePendingSummary();
+        if (window.historyService?.captureIfChanged) {
+          await window.historyService.captureIfChanged("pending", `Deleted Pending report: ${report.label || "report"}`);
+        }
+        showToast("Pending report deleted.", "info");
+      });
+      actions.appendChild(delBtn);
+
+      body.appendChild(actions);
+      card.appendChild(body);
+      listEl.appendChild(card);
+    });
+  }
+
+  async function loadPendingReportsInitial() {
+    try {
+      const saved = await pending.loadReports();
+      pendingReportsList = Array.isArray(saved) ? saved : [];
+    } catch (e) {
+      console.warn("Could not load initial pending reports:", e);
+      pendingReportsList = [];
+    }
+
+    const dateInput = el("pendingReportDate");
+    if (dateInput && !dateInput.value) {
+      dateInput.value = pending.todayLocal();
+    }
+
+    renderPendingList();
+    updatePendingSummary();
+    pending.checkDueNotifications(pendingReportsList, true);
+
+    pending.onChange(reports => {
+      pendingReportsList = Array.isArray(reports) ? reports : [];
+      renderPendingList();
+      updatePendingSummary();
+    });
+  }
+
+  function renderPendingWorkspace() {
+    if (!pendingReportsList.length) {
+      loadPendingReportsInitial();
+    } else {
+      renderPendingList();
+      updatePendingSummary();
+    }
+  }
+
+  function setPendingAddScreenshot(dataUrl) {
+    pendingAddScreenshotData = dataUrl || "";
+    const empty = el("pendingAddShotEmpty");
+    const wrap = el("pendingAddShotPreviewWrap");
+    const preview = el("pendingAddShotPreview");
+
+    if (pendingAddScreenshotData) {
+      if (preview) preview.src = pendingAddScreenshotData;
+      if (empty) empty.hidden = true;
+      if (wrap) wrap.hidden = false;
+    } else {
+      if (preview) preview.removeAttribute("src");
+      if (empty) empty.hidden = false;
+      if (wrap) wrap.hidden = true;
+    }
+  }
+
+  function clearPendingAddForm() {
+    if (el("pendingReportLabel")) el("pendingReportLabel").value = "";
+    if (el("pendingReportDate")) el("pendingReportDate").value = pending.todayLocal();
+    if (el("pendingReportOm")) el("pendingReportOm").value = "";
+    if (el("pendingTeamsLink")) el("pendingTeamsLink").value = "";
+    if (el("pendingAddShotInput")) el("pendingAddShotInput").value = "";
+    setPendingAddScreenshot("");
+  }
+
+  function initPendingController() {
+    el("btnAddPendingReport")?.addEventListener("click", async () => {
+      const label = (el("pendingReportLabel")?.value || "").trim();
+      const reportDate = el("pendingReportDate")?.value || pending.todayLocal();
+      const om = (el("pendingReportOm")?.value || "").trim();
+      const teamsLink = (el("pendingTeamsLink")?.value || "").trim();
+
+      if (!om) {
+        showToast("Please select or enter an OM.", "error");
+        el("pendingReportOm")?.focus();
+        return;
+      }
+
+      const now = new Date().toISOString();
+      const newReport = {
+        id: pending.uid(),
+        label,
+        reportDate,
+        om,
+        teamsLink,
+        remarks: "",
+        screenshotData: pendingAddScreenshotData || "",
+        createdAt: now,
+        updatedAt: now,
+        followupNotifiedAt: null,
+        emailNotifiedAt: null
+      };
+
+      pendingReportsList.push(newReport);
+      await pending.saveReports(pendingReportsList);
+      clearPendingAddForm();
+      renderPendingList();
+      updatePendingSummary();
+      showToast("Pending report added to queue.", "success");
+    });
+
+    el("btnClearPendingForm")?.addEventListener("click", clearPendingAddForm);
+
+    const dropzone = el("pendingAddShotDropzone");
+    const fileInput = el("pendingAddShotInput");
+
+    dropzone?.addEventListener("click", (e) => {
+      if (e.target !== el("btnRemovePendingShot")) {
+        fileInput?.click();
+      }
+    });
+
+    fileInput?.addEventListener("change", async () => {
+      if (!fileInput.files || !fileInput.files.length) return;
+      try {
+        const compressed = await pending.compressImage(fileInput.files[0]);
+        setPendingAddScreenshot(compressed);
+        showToast("Proof screenshot loaded.", "info");
+      } catch (err) {
+        console.error("Pending screenshot load failed:", err);
+        showToast(`Screenshot error: ${err.message}`, "error");
+      }
+    });
+
+    el("btnRemovePendingShot")?.addEventListener("click", (e) => {
+      e.stopPropagation();
+      setPendingAddScreenshot("");
+      if (fileInput) fileInput.value = "";
+    });
+
+    dropzone?.addEventListener("dragover", (e) => {
+      e.preventDefault();
+      dropzone.classList.add("drag-over");
+    });
+    dropzone?.addEventListener("dragleave", () => {
+      dropzone.classList.remove("drag-over");
+    });
+    dropzone?.addEventListener("drop", async (e) => {
+      e.preventDefault();
+      dropzone.classList.remove("drag-over");
+      if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length) {
+        const file = e.dataTransfer.files[0];
+        if (file.type.startsWith("image/")) {
+          try {
+            const compressed = await pending.compressImage(file);
+            setPendingAddScreenshot(compressed);
+            showToast("Proof screenshot loaded.", "info");
+          } catch (err) {
+            console.error("Drop image error:", err);
+          }
+        }
+      }
+    });
+
+    // Central Paste Router registration for Pending workspace
+    if (window.CCTV_PASTE_ROUTER) {
+      window.CCTV_PASTE_ROUTER.register("pending", async (files) => {
+        if (!files || !files.length) return;
+        const file = files[0];
+        try {
+          const compressed = await pending.compressImage(file);
+          setPendingAddScreenshot(compressed);
+          showToast("Screenshot pasted into form.", "info");
+        } catch (err) {
+          console.error("Paste image error:", err);
+        }
+      });
+    }
+
+    el("btnEnablePendingAlerts")?.addEventListener("click", async () => {
+      if (!("Notification" in window)) {
+        showToast("Browser notifications are not supported in this browser.", "info");
+        return;
+      }
+      try {
+        const permission = await Notification.requestPermission();
+        updatePendingSummary();
+        if (permission === "granted") {
+          showToast("Browser alerts enabled for Pending Reports!", "success");
+          pending.checkDueNotifications(pendingReportsList, false);
+        } else {
+          showToast("Notification permission was not granted.", "info");
+        }
+      } catch (err) {
+        console.error("Request permission error:", err);
+      }
+    });
+
+    window.renderPendingList = renderPendingList;
+    window.loadPendingReportsInitial = loadPendingReportsInitial;
+  }
+
+  // =========================================================================
+  // FOLLOW UP REPORTS CONTROLLER
+  // =========================================================================
+  let followupReportsList = [];
+  let followupAddScreenshotData = "";
+  let followupReplaceTargetId = "";
+  let followupSaveTimer = null;
+  let followupFilter = "all";
+  let followupSearchQuery = "";
+  let followupSelectedId = "";
+  let followupExpandedIds = new Set();
+
+  function refreshFollowupOmOptions() {
+    const list = el("followupOmOptions");
+    if (!list) return;
+    const master = edr.getOmNames ? edr.getOmNames() : [];
+    const formatted = master.map(name => `CCTV OM ${String(name).toUpperCase()}`);
+    const used = followupReportsList.map(r => String(r.om || "").trim()).filter(Boolean);
+    const values = [...new Set([...formatted, ...used])].sort((a, b) => a.localeCompare(b));
+    list.innerHTML = values.map(value => `<option value="${window.escapeHtml(value)}"></option>`).join("");
+  }
+
+  function updateFollowupSummary() {
+    const openCount = followup.getOpenCount(followupReportsList);
+    const resolvedCount = followupReportsList.filter(r => r.status === "Resolved").length;
+    const totalCount = followupReportsList.length;
+
+    if (el("followupOpenCount")) el("followupOpenCount").textContent = String(openCount);
+    if (el("followupResolvedCount")) el("followupResolvedCount").textContent = String(resolvedCount);
+    if (el("followupTotalCount")) el("followupTotalCount").textContent = String(totalCount);
+    if (el("followupQueueBadge")) el("followupQueueBadge").textContent = `${totalCount} item${totalCount === 1 ? "" : "s"}`;
+
+    const railBadge = el("railFollowupBadge");
+    if (railBadge) {
+      railBadge.textContent = String(openCount);
+      railBadge.style.display = openCount > 0 ? "inline-flex" : "none";
+    }
+
+    const legacySidebarBadge = el("followupSidebarBadge");
+    if (legacySidebarBadge) {
+      legacySidebarBadge.textContent = String(openCount);
+      legacySidebarBadge.style.display = openCount > 0 ? "inline-flex" : "none";
+      legacySidebarBadge.title = `${openCount} open follow-up report${openCount === 1 ? "" : "s"}`;
+    }
+  }
+
+  function setFollowupAddScreenshot(dataUrl) {
+    followupAddScreenshotData = dataUrl || "";
+    const empty = el("followupAddShotEmpty");
+    const wrap = el("followupAddShotPreviewWrap");
+    const preview = el("followupAddShotPreview");
+
+    if (followupAddScreenshotData) {
+      if (preview) preview.src = followupAddScreenshotData;
+      if (empty) empty.hidden = true;
+      if (wrap) wrap.hidden = false;
+    } else {
+      if (preview) preview.removeAttribute("src");
+      if (empty) empty.hidden = false;
+      if (wrap) wrap.hidden = true;
+    }
+  }
+
+  function clearFollowupAddForm() {
+    if (el("followupDate")) el("followupDate").value = followup.todayLocal();
+    if (el("followupOm")) el("followupOm").value = "";
+    if (el("followupLabel")) el("followupLabel").value = "";
+    if (el("followupCctvLink")) el("followupCctvLink").value = "";
+    if (el("followupStatus")) el("followupStatus").value = "Waiting for TL";
+    if (el("followupRemarks")) el("followupRemarks").value = "";
+    setFollowupAddScreenshot("");
+    const msg = el("followupMessage");
+    if (msg) {
+      msg.textContent = "";
+      msg.className = "followup-form-message";
+    }
+  }
+
+  function showFollowupMessage(text, kind = "") {
+    const msg = el("followupMessage");
+    if (!msg) return;
+    msg.textContent = text || "";
+    msg.style.color = kind === "error" ? "var(--accent-danger, #f87171)" : kind === "success" ? "var(--accent-success, #34d399)" : "var(--text-secondary)";
+  }
+
+  function scheduleFollowupSave() {
+    clearTimeout(followupSaveTimer);
+    followupSaveTimer = setTimeout(async () => {
+      try {
+        await followup.saveReports(followupReportsList);
+        updateFollowupSummary();
+      } catch (err) {
+        console.error("Save follow-up reports error:", err);
+      }
+    }, 350);
+  }
+
+  function renderFollowupList() {
+    refreshFollowupOmOptions();
+    updateFollowupSummary();
+    const listEl = el("followupReportList");
+    if (!listEl) return;
+
+    if (!followupReportsList.length) {
+      listEl.innerHTML = '<div class="empty-state" style="padding:40px; text-align:center; color:var(--text-muted); font-size:12px;">No pending follow-up records.</div>';
+      return;
+    }
+
+    const sorted = followup.sortReports(followupReportsList);
+
+    // Apply Filter Tab
+    let filtered = sorted;
+    if (followupFilter === "open") {
+      filtered = filtered.filter(r => r.status !== "Resolved");
+    } else if (followupFilter === "resolved") {
+      filtered = filtered.filter(r => r.status === "Resolved");
+    }
+
+    // Apply Search Query
+    if (followupSearchQuery) {
+      const q = followupSearchQuery.toLowerCase();
+      filtered = filtered.filter(r => {
+        const text = [r.label, r.om, r.status, r.date, r.remarks, r.cctvLink].filter(Boolean).join(" ").toLowerCase();
+        return text.includes(q);
+      });
+    }
+
+    if (!filtered.length) {
+      let emptyMsg = "No follow-up records in queue.";
+      if (followupSearchQuery) {
+        emptyMsg = `No follow-up records matching "${window.escapeHtml(followupSearchQuery)}".`;
+      } else if (followupFilter === "resolved") {
+        emptyMsg = "No resolved follow-up records found.";
+      } else if (followupFilter === "open") {
+        emptyMsg = "No open follow-up records. All caught up!";
+      }
+      listEl.innerHTML = `<div class="empty-state" style="padding:40px; text-align:center; color:var(--text-muted); font-size:12px;">${emptyMsg}</div>`;
+      return;
+    }
+
+    listEl.innerHTML = filtered.map(report => {
+      const hasImage = Boolean(report.screenshotData);
+      const safeLink = followup.safeWebUrl(report.cctvLink);
+      const statusClass = followup.statusClass(report.status);
+      const isSelected = report.id === followupSelectedId;
+      const isExpanded = followupExpandedIds.has(report.id);
+      const isResolved = report.status === "Resolved";
+
+      let agePillHtml = "";
+      if (!isResolved && report.date) {
+        try {
+          const recDate = new Date(report.date + (report.date.includes("T") ? "" : "T00:00:00"));
+          if (!isNaN(recDate.getTime())) {
+            const now = new Date();
+            const todayMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+            const recMidnight = new Date(recDate.getFullYear(), recDate.getMonth(), recDate.getDate()).getTime();
+            const ageDays = Math.floor((todayMidnight - recMidnight) / (1000 * 86400));
+            if (ageDays >= 2) {
+              agePillHtml = `<span class="followup-age-pill age-overdue" title="${ageDays} calendar days old - Attention recommended">&#x26a0;&#xfe0f; ${ageDays}d overdue</span>`;
+            } else if (ageDays === 1) {
+              agePillHtml = `<span class="followup-age-pill age-1d" title="1 day old">1d ago</span>`;
+            } else if (ageDays === 0) {
+              agePillHtml = `<span class="followup-age-pill age-today" title="Logged today">Today</span>`;
+            }
+          }
+        } catch (_) {}
+      }
+
+      return `
+        <article class="followup-report-card ${isSelected ? "is-selected" : ""} ${isResolved ? "is-resolved" : ""}" data-id="${window.escapeHtml(report.id)}" tabindex="0">
+          <div class="followup-card-primary-row">
+            <button type="button" class="followup-thumb-btn ${hasImage ? "has-image" : "no-image"}" ${hasImage ? "" : "disabled"} title="${hasImage ? "Click to view full screenshot evidence" : "No screenshot attached"}">
+              ${hasImage ? `<img src="${window.escapeHtml(report.screenshotData)}" alt="Evidence">` : `<svg class="icon icon-xs" viewBox="0 0 24 24" style="color:var(--text-dim); opacity:0.6;"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>`}
+            </button>
+
+            <div class="followup-card-main-info">
+              <div class="followup-card-title-row">
+                <span class="followup-card-title" title="${window.escapeHtml(report.label || report.om || "Follow Up Report")}">${window.escapeHtml(report.label || report.om || "Follow Up Report")}</span>
+                <span class="followup-chip followup-chip-om" title="OM / Group Chat">${window.escapeHtml(report.om || "OM not set")}</span>
+                <span class="followup-chip followup-chip-date" title="Report Date">${window.escapeHtml(followup.formatDate(report.date))}</span>
+                ${agePillHtml}
+                <span class="followup-status-pill ${statusClass}">${window.escapeHtml(report.status || "Waiting for TL")}</span>
+              </div>
+
+              ${report.remarks ? `
+                <div class="followup-card-remarks-snippet" title="${window.escapeHtml(report.remarks)}">
+                  <span class="followup-remarks-text">${window.escapeHtml(report.remarks)}</span>
+                </div>
+              ` : `
+                <div class="followup-card-remarks-snippet empty">No remarks recorded yet.</div>
+              `}
+            </div>
+
+            <div class="followup-card-quick-actions">
+              ${safeLink ? `
+                <a href="${safeLink}" target="_blank" rel="noopener noreferrer" class="btn btn-outline btn-xs followup-quick-link-btn" title="Open Teams Conversation">
+                  <svg class="icon icon-xs" viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+                  <span>Teams</span>
+                </a>
+              ` : ""}
+
+              ${isResolved ? `
+                <button type="button" class="btn btn-outline btn-xs followup-quick-reopen-btn" title="Reopen this report">
+                  <svg class="icon icon-xs" viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>
+                  <span>Reopen</span>
+                </button>
+              ` : `
+                <button type="button" class="btn btn-outline btn-xs followup-quick-resolve-btn" title="Mark this report as Resolved">
+                  <svg class="icon icon-xs" viewBox="0 0 24 24" style="color:#34d399;"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                  <span>Mark Done</span>
+                </button>
+              `}
+
+              <button type="button" class="btn btn-danger-ghost btn-xs followup-delete-btn" title="Delete follow-up report">
+                <svg class="icon icon-xs" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                <span>Delete</span>
+              </button>
+
+              <button type="button" class="btn btn-ghost btn-xs followup-toggle-drawer-btn" title="${isExpanded ? "Collapse editing drawer" : "Expand editing drawer"}">
+                <span>${isExpanded ? "Close" : "Edit"}</span>
+                <svg class="icon icon-xs" viewBox="0 0 24 24" style="transform:${isExpanded ? "rotate(180deg)" : "none"}; transition:transform 0.15s ease;"><polyline points="6 9 12 15 18 9"></polyline></svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="followup-card-drawer" ${isExpanded ? "" : "hidden"}>
+            <div class="followup-drawer-divider"></div>
+            <div class="followup-card-fields-row">
+              <div class="form-group" style="margin:0;">
+                <label class="form-label" style="font-size:10px;">Date</label>
+                <input type="date" class="form-control form-control-sm followup-edit-date" value="${window.escapeHtml(report.date || "")}">
+              </div>
+              <div class="form-group" style="margin:0;">
+                <label class="form-label" style="font-size:10px;">OM / Group Chat</label>
+                <input type="text" list="followupOmOptions" class="form-control form-control-sm followup-edit-om" value="${window.escapeHtml(report.om || "")}">
+              </div>
+              <div class="form-group" style="margin:0;">
+                <label class="form-label" style="font-size:10px;">TL / Report Label</label>
+                <input type="text" class="form-control form-control-sm followup-edit-label" value="${window.escapeHtml(report.label || "")}" placeholder="Optional label">
+              </div>
+              <div class="form-group" style="margin:0;">
+                <label class="form-label" style="font-size:10px;">Teams Link</label>
+                <div class="followup-link-row">
+                  <input type="url" class="form-control form-control-sm followup-edit-link" value="${window.escapeHtml(report.cctvLink || "")}" placeholder="Paste URL">
+                  <button type="button" class="btn btn-outline btn-sm followup-open-link-btn" ${safeLink ? "" : "disabled"} style="padding:2px 8px; font-size:10px;">Open</button>
+                </div>
+              </div>
+              <div class="form-group" style="margin:0;">
+                <label class="form-label" style="font-size:10px;">Status</label>
+                <select class="form-control form-control-sm followup-edit-status">
+                  ${followup.STATUSES.map(st => `<option value="${st}" ${st === report.status ? "selected" : ""}>${st}</option>`).join("")}
+                </select>
+              </div>
+            </div>
+
+            <div class="form-group" style="margin:6px 0 0 0;">
+              <label class="form-label" style="font-size:10px;">Remarks / TL Reply</label>
+              <textarea class="form-control form-control-sm followup-edit-remarks" rows="2" placeholder="Record TL reply and OM verification notes...">${window.escapeHtml(report.remarks || "")}</textarea>
+            </div>
+
+            <div class="followup-drawer-footer">
+              <div class="followup-drawer-meta">
+                <span>ID: <code style="font-size:9.5px; opacity:0.8;">${window.escapeHtml(report.id)}</code></span>
+                ${report.createdAt ? `<span> - Created: ${new Date(report.createdAt).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>` : ""}
+              </div>
+              <div style="display:flex; align-items:center; gap:6px;">
+                <button type="button" class="btn btn-outline btn-xs followup-replace-btn">Replace Screenshot</button>
+              </div>
+            </div>
+          </div>
+        </article>
+      `;
+    }).join("");
+
+    // Bind event handlers for cards
+    listEl.querySelectorAll(".followup-report-card").forEach(card => {
+      const cardId = card.dataset.id;
+      const report = followupReportsList.find(r => r.id === cardId);
+      if (!report) return;
+
+      // Selection on card click (unless clicking inside an interactive element)
+      card.addEventListener("click", (e) => {
+        if (e.target.closest("button, a, input, textarea, select, label")) return;
+        followupSelectedId = (followupSelectedId === report.id) ? "" : report.id;
+        listEl.querySelectorAll(".followup-report-card").forEach(c => {
+          c.classList.toggle("is-selected", c.dataset.id === followupSelectedId);
+        });
+      });
+
+      // Quick resolve button
+      card.querySelector(".followup-quick-resolve-btn")?.addEventListener("click", async (e) => {
+        e.stopPropagation();
+        report.status = "Resolved";
+        await followup.saveReports(followupReportsList);
+        renderFollowupList();
+        showToast("Report marked as Resolved.", "success");
+      });
+
+      // Quick reopen button
+      card.querySelector(".followup-quick-reopen-btn")?.addEventListener("click", async (e) => {
+        e.stopPropagation();
+        report.status = "Waiting for TL";
+        await followup.saveReports(followupReportsList);
+        renderFollowupList();
+        showToast("Follow Up report reopened.", "info");
+      });
+
+      // Toggle drawer button
+      card.querySelector(".followup-toggle-drawer-btn")?.addEventListener("click", (e) => {
+        e.stopPropagation();
+        if (followupExpandedIds.has(report.id)) {
+          followupExpandedIds.delete(report.id);
+        } else {
+          followupExpandedIds.add(report.id);
+        }
+        renderFollowupList();
+      });
+
+      // Screenshot preview click
+      card.querySelector(".followup-thumb-btn")?.addEventListener("click", (e) => {
+        e.stopPropagation();
+        if (report.screenshotData) {
+          openFullScreenshotViewer(report.screenshotData, `Evidence - ${report.label || report.om || "Follow Up"}`);
+        }
+      });
+
+      // Field binds
+      const bindField = (sel, key, evtName = "change") => {
+        const inputEl = card.querySelector(sel);
+        if (!inputEl) return;
+        inputEl.addEventListener(evtName, () => {
+          report[key] = inputEl.value;
+          if (key === "status" || key === "om" || key === "label" || key === "date") {
+            renderFollowupList();
+          }
+          scheduleFollowupSave();
+        });
+      };
+
+      bindField(".followup-edit-date", "date");
+      bindField(".followup-edit-om", "om");
+      bindField(".followup-edit-label", "label");
+      bindField(".followup-edit-status", "status");
+      bindField(".followup-edit-remarks", "remarks", "input");
+
+      const linkInput = card.querySelector(".followup-edit-link");
+      const openBtn = card.querySelector(".followup-open-link-btn");
+      if (linkInput && openBtn) {
+        linkInput.addEventListener("input", () => {
+          report.cctvLink = linkInput.value;
+          openBtn.disabled = !followup.safeWebUrl(linkInput.value);
+          scheduleFollowupSave();
+        });
+        openBtn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const url = followup.safeWebUrl(report.cctvLink);
+          if (url) window.open(url, "_blank", "noopener,noreferrer");
+        });
+      }
+
+      // Replace screenshot
+      card.querySelector(".followup-replace-btn")?.addEventListener("click", (e) => {
+        e.stopPropagation();
+        followupReplaceTargetId = report.id;
+        el("followupReplaceInput")?.click();
+      });
+
+      // Delete
+      card.querySelector(".followup-delete-btn")?.addEventListener("click", async (e) => {
+        e.stopPropagation();
+        const ok = window.appConfirm
+          ? await window.appConfirm({
+              title: "Delete follow-up report?",
+              message: "This removes the screenshot, OM, date, status, and remarks from Follow Up Reports.",
+              confirmText: "Delete",
+              tone: "danger"
+            })
+          : window.confirm("Delete this follow-up report?");
+        if (!ok) return;
+
+        followupReportsList = followupReportsList.filter(r => r.id !== report.id);
+        followupExpandedIds.delete(report.id);
+        if (followupSelectedId === report.id) followupSelectedId = "";
+        await followup.saveReports(followupReportsList);
+        renderFollowupList();
+        if (window.historyService?.captureIfChanged) {
+          await window.historyService.captureIfChanged("followup", `Deleted Follow Up report: ${report.label || "report"}`);
+        }
+        showToast("Follow-up report deleted.", "info");
+      });
+    });
+  }
+
+  async function loadFollowupReportsInitial() {
+    try {
+      followupReportsList = await followup.loadReports();
+      const params = new URLSearchParams(window.location.search);
+      if (params.has("demo") && !followupReportsList.length) {
+        const samplePng = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAA7SURBVHhe7c4BDQAACAMw9E/tUwwmFvw+yZptWc3MzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMxfmA0G6kFf2u/6fAAAAABJRU5ErkJggg==";
+        followupReportsList = [
+          followup.createReport({
+            date: "2026-09-10",
+            om: "CCTV OM MIRAH",
+            label: "TL Sarah Connor (Shopee Team)",
+            cctvLink: "https://teams.microsoft.com/l/message/19%3Ashopee%40thread.v2/0",
+            status: "Waiting for TL",
+            remarks: "Observed sleeping at workstation. Awaiting supervisor coaching form.",
+            screenshotData: samplePng
+          }),
+          followup.createReport({
+            date: "2026-09-10",
+            om: "CCTV OM RENATO",
+            label: "TL Christian Arcilla (AFP)",
+            cctvLink: "https://teams.microsoft.com/l/message/19%3Aafp%40thread.v2/1",
+            status: "TL Disputed",
+            remarks: "TL claims device was 2FA token. Escalated for CCTV footage verification.",
+            screenshotData: samplePng
+          }),
+          followup.createReport({
+            date: "2026-09-09",
+            om: "CCTV OM CRYSTAL",
+            label: "TL Dante Tahuran (TEMU)",
+            cctvLink: "https://teams.microsoft.com/l/message/19%3Atemu%40thread.v2/2",
+            status: "Resolved",
+            remarks: "Coaching session completed and notice of coaching signed.",
+            screenshotData: samplePng
+          })
+        ];
+        await followup.saveReports(followupReportsList);
+      }
+      renderFollowupList();
+      window.CCTV_DASHBOARD?.syncLocalWorkspaces?.();
+    } catch (err) {
+      console.error("Initial load follow-up reports error:", err);
+      followupReportsList = [];
+      renderFollowupList();
+    }
+  }
+
+  function renderFollowupWorkspace() {
+    if (!followupReportsList.length) {
+      loadFollowupReportsInitial();
+    } else {
+      renderFollowupList();
+      updateFollowupSummary();
+    }
+  }
+
+  function initFollowupController() {
+    if (el("followupDate")) el("followupDate").value = followup.todayLocal();
+    clearFollowupAddForm();
+    loadFollowupReportsInitial();
+
+    el("tabFollowup")?.addEventListener("click", refreshFollowupOmOptions);
+
+    // Toggle New Follow Up form card
+    const addCard = el("followupAddCard");
+    const toggleBtn = el("btnToggleFollowupAdd");
+    const toggleText = el("btnToggleFollowupAddText");
+    if (toggleBtn && addCard) {
+      toggleBtn.addEventListener("click", () => {
+        const isHidden = addCard.style.display === "none";
+        addCard.style.display = isHidden ? "block" : "none";
+        toggleBtn.classList.toggle("active", isHidden);
+        if (toggleText) toggleText.textContent = isHidden ? "Close Form" : "New Report";
+      });
+    }
+
+    // Refresh button
+    el("btnFollowupRefresh")?.addEventListener("click", async () => {
+      await loadFollowupReportsInitial();
+      showToast("Follow Up reports refreshed.", "info");
+    });
+
+    // Filter tabs
+    const filterBtns = [
+      { id: "btnFilterFollowupAll", filter: "all" },
+      { id: "btnFilterFollowupOpen", filter: "open" },
+      { id: "btnFilterFollowupResolved", filter: "resolved" }
+    ];
+    filterBtns.forEach(({ id, filter }) => {
+      el(id)?.addEventListener("click", () => {
+        followupFilter = filter;
+        filterBtns.forEach(b => el(b.id)?.classList.toggle("active", b.filter === filter));
+        renderFollowupList();
+      });
+    });
+
+    // Search input
+    el("followupSearchInput")?.addEventListener("input", (e) => {
+      followupSearchQuery = (e.target.value || "").trim().toLowerCase();
+      renderFollowupList();
+    });
+
+    el("followupChooseShotBtn")?.addEventListener("click", () => el("followupAddShotInput")?.click());
+    el("followupReplaceAddShotBtn")?.addEventListener("click", () => el("followupAddShotInput")?.click());
+    el("followupRemoveAddShotBtn")?.addEventListener("click", () => {
+      setFollowupAddScreenshot("");
+      showFollowupMessage("Screenshot removed from new follow-up form.");
+    });
+    el("followupClearBtn")?.addEventListener("click", clearFollowupAddForm);
+
+    el("followupAddShotInput")?.addEventListener("change", async e => {
+      const file = e.target.files?.[0];
+      e.target.value = "";
+      if (!file) return;
+      try {
+        showFollowupMessage("Processing screenshot...");
+        const compressed = await followup.compressImage(file);
+        setFollowupAddScreenshot(compressed);
+        showFollowupMessage("Screenshot ready.", "success");
+      } catch (err) {
+        showFollowupMessage(err.message || "Could not read image.", "error");
+      }
+    });
+
+    // Drag & drop
+    const dropZone = el("followupAddShotZone");
+    ["dragenter", "dragover"].forEach(evType => dropZone?.addEventListener(evType, ev => {
+      ev.preventDefault();
+      dropZone.classList.add("dragover");
+    }));
+    ["dragleave", "drop"].forEach(evType => dropZone?.addEventListener(evType, ev => {
+      ev.preventDefault();
+      dropZone.classList.remove("dragover");
+    }));
+    dropZone?.addEventListener("drop", async ev => {
+      const file = [...(ev.dataTransfer?.files || [])].find(f => String(f.type || "").startsWith("image/"));
+      if (!file) return;
+      try {
+        showFollowupMessage("Processing screenshot...");
+        const compressed = await followup.compressImage(file);
+        setFollowupAddScreenshot(compressed);
+        showFollowupMessage("Screenshot ready.", "success");
+      } catch (err) {
+        showFollowupMessage(err.message || "Could not read image.", "error");
+      }
+    });
+
+    // Central Paste Router registration for Follow Up workspace
+    if (window.CCTV_PASTE_ROUTER) {
+      window.CCTV_PASTE_ROUTER.register("followup", async (files) => {
+        if (!files || !files.length) return;
+        const file = files[0];
+        try {
+          showFollowupMessage("Processing pasted screenshot...");
+          const compressed = await followup.compressImage(file);
+          setFollowupAddScreenshot(compressed);
+          showFollowupMessage("Screenshot ready.", "success");
+          showToast("Screenshot pasted into Follow Up form.", "info");
+        } catch (err) {
+          showFollowupMessage(err.message || "Could not read image.", "error");
+        }
+      });
+    }
+
+    // Initialize & persist Keep OM & Date preference for Follow Up
+    const chkFollowupKeepShared = el("chkFollowupKeepShared");
+    if (chkFollowupKeepShared) {
+      try {
+        const saved = localStorage.getItem("cctv_followup_keep_shared");
+        if (saved !== null) {
+          chkFollowupKeepShared.checked = saved === "true";
+        }
+      } catch (_) {}
+      chkFollowupKeepShared.addEventListener("change", () => {
+        try {
+          localStorage.setItem("cctv_followup_keep_shared", String(chkFollowupKeepShared.checked));
+        } catch (_) {}
+      });
+    }
+
+    // Add button
+    let isAddingFollowup = false;
+    el("followupAddBtn")?.addEventListener("click", async () => {
+      if (isAddingFollowup) return;
+      isAddingFollowup = true;
+      const addBtn = el("followupAddBtn");
+      if (addBtn) addBtn.disabled = true;
+      try {
+        const om = String(el("followupOm")?.value || "").trim();
+        const date = el("followupDate")?.value || followup.todayLocal();
+        if (!followupAddScreenshotData) {
+          showFollowupMessage("Add the TL conversation screenshot first.", "error");
+          showToast("Add the TL conversation screenshot first.", "error");
+          return;
+        }
+        if (!om) {
+          showFollowupMessage("Select or type the OM / group chat.", "error");
+          showToast("Select or type the OM / group chat.", "error");
+          el("followupOm")?.focus();
+          return;
+        }
+
+        const newReport = followup.createReport({
+          date,
+          om,
+          label: el("followupLabel")?.value,
+          cctvLink: el("followupCctvLink")?.value,
+          status: el("followupStatus")?.value || "Waiting for TL",
+          remarks: el("followupRemarks")?.value,
+          screenshotData: followupAddScreenshotData
+        });
+
+        followupReportsList.unshift(newReport);
+        try {
+          await followup.saveReports(followupReportsList);
+          const keepShared = !!el("chkFollowupKeepShared")?.checked;
+          const preservedOm = keepShared ? om : "";
+          const preservedDate = keepShared ? date : "";
+
+          clearFollowupAddForm();
+
+          if (keepShared) {
+            if (preservedOm && el("followupOm")) el("followupOm").value = preservedOm;
+            if (preservedDate && el("followupDate")) el("followupDate").value = preservedDate;
+            setTimeout(() => {
+              el("followupLabel")?.focus();
+            }, 50);
+            showFollowupMessage("Follow-up report saved. OM and Date kept for next report.", "success");
+            showToast("Follow-up report saved. OM & Date preserved.", "success");
+          } else {
+            showFollowupMessage("Follow-up report saved.", "success");
+            showToast("Follow-up report saved.", "success");
+          }
+          renderFollowupList();
+        } catch (err) {
+          showFollowupMessage("Could not save report.", "error");
+          showToast("Could not save follow-up report.", "error");
+        }
+      } finally {
+        isAddingFollowup = false;
+        if (addBtn) addBtn.disabled = false;
+      }
+    });
+
+    // Replace input
+    el("followupReplaceInput")?.addEventListener("change", async ev => {
+      const file = ev.target.files?.[0];
+      const report = followupReportsList.find(r => r.id === followupReplaceTargetId);
+      ev.target.value = "";
+      if (!file || !report) return;
+      try {
+        report.screenshotData = await followup.compressImage(file);
+        await followup.saveReports(followupReportsList);
+        renderFollowupList();
+        showToast("Screenshot replaced.", "success");
+      } catch (err) {
+        showToast(err.message || "Could not replace screenshot.", "error");
+      } finally {
+        followupReplaceTargetId = "";
+      }
+    });
+
+    followup.onChange(updatedReports => {
+      followupReportsList = Array.isArray(updatedReports) ? updatedReports : [];
+      renderFollowupList();
+    });
+
+    window.setFollowupAddScreenshot = setFollowupAddScreenshot;
+    window.clearFollowupAddForm = clearFollowupAddForm;
+    window.renderFollowupList = renderFollowupList;
+    window.loadFollowupReportsInitial = loadFollowupReportsInitial;
+    window.getFollowupReports = () => followupReportsList.slice();
+  }
+
+  // =========================================================================
+  // MASTERLIST WORKSPACE CONTROLLER
+  // =========================================================================
+  window.appConfirm = window.appConfirm || function({ title, message, confirmText, tone }) {
+    return new Promise(resolve => {
+      const modal = el("modalAppConfirm");
+      if (!modal) {
+        resolve(window.confirm(`${title || 'Confirm'}\n\n${message || ''}`));
+        return;
+      }
+      const titleEl = el("confirmDialogTitle");
+      const msgEl = el("confirmDialogMessage");
+      const acceptBtn = el("btnConfirmDialogAccept");
+      if (titleEl) titleEl.textContent = title || "Confirm Action";
+      if (msgEl) msgEl.textContent = message || "Are you sure you want to proceed?";
+      if (acceptBtn) {
+        acceptBtn.textContent = confirmText || "Confirm";
+        acceptBtn.className = tone === "danger" ? "btn btn-danger btn-sm" : "btn btn-primary btn-sm";
+      }
+      modal.hidden = false;
+      window.handleConfirmDialog = function(accepted) {
+        modal.hidden = true;
+        resolve(!!accepted);
+      };
+    });
+  };
+
+  // =========================================================================
+  // =========================================================================
+  // WORKSPACE 1: CCTV Report Composer
+  // =========================================================================
+  let cctvReportDraft = null;
+
+  function renderCctvReportWorkspace() {
+    if (!window.CCTV_REPORT_SERVICE) return;
+    if (!cctvReportDraft) {
+      cctvReportDraft = window.CCTV_REPORT_SERVICE.getDraft();
+    }
+    syncCctvReportFormFromDraft();
+    renderCctvReportScreenshots();
+    updateCctvReportPreview();
+  }
+
+  let cctvReportLastGeneratedText = "";
+
+  let cctvReportAutosaveTimer = null;
+
+  function setReportAutosaveState(state) {
+    const pill = el("reportAutosavePill");
+    if (!pill) return;
+    if (state === "saving") {
+      pill.textContent = "\u23F3 Saving...";
+      pill.classList.add("saving");
+    } else if (state === "saved") {
+      clearTimeout(cctvReportAutosaveTimer);
+      cctvReportAutosaveTimer = setTimeout(() => {
+        pill.innerHTML = "&#x25cf; Saved locally";
+        pill.classList.remove("saving");
+      }, 250);
+    } else if (state === "error") {
+      pill.textContent = "\u26A0 Save error";
+      pill.classList.remove("saving");
+    }
+  }
+
+  function updateReportObservationStats() {
+    const obs = el("reportObservation")?.value || "";
+    const chars = obs.length;
+    const words = obs.trim() ? obs.trim().split(/\s+/).filter(Boolean).length : 0;
+    const countBadge = el("reportObsCountBadge");
+    if (countBadge) {
+      countBadge.innerHTML = `${chars} chars &bull; ${words} word${words === 1 ? '' : 's'}`;
+    }
+    const expStats = el("expandedReportStats");
+    if (expStats) {
+      const shotCount = Array.isArray(cctvReportDraft?.screenshots) ? cctvReportDraft.screenshots.length : 0;
+      expStats.innerHTML = `${chars} chars &bull; ${words} word${words === 1 ? '' : 's'} &bull; ${shotCount} screenshot${shotCount === 1 ? '' : 's'}`;
+    }
+  }
+
+  function syncCctvReportFormFromDraft() {
+    if (!cctvReportDraft) return;
+    if (el("quickComposeText")) el("quickComposeText").value = cctvReportDraft.rawInput || "";
+    if (el("reportGreeting")) el("reportGreeting").value = cctvReportDraft.greeting || "Good morning TLs,";
+    if (el("reportPersonInvolved")) el("reportPersonInvolved").value = cctvReportDraft.personInvolved || "";
+    if (el("reportObservation")) el("reportObservation").value = cctvReportDraft.observation || "";
+    if (el("reportSite")) el("reportSite").value = cctvReportDraft.site || "";
+    if (el("reportDateRange")) el("reportDateRange").value = cctvReportDraft.dateRange || "";
+    if (el("reportClipUrl")) el("reportClipUrl").value = cctvReportDraft.clipUrl || "";
+    updateReportObservationStats();
+    setReportAutosaveState("saved");
+  }
+
+  function syncCctvReportDraftFromForm() {
+    if (!cctvReportDraft) cctvReportDraft = window.CCTV_REPORT_SERVICE.getDraft();
+    cctvReportDraft.rawInput = el("quickComposeText")?.value || "";
+    cctvReportDraft.greeting = el("reportGreeting")?.value || "Good morning TLs,";
+    cctvReportDraft.personInvolved = el("reportPersonInvolved")?.value || "";
+    cctvReportDraft.observation = el("reportObservation")?.value || "";
+    cctvReportDraft.site = el("reportSite")?.value || "";
+    cctvReportDraft.dateRange = el("reportDateRange")?.value || "";
+    cctvReportDraft.clipUrl = el("reportClipUrl")?.value || "";
+    
+    setReportAutosaveState("saving");
+    const ok = window.CCTV_REPORT_SERVICE.saveDraft(cctvReportDraft);
+    if (ok !== false) {
+      setReportAutosaveState("saved");
+    } else {
+      setReportAutosaveState("error");
+    }
+    updateReportObservationStats();
+  }
+
+  function renderCctvReportPolicyBanner() {
+    const banner = el("reportPolicyBanner");
+    const badge = el("reportPolicyBadge");
+    const title = el("reportPolicyTitle");
+    if (!banner || !badge || !title) return;
+
+    if (cctvReportDraft && cctvReportDraft.referencedPolicy) {
+      const pol = cctvReportDraft.referencedPolicy;
+      banner.style.display = "flex";
+      badge.textContent = `Internal Reference: Policy ${pol.num}`;
+      title.textContent = `${pol.title} (${pol.severity}) - Internal Context Only (Not in final report)`;
+    } else {
+      banner.style.display = "none";
+    }
+  }
+
+  function updateCctvReportPreview() {
+    const box = el("teamsMessageBox");
+    if (!box || !cctvReportDraft) return;
+
+    const esc = (val) => String(val == null ? "" : val)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;");
+
+    const htmlParts = [];
+    const greeting = (cctvReportDraft.greeting || "Good morning TLs,").trim();
+    const observation = (cctvReportDraft.observation || "").trim();
+    const person = (cctvReportDraft.personInvolved || "").trim();
+    const site = (cctvReportDraft.site || "").trim();
+    const dateRange = (cctvReportDraft.dateRange || "").trim();
+
+    // Check if observation already starts with greeting
+    const startsWithGreeting = /^\s*good\s+(?:morning|afternoon|evening)/i.test(observation);
+    if (!startsWithGreeting && greeting) {
+      htmlParts.push(`<div class="teams-preview-greeting" style="margin-bottom: 6px;">${esc(greeting)}</div>`);
+    }
+
+    if (observation) {
+      const formattedBody = esc(observation).replace(/\r?\n/g, "<br>");
+      htmlParts.push(`<div class="teams-preview-body" style="margin: 6px 0;">${formattedBody}</div>`);
+    }
+
+    const hasLocationInObs = /\bLocation\s*:/i.test(observation);
+    const hasDateInObs = /\bDate\s*:/i.test(observation);
+
+    const metaItems = [];
+    if (person && !observation.includes(person)) {
+      metaItems.push(`<div class="teams-preview-meta-line"><strong>Person/Agent Involved:</strong> ${esc(person)}</div>`);
+    }
+    if (site && !hasLocationInObs) {
+      metaItems.push(`<div class="teams-preview-meta-line"><strong>Location:</strong> ${esc(site)}</div>`);
+    }
+    if (dateRange && !hasDateInObs) {
+      metaItems.push(`<div class="teams-preview-meta-line"><strong>Date:</strong> ${esc(dateRange)}</div>`);
+    }
+    if (metaItems.length) {
+      htmlParts.push(`<div class="teams-preview-meta" style="margin: 6px 0;">${metaItems.join("")}</div>`);
+    }
+
+    // Code of Conduct is kept strictly as internal supporting context.
+    // By authoritative policy, policy numbers/titles/penalties must NOT appear in CCTV reports.
+
+    if (Array.isArray(cctvReportDraft.screenshots) && cctvReportDraft.screenshots.length > 0) {
+      const shotsHtml = cctvReportDraft.screenshots.map((s, idx) => {
+        const src = typeof s === "string" ? s : (s.data || s.url || "");
+        if (!src || !/^(data:image\/|https?:\/\/)/i.test(String(src).trim())) return "";
+        return `
+          <div class="teams-preview-shot-wrapper" style="position:relative; display:inline-block; margin:2px;">
+            <span class="teams-preview-shot-badge">#${idx + 1}</span>
+            <img src="${esc(String(src).trim())}" class="teams-preview-shot-img" data-index="${idx}" alt="CCTV Screenshot ${idx + 1}" title="Click to inspect full resolution evidence" />
+          </div>`;
+      }).filter(Boolean).join("");
+      htmlParts.push(`<div class="teams-preview-shots" style="margin: 6px 0;">${shotsHtml}</div>`);
+    }
+
+    const clips = window.CCTV_REPORT_SERVICE?.parseClipUrls
+      ? window.CCTV_REPORT_SERVICE.parseClipUrls(cctvReportDraft.clipUrl)
+      : (cctvReportDraft.clipUrl || "")
+          .split(/[\r\n,]+/)
+          .map(u => u.trim())
+          .map(u => (typeof window.safeUrl === "function" ? window.safeUrl(u) : (/^https?:\/\//i.test(u) ? u : "")))
+          .filter(Boolean);
+
+    if (clips.length === 1) {
+      htmlParts.push(`<div class="teams-preview-clip" style="margin-top: 6px;"><strong>CCTV Clip:</strong> <a href="${esc(clips[0])}" target="_blank" rel="noopener noreferrer" style="color:#6366f1; text-decoration:underline; font-weight:600;">Click here!</a></div>`);
+    } else if (clips.length > 1) {
+      clips.forEach((c, idx) => {
+        htmlParts.push(`<div class="teams-preview-clip" style="margin-top: 4px;"><strong>CCTV Clip ${idx + 1}:</strong> <a href="${esc(c)}" target="_blank" rel="noopener noreferrer" style="color:#6366f1; text-decoration:underline; font-weight:600;">Click here!</a></div>`);
+      });
+    }
+
+    box.innerHTML = htmlParts.join("");
+
+    // Wire preview thumbnail click to open full-resolution screenshot viewer
+    box.querySelectorAll(".teams-preview-shot-img").forEach((img) => {
+      img.addEventListener("click", () => {
+        const idx = parseInt(img.dataset.index, 10) || 0;
+        if (window.openScreenshotViewer) {
+          window.openScreenshotViewer(cctvReportDraft.screenshots, "CCTV Report Evidence", "Full Resolution Screenshot", idx);
+        }
+      });
+    });
+
+    // Sync Plain Text view box
+    const plainBox = el("plainTextMessageText");
+    if (plainBox && window.CCTV_REPORT_SERVICE?.buildReportPlainText) {
+      plainBox.textContent = window.CCTV_REPORT_SERVICE.buildReportPlainText(cctvReportDraft);
+    }
+
+    updateReportObservationStats();
+  }
+
+  async function persistCctvReportScreenshots() {
+    if (!cctvReportDraft) return;
+    try {
+      if (typeof window.CCTV_REPORT_SERVICE?.saveDraftScreenshots === "function") {
+        await window.CCTV_REPORT_SERVICE.saveDraftScreenshots(cctvReportDraft.screenshots);
+      }
+      if (typeof window.CCTV_REPORT_SERVICE?.saveDraft === "function") {
+        window.CCTV_REPORT_SERVICE.saveDraft(cctvReportDraft);
+      }
+    } catch (err) {
+      console.warn("Could not persist CCTV Report screenshot changes:", err);
+    }
+  }
+  function renderCctvReportScreenshots() {
+    const gallery = el("reportShotGallery");
+    const countEl = el("reportShotCount");
+    if (!gallery) return;
+    if (!cctvReportDraft && window.CCTV_REPORT_SERVICE) {
+      cctvReportDraft = window.CCTV_REPORT_SERVICE.getDraft();
+    }
+    if (!cctvReportDraft) return;
+
+    const count = Array.isArray(cctvReportDraft.screenshots) ? cctvReportDraft.screenshots.length : 0;
+    if (countEl) countEl.textContent = String(count);
+
+    if (!count) {
+      gallery.innerHTML = "";
+      return;
+    }
+
+    gallery.innerHTML = cctvReportDraft.screenshots.map((shot, idx) => {
+      const src = typeof shot === "string" ? shot : (shot.data || shot.url || "");
+      const isFirst = idx === 0;
+      const isLast = idx === count - 1;
+
+      // Position options
+      let posOptions = "";
+      for (let p = 0; p < count; p++) {
+        posOptions += `<option value="${p}" ${p === idx ? 'selected' : ''}>#${p + 1}</option>`;
+      }
+
+      return `
+        <div class="report-shot-item" data-index="${idx}" draggable="true" title="Drag to reorder or click to preview">
+          <span class="report-shot-badge">#${idx + 1}</span>
+          <button type="button" class="report-shot-remove" data-index="${idx}" title="Remove screenshot">&times;</button>
+          <img src="${src}" alt="Screenshot ${idx + 1}" draggable="false">
+          <div class="report-shot-actions" onclick="event.stopPropagation();">
+            <div style="display:flex; align-items:center; gap:3px;">
+              <span style="font-size:10px; color:var(--text-muted); font-weight:600;">Pos:</span>
+              <select class="report-shot-pos-select" data-index="${idx}" title="Move directly to position">
+                ${posOptions}
+              </select>
+            </div>
+            <div style="display:flex; align-items:center; gap:2px;">
+              <button type="button" class="report-shot-move-btn btn-move-left" data-index="${idx}" ${isFirst ? 'disabled' : ''} title="Move left">&#9664;</button>
+              <button type="button" class="report-shot-move-btn btn-move-right" data-index="${idx}" ${isLast ? 'disabled' : ''} title="Move right">&#9654;</button>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join("");
+
+    let dragSrcIdx = null;
+
+    // Gallery-level dropzone for dragging to the end
+    gallery.ondragover = (e) => {
+      if (dragSrcIdx === null) return;
+      if (!e.target.closest(".report-shot-item")) {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = "move";
+      }
+    };
+
+    gallery.ondrop = async (e) => {
+      if (dragSrcIdx === null) return;
+      if (!e.target.closest(".report-shot-item")) {
+        e.preventDefault();
+        if (dragSrcIdx < cctvReportDraft.screenshots.length - 1) {
+          const [moved] = cctvReportDraft.screenshots.splice(dragSrcIdx, 1);
+          cctvReportDraft.screenshots.push(moved);
+          try {
+            await persistCctvReportScreenshots();
+            renderCctvReportScreenshots();
+            updateCctvReportPreview();
+            if (window.historyService?.captureIfChanged) {
+              window.historyService.captureIfChanged("report", "Moved screenshot to last position");
+            }
+            showToast(`Screenshot moved to last position (${cctvReportDraft.screenshots.length}).`, "info");
+          } catch (_) {
+            showToast("Failed to save screenshot order.", "error");
+          }
+        }
+        dragSrcIdx = null;
+      }
+    };
+
+    gallery.querySelectorAll(".report-shot-item").forEach(item => {
+      const idx = parseInt(item.dataset.index, 10);
+      const shot = cctvReportDraft.screenshots[idx];
+      const src = typeof shot === "string" ? shot : (shot.data || shot.url || "");
+
+      // Click thumbnail to view full image in viewer with all screenshots
+      item.addEventListener("click", (e) => {
+        if (e.target.closest("button") || e.target.closest(".report-shot-actions") || e.target.closest("select")) return;
+        if (window.openScreenshotViewer) {
+          window.openScreenshotViewer(cctvReportDraft.screenshots, "CCTV Report Evidence", "Full Resolution Screenshot", idx);
+        }
+      });
+
+      // Direct Position Selector Change
+      item.querySelector(".report-shot-pos-select")?.addEventListener("change", async (e) => {
+        e.stopPropagation();
+        const targetIdx = parseInt(e.target.value, 10);
+        if (!isNaN(targetIdx) && targetIdx !== idx) {
+          try {
+            const [moved] = cctvReportDraft.screenshots.splice(idx, 1);
+            cctvReportDraft.screenshots.splice(targetIdx, 0, moved);
+            await persistCctvReportScreenshots();
+            renderCctvReportScreenshots();
+            updateCctvReportPreview();
+            if (window.historyService?.captureIfChanged) {
+              window.historyService.captureIfChanged("report", `Moved screenshot to position #${targetIdx + 1}`);
+            }
+            showToast(`Screenshot moved to position #${targetIdx + 1}.`, "info");
+          } catch (err) {
+            showToast("Failed to save screenshot order.", "error");
+          }
+        }
+      });
+
+      // Drag and Drop reordering with true insertion
+      item.addEventListener("dragstart", (e) => {
+        dragSrcIdx = idx;
+        item.classList.add("dragging");
+        e.dataTransfer.effectAllowed = "move";
+        e.dataTransfer.setData("application/x-cctv-report-shot", String(idx));
+      });
+
+      item.addEventListener("dragover", (e) => {
+        if (dragSrcIdx === null) return;
+        e.preventDefault();
+        e.dataTransfer.dropEffect = "move";
+
+        const rect = item.getBoundingClientRect();
+        const relX = e.clientX - rect.left;
+        const isAfter = relX > (rect.width / 2);
+
+        item.classList.remove("drop-before", "drop-after");
+        if (isAfter) {
+          item.classList.add("drop-after");
+        } else {
+          item.classList.add("drop-before");
+        }
+      });
+
+      item.addEventListener("dragleave", () => {
+        item.classList.remove("drop-before", "drop-after");
+      });
+
+      item.addEventListener("dragend", () => {
+        item.classList.remove("dragging");
+        gallery.querySelectorAll(".report-shot-item").forEach(i => i.classList.remove("drop-before", "drop-after", "dragging"));
+        dragSrcIdx = null;
+      });
+
+      item.addEventListener("drop", async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const rect = item.getBoundingClientRect();
+        const relX = e.clientX - rect.left;
+        const isAfter = relX > (rect.width / 2);
+        item.classList.remove("drop-before", "drop-after");
+
+        const targetIdx = parseInt(item.dataset.index, 10);
+        if (dragSrcIdx !== null && !isNaN(dragSrcIdx) && !isNaN(targetIdx)) {
+          let targetInsert = isAfter ? targetIdx + 1 : targetIdx;
+          if (dragSrcIdx !== targetInsert && !(dragSrcIdx === targetInsert - 1 && isAfter)) {
+            try {
+              const [moved] = cctvReportDraft.screenshots.splice(dragSrcIdx, 1);
+              if (dragSrcIdx < targetInsert) {
+                targetInsert--;
+              }
+              cctvReportDraft.screenshots.splice(targetInsert, 0, moved);
+              await persistCctvReportScreenshots();
+              renderCctvReportScreenshots();
+              updateCctvReportPreview();
+              if (window.historyService?.captureIfChanged) {
+                window.historyService.captureIfChanged("report", "Reordered screenshots in report");
+              }
+              showToast(`Screenshot inserted at position #${targetInsert + 1}.`, "info");
+            } catch (err) {
+              showToast("Failed to save screenshot order.", "error");
+            }
+          }
+        }
+        dragSrcIdx = null;
+      });
+
+      // Move Left
+      item.querySelector(".btn-move-left")?.addEventListener("click", async (e) => {
+        e.stopPropagation();
+        if (idx > 0) {
+          try {
+            const [moved] = cctvReportDraft.screenshots.splice(idx, 1);
+            cctvReportDraft.screenshots.splice(idx - 1, 0, moved);
+            await persistCctvReportScreenshots();
+            renderCctvReportScreenshots();
+            updateCctvReportPreview();
+            if (window.historyService?.captureIfChanged) {
+              window.historyService.captureIfChanged("report", "Moved screenshot left");
+            }
+            showToast(`Screenshot moved to position #${idx}.`, "info");
+          } catch (err) {
+            showToast("Failed to save screenshot order.", "error");
+          }
+        }
+      });
+
+      // Move Right
+      item.querySelector(".btn-move-right")?.addEventListener("click", async (e) => {
+        e.stopPropagation();
+        if (idx < cctvReportDraft.screenshots.length - 1) {
+          try {
+            const [moved] = cctvReportDraft.screenshots.splice(idx, 1);
+            cctvReportDraft.screenshots.splice(idx + 1, 0, moved);
+            await persistCctvReportScreenshots();
+            renderCctvReportScreenshots();
+            updateCctvReportPreview();
+            if (window.historyService?.captureIfChanged) {
+              window.historyService.captureIfChanged("report", "Moved screenshot right");
+            }
+            showToast(`Screenshot moved to position #${idx + 2}.`, "info");
+          } catch (err) {
+            showToast("Failed to save screenshot order.", "error");
+          }
+        }
+      });
+
+      // Remove button
+      item.querySelector(".report-shot-remove")?.addEventListener("click", async (e) => {
+        e.stopPropagation();
+        try {
+          cctvReportDraft.screenshots.splice(idx, 1);
+          await persistCctvReportScreenshots();
+          renderCctvReportScreenshots();
+          updateCctvReportPreview();
+          if (window.historyService?.captureIfChanged) {
+            window.historyService.captureIfChanged("report", "Removed screenshot from report");
+          }
+          showToast("Screenshot removed.", "info");
+        } catch (err) {
+          showToast("Failed to update screenshots.", "error");
+        }
+      });
+    });
+  }
+
+  async function prepareReportScreenshot(file) {
+    if (!file) return null;
+
+    const originalDataUrl = await new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = (evt) => resolve(evt.target?.result || null);
+      reader.onerror = () => resolve(null);
+      reader.readAsDataURL(file);
+    });
+
+    if (!originalDataUrl || typeof originalDataUrl !== "string") return null;
+
+    try {
+      await new Promise((resolve, reject) => {
+        const image = new Image();
+        image.onload = () => resolve(image);
+        image.onerror = reject;
+        image.src = originalDataUrl;
+      });
+
+      return originalDataUrl;
+    } catch (err) {
+      console.warn("Could not verify CCTV Report screenshot image:", err);
+      return null;
+    }
+  }
+
+  async function handleReportImageFiles(files) {
+    if (!files || !files.length) return;
+
+    if (!cctvReportDraft && window.CCTV_REPORT_SERVICE) {
+      cctvReportDraft = window.CCTV_REPORT_SERVICE.getDraft();
+    }
+
+    if (!cctvReportDraft) return;
+
+    if (!Array.isArray(cctvReportDraft.screenshots)) {
+      cctvReportDraft.screenshots = [];
+    }
+
+    const imageFiles = Array.from(files).filter(file => {
+      if (!file) return false;
+
+      const type = String(file.type || "").toLowerCase();
+
+      return !type || type.startsWith("image/");
+    });
+
+    if (!imageFiles.length) {
+      showToast(
+        "Clipboard does not contain a readable screenshot.",
+        "info"
+      );
+      return;
+    }
+
+    // Step 1: Read and validate images
+    const validDataUrls = [];
+    let failedCount = 0;
+
+    for (const file of imageFiles) {
+      try {
+        const dataUrl = await prepareReportScreenshot(file);
+
+        if (dataUrl && typeof dataUrl === "string") {
+          validDataUrls.push(dataUrl);
+        } else {
+          failedCount++;
+        }
+      } catch (err) {
+        failedCount++;
+        console.error(
+          "Could not process CCTV Report screenshot:",
+          err
+        );
+      }
+    }
+
+    if (!validDataUrls.length) {
+      showToast(
+        failedCount === 1
+          ? "Screenshot could not be processed."
+          : `${failedCount} screenshots could not be processed.`,
+        "error"
+      );
+      return;
+    }
+
+    // Capture previous state for clean rollback if persistence/render fails
+    const previousScreenshots = cctvReportDraft.screenshots.slice();
+    const addedCount = validDataUrls.length;
+
+    // Step 2: Add valid images to the in-memory screenshot array
+    cctvReportDraft.screenshots.push(...validDataUrls);
+    const expectedCount = cctvReportDraft.screenshots.length;
+
+    try {
+      // Step 3: Await IndexedDB persistence
+      if (
+        typeof window.CCTV_REPORT_SERVICE?.saveDraftScreenshots !== "function"
+      ) {
+        throw new Error(
+          "IndexedDB screenshot storage is unavailable."
+        );
+      }
+
+      await window.CCTV_REPORT_SERVICE.saveDraftScreenshots(
+        cctvReportDraft.screenshots
+      );
+
+      // Step 4: Verify the updated screenshot collection is persisted in IndexedDB
+      const persistedScreenshots =
+        await window.CCTV_REPORT_SERVICE.loadDraftScreenshots();
+
+      if (
+        !Array.isArray(persistedScreenshots) ||
+        persistedScreenshots.length !== expectedCount
+      ) {
+        throw new Error(
+          `Persisted count mismatch: expected ${expectedCount}, but IndexedDB contains ${persistedScreenshots?.length ?? 0}`
+        );
+      }
+
+      // Also update lightweight draft in localStorage (with screenshots: [])
+      if (typeof window.CCTV_REPORT_SERVICE?.saveDraft === "function") {
+        window.CCTV_REPORT_SERVICE.saveDraft(cctvReportDraft);
+      }
+
+      // Step 5: Render the gallery
+      renderCctvReportScreenshots();
+
+      // Step 6: Render/update Report Preview
+      updateCctvReportPreview();
+
+      // Step 7: Update screenshot count & verify rendered gallery elements
+      const countEl = el("reportShotCount");
+      if (countEl) {
+        countEl.textContent = String(expectedCount);
+      }
+
+      const galleryItems = document.querySelectorAll(
+        "#reportShotGallery .report-shot-item"
+      );
+      if (galleryItems.length !== expectedCount) {
+        throw new Error(
+          `Rendered gallery count mismatch: expected ${expectedCount}, but found ${galleryItems.length}`
+        );
+      }
+
+      if (window.historyService?.captureIfChanged) {
+        await window.historyService.captureIfChanged(
+          "report",
+          addedCount === 1
+            ? "Added screenshot to report"
+            : `Added ${addedCount} screenshots to report`
+        );
+      }
+
+      // Step 8: Only THEN show: "Screenshot added to report."
+      showToast(
+        addedCount === 1
+          ? "Screenshot added to report."
+          : `${addedCount} screenshots added to report.`,
+        "success"
+      );
+    } catch (error) {
+      console.error(
+        "Could not persist or render CCTV Report screenshots:",
+        error
+      );
+
+      // Rollback to previous screenshots, preserving previously saved screenshots
+      cctvReportDraft.screenshots = previousScreenshots.slice();
+      try {
+        await window.CCTV_REPORT_SERVICE.saveDraftScreenshots(
+          cctvReportDraft.screenshots
+        );
+      } catch (_) {}
+
+      renderCctvReportScreenshots();
+      updateCctvReportPreview();
+
+      showToast(
+        "Screenshot could not be saved locally. Please try again.",
+        "error"
+      );
+    }
+
+    if (failedCount > 0) {
+      showToast(
+        `${failedCount} screenshot${failedCount === 1 ? "" : "s"} could not be processed.`,
+        "error"
+      );
+    }
+  }
+
+  function initCctvReportController() {
+    if (!window.CCTV_REPORT_SERVICE) return;
+    cctvReportDraft = window.CCTV_REPORT_SERVICE.getDraft();
+
+    if (typeof window.CCTV_REPORT_SERVICE.loadDraftScreenshots === "function") {
+      Promise.resolve(window.CCTV_REPORT_SERVICE.loadDraftScreenshots())
+        .then((storedScreenshots) => {
+          if (Array.isArray(storedScreenshots)) {
+            if (
+              !Array.isArray(cctvReportDraft.screenshots) ||
+              cctvReportDraft.screenshots.length === 0 ||
+              storedScreenshots.length >= cctvReportDraft.screenshots.length
+            ) {
+              cctvReportDraft.screenshots = storedScreenshots.slice();
+            }
+          }
+          renderCctvReportScreenshots();
+          updateCctvReportPreview();
+        })
+        .catch((error) => {
+          console.warn("Could not restore CCTV Report screenshots from IndexedDB:", error);
+          if (!Array.isArray(cctvReportDraft.screenshots) || cctvReportDraft.screenshots.length === 0) {
+            cctvReportDraft.screenshots = [];
+          }
+          renderCctvReportScreenshots();
+          updateCctvReportPreview();
+        });
+    } else {
+      renderCctvReportScreenshots();
+      updateCctvReportPreview();
+    }
+
+    // Helper: format today's date into standard MMMM d, yyyy
+    function getTodayFormattedDate() {
+      const now = new Date();
+      const monthNames = [
+        "January", "February", "March", "April", "May", "June",
+        "July", "August", "September", "October", "November", "December"
+      ];
+      return `${monthNames[now.getMonth()]} ${now.getDate()}, ${now.getFullYear()}`;
+    }
+
+    // Form field live binding
+    const fieldIds = [
+      "quickComposeText",
+      "reportGreeting",
+      "reportPersonInvolved",
+      "reportObservation",
+      "reportSite",
+      "reportDateRange",
+      "reportClipUrl"
+    ];
+
+    fieldIds.forEach(id => {
+      el(id)?.addEventListener("input", () => {
+        syncCctvReportDraftFromForm();
+        updateCctvReportPreview();
+      });
+    });
+
+    // Date "Today" button
+    el("btnReportDateToday")?.addEventListener("click", () => {
+      const todayStr = getTodayFormattedDate();
+      const input = el("reportDateRange");
+      if (input) {
+        input.value = todayStr;
+        syncCctvReportDraftFromForm();
+        updateCctvReportPreview();
+        showToast(`Date set to today: ${todayStr}`, "info");
+      }
+    });
+
+    // Quick Violation Presets and Quick COD dropdown removed per simplification specification.
+
+    // Batch clear screenshots button
+    el("btnClearReportShots")?.addEventListener("click", async () => {
+      const shots = cctvReportDraft?.screenshots || [];
+      if (!shots.length) {
+        showToast("No screenshots to clear.", "info");
+        return;
+      }
+      const ok = await window.appConfirm({
+        title: "Clear All Screenshots?",
+        message: `Are you sure you want to remove all ${shots.length} screenshot${shots.length === 1 ? '' : 's'} from this report?`,
+        confirmText: "Clear All",
+        tone: "danger"
+      });
+      if (!ok) return;
+
+      if (typeof window.CCTV_REPORT_SERVICE?.clearDraftScreenshots === "function") {
+        try {
+          await window.CCTV_REPORT_SERVICE.clearDraftScreenshots();
+        } catch (error) {
+          console.warn("Could not clear CCTV Report screenshots from IndexedDB:", error);
+        }
+      }
+
+      cctvReportDraft.screenshots = [];
+      await persistCctvReportScreenshots();
+      renderCctvReportScreenshots();
+      updateCctvReportPreview();
+      showToast("All screenshots cleared from report.", "info");
+    });
+
+    // View Mode Switcher (Teams Card vs Monospace Plain Text)
+    let currentPreviewMode = "teams";
+    el("btnViewModeTeams")?.addEventListener("click", () => {
+      currentPreviewMode = "teams";
+      el("btnViewModeTeams")?.classList.add("active");
+      el("btnViewModePlain")?.classList.remove("active");
+      if (el("teamsMessageBox")) el("teamsMessageBox").style.display = "block";
+      if (el("plainTextMessageText")) el("plainTextMessageText").style.display = "none";
+    });
+
+    el("btnViewModePlain")?.addEventListener("click", () => {
+      currentPreviewMode = "plain";
+      el("btnViewModePlain")?.classList.add("active");
+      el("btnViewModeTeams")?.classList.remove("active");
+      if (el("teamsMessageBox")) el("teamsMessageBox").style.display = "none";
+      const plainBox = el("plainTextMessageText");
+      if (plainBox) {
+        plainBox.style.display = "block";
+        if (window.CCTV_REPORT_SERVICE?.buildReportPlainText) {
+          plainBox.textContent = window.CCTV_REPORT_SERVICE.buildReportPlainText(cctvReportDraft);
+        }
+      }
+    });
+
+    // Dedicated Copy Plain Text button
+    el("btnCopyPlainTextReport")?.addEventListener("click", async () => {
+      syncCctvReportDraftFromForm();
+      if (!cctvReportDraft?.observation && !cctvReportDraft?.personInvolved) {
+        showToast("Please enter report details before copying.", "error");
+        return;
+      }
+      const plainText = window.CCTV_REPORT_SERVICE.buildReportPlainText(cctvReportDraft);
+      let success = false;
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        try {
+          await navigator.clipboard.writeText(plainText);
+          success = true;
+        } catch (_) {}
+      }
+      if (!success) {
+        try {
+          const ta = document.createElement("textarea");
+          ta.value = plainText;
+          ta.style.position = "fixed";
+          ta.style.left = "-9999px";
+          document.body.appendChild(ta);
+          ta.select();
+          success = document.execCommand("copy");
+          ta.remove();
+        } catch (_) {}
+      }
+      const btn = el("btnCopyPlainTextReport");
+      const lbl = el("btnCopyPlainTextReportLabel");
+      if (btn && lbl) {
+        btn.classList.add("btn-copy-success");
+        lbl.textContent = "\u2713 Copied!";
+        setTimeout(() => {
+          btn.classList.remove("btn-copy-success");
+          lbl.textContent = "Copy Plain";
+        }, 2500);
+      }
+      showToast("Copied plain text report to clipboard!", "success");
+    });
+
+    // Download / Export report button
+    el("btnDownloadReport")?.addEventListener("click", () => {
+      syncCctvReportDraftFromForm();
+      if (!cctvReportDraft?.observation && !cctvReportDraft?.personInvolved) {
+        showToast("Please enter report details before exporting.", "error");
+        return;
+      }
+      const plainText = window.CCTV_REPORT_SERVICE.buildReportPlainText(cctvReportDraft);
+      const now = new Date();
+      const pad = (n) => String(n).padStart(2, "0");
+      const dateStr = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+      const filename = `CCTV_Report_${dateStr}.txt`;
+      const blob = new Blob([plainText], { type: "text/plain;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      showToast(`Report exported as ${filename}`, "success");
+    });
+
+    // Fullscreen Expanded Preview Modal handlers
+    function openExpandedReportModal() {
+      const modal = el("modalExpandedReportPreview");
+      const container = el("expandedReportContentContainer");
+      if (!modal || !container) return;
+      syncCctvReportDraftFromForm();
+      updateReportObservationStats();
+
+      if (currentPreviewMode === "plain") {
+        const text = window.CCTV_REPORT_SERVICE.buildReportPlainText(cctvReportDraft);
+        const safeText = String(text || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        container.innerHTML = `<pre style="margin:0; font-family:var(--font-mono,'Consolas',monospace); font-size:13px; line-height:1.65; white-space:pre-wrap; word-break:break-word; color:var(--text-primary); user-select:text;">${safeText}</pre>`;
+      } else {
+        const richHtml = window.CCTV_REPORT_SERVICE.buildReportHtml(cctvReportDraft);
+        container.innerHTML = `<div class="teams-message-box" style="margin:0; border:none; background:transparent; padding:0;">${richHtml}</div>`;
+        container.querySelectorAll("img").forEach((img, i) => {
+          img.style.cursor = "zoom-in";
+          img.addEventListener("click", () => {
+            if (window.openFullScreenshotViewer) {
+              window.openFullScreenshotViewer(img.src, "CCTV Report Evidence", `Screenshot #${i + 1}`);
+            }
+          });
+        });
+      }
+      modal.hidden = false;
+    }
+
+    function closeExpandedReportModal() {
+      const modal = el("modalExpandedReportPreview");
+      if (modal) modal.hidden = true;
+    }
+
+    el("btnExpandReportPreview")?.addEventListener("click", openExpandedReportModal);
+    el("btnCloseExpandedReportPreview")?.addEventListener("click", closeExpandedReportModal);
+    el("btnModalCloseExpandedReport")?.addEventListener("click", closeExpandedReportModal);
+    el("modalExpandedReportPreview")?.addEventListener("click", (e) => {
+      if (e.target === el("modalExpandedReportPreview")) closeExpandedReportModal();
+    });
+
+    el("btnModalCopyPlain")?.addEventListener("click", () => {
+      el("btnCopyPlainTextReport")?.click();
+    });
+    el("btnModalCopyAll")?.addEventListener("click", () => {
+      el("btnCopyAllReport")?.click();
+    });
+
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") {
+        if (el("modalExpandedReportPreview") && !el("modalExpandedReportPreview").hidden) {
+          closeExpandedReportModal();
+        }
+        const mDrafts = el("modalMaintenanceDrafts");
+        if (mDrafts && !mDrafts.hidden) mDrafts.hidden = true;
+        const mSetup = el("modalMaintenanceSheetSetup");
+        if (mSetup && !mSetup.hidden) mSetup.hidden = true;
+      }
+    });
+
+    async function handleCctvReportCompose(isRegen = false) {
+      const rawText = el("quickComposeText")?.value || "";
+      if (!rawText.trim()) {
+        showToast("Please enter incident notes in Quick Compose first.", "warning");
+        return;
+      }
+
+      const currentObs = el("reportObservation")?.value || "";
+      // Protect manual edits from accidental overwrite
+      if (cctvReportLastGeneratedText && currentObs !== cctvReportLastGeneratedText && currentObs.trim()) {
+        const ok = await window.appConfirm({
+          title: "Overwrite Manual Edits?",
+          message: "You have manually edited the report body. Generating will replace your manual edits with a freshly composed report from Quick Compose. Proceed?",
+          confirmText: isRegen ? "Regenerate" : "Generate",
+          tone: "warning"
+        });
+        if (!ok) return;
+      }
+
+      const btnGen = el("btnGenerateReport");
+      const btnRegen = el("btnRegenerateReport");
+      const origGenHtml = btnGen ? btnGen.innerHTML : "";
+      const origRegenHtml = btnRegen ? btnRegen.innerHTML : "";
+
+      if (btnGen) btnGen.disabled = true;
+      if (btnRegen) btnRegen.disabled = true;
+
+      const activeBtn = isRegen ? (btnRegen || btnGen) : (btnGen || btnRegen);
+      if (activeBtn) {
+        activeBtn.innerHTML = '<span style="display:inline-block; margin-right:4px;">\u23F3</span> Generating...';
+      }
+
+      try {
+        syncCctvReportDraftFromForm();
+        const generated = await window.CCTV_REPORT_SERVICE.generateReportAI(rawText, cctvReportDraft);
+        cctvReportDraft = { ...cctvReportDraft, ...generated };
+        cctvReportLastGeneratedText = cctvReportDraft.observation;
+        window.CCTV_REPORT_SERVICE.saveDraft(cctvReportDraft);
+        syncCctvReportFormFromDraft();
+        updateCctvReportPreview();
+
+        // Flag location / date conflicts to operator without silent overwrites
+        if (generated.locationConflict) {
+          showToast(`Location conflict: Notes mentioned "${generated.locationConflict.detected}", preserved entered "${generated.locationConflict.entered}".`, "info");
+        }
+        if (generated.dateConflict) {
+          showToast(`Date conflict: Notes mentioned "${generated.dateConflict.detected}", preserved entered "${generated.dateConflict.entered}".`, "info");
+        }
+
+        // Inline status badge for AI vs Standard Generation
+        const statusBadge = el("cctvReportStatusBadge");
+        if (statusBadge) {
+          statusBadge.style.display = "inline-flex";
+          if (generated.aiUsed) {
+            statusBadge.className = "badge badge-success";
+            statusBadge.textContent = "AI Enhanced (Gemini)";
+            statusBadge.title = `Generated using ${generated.aiModel || "Gemini"}`;
+          } else {
+            statusBadge.className = "badge badge-neutral";
+            statusBadge.textContent = "Standard Generation";
+            statusBadge.title = generated.aiError || "Rule-based standard generation fallback";
+          }
+        }
+
+        if (generated.aiUsed) {
+          showToast(isRegen ? "Report regenerated with AI." : "Report generated with AI.", "success");
+        } else {
+          showToast("AI generation unavailable. Standard report generation was used.", "warning");
+        }
+      } catch (err) {
+        console.error("Report generation error:", err);
+        showToast("Error generating report. Please check input.", "error");
+      } finally {
+        if (btnGen) {
+          btnGen.disabled = false;
+          btnGen.innerHTML = origGenHtml;
+        }
+        if (btnRegen) {
+          btnRegen.disabled = false;
+          btnRegen.innerHTML = origRegenHtml;
+        }
+      }
+    }
+
+    // Generate Report button
+    el("btnGenerateReport")?.addEventListener("click", () => handleCctvReportCompose(false));
+
+    // Regenerate button with manual edit check
+    el("btnRegenerateReport")?.addEventListener("click", () => handleCctvReportCompose(true));
+
+    // Secondary action: Open Code of Conduct workspace
+    el("btnOpenConductFromReport")?.addEventListener("click", () => {
+      switchWorkspace("conduct");
+    });
+
+    // Removed policy banner button listener.
+
+    // Reset button
+    el("btnResetCctvReport")?.addEventListener("click", async () => {
+      const ok = await window.appConfirm({
+        title: "Reset CCTV Report?",
+        message: "Discard current report draft and reset fields to an empty blank draft?",
+        confirmText: "Reset Draft",
+        tone: "danger"
+      });
+      if (!ok) return;
+
+      if (typeof window.CCTV_REPORT_SERVICE?.clearDraftScreenshots === "function") {
+        try {
+          await window.CCTV_REPORT_SERVICE.clearDraftScreenshots();
+        } catch (error) {
+          console.warn("Could not clear CCTV Report screenshots:", error);
+        }
+      }
+
+      cctvReportDraft = window.CCTV_REPORT_SERVICE.resetDraft();
+      cctvReportLastGeneratedText = "";
+      syncCctvReportFormFromDraft();
+      renderCctvReportScreenshots();
+      updateCctvReportPreview();
+      const statusBadge = el("cctvReportStatusBadge");
+      if (statusBadge) statusBadge.style.display = "none";
+      showToast("Report composer reset to blank draft.", "info");
+    });
+
+    // Screenshot file input & browse button
+    el("btnBrowseReportShot")?.addEventListener("click", () => el("reportShotInput")?.click());
+    el("reportShotInput")?.addEventListener("change", (e) => {
+      handleReportImageFiles(e.target.files);
+      e.target.value = "";
+    });
+
+    // Dropzone drag & drop
+    const dropzone = el("reportDropzone");
+    if (dropzone) {
+      dropzone.addEventListener("click", () => el("reportShotInput")?.click());
+
+      ["dragenter", "dragover"].forEach(evtName => {
+        dropzone.addEventListener(evtName, (e) => {
+          if (e.dataTransfer && e.dataTransfer.types && !Array.from(e.dataTransfer.types).includes("Files")) {
+            return;
+          }
+          e.preventDefault();
+          e.stopPropagation();
+          dropzone.classList.add("drag-active");
+        });
+      });
+
+      ["dragleave", "drop"].forEach(evtName => {
+        dropzone.addEventListener(evtName, (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          dropzone.classList.remove("drag-active");
+        });
+      });
+
+      dropzone.addEventListener("drop", (e) => {
+        const dt = e.dataTransfer;
+        if (dt && dt.files && dt.files.length) {
+          handleReportImageFiles(dt.files);
+        }
+      });
+    }
+
+    // COPY ALL button with feedback
+    let isCopyingReport = false;
+    el("btnCopyAllReport")?.addEventListener("click", async () => {
+      if (isCopyingReport) return;
+      isCopyingReport = true;
+      const btn = el("btnCopyAllReport");
+      const btnLabel = el("btnCopyAllReportLabel");
+      if (btn) btn.disabled = true;
+      try {
+        syncCctvReportDraftFromForm();
+        if (!cctvReportDraft.observation && !cctvReportDraft.personInvolved) {
+          showToast("Please enter report details before copying.", "error");
+          return;
+        }
+
+        const res = await window.CCTV_REPORT_SERVICE.copyAll(cctvReportDraft);
+        const shotMsg = res.screenshotCount
+          ? ` with ${res.screenshotCount} screenshot${res.screenshotCount === 1 ? '' : 's'}`
+          : "";
+        const clipMsg = res.hasClipLink
+          ? ` and ${res.clipCount > 1 ? res.clipCount + ' clickable CCTV Clip links' : 'clickable CCTV Clip link'}`
+          : "";
+        
+        if (btn && btnLabel) {
+          btn.classList.add("btn-copy-success");
+          btnLabel.textContent = "\u2713 COPIED ALL!";
+          setTimeout(() => {
+            btn.classList.remove("btn-copy-success");
+            btnLabel.textContent = "COPY ALL";
+          }, 2500);
+        }
+
+        showToast(`Copied complete report${shotMsg}${clipMsg} for Microsoft Teams!`, "success");
+      } catch (err) {
+        console.error("Copy report error:", err);
+        showToast(err.message || "Failed to copy report to clipboard.", "error");
+      } finally {
+        isCopyingReport = false;
+        if (btn) btn.disabled = false;
+      }
+    });
+
+    // Send CCTV Report directly to Teams Dialog
+    el("btnSendReportTeams")?.addEventListener("click", async () => {
+      try {
+        syncCctvReportDraftFromForm();
+        if (!cctvReportDraft.observation && !cctvReportDraft.personInvolved) {
+          showToast("Please enter report details before sending to Teams.", "error");
+          return;
+        }
+        const previewBox = el("teamsMessageBox");
+        const plainText = previewBox ? (previewBox.innerText || previewBox.textContent || "") : "";
+        if (window.CCTV_TEAMS_SHARE) {
+          window.CCTV_TEAMS_SHARE.open({
+            reportType: "CCTV Incident Report",
+            plainContent: plainText,
+            htmlContent: previewBox ? previewBox.innerHTML : plainText
+          });
+        }
+      } catch (err) {
+        showToast(`Error sending report to Teams: ${err.message}`, "error");
+      }
+    });
+
+    // Central Paste Router registration for CCTV Report workspace
+    if (window.CCTV_PASTE_ROUTER) {
+      window.CCTV_PASTE_ROUTER.register("report", async (files) => {
+        await handleReportImageFiles(files);
+      });
+    }
+
+    window.renderCctvReportScreenshots = renderCctvReportScreenshots;
+    window.persistCctvReportScreenshots = persistCctvReportScreenshots;
+    window.prepareReportScreenshot = prepareReportScreenshot;
+    window.updateCctvReportPreview = updateCctvReportPreview;
+    window.syncCctvReportFormFromDraft = syncCctvReportFormFromDraft;
+    window.syncCctvReportDraftFromForm = syncCctvReportDraftFromForm;
+    window.getCctvReportDraft = () => {
+      if (!cctvReportDraft && window.CCTV_REPORT_SERVICE) {
+        cctvReportDraft = window.CCTV_REPORT_SERVICE.getDraft();
+      }
+      return cctvReportDraft;
+    };
+    window.setCctvReportDraft = (d) => {
+      cctvReportDraft = d;
+      if (window.CCTV_REPORT_SERVICE && d) {
+        window.CCTV_REPORT_SERVICE.saveDraft(d);
+      }
+    };
+  }
+
+  // =========================================================================
+  // WORKSPACE 2: Code of Conduct Policy Reference (Standalone)
+  // =========================================================================
+  let conductFilterCategory = "all";
+  let conductFilterSeverity = "all";
+  let conductFilterMonitored = false;
+  let conductCollapsedCategories = {};
+
+  function renderCodeOfConductWorkspace() {
+    renderCodeOfConductResults();
+  }
+
+  function renderCodeOfConductResults() {
+    const container = el("conductResultsContainer");
+    const countText = el("conductResultsCountText");
+    const conductSvc = window.CCTV_CONDUCT || window.codeOfConductService || window.CCTV_REPORT_SERVICE;
+    if (!container || !conductSvc) return;
+
+    const query = el("conductSearchInput")?.value || "";
+    const results = typeof conductSvc.searchCodeOfConduct === "function"
+      ? conductSvc.searchCodeOfConduct(query, conductFilterCategory, conductFilterSeverity, conductFilterMonitored)
+      : (typeof conductSvc.filterPolicies === "function" ? conductSvc.filterPolicies(conductFilterCategory, query) : []);
+
+    let totalMatchingPolicies = 0;
+    results.forEach(g => { totalMatchingPolicies += g.policies.length; });
+
+    if (countText) {
+      if (!query && conductFilterCategory === "all" && conductFilterSeverity === "all" && !conductFilterMonitored) {
+        countText.textContent = `Showing All Policies (${totalMatchingPolicies} rules)`;
+      } else {
+        countText.textContent = `Showing ${totalMatchingPolicies} Matched Polic${totalMatchingPolicies === 1 ? 'y' : 'ies'}`;
+      }
+    }
+
+    if (!results.length) {
+      container.innerHTML = `<div style="padding:28px 16px;text-align:center;color:var(--text-muted);font-size:12px;">No Code of Conduct violations found matching "<strong>${escapeHtml(query)}</strong>". Try searching another term or resetting filters.</div>`;
+      return;
+    }
+
+    const esc = (val) => String(val == null ? "" : val)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;");
+
+    // Flatten matching policies across groups
+    let flatPolicies = [];
+    results.forEach(g => {
+      g.policies.forEach(p => {
+        flatPolicies.push({
+          ...p,
+          sectionName: p.category || g.category
+        });
+      });
+    });
+
+    // If there is a search query, sort flatPolicies globally by relevance score
+    if (query) {
+      flatPolicies.sort((a, b) => (b._relevanceScore || 0) - (a._relevanceScore || 0));
+    }
+
+    // Render continuous flat list of policy cards with exact official section name
+    container.innerHTML = flatPolicies.map(pol => {
+      const sevClass = pol.severity === "GRAVE" ? "coc-sev-grave" : (pol.severity === "MAJOR" ? "coc-sev-major" : "coc-sev-minor");
+
+      return `
+        <div class="coc-rule-card" data-num="${esc(pol.num)}">
+          <div class="coc-rule-card-top">
+            <div class="coc-rule-title-group">
+              <span class="coc-rule-num">${esc(pol.num)}</span>
+              <strong class="coc-rule-title">${esc(pol.title)}</strong>
+            </div>
+            <span class="coc-sev-badge ${sevClass}">${esc(pol.severity)}</span>
+          </div>
+          <div class="coc-rule-desc">${esc(pol.description)}</div>
+          <div class="coc-rule-card-footer">
+            <div class="coc-rule-section-tag" title="${esc(pol.sectionName)}" style="margin:0;">Section: ${esc(pol.sectionName)}</div>
+            <div class="coc-rule-actions-cluster">
+              <button type="button" class="btn btn-outline btn-xs coc-btn-copy-citation" data-pol-num="${esc(pol.num)}" title="Copy formatted policy citation">
+                Copy Citation
+              </button>
+              <button type="button" class="btn btn-primary btn-xs coc-btn-use-in-report" data-pol-num="${esc(pol.num)}" title="Reference in CCTV Report">
+                Use in Report
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join("");
+
+    // Wire actions for policy cards
+    container.querySelectorAll(".coc-btn-copy-citation").forEach(btn => {
+      btn.addEventListener("click", async (e) => {
+        e.stopPropagation();
+        const pNum = btn.dataset.polNum;
+        const policy = flatPolicies.find(p => p.num === pNum);
+        if (!policy) return;
+        const citation = `Policy ${policy.num} - ${policy.title} (${policy.severity}): ${policy.description}`;
+        try {
+          if (navigator.clipboard?.writeText) {
+            await navigator.clipboard.writeText(citation);
+          } else {
+            const ta = document.createElement("textarea");
+            ta.value = citation;
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand("copy");
+            ta.remove();
+          }
+          const orig = btn.textContent;
+          btn.textContent = "\u2713 Copied!";
+          btn.classList.add("btn-copy-success");
+          setTimeout(() => {
+            btn.textContent = orig;
+            btn.classList.remove("btn-copy-success");
+          }, 2000);
+          showToast(`Copied Policy ${policy.num} citation to clipboard!`, "success");
+        } catch (_) {
+          showToast("Failed to copy citation.", "error");
+        }
+      });
+    });
+
+    container.querySelectorAll(".coc-btn-use-in-report").forEach(btn => {
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const pNum = btn.dataset.polNum;
+        const policy = flatPolicies.find(p => p.num === pNum);
+        if (!policy) return;
+        if (typeof window.setCctvReportReferencedPolicy === "function") {
+          window.setCctvReportReferencedPolicy(policy);
+        } else if (window.CCTV_REPORT_SERVICE) {
+          const draft = window.CCTV_REPORT_SERVICE.getDraft() || {};
+          draft.referencedPolicy = {
+            num: policy.num,
+            title: policy.title,
+            category: policy.sectionName,
+            severity: policy.severity
+          };
+          window.CCTV_REPORT_SERVICE.saveDraft(draft);
+          if (typeof window.setCctvReportDraft === "function") window.setCctvReportDraft(draft);
+          if (typeof window.syncCctvReportFormFromDraft === "function") window.syncCctvReportFormFromDraft();
+          if (typeof window.updateCctvReportPreview === "function") window.updateCctvReportPreview();
+        }
+        if (typeof window.switchWorkspace === "function") {
+          window.switchWorkspace("report");
+        }
+        showToast(`Policy ${policy.num} referenced in CCTV Report.`, "success");
+      });
+    });
+  }
+
+  function initCodeOfConductController() {
+    const conductSvc = window.CCTV_CONDUCT || window.codeOfConductService || window.CCTV_REPORT_SERVICE;
+    if (!conductSvc) return;
+
+    // Search input
+    const searchInput = el("conductSearchInput");
+    const clearBtn = el("btnConductClearSearch");
+    if (searchInput) {
+      searchInput.addEventListener("input", () => {
+        if (clearBtn) clearBtn.style.display = searchInput.value ? "inline-block" : "none";
+        renderCodeOfConductResults();
+      });
+    }
+    if (clearBtn) {
+      clearBtn.addEventListener("click", () => {
+        if (searchInput) {
+          searchInput.value = "";
+          clearBtn.style.display = "none";
+          searchInput.focus();
+        }
+        renderCodeOfConductResults();
+      });
+    }
+
+    // Category / Section dropdown filter
+    el("conductCategorySelect")?.addEventListener("change", (e) => {
+      conductFilterCategory = e.target.value;
+      renderCodeOfConductResults();
+    });
+  }
+
+  // =========================================================================
+  // WORKSPACE: TRACKERS (Shared Authoritative Google Sheets Integration)
+  // =========================================================================
+  const TRACKER_CONFIGS = {
+    audit: {
+      key: "audit",
+      label: "CCTV Audit",
+      sheetTitle: "CCTV Audit (AUDIT 2026)",
+      spreadsheetId: "1dhQKpRxZUFjQc-00a5SQXRRsIOMCjT_d-b-o36bYWzs",
+      gid: "312942343",
+      url: "https://docs.google.com/spreadsheets/d/1dhQKpRxZUFjQc-00a5SQXRRsIOMCjT_d-b-o36bYWzs/edit?gid=312942343#gid=312942343"
+    },
+    "2026": {
+      key: "2026",
+      label: "2026",
+      sheetTitle: "2026 Tracker (QUERY)",
+      spreadsheetId: "12o3O1u2xb3DbXW41jAen-8HSJhpJRzQLSIb_6o5JRc4",
+      gid: "1589623984",
+      url: "https://docs.google.com/spreadsheets/d/12o3O1u2xb3DbXW41jAen-8HSJhpJRzQLSIb_6o5JRc4/edit?gid=1589623984#gid=1589623984"
+    },
+    itsheet: {
+      key: "itsheet",
+      label: "IT Sheet",
+      sheetTitle: "IT Sheet / Maintenance (MAA 4F/5F)",
+      spreadsheetId: "1PBKIr7cACVcElX9YpAqshhTTsjlJz69dji7TiA0IlrE",
+      gid: "484781158",
+      url: "https://docs.google.com/spreadsheets/d/1PBKIr7cACVcElX9YpAqshhTTsjlJz69dji7TiA0IlrE/edit?gid=484781158#gid=484781158"
+    },
+    seatplan: {
+      key: "seatplan",
+      label: "Seatplan",
+      sheetTitle: "SEAT PLAN 2026",
+      spreadsheetId: "1XanmnE63XiyKyT7EZMahHd8E8uZJftQlwPihy1JF96E",
+      gid: "",
+      url: "https://docs.google.com/spreadsheets/d/1XanmnE63XiyKyT7EZMahHd8E8uZJftQlwPihy1JF96E/edit"
+    }
+  };
+
+  const TRACKER_STORAGE_KEY = "cctv_ops_v2_active_tracker_tab";
+  const TRACKER_DEFAULT_ZOOM = {
+    audit: 80,
+    "2026": 70,
+    itsheet: 90,
+    seatplan: 60
+  };
+  const TRACKER_ZOOM_LEVELS = [50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150];
+
+  let activeTrackerKey = "audit";
+
+  function getSavedTrackerZoom(key) {
+    const storageKey = `cctv_ops_v2_tracker_zoom_${key}`;
+    try {
+      const val = parseInt(localStorage.getItem(storageKey), 10);
+      if (!isNaN(val) && val >= 50 && val <= 150) return val;
+    } catch (_) {}
+    return TRACKER_DEFAULT_ZOOM[key] || 100;
+  }
+
+  function saveTrackerZoom(key, zoom) {
+    const storageKey = `cctv_ops_v2_tracker_zoom_${key}`;
+    try {
+      localStorage.setItem(storageKey, String(zoom));
+    } catch (_) {}
+  }
+
+  const MAX_LIVE_TRACKER_IFRAMES = 2;
+  const trackerIframeCache = new Map(); // key -> { key, iframe, reqId, loaded: boolean }
+  const trackerLruOrder = []; // [lruKey, mruKey]
+  let currentTrackerReqId = 0;
+
+  function evictLruTracker() {
+    while (trackerLruOrder.length >= MAX_LIVE_TRACKER_IFRAMES) {
+      const evictKey = trackerLruOrder.shift();
+      const entry = trackerIframeCache.get(evictKey);
+      if (entry) {
+        try {
+          if (entry.iframe) {
+            entry.iframe.onload = null;
+            entry.iframe.onerror = null;
+            entry.iframe.src = "about:blank";
+            entry.iframe.remove();
+          }
+        } catch (_) {}
+        trackerIframeCache.delete(evictKey);
+      }
+    }
+  }
+
+  function applyTrackerZoom(zoomPct, targetIframe = null) {
+    const display = el("trackerZoomDisplay");
+    if (display) display.textContent = `${zoomPct}%`;
+
+    const iframe = targetIframe || trackerIframeCache.get(activeTrackerKey)?.iframe || el("trackerFrame");
+    if (iframe) {
+      const scale = zoomPct / 100;
+      const logicalDim = `${(100 / scale).toFixed(4)}%`;
+      iframe.style.setProperty("width", logicalDim, "important");
+      iframe.style.setProperty("height", logicalDim, "important");
+      iframe.style.setProperty("max-width", "none", "important");
+      iframe.style.setProperty("max-height", "none", "important");
+      iframe.style.setProperty("transform", `scale(${scale})`, "important");
+      iframe.style.setProperty("transform-origin", "top left", "important");
+    }
+  }
+
+  function stepTrackerZoom(delta) {
+    const current = getSavedTrackerZoom(activeTrackerKey);
+    let newIdx = TRACKER_ZOOM_LEVELS.indexOf(current);
+    if (newIdx === -1) {
+      newIdx = TRACKER_ZOOM_LEVELS.findIndex(lvl => lvl >= current);
+      if (newIdx === -1) newIdx = TRACKER_ZOOM_LEVELS.length - 1;
+    }
+    const nextIdx = Math.max(0, Math.min(TRACKER_ZOOM_LEVELS.length - 1, newIdx + delta));
+    const nextZoom = TRACKER_ZOOM_LEVELS[nextIdx];
+    saveTrackerZoom(activeTrackerKey, nextZoom);
+    applyTrackerZoom(nextZoom);
+  }
+
+  function resetTrackerZoom() {
+    const defaultZoom = TRACKER_DEFAULT_ZOOM[activeTrackerKey] || 100;
+    saveTrackerZoom(activeTrackerKey, defaultZoom);
+    applyTrackerZoom(defaultZoom);
+  }
+
+  let trackerLoadTimeout = null;
+
+  function updateTrackerStatus(state, customLabel = null) {
+    const pill = el("trackerStatusPill");
+    const textEl = el("trackerStatusText");
+    if (!pill || !textEl) return;
+
+    pill.classList.remove("status-ready", "status-loading", "status-error");
+    if (state === "loading") {
+      pill.classList.add("status-loading");
+      textEl.textContent = customLabel || "Connecting...";
+      pill.title = "Connecting to Google Spreadsheet...";
+    } else if (state === "error") {
+      pill.classList.add("status-error");
+      textEl.textContent = customLabel || "Embed Restricted";
+      pill.title = "Iframe embed unavailable or offline. Use external link.";
+    } else {
+      pill.classList.add("status-ready");
+      textEl.textContent = customLabel || "Live Ready";
+      pill.title = "Authoritative Google Spreadsheet ready.";
+    }
+  }
+
+  let lastTrackerSwitchTime = 0;
+
+  function showTrackerLoading(label) {
+    const overlay = el("trackersLoadingState");
+    const title = el("trackersLoadingTitle");
+    const errOverlay = el("trackersErrorState");
+    if (errOverlay) errOverlay.style.display = "none";
+
+    if (title) title.textContent = `Loading ${label || 'Tracker'}...`;
+    if (overlay) {
+      overlay.style.display = "flex";
+      overlay.style.opacity = "1";
+    }
+    updateTrackerStatus("loading", "Connecting...");
+  }
+
+  function hideTrackerLoading(success = true) {
+    if (trackerLoadTimeout) {
+      clearTimeout(trackerLoadTimeout);
+      trackerLoadTimeout = null;
+    }
+    const overlay = el("trackersLoadingState");
+    if (overlay) {
+      overlay.style.opacity = "0";
+      setTimeout(() => {
+        if (overlay.style.opacity === "0") {
+          overlay.style.display = "none";
+        }
+      }, 200);
+    }
+    if (success) {
+      const errOverlay = el("trackersErrorState");
+      if (errOverlay) errOverlay.style.display = "none";
+      updateTrackerStatus("ready", "Live Ready");
+    }
+  }
+
+  function setTrackerWorkbook(key, forceReload = false) {
+    if (!TRACKER_CONFIGS[key]) key = "audit";
+    activeTrackerKey = key;
+    lastTrackerSwitchTime = Date.now();
+    try {
+      localStorage.setItem(TRACKER_STORAGE_KEY, key);
+    } catch (_) {}
+
+    const cfg = TRACKER_CONFIGS[key];
+    const labelEl = el("trackersActiveLabel");
+    const openLink = el("linkOpenGoogleSheets");
+    const errorOpenLink = el("linkTrackerErrorOpen");
+    const errOverlay = el("trackersErrorState");
+    if (errOverlay) errOverlay.style.display = "none";
+
+    if (labelEl) labelEl.textContent = cfg.sheetTitle || cfg.label;
+    if (openLink) openLink.href = cfg.url;
+    if (errorOpenLink) errorOpenLink.href = cfg.url;
+
+    // Update switcher tab buttons
+    document.querySelectorAll(".tracker-switch-btn").forEach(btn => {
+      const isCurrent = btn.dataset.tracker === key;
+      btn.classList.toggle("active", isCurrent);
+      btn.setAttribute("aria-selected", isCurrent ? "true" : "false");
+    });
+
+    const savedZoom = getSavedTrackerZoom(key);
+    const container = el("trackersFrameContainer");
+    if (!container) return;
+
+    // Check if tracker iframe is already in LRU cache
+    if (trackerIframeCache.has(key)) {
+      // Update LRU position: move key to most recently used (end)
+      const lruIdx = trackerLruOrder.indexOf(key);
+      if (lruIdx !== -1) trackerLruOrder.splice(lruIdx, 1);
+      trackerLruOrder.push(key);
+
+      const entry = trackerIframeCache.get(key);
+
+      // Single activation helper: show this frame, hide every other cached frame
+      activateTrackerIframe(key);
+
+      applyTrackerZoom(savedZoom, entry.iframe);
+
+      if (forceReload) {
+        const reqId = ++currentTrackerReqId;
+        entry.reqId = reqId;
+        entry.loaded = false;
+        showTrackerLoading(cfg.label);
+        entry.iframe.src = cfg.url;
+
+        if (trackerLoadTimeout) clearTimeout(trackerLoadTimeout);
+        trackerLoadTimeout = setTimeout(() => {
+          if (activeTrackerKey === key && entry.reqId === currentTrackerReqId) {
+            entry.loaded = true;
+            hideTrackerLoading(true);
+          }
+        }, 3200);
+      } else {
+        // Instant cached switch!
+        if (entry.loaded) {
+          hideTrackerLoading(true);
+          updateTrackerStatus("ready", "Live Ready");
+        } else {
+          showTrackerLoading(cfg.label);
+        }
+      }
+      return;
+    }
+
+    // Tracker is not cached. Ensure capacity before creating new iframe.
+    evictLruTracker();
+
+    // Mark any currently cached iframes hidden
+    trackerIframeCache.forEach(otherEntry => {
+      otherEntry.iframe.classList.add("is-hidden");
+      otherEntry.iframe.classList.remove("is-active");
+      if (otherEntry.iframe.id === "trackerFrame") otherEntry.iframe.id = "";
+    });
+
+    // Create fresh live iframe with overlay styling
+    const reqId = ++currentTrackerReqId;
+    const iframe = document.createElement("iframe");
+    iframe.id = "trackerFrame";
+    iframe.className = "tracker-iframe is-active";
+    iframe.setAttribute("allow", "clipboard-read; clipboard-write");
+    iframe.setAttribute("loading", "eager");
+    iframe.setAttribute("title", cfg.sheetTitle || cfg.label);
+    iframe.dataset.tracker = key;
+
+    const entry = { key, iframe, reqId, loaded: false };
+    trackerIframeCache.set(key, entry);
+    trackerLruOrder.push(key);
+
+    container.appendChild(iframe);
+    activateTrackerIframe(key);
+
+    iframe.addEventListener("load", () => {
+      entry.loaded = true;
+      if (activeTrackerKey === key && entry.reqId === currentTrackerReqId) {
+        hideTrackerLoading(true);
+        const err = el("trackersErrorState");
+        if (err) err.style.display = "none";
+        applyTrackerZoom(getSavedTrackerZoom(key), iframe);
+      }
+    });
+
+    iframe.addEventListener("error", () => {
+      if (activeTrackerKey === key && entry.reqId === currentTrackerReqId) {
+        if (Date.now() - lastTrackerSwitchTime < 1500) return;
+        hideTrackerLoading(false);
+        updateTrackerStatus("error", "Embed Restricted");
+        const err = el("trackersErrorState");
+        if (err) err.style.display = "flex";
+      }
+    });
+
+    showTrackerLoading(cfg.label);
+    applyTrackerZoom(savedZoom, iframe);
+    iframe.src = cfg.url;
+
+    if (trackerLoadTimeout) clearTimeout(trackerLoadTimeout);
+    trackerLoadTimeout = setTimeout(() => {
+      if (activeTrackerKey === key && entry.reqId === currentTrackerReqId) {
+        entry.loaded = true;
+        hideTrackerLoading(true);
+      }
+    }, 3200);
+  }
+
+  function activateTrackerIframe(key) {
+    trackerIframeCache.forEach((entry, entryKey) => {
+      if (entryKey === key) {
+        entry.iframe.classList.remove("is-hidden");
+        entry.iframe.classList.add("is-active");
+        entry.iframe.id = "trackerFrame";
+      } else {
+        entry.iframe.classList.add("is-hidden");
+        entry.iframe.classList.remove("is-active");
+        if (entry.iframe.id === "trackerFrame") entry.iframe.id = "";
+      }
+    });
+  }
+
+  function renderTrackersWorkspace() {
+    let savedKey = "audit";
+    try {
+      savedKey = localStorage.getItem(TRACKER_STORAGE_KEY) || "audit";
+    } catch (_) {}
+    if (!TRACKER_CONFIGS[savedKey]) savedKey = "audit";
+
+    if (activeTrackerKey === savedKey && trackerIframeCache.has(savedKey)) {
+      activateTrackerIframe(savedKey);
+      const entry = trackerIframeCache.get(savedKey);
+      if (entry && entry.iframe) {
+        applyTrackerZoom(getSavedTrackerZoom(savedKey), entry.iframe);
+        if (entry.loaded) {
+          hideTrackerLoading(true);
+          updateTrackerStatus("ready", "Live Ready");
+        }
+      }
+      return;
+    }
+
+    setTrackerWorkbook(savedKey, false);
+  }
+
+  function initTrackersController() {
+    // Check if an initial #trackerFrame exists in HTML, adopt or remove
+    const initialIframe = el("trackerFrame");
+    if (initialIframe) {
+      initialIframe.remove();
+    }
+
+    // Switcher buttons
+    document.querySelectorAll(".tracker-switch-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const key = btn.dataset.tracker;
+        setTrackerWorkbook(key, false);
+      });
+    });
+
+    // Reload button
+    el("btnTrackerReload")?.addEventListener("click", () => {
+      setTrackerWorkbook(activeTrackerKey, true);
+      showToast(`Reloaded ${TRACKER_CONFIGS[activeTrackerKey]?.label || 'tracker'}.`, "info");
+    });
+
+    // Retry button in error overlay
+    el("btnTrackerRetry")?.addEventListener("click", () => {
+      const errOverlay = el("trackersErrorState");
+      if (errOverlay) errOverlay.style.display = "none";
+      setTrackerWorkbook(activeTrackerKey, true);
+    });
+
+    // Independent Tracker Zoom Controls
+    el("btnTrackerZoomOut")?.addEventListener("click", () => stepTrackerZoom(-1));
+    el("btnTrackerZoomIn")?.addEventListener("click", () => stepTrackerZoom(1));
+    el("btnTrackerZoomReset")?.addEventListener("click", () => resetTrackerZoom());
+
+    // Ctrl + Mouse Wheel listener over the tracker viewport container
+    const frameContainer = el("trackersFrameContainer");
+    if (frameContainer) {
+      frameContainer.addEventListener("wheel", (e) => {
+        if (e.ctrlKey) {
+          e.preventDefault();
+          stepTrackerZoom(e.deltaY < 0 ? 1 : -1);
+        }
+      }, { passive: false });
+    }
+
+    // Network status awareness
+    window.addEventListener("online", () => updateTrackerStatus("ready", "Live Ready"));
+    window.addEventListener("offline", () => updateTrackerStatus("error", "Offline"));
+
+    // Restore saved state
+    let savedKey = "audit";
+    try {
+      savedKey = localStorage.getItem(TRACKER_STORAGE_KEY) || "audit";
+    } catch (_) {}
+    if (!TRACKER_CONFIGS[savedKey]) savedKey = "audit";
+    setTrackerWorkbook(savedKey, false);
+
+    window.activateTrackerIframe = activateTrackerIframe;
+    window.setTrackerWorkbook = setTrackerWorkbook;
+    window.renderTrackersWorkspace = renderTrackersWorkspace;
+    window.TRACKER_CONFIGS = TRACKER_CONFIGS;
+    window.applyTrackerZoom = applyTrackerZoom;
+    window.getSavedTrackerZoom = getSavedTrackerZoom;
+    window.updateTrackerStatus = updateTrackerStatus;
+    window.__trackerIframeCache = trackerIframeCache;
+    window.__trackerLruOrder = trackerLruOrder;
+  }
+
+  let currentNocMemberFilter = "ALL";
+  let currentBreakdownTab = "infractions";
+  let activePendingTeamFilter = null;
+
+  function initDashboardController() {
+    if (!window.CCTV_DASHBOARD) return;
+
+    const btnRefresh = el("btnDashRefresh");
+    if (btnRefresh) {
+      btnRefresh.addEventListener("click", async () => {
+        if (btnRefresh.classList.contains("is-spinning")) return;
+        btnRefresh.classList.add("is-spinning");
+        try {
+          await window.CCTV_DASHBOARD.refresh();
+          showToast("Dashboard synchronized with authoritative Tracker", "info");
+        } catch (err) {
+          showToast(`Refresh error: ${err.message || 'Connection failed'}`, "warning");
+        } finally {
+          btnRefresh.classList.remove("is-spinning");
+        }
+      });
+    }
+
+    // Top 6 KPI Card Click Handlers
+    el("kpiCardPostedMonth")?.addEventListener("click", () => {
+      switchWorkspace("trackers");
+      if (typeof window.setTrackerWorkbook === "function") window.setTrackerWorkbook("audit");
+    });
+
+    el("kpiCardSuccessfulNoc")?.addEventListener("click", () => {
+      switchWorkspace("audit");
+    });
+
+    el("kpiCardPendingReports")?.addEventListener("click", () => {
+      const targetSec = el("secPendingDetails") || el("secPendingByTeam");
+      if (targetSec && !targetSec.hidden && targetSec.style.display !== "none") {
+        targetSec.scrollIntoView({ behavior: "smooth", block: "start" });
+      } else {
+        switchWorkspace("trackers");
+      }
+    });
+
+    el("kpiCardFollowUp")?.addEventListener("click", () => {
+      switchWorkspace("followup");
+    });
+
+    el("kpiCardUnreported")?.addEventListener("click", () => {
+      switchWorkspace("unreported");
+    });
+
+    el("kpiCardEdrAction")?.addEventListener("click", () => {
+      currentEdrFilter = "needs_action";
+      switchWorkspace("edr");
+      if (typeof window.CCTV_EDR?.getReports === "function") {
+        renderEdrList(window.CCTV_EDR.getReports());
+      }
+    });
+
+    // Needs Attention Navigation Handlers
+    el("naChipPending")?.addEventListener("click", () => {
+      el("secPendingDetails")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+    el("naChipPending24")?.addEventListener("click", () => {
+      el("secPendingDetails")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+    el("naChipPending48")?.addEventListener("click", () => {
+      el("secPendingDetails")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+    el("naChipFollowUp")?.addEventListener("click", () => {
+      switchWorkspace("followup");
+    });
+    el("naChipUnreported")?.addEventListener("click", () => {
+      switchWorkspace("unreported");
+    });
+    el("naChipEdrTeams")?.addEventListener("click", () => {
+      currentEdrFilter = "not_copied";
+      switchWorkspace("edr");
+      if (typeof window.CCTV_EDR?.getReports === "function") {
+        renderEdrList(window.CCTV_EDR.getReports());
+      }
+    });
+    el("naChipEdrAudit")?.addEventListener("click", () => {
+      currentEdrFilter = "not_audited";
+      switchWorkspace("edr");
+      if (typeof window.CCTV_EDR?.getReports === "function") {
+        renderEdrList(window.CCTV_EDR.getReports());
+      }
+    });
+
+    // Monthly Activity Selector Listener
+    const selectMemberEl = el("selectNocGraphMember");
+    if (selectMemberEl) {
+      selectMemberEl.addEventListener("change", (e) => {
+        currentNocMemberFilter = e.target.value || "ALL";
+        renderDashboardWorkspace();
+      });
+    }
+
+    // Month Breakdown Tabs
+    const breakdownTabsContainer = el("breakdownTabs");
+    if (breakdownTabsContainer) {
+      breakdownTabsContainer.querySelectorAll(".btn-breakdown-tab").forEach(tabBtn => {
+        tabBtn.addEventListener("click", () => {
+          breakdownTabsContainer.querySelectorAll(".btn-breakdown-tab").forEach(b => b.classList.remove("is-active"));
+          tabBtn.classList.add("is-active");
+          currentBreakdownTab = tabBtn.dataset.tab || "infractions";
+          renderDashboardWorkspace();
+        });
+      });
+    }
+
+    // Pending Details Filter Clear
+    const filterPill = el("dashPendingFilterIndicator");
+    if (filterPill) {
+      filterPill.addEventListener("click", () => {
+        activePendingTeamFilter = null;
+        renderDashboardWorkspace();
+      });
+    }
+
+    // Subscribe to Dashboard Service updates
+    window.CCTV_DASHBOARD.subscribe(renderDashboardWorkspace);
+
+    // Initial service initialization
+    window.CCTV_DASHBOARD.init();
+  }
+
+  function renderDashboardWorkspace(providedState) {
+    const svc = window.CCTV_DASHBOARD;
+    const s = providedState || (svc ? svc.getState() : null);
+    if (!s) return;
+
+    const isLoaded = s.hasLoadedAuthoritativeData;
+
+    // Header info
+    const monthEl = el("dashCurrentMonthText");
+    if (monthEl) monthEl.textContent = s.currentMonthLabel || "—";
+
+    const updatedEl = el("dashLastUpdatedText");
+    if (updatedEl) updatedEl.textContent = s.lastUpdatedFormatted || "—";
+
+    const overallReportsEl = el("dashOverallReportsText");
+    if (overallReportsEl) {
+      overallReportsEl.textContent = (isLoaded && s.overallReports != null) ? s.overallReports.toLocaleString() : "—";
+    }
+
+    // Stale/Error Notification Banner
+    const staleBanner = el("dashStaleBanner");
+    const staleMessage = el("dashStaleMessage");
+    if (staleBanner) {
+      if (s.isStale && s.fetchError) {
+        staleBanner.style.display = "flex";
+        if (staleMessage) {
+          const suffix = s.hasLoadedAuthoritativeData
+            ? " Preserving previous valid metrics."
+            : " Displaying unavailable indicators until connected.";
+          staleMessage.textContent = `Tracker notice: ${s.fetchError}.${suffix}`;
+        }
+      } else {
+        staleBanner.style.display = "none";
+      }
+    }
+
+    // Top 6 Primary KPI Cards
+    const valPosted = el("kpiValPostedMonth");
+    if (valPosted) {
+      valPosted.textContent = (isLoaded && s.postedThisMonth != null) ? s.postedThisMonth.toLocaleString() : "—";
+    }
+    const subPosted = el("kpiSubPostedMonth");
+    if (subPosted) subPosted.textContent = `${s.currentMonthLabel || "Current month"} reports`;
+
+    const valNoc = el("kpiValSuccessfulNoc");
+    if (valNoc) {
+      valNoc.textContent = (isLoaded && s.totalNocThisMonth != null) ? s.totalNocThisMonth.toLocaleString() : "—";
+    }
+    const subNoc = el("kpiSubSuccessfulNoc");
+    if (subNoc) subNoc.textContent = `${s.currentMonthLabel || "This Month"} (YES)`;
+
+    const valPending = el("kpiValPendingReports");
+    if (valPending) {
+      valPending.textContent = (isLoaded && s.pendingReports != null) ? s.pendingReports.toLocaleString() : "—";
+    }
+    const valPct = el("kpiValPendingPct");
+    if (valPct) {
+      valPct.textContent = (isLoaded && s.pendingPercentage != null) ? s.pendingPercentage : "—";
+    }
+
+    const valFollowup = el("kpiValFollowUp");
+    if (valFollowup) {
+      valFollowup.textContent = (s.followupCount != null) ? s.followupCount.toLocaleString() : "—";
+    }
+
+    const valUnreported = el("kpiValUnreported");
+    if (valUnreported) {
+      valUnreported.textContent = (s.unreportedCount != null) ? s.unreportedCount.toLocaleString() : "—";
+    }
+
+    const valEdrAction = el("kpiValEdrAction");
+    if (valEdrAction) {
+      valEdrAction.textContent = (s.edrActionNeededCount != null) ? s.edrActionNeededCount.toLocaleString() : "—";
+    }
+    const subEdrAction = el("kpiSubEdrAction");
+    if (subEdrAction) {
+      subEdrAction.textContent = `${s.edrUncopiedCount || 0} Teams · ${s.edrUnauditedCount || 0} Audit`;
+    }
+
+    // SECTION 2: Needs Attention Strip
+    const na = s.needsAttention || {};
+    const countPending = el("naCountPending");
+    if (countPending) countPending.textContent = (isLoaded && s.pendingReports != null) ? s.pendingReports : (na.pendingNoc || "—");
+
+    const countPending24 = el("naCountPending24");
+    if (countPending24) countPending24.textContent = na.pendingOlder24 != null ? na.pendingOlder24 : "—";
+
+    const countPending48 = el("naCountPending48");
+    if (countPending48) countPending48.textContent = na.pendingOlder48 != null ? na.pendingOlder48 : "—";
+
+    const countFollowUp = el("naCountFollowUp");
+    if (countFollowUp) countFollowUp.textContent = s.followupCount != null ? s.followupCount : (na.followup || "—");
+
+    const countUnreported = el("naCountUnreported");
+    if (countUnreported) countUnreported.textContent = s.unreportedCount != null ? s.unreportedCount : (na.unreported || "—");
+
+    const countEdrTeams = el("naCountEdrTeams");
+    if (countEdrTeams) countEdrTeams.textContent = s.edrUncopiedCount != null ? s.edrUncopiedCount : (na.edrTeamsPending || "—");
+
+    const countEdrAudit = el("naCountEdrAudit");
+    if (countEdrAudit) countEdrAudit.textContent = s.edrUnauditedCount != null ? s.edrUnauditedCount : (na.edrAuditPending || "—");
+
+    // SECTION 3: CCTV Team — Current Month Table (Sorted by Reports descending)
+    const teamHeading = el("dashTeamCurrentMonthHeading");
+    if (teamHeading) {
+      teamHeading.textContent = `CCTV Team — ${s.currentMonthLabel || "Current Month"}`;
+    }
+
+    const tbodyTeam = el("tbodyTeamCurrentMonth");
+    if (tbodyTeam) {
+      if (isLoaded && Array.isArray(s.teamStats) && s.teamStats.length > 0) {
+        tbodyTeam.innerHTML = s.teamStats.map(t => {
+          return `
+            <tr>
+              <td><strong>${escapeHtml(t.name)}</strong></td>
+              <td class="col-num">${(t.reports || 0).toLocaleString()}</td>
+              <td class="col-num" style="color:var(--accent-emerald,#10b981); font-weight:600;">${(t.yes || 0).toLocaleString()}</td>
+              <td class="col-num" style="color:#f87171;">${(t.no || 0).toLocaleString()}</td>
+              <td class="col-num" style="color:var(--accent-amber,#fbbf24); font-weight:700;">${(t.pending || 0).toLocaleString()}</td>
+              <td class="col-num" style="color:var(--text-secondary,#94a3b8);">${t.pendingPct || '0.00%'}</td>
+            </tr>
+          `;
+        }).join("");
+      } else {
+        tbodyTeam.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:20px; color:var(--text-muted); font-size:13px;">Tracker API unavailable — No team statistics loaded</td></tr>`;
+      }
+    }
+
+    // SECTION 4: Monthly Activity Historical Panel
+    const maHeading = el("dashMonthlyActivityHeading");
+    if (maHeading) {
+      maHeading.textContent = `Monthly Activity — ${s.currentYear || 2026}`;
+    }
+
+    const maChartEl = el("dashMonthlyActivityChart");
+    const selectMemberEl = el("selectNocGraphMember");
+    const activeMember = (selectMemberEl && selectMemberEl.value) || "ALL";
+
+    let activeGraphData = null;
+    if (activeMember === "ALL") {
+      activeGraphData = s.entireTeamGraph;
+    } else if (Array.isArray(s.memberNocGraphs)) {
+      activeGraphData = s.memberNocGraphs.find(m => m.name === activeMember);
+    }
+
+    if (maChartEl) {
+      if (isLoaded && activeGraphData && Array.isArray(activeGraphData.monthlyData) && activeGraphData.monthlyData.length > 0) {
+        const maxVal = Math.max(5, ...activeGraphData.monthlyData.map(m => m.count || 0));
+
+        maChartEl.innerHTML = activeGraphData.monthlyData.map(m => {
+          const barHeightPct = m.count > 0 ? Math.max(6, Math.round((m.count / maxVal) * 100)) : 3;
+          const currentClass = m.isCurrent ? "is-current" : "";
+          const zeroClass = m.count === 0 ? "is-zero" : "";
+          const titleText = `${activeGraphData.name} - ${m.fullName}: ${m.count} Successful NOC`;
+
+          return `
+            <div class="ma-bar-col ${currentClass} ${zeroClass}" title="${titleText}">
+              <div class="ma-bar-val">${m.count > 0 ? m.count : ""}</div>
+              <div class="ma-bar-track">
+                <div class="ma-bar-fill" style="height: ${barHeightPct}%;"></div>
+              </div>
+              <div class="ma-bar-label">${m.month}</div>
+            </div>
+          `;
+        }).join("");
+
+        const totalYearEl = el("dashMonthlyActivityTotalYear");
+        if (totalYearEl) totalYearEl.textContent = (activeGraphData.totalThisYear || 0).toLocaleString();
+
+        const thisMonthEl = el("dashMonthlyActivityThisMonth");
+        if (thisMonthEl) thisMonthEl.textContent = (activeGraphData.thisMonth || 0).toLocaleString();
+      } else {
+        maChartEl.innerHTML = `<div style="text-align: center; width: 100%; padding: 40px 16px; color: var(--text-muted); font-size: 13px;">Tracker API unavailable — No monthly activity data</div>`;
+      }
+    }
+
+    // Pending by CCTV Team
+    const pendingListEl = el("dashPendingByTeamList");
+    if (pendingListEl) {
+      if (isLoaded && Array.isArray(s.pendingByTeam) && s.pendingByTeam.length > 0) {
+        pendingListEl.innerHTML = s.pendingByTeam.map(item => {
+          const isZero = item.pending === 0;
+          const isSelected = activePendingTeamFilter === item.name;
+          return `
+            <div class="dashboard-pending-item ${isZero ? 'has-zero' : ''} ${isSelected ? 'is-selected' : ''}" data-team="${escapeHtml(item.name)}" style="cursor:pointer;" title="Click to filter pending records for ${escapeHtml(item.name)}">
+              <div class="pending-item-name" style="${isSelected ? 'color:var(--accent-cyan,#06b6d4); font-weight:700;' : ''}">${escapeHtml(item.name)}</div>
+              <div class="pending-item-stats">
+                <span class="pending-count-badge ${isZero ? 'zero' : ''}">${item.pending} Pending</span>
+                <span class="pending-pct-text">${item.trackerPct || item.sharePct}</span>
+              </div>
+            </div>
+          `;
+        }).join("");
+
+        // Delegate click on pending items to filter Pending Details
+        pendingListEl.querySelectorAll(".dashboard-pending-item").forEach(itemEl => {
+          itemEl.addEventListener("click", () => {
+            const teamName = itemEl.getAttribute("data-team");
+            if (activePendingTeamFilter === teamName) {
+              activePendingTeamFilter = null;
+            } else {
+              activePendingTeamFilter = teamName;
+            }
+            renderDashboardWorkspace();
+            el("secPendingDetails")?.scrollIntoView({ behavior: "smooth", block: "start" });
+          });
+        });
+      } else {
+        pendingListEl.innerHTML = `<div style="text-align: center; padding: 24px 16px; color: var(--text-muted); font-size: 13px;">Tracker API unavailable — No pending data</div>`;
+      }
+    }
+
+    // SECTION 5: Month Breakdown
+    const breakdownTitleEl = el("dashBreakdownTitle");
+    if (breakdownTitleEl) {
+      breakdownTitleEl.textContent = `Month Breakdown — ${s.currentMonthLabel || "October 2026"}`;
+    }
+
+    const breakdownContentEl = el("dashBreakdownContent");
+    if (breakdownContentEl) {
+      const activeTab = currentBreakdownTab || "infractions";
+      const items = (s.breakdown && Array.isArray(s.breakdown[activeTab])) ? s.breakdown[activeTab] : [];
+
+      if (items.length > 0) {
+        const maxCount = Math.max(1, ...items.map(it => it.count || 0));
+        breakdownContentEl.innerHTML = items.map(it => {
+          const pct = Math.max(4, Math.round((it.count / maxCount) * 100));
+          return `
+            <div class="breakdown-row">
+              <span class="breakdown-row-name" title="${escapeHtml(it.name)}">${escapeHtml(it.name)}</span>
+              <div class="breakdown-row-track">
+                <div class="breakdown-row-fill" style="width: ${pct}%;"></div>
+              </div>
+              <span class="breakdown-row-val">${(it.count || 0).toLocaleString()}</span>
+            </div>
+          `;
+        }).join("");
+      } else {
+        const tabLabel = activeTab.charAt(0).toUpperCase() + activeTab.slice(1);
+        breakdownContentEl.innerHTML = `
+          <div style="text-align:center; padding:24px 16px; color:var(--text-muted); font-size:12.5px;">
+            <div style="font-weight:600; color:var(--text-secondary); margin-bottom:4px;">No ${escapeHtml(tabLabel)} Breakdown Data</div>
+            <div>Awaiting monthly breakdown sync from Google Sheets (see scratch/CCTV_OPS_Dashboard_Tracker_API.gs)</div>
+          </div>
+        `;
+      }
+    }
+
+    // SECTION 6: Today Operational Panel
+    const todayDateEl = el("dashTodayHeading");
+    if (todayDateEl) {
+      const todayInfo = svc && typeof svc.getCurrentMonthInfo === "function" ? svc.getCurrentMonthInfo() : null;
+      todayDateEl.textContent = todayInfo ? `Today — ${todayInfo.monthShort} ${todayInfo.day}` : "Today";
+    }
+
+    const todayObj = s.today || {};
+    const repToday = el("todayValReports");
+    if (repToday) repToday.textContent = todayObj.reportsToday != null ? todayObj.reportsToday : "Unavailable";
+
+    const nocToday = el("todayValNoc");
+    if (nocToday) nocToday.textContent = todayObj.successfulNocToday != null ? todayObj.successfulNocToday : "Unavailable";
+
+    const pendToday = el("todayValPending");
+    if (pendToday) pendToday.textContent = todayObj.pendingAddedToday != null ? todayObj.pendingAddedToday : "Unavailable";
+
+    const edrToday = el("todayValEdrs");
+    if (edrToday) edrToday.textContent = todayObj.edrsCreatedToday != null ? todayObj.edrsCreatedToday : "0";
+
+    const fuToday = el("todayValFollowups");
+    if (fuToday) fuToday.textContent = todayObj.followupsDueToday != null ? todayObj.followupsDueToday : "0";
+
+    // SECTION 7: Pending Details Table (with Age Indicators & Member Filter)
+    const secDetails = el("secPendingDetails");
+    const tbodyDetails = el("tbodyPendingDetails");
+    const countBadge = el("dashPendingDetailsCount");
+    const filterIndicator = el("dashPendingFilterIndicator");
+    const filterNameText = el("dashPendingFilterName");
+
+    if (secDetails && tbodyDetails) {
+      let detailsList = Array.isArray(s.pendingDetails) ? s.pendingDetails : [];
+
+      if (activePendingTeamFilter) {
+        detailsList = detailsList.filter(d => d.team === activePendingTeamFilter);
+        if (filterIndicator) filterIndicator.style.display = "inline-flex";
+        if (filterNameText) filterNameText.textContent = activePendingTeamFilter;
+      } else {
+        if (filterIndicator) filterIndicator.style.display = "none";
+      }
+
+      if (detailsList.length > 0) {
+        secDetails.style.display = "";
+        if (countBadge) countBadge.textContent = `${detailsList.length} Records`;
+
+        tbodyDetails.innerHTML = detailsList.map((row, idx) => {
+          let ageBadgeHtml = "";
+          if (row.ageCategory === "≥2 days" || row.ageCategory === ">48h") {
+            const titleStr = row.ageDays != null ? `${row.ageDays} days old` : "≥2 days old";
+            ageBadgeHtml = `<span class="age-badge age-48" title="${titleStr}">≥2 days</span>`;
+          } else if (row.ageCategory === "1 day" || row.ageCategory === "24–48h") {
+            ageBadgeHtml = `<span class="age-badge age-24" title="1 day old">1 day</span>`;
+          } else if ((row.ageCategory === "Today" || row.ageCategory === "<24h") && row.parsedDate) {
+            ageBadgeHtml = `<span class="age-badge age-fresh" title="Incident today">Today</span>`;
+          }
+
+          return `
+            <tr>
+              <td>
+                <span style="font-family:var(--font-mono,monospace);">${escapeHtml(row.date || '—')}</span>
+                ${ageBadgeHtml}
+              </td>
+              <td><strong>${escapeHtml(row.team || '—')}</strong></td>
+              <td>${escapeHtml(row.site || '—')}</td>
+              <td><span class="badge-pending">${escapeHtml(row.status || 'Pending')}</span></td>
+              <td style="max-width:180px; overflow:hidden; text-overflow:ellipsis;" title="${escapeHtml(row.pendingReason || '')}">
+                ${escapeHtml(row.pendingReason || '—')}
+              </td>
+              <td style="max-width:240px; overflow:hidden; text-overflow:ellipsis;" title="${escapeHtml(row.remarks || '')}">
+                ${escapeHtml(row.remarks || '—')}
+              </td>
+              <td>
+                <button type="button" class="btn-open-source" data-action="open-tracker" data-index="${idx}">
+                  Open
+                </button>
+              </td>
+            </tr>
+          `;
+        }).join("");
+
+        tbodyDetails.querySelectorAll("button[data-action='open-tracker']").forEach(btn => {
+          btn.addEventListener("click", () => {
+            switchWorkspace("trackers");
+            if (typeof window.setTrackerWorkbook === "function") {
+              window.setTrackerWorkbook("audit");
+            }
+          });
+        });
+      } else {
+        if (activePendingTeamFilter) {
+          secDetails.style.display = "";
+          if (countBadge) countBadge.textContent = `0 Records`;
+          tbodyDetails.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:20px; color:var(--text-muted); font-size:13px;">No pending records for ${escapeHtml(activePendingTeamFilter)}</td></tr>`;
+        } else {
+          secDetails.style.display = "none";
+        }
+      }
+    }
+
+    // SECTION 8: System Status Footer
+    const dotTracker = el("statusDotTracker");
+    const textTracker = el("statusTextTracker");
+    if (dotTracker && textTracker) {
+      if (s.isStale) {
+        dotTracker.className = "status-indicator-dot is-stale";
+        textTracker.textContent = "Stale / Cached";
+      } else {
+        dotTracker.className = "status-indicator-dot is-online";
+        textTracker.textContent = "Synced";
+      }
+    }
+    const lastRefreshEl = el("statusLastRefresh");
+    if (lastRefreshEl) lastRefreshEl.textContent = s.lastUpdatedFormatted || "—";
+  }
+
+  window.renderDashboardWorkspace = renderDashboardWorkspace;
+  window.initDashboardController = initDashboardController;
+
+  function renderMasterlistWorkspace() {
+    if (window._renderMasterlistWorkspaceFn) {
+      window._renderMasterlistWorkspaceFn();
+    }
+  }
+
+  function initMasterlistController() {
+    const masterlist = window.masterlistService;
+    if (!masterlist) return;
+
+    const syncDot = el("masterlistSyncDot");
+    const syncTitle = el("masterlistSyncTitle");
+    const syncDetail = el("masterlistSyncDetail");
+    const lastUpdated = el("masterlistLastUpdated");
+    const refreshBtn = el("masterlistRefreshBtn");
+
+    const pendingTitle = el("masterPendingTitle");
+    const pendingMilesCount = el("masterPendingMilesCount");
+    const pendingTabs = el("masterPendingTabs");
+    const pendingTable = el("masterPendingMilesTable");
+
+    const notepadTitle = el("masterPendingNotesTitle");
+    const notepadStatus = el("masterNotepadStatus");
+    const notepadText = el("masterPendingNotepad");
+    const notepadClearBtn = el("masterNotepadClearBtn");
+
+    const hrCount = el("masterAssignedHrCount");
+    const hrEditId = el("masterHrEditId");
+    const hrSiteInput = el("masterHrSiteInput");
+    const hrTeamInput = el("masterHrTeamInput");
+    const hrAssignedInput = el("masterHrAssignedInput");
+    const hrSaveBtn = el("masterHrSaveBtn");
+    const hrCancelBtn = el("masterHrCancelBtn");
+    const hrStatus = el("masterHrCrudStatus");
+    const hrSearch = el("masterHrSearch");
+    const hrSearchClear = el("masterHrSearchClear");
+    const hrTableBody = el("masterAssignedHrBody");
+
+    function renderSyncStatus() {
+      const state = masterlist.getSyncState();
+      if (syncDot) {
+        syncDot.className = "masterlist-sync-dot " + (state.kind === "live" ? "is-live" : (state.kind === "syncing" ? "is-syncing" : "is-error"));
+      }
+      if (syncTitle) syncTitle.textContent = state.title;
+      if (syncDetail) syncDetail.textContent = state.detail;
+      if (lastUpdated) lastUpdated.textContent = state.formattedTime;
+    }
+
+    function renderPendingTrackers() {
+      const trackers = masterlist.getTrackers();
+      const activeKey = masterlist.getActiveTrackerKey();
+      const activeTracker = trackers.find(t => t.key === activeKey) || trackers[0];
+
+      // Update tab badges
+      trackers.forEach(t => {
+        const badgeEl = el("badge" + t.label.replace(/[^a-zA-Z]/g, ""));
+        if (badgeEl) badgeEl.textContent = String(t.count);
+      });
+
+      // Update active tab buttons
+      pendingTabs?.querySelectorAll("[data-pending-key]").forEach(btn => {
+        btn.classList.toggle("active", btn.dataset.pendingKey === activeKey);
+      });
+
+      if (pendingTitle) pendingTitle.textContent = `Pending ${activeTracker ? activeTracker.label : 'Miles'}`;
+      if (pendingMilesCount) pendingMilesCount.textContent = String(activeTracker ? activeTracker.count : 0);
+
+      // Render table
+      if (pendingTable) {
+        const thead = pendingTable.querySelector("thead");
+        const tbody = pendingTable.querySelector("tbody");
+        const columns = masterlist.getColumns();
+
+        if (thead) {
+          thead.innerHTML = `<tr>${columns.map(col => `<th>${escapeHtml(col)}</th>`).join("")}</tr>`;
+        }
+
+        if (tbody) {
+          const rows = masterlist.getPendingRows(activeKey);
+          const sourceInfo = activeTracker?.sourceInfo;
+
+          if (sourceInfo && sourceInfo.ok === false) {
+            const errDetail = sourceInfo.error || "Sheet could not be read or was not found.";
+            tbody.innerHTML = `<tr><td colspan="${columns.length}" class="masterlist-empty-cell is-error"><strong>Source Error:</strong> Could not load ${escapeHtml(activeTracker.label)} tracker: ${escapeHtml(errDetail)}</td></tr>`;
+          } else if (!rows.length) {
+            tbody.innerHTML = `<tr><td colspan="${columns.length}" class="masterlist-empty-cell">No Pending ${escapeHtml(activeTracker ? activeTracker.label : 'Miles')} rows found.</td></tr>`;
+          } else {
+            tbody.innerHTML = rows.map(row => `
+              <tr>
+                ${columns.map(col => `<td>${escapeHtml(masterlist.valueForPendingColumn(row, col))}</td>`).join("")}
+              </tr>
+            `).join("");
+          }
+        }
+      }
+
+      // Update Notepad
+      if (notepadTitle) notepadTitle.textContent = `Pending ${activeTracker ? activeTracker.label : 'Miles'} Notes`;
+      if (notepadText) notepadText.value = masterlist.getNotepad(activeKey);
+      if (notepadStatus) notepadStatus.textContent = "Saved locally";
+    }
+
+    function setHrStatus(msg, tone = "") {
+      if (!hrStatus) return;
+      if (!msg) {
+        hrStatus.style.display = "none";
+        hrStatus.textContent = "";
+        return;
+      }
+      hrStatus.style.display = "block";
+      hrStatus.textContent = msg;
+      hrStatus.className = "masterlist-hr-status" + (tone ? ` is-${tone}` : "");
+    }
+
+    function clearHrForm() {
+      if (hrEditId) hrEditId.value = "";
+      if (hrSiteInput) hrSiteInput.value = "";
+      if (hrTeamInput) hrTeamInput.value = "";
+      if (hrAssignedInput) hrAssignedInput.value = "";
+      if (hrSaveBtn) hrSaveBtn.textContent = "Add";
+      setHrStatus("");
+    }
+
+    function renderHrAssignments() {
+      const query = hrSearch?.value || "";
+      const assignments = masterlist.getHrAssignments(query);
+
+      if (hrCount) hrCount.textContent = String(assignments.length);
+
+      if (!hrTableBody) return;
+
+      if (!assignments.length) {
+        hrTableBody.innerHTML = `<tr><td colspan="4" class="masterlist-empty-cell">No HR assignments found.</td></tr>`;
+        return;
+      }
+
+      hrTableBody.innerHTML = assignments.map(item => `
+        <tr data-id="${escapeHtml(item.id || "")}">
+          <td>${escapeHtml(item.site)}</td>
+          <td>${escapeHtml(item.omTeam)}</td>
+          <td>${escapeHtml(item.hr)}</td>
+          <td>
+            <div class="masterlist-hr-actions-cell">
+              <button type="button" class="btn btn-ghost btn-sm btn-hr-edit" data-id="${escapeHtml(item.id || "")}" style="padding:2px 6px; font-size:10px;">Edit</button>
+              <button type="button" class="btn btn-danger-ghost btn-sm btn-hr-delete" data-id="${escapeHtml(item.id || "")}" style="padding:2px 6px; font-size:10px;">Delete</button>
+            </div>
+          </td>
+        </tr>
+      `).join("");
+
+      // Wire edit buttons
+      hrTableBody.querySelectorAll(".btn-hr-edit").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const id = btn.dataset.id;
+          const item = assignments.find(a => a.id === id);
+          if (!item) return;
+          if (hrEditId) hrEditId.value = item.id || "";
+          if (hrSiteInput) hrSiteInput.value = item.site || "";
+          if (hrTeamInput) hrTeamInput.value = item.omTeam || "";
+          if (hrAssignedInput) hrAssignedInput.value = item.hr || "";
+          if (hrSaveBtn) hrSaveBtn.textContent = "Update";
+          hrSiteInput?.focus();
+          setHrStatus(`Editing assignment for ${item.site}  -  ${item.omTeam}`, "local");
+        });
+      });
+
+      // Wire delete buttons
+      hrTableBody.querySelectorAll(".btn-hr-delete").forEach(btn => {
+        btn.addEventListener("click", async () => {
+          const id = btn.dataset.id;
+          const item = assignments.find(a => a.id === id);
+          if (!item) return;
+
+          const approved = await (window.appConfirm ? window.appConfirm({
+            title: "Delete HR Assignment?",
+            message: `Remove assignment for ${item.site}  -  ${item.omTeam}  -  ${item.hr}?`,
+            confirmText: "Delete Assignment",
+            tone: "danger"
+          }) : window.confirm(`Delete assignment for ${item.site}  -  ${item.omTeam}?`));
+
+          if (!approved) return;
+
+          try {
+            await masterlist.deleteHrAssignment(id);
+            showToast("HR assignment removed.", "success");
+            setHrStatus("Assignment removed.", "success");
+          } catch (err) {
+            showToast(err.message || "Could not delete assignment.", "error");
+            setHrStatus(err.message || "Could not delete assignment.", "error");
+          }
+        });
+      });
+    }
+
+    // Tracker sub-tab events
+    pendingTabs?.querySelectorAll("[data-pending-key]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        masterlist.setActiveTrackerKey(btn.dataset.pendingKey);
+        renderPendingTrackers();
+      });
+    });
+
+    // Refresh button event
+    refreshBtn?.addEventListener("click", async () => {
+      refreshBtn.disabled = true;
+      const origText = refreshBtn.innerHTML;
+      refreshBtn.innerHTML = `<span>Updating...</span>`;
+      try {
+        await masterlist.loadMasterList(true);
+        showToast("Master List refreshed from Google Sheets.", "success");
+      } catch (err) {
+        showToast("Refresh failed: " + (err.message || "Network error"), "error");
+      } finally {
+        refreshBtn.disabled = false;
+        refreshBtn.innerHTML = origText;
+      }
+    });
+
+    // Debounced Notepad saving
+    let noteTimer = null;
+    notepadText?.addEventListener("input", () => {
+      if (notepadStatus) notepadStatus.textContent = "Saving...";
+      clearTimeout(noteTimer);
+      noteTimer = setTimeout(() => {
+        const text = notepadText.value;
+        const activeKey = masterlist.getActiveTrackerKey();
+        masterlist.saveNotepad(activeKey, text);
+        if (notepadStatus) {
+          notepadStatus.textContent = "Saved " + new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+        }
+      }, 350);
+    });
+
+    // Clear Notepad button
+    notepadClearBtn?.addEventListener("click", async () => {
+      const activeKey = masterlist.getActiveTrackerKey();
+      const approved = await (window.appConfirm ? window.appConfirm({
+        title: `Clear Pending Notepad?`,
+        message: "This will remove the saved notes for this pending tracker from this browser.",
+        confirmText: "Clear Notepad",
+        tone: "danger"
+      }) : window.confirm("Clear notepad for this tracker?"));
+
+      if (!approved) return;
+
+      masterlist.clearNotepad(activeKey);
+      if (notepadText) notepadText.value = "";
+      if (notepadStatus) notepadStatus.textContent = "Notepad cleared";
+      showToast("Notepad cleared.", "info");
+    });
+
+    // HR Form Add/Save
+    hrSaveBtn?.addEventListener("click", async () => {
+      const site = hrSiteInput?.value?.trim();
+      const omTeam = hrTeamInput?.value?.trim();
+      const hr = hrAssignedInput?.value?.trim();
+      const id = hrEditId?.value?.trim();
+
+      if (!site || !omTeam || !hr) {
+        setHrStatus("Site, Team / OM / Campaign, and HR are required.", "error");
+        showToast("Please fill in all required HR assignment fields.", "error");
+        return;
+      }
+
+      try {
+        const result = await masterlist.saveHrAssignment({ id, site, omTeam, hr });
+        clearHrForm();
+        setHrStatus(
+          result.sent
+            ? "Saved. Google Sheets sync will confirm it on refresh."
+            : "Saved on this browser; Google Sheets write could not be confirmed.",
+          result.sent ? "success" : "local"
+        );
+        showToast("HR assignment saved.", "success");
+      } catch (err) {
+        setHrStatus(err.message || "Failed to save assignment.", "error");
+        showToast(err.message || "Failed to save assignment.", "error");
+      }
+    });
+
+    // HR Form Cancel
+    hrCancelBtn?.addEventListener("click", () => {
+      clearHrForm();
+    });
+
+    // Search input & clear
+    hrSearch?.addEventListener("input", () => {
+      renderHrAssignments();
+    });
+
+    hrSearchClear?.addEventListener("click", () => {
+      if (hrSearch) {
+        hrSearch.value = "";
+        hrSearch.focus();
+        renderHrAssignments();
+      }
+    });
+
+    // Saved Options Elements
+    const optCard = el("masterSavedOptionsCard");
+    const optCount = el("masterSavedOptionsCount");
+    const optTabs = el("masterOptionsTabs");
+    const optNewInput = el("masterOptionNewInput");
+    const optAddBtn = el("masterOptionAddBtn");
+    const optSearch = el("masterOptionSearch");
+    const optSearchClear = el("masterOptionSearchClear");
+    const optTableBody = el("masterSavedOptionsBody");
+    const badgeOptTls = el("badgeOptionsTls");
+    const badgeOptOms = el("badgeOptionsOms");
+    const badgeOptAccounts = el("badgeOptionsAccounts");
+
+    let currentOptionCat = "tls";
+
+    const OPTION_CAT_CONFIG = {
+      tls: {
+        label: "Team / TL",
+        plural: "Teams / TLs",
+        placeholder: "Add new Team / TL to Masterlist...",
+        getItems: () => masterlist.getTeamLeaders(),
+        add: name => masterlist.addTeam(name),
+        remove: name => masterlist.removeTeam(name)
+      },
+      oms: {
+        label: "Dedicated OM",
+        plural: "Dedicated OMs",
+        placeholder: "Add new Dedicated OM to Masterlist...",
+        getItems: () => masterlist.getOms(),
+        add: name => masterlist.addDedicatedOm(name),
+        remove: name => masterlist.removeDedicatedOm(name)
+      },
+      accounts: {
+        label: "Account / Campaign",
+        plural: "Accounts / Campaigns",
+        placeholder: "Add new Account / Campaign to Masterlist...",
+        getItems: () => masterlist.getAccounts(),
+        add: name => masterlist.addAccount(name),
+        remove: name => masterlist.removeAccount(name)
+      }
+    };
+
+    function renderSavedOptions() {
+      if (!optCard) return;
+
+      const tlsList = masterlist.getTeamLeaders();
+      const omsList = masterlist.getOms();
+      const accList = masterlist.getAccounts();
+
+      if (badgeOptTls) badgeOptTls.textContent = String(tlsList.length);
+      if (badgeOptOms) badgeOptOms.textContent = String(omsList.length);
+      if (badgeOptAccounts) badgeOptAccounts.textContent = String(accList.length);
+
+      optTabs?.querySelectorAll("[data-option-cat]").forEach(btn => {
+        btn.classList.toggle("active", btn.dataset.optionCat === currentOptionCat);
+      });
+
+      const catCfg = OPTION_CAT_CONFIG[currentOptionCat] || OPTION_CAT_CONFIG.tls;
+      if (optNewInput) {
+        optNewInput.placeholder = catCfg.placeholder;
+      }
+
+      const allItems = catCfg.getItems();
+      if (optCount) optCount.textContent = `${allItems.length} active`;
+
+      const q = (optSearch?.value || "").trim().toLowerCase();
+      const filtered = q ? allItems.filter(item => item.toLowerCase().includes(q)) : allItems;
+
+      if (!optTableBody) return;
+
+      if (!filtered.length) {
+        optTableBody.innerHTML = `<tr><td colspan="4" class="masterlist-empty-cell">${q ? 'No matching options found.' : 'No active options in this list.'}</td></tr>`;
+        return;
+      }
+
+      optTableBody.innerHTML = filtered.map((name, idx) => {
+        const isCustom = typeof masterlist.isCustomOption === "function"
+          ? masterlist.isCustomOption(currentOptionCat, name)
+          : false;
+        const sourceBadge = isCustom
+          ? `<span class="badge badge-success" style="font-size:9.5px; padding:2px 6px;">Custom / EDR</span>`
+          : `<span class="badge badge-neutral" style="font-size:9.5px; padding:2px 6px;">System / Sheets</span>`;
+
+        return `
+          <tr>
+            <td style="color:var(--text-muted); font-size:11px;">${idx + 1}</td>
+            <td style="font-weight:500;">${escapeHtml(name)}</td>
+            <td>${sourceBadge}</td>
+            <td style="text-align:right;">
+              <button type="button" class="btn btn-danger-ghost btn-sm btn-opt-deactivate" data-name="${escapeHtml(name)}" style="padding:2px 6px; font-size:10px;">Deactivate</button>
+            </td>
+          </tr>
+        `;
+      }).join("");
+
+      optTableBody.querySelectorAll(".btn-opt-deactivate").forEach(btn => {
+        btn.addEventListener("click", async () => {
+          const name = btn.dataset.name;
+          if (!name) return;
+
+          const approved = await (window.appConfirm ? window.appConfirm({
+            title: `Deactivate ${catCfg.label}?`,
+            message: `Remove "${name}" from active ${catCfg.plural.toLowerCase()}? Historical EDR records and HR assignments will remain intact.`,
+            confirmText: "Deactivate Option",
+            tone: "danger"
+          }) : window.confirm(`Deactivate "${name}" from active ${catCfg.plural.toLowerCase()}?`));
+
+          if (!approved) return;
+
+          catCfg.remove(name);
+          showToast(`Deactivated "${name}" from active choices.`, "info");
+          renderSavedOptions();
+        });
+      });
+    }
+
+    // Saved options category tabs
+    optTabs?.querySelectorAll("[data-option-cat]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        currentOptionCat = btn.dataset.optionCat || "tls";
+        if (optSearch) optSearch.value = "";
+        renderSavedOptions();
+      });
+    });
+
+    // Saved options add button & enter key
+    async function handleAddOption() {
+      const val = optNewInput?.value?.trim();
+      if (!val) {
+        showToast("Please enter an option name.", "info");
+        optNewInput?.focus();
+        return;
+      }
+      const catCfg = OPTION_CAT_CONFIG[currentOptionCat] || OPTION_CAT_CONFIG.tls;
+      const res = catCfg.add(val);
+      if (optNewInput) optNewInput.value = "";
+      if (res && res.added) {
+        showToast(`Added "${val}" to ${catCfg.plural}.`, "success");
+      } else {
+        showToast(`"${val}" is already in active ${catCfg.plural}.`, "info");
+      }
+      renderSavedOptions();
+    }
+
+    optAddBtn?.addEventListener("click", handleAddOption);
+    optNewInput?.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        handleAddOption();
+      }
+    });
+
+    // Saved options search
+    optSearch?.addEventListener("input", () => {
+      renderSavedOptions();
+    });
+
+    optSearchClear?.addEventListener("click", () => {
+      if (optSearch) {
+        optSearch.value = "";
+        optSearch.focus();
+        renderSavedOptions();
+      }
+    });
+
+    // Masterlist service subscription
+    masterlist.subscribe(() => {
+      renderSyncStatus();
+      renderPendingTrackers();
+      renderHrAssignments();
+      renderSavedOptions();
+    });
+
+    window._renderMasterlistWorkspaceFn = function() {
+      renderSyncStatus();
+      renderPendingTrackers();
+      renderHrAssignments();
+      renderSavedOptions();
+    };
+
+    // Initial render & boot
+    renderSyncStatus();
+    renderPendingTrackers();
+    renderHrAssignments();
+    renderSavedOptions();
+    masterlist.init();
+  }
+
+  // =========================================================================
+  // ACTIVITY HISTORY WORKSPACE CONTROLLER
+  // =========================================================================
+  function renderHistoryWorkspace() {
+    if (window._renderHistoryWorkspaceFn) {
+      window._renderHistoryWorkspaceFn();
+    }
+  }
+
+  function initHistoryController() {
+    const history = window.historyService;
+    if (!history) return;
+
+    const undoBtn = el("historyUndoBtn");
+    const redoBtn = el("historyRedoBtn");
+    const restoreBtn = el("historyRestoreSelectedBtn");
+    const clearBtn = el("historyClearBtn");
+    const summaryText = el("historySummaryText");
+    const countBadge = el("historyCountBadge");
+    const listContainer = el("historyListContainer");
+    const previewContainer = el("historyPreviewContainer");
+    const selectedWsBadge = el("historySelectedWsBadge");
+
+    function formatTime(iso) {
+      const date = new Date(iso);
+      if (Number.isNaN(date.getTime())) return "";
+      return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+    }
+
+    function renderHistoryPreview(entry) {
+      if (!previewContainer) return;
+      if (!entry) {
+        if (selectedWsBadge) selectedWsBadge.textContent = "-";
+        previewContainer.innerHTML = '<div class="history-preview-empty">Select a history item to inspect affected reports or data.</div>';
+        return;
+      }
+
+      if (selectedWsBadge) {
+        selectedWsBadge.textContent = (entry.workspace || "Workspace").toUpperCase();
+      }
+
+      const summary = history.historyEntrySummary(entry);
+      let previewHtml = `
+        <div class="history-preview-box">
+          <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
+            <strong style="color:var(--text-primary); font-size:12px;">${escapeHtml(entry.action)}</strong>
+            <span style="color:var(--text-dim); font-size:10.5px;">${escapeHtml(formatTime(entry.at))}</span>
+          </div>
+          <div style="font-size:11.5px; color:var(--text-secondary); margin-bottom:8px;">
+            ${escapeHtml(summary || "State snapshot captured.")}
+          </div>
+        </div>
+      `;
+
+            const deletedDetails = (typeof history.getDeletedDetails === "function")
+        ? history.getDeletedDetails(entry)
+        : [];
+
+      previewHtml += `
+        <div style="display:flex; flex-direction:column; gap:6px; margin-top:6px;">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-size:11px; font-weight:700; color:var(--text-secondary); text-transform:uppercase;">Deleted Data</span>
+            ${deletedDetails.length > 0 ? `<span class="history-ws-badge" style="font-size:10px; background:rgba(239,68,68,0.15); color:#ef4444; border:1px solid rgba(239,68,68,0.3); font-weight:700;">${deletedDetails.length} deleted</span>` : ''}
+          </div>
+      `;
+
+      if (deletedDetails.length === 0) {
+        previewHtml += `
+          <div class="history-preview-box" style="font-size:11.5px; color:var(--text-muted); font-style:italic;">
+            No deleted data in this change. Use Undo/Redo for edits or additions.
+          </div>
+        </div>`;
+      } else {
+        previewHtml += `
+          <div style="display:flex; flex-direction:column; gap:8px; max-height:260px; overflow-y:auto; padding-right:2px;">
+            ${deletedDetails.map(item => `
+              <div class="history-preview-box" style="margin-bottom:0; background:rgba(239,68,68,0.04); border-color:rgba(239,68,68,0.2);">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; border-bottom:1px solid rgba(255,255,255,0.06); padding-bottom:4px;">
+                  <strong style="color:var(--text-primary); font-size:11.5px;">${escapeHtml(item.title || item.type)}</strong>
+                  <span style="font-size:10px; color:#ef4444; font-weight:600; text-transform:uppercase;">${escapeHtml(item.type)}</span>
+                </div>
+                <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(130px, 1fr)); gap:4px 8px; font-size:11px;">
+                  ${item.fields.map(([k, v]) => `
+                    <div>
+                      <span style="color:var(--text-dim); font-size:10px; display:block;">${escapeHtml(k)}</span>
+                      <span style="color:var(--text-secondary); font-weight:500; word-break:break-word;">${escapeHtml(String(v))}</span>
+                    </div>
+                  `).join("")}
+                </div>
+              </div>
+            `).join("")}
+          </div>
+        </div>`;
+      }
+
+      previewContainer.innerHTML = previewHtml;
+    }
+
+    function renderTimeline() {
+      const timeline = history.getTimeline();
+
+      const selectedEntry = timeline.entries.find(e => e.id === timeline.selectedId);
+      const deletedDetails = selectedEntry && typeof history.getDeletedDetails === "function"
+        ? history.getDeletedDetails(selectedEntry)
+        : [];
+
+      if (undoBtn) undoBtn.disabled = !timeline.canUndo;
+      if (redoBtn) redoBtn.disabled = !timeline.canRedo;
+      if (restoreBtn) {
+        restoreBtn.disabled = !selectedEntry || deletedDetails.length === 0;
+        if (selectedEntry && deletedDetails.length > 0) {
+          restoreBtn.title = "Restore " + deletedDetails.length + " deleted item" + (deletedDetails.length === 1 ? "" : "s");
+        } else {
+          restoreBtn.title = "No deleted data in this change";
+        }
+      }
+
+      if (countBadge) countBadge.textContent = String(timeline.total);
+      if (summaryText) {
+        summaryText.textContent = timeline.total
+          ? `${timeline.total} saved change${timeline.total === 1 ? "" : "s"} recorded`
+          : "No changes recorded yet.";
+      }
+
+      if (!listContainer) return;
+
+      if (!timeline.entries.length) {
+        listContainer.innerHTML = '<div class="history-preview-empty">No workspace changes recorded yet. Actions across all workspaces are automatically tracked here.</div>';
+        renderHistoryPreview(null);
+        return;
+      }
+
+      listContainer.innerHTML = timeline.entries
+        .map((entry, index) => ({ entry, index }))
+        .reverse()
+        .map(({ entry, index }) => {
+          const isSelected = entry.id === timeline.selectedId;
+          const isCurrent = index === timeline.cursor;
+          const wsLabel = (entry.workspace || "").toUpperCase();
+
+          return `
+            <div class="history-item ${isSelected ? 'selected' : ''} ${isCurrent ? 'current' : ''}" data-id="${escapeHtml(entry.id)}">
+              <input type="radio" class="history-radio" name="historyTimelineRadio" value="${escapeHtml(entry.id)}" ${isSelected ? 'checked' : ''}>
+              <div class="history-item-body">
+                <div class="history-item-top">
+                  <span class="history-item-action">${escapeHtml(entry.action)}</span>
+                  <span class="history-item-time">${escapeHtml(formatTime(entry.at))}</span>
+                </div>
+                <div class="history-item-meta">
+                  <span class="history-ws-badge">${escapeHtml(wsLabel)}</span>
+                  <span class="history-item-summary">${escapeHtml(history.historyEntrySummary(entry))}</span>
+                </div>
+              </div>
+            </div>
+          `;
+        })
+        .join("");
+
+      listContainer.querySelectorAll(".history-item").forEach(itemEl => {
+        itemEl.addEventListener("click", () => {
+          const id = itemEl.dataset.id;
+          history.setSelectedId(id);
+        });
+      });
+
+      renderHistoryPreview(selectedEntry || null);
+    }
+
+    undoBtn?.addEventListener("click", async () => {
+      const ok = await history.undo("history");
+      if (ok) showToast("Undone last workspace change.", "info");
+    });
+
+    redoBtn?.addEventListener("click", async () => {
+      const ok = await history.redo("history");
+      if (ok) showToast("Redone workspace change.", "info");
+    });
+
+    // =========================================================================
+    // GLOBAL KEYBOARD SHORTCUTS: Undo (Ctrl+Z) and Redo (Ctrl+Y / Ctrl+Shift+Z)
+    // Centralized authoritative keyboard router enforcing strict workspace scoping
+    // and preserving native browser text editing undo/redo.
+    // =========================================================================
+    document.addEventListener("keydown", async (event) => {
+      if (!(event.ctrlKey || event.metaKey)) return;
+      const active = document.activeElement;
+      const target = event.target;
+      const isTyping = (active && /^(INPUT|TEXTAREA|SELECT)$/i.test(active.tagName)) ||
+                       (target && /^(INPUT|TEXTAREA|SELECT)$/i.test(target.tagName));
+      // Allow native undo/redo in contenteditable cells
+      const isEditingCell = (active && (active.isContentEditable || (active.matches && active.matches('[contenteditable="true"]') && active.dataset.editing === "true"))) ||
+                            (target && (target.isContentEditable || (target.matches && target.matches('[contenteditable="true"]') && target.dataset.editing === "true")));
+      if (isTyping || isEditingCell) {
+        // Native browser undo/redo must continue working; do not intercept
+        return;
+      }
+
+      const key = String(event.key || "").toLowerCase();
+      const isUndo = !event.shiftKey && key === "z";
+      const isRedo = (!event.shiftKey && key === "y") || (event.shiftKey && key === "z");
+
+      if (!isUndo && !isRedo) return;
+
+      event.preventDefault();
+      const targetWs = typeof window.getCurrentWorkspace === "function"
+        ? window.getCurrentWorkspace()
+        : currentWorkspace;
+
+      if (isUndo) {
+        const ok = await history.undo(targetWs);
+        if (ok) {
+          const wsTitle = WORKSPACES[targetWs]?.title || targetWs;
+          showToast(`Undone last change in ${wsTitle}.`, "info");
+        }
+        return;
+      }
+
+      if (isRedo) {
+        const ok = await history.redo(targetWs);
+        if (ok) {
+          const wsTitle = WORKSPACES[targetWs]?.title || targetWs;
+          showToast(`Redone change in ${wsTitle}.`, "info");
+        }
+        return;
+      }
+    });
+
+    restoreBtn?.addEventListener("click", async () => {
+      const timeline = history.getTimeline();
+      if (!timeline.selectedId) return;
+
+      restoreBtn.disabled = true;
+      try {
+        const res = await history.restoreSelectedEntry(timeline.selectedId);
+        if (res && res.success && res.restoredCount > 0) {
+          const desc = res.description || (res.restoredCount + " deleted item" + (res.restoredCount === 1 ? "" : "s"));
+          showToast("Restored " + desc + ".", "success");
+        } else if (res && res.reason === "already-restored") {
+          showToast("Deleted data is already restored.", "info");
+        } else if (res && res.reason === "adapter-error") {
+          showToast(`Restore failed: ${res.error || "workspace restore error"}`, "error");
+        } else {
+          showToast("No deleted data to restore from this change.", "info");
+        }
+      } catch (err) {
+        console.error("Restore error:", err);
+        showToast(`Restore failed: ${err.message}`, "error");
+      } finally {
+        renderTimeline();
+      }
+    });
+
+    clearBtn?.addEventListener("click", async () => {
+      const approved = await (window.appConfirm ? window.appConfirm({
+        title: "Clear workspace history?",
+        message: "Undo/redo snapshots from all workspaces will be removed. Current data will stay.",
+        confirmText: "Clear History",
+        tone: "danger"
+      }) : window.confirm("Clear all workspace history snapshots?"));
+
+      if (!approved) return;
+
+      await history.clearHistory();
+      showToast("Workspace history cleared.", "info");
+    });
+
+    history.subscribe(() => {
+      renderTimeline();
+    });
+
+    window._renderHistoryWorkspaceFn = function() {
+      renderTimeline();
+    };
+
+    renderTimeline();
+    history.init();
+  }
+
+  // =========================================================================
+  // ACCOUNTS / ADMIN OPERATIONS CONSOLE CONTROLLER
+  // =========================================================================
+  function initAccountsController() {
+    const svc = window.CCTV_ACCOUNTS;
+    if (!svc) { console.warn('[Accounts] CCTV_ACCOUNTS service not loaded.'); return; }
+    svc.init();
+
+    let accessEditingUser = null;
+
+    // --- Utility helpers ----------------------------------------------------
+    const $ = id => document.getElementById(id);
+    const esc = t => String(t ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    const dt = v => { if (!v) return '-'; const d = new Date(v); if (isNaN(d)) return '-'; return d.toLocaleString([],{month:'short',day:'numeric',year:'numeric',hour:'2-digit',minute:'2-digit'}); };
+    const cleanUsername = u => String(u||'').trim().replace(/^@+/,'');
+    const usernameLabel = u => { const c = cleanUsername(u); return c ? `@${c}` : ''; };
+
+    const statusPill = s => {
+      const n = String(s||'').toLowerCase();
+      if (n === 'approved' || n === 'active') return `<span class="admin-badge badge-active">Active</span>`;
+      if (n === 'disabled' || n === 'suspended') return `<span class="admin-badge badge-disabled">Disabled</span>`;
+      if (n === 'pending') return `<span class="admin-badge badge-pending">Pending</span>`;
+      if (n === 'rejected') return `<span class="admin-badge badge-disabled">Rejected</span>`;
+      return `<span class="admin-badge badge-user">${esc(s||'Unknown')}</span>`;
+    };
+
+    const permSummary = item => {
+      if (item?.role === 'super_admin') return 'Super Admin (All Workspaces & Capabilities)';
+      const p = item?.permissions || {};
+      if (item?.role === 'admin') {
+        const privs = [];
+        if (p.accounts) privs.push('Accounts');
+        if (p.manage_users) privs.push('Users');
+        if (p.manage_permissions) privs.push('Perms');
+        if (p.view_security_logs) privs.push('Audit');
+        return `Admin (${privs.join(', ') || 'Custom'})`;
+      }
+      const list = [];
+      if (p.report !== false && p.cctv !== false) list.push('Report');
+      if (p.conduct !== false) list.push('Conduct');
+      if (p.edr !== false) list.push('EDR');
+      if (p.audit !== false && p.cctv !== false) list.push('Audit');
+      if (p.trackers !== false) list.push('Trackers');
+      if (p.sorter !== false && p.aiSorter !== false) list.push('Sorter');
+      if (p.maintenance !== false) list.push('Maint');
+      if (p.pending !== false) list.push('Pending');
+      if (p.followup !== false) list.push('Followup');
+      if (p.masterlist !== false) list.push('Master');
+      if (p.history !== false) list.push('History');
+      return list.join(', ') || 'No workspaces';
+    };
+
+    const setStatus = (text, kind = '') => {
+      const s = $('adminCreateAccountStatus');
+      if (!s) return;
+      s.textContent = text;
+      s.className = 'auth-create-status';
+      if (kind) s.classList.add(`is-${kind}`);
+    };
+
+    async function copyText(text, btn, label = 'Copied!') {
+      try {
+        if (navigator.clipboard?.writeText) await navigator.clipboard.writeText(text);
+        else {
+          const ta = document.createElement('textarea');
+          ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+          document.body.appendChild(ta); ta.focus(); ta.select();
+          document.execCommand('copy'); ta.remove();
+        }
+        if (btn) {
+          const oldHtml = btn.innerHTML;
+          btn.classList.add('is-copied');
+          const span = btn.querySelector('span');
+          if (span) span.textContent = label; else btn.textContent = `OK ${label}`;
+          setTimeout(() => { btn.classList.remove('is-copied'); btn.innerHTML = oldHtml; }, 1800);
+        }
+        showToast('Copied to clipboard.');
+      } catch (_) { showToast('Could not copy.'); }
+    }
+
+    // --- KPI + System Status update -----------------------------------------
+    async function updateKpiDisplay() {
+      const metrics = await svc.getMetrics();
+      if ($('adminTotalUsers')) $('adminTotalUsers').textContent = metrics.totalUsers;
+      if ($('adminCountAdmins')) $('adminCountAdmins').textContent = metrics.countAdmins;
+      if ($('adminCountUsers')) $('adminCountUsers').textContent = metrics.countUsers;
+      if ($('adminPendingUsers')) $('adminPendingUsers').textContent = metrics.pendingUsers;
+      if ($('adminDisabledUsers')) $('adminDisabledUsers').textContent = metrics.disabledUsers;
+      if ($('adminRecentUsers')) $('adminRecentUsers').textContent = metrics.recentUsers;
+      if ($('adminEdrCount')) $('adminEdrCount').textContent = metrics.edrCount;
+      if ($('adminCctvCount')) $('adminCctvCount').textContent = metrics.cctvCount;
+      if ($('adminFollowupCount')) $('adminFollowupCount').textContent = metrics.followupCount;
+
+      const sys = svc.getSystemStatus();
+      if ($('adminSupabaseStatus')) $('adminSupabaseStatus').textContent = sys.supabase.label;
+      if ($('adminSupabaseDot')) {
+        $('adminSupabaseDot').classList.toggle('is-online', sys.supabase.isOnline);
+        $('adminSupabaseDot').classList.toggle('is-warning', !sys.supabase.isOnline);
+      }
+      if ($('adminDocsStatus')) $('adminDocsStatus').textContent = sys.docs.label;
+      if ($('adminDocsDot')) {
+        $('adminDocsDot').classList.toggle('is-online', sys.docs.isOnline);
+        $('adminDocsDot').classList.toggle('is-warning', !sys.docs.isOnline);
+      }
+      if ($('adminSheetsStatus')) $('adminSheetsStatus').textContent = sys.sheets.label;
+      if ($('adminSheetsDot')) {
+        $('adminSheetsDot').classList.toggle('is-online', sys.sheets.isOnline);
+        $('adminSheetsDot').classList.toggle('is-warning', !sys.sheets.isOnline);
+      }
+    }
+
+    // --- Transient One-Time Creation Credentials (In-Memory Only) ----------
+    let _transientCred = null;
+    let _transientCredTimer = null;
+    const TRANSIENT_CRED_TTL_MS = 90000; // 90 seconds auto-clear
+
+    // Aggressively purge any legacy web storage keys on init
+    try {
+      sessionStorage.removeItem("cctv_admin_recent_creds_v1");
+      localStorage.removeItem("cctv_admin_recent_creds_v1");
+    } catch (_) { }
+
+    function clearTransientCredential() {
+      _transientCred = null;
+      if (_transientCredTimer) {
+        clearTimeout(_transientCredTimer);
+        _transientCredTimer = null;
+      }
+      try {
+        sessionStorage.removeItem("cctv_admin_recent_creds_v1");
+        localStorage.removeItem("cctv_admin_recent_creds_v1");
+        if (svc?.clearRecentCredentials) svc.clearRecentCredentials();
+      } catch (_) { }
+      renderRecentCredentials();
+    }
+    window._clearTransientCredential = clearTransientCredential;
+
+    // --- Render Recent Credentials ------------------------------------------
+    function renderRecentCredentials() {
+      const section = $('adminRecentCredsSection');
+      const listEl = $('adminRecentCredsList');
+      if (!section || !listEl) return;
+      if (!_transientCred || !_transientCred.password) {
+        section.hidden = true;
+        listEl.innerHTML = '';
+        return;
+      }
+      section.hidden = false;
+      const item = _transientCred;
+      listEl.innerHTML = `
+        <div class="recent-cred-card">
+          <div class="recent-cred-top">
+            <div class="recent-cred-identity">
+              <span class="admin-badge badge-${esc(String(item.role||'user').toLowerCase())}">${esc(item.role === 'admin' ? 'Admin' : 'User')}</span>
+              <span class="recent-cred-name" title="${esc(item.name)}">${esc(item.name)}</span>
+            </div>
+            <button type="button" class="recent-cred-btn cred-remove-btn" title="Dismiss" aria-label="Dismiss">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+          <div class="recent-cred-body">
+            <div class="recent-cred-row">
+              <span class="recent-cred-label">Username</span>
+              <div class="recent-cred-val-wrap">
+                <span class="recent-cred-val">${esc(cleanUsername(item.username))}</span>
+                <button type="button" class="recent-cred-btn cred-copy-user-btn" title="Copy Username">
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                  <span>Copy</span>
+                </button>
+              </div>
+            </div>
+            <div class="recent-cred-row">
+              <span class="recent-cred-label">Temp Password</span>
+              <div class="recent-cred-val-wrap">
+                <span class="recent-cred-val recent-cred-pw-val is-masked">••••••••</span>
+                <button type="button" class="recent-cred-btn cred-toggle-pw-btn" aria-label="Show password" title="Show password">
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                  <span>Show</span>
+                </button>
+                <button type="button" class="recent-cred-btn cred-copy-pw-btn" title="Copy Password">
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                  <span>Copy</span>
+                </button>
+              </div>
+            </div>
+          </div>
+          <div class="recent-cred-footer">
+            <button type="button" class="recent-cred-copy-all-btn cred-copy-all-btn" title="Copy all credentials">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              <span>Copy All Credentials</span>
+            </button>
+            <button type="button" class="recent-cred-btn-danger cred-remove-btn">Dismiss</button>
+          </div>
+        </div>
+      `;
+
+      listEl.querySelectorAll('.cred-remove-btn').forEach(btn =>
+        btn.addEventListener('click', () => { clearTransientCredential(); showToast('Credential banner dismissed.'); })
+      );
+      listEl.querySelector('.cred-copy-user-btn')?.addEventListener('click', function() {
+        if (!_transientCred?.username) { showToast('Credential has expired.', 'warning'); return; }
+        copyText(cleanUsername(_transientCred.username), this, 'Copied!');
+      });
+      listEl.querySelector('.cred-copy-pw-btn')?.addEventListener('click', function() {
+        if (!_transientCred?.password) { showToast('Credential has expired.', 'warning'); return; }
+        copyText(_transientCred.password, this, 'Copied!');
+      });
+      listEl.querySelector('.cred-toggle-pw-btn')?.addEventListener('click', function() {
+        const pw = listEl.querySelector('.recent-cred-pw-val');
+        if (!pw) return;
+        if (!_transientCred?.password) {
+          pw.textContent = '••••••••';
+          pw.classList.add('is-masked');
+          showToast('Credential has expired.', 'warning');
+          return;
+        }
+        const masked = pw.classList.contains('is-masked');
+        if (masked) {
+          pw.classList.remove('is-masked');
+          pw.textContent = _transientCred.password;
+          this.querySelector('span').textContent = 'Hide';
+        } else {
+          pw.classList.add('is-masked');
+          pw.textContent = '••••••••';
+          this.querySelector('span').textContent = 'Show';
+        }
+      });
+      listEl.querySelector('.cred-copy-all-btn')?.addEventListener('click', function() {
+        if (!_transientCred?.password) { showToast('Credential has expired.', 'warning'); return; }
+        const text = [
+          `Name: ${_transientCred.name}`,
+          `Username: ${cleanUsername(_transientCred.username)}`,
+          `Temporary Password: ${_transientCred.password}`,
+          `Role: ${_transientCred.role}`
+        ].join('\n');
+        copyText(text, this, 'Copied All!');
+      });
+    }
+
+    // --- Render User Accounts -----------------------------------------------
+    function renderUsers(rows) {
+      const body = $('adminUsersBody');
+      if (!body) return;
+      if (!rows || !rows.length) {
+        body.innerHTML = '<div class="auth-admin-empty" style="grid-column:1/-1;">No accounts found.</div>';
+        return;
+      }
+      const recentCreds = svc.getRecentCredentials();
+      const activeUser = window.CCTV_AUTH?.getUser?.();
+      const isCallerSuper = !!(window.CCTV_AUTH && typeof window.CCTV_AUTH.isSuperAdmin === "function" && window.CCTV_AUTH.isSuperAdmin());
+      const approvedSuperCount = rows.filter(x => x.role === 'super_admin' && (x.status === 'approved' || !x.status)).length;
+
+      body.innerHTML = rows.map(item => {
+        const self = item.id === activeUser?.id;
+        const search = ((item.display_name||'') + ' ' + (item.username||'') + ' ' + (item.email||'')).toLowerCase();
+        const isSuperTarget = item.role === 'super_admin';
+        const roleLabel = isSuperTarget ? 'Super Admin' : (item.role === 'admin' ? 'Admin' : 'User');
+        const isApproved = item.status === 'approved';
+        const isDisabled = item.status === 'disabled' || item.status === 'suspended';
+        const isPending = item.status === 'pending';
+        const permsText = isSuperTarget ? '⚡ Unrestricted Full Access' : permSummary(item);
+        const uKey = cleanUsername(item.username).toLowerCase();
+        const cred = recentCreds.find(c => cleanUsername(c.username).toLowerCase() === uKey);
+
+        const isLastSuper = isSuperTarget && approvedSuperCount <= 1;
+        const isAdminTarget = item.role === 'admin';
+        const isPrivilegedTarget = isSuperTarget || isAdminTarget;
+        const canManageTarget = isCallerSuper || (!isPrivilegedTarget && (window.CCTV_AUTH?.hasPermission?.('manage_users') || window.CCTV_AUTH?.hasPermission?.('manage_permissions')));
+
+        const pwRowHtml = `
+          <div class="admin-user-card-pw-row">
+            <span class="admin-user-meta-label">Password</span>
+            <span style="font-size:11px; color:var(--text-dim);">Protected</span>
+          </div>`;
+
+        return `
+        <div class="admin-user-card" data-id="${esc(item.id)}" data-search="${esc(search)}">
+          <div class="admin-user-card-top">
+            <div class="admin-user-card-identity">
+              <div class="admin-user-avatar">${esc(svc.getInitials(item.display_name || item.username))}</div>
+              <div class="admin-user-info">
+                <strong class="admin-user-name" title="${esc(item.display_name||item.username||'User')}">${esc(item.display_name||item.username||'User')}</strong>
+                <span class="admin-user-username">${esc(usernameLabel(item.username))}</span>
+              </div>
+            </div>
+            <div class="admin-user-card-badges">
+              ${statusPill(item.status)}
+              <span class="admin-badge badge-${esc(String(item.role||'user').toLowerCase())}">${roleLabel}</span>
+            </div>
+          </div>
+          <div class="admin-user-card-body">
+            ${pwRowHtml}
+            <div class="admin-user-meta-row">
+              <span class="admin-user-meta-label">Permissions</span>
+              <span class="admin-user-meta-val">${esc(permsText)}</span>
+            </div>
+            <div class="admin-user-card-dates">
+              <div><span class="admin-user-meta-label">Created</span> <span>${esc(dt(item.created_at))}</span></div>
+              <div><span class="admin-user-meta-label">Last Active</span> <span>${esc(dt(item.last_seen_at))}</span></div>
+            </div>
+          </div>
+          <div class="admin-user-card-footer">
+            <div class="admin-user-card-actions">
+              ${isPending && canManageTarget ? `<button type="button" class="admin-action-btn auth-approve-btn" data-id="${esc(item.id)}">Approve</button>` : ''}
+              ${isPending && canManageTarget ? `<button type="button" class="admin-action-btn auth-reject-btn" data-id="${esc(item.id)}">Reject</button>` : ''}
+              ${canManageTarget ? `<button type="button" class="admin-action-btn auth-access-btn" data-id="${esc(item.id)}">Access</button>` : ''}
+              ${!self && isApproved && canManageTarget && !isLastSuper ? `<button type="button" class="admin-action-btn auth-disable-btn" data-id="${esc(item.id)}">Disable</button>` : ''}
+              ${!self && isDisabled && canManageTarget ? `<button type="button" class="admin-action-btn auth-reactivate-btn" data-id="${esc(item.id)}">Reactivate</button>` : ''}
+              ${!self && canManageTarget && !isLastSuper ? `<button type="button" class="admin-action-btn auth-delete-danger auth-remove-user-btn" data-id="${esc(item.id)}">Delete</button>` : ''}
+              ${self ? '<span class="auth-self-label">You</span>' : (!canManageTarget ? '<span class="auth-self-label" style="opacity:0.75;">Protected</span>' : (isLastSuper ? '<span class="auth-self-label" title="Final Super Admin cannot be removed">Protected</span>' : ''))}
+            </div>
+          </div>
+        </div>`;
+      }).join('');
+
+      body.querySelectorAll('.auth-approve-btn').forEach(btn =>
+        btn.addEventListener('click', () => doSetStatus(btn.dataset.id, 'approved'))
+      );
+      body.querySelectorAll('.auth-reject-btn').forEach(btn =>
+        btn.addEventListener('click', async () => {
+          const item = svc.getCachedUsers().find(x => x.id === btn.dataset.id);
+          const ok = await (window.appConfirm ? window.appConfirm({ title:'Reject signup?', message:`Reject request for ${item?.display_name || item?.username || 'this user'}?`, confirmText:'Reject', tone:'danger' }) : window.confirm('Reject this signup request?'));
+          if (ok) doSetStatus(btn.dataset.id, 'rejected');
+        })
+      );
+      body.querySelectorAll('.auth-access-btn').forEach(btn =>
+        btn.addEventListener('click', () => openAccessEditor(btn.dataset.id))
+      );
+      body.querySelectorAll('.auth-disable-btn').forEach(btn =>
+        btn.addEventListener('click', async () => {
+          const item = svc.getCachedUsers().find(x => x.id === btn.dataset.id);
+          const ok = await (window.appConfirm ? window.appConfirm({ title:'Disable account?', message:`${item?.display_name || item?.username || 'This account'} will be locked out immediately.`, confirmText:'Disable Account', tone:'danger' }) : window.confirm('Disable this account?'));
+          if (ok) doSetStatus(btn.dataset.id, 'disabled');
+        })
+      );
+      body.querySelectorAll('.auth-reactivate-btn').forEach(btn =>
+        btn.addEventListener('click', () => doSetStatus(btn.dataset.id, 'approved'))
+      );
+      body.querySelectorAll('.auth-remove-user-btn').forEach(btn =>
+        btn.addEventListener('click', async () => {
+          const item = svc.getCachedUsers().find(x => x.id === btn.dataset.id);
+          const ok = await (window.appConfirm ? window.appConfirm({ title:'Delete Account Permanently', message:`Permanently delete ${item?.display_name || item?.username || 'this user'}? This cannot be undone.`, confirmText:'Delete', tone:'danger' }) : window.confirm('Permanently delete this account?'));
+          if (!ok) return;
+          try { await svc.deleteAccount(btn.dataset.id); showToast('Account deleted.'); await loadAdmin(); } catch(e) { showToast(e.message || 'Could not delete.'); }
+        })
+      );
+      filterUsers();
+    }
+
+    function filterUsers() {
+      const q = String($('adminUserSearch')?.value||'').trim().toLowerCase();
+      $('adminUsersBody')?.querySelectorAll('.admin-user-card[data-search]').forEach(card => {
+        card.hidden = !!(q && !card.dataset.search.includes(q));
+      });
+    }
+
+    async function doSetStatus(id, status) {
+      try {
+        await svc.setStatus(id, status);
+        showToast(status === 'approved' ? 'Account active.' : (status === 'disabled' ? 'Account disabled.' : 'Status updated.'));
+        await loadAdmin();
+      } catch(e) { showToast(e.message||'Could not update status.'); }
+    }
+
+    async function loadAdmin() {
+      const refreshBtn = $('adminRefreshBtn');
+      if (refreshBtn) { refreshBtn.disabled = true; refreshBtn.textContent = 'Refreshing...'; }
+      try {
+        await svc.fetchUsers(true);
+        renderUsers(svc.getCachedUsers());
+        renderRecentCredentials();
+        await updateKpiDisplay();
+        await loadAuditLogs();
+      } catch(e) { showToast(e.message||'Could not load accounts.'); }
+      finally { if (refreshBtn) { refreshBtn.disabled = false; refreshBtn.textContent = 'Refresh'; } }
+    }
+
+    async function loadAuditLogs(forceRemote = false) {
+      const body = $('adminSecurityAuditBody');
+      if (!body) return;
+      const logs = await svc.fetchAuditLogs(forceRemote);
+      renderAuditLogs(logs);
+    }
+
+    function renderAuditLogs(logs) {
+      const body = $('adminSecurityAuditBody');
+      if (!body) return;
+      if (!logs || !logs.length) {
+        body.innerHTML = '<tr><td colspan="6" class="auth-admin-empty">No security audit events recorded yet.</td></tr>';
+        return;
+      }
+      body.innerHTML = logs.map(item => {
+        const search = ((item.actor_username||'') + ' ' + (item.action||'') + ' ' + (item.target_item||'')).toLowerCase();
+        const detailsStr = typeof item.details === 'object' ? JSON.stringify(item.details) : String(item.details||'');
+        return `<tr data-search="${esc(search)}">
+          <td>${esc(dt(item.created_at))}</td>
+          <td><strong>${esc(item.actor_username||'admin')}</strong></td>
+          <td><span class="admin-badge badge-${esc(String(item.actor_role||'user').toLowerCase())}">${esc(item.actor_role||'admin')}</span></td>
+          <td><strong>${esc(item.action||'event')}</strong></td>
+          <td>${esc(item.target_item||'-')}</td>
+          <td><code>${esc(detailsStr||'-')}</code></td>
+        </tr>`;
+      }).join('');
+    }
+
+    function filterAuditLogs() {
+      const q = String($('adminAuditSearch')?.value||'').trim().toLowerCase();
+      $('adminSecurityAuditBody')?.querySelectorAll('tr[data-search]').forEach(row => {
+        row.hidden = !!(q && !row.dataset.search.includes(q));
+      });
+    }
+
+    // --- Account Creation ---------------------------------------------------
+    async function createStaffAccount() {
+      const name = String($('adminCreateName')?.value||'').trim();
+      const username = String($('adminCreateUsername')?.value||'').trim().replace(/^@+/,'');
+      const password = $('adminCreatePassword')?.value || '';
+      const role = $('adminCreateRole')?.value || 'user';
+      const btn = $('adminCreateAccountBtn');
+
+      if (!name) { setStatus('Enter the staff member\'s name.', 'error'); $('adminCreateName')?.focus(); return; }
+      if (!username || username.length < 2) { setStatus('Enter a valid username.', 'error'); $('adminCreateUsername')?.focus(); return; }
+      if (password.length < 6) { setStatus('Temporary password must contain at least 6 characters.', 'error'); $('adminCreatePassword')?.focus(); return; }
+
+      if (btn) { btn.disabled = true; btn.textContent = 'Creating...'; }
+      setStatus('Creating account...', 'info');
+
+      try {
+        clearTransientCredential();
+        const newAcc = await svc.createAccount({ name, username, password, role });
+        const roleLabel = role === 'super_admin' ? 'Super Admin' : (role === 'admin' ? 'Admin' : 'User');
+        setStatus(`${newAcc.display_name} created and approved  -  @${newAcc.username}  -  Role: ${roleLabel}`, 'success');
+        showToast(`${newAcc.display_name} account created.`);
+        if ($('adminCreateName')) $('adminCreateName').value = '';
+        if ($('adminCreateUsername')) $('adminCreateUsername').value = '';
+        if ($('adminCreatePassword')) { $('adminCreatePassword').value = ''; $('adminCreatePassword').type = 'password'; }
+        if ($('adminCreateRole')) $('adminCreateRole').value = 'user';
+
+        // Keep transient credentials only in memory for 90 seconds
+        _transientCred = {
+          id: newAcc.id || ("tc_" + Date.now()),
+          name: newAcc.display_name || name,
+          username: cleanUsername(newAcc.username || username),
+          password: password,
+          role: role
+        };
+        if (_transientCredTimer) clearTimeout(_transientCredTimer);
+        _transientCredTimer = setTimeout(() => {
+          clearTransientCredential();
+        }, TRANSIENT_CRED_TTL_MS);
+
+        try {
+          sessionStorage.removeItem("cctv_admin_recent_creds_v1");
+          localStorage.removeItem("cctv_admin_recent_creds_v1");
+        } catch (_) { }
+
+        renderRecentCredentials();
+        await loadAdmin();
+      } catch(e) {
+        setStatus(e.message || 'Could not create account.', 'error');
+        showToast(e.message || 'Could not create account.');
+      } finally {
+        if (btn) { btn.disabled = false; btn.textContent = 'Create Account'; }
+      }
+    }
+
+    // --- Access Editor Modal ------------------------------------------------
+    function openAccessEditor(id) {
+      const item = svc.getCachedUsers().find(x => x.id === id);
+      if (!item) return;
+
+      const isCallerSuper = !!(window.CCTV_AUTH && typeof window.CCTV_AUTH.isSuperAdmin === "function" && window.CCTV_AUTH.isSuperAdmin());
+      const isSuper = item.role === 'super_admin';
+      const isAdmin = item.role === 'admin';
+
+      // Non-Super Admins cannot edit Super Admin or Admin accounts
+      if ((isSuper || isAdmin) && !isCallerSuper) {
+        showToast("Access Denied: Only a Super Administrator can modify an Administrator account.", "warning");
+        return;
+      }
+
+      accessEditingUser = item;
+      if ($('adminAccessTargetId')) $('adminAccessTargetId').value = item.id;
+      if ($('adminAccessDisplayName')) $('adminAccessDisplayName').value = item.display_name || '';
+      if ($('adminAccessUserLabel')) $('adminAccessUserLabel').textContent = `${item.display_name||item.username||'User'}  -  ${usernameLabel(item.username)}`;
+
+      const roleSelect = $('adminAccessRole');
+      const superBadge = $('superAdminActiveBadge');
+      const promoBox = $('superAdminPromotionBox');
+      const demoteBox = $('superAdminDemoteBox');
+      const optAdmin = $('optAccessAdmin');
+
+      const approvedSuperCount = svc.getCachedUsers().filter(x => x.role === 'super_admin' && (x.status === 'approved' || !x.status)).length;
+
+      if (isSuper) {
+        if (superBadge) superBadge.style.display = 'block';
+        if (roleSelect) roleSelect.style.display = 'none';
+        if (promoBox) promoBox.style.display = 'none';
+        if (demoteBox) demoteBox.style.display = (isCallerSuper && approvedSuperCount > 1) ? 'block' : 'none';
+      } else {
+        if (superBadge) superBadge.style.display = 'none';
+        if (roleSelect) {
+          roleSelect.style.display = 'block';
+          roleSelect.value = item.role || 'user';
+        }
+        if (demoteBox) demoteBox.style.display = 'none';
+        if (optAdmin) {
+          optAdmin.hidden = !isCallerSuper;
+          optAdmin.disabled = !isCallerSuper;
+        }
+        if (promoBox) promoBox.style.display = isCallerSuper ? 'block' : 'none';
+      }
+
+      if ($('adminAccessStatus')) $('adminAccessStatus').value = (item.status === 'disabled'||item.status === 'suspended') ? 'disabled' : 'active';
+
+      const perms = item.permissions || {};
+
+      $('adminAccessGrid')?.querySelectorAll('[data-permission]').forEach(input => {
+        const k = input.dataset.permission;
+        if (isSuper) {
+          input.checked = true;
+        } else if (item.role === 'admin') {
+          input.checked = perms[k] === true || (perms[k] !== false && (k === 'edr' || k === 'report' || k === 'cctv' || k === 'audit' || k === 'sorter' || k === 'maintenance' || k === 'followup' || k === 'pending' || k === 'masterlist' || k === 'history'));
+        } else {
+          input.checked = perms[k] !== false && k !== 'accounts';
+        }
+      });
+
+      $('adminPrivilegesGrid')?.querySelectorAll('[data-permission]').forEach(input => {
+        const k = input.dataset.permission;
+        input.checked = isSuper ? true : !!perms[k];
+      });
+
+      refreshAccessRoleUi();
+      const modal = $('adminAccessModal');
+      if (modal) { modal.hidden = false; document.body.classList.add('modal-open'); }
+    }
+
+    function closeAccessEditor() {
+      const modal = $('adminAccessModal');
+      if (modal) { modal.hidden = true; document.body.classList.remove('modal-open'); }
+      accessEditingUser = null;
+    }
+
+    function refreshAccessRoleUi() {
+      const authApi = window.CCTV_AUTH;
+
+      const isCallerSuper = !!(
+        authApi &&
+        typeof authApi.isSuperAdmin === "function" &&
+        authApi.isSuperAdmin()
+      );
+
+      const canManagePermissions = isCallerSuper || !!(
+        authApi &&
+        typeof authApi.hasPermission === "function" &&
+        authApi.hasPermission("manage_permissions")
+      );
+
+      const isSuper = accessEditingUser?.role === 'super_admin';
+      const role = isSuper ? 'super_admin' : ($('adminAccessRole')?.value || 'user');
+      const isAdmin = role === 'admin';
+      const isUser = role === 'user';
+
+      const notice = $('superAdminUnrestrictedNotice');
+      if (notice) notice.style.display = isSuper ? 'inline-block' : 'none';
+
+      // Only Super Admin may change account roles.
+      const roleSelect = $('adminAccessRole');
+      if (roleSelect) {
+        roleSelect.disabled = !isCallerSuper;
+      }
+
+      // Access-editor fields are read-only without manage_permissions.
+      const displayNameInput = $('adminAccessDisplayName');
+      if (displayNameInput) {
+        displayNameInput.disabled = !canManagePermissions;
+      }
+
+      const statusSelect = $('adminAccessStatus');
+      if (statusSelect) {
+        statusSelect.disabled = !canManagePermissions;
+      }
+
+      // Workspace permissions
+      $('adminAccessGrid')?.querySelectorAll('[data-permission]').forEach(input => {
+        if (isSuper) {
+          input.checked = true;
+          input.disabled = true;
+          return;
+        }
+
+        // Normal users can never receive the Accounts workspace.
+        if (isUser && input.dataset.permission === 'accounts') {
+          input.checked = false;
+          input.disabled = true;
+          return;
+        }
+
+        input.disabled = !canManagePermissions;
+      });
+
+      // Administrative capabilities
+      $('adminPrivilegesGrid')?.querySelectorAll('[data-permission]').forEach(input => {
+        if (isSuper) {
+          input.checked = true;
+          input.disabled = true;
+        } else if (isAdmin) {
+          input.disabled = !canManagePermissions;
+        } else {
+          input.checked = false;
+          input.disabled = true;
+        }
+
+        input.closest('label')?.toggleAttribute('hidden', isUser);
+      });
+
+      // Prevent misleading Save attempts when the caller only has manage_users.
+      const saveBtn = $('adminAccessSave');
+      if (saveBtn) {
+        saveBtn.disabled = !canManagePermissions;
+        saveBtn.textContent = canManagePermissions ? 'Save Access' : 'Read Only';
+        saveBtn.title = canManagePermissions
+          ? ''
+          : 'Modify Permissions permission is required to edit account access.';
+      }
+    }
+    async function saveAccessEditor() {
+      const id = $('adminAccessTargetId')?.value;
+      if (!id) return;
+      const isTargetSuper = accessEditingUser?.role === 'super_admin';
+      const isCallerSuper = !!(window.CCTV_AUTH && typeof window.CCTV_AUTH.isSuperAdmin === "function" && window.CCTV_AUTH.isSuperAdmin());
+
+      let role = isTargetSuper ? 'super_admin' : ($('adminAccessRole')?.value || 'user');
+      if (role === 'admin' && !isCallerSuper) role = 'user';
+
+      const status = $('adminAccessStatus')?.value === 'disabled' ? 'disabled' : 'approved';
+      const displayName = String($('adminAccessDisplayName')?.value||'').trim();
+
+      const permissions = {};
+      if (role === 'super_admin') {
+        permissions.all = true;
+        permissions.super_admin = true;
+      } else {
+        $('adminAccessGrid')?.querySelectorAll('[data-permission]').forEach(input => {
+          permissions[input.dataset.permission] = !!input.checked;
+        });
+        $('adminPrivilegesGrid')?.querySelectorAll('[data-permission]').forEach(input => {
+          permissions[input.dataset.permission] = role === 'admin' ? !!input.checked : false;
+        });
+        if (role === 'user') {
+          permissions.accounts = false;
+          permissions.manage_users = false;
+          permissions.manage_roles = false;
+          permissions.manage_permissions = false;
+          permissions.view_security_logs = false;
+        }
+      }
+
+      const saveBtn = $('adminAccessSave');
+      if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = 'Saving...'; }
+      try {
+        await svc.saveUserAccess(id, { role, status, displayName, permissions });
+        showToast(role === 'super_admin' ? 'Super Admin access saved.' : (role === 'admin' ? 'Admin access saved.' : 'User access updated.'));
+        closeAccessEditor();
+        await loadAdmin();
+      } catch(e) { showToast(e.message||'Could not update access.'); }
+      finally { if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = 'Save Access'; } }
+    }
+
+    // --- Operational Settings -----------------------------------------------
+    function populateOperationalSettingsUI(s) {
+      if (!s) return;
+      if ($('adminSettingTheme')) $('adminSettingTheme').value = s.theme || 'dark';
+      if ($('adminSettingLanding')) $('adminSettingLanding').value = s.landing || 'cctv';
+      if ($('adminSettingSubtitle')) $('adminSettingSubtitle').value = s.subtitle || 'Secure operations workspace';
+      if ($('adminSettingAutoTrim')) $('adminSettingAutoTrim').checked = s.autoTrim !== false;
+    }
+
+    async function loadOperationalSettings() {
+      const s = svc.getOperationalSettings();
+      populateOperationalSettingsUI(s);
+
+      try {
+        const remote = await svc.fetchOperationalSettings(true);
+        if (remote) {
+          populateOperationalSettingsUI(remote);
+        }
+      } catch (_) { }
+    }
+
+    async function saveOperationalSettings() {
+      const saveBtn = $('adminSaveSettingsBtn');
+      if (saveBtn && saveBtn.disabled) return;
+      if (saveBtn) {
+        saveBtn.disabled = true;
+        saveBtn.textContent = 'Saving...';
+      }
+
+      try {
+        const settings = {
+          theme: $('adminSettingTheme')?.value || 'dark',
+          landing: $('adminSettingLanding')?.value || 'cctv',
+          subtitle: String($('adminSettingSubtitle')?.value||'').trim() || 'Secure operations workspace',
+          autoTrim: !!$('adminSettingAutoTrim')?.checked
+        };
+        const updated = await svc.saveOperationalSettings(settings);
+        populateOperationalSettingsUI(updated);
+        const notice = $('adminSaveSettingsNotice');
+        if (notice) { notice.textContent = 'OK Settings saved successfully.'; setTimeout(() => { notice.textContent = ''; }, 3500); }
+        showToast('Operational settings saved.');
+      } catch(err) {
+        console.error('[Accounts Console] Save operational settings error:', err);
+        showToast(err.message || 'Failed to save operational settings.');
+      } finally {
+        if (saveBtn) {
+          saveBtn.disabled = false;
+          saveBtn.textContent = 'Save Settings';
+        }
+      }
+    }
+
+    // --- Subnav Tab Switching -----------------------------------------------
+    function initAdminSubnav() {
+      document.querySelectorAll('.admin-subnav-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const target = btn.dataset.adminTab;
+          document.querySelectorAll('.admin-subnav-btn').forEach(b => {
+            b.classList.toggle('active', b === btn);
+            b.setAttribute('aria-selected', b === btn ? 'true' : 'false');
+          });
+          const tabUsers = $('adminTabUsers');
+          const tabAudit = $('adminTabAudit');
+          const tabSettings = $('adminTabSettings');
+          if (tabUsers) tabUsers.hidden = target !== 'users';
+          if (tabAudit) tabAudit.hidden = target !== 'audit';
+          if (tabSettings) tabSettings.hidden = target !== 'settings';
+          if (target === 'audit') loadAuditLogs(true);
+          if (target === 'settings') loadOperationalSettings();
+        });
+      });
+    }
+
+    // --- Password toggle for create form ------------------------------------
+    function initPasswordToggles() {
+      document.querySelectorAll('.auth-password-toggle').forEach(btn => {
+        btn.addEventListener('click', e => {
+          e.preventDefault(); e.stopPropagation();
+          const input = document.getElementById(btn.dataset.target||'');
+          if (!input) return;
+          const showing = input.type === 'text';
+          input.type = showing ? 'password' : 'text';
+          btn.classList.toggle('is-visible', !showing);
+          const label = showing ? 'Show password' : 'Hide password';
+          btn.setAttribute('aria-label', label); btn.setAttribute('title', label);
+        });
+      });
+    }
+
+    // --- Wire Events --------------------------------------------------------
+    $('adminCreateAccountBtn')?.addEventListener('click', createStaffAccount);
+    $('adminCreateAccountForm')?.addEventListener('submit', e => { e.preventDefault(); createStaffAccount(); });
+    $('adminRefreshBtn')?.addEventListener('click', () => loadAdmin());
+    $('adminUserSearch')?.addEventListener('input', filterUsers);
+
+    $('adminClearAllCredsBtn')?.addEventListener('click', () => {
+      svc.clearRecentCredentials();
+      renderRecentCredentials();
+      showToast('Session credentials cleared.');
+    });
+
+    $('adminRefreshAuditBtn')?.addEventListener('click', () => loadAuditLogs(true));
+    $('adminExportAuditBtn')?.addEventListener('click', () => { svc.exportAuditLogs(); showToast('Audit log exported.'); });
+    $('adminAuditSearch')?.addEventListener('input', filterAuditLogs);
+
+    $('adminSaveSettingsBtn')?.addEventListener('click', saveOperationalSettings);
+
+    $('adminAccessRole')?.addEventListener('change', refreshAccessRoleUi);
+    $('adminAccessSave')?.addEventListener('click', saveAccessEditor);
+    $('adminAccessCancel')?.addEventListener('click', closeAccessEditor);
+    $('adminAccessClose')?.addEventListener('click', closeAccessEditor);
+    $('adminAccessModal')?.addEventListener('click', e => { if (e.target === $('adminAccessModal')) closeAccessEditor(); });
+
+    $('btnPromoteSuperAdmin')?.addEventListener('click', async () => {
+      if (!accessEditingUser) return;
+      const name = accessEditingUser.display_name || accessEditingUser.username || 'this user';
+      const ok = await (window.appConfirm ? window.appConfirm({
+        title: 'Promote to Super Administrator?',
+        message: `Are you sure you want to promote ${name} to Super Administrator?\n\nThis grants universal unrestricted access to all CCTV OPS workspaces and privileged administrative capabilities.`,
+        confirmText: 'Promote to Super Admin',
+        tone: 'danger'
+      }) : window.confirm(`Promote ${name} to Super Administrator?\n\nThis grants universal unrestricted access.`));
+
+      if (!ok) return;
+      const btn = $('btnPromoteSuperAdmin');
+      if (btn) { btn.disabled = true; btn.textContent = 'Promoting...'; }
+      try {
+        await svc.promoteToSuperAdmin(accessEditingUser.id);
+        showToast(`${name} promoted to Super Administrator.`);
+        closeAccessEditor();
+        await loadAdmin();
+      } catch (err) {
+        showToast(err.message || 'Could not promote to Super Admin.', 'error');
+      } finally {
+        if (btn) { btn.disabled = false; btn.textContent = '⚡ Promote to Super Admin'; }
+      }
+    });
+
+    $('btnDemoteSuperAdmin')?.addEventListener('click', async () => {
+      if (!accessEditingUser) return;
+      const name = accessEditingUser.display_name || accessEditingUser.username || 'this user';
+      const ok = await (window.appConfirm ? window.appConfirm({
+        title: 'Demote Super Administrator?',
+        message: `Are you sure you want to revoke Super Administrator status for ${name} and reassign them as Administrator?`,
+        confirmText: 'Demote to Admin',
+        tone: 'danger'
+      }) : window.confirm(`Demote ${name} from Super Administrator to Admin?`));
+
+      if (!ok) return;
+      const btn = $('btnDemoteSuperAdmin');
+      if (btn) { btn.disabled = true; btn.textContent = 'Demoting...'; }
+      try {
+        await svc.demoteSuperAdmin(accessEditingUser.id);
+        showToast(`${name} demoted to Administrator.`);
+        closeAccessEditor();
+        await loadAdmin();
+      } catch (err) {
+        showToast(err.message || 'Could not demote Super Admin.', 'error');
+      } finally {
+        if (btn) { btn.disabled = false; btn.textContent = 'Demote to Admin'; }
+      }
+    });
+
+    initAdminSubnav();
+    initPasswordToggles();
+    loadOperationalSettings();
+
+    window._renderAccountsWorkspaceFn = async function() {
+      const isCallerSuper = !!(window.CCTV_AUTH && typeof window.CCTV_AUTH.isSuperAdmin === "function" && window.CCTV_AUTH.isSuperAdmin());
+      const optCreateAdmin = $('optCreateAdmin');
+      if (optCreateAdmin) {
+        optCreateAdmin.hidden = !isCallerSuper;
+        optCreateAdmin.disabled = !isCallerSuper;
+        if (!isCallerSuper && $('adminCreateRole')) $('adminCreateRole').value = 'user';
+      }
+      renderUsers(svc.getCachedUsers());
+      renderRecentCredentials();
+      await updateKpiDisplay();
+      // Show Users tab by default
+      const tabUsers = $('adminTabUsers');
+      const tabAudit = $('adminTabAudit');
+      const tabSettings = $('adminTabSettings');
+      if (tabUsers) tabUsers.hidden = false;
+      if (tabAudit) tabAudit.hidden = true;
+      if (tabSettings) tabSettings.hidden = true;
+      document.querySelectorAll('.admin-subnav-btn').forEach(b => {
+        b.classList.toggle('active', b.dataset.adminTab === 'users');
+      });
+      // Lazy-load users if cache empty
+      if (!svc.getCachedUsers().length) await loadAdmin();
+    };
+
+    // Initial load from local cache
+    renderUsers(svc.getCachedUsers());
+    renderRecentCredentials();
+    updateKpiDisplay();
+  }
+
+  // App Initialization
+  window.addEventListener("DOMContentLoaded", async () => {
+    initWorkspaceNavigation();
+
+    // Check initial workspace from URL param, hash or sessionStorage; default to dashboard
+    const params = new URLSearchParams(window.location.search);
+    const initialWorkspace = params.get("workspace") || (window.location.hash ? window.location.hash.slice(1).toLowerCase() : null) || sessionStorage.getItem("cctv_active_workspace");
+    if (initialWorkspace && WORKSPACES[initialWorkspace]) {
+      switchWorkspace(initialWorkspace);
+    } else {
+      switchWorkspace("dashboard");
+    }
+
+    initFormDropdowns();
+    initChoiceButtons();
+    initScreenshotDropzone();
+    initMultiLinkField();
+    initMultiSubjectEdr();
+    initEvents();
+
+    // Dashboard Controller Initialization
+    initDashboardController();
+
+    if (params.get("edr") === "expanded" && typeof window.setDispatchExpanded === "function") {
+      window.setDispatchExpanded(true);
+    }
+
+    // CCTV Audit & Smart Audit Guard Initialization
+    initAuditEvents();
+    initSmartAuditGuard();
+    initLiveTrackerController();
+    if (params.get("find") && liveTrackerGrid) {
+      setTimeout(() => {
+        liveTrackerGrid.openFind(params.get("find"));
+      }, 300);
+    }
+
+    // AI Sorter Initialization
+    initSorterController();
+
+    // Maintenance Report Initialization
+    initMaintenanceController();
+
+    // Pending Reports Initialization
+    initPendingController();
+
+    // Follow Up Reports Initialization
+    initFollowupController();
+
+    // Unreported Workspace Initialization
+    if (window.unreportedService && typeof window.unreportedService.init === "function") {
+      window.unreportedService.init();
+    }
+
+    // CCTV Report Workspace Initialization
+    initCctvReportController();
+
+    // Code of Conduct Reference Initialization
+    initCodeOfConductController();
+
+    // Trackers Workspace Initialization
+    initTrackersController();
+
+    // Masterlist Workspace Initialization
+    initMasterlistController();
+
+    // Activity History Initialization
+    initHistoryController();
+
+    // Accounts / Admin Console Initialization
+    initAccountsController();
+
+    // Centralized Operational Settings initialization
+    if (window.CCTV_ACCOUNTS && typeof window.CCTV_ACCOUNTS.fetchOperationalSettings === "function") {
+      window.CCTV_ACCOUNTS.fetchOperationalSettings().then(s => {
+        if (s && s.subtitle) {
+          document.querySelectorAll(".workspace-subtitle, .auth-brand span").forEach(el => {
+            el.textContent = s.subtitle;
+          });
+        }
+      }).catch(() => {});
+    }
+
+    // Microsoft 365 Services & Modals
+    if (window.CCTV_MS_CONFIG_DIALOG) {
+      window.CCTV_MS_CONFIG_DIALOG.init();
+    }
+    if (window.CCTV_TEAMS_SHARE) {
+      window.CCTV_TEAMS_SHARE.init();
+    }
+
+    // Manila clock ticker
+    if (typeof window.initManilaClock === "function") {
+      window.initManilaClock();
+    } else {
+      updateManilaClock();
+      if (!window.__manilaClockInterval) {
+        window.__manilaClockInterval = setInterval(updateManilaClock, 1000);
+      }
+    }
+
+    // Watch EDR updates
+    edr.onChange(reports => {
+      renderEdrList(reports);
+    });
+
+    // Watch Audit updates
+    audit.onChange(() => {
+      renderAuditTable();
+    });
+
+    // Watch Guard updates
+    audit.onGuardChange(() => {
+      renderGuardStatus();
+    });
+
+    // Initial load of existing EDR records from IndexedDB
+    await edr.init();
+    window.CCTV_DASHBOARD?.syncLocalWorkspaces?.();
+
+    // Initial load of existing Audit entries & Guard snapshot
+    await audit.init();
+    await audit.initGuard();
+    renderAuditTable();
+    renderGuardStatus();
+
+    // Optional demo seed for testing / visual verification if requested
+    if (params.has("demo") && !audit.getEntries().length) {
+      audit.addEntry({
+        rawDate: "2026-09-10",
+        site: "Mabini Site A - 1st Floor",
+        tlName: "Abegail Llena",
+        agentName: "Juan Dela Cruz",
+        omName: "Abby",
+        account: "Shopee - CB-SCS",
+        cleanAccount: "Shopee - CB-SCS",
+        reasonCode: "SLEEPING",
+        noc: "YES",
+        remarks: "CCTV observed sleeping at workstation. Supervisor coached on shift."
+      });
+      audit.addEntry({
+        rawDate: "2026-09-10",
+        site: "Mabini Site B - 2nd Floor",
+        tlName: "Christian Arcilla",
+        agentName: "Maria Santos",
+        omName: "Renato",
+        account: "AFP",
+        cleanAccount: "AFP",
+        reasonCode: "USING SMARTPHONE",
+        noc: "Pending",
+        remarks: "Device noted in production bay; pending verification with TL."
+      });
+      audit.addEntry({
+        rawDate: "2026-09-09",
+        site: "Ecoland Site",
+        tlName: "Dante Tahuran",
+        agentName: "Pedro Penduko",
+        omName: "Crystal",
+        account: "TEMU - 1404",
+        cleanAccount: "TEMU - 1404",
+        reasonCode: "BROWSING",
+        noc: "YES",
+        remarks: "Non-work streaming detected during call wrap-up.",
+        sourceEdrId: "edr-demo-404"
+      });
+    }
+
+    if (params.has("demo") && !edr.getReports().length) {
+      const samplePng = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAA7SURBVHhe7c4BDQAACAMw9E/tUwwmFvw+yZptWc3MzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMxfmA0G6kFf2u/6fAAAAABJRU5ErkJggg==";
+      await edr.saveReport({
+        date: "2026-09-10",
+        site: "Mabini Site A - 1st Floor",
+        account: "AFP",
+        timeObserved: "14:30",
+        supervisorRole: "Team Leader",
+        supervisorName: "Sarah Connor",
+        subjectType: "Agent/s",
+        subjectName: "John Matrix",
+        incident: "CCTV observed sleeping at workstation during production shift",
+        action: "Verbal warning issued; documented incident in portal",
+        clipLink: "http://122.54.123.45:8080/clip1",
+        screenshotData: samplePng,
+        selected: true,
+        done: false
+      });
+      await edr.saveReport({
+        date: "2026-09-10",
+        site: "Shaw Site B - 2nd Floor",
+        account: "Healthcare",
+        timeObserved: "16:15",
+        supervisorRole: "OM",
+        supervisorName: "Dutch Schaefer",
+        subjectType: "Agent/s",
+        subjectName: "Kyle Reese",
+        incident: "Unauthorized mobile device usage in secured production area",
+        action: "Device surrendered to security desk; supervisor notified",
+        clipLink: "",
+        screenshotData: "",
+        selected: false,
+        done: false
+      });
+    }
+
+    if (params.has("demo") && !followupReportsList.length) {
+      const samplePng = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAA7SURBVHhe7c4BDQAACAMw9E/tUwwmFvw+yZptWc3MzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMxfmA0G6kFf2u/6fAAAAABJRU5ErkJggg==";
+      const demoFollowups = [
+        followup.createReport({
+          date: "2026-09-10",
+          om: "CCTV OM MIRAH",
+          label: "TL Sarah Connor (Shopee)",
+          cctvLink: "https://teams.microsoft.com/l/message/19%3Ashopee%40thread.v2/0",
+          status: "Waiting for TL",
+          remarks: "Observed sleeping at workstation. Awaiting supervisor coaching form.",
+          screenshotData: samplePng
+        }),
+        followup.createReport({
+          date: "2026-09-10",
+          om: "CCTV OM RENATO",
+          label: "TL Christian Arcilla (AFP)",
+          cctvLink: "https://teams.microsoft.com/l/message/19%3Aafp%40thread.v2/1",
+          status: "TL Disputed",
+          remarks: "TL claims device was 2FA token. Escalated for CCTV footage verification.",
+          screenshotData: samplePng
+        }),
+        followup.createReport({
+          date: "2026-09-09",
+          om: "CCTV OM CRYSTAL",
+          label: "TL Dante Tahuran (TEMU)",
+          cctvLink: "https://teams.microsoft.com/l/message/19%3Atemu%40thread.v2/2",
+          status: "Resolved",
+          remarks: "Coaching session completed and notice of coaching signed.",
+          screenshotData: samplePng
+        })
+      ];
+      followupReportsList = demoFollowups;
+      await followup.saveReports(demoFollowups);
+      renderFollowupList();
+    }
+
+    // Restore draft form and Facebook text if present
+    restoreDraftForm();
+    const savedFb = edr.getFacebookText();
+    if (savedFb && el("edrFacebookText")) {
+      el("edrFacebookText").value = savedFb;
+      updateLivePreview();
+    }
+
+    // Display Preview Mode Banner if active
+    const cfg = window.CCTV_V2_CONFIG || {};
+    if (cfg.IS_PREVIEW) {
+      const banner = el("cctvPreviewBanner");
+      if (banner) {
+        banner.hidden = false;
+        banner.style.display = "flex";
+        if (cfg.IS_STAGING_CONFIGURED) {
+          banner.innerHTML = '<span class="preview-tag">PREVIEW MODE</span><span>Connected to Staging Backend. Production database is isolated.</span>';
+        }
+      }
+    }
+
+    // Google Docs initial connection check
+    const currentDocsUrl = edr.getDocsUrl();
+    if (el("edrDocsStatusText")) {
+      el("edrDocsStatusText").textContent = edr.isValidDocsUrl(currentDocsUrl) ? "Docs Connected" : "Local Storage";
+    }
+
+    // Live Integration Status Controller
+    function updateIntegrationStatusPills() {
+      const cfg = window.CCTV_V2_CONFIG || {};
+      // 1. Supabase Auth
+      const pillAuth = el("pillSupabaseAuth");
+      if (pillAuth) {
+        const val = el("valSupabaseAuth");
+        if (cfg.IS_PREVIEW && !cfg.IS_BACKEND_AVAILABLE) {
+          pillAuth.className = "integration-pill is-preview is-isolated";
+          if (val) val.textContent = "Preview (Isolated)";
+          pillAuth.title = "Preview Environment: Production database is isolated. Staging backend required for cloud auth.";
+        } else {
+          const user = window.CCTV_AUTH?.getUser?.() || null;
+          const isAuth = !!user;
+          if (isAuth) {
+            pillAuth.className = "integration-pill is-connected";
+            if (val) val.textContent = cfg.IS_STAGING_CONFIGURED ? "Staging Connected" : "Connected";
+            pillAuth.title = `Supabase Auth: Connected (${user.email || user.id || "Active session"})`;
+          } else {
+            pillAuth.className = "integration-pill is-disconnected";
+            if (val) val.textContent = "Disconnected";
+            pillAuth.title = "Supabase Auth: Disconnected (Sign in to establish active session)";
+          }
+        }
+      }
+
+      // 2. Google Docs EDR
+      const pillDocs = el("pillGoogleDocs");
+      if (pillDocs) {
+        const docsUrl = edr?.getDocsUrl?.() || "";
+        const isDocsConfigured = !!(edr?.isValidDocsUrl && edr.isValidDocsUrl(docsUrl));
+        const val = el("valGoogleDocs");
+        if (isDocsConfigured) {
+          pillDocs.className = "integration-pill is-connected";
+          if (val) val.textContent = "Connected";
+          pillDocs.title = "Google Docs EDR: Connected and receiver configured";
+        } else {
+          pillDocs.className = "integration-pill is-disconnected";
+          if (val) val.textContent = "Disconnected";
+          pillDocs.title = "Google Docs EDR: Disconnected (No Web App URL configured)";
+        }
+      }
+
+      // 3. Google Sheets Maintenance
+      const pillSheets = el("pillGoogleSheets");
+      if (pillSheets) {
+        const sheetsUrl = localStorage.getItem("maintenance_google_sheets_web_app_url_v1") || "";
+        const isSheetsConfigured = /^https:\/\/script\.google\.com\/macros\/s\/[^/]+\/exec(?:\?.*)?$/i.test(sheetsUrl.trim());
+        const val = el("valGoogleSheets");
+        if (isSheetsConfigured) {
+          pillSheets.className = "integration-pill is-connected";
+          if (val) val.textContent = "Configured";
+          pillSheets.title = "Google Sheets Maintenance: Configured and ready";
+        } else {
+          pillSheets.className = "integration-pill is-disconnected";
+          if (val) val.textContent = "Disconnected";
+          pillSheets.title = "Google Sheets Maintenance: Disconnected (No Web App URL configured)";
+        }
+      }
+    }
+    window.updateIntegrationStatusPills = updateIntegrationStatusPills;
+    window.renderEdrList = renderEdrList;
+    window.renderAuditTable = renderAuditTable;
+
+    // --- Restored Authentication Gate & Session Lifecycle ---
+    const loginModal = el("loginModal");
+    const loginForm = el("loginForm");
+    const loginBtn = el("loginBtn");
+    const authMessage = el("authMessage");
+    const loginUsername = el("loginUsername");
+    const loginPassword = el("loginPassword");
+    const btnLogoutTop = el("btnLogoutTop");
+
+    // Rate-limiting & Anti-Abuse state (defense-in-depth)
+    let failedLoginAttempts = 0;
+    let lockoutUntil = 0;
+    let lockoutTimer = null;
+
+    function startLockoutCountdown() {
+      if (lockoutTimer) clearInterval(lockoutTimer);
+      const updateMessage = () => {
+        const remainingMs = lockoutUntil - Date.now();
+        if (remainingMs <= 0) {
+          clearInterval(lockoutTimer);
+          lockoutTimer = null;
+          lockoutUntil = 0;
+          showAuthMessage("");
+          if (loginBtn) loginBtn.disabled = false;
+          return;
+        }
+        const remainingSec = Math.ceil(remainingMs / 1000);
+        showAuthMessage(`Too many failed attempts. Cooldown active: please wait ${remainingSec}s before retrying.`);
+        if (loginBtn) loginBtn.disabled = true;
+      };
+      updateMessage();
+      lockoutTimer = setInterval(updateMessage, 1000);
+    }
+
+    function showAuthMessage(msg, isSuccess = false) {
+      if (!authMessage) return;
+      if (!msg) {
+        authMessage.style.display = "none";
+        authMessage.textContent = "";
+        authMessage.className = "auth-message";
+      } else {
+        authMessage.style.display = "block";
+        authMessage.textContent = msg;
+        authMessage.className = isSuccess ? "auth-message success" : "auth-message";
+      }
+    }
+
+    function setAuthBusy(isBusy, busyText = "CONNECTING...") {
+      if (!loginBtn) return;
+      const label = loginBtn.querySelector(".btn-label") || loginBtn;
+      if (isBusy) {
+        loginBtn.dataset.origText = label.textContent;
+        label.textContent = busyText;
+        loginBtn.disabled = true;
+      } else {
+        label.textContent = loginBtn.dataset.origText || "INITIATE_CONNECTION";
+        if (Date.now() >= lockoutUntil) {
+          loginBtn.disabled = false;
+        }
+      }
+    }
+
+    function lockApp() {
+      document.body.classList.add("auth-locked");
+      document.body.classList.remove("auth-unlocked");
+      if (loginModal) {
+        loginModal.hidden = false;
+        loginModal.style.display = "flex";
+        loginModal.classList.remove("hidden");
+      }
+      if (typeof window.__renderJapaneseMatrix === "function") {
+        window.__renderJapaneseMatrix();
+      }
+      const cfg = window.CCTV_V2_CONFIG || {};
+      if (cfg.IS_PREVIEW && !cfg.IS_BACKEND_AVAILABLE) {
+        showAuthMessage("PREVIEW MODE: Production database isolated. Backend authentication is disabled until staging is configured.");
+      }
+      const tabAccounts = el("tabAccounts");
+      if (tabAccounts) tabAccounts.style.display = "none";
+
+      // Reset active workspace away from any restricted workspaces
+      currentWorkspace = "dashboard";
+      window.getCurrentWorkspace = () => "dashboard";
+      try {
+        sessionStorage.setItem("cctv_active_workspace", "dashboard");
+      } catch (_) {}
+
+      // Ensure restricted panes and all non-dashboard panes are hidden
+      document.querySelectorAll(".workspace-pane").forEach(pane => {
+        if (pane.id === "paneDashboard") {
+          pane.hidden = false;
+          pane.classList.add("active");
+        } else {
+          pane.hidden = true;
+          pane.classList.remove("active");
+        }
+      });
+      document.querySelectorAll(".nav-rail .nav-item").forEach(tab => {
+        if (tab.id === "tabDashboard") {
+          tab.classList.add("active");
+          tab.setAttribute("aria-selected", "true");
+        } else {
+          tab.classList.remove("active");
+          tab.setAttribute("aria-selected", "false");
+        }
+      });
+
+      // Close open modals so sensitive operational data is not left visible behind login screen
+      document.querySelectorAll(".modal-backdrop:not(#loginModal)").forEach(m => {
+        m.hidden = true;
+        m.classList.remove("is-visible");
+      });
+    }
+
+    function unlockApp(user, profile) {
+      document.body.classList.remove("auth-locked");
+      document.body.classList.add("auth-unlocked");
+      if (loginModal) {
+        loginModal.hidden = true;
+        loginModal.style.display = "none";
+        loginModal.classList.add("hidden");
+      }
+      const matrix = document.getElementById("jpMatrix");
+      if (matrix) matrix.replaceChildren();
+      showAuthMessage("");
+      if (loginPassword) loginPassword.value = "";
+
+      failedLoginAttempts = 0;
+      lockoutUntil = 0;
+      if (lockoutTimer) {
+        clearInterval(lockoutTimer);
+        lockoutTimer = null;
+      }
+
+      const isSuper = !!(auth && typeof auth.isSuperAdmin === "function" && auth.isSuperAdmin());
+      const isAdmin = !!(auth && typeof auth.isAdmin === "function" && auth.isAdmin());
+      const canAccessAccounts = !!(auth && typeof auth.canAccessWorkspace === "function" && auth.canAccessWorkspace("accounts"));
+
+      const tabAccounts = el("tabAccounts");
+      if (tabAccounts) {
+        tabAccounts.style.display = canAccessAccounts ? "" : "none";
+      }
+      if (!canAccessAccounts && currentWorkspace === "accounts") {
+        switchWorkspace("edr");
+      }
+
+      if (user) {
+        if (el("userNameText")) el("userNameText").textContent = profile?.display_name || profile?.username || "Operator";
+        const roleLabel = profile?.role === "super_admin" ? "Super Admin" : (profile?.role === "admin" ? "Admin" : "User");
+        if (el("userRoleText")) el("userRoleText").textContent = roleLabel;
+        if (el("railUserMeta")) el("railUserMeta").textContent = roleLabel;
+        if (el("userAvatarText")) el("userAvatarText").textContent = (profile?.username || "U")[0].toUpperCase();
+      }
+
+      // Dynamically toggle admin creation option for logged-in super admins only
+      const optCreateAdmin = el("optCreateAdmin");
+      if (optCreateAdmin) {
+        optCreateAdmin.hidden = !isSuper;
+        optCreateAdmin.disabled = !isSuper;
+      }
+
+      // Restore user requested workspace if accessible upon unlock
+      try {
+        const p = new URLSearchParams(window.location.search);
+        const reqWs = p.get("workspace") || (window.location.hash ? window.location.hash.slice(1).toLowerCase() : null) || sessionStorage.getItem("cctv_active_workspace");
+        if (reqWs && WORKSPACES[reqWs] && reqWs !== currentWorkspace) {
+          if (auth && typeof auth.canAccessWorkspace === "function" && auth.canAccessWorkspace(reqWs)) {
+            switchWorkspace(reqWs);
+          }
+        }
+      } catch (_) {}
+    }
+
+    // Bind login form submit
+    if (loginForm) {
+      loginForm.addEventListener("submit", async (e) => {
+        if (e) {
+          e.preventDefault();
+          if (typeof e.stopPropagation === "function") e.stopPropagation();
+        }
+
+        if (Date.now() < lockoutUntil) {
+          startLockoutCountdown();
+          return;
+        }
+
+        showAuthMessage("");
+        const username = (loginUsername?.value || "").trim();
+        const password = loginPassword?.value || "";
+
+        if (!username) {
+          showAuthMessage("Enter your operator ID, username or email.");
+          loginUsername?.focus();
+          return;
+        }
+        if (!password) {
+          showAuthMessage("Enter your access key / password.");
+          loginPassword?.focus();
+          return;
+        }
+
+        setAuthBusy(true, "CONNECTING...");
+        try {
+          const res = await auth.signIn(username, password);
+          unlockApp(res.user, res.profile);
+          showToast("Authenticated successfully.", "success");
+        } catch (err) {
+          console.error("Sign in error:", err);
+          const rawErr = err?.message || "";
+          const msg = rawErr.toLowerCase();
+          if (msg.includes("preview mode")) {
+            showAuthMessage(rawErr);
+            return;
+          }
+          const isNetworkError = msg.includes("failed to fetch") || msg.includes("network") || msg.includes("abort") || err?.name === "TypeError";
+          if (isNetworkError) {
+            showAuthMessage("Network connection error. Please check your internet connection.");
+            return;
+          }
+
+          failedLoginAttempts++;
+          if (failedLoginAttempts >= 5) {
+            lockoutUntil = Date.now() + 30000;
+            failedLoginAttempts = 0;
+            startLockoutCountdown();
+            try {
+              if (window.CCTV_ACCOUNTS && typeof window.CCTV_ACCOUNTS.logSecurityEvent === "function") {
+                window.CCTV_ACCOUNTS.logSecurityEvent("login_rate_limit_triggered", username, { attempts: 5, cooldown_seconds: 30 });
+              }
+            } catch (_) {}
+            return;
+          }
+
+          // Anti-enumeration generic error message
+          showAuthMessage("Incorrect username or access key.");
+        } finally {
+          setAuthBusy(false);
+        }
+      });
+    }
+
+    // Bind logout buttons (sidebar footer primary, topbar compatibility fallback)
+    const handleSignOutAction = async () => {
+      try {
+        await auth.signOut();
+      } catch (err) {
+        console.warn("Sign out error:", err);
+      }
+      if (typeof window._clearTransientCredential === "function") {
+        window._clearTransientCredential();
+      }
+      lockApp();
+      showToast("Signed out safely.", "info");
+    };
+
+    if (btnLogoutTop) {
+      btnLogoutTop.addEventListener("click", handleSignOutAction);
+    }
+    el("btnSidebarLogout")?.addEventListener("click", handleSignOutAction);
+
+    // Sidebar My Account action
+    el("btnSidebarMyAccount")?.addEventListener("click", () => {
+      if (window.CCTV_MY_ACCOUNT && typeof window.CCTV_MY_ACCOUNT.open === "function") {
+        window.CCTV_MY_ACCOUNT.open();
+      } else if (auth && typeof auth.canAccessWorkspace === "function" && auth.canAccessWorkspace("accounts")) {
+        switchWorkspace("accounts");
+      }
+    });
+
+    // User profile menu button -> Opens My Account
+    el("btnUserMenu")?.addEventListener("click", () => {
+      if (window.CCTV_MY_ACCOUNT && typeof window.CCTV_MY_ACCOUNT.open === "function") {
+        window.CCTV_MY_ACCOUNT.open();
+      } else if (auth && typeof auth.canAccessWorkspace === "function" && auth.canAccessWorkspace("accounts")) {
+        switchWorkspace("accounts");
+      } else {
+        const prof = auth?.getProfile();
+        const roleLabel = prof?.role === "super_admin" ? "Super Admin" : (prof?.role === "admin" ? "Admin" : "User");
+        showToast(`Signed in as ${prof?.display_name || prof?.username || "Operator"} (${roleLabel})`, "info");
+      }
+    });
+
+    auth.onAuthChange(({ user, profile }) => {
+      if (user) {
+        unlockApp(user, profile);
+      } else {
+        lockApp();
+      }
+      updateIntegrationStatusPills();
+      restoreSorterDraft().catch(console.error);
+      if (typeof edr?.loadReports === "function") {
+        edr.loadReports().then(reps => {
+          if (typeof renderEdrList === "function") renderEdrList(reps);
+        }).catch(console.error);
+      }
+      if (typeof window.historyService?.reload === "function") {
+        window.historyService.reload().catch(console.error);
+      }
+    });
+
+    // Initial auth check on app startup
+    const initialAuth = await auth.init();
+    const activeUser = (initialAuth && initialAuth.user) || auth?.getUser?.();
+    const activeProfile = (initialAuth && initialAuth.profile) || auth?.getProfile?.();
+    if (typeof edr?.loadReports === "function") {
+      edr.loadReports().then(reps => {
+        if (typeof renderEdrList === "function") renderEdrList(reps);
+      }).catch(console.error);
+    }
+    if (activeUser) {
+      unlockApp(activeUser, activeProfile);
+    } else {
+      lockApp();
+    }
+    updateIntegrationStatusPills();
+    window.addEventListener("storage", (e) => {
+      if (e.key === "maintenance_google_sheets_web_app_url_v1" || e.key === "cctv_edr_docs_url_v1") {
+        updateIntegrationStatusPills();
+      }
+    });
+  });
+})();
+
+// ============================================================
+// JP_MATRIX_BACKGROUND
+// Animated Katakana login background
+// ============================================================
+(() => {
+  const initJapaneseMatrix = () => {
+    const matrix = document.getElementById("jpMatrix");
+    if (!matrix) return;
+
+    const chars = Array.from(
+      "アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン" +
+      "ガギグゲゴザジズゼゾダヂヅデドバビブベボパピプペポ"
+    );
+
+    const render = () => {
+      if (document.body.classList.contains("auth-unlocked") || !document.body.classList.contains("auth-locked")) {
+        matrix.replaceChildren();
+        return;
+      }
+
+      const width = Math.max(window.innerWidth, 1920);
+      const height = Math.max(window.innerHeight, 1080);
+
+      const columns = Math.ceil(width / 40);
+      const rows = Math.ceil(height / 40);
+      const total = columns * rows;
+
+      const fragment = document.createDocumentFragment();
+
+      for (let i = 0; i < total; i++) {
+        const span = document.createElement("span");
+        span.textContent = chars[i % chars.length];
+        fragment.appendChild(span);
+      }
+
+      matrix.replaceChildren(fragment);
+    };
+
+    window.__renderJapaneseMatrix = render;
+
+    render();
+
+    let resizeTimer;
+    window.addEventListener("resize", () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(render, 150);
+    });
+  };
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initJapaneseMatrix);
+  } else {
+    initJapaneseMatrix();
+  }
+})();
+/* =========================================================
+   REPORT HEADER POLISH V1
+   Auto-detect CCTV REPORT / REPORT PREVIEW headers and
+   turn header buttons into aligned text actions
+   ========================================================= */
+(function () {
+  if (window.__reportHeaderPolishInit) return;
+  window.__reportHeaderPolishInit = true;
+
+  function normalize(value) {
+    return String(value || "")
+      .replace(/\s+/g, " ")
+      .trim()
+      .toLowerCase();
+  }
+
+  function findTitleNode(label) {
+    const selector = [
+      "h1","h2","h3","h4","h5",
+      ".section-title",".panel-title",".card-title",
+      "[class*='title']"
+    ].join(",");
+
+    return Array.from(document.querySelectorAll(selector)).find(el => {
+      return normalize(el.textContent) === normalize(label);
+    });
+  }
+
+  function findHeaderContainer(titleEl, actionLabels) {
+    let node = titleEl ? titleEl.parentElement : null;
+
+    while (node && node !== document.body) {
+      const actionTexts = Array.from(node.querySelectorAll("button,a"))
+        .map(el => normalize(el.textContent))
+        .filter(Boolean);
+
+      const hasExpectedAction = actionLabels.some(label =>
+        actionTexts.includes(normalize(label))
+      );
+
+      const hasFormControl = !!node.querySelector("input, textarea, select");
+
+      if (hasExpectedAction && !hasFormControl) {
+        return node;
+      }
+
+      node = node.parentElement;
+    }
+
+    return titleEl ? titleEl.parentElement : null;
+  }
+
+  function findCardContainer(headerEl) {
+    if (!headerEl) return null;
+    const directCard = headerEl.closest ? headerEl.closest(".card") : null;
+    if (directCard) return directCard;
+
+    let node = headerEl.parentElement;
+    while (node && node !== document.body) {
+      if (node.classList && node.classList.contains("card")) {
+        return node;
+      }
+      if (node.querySelector("textarea, input, select, [contenteditable='true']")) {
+        return node;
+      }
+      node = node.parentElement;
+    }
+
+    return headerEl.parentElement || null;
+  }
+
+  function decorateOne(config) {
+    const titleEl = findTitleNode(config.title);
+    if (!titleEl) return;
+
+    const header = findHeaderContainer(titleEl, config.actions);
+    if (!header) return;
+
+    titleEl.classList.add("report-clean-title");
+    header.classList.add("report-clean-header");
+
+    let actionsWrap = header.querySelector(".report-clean-actions");
+    if (!actionsWrap) {
+      actionsWrap = document.createElement("div");
+      actionsWrap.className = "report-clean-actions";
+      header.appendChild(actionsWrap);
+    }
+
+    Array.from(header.querySelectorAll("button,a")).forEach(el => {
+      const txt = normalize(el.textContent);
+      if (config.actions.some(action => normalize(action) === txt)) {
+        el.classList.add("report-clean-action");
+        actionsWrap.appendChild(el);
+      }
+    });
+
+    const card = findCardContainer(header);
+    if (card) {
+      card.classList.add("report-clean-card");
+      card.classList.add(config.cardClass);
+    }
+  }
+
+  function applyReportHeaderPolish() {
+    decorateOne({
+      title: "CCTV REPORT",
+      actions: ["Open Code of Conduct", "Reset"],
+      cardClass: "report-clean-card--compose"
+    });
+
+    decorateOne({
+      title: "REPORT PREVIEW",
+      actions: ["Expand", "Copy Plain", "Export", "Copy All"],
+      cardClass: "report-clean-card--preview"
+    });
+  }
+
+  let timer = null;
+  function scheduleApply() {
+    clearTimeout(timer);
+    timer = setTimeout(applyReportHeaderPolish, 40);
+  }
+  window.applyReportHeaderPolish = applyReportHeaderPolish;
+
+  document.addEventListener("DOMContentLoaded", scheduleApply);
+  window.addEventListener("load", scheduleApply);
+
+  setTimeout(applyReportHeaderPolish, 200);
+  setTimeout(applyReportHeaderPolish, 700);
+  setTimeout(applyReportHeaderPolish, 1200);
+})();
