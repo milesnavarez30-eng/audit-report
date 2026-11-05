@@ -136,99 +136,36 @@ h1, h2, h3, h4, h5, h6 {
   padding-top: 6px !important;
 }
 
-/* Sidebar Footer User Actions (My Account & Logout) */
+/* Sidebar User Actions Container (Removed from fixed footer) */
 .rail-user-actions {
-  padding: 6px 8px !important;
-  border-top: 1px solid var(--border-subtle) !important;
-  display: flex !important;
-  flex-direction: column !important;
-  gap: 3px !important;
-  background: var(--bg-rail) !important;
-  flex-shrink: 0 !important;
+  display: none !important;
 }
 
-.rail-action-btn {
-  display: flex !important;
-  align-items: center !important;
-  gap: 10px !important;
-  width: 100% !important;
-  height: 34px !important;
-  padding: 0 10px !important;
-  background: transparent !important;
-  border: 1px solid transparent !important;
-  border-radius: var(--radius-sm, 6px) !important;
+/* Logout Item inside Scrollable Navigation Rail */
+.nav-item.nav-item-logout {
+  margin-top: 4px !important;
   color: var(--text-secondary) !important;
-  font-family: var(--font-ui) !important;
-  font-size: 12px !important;
-  font-weight: 500 !important;
-  cursor: pointer !important;
-  text-align: left !important;
-  transition: all var(--trans-fast) !important;
-  box-sizing: border-box !important;
 }
 
-.rail-action-btn:hover {
-  background: var(--bg-surface-hover) !important;
-  color: var(--text-primary) !important;
-  border-color: var(--border-default) !important;
-}
-
-.rail-action-icon {
-  width: 16px !important;
-  height: 16px !important;
-  flex-shrink: 0 !important;
-}
-
-.rail-action-label {
-  white-space: nowrap !important;
-  overflow: hidden !important;
-  text-overflow: ellipsis !important;
-}
-
-.rail-action-meta {
-  margin-left: auto !important;
-  font-family: var(--font-mono) !important;
-  font-size: 9px !important;
-  color: var(--text-muted) !important;
-  background: var(--bg-surface) !important;
-  padding: 1px 5px !important;
-  border-radius: 3px !important;
-  border: 1px solid var(--border-subtle) !important;
-  text-transform: uppercase !important;
-}
-
-.rail-action-logout:hover {
+.nav-item.nav-item-logout:hover {
   background: rgba(239, 68, 68, 0.12) !important;
   color: #f87171 !important;
   border-color: rgba(239, 68, 68, 0.3) !important;
 }
 
-.rail-action-logout:hover .rail-action-icon {
+.nav-item.nav-item-logout:hover .nav-icon {
+  color: #f87171 !important;
   stroke: #f87171 !important;
 }
 
-/* Collapsed rail adjustments for actions */
-.nav-rail.collapsed .rail-user-actions {
-  padding: 6px 4px !important;
-  align-items: center !important;
+.nav-rail.collapsed .nav-item.nav-item-logout:hover .nav-icon {
+  color: #f87171 !important;
+  stroke: #f87171 !important;
 }
 
-.nav-rail.collapsed .rail-action-btn {
-  width: 38px !important;
-  height: 38px !important;
-  padding: 0 !important;
-  justify-content: center !important;
-  margin: 0 auto !important;
-}
-
-.nav-rail.collapsed .rail-action-label,
-.nav-rail.collapsed .rail-action-meta {
-  display: none !important;
-}
-
-.nav-rail.collapsed .rail-action-icon {
-  width: 18px !important;
-  height: 18px !important;
+.nav-item.nav-item-logout:focus-visible {
+  outline: 2px solid #ef4444 !important;
+  outline-offset: 2px !important;
 }
 
 /* Top Appbar */
