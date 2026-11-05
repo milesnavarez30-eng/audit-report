@@ -113,12 +113,8 @@ fs.writeFileSync(path.join(DIST_DIR, '_headers'), headersContent, 'utf8');
 const redirectsContent = `# Cloudflare Redirects for CCTV OPS V2
 /                  /cctv-ops-v2/  302
 /cctv-ops-v2       /cctv-ops-v2/  301
-/cctv-ops-v2/*     /cctv-ops-v2/index.html  200
 `;
 fs.writeFileSync(path.join(DIST_DIR, '_redirects'), redirectsContent, 'utf8');
-
-fs.writeFileSync(path.join(DIST_DIR, 'cctv-ops-v2', '_headers'), headersContent, 'utf8');
-fs.writeFileSync(path.join(DIST_DIR, 'cctv-ops-v2', '_redirects'), redirectsContent, 'utf8');
 
 // 8. Strict Security & Manifest Verification
 const forbiddenExtensions = ['.sql', '.gs', '.bak', '.zip', '.tmp', '.patch', '.log', '.ps1', '.tar', '.gz'];
