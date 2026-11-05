@@ -3526,7 +3526,7 @@ table.mini-sheet tr.floor-break td {
 .edr-split-layout.dispatch-expanded #cardSavedEdrs {
   order: 1 !important;
   height: 100% !important;
-  max-height: calc(100vh - 120px) !important;
+  max-height: none !important;
   display: flex !important;
   flex-direction: column !important;
 }
@@ -3534,20 +3534,20 @@ table.mini-sheet tr.floor-break td {
 .edr-split-layout.dispatch-expanded #cardTeamsDispatch {
   order: 2 !important;
   height: 100% !important;
-  max-height: calc(100vh - 120px) !important;
+  max-height: none !important;
   display: flex !important;
   flex-direction: column !important;
 }
 
 .edr-split-layout.dispatch-expanded #edrPreviewBox {
   flex: 1 1 auto !important;
-  min-height: 280px !important;
-  max-height: calc(100vh - 310px) !important;
+  min-height: 140px !important;
+  max-height: none !important;
 }
 
 .edr-split-layout.dispatch-expanded #edrListContainer {
   flex: 1 1 auto !important;
-  max-height: calc(100vh - 210px) !important;
+  max-height: none !important;
 }
 
 @media (max-width: 900px) {

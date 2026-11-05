@@ -4350,3 +4350,9 @@ body.edr-resizing-h {
   border: 1px solid rgba(16, 185, 129, 0.3);
   transition: opacity 0.2s ease;
 }
+
+/* EDR WORKSPACE FULL HEIGHT FIX */
+#paneEdr > .edr-split-layout {
+  height: 100%;
+  min-height: 0;
+}

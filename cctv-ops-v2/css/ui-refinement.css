@@ -4352,9 +4352,7 @@ body.edr-resizing-h {
 }
 
 /* EDR WORKSPACE FULL HEIGHT FIX */
-@media (min-width: 901px) {
-    #paneEdr > .edr-split-layout {
-        height: 100% !important;
-        min-height: 0 !important;
-    }
+#paneEdr > .edr-split-layout {
+  height: 100%;
+  min-height: 0;
 }
