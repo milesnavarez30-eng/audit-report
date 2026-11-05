@@ -64,12 +64,15 @@ USING (auth.uid() = user_id)
 WITH CHECK (auth.uid() = user_id);
 
 -- -----------------------------------------------------------------------------
--- 3. Secure Retrieval RPC (SECURITY DEFINER with fixed search_path)
+-- 3. Secure Retrieval RPC (SECURITY INVOKER with fixed search_path)
 -- -----------------------------------------------------------------------------
+-- In compliance with current Supabase security guidance, this function runs
+-- with the caller's privileges (SECURITY INVOKER) because authenticated users
+-- already possess direct SELECT grants governed by the RLS policy.
 CREATE OR REPLACE FUNCTION public.get_cctv_user_focus_state()
 RETURNS JSONB
 LANGUAGE plpgsql
-SECURITY DEFINER
+SECURITY INVOKER
 SET search_path = ''
 AS $$
 DECLARE
