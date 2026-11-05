@@ -189,6 +189,7 @@ try {
     Write-Host "`n[Audit 2] Testing Revised Shortcuts (Alt+Shift+F, Alt+Shift+H, Alt+Shift+M, Alt+Shift+Space)..." -ForegroundColor Yellow
     $shortcutResult = Send-Eval -expression @'
     (function() {
+        document.body.classList.remove("auth-locked");
         window.CCTV_FOCUS.enable();
         window.CCTV_FOCUS.hide();
 

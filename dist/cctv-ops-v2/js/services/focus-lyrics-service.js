@@ -171,6 +171,12 @@ window.CCTV_FOCUS_LYRICS = (function () {
      * Get user custom saved lyrics for a track
      */
     getCustomLyrics(trackId) {
+      if (!trackId) return null;
+      // 1. Check in-memory/backend user state first
+      const mem = window.CCTV_FOCUS_STATE?.getCustomLyricsForTrack?.(trackId);
+      if (mem) return mem;
+
+      // 2. Check legacy local storage only if exact user key exists
       try {
         const raw = localStorage.getItem(getStorageKey(trackId));
         return raw ? JSON.parse(raw) : null;
@@ -184,28 +190,33 @@ window.CCTV_FOCUS_LYRICS = (function () {
      */
     saveCustomLyrics(trackId, text, timeOffset = 0) {
       if (!trackId) return;
-      try {
-        const payload = {
-          text: text ? text.trim() : "",
-          timeOffset: Number(timeOffset) || 0,
-          updatedAt: Date.now()
-        };
-        localStorage.setItem(getStorageKey(trackId), JSON.stringify(payload));
-        // Clear memory cache so next retrieval uses custom lyrics
-        memoryCache.delete(trackId);
-      } catch (err) {
-        console.warn("Failed to save custom lyrics:", err);
+      const payload = {
+        text: text ? text.trim() : "",
+        timeOffset: Number(timeOffset) || 0,
+        updatedAt: Date.now()
+      };
+
+      // Delegate to Focus State Service for secure Supabase RLS persistence
+      if (window.CCTV_FOCUS_STATE?.setCustomLyricsForTrack) {
+        window.CCTV_FOCUS_STATE.setCustomLyricsForTrack(trackId, payload);
       }
+
+      // Clear memory cache so next retrieval uses custom lyrics
+      memoryCache.delete(trackId);
     },
 
     /**
      * Clear custom lyrics for a track
      */
     deleteCustomLyrics(trackId) {
+      if (!trackId) return;
+      if (window.CCTV_FOCUS_STATE?.setCustomLyricsForTrack) {
+        window.CCTV_FOCUS_STATE.setCustomLyricsForTrack(trackId, null);
+      }
       try {
         localStorage.removeItem(getStorageKey(trackId));
-        memoryCache.delete(trackId);
       } catch (_) {}
+      memoryCache.delete(trackId);
     }
   };
 })();

@@ -48,7 +48,8 @@ window.CCTV_FOCUS_WINDOW = (function () {
       <div class="focus-header" id="focusHeader">
         <div class="focus-header-left">
           <span class="focus-live-pip" id="focusHeaderPip" style="display:none;"></span>
-          <span class="focus-title">FOCUS</span>
+          <span class="focus-title" id="focusTitle">FOCUS</span>
+          <span class="focus-sync-warn" id="focusSyncWarn" style="display:none; font-size:9px; font-weight:600; color:var(--accent-warning, #F59E0B); padding:1px 4px; border-radius:3px; background:rgba(245,158,11,0.15); letter-spacing:0.04em;" title="Cloud save unavailable — running in temporary memory">OFFLINE</span>
         </div>
 
         <!-- Discreet Mode Controls (Visible only in Discreet Mode) -->
@@ -506,8 +507,8 @@ window.CCTV_FOCUS_WINDOW = (function () {
       // Escape: Hide Focus ONLY IF Focus is currently open, and NO other modal is open
       if (e.key === "Escape") {
         const lm = document.getElementById("loginModal");
-        const loginModalOpen = lm && !lm.hidden && lm.style.display !== "none";
-        const anyOtherModalOpen = document.querySelector(".modal-backdrop.active, .modal.active");
+        const loginModalOpen = lm && !lm.hidden && lm.style.display !== "none" && document.body.classList.contains("auth-locked");
+        const anyOtherModalOpen = document.querySelector(".modal-backdrop.active, .modal.active:not(#focusWindow)");
 
         if (!loginModalOpen && !anyOtherModalOpen && container && container.style.display !== "none") {
           e.preventDefault();
@@ -954,6 +955,12 @@ window.CCTV_FOCUS_WINDOW = (function () {
 
       // Visibility
       container.style.display = (state.isEnabled && state.isWindowVisible) ? "flex" : "none";
+
+      // Sync status indicator
+      const syncWarn = el("focusSyncWarn");
+      if (syncWarn) {
+        syncWarn.style.display = (state.syncStatus === "offline" || state.syncStatus === "error") ? "inline-block" : "none";
+      }
 
       // Mode styling & rect restoration
       const isDiscreet = state.mode === "discreet";
