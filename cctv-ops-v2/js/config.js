@@ -23,7 +23,6 @@ function _checkIsPreview() {
       return true;
     }
   } catch (_) {}
-  const host = (window.location.hostname || "").toLowerCase();
   return (
     host.endsWith(".pages.dev") ||
     host.includes(".pages.dev") ||
