@@ -3604,7 +3604,12 @@ tbody tr:hover {
   border: 2px solid #f59e0b !important;
   color: #fbbf24 !important;
   cursor: pointer !important;
+  pointer-events: auto !important;
   transition: all 0.2s ease !important;
+}
+
+.btn-demo-preview * {
+  pointer-events: none !important;
 }
 
 .btn-demo-preview:hover,

@@ -24,6 +24,9 @@ function _checkIsPreview() {
     }
   } catch (_) {}
   return (
+    host === "localhost" ||
+    host === "127.0.0.1" ||
+    host === "0.0.0.0" ||
     host.endsWith(".pages.dev") ||
     host.includes(".pages.dev") ||
     host.includes("preview.") ||

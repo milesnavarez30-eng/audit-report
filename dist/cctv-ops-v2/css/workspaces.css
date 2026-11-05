@@ -5245,8 +5245,13 @@ body.auth-locked .app-root {
   display: none !important;
 }
 
-body:not(.auth-locked) #loginModal {
+body:not(.auth-locked) #loginModal,
+body.auth-unlocked #loginModal,
+#loginModal[hidden],
+#loginModal.hidden {
   display: none !important;
+  pointer-events: none !important;
+  visibility: hidden !important;
 }
 
 .terminal-login-wrapper {

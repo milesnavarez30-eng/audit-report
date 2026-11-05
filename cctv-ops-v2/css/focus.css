@@ -10,7 +10,8 @@
    ========================================================================= */
 .focus-window {
   position: fixed;
-  z-index: 1050;
+  z-index: 10050 !important;
+  pointer-events: auto !important;
   background: var(--bg-surface, #161B22);
   border: 1px solid var(--border-default, #30363D);
   border-radius: var(--radius-md, 8px);
@@ -907,3 +908,48 @@
   }
 }
 
+
+
+/* =========================================================================
+   Focus Controls Click Reliability & Pointer Event Targets
+   ========================================================================= */
+.focus-window,
+.focus-window button,
+.focus-window input,
+.focus-window a,
+.focus-header-btn,
+.focus-ctrl-btn,
+.focus-btn-round,
+.focus-pill-btn,
+.focus-autoplay-pill,
+.focus-nav-tab,
+.focus-chip,
+.focus-mini-slider,
+.focus-vol-slider,
+.focus-progress-wrap,
+.focus-progress-bar-container,
+.focus-resize-handle,
+.focus-track-item,
+.focus-item-menu-btn,
+.focus-lyric-line {
+  pointer-events: auto !important;
+}
+
+.focus-header-btn *,
+.focus-ctrl-btn *,
+.focus-btn-round *,
+.focus-pill-btn *,
+.focus-autoplay-pill *,
+.focus-nav-tab *,
+.focus-item-menu-btn * {
+  pointer-events: none !important;
+}
+
+#btnSidebarFocus {
+  pointer-events: auto !important;
+  cursor: pointer !important;
+}
+
+#btnSidebarFocus * {
+  pointer-events: none !important;
+}

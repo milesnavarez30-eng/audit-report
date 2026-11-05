@@ -13331,8 +13331,370 @@ function doPost(e) {
     updateKpiDisplay();
   }
 
+  // =========================================================================
+  // Synchronous Authentication Gate & Session Lifecycle
+  // (Bound immediately on DOM ready to avoid race conditions with async loaders)
+  // =========================================================================
+  let unlockApp = null;
+  let lockApp = null;
+  function initAuthGate() {
+    // --- Restored Authentication Gate & Session Lifecycle ---
+    const loginModal = el("loginModal");
+    const loginForm = el("loginForm");
+    const loginBtn = el("loginBtn");
+    const authMessage = el("authMessage");
+    const loginUsername = el("loginUsername");
+    const loginPassword = el("loginPassword");
+    const btnLogoutTop = el("btnLogoutTop");
+
+    // Rate-limiting & Anti-Abuse state (defense-in-depth)
+    let failedLoginAttempts = 0;
+    let lockoutUntil = 0;
+    let lockoutTimer = null;
+
+    function startLockoutCountdown() {
+      if (lockoutTimer) clearInterval(lockoutTimer);
+      const updateMessage = () => {
+        const remainingMs = lockoutUntil - Date.now();
+        if (remainingMs <= 0) {
+          clearInterval(lockoutTimer);
+          lockoutTimer = null;
+          lockoutUntil = 0;
+          showAuthMessage("");
+          if (loginBtn) loginBtn.disabled = false;
+          return;
+        }
+        const remainingSec = Math.ceil(remainingMs / 1000);
+        showAuthMessage(`Too many failed attempts. Cooldown active: please wait ${remainingSec}s before retrying.`);
+        if (loginBtn) loginBtn.disabled = true;
+      };
+      updateMessage();
+      lockoutTimer = setInterval(updateMessage, 1000);
+    }
+
+    function showAuthMessage(msg, isSuccess = false) {
+      if (!authMessage) return;
+      if (!msg) {
+        authMessage.style.display = "none";
+        authMessage.textContent = "";
+        authMessage.className = "auth-message";
+      } else {
+        authMessage.style.display = "block";
+        authMessage.textContent = msg;
+        authMessage.className = isSuccess ? "auth-message success" : "auth-message";
+      }
+    }
+
+    function setAuthBusy(isBusy, busyText = "CONNECTING...") {
+      if (!loginBtn) return;
+      const label = loginBtn.querySelector(".btn-label") || loginBtn;
+      if (isBusy) {
+        loginBtn.dataset.origText = label.textContent;
+        label.textContent = busyText;
+        loginBtn.disabled = true;
+      } else {
+        label.textContent = loginBtn.dataset.origText || "INITIATE_CONNECTION";
+        if (Date.now() >= lockoutUntil) {
+          loginBtn.disabled = false;
+        }
+      }
+    }
+
+    lockApp = function() {
+      const loginModal = el("loginModal");
+      document.body.classList.add("auth-locked");
+      document.body.classList.remove("auth-unlocked");
+      if (loginModal) {
+        loginModal.hidden = false;
+        loginModal.style.setProperty("display", "flex", "important");
+        loginModal.style.setProperty("pointer-events", "auto", "important");
+        loginModal.style.setProperty("visibility", "visible", "important");
+        loginModal.classList.remove("hidden");
+      }
+      if (typeof window.__renderJapaneseMatrix === "function") {
+        window.__renderJapaneseMatrix();
+      }
+      const cfg = window.CCTV_V2_CONFIG || {};
+      const isPreviewEnv = !!(cfg.IS_PREVIEW && !cfg.IS_BACKEND_AVAILABLE);
+      const btnDemo = el("btnEnterDemoPreview");
+      const divider = el("previewLoginDivider");
+      const note = el("previewLoginNote");
+
+      if (isPreviewEnv) {
+        showAuthMessage("PREVIEW MODE: Production database isolated. Click Enter Demo Preview below to test Focus.");
+        if (btnDemo) { btnDemo.style.display = "block"; btnDemo.hidden = false; }
+        if (divider) { divider.style.display = "flex"; divider.hidden = false; }
+        if (note) { note.style.display = "block"; note.hidden = false; }
+      } else {
+        if (btnDemo) { btnDemo.style.display = "none"; btnDemo.hidden = true; }
+        if (divider) { divider.style.display = "none"; divider.hidden = true; }
+        if (note) { note.style.display = "none"; note.hidden = true; }
+      }
+      const tabAccounts = el("tabAccounts");
+      if (tabAccounts) tabAccounts.style.display = "none";
+
+      // Reset active workspace away from any restricted workspaces
+      currentWorkspace = "dashboard";
+      window.getCurrentWorkspace = () => "dashboard";
+      try {
+        sessionStorage.setItem("cctv_active_workspace", "dashboard");
+      } catch (_) {}
+
+      // Ensure restricted panes and all non-dashboard panes are hidden
+      document.querySelectorAll(".workspace-pane").forEach(pane => {
+        if (pane.id === "paneDashboard") {
+          pane.hidden = false;
+          pane.classList.add("active");
+        } else {
+          pane.hidden = true;
+          pane.classList.remove("active");
+        }
+      });
+      document.querySelectorAll(".nav-rail .nav-item").forEach(tab => {
+        if (tab.id === "tabDashboard") {
+          tab.classList.add("active");
+          tab.setAttribute("aria-selected", "true");
+        } else {
+          tab.classList.remove("active");
+          tab.setAttribute("aria-selected", "false");
+        }
+      });
+
+      // Close open modals so sensitive operational data is not left visible behind login screen
+      document.querySelectorAll(".modal-backdrop:not(#loginModal)").forEach(m => {
+        m.hidden = true;
+        m.classList.remove("is-visible");
+      });
+    }
+
+    unlockApp = function(user, profile) {
+      document.body.classList.remove("auth-locked");
+      document.body.classList.add("auth-unlocked");
+      if (loginModal) {
+        loginModal.hidden = true;
+        loginModal.style.setProperty("display", "none", "important");
+        loginModal.style.setProperty("pointer-events", "none", "important");
+        loginModal.style.setProperty("visibility", "hidden", "important");
+        loginModal.classList.add("hidden");
+      }
+      const matrix = document.getElementById("jpMatrix");
+      if (matrix) matrix.replaceChildren();
+      showAuthMessage("");
+      if (loginPassword) loginPassword.value = "";
+
+      failedLoginAttempts = 0;
+      lockoutUntil = 0;
+      if (lockoutTimer) {
+        clearInterval(lockoutTimer);
+        lockoutTimer = null;
+      }
+
+      const isSuper = !!(auth && typeof auth.isSuperAdmin === "function" && auth.isSuperAdmin());
+      const isAdmin = !!(auth && typeof auth.isAdmin === "function" && auth.isAdmin());
+      const canAccessAccounts = !!(auth && typeof auth.canAccessWorkspace === "function" && auth.canAccessWorkspace("accounts"));
+
+      const tabAccounts = el("tabAccounts");
+      if (tabAccounts) {
+        tabAccounts.style.display = canAccessAccounts ? "" : "none";
+      }
+      if (!canAccessAccounts && currentWorkspace === "accounts") {
+        switchWorkspace("edr");
+      }
+
+      if (user) {
+        if (el("userNameText")) el("userNameText").textContent = profile?.display_name || profile?.username || "Operator";
+        const roleLabel = profile?.role === "super_admin" ? "Super Admin" : (profile?.role === "admin" ? "Admin" : "User");
+        if (el("userRoleText")) el("userRoleText").textContent = roleLabel;
+        if (el("railUserMeta")) el("railUserMeta").textContent = roleLabel;
+        if (el("userAvatarText")) el("userAvatarText").textContent = (profile?.username || "U")[0].toUpperCase();
+      }
+
+      // Dynamically toggle admin creation option for logged-in super admins only
+      const optCreateAdmin = el("optCreateAdmin");
+      if (optCreateAdmin) {
+        optCreateAdmin.hidden = !isSuper;
+        optCreateAdmin.disabled = !isSuper;
+      }
+
+      // Restore user requested workspace if accessible upon unlock
+      try {
+        const p = new URLSearchParams(window.location.search);
+        const reqWs = p.get("workspace") || (window.location.hash ? window.location.hash.slice(1).toLowerCase() : null) || sessionStorage.getItem("cctv_active_workspace");
+        if (reqWs && WORKSPACES[reqWs] && reqWs !== currentWorkspace) {
+          if (auth && typeof auth.canAccessWorkspace === "function" && auth.canAccessWorkspace(reqWs)) {
+            switchWorkspace(reqWs);
+          }
+        }
+      } catch (_) {}
+    }
+
+    // Bind login form submit
+    if (loginForm) {
+      loginForm.addEventListener("submit", async (e) => {
+        if (e) {
+          e.preventDefault();
+          if (typeof e.stopPropagation === "function") e.stopPropagation();
+        }
+
+        if (Date.now() < lockoutUntil) {
+          startLockoutCountdown();
+          return;
+        }
+
+        showAuthMessage("");
+        const username = (loginUsername?.value || "").trim();
+        const password = loginPassword?.value || "";
+
+        if (!username) {
+          showAuthMessage("Enter your operator ID, username or email.");
+          loginUsername?.focus();
+          return;
+        }
+        if (!password) {
+          showAuthMessage("Enter your access key / password.");
+          loginPassword?.focus();
+          return;
+        }
+
+        setAuthBusy(true, "CONNECTING...");
+        try {
+          const res = await auth.signIn(username, password);
+          unlockApp(res.user, res.profile);
+          showToast("Authenticated successfully.", "success");
+        } catch (err) {
+          console.error("Sign in error:", err);
+          const rawErr = err?.message || "";
+          const msg = rawErr.toLowerCase();
+          if (msg.includes("preview mode")) {
+            showAuthMessage(rawErr);
+            return;
+          }
+          const isNetworkError = msg.includes("failed to fetch") || msg.includes("network") || msg.includes("abort") || err?.name === "TypeError";
+          if (isNetworkError) {
+            showAuthMessage("Network connection error. Please check your internet connection.");
+            return;
+          }
+
+          failedLoginAttempts++;
+          if (failedLoginAttempts >= 5) {
+            lockoutUntil = Date.now() + 30000;
+            failedLoginAttempts = 0;
+            startLockoutCountdown();
+            try {
+              if (window.CCTV_ACCOUNTS && typeof window.CCTV_ACCOUNTS.logSecurityEvent === "function") {
+                window.CCTV_ACCOUNTS.logSecurityEvent("login_rate_limit_triggered", username, { attempts: 5, cooldown_seconds: 30 });
+              }
+            } catch (_) {}
+            return;
+          }
+
+          // Anti-enumeration generic error message
+          showAuthMessage("Incorrect username or access key.");
+        } finally {
+          setAuthBusy(false);
+        }
+      });
+    }
+
+    // Enter Demo Preview button action (isolated preview environments only)
+    const btnEnterDemoPreview = el("btnEnterDemoPreview");
+    if (btnEnterDemoPreview) {
+      btnEnterDemoPreview.addEventListener("click", async () => {
+        const cfg = window.CCTV_V2_CONFIG || {};
+        if (!cfg.IS_PREVIEW) return;
+        setAuthBusy(true, "ENTERING PREVIEW...");
+        try {
+          const res = await auth.signInDemoPreview();
+          unlockApp(res.user, res.profile);
+          showToast("Entered demo preview mode. Focus music player is ready.", "success");
+          if (typeof switchWorkspace === "function") {
+            switchWorkspace("dashboard");
+          }
+          if (window.CCTV_FOCUS_STATE && typeof window.CCTV_FOCUS_STATE.setEnabled === "function") {
+            window.CCTV_FOCUS_STATE.setEnabled(true);
+          }
+        } catch (err) {
+          console.error("Demo preview entry error:", err);
+          showAuthMessage(err ? err.message : "Failed to enter demo preview.");
+        } finally {
+          setAuthBusy(false);
+        }
+      });
+    }
+
+    // Bind logout buttons (sidebar footer primary, topbar compatibility fallback)
+    const handleSignOutAction = async () => {
+      try {
+        await auth.signOut();
+      } catch (err) {
+        console.warn("Sign out error:", err);
+      }
+      if (typeof window._clearTransientCredential === "function") {
+        window._clearTransientCredential();
+      }
+      lockApp();
+      showToast("Signed out safely.", "info");
+    };
+
+    if (btnLogoutTop) {
+      btnLogoutTop.addEventListener("click", handleSignOutAction);
+    }
+    el("btnSidebarLogout")?.addEventListener("click", handleSignOutAction);
+
+    // Sidebar My Account action
+    el("btnSidebarMyAccount")?.addEventListener("click", () => {
+      if (window.CCTV_MY_ACCOUNT && typeof window.CCTV_MY_ACCOUNT.open === "function") {
+        window.CCTV_MY_ACCOUNT.open();
+      } else if (auth && typeof auth.canAccessWorkspace === "function" && auth.canAccessWorkspace("accounts")) {
+        switchWorkspace("accounts");
+      }
+    });
+
+    // User profile menu button -> Opens My Account
+    el("btnUserMenu")?.addEventListener("click", () => {
+      if (window.CCTV_MY_ACCOUNT && typeof window.CCTV_MY_ACCOUNT.open === "function") {
+        window.CCTV_MY_ACCOUNT.open();
+      } else if (auth && typeof auth.canAccessWorkspace === "function" && auth.canAccessWorkspace("accounts")) {
+        switchWorkspace("accounts");
+      } else {
+        const prof = auth?.getProfile();
+        const roleLabel = prof?.role === "super_admin" ? "Super Admin" : (prof?.role === "admin" ? "Admin" : "User");
+        showToast(`Signed in as ${prof?.display_name || prof?.username || "Operator"} (${roleLabel})`, "info");
+      }
+    });
+
+    auth.onAuthChange(({ user, profile }) => {
+      if (user) {
+        unlockApp(user, profile);
+      } else {
+        lockApp();
+      }
+      updateIntegrationStatusPills();
+      restoreSorterDraft().catch(console.error);
+      if (typeof edr?.loadReports === "function") {
+        edr.loadReports().then(reps => {
+          if (typeof renderEdrList === "function") renderEdrList(reps);
+        }).catch(console.error);
+      }
+      if (typeof window.historyService?.reload === "function") {
+        window.historyService.reload().catch(console.error);
+      }
+    });
+
+
+    // Immediate preliminary auth check from local storage/session before async init
+    const earlyUser = (auth && typeof auth.getUser === "function") ? auth.getUser() : null;
+    const earlyProfile = (auth && typeof auth.getProfile === "function") ? auth.getProfile() : null;
+    if (earlyUser) {
+      unlockApp(earlyUser, earlyProfile);
+    } else {
+      lockApp();
+    }
+  }
+
   // App Initialization
   window.addEventListener("DOMContentLoaded", async () => {
+    initAuthGate();
     initWorkspaceNavigation();
 
     // Check initial workspace from URL param, hash or sessionStorage; default to dashboard
@@ -13660,344 +14022,6 @@ function doPost(e) {
     window.updateIntegrationStatusPills = updateIntegrationStatusPills;
     window.renderEdrList = renderEdrList;
     window.renderAuditTable = renderAuditTable;
-
-    // --- Restored Authentication Gate & Session Lifecycle ---
-    const loginModal = el("loginModal");
-    const loginForm = el("loginForm");
-    const loginBtn = el("loginBtn");
-    const authMessage = el("authMessage");
-    const loginUsername = el("loginUsername");
-    const loginPassword = el("loginPassword");
-    const btnLogoutTop = el("btnLogoutTop");
-
-    // Rate-limiting & Anti-Abuse state (defense-in-depth)
-    let failedLoginAttempts = 0;
-    let lockoutUntil = 0;
-    let lockoutTimer = null;
-
-    function startLockoutCountdown() {
-      if (lockoutTimer) clearInterval(lockoutTimer);
-      const updateMessage = () => {
-        const remainingMs = lockoutUntil - Date.now();
-        if (remainingMs <= 0) {
-          clearInterval(lockoutTimer);
-          lockoutTimer = null;
-          lockoutUntil = 0;
-          showAuthMessage("");
-          if (loginBtn) loginBtn.disabled = false;
-          return;
-        }
-        const remainingSec = Math.ceil(remainingMs / 1000);
-        showAuthMessage(`Too many failed attempts. Cooldown active: please wait ${remainingSec}s before retrying.`);
-        if (loginBtn) loginBtn.disabled = true;
-      };
-      updateMessage();
-      lockoutTimer = setInterval(updateMessage, 1000);
-    }
-
-    function showAuthMessage(msg, isSuccess = false) {
-      if (!authMessage) return;
-      if (!msg) {
-        authMessage.style.display = "none";
-        authMessage.textContent = "";
-        authMessage.className = "auth-message";
-      } else {
-        authMessage.style.display = "block";
-        authMessage.textContent = msg;
-        authMessage.className = isSuccess ? "auth-message success" : "auth-message";
-      }
-    }
-
-    function setAuthBusy(isBusy, busyText = "CONNECTING...") {
-      if (!loginBtn) return;
-      const label = loginBtn.querySelector(".btn-label") || loginBtn;
-      if (isBusy) {
-        loginBtn.dataset.origText = label.textContent;
-        label.textContent = busyText;
-        loginBtn.disabled = true;
-      } else {
-        label.textContent = loginBtn.dataset.origText || "INITIATE_CONNECTION";
-        if (Date.now() >= lockoutUntil) {
-          loginBtn.disabled = false;
-        }
-      }
-    }
-
-    function lockApp() {
-      document.body.classList.add("auth-locked");
-      document.body.classList.remove("auth-unlocked");
-      if (loginModal) {
-        loginModal.hidden = false;
-        loginModal.style.display = "flex";
-        loginModal.classList.remove("hidden");
-      }
-      if (typeof window.__renderJapaneseMatrix === "function") {
-        window.__renderJapaneseMatrix();
-      }
-      const cfg = window.CCTV_V2_CONFIG || {};
-      const isPreviewEnv = !!(cfg.IS_PREVIEW && !cfg.IS_BACKEND_AVAILABLE);
-      const btnDemo = el("btnEnterDemoPreview");
-      const divider = el("previewLoginDivider");
-      const note = el("previewLoginNote");
-
-      if (isPreviewEnv) {
-        showAuthMessage("PREVIEW MODE: Production database isolated. Click Enter Demo Preview below to test Focus.");
-        if (btnDemo) { btnDemo.style.display = "block"; btnDemo.hidden = false; }
-        if (divider) { divider.style.display = "flex"; divider.hidden = false; }
-        if (note) { note.style.display = "block"; note.hidden = false; }
-      } else {
-        if (btnDemo) { btnDemo.style.display = "none"; btnDemo.hidden = true; }
-        if (divider) { divider.style.display = "none"; divider.hidden = true; }
-        if (note) { note.style.display = "none"; note.hidden = true; }
-      }
-      const tabAccounts = el("tabAccounts");
-      if (tabAccounts) tabAccounts.style.display = "none";
-
-      // Reset active workspace away from any restricted workspaces
-      currentWorkspace = "dashboard";
-      window.getCurrentWorkspace = () => "dashboard";
-      try {
-        sessionStorage.setItem("cctv_active_workspace", "dashboard");
-      } catch (_) {}
-
-      // Ensure restricted panes and all non-dashboard panes are hidden
-      document.querySelectorAll(".workspace-pane").forEach(pane => {
-        if (pane.id === "paneDashboard") {
-          pane.hidden = false;
-          pane.classList.add("active");
-        } else {
-          pane.hidden = true;
-          pane.classList.remove("active");
-        }
-      });
-      document.querySelectorAll(".nav-rail .nav-item").forEach(tab => {
-        if (tab.id === "tabDashboard") {
-          tab.classList.add("active");
-          tab.setAttribute("aria-selected", "true");
-        } else {
-          tab.classList.remove("active");
-          tab.setAttribute("aria-selected", "false");
-        }
-      });
-
-      // Close open modals so sensitive operational data is not left visible behind login screen
-      document.querySelectorAll(".modal-backdrop:not(#loginModal)").forEach(m => {
-        m.hidden = true;
-        m.classList.remove("is-visible");
-      });
-    }
-
-    function unlockApp(user, profile) {
-      document.body.classList.remove("auth-locked");
-      document.body.classList.add("auth-unlocked");
-      if (loginModal) {
-        loginModal.hidden = true;
-        loginModal.style.display = "none";
-        loginModal.classList.add("hidden");
-      }
-      const matrix = document.getElementById("jpMatrix");
-      if (matrix) matrix.replaceChildren();
-      showAuthMessage("");
-      if (loginPassword) loginPassword.value = "";
-
-      failedLoginAttempts = 0;
-      lockoutUntil = 0;
-      if (lockoutTimer) {
-        clearInterval(lockoutTimer);
-        lockoutTimer = null;
-      }
-
-      const isSuper = !!(auth && typeof auth.isSuperAdmin === "function" && auth.isSuperAdmin());
-      const isAdmin = !!(auth && typeof auth.isAdmin === "function" && auth.isAdmin());
-      const canAccessAccounts = !!(auth && typeof auth.canAccessWorkspace === "function" && auth.canAccessWorkspace("accounts"));
-
-      const tabAccounts = el("tabAccounts");
-      if (tabAccounts) {
-        tabAccounts.style.display = canAccessAccounts ? "" : "none";
-      }
-      if (!canAccessAccounts && currentWorkspace === "accounts") {
-        switchWorkspace("edr");
-      }
-
-      if (user) {
-        if (el("userNameText")) el("userNameText").textContent = profile?.display_name || profile?.username || "Operator";
-        const roleLabel = profile?.role === "super_admin" ? "Super Admin" : (profile?.role === "admin" ? "Admin" : "User");
-        if (el("userRoleText")) el("userRoleText").textContent = roleLabel;
-        if (el("railUserMeta")) el("railUserMeta").textContent = roleLabel;
-        if (el("userAvatarText")) el("userAvatarText").textContent = (profile?.username || "U")[0].toUpperCase();
-      }
-
-      // Dynamically toggle admin creation option for logged-in super admins only
-      const optCreateAdmin = el("optCreateAdmin");
-      if (optCreateAdmin) {
-        optCreateAdmin.hidden = !isSuper;
-        optCreateAdmin.disabled = !isSuper;
-      }
-
-      // Restore user requested workspace if accessible upon unlock
-      try {
-        const p = new URLSearchParams(window.location.search);
-        const reqWs = p.get("workspace") || (window.location.hash ? window.location.hash.slice(1).toLowerCase() : null) || sessionStorage.getItem("cctv_active_workspace");
-        if (reqWs && WORKSPACES[reqWs] && reqWs !== currentWorkspace) {
-          if (auth && typeof auth.canAccessWorkspace === "function" && auth.canAccessWorkspace(reqWs)) {
-            switchWorkspace(reqWs);
-          }
-        }
-      } catch (_) {}
-    }
-
-    // Bind login form submit
-    if (loginForm) {
-      loginForm.addEventListener("submit", async (e) => {
-        if (e) {
-          e.preventDefault();
-          if (typeof e.stopPropagation === "function") e.stopPropagation();
-        }
-
-        if (Date.now() < lockoutUntil) {
-          startLockoutCountdown();
-          return;
-        }
-
-        showAuthMessage("");
-        const username = (loginUsername?.value || "").trim();
-        const password = loginPassword?.value || "";
-
-        if (!username) {
-          showAuthMessage("Enter your operator ID, username or email.");
-          loginUsername?.focus();
-          return;
-        }
-        if (!password) {
-          showAuthMessage("Enter your access key / password.");
-          loginPassword?.focus();
-          return;
-        }
-
-        setAuthBusy(true, "CONNECTING...");
-        try {
-          const res = await auth.signIn(username, password);
-          unlockApp(res.user, res.profile);
-          showToast("Authenticated successfully.", "success");
-        } catch (err) {
-          console.error("Sign in error:", err);
-          const rawErr = err?.message || "";
-          const msg = rawErr.toLowerCase();
-          if (msg.includes("preview mode")) {
-            showAuthMessage(rawErr);
-            return;
-          }
-          const isNetworkError = msg.includes("failed to fetch") || msg.includes("network") || msg.includes("abort") || err?.name === "TypeError";
-          if (isNetworkError) {
-            showAuthMessage("Network connection error. Please check your internet connection.");
-            return;
-          }
-
-          failedLoginAttempts++;
-          if (failedLoginAttempts >= 5) {
-            lockoutUntil = Date.now() + 30000;
-            failedLoginAttempts = 0;
-            startLockoutCountdown();
-            try {
-              if (window.CCTV_ACCOUNTS && typeof window.CCTV_ACCOUNTS.logSecurityEvent === "function") {
-                window.CCTV_ACCOUNTS.logSecurityEvent("login_rate_limit_triggered", username, { attempts: 5, cooldown_seconds: 30 });
-              }
-            } catch (_) {}
-            return;
-          }
-
-          // Anti-enumeration generic error message
-          showAuthMessage("Incorrect username or access key.");
-        } finally {
-          setAuthBusy(false);
-        }
-      });
-    }
-
-    // Enter Demo Preview button action (isolated preview environments only)
-    const btnEnterDemoPreview = el("btnEnterDemoPreview");
-    if (btnEnterDemoPreview) {
-      btnEnterDemoPreview.addEventListener("click", async () => {
-        const cfg = window.CCTV_V2_CONFIG || {};
-        if (!cfg.IS_PREVIEW) return;
-        setAuthBusy(true, "ENTERING PREVIEW...");
-        try {
-          const res = await auth.signInDemoPreview();
-          unlockApp(res.user, res.profile);
-          showToast("Entered demo preview mode. Focus music player is ready.", "success");
-          if (typeof switchWorkspace === "function") {
-            switchWorkspace("dashboard");
-          }
-          if (window.CCTV_FOCUS_STATE && typeof window.CCTV_FOCUS_STATE.setEnabled === "function") {
-            window.CCTV_FOCUS_STATE.setEnabled(true);
-          }
-        } catch (err) {
-          console.error("Demo preview entry error:", err);
-          showAuthMessage(err ? err.message : "Failed to enter demo preview.");
-        } finally {
-          setAuthBusy(false);
-        }
-      });
-    }
-
-    // Bind logout buttons (sidebar footer primary, topbar compatibility fallback)
-    const handleSignOutAction = async () => {
-      try {
-        await auth.signOut();
-      } catch (err) {
-        console.warn("Sign out error:", err);
-      }
-      if (typeof window._clearTransientCredential === "function") {
-        window._clearTransientCredential();
-      }
-      lockApp();
-      showToast("Signed out safely.", "info");
-    };
-
-    if (btnLogoutTop) {
-      btnLogoutTop.addEventListener("click", handleSignOutAction);
-    }
-    el("btnSidebarLogout")?.addEventListener("click", handleSignOutAction);
-
-    // Sidebar My Account action
-    el("btnSidebarMyAccount")?.addEventListener("click", () => {
-      if (window.CCTV_MY_ACCOUNT && typeof window.CCTV_MY_ACCOUNT.open === "function") {
-        window.CCTV_MY_ACCOUNT.open();
-      } else if (auth && typeof auth.canAccessWorkspace === "function" && auth.canAccessWorkspace("accounts")) {
-        switchWorkspace("accounts");
-      }
-    });
-
-    // User profile menu button -> Opens My Account
-    el("btnUserMenu")?.addEventListener("click", () => {
-      if (window.CCTV_MY_ACCOUNT && typeof window.CCTV_MY_ACCOUNT.open === "function") {
-        window.CCTV_MY_ACCOUNT.open();
-      } else if (auth && typeof auth.canAccessWorkspace === "function" && auth.canAccessWorkspace("accounts")) {
-        switchWorkspace("accounts");
-      } else {
-        const prof = auth?.getProfile();
-        const roleLabel = prof?.role === "super_admin" ? "Super Admin" : (prof?.role === "admin" ? "Admin" : "User");
-        showToast(`Signed in as ${prof?.display_name || prof?.username || "Operator"} (${roleLabel})`, "info");
-      }
-    });
-
-    auth.onAuthChange(({ user, profile }) => {
-      if (user) {
-        unlockApp(user, profile);
-      } else {
-        lockApp();
-      }
-      updateIntegrationStatusPills();
-      restoreSorterDraft().catch(console.error);
-      if (typeof edr?.loadReports === "function") {
-        edr.loadReports().then(reps => {
-          if (typeof renderEdrList === "function") renderEdrList(reps);
-        }).catch(console.error);
-      }
-      if (typeof window.historyService?.reload === "function") {
-        window.historyService.reload().catch(console.error);
-      }
-    });
 
     // Initial auth check on app startup
     const initialAuth = await auth.init();
