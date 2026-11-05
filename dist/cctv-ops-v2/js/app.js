@@ -9461,7 +9461,12 @@ function doPost(e) {
   function syncCctvReportFormFromDraft() {
     if (!cctvReportDraft) return;
     if (el("quickComposeText")) el("quickComposeText").value = cctvReportDraft.rawInput || "";
-    if (el("reportGreeting")) el("reportGreeting").value = cctvReportDraft.greeting || "Good morning TLs,";
+    if (el("reportGreeting")) {
+      const g = typeof cctvReportDraft.greeting === "string"
+        ? cctvReportDraft.greeting
+        : (window.CCTV_REPORT_SERVICE?.getSavedGreetingPreference?.() ?? "Good morning TLs,");
+      el("reportGreeting").value = g;
+    }
     if (el("reportPersonInvolved")) el("reportPersonInvolved").value = cctvReportDraft.personInvolved || "";
     if (el("reportObservation")) el("reportObservation").value = cctvReportDraft.observation || "";
     if (el("reportSite")) el("reportSite").value = cctvReportDraft.site || "";
@@ -9474,7 +9479,13 @@ function doPost(e) {
   function syncCctvReportDraftFromForm() {
     if (!cctvReportDraft) cctvReportDraft = window.CCTV_REPORT_SERVICE.getDraft();
     cctvReportDraft.rawInput = el("quickComposeText")?.value || "";
-    cctvReportDraft.greeting = el("reportGreeting")?.value || "Good morning TLs,";
+    if (el("reportGreeting")) {
+      const gVal = el("reportGreeting").value;
+      cctvReportDraft.greeting = gVal;
+      if (typeof window.CCTV_REPORT_SERVICE?.saveGreetingPreference === "function") {
+        window.CCTV_REPORT_SERVICE.saveGreetingPreference(gVal);
+      }
+    }
     cctvReportDraft.personInvolved = el("reportPersonInvolved")?.value || "";
     cctvReportDraft.observation = el("reportObservation")?.value || "";
     cctvReportDraft.site = el("reportSite")?.value || "";
@@ -9517,15 +9528,21 @@ function doPost(e) {
       .replace(/>/g, "&gt;");
 
     const htmlParts = [];
-    const greeting = (cctvReportDraft.greeting || "Good morning TLs,").trim();
+    const rawGreeting = typeof cctvReportDraft.greeting === "string"
+      ? cctvReportDraft.greeting
+      : (window.CCTV_REPORT_SERVICE?.getSavedGreetingPreference?.() ?? "Good morning TLs,");
+    const greeting = rawGreeting.trim();
     const observation = (cctvReportDraft.observation || "").trim();
     const person = (cctvReportDraft.personInvolved || "").trim();
     const site = (cctvReportDraft.site || "").trim();
     const dateRange = (cctvReportDraft.dateRange || "").trim();
 
-    // Check if observation already starts with greeting
-    const startsWithGreeting = /^\s*good\s+(?:morning|afternoon|evening)/i.test(observation);
-    if (!startsWithGreeting && greeting) {
+    // Check if observation already starts with greeting or duplicate
+    const isDup = window.CCTV_REPORT_SERVICE?.isDuplicateGreeting
+      ? window.CCTV_REPORT_SERVICE.isDuplicateGreeting(observation, greeting)
+      : /^\s*good\s+(?:morning|afternoon|evening)/i.test(observation);
+
+    if (!isDup && greeting) {
       htmlParts.push(`<div class="teams-preview-greeting" style="margin-bottom: 6px;">${esc(greeting)}</div>`);
     }
 
@@ -10161,68 +10178,28 @@ function doPost(e) {
       showToast("All screenshots cleared from report.", "info");
     });
 
-    // View Mode Switcher (Teams Card vs Monospace Plain Text)
-    let currentPreviewMode = "teams";
-    el("btnViewModeTeams")?.addEventListener("click", () => {
-      currentPreviewMode = "teams";
-      el("btnViewModeTeams")?.classList.add("active");
-      el("btnViewModePlain")?.classList.remove("active");
-      if (el("teamsMessageBox")) el("teamsMessageBox").style.display = "block";
-      if (el("plainTextMessageText")) el("plainTextMessageText").style.display = "none";
-    });
+    // Greeting input and saved preference handling
+    let greetingSaveTimeout = null;
+    function showGreetingSavedIndicator() {
+      const badge = el("reportGreetingSavedBadge");
+      if (!badge) return;
+      badge.style.display = "inline-flex";
+      clearTimeout(greetingSaveTimeout);
+      greetingSaveTimeout = setTimeout(() => {
+        if (badge) badge.style.display = "none";
+      }, 1800);
+    }
 
-    el("btnViewModePlain")?.addEventListener("click", () => {
-      currentPreviewMode = "plain";
-      el("btnViewModePlain")?.classList.add("active");
-      el("btnViewModeTeams")?.classList.remove("active");
-      if (el("teamsMessageBox")) el("teamsMessageBox").style.display = "none";
-      const plainBox = el("plainTextMessageText");
-      if (plainBox) {
-        plainBox.style.display = "block";
-        if (window.CCTV_REPORT_SERVICE?.buildReportPlainText) {
-          plainBox.textContent = window.CCTV_REPORT_SERVICE.buildReportPlainText(cctvReportDraft);
-        }
-      }
-    });
-
-    // Dedicated Copy Plain Text button
-    el("btnCopyPlainTextReport")?.addEventListener("click", async () => {
+    el("reportGreeting")?.addEventListener("input", () => {
       syncCctvReportDraftFromForm();
-      if (!cctvReportDraft?.observation && !cctvReportDraft?.personInvolved) {
-        showToast("Please enter report details before copying.", "error");
-        return;
-      }
-      const plainText = window.CCTV_REPORT_SERVICE.buildReportPlainText(cctvReportDraft);
-      let success = false;
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        try {
-          await navigator.clipboard.writeText(plainText);
-          success = true;
-        } catch (_) {}
-      }
-      if (!success) {
-        try {
-          const ta = document.createElement("textarea");
-          ta.value = plainText;
-          ta.style.position = "fixed";
-          ta.style.left = "-9999px";
-          document.body.appendChild(ta);
-          ta.select();
-          success = document.execCommand("copy");
-          ta.remove();
-        } catch (_) {}
-      }
-      const btn = el("btnCopyPlainTextReport");
-      const lbl = el("btnCopyPlainTextReportLabel");
-      if (btn && lbl) {
-        btn.classList.add("btn-copy-success");
-        lbl.textContent = "\u2713 Copied!";
-        setTimeout(() => {
-          btn.classList.remove("btn-copy-success");
-          lbl.textContent = "Copy Plain";
-        }, 2500);
-      }
-      showToast("Copied plain text report to clipboard!", "success");
+      updateCctvReportPreview();
+      showGreetingSavedIndicator();
+    });
+
+    el("reportGreeting")?.addEventListener("change", () => {
+      syncCctvReportDraftFromForm();
+      updateCctvReportPreview();
+      showGreetingSavedIndicator();
     });
 
     // Download / Export report button
@@ -10257,22 +10234,16 @@ function doPost(e) {
       syncCctvReportDraftFromForm();
       updateReportObservationStats();
 
-      if (currentPreviewMode === "plain") {
-        const text = window.CCTV_REPORT_SERVICE.buildReportPlainText(cctvReportDraft);
-        const safeText = String(text || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-        container.innerHTML = `<pre style="margin:0; font-family:var(--font-mono,'Consolas',monospace); font-size:13px; line-height:1.65; white-space:pre-wrap; word-break:break-word; color:var(--text-primary); user-select:text;">${safeText}</pre>`;
-      } else {
-        const richHtml = window.CCTV_REPORT_SERVICE.buildReportHtml(cctvReportDraft);
-        container.innerHTML = `<div class="teams-message-box" style="margin:0; border:none; background:transparent; padding:0;">${richHtml}</div>`;
-        container.querySelectorAll("img").forEach((img, i) => {
-          img.style.cursor = "zoom-in";
-          img.addEventListener("click", () => {
-            if (window.openFullScreenshotViewer) {
-              window.openFullScreenshotViewer(img.src, "CCTV Report Evidence", `Screenshot #${i + 1}`);
-            }
-          });
+      const richHtml = window.CCTV_REPORT_SERVICE.buildReportHtml(cctvReportDraft);
+      container.innerHTML = `<div class="teams-message-box" style="margin:0; border:none; background:transparent; padding:0;">${richHtml}</div>`;
+      container.querySelectorAll("img").forEach((img, i) => {
+        img.style.cursor = "zoom-in";
+        img.addEventListener("click", () => {
+          if (window.openFullScreenshotViewer) {
+            window.openFullScreenshotViewer(img.src, "CCTV Report Evidence", `Screenshot #${i + 1}`);
+          }
         });
-      }
+      });
       modal.hidden = false;
     }
 
@@ -10288,9 +10259,6 @@ function doPost(e) {
       if (e.target === el("modalExpandedReportPreview")) closeExpandedReportModal();
     });
 
-    el("btnModalCopyPlain")?.addEventListener("click", () => {
-      el("btnCopyPlainTextReport")?.click();
-    });
     el("btnModalCopyAll")?.addEventListener("click", () => {
       el("btnCopyAllReport")?.click();
     });

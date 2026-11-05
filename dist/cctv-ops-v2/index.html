@@ -2884,6 +2884,15 @@
                     </div>
                   </div>
 
+                  <!-- Editable Greeting / Opening Line -->
+                  <div class="form-group" style="margin-bottom:0;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                      <label class="form-label" for="reportGreeting" style="margin-bottom:0;">Greeting / Opening Line</label>
+                      <span id="reportGreetingSavedBadge" class="badge" style="display:none; font-size:10px; padding:1px 6px; color:var(--accent-success,#10b981);">Saved</span>
+                    </div>
+                    <input type="text" class="form-control" id="reportGreeting" placeholder="e.g. Good morning TLs," value="Good morning TLs," style="font-size:12.5px;">
+                  </div>
+
                   <!-- Editable Generated Report Textarea -->
                   <div class="form-group" style="margin-bottom:0;">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
@@ -2956,24 +2965,16 @@
             <div class="cctv-report-right-col">
               <div class="card cctv-preview-card">
                 <div class="card-header cctv-card-header cctv-preview-header">
-                  <div class="card-title-wrap">
-                    <div style="display:flex; align-items:center; gap:8px;">
+                  <div class="cctv-preview-header-top">
+                    <div class="card-title-wrap">
                       <span class="cctv-preview-accent-dot" style="width:8px; height:8px; border-radius:50%; background:#14b8a6; box-shadow:0 0 6px rgba(20,184,166,0.6); flex-shrink:0;"></span>
                       <span class="card-title">Report Preview</span>
                     </div>
-                    <div class="choice-segment" id="reportPreviewModeGroup" style="display:inline-flex; margin-left:6px;">
-                      <button type="button" class="choice-btn active" id="btnViewModeTeams" title="Formatted Microsoft Teams Card View" style="padding:2px 8px; font-size:11px; height:24px;">Teams</button>
-                      <button type="button" class="choice-btn" id="btnViewModePlain" title="Plain Monospace Text View" style="padding:2px 8px; font-size:11px; height:24px;">Plain Text</button>
-                    </div>
                   </div>
-                  <div class="card-actions">
+                  <div class="cctv-preview-actions-row card-actions" id="reportPreviewActionsRow">
                     <button type="button" class="btn btn-ghost btn-sm" id="btnExpandReportPreview" title="Expand preview to full screen" style="gap:4px; padding:3px 7px; height:28px;">
                       <svg class="icon icon-sm" viewBox="0 0 24 24"><polyline points="15 3 21 3 21 9"></polyline><polyline points="9 21 3 21 3 15"></polyline><line x1="21" y1="3" x2="14" y2="10"></line><line x1="3" y1="21" x2="10" y2="14"></line></svg>
                       <span>Expand</span>
-                    </button>
-                    <button type="button" class="btn btn-outline btn-sm" id="btnCopyPlainTextReport" title="Copy report as plain unformatted text" style="gap:4px; height:28px;">
-                      <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
-                      <span id="btnCopyPlainTextReportLabel">Copy Plain</span>
                     </button>
                     <button type="button" class="btn btn-outline btn-sm" id="btnDownloadReport" title="Download report as .txt file" style="gap:4px; padding:3px 7px; height:28px;">
                       <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
@@ -3645,7 +3646,6 @@
       <div class="modal-footer" style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid var(--border-subtle); padding:10px 18px;">
         <span style="font-size:11px; color:var(--text-muted);">Tip: Press <kbd style="padding:1px 5px; border-radius:3px; background:var(--bg-elevated); border:1px solid var(--border-default);">ESC</kbd> to close</span>
         <div style="display:flex; gap:8px; align-items:center;">
-          <button type="button" class="btn btn-outline btn-sm" id="btnModalCopyPlain">Copy Plain Text</button>
           <button type="button" class="btn btn-primary btn-sm" id="btnModalCopyAll">COPY ALL</button>
           <button type="button" class="btn btn-ghost btn-sm" id="btnModalCloseExpandedReport">Close</button>
         </div>

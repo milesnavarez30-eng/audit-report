@@ -383,9 +383,57 @@ window.CCTV_REPORT_SERVICE = (function () {
     return normalized;
   }
 
+  const GREETING_PREF_KEY = "cctv_ops_v2_report_preferred_greeting";
+  const DEFAULT_GREETING = "Good morning TLs,";
+
+  function getSavedGreetingPreference() {
+    try {
+      const saved = localStorage.getItem(GREETING_PREF_KEY);
+      if (saved !== null) {
+        return saved;
+      }
+    } catch (_) {}
+    return DEFAULT_GREETING;
+  }
+
+  function saveGreetingPreference(greeting) {
+    try {
+      const val = typeof greeting === "string" ? greeting : DEFAULT_GREETING;
+      localStorage.setItem(GREETING_PREF_KEY, val);
+      return val;
+    } catch (_) {}
+    return DEFAULT_GREETING;
+  }
+
+  function isDuplicateGreeting(observationText, greetingText) {
+    if (!greetingText || !observationText) return false;
+    const obs = String(observationText).trim().toLowerCase();
+    const greet = String(greetingText).trim().toLowerCase();
+    if (!greet) return false;
+
+    // Direct match: observation starts with the custom greeting (ignoring trailing punctuation)
+    const greetCore = greet.replace(/[,:!.-]+$/, "").trim();
+    if (greetCore && (obs.startsWith(greetCore) || obs.startsWith(greet))) {
+      return true;
+    }
+
+    // Generic time greeting match: e.g. "Good morning/afternoon/evening/day"
+    if (/^\s*good\s+(?:morning|afternoon|evening|day)/i.test(greet) &&
+        /^\s*good\s+(?:morning|afternoon|evening|day)/i.test(obs)) {
+      return true;
+    }
+
+    // Informal greetings (Hello, Hi)
+    if (/^\s*(?:hello|hi)\b/i.test(greet) && /^\s*(?:hello|hi)\b/i.test(obs)) {
+      return true;
+    }
+
+    return false;
+  }
+
   function getDefaultDraft() {
     return {
-      greeting: "Good morning TLs,",
+      greeting: getSavedGreetingPreference(),
       observation: "",
       personInvolved: "",
       site: "",
@@ -430,6 +478,10 @@ window.CCTV_REPORT_SERVICE = (function () {
           screenshots: currentScreenshots
         };
 
+        if (typeof parsed?.greeting === "string") {
+          merged.greeting = parsed.greeting;
+        }
+
         const normalized =
           normalizeCctvReportDraft(merged);
 
@@ -451,6 +503,9 @@ window.CCTV_REPORT_SERVICE = (function () {
 
   function saveDraft(draft) {
     try {
+      if (draft && typeof draft.greeting === "string") {
+        saveGreetingPreference(draft.greeting);
+      }
       const normalized =
         normalizeCctvReportDraft(draft);
 
@@ -1036,8 +1091,12 @@ window.CCTV_REPORT_SERVICE = (function () {
       finalClip = parsed.detectedUrls.join("\n");
     }
 
+    const preservedGreeting = (typeof existingDraft.greeting === "string")
+      ? existingDraft.greeting
+      : getSavedGreetingPreference();
+
     return normalizeCctvReportDraft({
-      greeting: existingDraft.greeting || "Good morning TLs,",
+      greeting: preservedGreeting,
       observation: fullObservation,
       personInvolved: existingDraft.personInvolved || "",
       site: finalLocation,
@@ -1083,15 +1142,16 @@ window.CCTV_REPORT_SERVICE = (function () {
     const d = draft || getDefaultDraft();
     const parts = [];
 
-    const greeting = (d.greeting || "Good morning TLs,").trim();
+    const rawGreeting = typeof d.greeting === "string" ? d.greeting : getSavedGreetingPreference();
+    const greeting = rawGreeting.trim();
     const observation = (d.observation || d.body || "").trim();
     const person = (d.personInvolved || "").trim();
     const location = (d.site || d.location || "").trim();
     const date = (d.dateRange || d.date || "").trim();
     const clipUrl = d.clipUrl || "";
 
-    const startsWithGreeting = /^\s*good\s+(?:morning|afternoon|evening)/i.test(observation);
-    if (!startsWithGreeting && greeting) {
+    const hasDuplicate = isDuplicateGreeting(observation, greeting);
+    if (!hasDuplicate && greeting) {
       parts.push(greeting);
       parts.push("");
     }
@@ -1139,7 +1199,8 @@ window.CCTV_REPORT_SERVICE = (function () {
       .replace(/</g, "&lt;")
       .replace(/>/g, "&gt;");
 
-    const greeting = (d.greeting || "Good morning TLs,").trim();
+    const rawGreeting = typeof d.greeting === "string" ? d.greeting : getSavedGreetingPreference();
+    const greeting = rawGreeting.trim();
     const observation = (d.observation || d.body || "").trim();
     const person = (d.personInvolved || "").trim();
     const location = (d.site || d.location || "").trim();
@@ -1148,8 +1209,8 @@ window.CCTV_REPORT_SERVICE = (function () {
 
     const htmlParts = [];
 
-    const startsWithGreeting = /^\s*good\s+(?:morning|afternoon|evening)/i.test(observation);
-    if (!startsWithGreeting && greeting) {
+    const hasDuplicate = isDuplicateGreeting(observation, greeting);
+    if (!hasDuplicate && greeting) {
       htmlParts.push(`<div style="margin:0 0 6px 0;">${esc(greeting)}</div>`);
     }
 
@@ -1447,6 +1508,9 @@ window.CCTV_REPORT_SERVICE = (function () {
     getDraft,
     saveDraft,
     resetDraft,
+    getSavedGreetingPreference,
+    saveGreetingPreference,
+    isDuplicateGreeting,
     calculateDurationWholeMinutes,
     loadDraftScreenshots,
     saveDraftScreenshots,

@@ -3834,9 +3834,13 @@ body.edr-resizing-h {
 }
 
 @media (max-width: 1080px) {
+  #paneCctvReport {
+    overflow-y: auto !important;
+    height: 100% !important;
+  }
   .cctv-report-layout {
     flex-direction: column !important;
-    overflow-y: auto !important;
+    overflow-y: visible !important;
     height: auto !important;
   }
   .cctv-report-left-col,
@@ -3991,4 +3995,104 @@ body.edr-resizing-h {
     .app-main > .workspace-viewport {
         padding-top: 44px !important;
     }
+}
+
+
+/* ==========================================================================
+   CCTV REPORT PREVIEW & GREETING REFINEMENT
+   ========================================================================== */
+.cctv-report-right-col,
+.cctv-preview-card {
+  container-type: inline-size;
+  container-name: previewContainer;
+}
+
+.cctv-preview-header,
+.cctv-preview-card .card-header.cctv-preview-header {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: stretch !important;
+  justify-content: flex-start !important;
+  padding: 10px 14px !important;
+  min-height: auto !important;
+  gap: 8px !important;
+  border-left: 3px solid #14b8a6 !important;
+  background: linear-gradient(90deg, rgba(20, 184, 166, 0.09) 0%, rgba(20, 184, 166, 0.01) 35%, var(--bg-surface-elevated)) !important;
+}
+
+.cctv-preview-header-top {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  min-width: 0 !important;
+  width: 100% !important;
+}
+
+.cctv-preview-header-top .card-title-wrap {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  min-width: 0 !important;
+}
+
+.cctv-preview-actions-row,
+.cctv-preview-card .card-actions.cctv-preview-actions-row {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 6px 8px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  width: 100% !important;
+  flex-shrink: 0 !important;
+}
+
+.cctv-preview-actions-row .btn {
+  height: 28px !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  white-space: nowrap !important;
+  margin: 0 !important;
+  flex: 0 0 auto !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 5px !important;
+}
+
+@container previewContainer (max-width: 320px) {
+  .cctv-preview-actions-row {
+    gap: 6px !important;
+  }
+  .cctv-preview-actions-row .btn {
+    flex: 1 1 calc(50% - 4px) !important;
+    min-width: 0 !important;
+    justify-content: center !important;
+    padding: 0 6px !important;
+  }
+  .cctv-preview-actions-row #btnCopyAllReport {
+    flex: 1 1 100% !important;
+    width: 100% !important;
+  }
+}
+
+#reportGreeting {
+  font-size: 12.5px !important;
+  height: 32px !important;
+  transition: border-color var(--transition-fast, 0.15s ease);
+}
+
+#reportGreeting:focus {
+  border-color: var(--accent-primary, #6366f1) !important;
+}
+
+#reportGreetingSavedBadge {
+  font-family: var(--font-mono, monospace);
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 3px;
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  transition: opacity 0.2s ease;
 }
