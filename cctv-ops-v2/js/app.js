@@ -13735,8 +13735,20 @@ function doPost(e) {
         window.__renderJapaneseMatrix();
       }
       const cfg = window.CCTV_V2_CONFIG || {};
-      if (cfg.IS_PREVIEW && !cfg.IS_BACKEND_AVAILABLE) {
-        showAuthMessage("PREVIEW MODE: Production database isolated. Backend authentication is disabled until staging is configured.");
+      const isPreviewEnv = !!(cfg.IS_PREVIEW && !cfg.IS_BACKEND_AVAILABLE);
+      const btnDemo = el("btnEnterDemoPreview");
+      const divider = el("previewLoginDivider");
+      const note = el("previewLoginNote");
+
+      if (isPreviewEnv) {
+        showAuthMessage("PREVIEW MODE: Production database isolated. Click Enter Demo Preview below to test Focus.");
+        if (btnDemo) { btnDemo.style.display = "block"; btnDemo.hidden = false; }
+        if (divider) { divider.style.display = "flex"; divider.hidden = false; }
+        if (note) { note.style.display = "block"; note.hidden = false; }
+      } else {
+        if (btnDemo) { btnDemo.style.display = "none"; btnDemo.hidden = true; }
+        if (divider) { divider.style.display = "none"; divider.hidden = true; }
+        if (note) { note.style.display = "none"; note.hidden = true; }
       }
       const tabAccounts = el("tabAccounts");
       if (tabAccounts) tabAccounts.style.display = "none";
@@ -13896,6 +13908,32 @@ function doPost(e) {
 
           // Anti-enumeration generic error message
           showAuthMessage("Incorrect username or access key.");
+        } finally {
+          setAuthBusy(false);
+        }
+      });
+    }
+
+    // Enter Demo Preview button action (isolated preview environments only)
+    const btnEnterDemoPreview = el("btnEnterDemoPreview");
+    if (btnEnterDemoPreview) {
+      btnEnterDemoPreview.addEventListener("click", async () => {
+        const cfg = window.CCTV_V2_CONFIG || {};
+        if (!cfg.IS_PREVIEW) return;
+        setAuthBusy(true, "ENTERING PREVIEW...");
+        try {
+          const res = await auth.signInDemoPreview();
+          unlockApp(res.user, res.profile);
+          showToast("Entered demo preview mode. Focus music player is ready.", "success");
+          if (typeof switchWorkspace === "function") {
+            switchWorkspace("dashboard");
+          }
+          if (window.CCTV_FOCUS_STATE && typeof window.CCTV_FOCUS_STATE.setEnabled === "function") {
+            window.CCTV_FOCUS_STATE.setEnabled(true);
+          }
+        } catch (err) {
+          console.error("Demo preview entry error:", err);
+          showAuthMessage(err ? err.message : "Failed to enter demo preview.");
         } finally {
           setAuthBusy(false);
         }

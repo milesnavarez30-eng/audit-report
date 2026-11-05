@@ -184,7 +184,11 @@ window.CCTV_FOCUS_STATE = (function () {
     } else if (isMockEnvironment() && user) {
       // Mock / Offline Development Sandbox: explicitly isolated mock storage
       try {
-        localStorage.setItem(`cctv_focus_mock_${user.id}`, JSON.stringify(payload));
+        if (user.id === "demo-operator-preview") {
+          sessionStorage.setItem("cctv_focus_demo_state", JSON.stringify(payload));
+        } else {
+          localStorage.setItem(`cctv_focus_mock_${user.id}`, JSON.stringify(payload));
+        }
         syncStatus = "synced";
       } catch (_) {}
       notify();
@@ -282,11 +286,15 @@ window.CCTV_FOCUS_STATE = (function () {
 
     // Resolve User Opt-In preference (User-specific)
     if (user) {
-      try {
-        const userOpt = localStorage.getItem(`cctv_focus_enabled_${user.id}`);
-        isEnabled = userOpt === "true";
-      } catch (_) {
-        isEnabled = false;
+      if (!isProductionMode() && user.id === "demo-operator-preview") {
+        isEnabled = true;
+      } else {
+        try {
+          const userOpt = localStorage.getItem(`cctv_focus_enabled_${user.id}`);
+          isEnabled = userOpt === "true";
+        } catch (_) {
+          isEnabled = false;
+        }
       }
     } else {
       // In preview mode only: allow URL parameter
@@ -369,7 +377,9 @@ window.CCTV_FOCUS_STATE = (function () {
     } else if (isMockEnvironment() && user) {
       // Mock / Offline Development Sandbox: load from explicitly isolated mock storage
       try {
-        const raw = localStorage.getItem(`cctv_focus_mock_${user.id}`);
+        const raw = user.id === "demo-operator-preview"
+          ? sessionStorage.getItem("cctv_focus_demo_state")
+          : localStorage.getItem(`cctv_focus_mock_${user.id}`);
         if (raw) {
           const data = JSON.parse(raw);
           if (Array.isArray(data.queue)) upcomingQueue = data.queue.slice(0, QUEUE_MAX);
