@@ -13131,6 +13131,9 @@ function doPost(e) {
       if ($('adminSettingLanding')) $('adminSettingLanding').value = s.landing || 'cctv';
       if ($('adminSettingSubtitle')) $('adminSettingSubtitle').value = s.subtitle || 'Secure operations workspace';
       if ($('adminSettingAutoTrim')) $('adminSettingAutoTrim').checked = s.autoTrim !== false;
+      if ($('adminSettingFocusEnabled')) {
+        $('adminSettingFocusEnabled').checked = localStorage.getItem('cctv_focus_enabled') === 'true';
+      }
     }
 
     async function loadOperationalSettings() {
@@ -13160,6 +13163,9 @@ function doPost(e) {
           subtitle: String($('adminSettingSubtitle')?.value||'').trim() || 'Secure operations workspace',
           autoTrim: !!$('adminSettingAutoTrim')?.checked
         };
+        if ($('adminSettingFocusEnabled')) {
+          window.CCTV_FOCUS_STATE?.setEnabled?.(!!$('adminSettingFocusEnabled').checked);
+        }
         const updated = await svc.saveOperationalSettings(settings);
         populateOperationalSettingsUI(updated);
         const notice = $('adminSaveSettingsNotice');
@@ -13230,6 +13236,9 @@ function doPost(e) {
     $('adminAuditSearch')?.addEventListener('input', filterAuditLogs);
 
     $('adminSaveSettingsBtn')?.addEventListener('click', saveOperationalSettings);
+    $('adminSettingFocusEnabled')?.addEventListener('change', (e) => {
+      window.CCTV_FOCUS_STATE?.setEnabled?.(e.target.checked);
+    });
 
     $('adminAccessRole')?.addEventListener('change', refreshAccessRoleUi);
     $('adminAccessSave')?.addEventListener('click', saveAccessEditor);
