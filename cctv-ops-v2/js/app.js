@@ -14034,7 +14034,7 @@ function doPost(e) {
     }
     if (activeUser) {
       unlockApp(activeUser, activeProfile);
-    } else {
+    } else if (!document.body.classList.contains("auth-unlocked") && !auth?.getUser?.()) {
       lockApp();
     }
     updateIntegrationStatusPills();

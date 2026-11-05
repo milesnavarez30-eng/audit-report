@@ -40,8 +40,9 @@ window.CCTV_FOCUS_WINDOW = (function () {
     wrap.id = "focusWindow";
     wrap.className = "focus-window mode-discreet";
     wrap.style.display = "none";
+    const initialY = Math.max(12, (window.innerHeight || 768) - 60);
     wrap.style.left = "80px";
-    wrap.style.top = "740px";
+    wrap.style.top = `${initialY}px`;
 
     wrap.innerHTML = `
       <!-- Window Header (Drag Handle) -->
@@ -208,6 +209,40 @@ window.CCTV_FOCUS_WINDOW = (function () {
     container = wrap;
   }
 
+  function clampToViewport() {
+    if (!container) return;
+    if (window.innerWidth <= 768) {
+      container.style.left = "";
+      container.style.top = "";
+      return;
+    }
+    const rect = container.getBoundingClientRect();
+    const pad = 12;
+    const vw = window.innerWidth || document.documentElement.clientWidth || 1024;
+    const vh = window.innerHeight || document.documentElement.clientHeight || 768;
+
+    const isDiscreet = container.classList.contains("mode-discreet");
+    const w = rect.width || (isDiscreet ? 230 : 360);
+    const h = rect.height || (isDiscreet ? 44 : 500);
+
+    const maxLeft = Math.max(pad, vw - w - pad);
+    const maxTop = Math.max(pad, vh - h - pad);
+
+    let curLeft = parseFloat(container.style.left);
+    let curTop = parseFloat(container.style.top);
+
+    if (isNaN(curLeft)) curLeft = 80;
+    if (isNaN(curTop) || curTop > maxTop) {
+      curTop = isDiscreet ? Math.max(pad, vh - 60) : Math.max(pad, Math.min(vh - 520, 80));
+    }
+
+    const clampedLeft = Math.max(pad, Math.min(maxLeft, curLeft));
+    const clampedTop = Math.max(pad, Math.min(maxTop, curTop));
+
+    container.style.left = `${Math.round(clampedLeft)}px`;
+    container.style.top = `${Math.round(clampedTop)}px`;
+  }
+
   // Bind dragging and window resizing
   function bindWindowInteractions() {
     const header = el("focusHeader");
@@ -276,27 +311,22 @@ window.CCTV_FOCUS_WINDOW = (function () {
         isDragging = false;
         isResizing = false;
         container.classList.remove("is-dragging");
+        clampToViewport();
         const rect = container.getBoundingClientRect();
         const mode = container.classList.contains("mode-discreet") ? "discreet" : "full";
         window.CCTV_FOCUS_STATE?.updateWindowRect?.(mode, {
-          x: rect.left,
-          y: rect.top,
-          width: rect.width,
-          height: rect.height
+          x: Math.round(rect.left),
+          y: Math.round(rect.top),
+          width: Math.round(rect.width),
+          height: Math.round(rect.height)
         });
       }
     });
 
-    // Viewport resize guard: keep window on screen
+    // Viewport resize guard: keep window strictly inside visible screen
     window.addEventListener("resize", () => {
       if (!container || container.style.display === "none") return;
-      const rect = container.getBoundingClientRect();
-      if (rect.right > window.innerWidth) {
-        container.style.left = `${Math.max(0, window.innerWidth - rect.width - 10)}px`;
-      }
-      if (rect.bottom > window.innerHeight) {
-        container.style.top = `${Math.max(0, window.innerHeight - rect.height - 10)}px`;
-      }
+      clampToViewport();
     });
   }
 
@@ -306,6 +336,7 @@ window.CCTV_FOCUS_WINDOW = (function () {
     el("btnFocusToggleMode")?.addEventListener("click", () => {
       const isDiscreet = container.classList.contains("mode-discreet");
       window.CCTV_FOCUS_STATE?.setMode?.(isDiscreet ? "full" : "discreet");
+      setTimeout(clampToViewport, 20);
     });
 
     // Minimize & Close
@@ -318,9 +349,14 @@ window.CCTV_FOCUS_WINDOW = (function () {
     });
 
     // Sidebar launcher click
-    el("btnSidebarFocus")?.addEventListener("click", () => {
+    const handleLauncherClick = (e) => {
+      e?.preventDefault?.();
+      e?.stopPropagation?.();
       window.CCTV_FOCUS_STATE?.toggleWindow?.();
-    });
+      setTimeout(clampToViewport, 10);
+    };
+
+    el("btnSidebarFocus")?.addEventListener("click", handleLauncherClick);
 
     // Play/Pause Hero & Discreet
     const togglePlayback = () => window.CCTV_FOCUS_AUDIO?.togglePlay?.();
@@ -954,7 +990,8 @@ window.CCTV_FOCUS_WINDOW = (function () {
       if (!container) return;
 
       // Visibility
-      container.style.display = (state.isEnabled && state.isWindowVisible) ? "flex" : "none";
+      const shouldShow = !!(state.isEnabled && state.isWindowVisible);
+      container.style.display = shouldShow ? "flex" : "none";
 
       // Sync status indicator
       const syncWarn = el("focusSyncWarn");
@@ -970,8 +1007,12 @@ window.CCTV_FOCUS_WINDOW = (function () {
       if (rect) {
         if (rect.width) container.style.width = `${rect.width}px`;
         if (rect.height && !isDiscreet) container.style.height = `${rect.height}px`;
-        if (rect.x) container.style.left = `${rect.x}px`;
-        if (rect.y) container.style.top = `${rect.y}px`;
+        if (typeof rect.x === "number") container.style.left = `${rect.x}px`;
+        if (typeof rect.y === "number") container.style.top = `${rect.y}px`;
+      }
+
+      if (shouldShow) {
+        clampToViewport();
       }
 
       // Autoplay pill

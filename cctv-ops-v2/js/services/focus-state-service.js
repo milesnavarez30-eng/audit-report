@@ -32,16 +32,50 @@ window.CCTV_FOCUS_STATE = (function () {
   let saveDebounceTimer = null;
   let isInitialLoadDone = false;
 
-  let windowRectDiscreet = { width: 230, height: 46, x: 80, y: 740 };
-  let windowRectFull = { width: 360, height: 500, x: 80, y: 340 };
+  function getDefaultDiscreetRect() {
+    const vh = (typeof window !== "undefined" && window.innerHeight) ? window.innerHeight : 768;
+    return { width: 230, height: 44, x: 80, y: Math.max(12, vh - 60) };
+  }
 
-  // Load non-sensitive UI layout from local storage
+  function getDefaultFullRect() {
+    const vh = (typeof window !== "undefined" && window.innerHeight) ? window.innerHeight : 768;
+    return { width: 360, height: 500, x: 80, y: Math.max(12, Math.min(vh - 520, 80)) };
+  }
+
+  let windowRectDiscreet = getDefaultDiscreetRect();
+  let windowRectFull = getDefaultFullRect();
+
+  // Load non-sensitive UI layout from local storage (with viewport sanity guard)
   try {
     const rawLayout = localStorage.getItem(UI_LAYOUT_KEY);
     if (rawLayout) {
       const parsedLayout = JSON.parse(rawLayout);
-      if (parsedLayout.windowRectDiscreet) windowRectDiscreet = parsedLayout.windowRectDiscreet;
-      if (parsedLayout.windowRectFull) windowRectFull = parsedLayout.windowRectFull;
+      const vh = (typeof window !== "undefined" && window.innerHeight) ? window.innerHeight : 768;
+      const vw = (typeof window !== "undefined" && window.innerWidth) ? window.innerWidth : 1024;
+
+      if (parsedLayout.windowRectDiscreet && typeof parsedLayout.windowRectDiscreet === "object") {
+        const d = parsedLayout.windowRectDiscreet;
+        // Verify coordinates are strictly inside visible screen bounds
+        if (typeof d.y === "number" && d.y > 0 && d.y <= vh - 40 && typeof d.x === "number" && d.x >= 0 && d.x <= vw - 50) {
+          windowRectDiscreet = {
+            width: d.width || 230,
+            height: d.height || 44,
+            x: Math.max(8, Math.min(vw - (d.width || 230) - 8, d.x)),
+            y: Math.max(8, Math.min(vh - (d.height || 44) - 8, d.y))
+          };
+        }
+      }
+      if (parsedLayout.windowRectFull && typeof parsedLayout.windowRectFull === "object") {
+        const f = parsedLayout.windowRectFull;
+        if (typeof f.y === "number" && f.y > 0 && f.y <= vh - 100 && typeof f.x === "number" && f.x >= 0 && f.x <= vw - 100) {
+          windowRectFull = {
+            width: f.width || 360,
+            height: f.height || 500,
+            x: Math.max(8, Math.min(vw - (f.width || 360) - 8, f.x)),
+            y: Math.max(8, Math.min(vh - (f.height || 500) - 8, f.y))
+          };
+        }
+      }
       if (parsedLayout.activeTab) activeTab = parsedLayout.activeTab;
     }
   } catch (_) {}
@@ -286,7 +320,7 @@ window.CCTV_FOCUS_STATE = (function () {
 
     // Resolve User Opt-In preference (User-specific)
     if (user) {
-      if (!isProductionMode() && user.id === "demo-operator-preview") {
+      if (!isProductionMode() && (user.id === "demo-operator-preview" || user.id === "demo-operator")) {
         isEnabled = true;
       } else {
         try {
@@ -297,7 +331,7 @@ window.CCTV_FOCUS_STATE = (function () {
         }
       }
     } else {
-      // In preview mode only: allow URL parameter
+      // In preview or local dev mode: allow URL parameter
       if (!isProductionMode()) {
         const urlParams = new URLSearchParams(window.location.search);
         isEnabled = urlParams.get("focus") === "1" || urlParams.get("focus") === "true";
@@ -564,6 +598,18 @@ window.CCTV_FOCUS_STATE = (function () {
     },
 
     toggleWindow(visible) {
+      // Explicit launcher click auto-enables the utility if currently disabled
+      if (!isEnabled) {
+        if (!isProductionMode() || isFocusAllowedByAdmin()) {
+          isEnabled = true;
+          const user = getAuthenticatedUser();
+          if (user) {
+            try {
+              localStorage.setItem(`cctv_focus_enabled_${user.id}`, "true");
+            } catch (_) {}
+          }
+        }
+      }
       isWindowVisible = typeof visible === "boolean" ? visible : !isWindowVisible;
       notify();
     },
