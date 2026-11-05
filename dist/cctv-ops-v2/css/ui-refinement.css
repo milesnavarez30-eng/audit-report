@@ -3999,7 +3999,7 @@ body.edr-resizing-h {
 
 
 /* ==========================================================================
-   CCTV REPORT PREVIEW & GREETING REFINEMENT
+   CCTV REPORT PREVIEW & GREETING REFINEMENT (CONTINUOUS DOCUMENT)
    ========================================================================== */
 .cctv-report-right-col,
 .cctv-preview-card {
@@ -4007,73 +4007,327 @@ body.edr-resizing-h {
   container-name: previewContainer;
 }
 
+/* Outer Card & Body: Seamless document canvas without nested boxes */
+.cctv-preview-card {
+  display: flex !important;
+  flex-direction: column !important;
+  background: var(--bg-surface, #161b22) !important;
+  border: 1px solid var(--border-default, #30363d) !important;
+  border-radius: var(--radius-md, 6px) !important;
+  overflow: hidden !important;
+}
+
+.cctv-preview-card > .card-body {
+  padding: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 1 auto !important;
+  overflow: hidden !important;
+  background: var(--bg-surface, #161b22) !important;
+}
+
+/* Compact single-row header when wide enough */
 .cctv-preview-header,
 .cctv-preview-card .card-header.cctv-preview-header {
   display: flex !important;
-  flex-direction: column !important;
-  align-items: stretch !important;
-  justify-content: flex-start !important;
-  padding: 10px 14px !important;
-  min-height: auto !important;
-  gap: 8px !important;
-  border-left: 3px solid #14b8a6 !important;
-  background: linear-gradient(90deg, rgba(20, 184, 166, 0.09) 0%, rgba(20, 184, 166, 0.01) 35%, var(--bg-surface-elevated)) !important;
-}
-
-.cctv-preview-header-top {
-  display: flex !important;
+  flex-direction: row !important;
   align-items: center !important;
   justify-content: space-between !important;
-  min-width: 0 !important;
-  width: 100% !important;
+  padding: 6px 12px !important;
+  min-height: 38px !important;
+  height: auto !important;
+  gap: 8px !important;
+  flex-wrap: nowrap !important;
+  border-left: 3px solid #14b8a6 !important;
+  border-bottom: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08)) !important;
+  background: linear-gradient(90deg, rgba(20, 184, 166, 0.09) 0%, rgba(20, 184, 166, 0.01) 35%, var(--bg-surface-elevated, #1c2128)) !important;
+  box-sizing: border-box !important;
 }
 
-.cctv-preview-header-top .card-title-wrap {
+.cctv-preview-header-top,
+.cctv-preview-header-left {
   display: flex !important;
   align-items: center !important;
   gap: 8px !important;
   min-width: 0 !important;
+  flex: 0 0 auto !important;
+}
+
+.cctv-preview-header .card-title {
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.5px !important;
+  text-transform: uppercase !important;
+  color: var(--text-primary, #f1f5f9) !important;
+  white-space: nowrap !important;
 }
 
 .cctv-preview-actions-row,
 .cctv-preview-card .card-actions.cctv-preview-actions-row {
-  display: flex !important;
-  flex-wrap: wrap !important;
+  display: inline-flex !important;
+  flex-direction: row !important;
   align-items: center !important;
-  justify-content: flex-start !important;
-  gap: 6px 8px !important;
-  margin: 0 !important;
+  justify-content: flex-end !important;
+  gap: 6px !important;
+  margin: 0 0 0 auto !important;
   padding: 0 !important;
-  width: 100% !important;
-  flex-shrink: 0 !important;
+  flex: 0 0 auto !important;
+  width: auto !important;
 }
 
 .cctv-preview-actions-row .btn {
-  height: 28px !important;
+  height: 26px !important;
   font-size: 11px !important;
   font-weight: 600 !important;
+  padding: 0 9px !important;
   white-space: nowrap !important;
   margin: 0 !important;
-  flex: 0 0 auto !important;
   display: inline-flex !important;
   align-items: center !important;
   gap: 5px !important;
+  border-radius: 4px !important;
+}
+
+.cctv-preview-actions-row #btnCopyAllReport {
+  background: var(--accent-primary, #6366f1) !important;
+  border-color: var(--accent-primary, #6366f1) !important;
+  color: #ffffff !important;
+  font-weight: 700 !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25) !important;
+}
+
+.cctv-preview-actions-row #btnCopyAllReport:hover {
+  background: var(--accent-primary-hover, #4f46e5) !important;
+  border-color: var(--accent-primary-hover, #4f46e5) !important;
+}
+
+/* Container Queries for responsive wrapping */
+@container previewContainer (max-width: 380px) {
+  .cctv-preview-header,
+  .cctv-preview-card .card-header.cctv-preview-header {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    padding: 7px 10px !important;
+    gap: 7px !important;
+  }
+  .cctv-preview-header-top,
+  .cctv-preview-header-left {
+    width: 100% !important;
+    justify-content: flex-start !important;
+  }
+  .cctv-preview-actions-row,
+  .cctv-preview-card .card-actions.cctv-preview-actions-row {
+    width: 100% !important;
+    justify-content: flex-end !important;
+    margin-left: 0 !important;
+  }
 }
 
 @container previewContainer (max-width: 320px) {
-  .cctv-preview-actions-row {
-    gap: 6px !important;
+  .cctv-preview-actions-row,
+  .cctv-preview-card .card-actions.cctv-preview-actions-row {
+    display: flex !important;
+    gap: 5px !important;
   }
   .cctv-preview-actions-row .btn {
-    flex: 1 1 calc(50% - 4px) !important;
-    min-width: 0 !important;
+    flex: 1 1 calc(50% - 3px) !important;
     justify-content: center !important;
-    padding: 0 6px !important;
+    padding: 0 4px !important;
   }
   .cctv-preview-actions-row #btnCopyAllReport {
     flex: 1 1 100% !important;
     width: 100% !important;
   }
+}
+
+/* Teams Message Box as Continuous Document Canvas */
+#teamsMessageBox,
+.cctv-preview-card .teams-message-box {
+  flex: 1 1 auto !important;
+  overflow-y: auto !important;
+  padding: 16px 20px !important;
+  margin: 0 !important;
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+  color: #e2e8f0 !important;
+  font-size: 13px !important;
+  line-height: 1.65 !important;
+  user-select: text !important;
+  word-break: break-word !important;
+}
+
+/* Continuous Document Elements - No Decorative Segment Boxes */
+.teams-preview-greeting {
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  color: #f8fafc !important;
+  margin-bottom: 12px !important;
+  line-height: 1.5 !important;
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+}
+
+.teams-preview-body {
+  font-size: 13px !important;
+  line-height: 1.65 !important;
+  color: #e2e8f0 !important;
+  margin-bottom: 14px !important;
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+}
+
+.teams-preview-meta {
+  font-size: 12.5px !important;
+  line-height: 1.6 !important;
+  color: #cbd5e1 !important;
+  margin-bottom: 14px !important;
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+}
+
+.teams-preview-meta-line {
+  margin-bottom: 3px !important;
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+}
+
+.teams-preview-meta-line strong {
+  color: #f1f5f9 !important;
+  font-weight: 600 !important;
+}
+
+.teams-preview-shots {
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: wrap !important;
+  gap: 8px !important;
+  margin: 0 0 14px 0 !important;
+  align-items: flex-start !important;
+}
+
+.teams-preview-shot-wrapper {
+  position: relative !important;
+  display: inline-block !important;
+  border-radius: 4px !important;
+  overflow: hidden !important;
+  border: 1px solid var(--border-default, #334155) !important;
+  background: rgba(0, 0, 0, 0.3) !important;
+  margin: 0 !important;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease !important;
+}
+
+.teams-preview-shot-wrapper:hover {
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.45) !important;
+  border-color: #14b8a6 !important;
+}
+
+.teams-preview-shot-badge {
+  position: absolute !important;
+  top: 4px !important;
+  left: 4px !important;
+  background: rgba(15, 23, 42, 0.85) !important;
+  color: #38bdf8 !important;
+  font-size: 9.5px !important;
+  font-weight: 700 !important;
+  padding: 1px 5px !important;
+  border-radius: 3px !important;
+  border: 1px solid rgba(56, 189, 248, 0.35) !important;
+  pointer-events: none !important;
+  z-index: 2 !important;
+  font-family: var(--font-mono, monospace) !important;
+}
+
+.teams-preview-shot-img {
+  cursor: zoom-in !important;
+  max-width: 240px !important;
+  max-height: 150px !important;
+  width: auto !important;
+  height: auto !important;
+  object-fit: contain !important;
+  display: block !important;
+  margin: 0 !important;
+  border: none !important;
+}
+
+.teams-preview-clip {
+  font-size: 12.5px !important;
+  line-height: 1.6 !important;
+  margin: 0 0 4px 0 !important;
+  color: #cbd5e1 !important;
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+}
+
+.teams-preview-clip strong {
+  color: #f1f5f9 !important;
+  font-weight: 600 !important;
+}
+
+.teams-preview-clip a {
+  color: #818cf8 !important;
+  text-decoration: underline !important;
+  font-weight: 600 !important;
+}
+
+.teams-preview-clip a:hover {
+  color: #a5b4fc !important;
+}
+
+/* Subtle Empty State */
+.cctv-preview-empty-state {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-height: 220px !important;
+  height: 100% !important;
+  text-align: center !important;
+  padding: 36px 20px !important;
+  color: var(--text-muted, #64748b) !important;
+  user-select: none !important;
+  margin: auto 0 !important;
+}
+
+.cctv-preview-empty-icon {
+  width: 42px !important;
+  height: 42px !important;
+  border-radius: 50% !important;
+  background: rgba(255, 255, 255, 0.03) !important;
+  border: 1px solid rgba(255, 255, 255, 0.06) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  margin-bottom: 12px !important;
+  color: var(--text-muted, #64748b) !important;
+}
+
+.cctv-preview-empty-icon svg {
+  width: 20px !important;
+  height: 20px !important;
+  opacity: 0.6 !important;
+}
+
+.cctv-preview-empty-title {
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  color: var(--text-secondary, #94a3b8) !important;
+  margin-bottom: 5px !important;
+}
+
+.cctv-preview-empty-desc {
+  font-size: 11.5px !important;
+  color: var(--text-muted, #64748b) !important;
+  max-width: 270px !important;
+  line-height: 1.45 !important;
 }
 
 #reportGreeting {

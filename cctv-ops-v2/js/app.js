@@ -9527,7 +9527,6 @@ function doPost(e) {
       .replace(/</g, "&lt;")
       .replace(/>/g, "&gt;");
 
-    const htmlParts = [];
     const rawGreeting = typeof cctvReportDraft.greeting === "string"
       ? cctvReportDraft.greeting
       : (window.CCTV_REPORT_SERVICE?.getSavedGreetingPreference?.() ?? "Good morning TLs,");
@@ -9536,6 +9535,42 @@ function doPost(e) {
     const person = (cctvReportDraft.personInvolved || "").trim();
     const site = (cctvReportDraft.site || "").trim();
     const dateRange = (cctvReportDraft.dateRange || "").trim();
+    const screenshots = Array.isArray(cctvReportDraft.screenshots) ? cctvReportDraft.screenshots : [];
+    const clipUrl = (cctvReportDraft.clipUrl || "").trim();
+
+    // Check if there is actual report body/evidence content
+    const hasReportContent = Boolean(
+      observation ||
+      screenshots.length > 0 ||
+      person ||
+      site ||
+      dateRange ||
+      clipUrl
+    );
+
+    if (!hasReportContent) {
+      box.innerHTML = `
+        <div class="cctv-preview-empty-state">
+          <div class="cctv-preview-empty-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <line x1="16" y1="13" x2="8" y2="13"></line>
+              <line x1="16" y1="17" x2="8" y2="17"></line>
+              <polyline points="10 9 9 9 8 9"></polyline>
+            </svg>
+          </div>
+          <div class="cctv-preview-empty-title">No report generated yet</div>
+          <div class="cctv-preview-empty-desc">Enter incident details or use Quick Compose to preview your report here.</div>
+        </div>
+      `;
+      const plainBox = el("plainTextMessageText");
+      if (plainBox) plainBox.textContent = "";
+      updateReportObservationStats();
+      return;
+    }
+
+    const htmlParts = [];
 
     // Check if observation already starts with greeting or duplicate
     const isDup = window.CCTV_REPORT_SERVICE?.isDuplicateGreeting
@@ -9543,12 +9578,12 @@ function doPost(e) {
       : /^\s*good\s+(?:morning|afternoon|evening)/i.test(observation);
 
     if (!isDup && greeting) {
-      htmlParts.push(`<div class="teams-preview-greeting" style="margin-bottom: 6px;">${esc(greeting)}</div>`);
+      htmlParts.push(`<div class="teams-preview-greeting">${esc(greeting)}</div>`);
     }
 
     if (observation) {
       const formattedBody = esc(observation).replace(/\r?\n/g, "<br>");
-      htmlParts.push(`<div class="teams-preview-body" style="margin: 6px 0;">${formattedBody}</div>`);
+      htmlParts.push(`<div class="teams-preview-body">${formattedBody}</div>`);
     }
 
     const hasLocationInObs = /\bLocation\s*:/i.test(observation);
@@ -9565,23 +9600,25 @@ function doPost(e) {
       metaItems.push(`<div class="teams-preview-meta-line"><strong>Date:</strong> ${esc(dateRange)}</div>`);
     }
     if (metaItems.length) {
-      htmlParts.push(`<div class="teams-preview-meta" style="margin: 6px 0;">${metaItems.join("")}</div>`);
+      htmlParts.push(`<div class="teams-preview-meta">${metaItems.join("")}</div>`);
     }
 
     // Code of Conduct is kept strictly as internal supporting context.
     // By authoritative policy, policy numbers/titles/penalties must NOT appear in CCTV reports.
 
-    if (Array.isArray(cctvReportDraft.screenshots) && cctvReportDraft.screenshots.length > 0) {
-      const shotsHtml = cctvReportDraft.screenshots.map((s, idx) => {
+    if (screenshots.length > 0) {
+      const shotsHtml = screenshots.map((s, idx) => {
         const src = typeof s === "string" ? s : (s.data || s.url || "");
         if (!src || !/^(data:image\/|https?:\/\/)/i.test(String(src).trim())) return "";
         return `
-          <div class="teams-preview-shot-wrapper" style="position:relative; display:inline-block; margin:2px;">
+          <div class="teams-preview-shot-wrapper">
             <span class="teams-preview-shot-badge">#${idx + 1}</span>
             <img src="${esc(String(src).trim())}" class="teams-preview-shot-img" data-index="${idx}" alt="CCTV Screenshot ${idx + 1}" title="Click to inspect full resolution evidence" />
           </div>`;
       }).filter(Boolean).join("");
-      htmlParts.push(`<div class="teams-preview-shots" style="margin: 6px 0;">${shotsHtml}</div>`);
+      if (shotsHtml) {
+        htmlParts.push(`<div class="teams-preview-shots">${shotsHtml}</div>`);
+      }
     }
 
     const clips = window.CCTV_REPORT_SERVICE?.parseClipUrls
@@ -9593,10 +9630,10 @@ function doPost(e) {
           .filter(Boolean);
 
     if (clips.length === 1) {
-      htmlParts.push(`<div class="teams-preview-clip" style="margin-top: 6px;"><strong>CCTV Clip:</strong> <a href="${esc(clips[0])}" target="_blank" rel="noopener noreferrer" style="color:#6366f1; text-decoration:underline; font-weight:600;">Click here!</a></div>`);
+      htmlParts.push(`<div class="teams-preview-clip"><strong>CCTV Clip:</strong> <a href="${esc(clips[0])}" target="_blank" rel="noopener noreferrer">Click here!</a></div>`);
     } else if (clips.length > 1) {
       clips.forEach((c, idx) => {
-        htmlParts.push(`<div class="teams-preview-clip" style="margin-top: 4px;"><strong>CCTV Clip ${idx + 1}:</strong> <a href="${esc(c)}" target="_blank" rel="noopener noreferrer" style="color:#6366f1; text-decoration:underline; font-weight:600;">Click here!</a></div>`);
+        htmlParts.push(`<div class="teams-preview-clip"><strong>CCTV Clip ${idx + 1}:</strong> <a href="${esc(c)}" target="_blank" rel="noopener noreferrer">Click here!</a></div>`);
       });
     }
 
@@ -10234,13 +10271,43 @@ function doPost(e) {
       syncCctvReportDraftFromForm();
       updateReportObservationStats();
 
+      const observation = (cctvReportDraft.observation || "").trim();
+      const person = (cctvReportDraft.personInvolved || "").trim();
+      const site = (cctvReportDraft.site || "").trim();
+      const dateRange = (cctvReportDraft.dateRange || "").trim();
+      const screenshots = Array.isArray(cctvReportDraft.screenshots) ? cctvReportDraft.screenshots : [];
+      const clipUrl = (cctvReportDraft.clipUrl || "").trim();
+
+      const hasContent = Boolean(observation || screenshots.length || person || site || dateRange || clipUrl);
+
+      if (!hasContent) {
+        container.innerHTML = `
+          <div class="cctv-preview-empty-state" style="padding:60px 20px;">
+            <div class="cctv-preview-empty-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+                <line x1="16" y1="13" x2="8" y2="13"></line>
+                <line x1="16" y1="17" x2="8" y2="17"></line>
+                <polyline points="10 9 9 9 8 9"></polyline>
+              </svg>
+            </div>
+            <div class="cctv-preview-empty-title">No report generated yet</div>
+            <div class="cctv-preview-empty-desc">Enter incident details or use Quick Compose to preview your report here.</div>
+          </div>
+        `;
+        modal.hidden = false;
+        return;
+      }
+
       const richHtml = window.CCTV_REPORT_SERVICE.buildReportHtml(cctvReportDraft);
-      container.innerHTML = `<div class="teams-message-box" style="margin:0; border:none; background:transparent; padding:0;">${richHtml}</div>`;
+      container.innerHTML = `<div class="teams-message-box" style="margin:0; border:none; background:transparent; padding:0; line-height:1.65;">${richHtml}</div>`;
       container.querySelectorAll("img").forEach((img, i) => {
         img.style.cursor = "zoom-in";
         img.addEventListener("click", () => {
-          if (window.openFullScreenshotViewer) {
-            window.openFullScreenshotViewer(img.src, "CCTV Report Evidence", `Screenshot #${i + 1}`);
+          const viewer = window.openScreenshotViewer || window.openFullScreenshotViewer;
+          if (viewer) {
+            viewer(img.src, "CCTV Report Evidence", `Screenshot #${i + 1}`);
           }
         });
       });
