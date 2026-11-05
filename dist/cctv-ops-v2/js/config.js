@@ -1,4 +1,4 @@
-﻿/**
+/**
  * CCTV OPS V2 - Global Configuration & Constants
  */
 
@@ -23,7 +23,9 @@ function _checkIsPreview() {
     host.endsWith(".pages.dev") ||
     host.includes(".pages.dev") ||
     host.includes("preview.") ||
-    host.includes("-preview")
+    host.includes("-preview") ||
+    host.includes("preview") ||
+    (host.endsWith(".workers.dev") && host !== "audit-report.milesnavarez30.workers.dev")
   );
 }
 
