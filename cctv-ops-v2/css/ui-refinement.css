@@ -3572,6 +3572,62 @@ tbody tr:hover {
   box-shadow: 0 0 6px rgba(245, 158, 11, 0.6) !important;
 }
 
+/* Demo Preview Terminal Login Enhancements */
+.preview-login-divider {
+  display: flex !important;
+  align-items: center !important;
+  text-align: center !important;
+  margin: 1.25rem 0 0.6rem 0 !important;
+  color: rgba(255, 255, 255, 0.4) !important;
+  font-size: 0.72rem !important;
+  letter-spacing: 0.1em !important;
+}
+
+.preview-login-divider::before,
+.preview-login-divider::after {
+  content: "" !important;
+  flex: 1 !important;
+  border-bottom: 1px dashed rgba(245, 158, 11, 0.4) !important;
+}
+
+.preview-login-divider span {
+  padding: 0 10px !important;
+  color: #fbbf24 !important;
+  font-weight: 700 !important;
+  font-size: 0.7rem !important;
+  letter-spacing: 0.1em !important;
+}
+
+.btn-demo-preview {
+  margin-top: 0.5rem !important;
+  background-color: rgba(245, 158, 11, 0.15) !important;
+  border: 2px solid #f59e0b !important;
+  color: #fbbf24 !important;
+  cursor: pointer !important;
+  pointer-events: auto !important;
+  transition: all 0.2s ease !important;
+}
+
+.btn-demo-preview * {
+  pointer-events: none !important;
+}
+
+.btn-demo-preview:hover,
+.btn-demo-preview:focus {
+  background-color: #f59e0b !important;
+  color: #0f172a !important;
+  box-shadow: 0 0 25px rgba(245, 158, 11, 0.7) !important;
+}
+
+.preview-login-note {
+  margin-top: 0.75rem !important;
+  font-size: 0.72rem !important;
+  line-height: 1.4 !important;
+  color: rgba(251, 191, 36, 0.85) !important;
+  text-align: center !important;
+  font-family: var(--font-family) !important;
+}
+
 /* ==========================================================================
    FULLY RESIZABLE EDR WORKSPACE â€” DIVIDERS & ACCESSIBLE SPLIT CONTROLS
    ========================================================================== */

@@ -1615,3 +1615,29 @@ tbody td {
     padding: 3px 5px !important;
   }
 }
+/* CCTV_OPS_LOGIN_MATRIX_LIGHTWEIGHT_V1
+   Login-only override: avoid oversized 1920x1080 DOM grid, CSS animations and filters.
+   Keep the familiar terminal ambience, but sparse and static. */
+.terminal-login-wrapper .jp-matrix {
+  top: 0 !important;
+  left: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  transform: none !important;
+  grid-template-columns: repeat(var(--jp-cols, 11), minmax(0, 1fr)) !important;
+  grid-template-rows: repeat(var(--jp-rows, 6), minmax(0, 1fr)) !important;
+  grid-auto-rows: auto !important;
+  font-size: clamp(14px, 1.6vw, 19px) !important;
+  opacity: 0.34 !important;
+  filter: none !important;
+  pointer-events: none !important;
+}
+.terminal-login-wrapper .jp-matrix > span {
+  animation: none !important;
+  transition: none !important;
+  text-shadow: none !important;
+  color: rgba(0, 175, 195, 0.38) !important;
+  contain: paint;
+}

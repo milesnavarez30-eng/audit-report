@@ -1,4 +1,4 @@
-﻿/**
+/**
  * CCTV OPS V2 - Global Configuration & Constants
  */
 
@@ -10,6 +10,11 @@ const _PROD_SUPABASE_KEY = "sb_publishable_JGUCURJkbOw-KypucxXNSQ_magKTFPd";
 
 function _checkIsPreview() {
   if (typeof window === "undefined" || !window.location) return false;
+  const host = (window.location.hostname || "").toLowerCase();
+  // Authoritative production host lock: NEVER preview under any circumstance
+  if (host === "audit-report.milesnavarez30.workers.dev") {
+    return false;
+  }
   if (window.CCTV_PREVIEW_MODE === true) return true;
   if (window.CCTV_AUTH_CONFIG && window.CCTV_AUTH_CONFIG.IS_PREVIEW === true) return true;
   try {
@@ -18,12 +23,16 @@ function _checkIsPreview() {
       return true;
     }
   } catch (_) {}
-  const host = (window.location.hostname || "").toLowerCase();
   return (
+    host === "localhost" ||
+    host === "127.0.0.1" ||
+    host === "0.0.0.0" ||
     host.endsWith(".pages.dev") ||
     host.includes(".pages.dev") ||
     host.includes("preview.") ||
-    host.includes("-preview")
+    host.includes("-preview") ||
+    host.includes("preview") ||
+    (host.endsWith(".workers.dev") && host !== "audit-report.milesnavarez30.workers.dev")
   );
 }
 

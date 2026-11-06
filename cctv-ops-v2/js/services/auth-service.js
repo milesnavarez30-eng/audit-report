@@ -1,4 +1,4 @@
-﻿/**
+/**
  * CCTV OPS V2 - Authentication & Account Service
  * Supabase Client, Role & Permission Management, Audit Logging & Admin Controls
  */
@@ -51,7 +51,15 @@ window.CCTV_AUTH = (function () {
   function readLocalSession() {
     try {
       const raw = sessionStorage.getItem(STORAGE_KEYS.LOCAL_SESSION) || localStorage.getItem(STORAGE_KEYS.LOCAL_SESSION);
-      return raw ? JSON.parse(raw) : null;
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      if (parsed && parsed.user && parsed.user.id === "demo-operator-preview") {
+        if (!cfg.IS_PREVIEW) {
+          clearLocalAuth();
+          return null;
+        }
+      }
+      return parsed;
     } catch (_) {
       return null;
     }
@@ -421,6 +429,67 @@ window.CCTV_AUTH = (function () {
 
     getClient() {
       return initClient();
+    },
+
+    async signInDemoPreview() {
+      const host = (typeof window !== "undefined" && window.location && window.location.hostname || "").toLowerCase();
+      if (host === "audit-report.milesnavarez30.workers.dev" || !cfg.IS_PREVIEW) {
+        throw new Error("Demo preview authentication is strictly forbidden in production.");
+      }
+
+      const demoUser = Object.freeze({
+        id: "demo-operator-preview",
+        email: "demo-operator@cctvops.preview",
+        user_metadata: {
+          display_name: "Demo Operator"
+        },
+        app_metadata: {
+          provider: "preview-mock"
+        },
+        created_at: new Date().toISOString()
+      });
+
+      const demoProfile = Object.freeze({
+        id: "demo-operator-preview",
+        email: "demo-operator@cctvops.preview",
+        username: "demo_operator",
+        display_name: "Demo Operator",
+        role: "user",
+        status: "approved",
+        permissions: normalizePermissions({
+          dashboard: true,
+          report: true,
+          conduct: true,
+          edr: true,
+          audit: true,
+          trackers: true,
+          hris: false,
+          sorter: true,
+          maintenance: true,
+          pending: true,
+          followup: true,
+          unreported: true,
+          masterlist: true,
+          history: true,
+          accounts: false,
+          manage_users: false,
+          manage_roles: false,
+          manage_permissions: false,
+          view_security_logs: false
+        })
+      });
+
+      currentUser = demoUser;
+      currentProfile = demoProfile;
+      currentRole = "user";
+
+      // Isolated session-only persistence (never touches localStorage)
+      try {
+        sessionStorage.setItem(STORAGE_KEYS.LOCAL_SESSION, JSON.stringify({ user: demoUser, profile: demoProfile }));
+      } catch (_) {}
+
+      await notifyAuthChange(currentUser, currentProfile);
+      return { user: currentUser, profile: currentProfile };
     },
 
     async signIn(usernameOrEmail, password) {

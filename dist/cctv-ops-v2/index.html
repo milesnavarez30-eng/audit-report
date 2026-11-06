@@ -1110,6 +1110,23 @@
           >
             <span class="btn-label">INITIATE_CONNECTION</span>
           </button>
+
+          <!-- Demo Preview Entry (Visible only in isolated Preview environment) -->
+          <div class="preview-login-divider" id="previewLoginDivider" style="display:none;">
+            <span>OR PREVIEW ACCESS</span>
+          </div>
+          <button
+            type="button"
+            class="terminal-submit-btn btn-demo-preview"
+            id="btnEnterDemoPreview"
+            data-text="ENTER DEMO PREVIEW"
+            style="display:none;"
+          >
+            <span class="btn-label">ENTER DEMO PREVIEW</span>
+          </button>
+          <p class="preview-login-note" id="previewLoginNote" style="display:none;">
+            Isolated demo operator sandbox. Production database and records remain strictly isolated.
+          </p>
         </div>
       </form>
     </div>
@@ -1294,6 +1311,7 @@
         </button>
 
         <!-- Logout Action Item (scrolls with navigation) -->
+
         <button type="button" class="nav-item nav-item-logout" id="btnSidebarLogout" title="Sign Out" data-tooltip="Sign Out" data-tooltip-pos="right" aria-label="Sign Out">
           <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
