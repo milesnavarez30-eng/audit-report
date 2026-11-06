@@ -3326,7 +3326,9 @@
       if (el("edrDocsStatusText")) el("edrDocsStatusText").textContent = "Local Storage";
       el("edrDocsUrlHint").textContent = "URL must end in /exec.";
       el("edrDocsUrlHint").className = "docs-url-hint";
-      updateIntegrationStatusPills();
+      if (typeof updateIntegrationStatusPills === "function") {
+        updateIntegrationStatusPills();
+      }
       showToast("Google Docs connection disconnected.", "info");
     });
 
@@ -3342,7 +3344,9 @@
         edr.setDocsUrl(url);
         el("modalDocsSetup").hidden = true;
         if (el("edrDocsStatusText")) el("edrDocsStatusText").textContent = "Docs Connected";
+        if (typeof updateIntegrationStatusPills === "function") {
         updateIntegrationStatusPills();
+      }
         showToast(`Connected to "${testRes.documentName || "EDR Doc"}". Loading saved EDRs...`, "success");
         await edr.loadSavedEdrsFromDocs();
       } catch (err) {
@@ -13131,9 +13135,6 @@ function doPost(e) {
       if ($('adminSettingLanding')) $('adminSettingLanding').value = s.landing || 'cctv';
       if ($('adminSettingSubtitle')) $('adminSettingSubtitle').value = s.subtitle || 'Secure operations workspace';
       if ($('adminSettingAutoTrim')) $('adminSettingAutoTrim').checked = s.autoTrim !== false;
-      if ($('adminSettingFocusEnabled')) {
-        $('adminSettingFocusEnabled').checked = localStorage.getItem('cctv_focus_enabled') === 'true';
-      }
     }
 
     async function loadOperationalSettings() {
@@ -13163,9 +13164,6 @@ function doPost(e) {
           subtitle: String($('adminSettingSubtitle')?.value||'').trim() || 'Secure operations workspace',
           autoTrim: !!$('adminSettingAutoTrim')?.checked
         };
-        if ($('adminSettingFocusEnabled')) {
-          window.CCTV_FOCUS_STATE?.setEnabled?.(!!$('adminSettingFocusEnabled').checked);
-        }
         const updated = await svc.saveOperationalSettings(settings);
         populateOperationalSettingsUI(updated);
         const notice = $('adminSaveSettingsNotice');
@@ -13236,9 +13234,6 @@ function doPost(e) {
     $('adminAuditSearch')?.addEventListener('input', filterAuditLogs);
 
     $('adminSaveSettingsBtn')?.addEventListener('click', saveOperationalSettings);
-    $('adminSettingFocusEnabled')?.addEventListener('change', (e) => {
-      window.CCTV_FOCUS_STATE?.setEnabled?.(e.target.checked);
-    });
 
     $('adminAccessRole')?.addEventListener('change', refreshAccessRoleUi);
     $('adminAccessSave')?.addEventListener('click', saveAccessEditor);
@@ -13421,7 +13416,7 @@ function doPost(e) {
       const note = el("previewLoginNote");
 
       if (isPreviewEnv) {
-        showAuthMessage("PREVIEW MODE: Production database isolated. Click Enter Demo Preview below to test Focus.");
+        showAuthMessage("PREVIEW MODE: Production database isolated. Click Enter Demo Preview below.");
         if (btnDemo) { btnDemo.style.display = "block"; btnDemo.hidden = false; }
         if (divider) { divider.style.display = "flex"; divider.hidden = false; }
         if (note) { note.style.display = "block"; note.hidden = false; }
@@ -13606,12 +13601,9 @@ function doPost(e) {
         try {
           const res = await auth.signInDemoPreview();
           unlockApp(res.user, res.profile);
-          showToast("Entered demo preview mode. Focus music player is ready.", "success");
+          showToast("Entered demo preview mode.", "success");
           if (typeof switchWorkspace === "function") {
             switchWorkspace("dashboard");
-          }
-          if (window.CCTV_FOCUS_STATE && typeof window.CCTV_FOCUS_STATE.setEnabled === "function") {
-            window.CCTV_FOCUS_STATE.setEnabled(true);
           }
         } catch (err) {
           console.error("Demo preview entry error:", err);
@@ -13669,7 +13661,9 @@ function doPost(e) {
       } else {
         lockApp();
       }
-      updateIntegrationStatusPills();
+      if (typeof updateIntegrationStatusPills === "function") {
+        updateIntegrationStatusPills();
+      }
       restoreSorterDraft().catch(console.error);
       if (typeof edr?.loadReports === "function") {
         edr.loadReports().then(reps => {
@@ -14040,7 +14034,9 @@ function doPost(e) {
     updateIntegrationStatusPills();
     window.addEventListener("storage", (e) => {
       if (e.key === "maintenance_google_sheets_web_app_url_v1" || e.key === "cctv_edr_docs_url_v1") {
+        if (typeof updateIntegrationStatusPills === "function") {
         updateIntegrationStatusPills();
+      }
       }
     });
   });
