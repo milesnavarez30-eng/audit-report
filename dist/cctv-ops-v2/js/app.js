@@ -14062,12 +14062,17 @@ function doPost(e) {
         return;
       }
 
-      const width = Math.max(window.innerWidth, 1920);
-      const height = Math.max(window.innerHeight, 1080);
-
-      const columns = Math.ceil(width / 40);
-      const rows = Math.ceil(height / 40);
+      // CCTV_OPS_LOGIN_MATRIX_LIGHTWEIGHT_V1: viewport-sized static matrix, maximum 126 glyphs.
+      const width = Math.max(320, matrix.clientWidth || window.innerWidth);
+      const height = Math.max(240, matrix.clientHeight || window.innerHeight);
+      const columns = Math.min(14, Math.max(5, Math.ceil(width / 130)));
+      const rows = Math.min(9, Math.max(4, Math.ceil(height / 130)));
       const total = columns * rows;
+      const signature = `${columns}x${rows}`;
+      if (matrix.dataset.matrixGrid === signature && matrix.childElementCount === total) return;
+      matrix.dataset.matrixGrid = signature;
+      matrix.style.setProperty("--jp-cols", String(columns));
+      matrix.style.setProperty("--jp-rows", String(rows));
 
       const fragment = document.createDocumentFragment();
 
